@@ -1,0 +1,11 @@
+{
+  "name": "kanopi",
+  "version": "0.1.0-alpha",
+  "description": "The VSCode of live coding — multi-runtime IDE with shared clock, scenes, and hardware surfaces.",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "author": "roomi-fields",
+  "license": "UNLICENSED"
+}
