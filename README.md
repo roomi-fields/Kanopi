@@ -31,4 +31,4 @@ No existing tool integrates multiple live-coding runtimes with shared temporal s
 
 ## License
 
-TBD.
+[AGPL-3.0-or-later](LICENSE) — copyleft including network use. If you run Kanopi as a service, you must share your modifications.
