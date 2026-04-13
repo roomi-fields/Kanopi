@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kanopi — myset</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0e11;
+    --surface: #14161a;
+    --panel: #181a1e;
+    --elevated: #1e2126;
+    --border: #24282e;
+    --border-dim: #1b1e22;
+    --divider: #20242a;
+
+    --text: #e8e4da;
+    --text-muted: #8a8c91;
+    --text-dim: #55585d;
+    --text-faint: #3a3d42;
+
+    --amber: #e89c3e;
+    --amber-soft: #f5b25a;
+    --amber-glow: rgba(232, 156, 62, 0.35);
+    --amber-dim: #7a551f;
+
+    --green: #7ec873;
+    --green-glow: rgba(126, 200, 115, 0.55);
+    --red: #c86b6b;
+    --red-glow: rgba(200, 107, 107, 0.4);
+
+    --tidal: #b292c9;
+    --sc: #6aa4d4;
+    --hydra: #d4a566;
+    --python: #6cb892;
+    --kanopi: #e89c3e;
+    --cyan: #5fbac4;
+
+    --font-mono: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+    --font-code: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+    --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: 0.01em;
+  }
+
+  body {
+    background-image:
+      radial-gradient(ellipse 80% 40% at 50% 0%, rgba(232, 156, 62, 0.035), transparent 70%),
+      radial-gradient(ellipse 60% 60% at 100% 100%, rgba(95, 186, 196, 0.02), transparent 60%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='1' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.04 0'/></filter><rect width='240' height='240' filter='url(%23n)'/></svg>");
+  }
+
+  button { font-family: inherit; font-size: inherit; color: inherit; background: none; border: none; cursor: pointer; letter-spacing: inherit; }
+  kbd { font-family: var(--font-mono); font-size: 10px; }
+  svg { display: block; }
+
+  .app {
+    display: grid;
+    grid-template-rows: 56px 1fr 30px;
+    height: 100vh;
+  }
+
+  /* ═══════════════ TOPBAR ═══════════════ */
+
+  .topbar {
+    display: grid;
+    grid-template-columns: 240px 1fr auto;
+    align-items: center;
+    background: linear-gradient(to bottom, #171a1f, #13161a);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px 0 14px;
+    position: relative;
+  }
+
+  .topbar::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--amber-glow), transparent);
+    opacity: 0.4;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sigil {
+    width: 22px; height: 22px;
+    color: var(--amber);
+    filter: drop-shadow(0 0 4px var(--amber-glow));
+  }
+
+  .brand-name {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    color: var(--text);
+  }
+
+  .brand-sep {
+    color: var(--text-faint);
+    margin: 0 2px;
+  }
+
+  .workspace-name {
+    font-family: var(--font-mono);
+    font-weight: 400;
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
+
+  .topbar-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .transport-cluster {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 6px 16px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: rgba(0,0,0,0.2);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+  }
+
+  .tbtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px; height: 26px;
+    border-radius: 3px;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .tbtn:hover { color: var(--text); background: var(--elevated); }
+
+  .tbtn.playing {
+    color: var(--amber);
+    background: rgba(232, 156, 62, 0.12);
+    box-shadow: 0 0 0 1px rgba(232, 156, 62, 0.2), inset 0 0 8px rgba(232, 156, 62, 0.08);
+  }
+
+  .tbtn svg { width: 11px; height: 11px; }
+
+  .bpm-module {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding-left: 10px;
+    border-left: 1px solid var(--border);
+  }
+
+  .bpm-value {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 22px;
+    color: var(--amber);
+    letter-spacing: -0.02em;
+    text-shadow: 0 0 10px var(--amber-glow);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .bpm-value .decimal {
+    font-size: 15px;
+    opacity: 0.75;
+  }
+
+  .bpm-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--text-dim);
+    letter-spacing: 0.2em;
+  }
+
+  .tap-btn {
+    padding: 5px 9px;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    font-weight: 500;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+
+  .tap-btn:hover { color: var(--amber); border-color: var(--amber-dim); }
+
+  .beat-meter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-left: 10px;
+    border-left: 1px solid var(--border);
+  }
+
+  .beat-dots {
+    display: flex;
+    gap: 4px;
+  }
+
+  .beat-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.1s;
+  }
+
+  .beat-dot.active {
+    background: var(--amber);
+    box-shadow: 0 0 6px var(--amber-glow);
+    animation: beat-pulse 0.47s ease-out;
+  }
+
+  @keyframes beat-pulse {
+    0% { transform: scale(1.4); box-shadow: 0 0 10px var(--amber); }
+    100% { transform: scale(1); box-shadow: 0 0 6px var(--amber-glow); }
+  }
+
+  .beat-counter {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+  }
+
+  .beat-counter .sep { color: var(--text-faint); margin: 0 3px; }
+  .beat-counter .dim { color: var(--text-dim); }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cmdk-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px 5px 7px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    transition: all 0.15s;
+  }
+
+  .cmdk-pill:hover { color: var(--text-muted); border-color: var(--elevated); background: rgba(255,255,255,0.02); }
+
+  .cmdk-pill kbd {
+    display: inline-block;
+    padding: 1px 4px;
+    background: var(--elevated);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+
+  .icon-btn {
+    width: 28px; height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    border-radius: 3px;
+    transition: all 0.15s;
+  }
+
+  .icon-btn:hover { color: var(--text-muted); background: var(--elevated); }
+
+  /* ═══════════════ MAIN ═══════════════ */
+
+  .main {
+    display: grid;
+    grid-template-columns: 44px 260px 1fr 300px;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  /* ─── Activity bar ─── */
+  .activity-bar {
+    background: linear-gradient(to bottom, #12151a, #0f1215);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    gap: 4px;
+  }
+
+  .ab-btn {
+    width: 40px; height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    border-radius: 3px;
+    position: relative;
+    transition: all 0.15s;
+  }
+
+  .ab-btn:hover { color: var(--text-muted); background: rgba(255,255,255,0.02); }
+
+  .ab-btn.active {
+    color: var(--amber);
+    background: rgba(232, 156, 62, 0.08);
+  }
+
+  .ab-btn.active::before {
+    content: '';
+    position: absolute;
+    left: -1px; top: 8px; bottom: 8px;
+    width: 2px;
+    background: var(--amber);
+    box-shadow: 0 0 6px var(--amber-glow);
+    border-radius: 0 2px 2px 0;
+  }
+
+  .ab-btn svg { width: 18px; height: 18px; }
+
+  .ab-spacer { flex: 1; }
+
+  .ab-badge {
+    position: absolute;
+    top: 6px; right: 6px;
+    min-width: 13px; height: 13px;
+    padding: 0 3px;
+    background: var(--amber);
+    color: var(--bg);
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 4px var(--amber-glow);
+  }
+
+  .sidebar-left,
+  .sidebar-right {
+    background: var(--surface);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-left { border-right: 1px solid var(--border); }
+  .sidebar-right { border-left: 1px solid var(--border); }
+
+  /* ─── Library view ─── */
+
+  .lib-search {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-dim);
+  }
+
+  .lib-search-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .lib-search-input svg { flex-shrink: 0; opacity: 0.6; }
+
+  .lib-cats {
+    display: flex;
+    gap: 2px;
+    padding: 8px 8px 0;
+    border-bottom: 1px solid var(--border-dim);
+    overflow-x: auto;
+  }
+
+  .lib-cat {
+    padding: 6px 9px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    color: var(--text-dim);
+    white-space: nowrap;
+    cursor: pointer;
+    border-bottom: 1.5px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s;
+  }
+
+  .lib-cat:hover { color: var(--text-muted); }
+
+  .lib-cat.active {
+    color: var(--amber);
+    border-bottom-color: var(--amber);
+  }
+
+  .lib-sources {
+    display: flex;
+    gap: 4px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-dim);
+    background: rgba(0,0,0,0.15);
+  }
+
+  .lib-src {
+    flex: 1;
+    padding: 5px 6px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: var(--text-dim);
+    text-align: center;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .lib-src:hover { color: var(--text-muted); }
+
+  .lib-src.active {
+    color: var(--text);
+    background: var(--elevated);
+    border-color: var(--border);
+  }
+
+  .lib-src .src-count {
+    font-size: 8px;
+    color: var(--text-faint);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+
+  .lib-src.active .src-count { color: var(--amber); }
+
+  .lib-src-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .lib-src-dot.bundled  { background: var(--amber); box-shadow: 0 0 3px var(--amber-glow); }
+  .lib-src-dot.mine     { background: var(--cyan);  box-shadow: 0 0 3px rgba(95, 186, 196, 0.5); }
+  .lib-src-dot.comm     { background: var(--green); box-shadow: 0 0 3px var(--green-glow); }
+
+  .lib-section-title {
+    padding: 14px 14px 6px;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    color: var(--text-faint);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .lib-section-title .more {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    cursor: pointer;
+  }
+
+  .lib-item {
+    display: grid;
+    grid-template-columns: 4px 1fr auto;
+    gap: 10px;
+    padding: 9px 14px 9px 10px;
+    cursor: pointer;
+    transition: background 0.1s;
+    align-items: center;
+    border-left: 4px solid transparent;
+    position: relative;
+  }
+
+  .lib-item:hover { background: rgba(255,255,255,0.025); }
+  .lib-item:hover .lib-add { opacity: 1; }
+
+  .lib-accent {
+    width: 3px; height: 28px;
+    margin-left: -10px;
+    border-radius: 0 1px 1px 0;
+    box-shadow: 0 0 6px currentColor;
+  }
+
+  .lib-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .lib-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .lib-meta {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .lib-meta .dot { width: 2px; height: 2px; background: var(--text-faint); border-radius: 50%; }
+  .lib-meta .verified { color: var(--green); }
+  .lib-meta .tier.bundled { color: var(--amber); }
+  .lib-meta .tier.mine    { color: var(--cyan); }
+  .lib-meta .tier.comm    { color: var(--green); }
+
+  .lib-stars {
+    color: var(--amber);
+    letter-spacing: -0.5px;
+    font-size: 9px;
+  }
+
+  .lib-stars .empty { color: var(--border); }
+
+  .lib-usage {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-dim);
+  }
+
+  .lib-comments {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--text-dim);
+  }
+
+  .lib-avatar {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--elevated), var(--border));
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0;
+    flex-shrink: 0;
+  }
+
+  .lib-add {
+    color: var(--text-dim);
+    font-size: 16px;
+    width: 18px; height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    opacity: 0.5;
+    transition: all 0.15s;
+  }
+
+  .lib-add:hover { color: var(--amber); background: rgba(232, 156, 62, 0.08); opacity: 1; }
+
+  .lib-footer {
+    margin-top: auto;
+    padding: 10px 14px;
+    border-top: 1px solid var(--border-dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.14em;
+  }
+
+  .lib-footer a {
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    transition: all 0.15s;
+  }
+
+  .lib-footer a:hover { color: var(--amber); border-color: var(--amber-dim); }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--border-dim);
+  }
+
+  .panel-title {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    color: var(--text-dim);
+  }
+
+  .panel-count {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-faint);
+    letter-spacing: 0.12em;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .panel-action {
+    color: var(--text-faint);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 4px;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+
+  .panel-action:hover { color: var(--amber); }
+
+  /* ─── File tree ─── */
+
+  .workspace-section { padding: 6px 0; }
+
+  .folder {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 14px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+
+  .folder-arrow {
+    color: var(--text-dim);
+    font-size: 9px;
+    transition: transform 0.15s;
+  }
+
+  .folder-name::before {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 8px;
+    background: currentColor;
+    margin-right: 6px;
+    opacity: 0.6;
+    clip-path: polygon(0 20%, 40% 20%, 50% 0, 100% 0, 100% 100%, 0 100%);
+  }
+
+  .files { padding-left: 14px; }
+
+  .file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 14px 5px 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    position: relative;
+    transition: background 0.1s;
+    letter-spacing: 0.02em;
+  }
+
+  .file:hover { background: rgba(255,255,255,0.02); color: var(--text); }
+
+  .file.active {
+    background: rgba(232, 156, 62, 0.06);
+    color: var(--text);
+  }
+
+  .file.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--amber);
+    box-shadow: 0 0 6px var(--amber-glow);
+  }
+
+  .file-tape {
+    display: inline-block;
+    width: 3px;
+    height: 12px;
+    border-radius: 1px;
+    flex-shrink: 0;
+    box-shadow: 0 0 4px currentColor;
+  }
+
+  .file-name { flex: 1; }
+
+  .file-ext {
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 0.08em;
+  }
+
+  /* ─── Quick stats bottom of left panel ─── */
+
+  .ws-stats {
+    margin-top: auto;
+    padding: 12px 14px;
+    border-top: 1px solid var(--border-dim);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 14px;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-label {
+    font-size: 8px;
+    letter-spacing: 0.22em;
+    color: var(--text-faint);
+    font-weight: 500;
+  }
+
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
+  }
+
+  .stat-value.accent { color: var(--amber); }
+
+  /* ═══════════════ CENTER (editor) ═══════════════ */
+
+  .center {
+    display: grid;
+    grid-template-rows: 36px 1fr 220px;
+    overflow: hidden;
+    min-height: 0;
+    background: var(--bg);
+  }
+
+  .tabs {
+    display: flex;
+    align-items: flex-end;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding-left: 8px;
+    overflow-x: auto;
+  }
+
+  .tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    height: 36px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    border-right: 1px solid var(--border-dim);
+    cursor: pointer;
+    position: relative;
+    letter-spacing: 0.02em;
+    transition: color 0.1s;
+  }
+
+  .tab:hover { color: var(--text-muted); }
+
+  .tab.active {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .tab.active::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1.5px;
+    background: var(--amber);
+    box-shadow: 0 0 8px var(--amber-glow);
+  }
+
+  .tab-marker {
+    width: 6px; height: 6px;
+    border-radius: 1px;
+    flex-shrink: 0;
+  }
+
+  .tab-close {
+    font-size: 14px;
+    color: var(--text-faint);
+    margin-left: 2px;
+    width: 14px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+
+  .tab:hover .tab-close,
+  .tab.active .tab-close { opacity: 1; }
+  .tab-close:hover { color: var(--text); }
+
+  /* ─── Editor ─── */
+
+  .editor {
+    position: relative;
+    overflow: auto;
+    font-family: var(--font-code);
+    font-size: 13px;
+    line-height: 1.65;
+    letter-spacing: 0;
+    background:
+      linear-gradient(to right, transparent 49px, var(--border-dim) 49px, var(--border-dim) 50px, transparent 50px);
+  }
+
+  .editor::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; left: 620px;
+    width: 1px;
+    background: var(--border-dim);
+    opacity: 0.5;
+  }
+
+  .editor-content {
+    padding: 18px 24px 40px 0;
+    min-height: 100%;
+  }
+
+  .code-line {
+    display: flex;
+    align-items: baseline;
+    padding-left: 0;
+  }
+
+  .code-line.current { background: rgba(232, 156, 62, 0.04); }
+
+  .line-num {
+    display: inline-block;
+    width: 50px;
+    padding-right: 14px;
+    text-align: right;
+    color: var(--text-faint);
+    font-size: 11px;
+    user-select: none;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .code-line.current .line-num { color: var(--amber); }
+
+  .code-content {
+    padding-left: 18px;
+    white-space: pre;
+    color: var(--text);
+  }
+
+  /* syntax */
+  .c-comment { color: var(--text-dim); font-style: italic; }
+  .c-comment-head { color: var(--text-muted); }
+  .c-keyword { color: var(--amber); font-weight: 500; }
+  .c-ident { color: var(--text); }
+  .c-attr { color: var(--cyan); }
+  .c-string { color: var(--hydra); }
+  .c-type { color: var(--tidal); }
+  .c-number { color: var(--green); }
+  .c-arrow { color: var(--amber-soft); font-weight: 500; }
+  .c-punct { color: var(--text-dim); }
+  .c-bracket { color: var(--text-muted); }
+  .c-target { color: var(--python); }
+
+  .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 15px;
+    background: var(--amber);
+    margin-left: -1px;
+    vertical-align: middle;
+    box-shadow: 0 0 4px var(--amber-glow);
+    animation: blink 1.1s steps(2) infinite;
+  }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ─── Bottom panel ─── */
+
+  .bottom-panel {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-rows: 32px 1fr;
+    overflow: hidden;
+  }
+
+  .bottom-tabs {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border-dim);
+    padding: 0 14px;
+    gap: 2px;
+  }
+
+  .btab {
+    padding: 0 12px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    color: var(--text-dim);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.15s;
+  }
+
+  .btab:hover { color: var(--text-muted); }
+
+  .btab.active { color: var(--text); }
+
+  .btab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 1px;
+    background: var(--amber);
+  }
+
+  .btab-count {
+    font-size: 9px;
+    padding: 1px 5px;
+    background: var(--elevated);
+    border-radius: 8px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+  }
+
+  .bottom-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+  }
+
+  .baction {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    padding: 4px 8px;
+    border: 1px solid var(--border-dim);
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+
+  .baction:hover { color: var(--text-muted); border-color: var(--border); }
+
+  .console {
+    overflow-y: auto;
+    padding: 10px 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.7;
+  }
+
+  .log-line {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    letter-spacing: 0.01em;
+  }
+
+  .log-time {
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+
+  .log-tag {
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    min-width: 76px;
+    flex-shrink: 0;
+  }
+
+  .log-msg { color: var(--text-muted); }
+  .log-msg .em { color: var(--text); }
+  .log-msg .arrow { color: var(--amber); font-weight: 500; }
+  .log-msg .num { color: var(--green); font-variant-numeric: tabular-nums; }
+
+  /* ═══════════════ RIGHT SIDEBAR ═══════════════ */
+
+  .panel-block {
+    border-bottom: 1px solid var(--border-dim);
+  }
+
+  /* Scenes */
+
+  .scene-grid {
+    padding: 10px;
+    display: grid;
+    gap: 6px;
+  }
+
+  .scene {
+    display: grid;
+    grid-template-columns: 18px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--panel);
+    border: 1px solid var(--border-dim);
+    border-radius: 3px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.15s;
+  }
+
+  .scene:hover { border-color: var(--border); }
+
+  .scene.active {
+    background: linear-gradient(to right, rgba(232, 156, 62, 0.08), rgba(232, 156, 62, 0.02));
+    border-color: var(--amber-dim);
+    box-shadow: inset 0 0 0 1px rgba(232, 156, 62, 0.15), 0 0 12px rgba(232, 156, 62, 0.06);
+  }
+
+  .scene-num {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    font-weight: 500;
+    text-align: center;
+    letter-spacing: 0.08em;
+  }
+
+  .scene.active .scene-num { color: var(--amber); }
+
+  .scene-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text);
+    letter-spacing: 0.04em;
+    font-weight: 400;
+  }
+
+  .scene.active .scene-name { color: var(--amber-soft); font-weight: 500; }
+
+  .scene-dots {
+    display: flex;
+    gap: 4px;
+  }
+
+  .s-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.15s;
+  }
+
+  .s-dot.on.tidal  { background: var(--tidal);  box-shadow: 0 0 4px var(--tidal); }
+  .s-dot.on.sc     { background: var(--sc);     box-shadow: 0 0 4px var(--sc); }
+  .s-dot.on.hydra  { background: var(--hydra);  box-shadow: 0 0 4px var(--hydra); }
+  .s-dot.on.python { background: var(--python); box-shadow: 0 0 4px var(--python); }
+  .s-dot.on.sub37  { background: var(--amber);  box-shadow: 0 0 4px var(--amber); }
+
+  /* Actors */
+
+  .actor-list { padding: 6px 0; }
+
+  .actor {
+    display: grid;
+    grid-template-columns: 3px 1fr auto auto;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px 8px 11px;
+    cursor: pointer;
+    transition: background 0.1s;
+    font-family: var(--font-mono);
+    border-left: 3px solid transparent;
+  }
+
+  .actor:hover { background: rgba(255,255,255,0.015); }
+
+  .actor.off { opacity: 0.5; }
+
+  .actor-stripe {
+    width: 3px; height: 18px;
+    margin-left: -11px;
+    border-radius: 0 1px 1px 0;
+    box-shadow: 0 0 6px currentColor;
+  }
+
+  .actor-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .actor-name {
+    font-size: 12px;
+    color: var(--text);
+    letter-spacing: 0.03em;
+  }
+
+  .actor-transport {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .actor-meter {
+    width: 28px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--elevated);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .actor-meter-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: linear-gradient(to right, var(--green), var(--amber));
+    border-radius: 2px;
+  }
+
+  .actor-toggle {
+    width: 22px;
+    height: 12px;
+    border-radius: 7px;
+    background: var(--elevated);
+    border: 1px solid var(--border);
+    position: relative;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .actor-toggle::after {
+    content: '';
+    position: absolute;
+    top: 1px; left: 1px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    transition: all 0.2s;
+  }
+
+  .actor.on .actor-toggle {
+    background: rgba(232, 156, 62, 0.18);
+    border-color: var(--amber-dim);
+  }
+
+  .actor.on .actor-toggle::after {
+    left: 11px;
+    background: var(--amber);
+    box-shadow: 0 0 6px var(--amber-glow);
+  }
+
+  /* Hardware */
+
+  .hw-list { padding: 6px 0 10px; }
+
+  .hw-device {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    transition: background 0.1s;
+  }
+
+  .hw-device:hover { background: rgba(255,255,255,0.015); }
+
+  .hw-led {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  .hw-led.on {
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green-glow), inset 0 0 1px rgba(255,255,255,0.4);
+    animation: led-breathe 3s ease-in-out infinite;
+  }
+
+  @keyframes led-breathe {
+    0%, 100% { box-shadow: 0 0 4px var(--green-glow); }
+    50% { box-shadow: 0 0 8px var(--green-glow), 0 0 12px var(--green-glow); }
+  }
+
+  .hw-name {
+    flex: 1;
+    color: var(--text);
+    letter-spacing: 0.03em;
+  }
+
+  .hw-badge {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text-muted);
+  }
+
+  /* ═══════════════ STATUSBAR ═══════════════ */
+
+  .statusbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 0 16px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
+
+  .sb-group {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .sb-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sb-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 5px var(--amber-glow);
+    animation: sb-pulse 0.47s ease-out infinite;
+  }
+
+  @keyframes sb-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+
+  .sb-item .accent { color: var(--amber); }
+  .sb-item .dim { color: var(--text-dim); }
+  .sb-item .num { color: var(--text); font-variant-numeric: tabular-nums; }
+
+  .sb-sep { color: var(--text-faint); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--elevated); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ═══════════════ TOPBAR ═══════════════ -->
+  <header class="topbar">
+    <div class="brand">
+      <svg class="sigil" viewBox="0 0 24 24" fill="none">
+        <path d="M12 22 L12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M3 5 Q12 2 21 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+        <path d="M5 9 Q12 6 19 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.8"/>
+        <path d="M7 13 Q12 10 17 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+        <circle cx="12" cy="22" r="1" fill="currentColor"/>
+      </svg>
+      <span class="brand-name">KANOPI</span>
+      <span class="brand-sep">·</span>
+      <span class="workspace-name">myset</span>
+    </div>
+
+    <div class="topbar-center">
+      <div class="transport-cluster">
+        <button class="tbtn" title="Stop">
+          <svg viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="2" width="8" height="8" rx="0.5"/></svg>
+        </button>
+        <button class="tbtn playing" title="Play">
+          <svg viewBox="0 0 12 12" fill="currentColor"><path d="M2.5 1.5 L10 6 L2.5 10.5 Z"/></svg>
+        </button>
+
+        <div class="bpm-module">
+          <span class="bpm-value">128<span class="decimal">.0</span></span>
+          <span class="bpm-label">BPM</span>
+        </div>
+
+        <button class="tap-btn">TAP</button>
+
+        <div class="beat-meter">
+          <div class="beat-dots">
+            <span class="beat-dot"></span>
+            <span class="beat-dot"></span>
+            <span class="beat-dot active"></span>
+            <span class="beat-dot"></span>
+          </div>
+          <span class="beat-counter">003<span class="sep">·</span>03<span class="dim">.50</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <button class="cmdk-pill">
+        <kbd>⌘</kbd><kbd>K</kbd>
+        <span>command</span>
+      </button>
+      <button class="icon-btn" title="Settings">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2">
+          <circle cx="7" cy="7" r="2"/>
+          <path d="M7 1v2M7 11v2M1 7h2M11 7h2M3 3l1.4 1.4M9.6 9.6L11 11M3 11l1.4-1.4M9.6 4.4L11 3"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════════ MAIN ═══════════════ -->
+  <div class="main">
+
+    <!-- ACTIVITY BAR -->
+    <nav class="activity-bar">
+      <button class="ab-btn" title="Files">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3">
+          <path d="M3 4 Q3 3 4 3 L7 3 L9 5 L14 5 Q15 5 15 6 L15 14 Q15 15 14 15 L4 15 Q3 15 3 14 Z"/>
+        </svg>
+      </button>
+      <button class="ab-btn active" title="Library">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3">
+          <rect x="3" y="3" width="3" height="12" rx="0.5"/>
+          <rect x="7" y="3" width="3" height="12" rx="0.5"/>
+          <rect x="11" y="4" width="3" height="11" rx="0.5" transform="rotate(8 12.5 9.5)"/>
+        </svg>
+      </button>
+      <button class="ab-btn" title="Search">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.4">
+          <circle cx="8" cy="8" r="4.5"/>
+          <line x1="11.5" y1="11.5" x2="15" y2="15" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button class="ab-btn" title="Hardware">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3">
+          <rect x="2.5" y="5" width="13" height="8" rx="1"/>
+          <circle cx="5" cy="9" r="0.8" fill="currentColor"/>
+          <circle cx="8" cy="9" r="0.8" fill="currentColor"/>
+          <circle cx="11" cy="9" r="0.8" fill="currentColor"/>
+          <circle cx="14" cy="9" r="0.8" fill="currentColor"/>
+        </svg>
+        <span class="ab-badge">2</span>
+      </button>
+      <button class="ab-btn" title="Git">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3">
+          <circle cx="5" cy="4.5" r="1.5"/>
+          <circle cx="5" cy="13.5" r="1.5"/>
+          <circle cx="13" cy="9" r="1.5"/>
+          <path d="M5 6 L5 12"/>
+          <path d="M5 9 Q5 9 13 9" stroke-dasharray="0"/>
+        </svg>
+      </button>
+      <div class="ab-spacer"></div>
+      <button class="ab-btn" title="Docs">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3">
+          <circle cx="9" cy="9" r="6"/>
+          <path d="M9 12 L9 8.5" stroke-linecap="round"/>
+          <circle cx="9" cy="6" r="0.6" fill="currentColor"/>
+        </svg>
+      </button>
+      <button class="ab-btn" title="Account">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.3">
+          <circle cx="9" cy="7" r="2.5"/>
+          <path d="M3.5 15 Q3.5 11 9 11 Q14.5 11 14.5 15"/>
+        </svg>
+      </button>
+    </nav>
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar-left">
+      <div class="panel-header">
+        <span class="panel-title">LIBRARY</span>
+        <span class="panel-action">⟳</span>
+      </div>
+
+      <div class="lib-search">
+        <div class="lib-search-input">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4">
+            <circle cx="5" cy="5" r="3"/>
+            <line x1="7.5" y1="7.5" x2="10" y2="10" stroke-linecap="round"/>
+          </svg>
+          <span>search library…</span>
+        </div>
+      </div>
+
+      <div class="lib-cats">
+        <div class="lib-cat active">ALL</div>
+        <div class="lib-cat">STARTERS</div>
+        <div class="lib-cat">SCENES</div>
+        <div class="lib-cat">SNIPPETS</div>
+        <div class="lib-cat">DEVICES</div>
+        <div class="lib-cat">SCALES</div>
+      </div>
+
+      <div class="lib-sources">
+        <div class="lib-src active">
+          <span class="lib-src-dot bundled"></span>
+          BUNDLED <span class="src-count">42</span>
+        </div>
+        <div class="lib-src">
+          <span class="lib-src-dot mine"></span>
+          MINE <span class="src-count">17</span>
+        </div>
+        <div class="lib-src">
+          <span class="lib-src-dot comm"></span>
+          COMMUNITY <span class="src-count">2.4k</span>
+        </div>
+      </div>
+
+      <div class="lib-section-title">
+        <span>● BUNDLED · FEATURED</span>
+        <span class="more">view all →</span>
+      </div>
+
+      <div class="lib-item">
+        <span class="lib-accent" style="background:var(--tidal); color:var(--tidal)"></span>
+        <div class="lib-body">
+          <span class="lib-name">minimal tidal + hydra</span>
+          <span class="lib-meta"><span class="tier bundled">● bundled</span><span class="dot"></span><span>starter · 3 files</span></span>
+        </div>
+        <span class="lib-add">+</span>
+      </div>
+
+      <div class="lib-item">
+        <span class="lib-accent" style="background:var(--amber); color:var(--amber)"></span>
+        <div class="lib-body">
+          <span class="lib-name">drone ambient set</span>
+          <span class="lib-meta"><span class="tier bundled">● bundled</span><span class="dot"></span><span>4 scenes</span></span>
+        </div>
+        <span class="lib-add">+</span>
+      </div>
+
+      <div class="lib-item">
+        <span class="lib-accent" style="background:var(--cyan); color:var(--cyan)"></span>
+        <div class="lib-body">
+          <span class="lib-name">raga · bhairav sargam</span>
+          <span class="lib-meta"><span class="tier bundled">● bundled</span><span class="dot"></span><span>scale</span></span>
+        </div>
+        <span class="lib-add">+</span>
+      </div>
+
+      <div class="lib-section-title">
+        <span>● MINE · RECENT</span>
+        <span class="more">view all →</span>
+      </div>
+
+      <div class="lib-item">
+        <span class="lib-accent" style="background:var(--kanopi); color:var(--kanopi)"></span>
+        <div class="lib-body">
+          <span class="lib-name">icelandic set · v3</span>
+          <span class="lib-meta"><span class="tier mine">● mine</span><span class="dot"></span><span>2d ago</span></span>
+        </div>
+        <span class="lib-add">+</span>
+      </div>
+
+      <div class="lib-item">
+        <span class="lib-accent" style="background:var(--tidal); color:var(--tidal)"></span>
+        <div class="lib-body">
+          <span class="lib-name">gamelan polyrhythm base</span>
+          <span class="lib-meta"><span class="tier mine">● mine</span><span class="dot"></span><span>scene · 6d ago</span></span>
+        </div>
+        <span class="lib-add">+</span>
+      </div>
+
+      <div class="lib-section-title">
+        <span>● COMMUNITY · TRENDING</span>
+        <span class="more">view all →</span>
+      </div>
+
+      <div class="lib-item">
+        <span class="lib-accent" style="background:var(--python); color:var(--python)"></span>
+        <div class="lib-body">
+          <span class="lib-name">sardine polymetric 3:5</span>
+          <span class="lib-meta">
+            <span class="lib-avatar">B</span>
+            <span>bubobubo</span>
+            <span class="dot"></span>
+            <span class="lib-stars">★★★★<span class="empty">★</span></span>
+            <span class="lib-usage">· 847↓</span>
+            <span class="lib-comments">· 23💬</span>
+          </span>
+        </div>
+        <span class="lib-add">+</span>
+      </div>
+
+      <div class="lib-item">
+        <span class="lib-accent" style="background:var(--hydra); color:var(--hydra)"></span>
+        <div class="lib-body">
+          <span class="lib-name">caustic feedback mesh</span>
+          <span class="lib-meta">
+            <span class="lib-avatar">O</span>
+            <span>ojack</span>
+            <span class="dot"></span>
+            <span class="lib-stars">★★★★★</span>
+            <span class="lib-usage">· 2.1k↓</span>
+            <span class="lib-comments">· 41💬</span>
+          </span>
+        </div>
+        <span class="lib-add">+</span>
+      </div>
+
+      <div class="lib-item">
+        <span class="lib-accent" style="background:var(--tidal); color:var(--tidal)"></span>
+        <div class="lib-body">
+          <span class="lib-name">4-to-floor kick rotation</span>
+          <span class="lib-meta">
+            <span class="lib-avatar">Y</span>
+            <span>yaxu</span>
+            <span class="dot"></span>
+            <span class="lib-stars">★★★★<span class="empty">★</span></span>
+            <span class="lib-usage">· 512↓</span>
+            <span class="lib-comments">· 9💬</span>
+          </span>
+        </div>
+        <span class="lib-add">+</span>
+      </div>
+
+      <div class="lib-item">
+        <span class="lib-accent" style="background:var(--amber); color:var(--amber)"></span>
+        <div class="lib-body">
+          <span class="lib-name">Sub37 · live performance map</span>
+          <span class="lib-meta">
+            <span class="lib-avatar">M</span>
+            <span>mwgkit</span>
+            <span class="dot"></span>
+            <span class="lib-stars">★★★★★</span>
+            <span class="lib-usage">· 189↓</span>
+            <span class="lib-comments">· 7💬</span>
+          </span>
+        </div>
+        <span class="lib-add">+</span>
+      </div>
+
+      <div class="lib-footer">
+        <span>2 471 items</span>
+        <a href="#">BROWSE HUB</a>
+      </div>
+
+    </aside>
+
+    <!-- CENTER -->
+    <div class="center">
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active">
+          <span class="tab-marker" style="background: var(--kanopi); box-shadow: 0 0 4px var(--kanopi)"></span>
+          <span>session.kanopi</span>
+          <span class="tab-close">×</span>
+        </div>
+        <div class="tab">
+          <span class="tab-marker" style="background: var(--tidal)"></span>
+          <span>drums.tidal</span>
+          <span class="tab-close">×</span>
+        </div>
+        <div class="tab">
+          <span class="tab-marker" style="background: var(--sc)"></span>
+          <span>bass.scd</span>
+          <span class="tab-close">×</span>
+        </div>
+        <div class="tab">
+          <span class="tab-marker" style="background: var(--hydra)"></span>
+          <span>visuals.hydra</span>
+          <span class="tab-close">×</span>
+        </div>
+        <div class="tab">
+          <span class="tab-marker" style="background: var(--python)"></span>
+          <span>sensors.py</span>
+          <span class="tab-close">×</span>
+        </div>
+      </div>
+
+      <!-- Editor -->
+      <div class="editor">
+        <div class="editor-content">
+<div class="code-line"><span class="line-num">1</span><span class="code-content"><span class="c-comment-head"># myset / session.kanopi</span></span></div>
+<div class="code-line"><span class="line-num">2</span><span class="code-content"><span class="c-comment-head"># live set — 2026.04.13</span></span></div>
+<div class="code-line"><span class="line-num">3</span><span class="code-content"></span></div>
+<div class="code-line"><span class="line-num">4</span><span class="code-content"><span class="c-keyword">@workspace</span> <span class="c-ident">myset</span></span></div>
+<div class="code-line"><span class="line-num">5</span><span class="code-content"><span class="c-keyword">@tempo</span>     <span class="c-number">128</span></span></div>
+<div class="code-line"><span class="line-num">6</span><span class="code-content"><span class="c-keyword">@quantize</span>  <span class="c-type">bar</span></span></div>
+<div class="code-line"><span class="line-num">7</span><span class="code-content"></span></div>
+<div class="code-line"><span class="line-num">8</span><span class="code-content"><span class="c-comment">─── actors ──────────────────────────────────────</span></span></div>
+<div class="code-line"><span class="line-num">9</span><span class="code-content"></span></div>
+<div class="code-line"><span class="line-num">10</span><span class="code-content"><span class="c-keyword">@actor</span> <span class="c-ident">drums</span>    <span class="c-attr">file:</span><span class="c-string">drums.tidal</span>    <span class="c-attr">transport:</span><span class="c-type">tidal</span></span></div>
+<div class="code-line"><span class="line-num">11</span><span class="code-content"><span class="c-keyword">@actor</span> <span class="c-ident">bass</span>     <span class="c-attr">file:</span><span class="c-string">bass.scd</span>       <span class="c-attr">transport:</span><span class="c-type">sc</span></span></div>
+<div class="code-line"><span class="line-num">12</span><span class="code-content"><span class="c-keyword">@actor</span> <span class="c-ident">visuals</span>  <span class="c-attr">file:</span><span class="c-string">visuals.hydra</span>  <span class="c-attr">transport:</span><span class="c-type">hydra</span></span></div>
+<div class="code-line"><span class="line-num">13</span><span class="code-content"><span class="c-keyword">@actor</span> <span class="c-ident">sensors</span>  <span class="c-attr">file:</span><span class="c-string">sensors.py</span>     <span class="c-attr">transport:</span><span class="c-type">python</span></span></div>
+<div class="code-line"><span class="line-num">14</span><span class="code-content"><span class="c-keyword">@actor</span> <span class="c-ident">sub37</span>                          <span class="c-attr">transport:</span><span class="c-type">osc</span><span class="c-bracket">(</span><span class="c-string">/sub37</span><span class="c-bracket">)</span></span></div>
+<div class="code-line"><span class="line-num">15</span><span class="code-content"></span></div>
+<div class="code-line"><span class="line-num">16</span><span class="code-content"><span class="c-comment">─── scenes ──────────────────────────────────────</span></span></div>
+<div class="code-line"><span class="line-num">17</span><span class="code-content"></span></div>
+<div class="code-line"><span class="line-num">18</span><span class="code-content"><span class="c-keyword">@scene</span> <span class="c-ident">intro</span>    <span class="c-arrow">=</span> <span class="c-bracket">{</span> <span class="c-attr">visuals:</span> <span class="c-type">on</span> <span class="c-bracket">}</span></span></div>
+<div class="code-line"><span class="line-num">19</span><span class="code-content"><span class="c-keyword">@scene</span> <span class="c-ident">buildup</span>  <span class="c-arrow">=</span> <span class="c-bracket">{</span> <span class="c-attr">drums:</span> <span class="c-type">on</span>, <span class="c-attr">visuals:</span> <span class="c-type">on</span>, <span class="c-attr">sensors:</span> <span class="c-type">on</span> <span class="c-bracket">}</span></span></div>
+<div class="code-line current"><span class="line-num">20</span><span class="code-content"><span class="c-keyword">@scene</span> <span class="c-ident">drop</span>     <span class="c-arrow">=</span> <span class="c-bracket">{</span> <span class="c-attr">drums:</span> <span class="c-type">on</span>, <span class="c-attr">bass:</span> <span class="c-type">on</span>, <span class="c-attr">sub37:</span> <span class="c-type">on</span>, <span class="c-attr">visuals:</span> <span class="c-type">on</span> <span class="c-bracket">}</span><span class="cursor"></span></span></div>
+<div class="code-line"><span class="line-num">21</span><span class="code-content"><span class="c-keyword">@scene</span> <span class="c-ident">outro</span>    <span class="c-arrow">=</span> <span class="c-bracket">{</span> <span class="c-attr">visuals:</span> <span class="c-type">on</span> <span class="c-bracket">}</span></span></div>
+<div class="code-line"><span class="line-num">22</span><span class="code-content"></span></div>
+<div class="code-line"><span class="line-num">23</span><span class="code-content"><span class="c-comment">─── hardware mapping — minilab 3 ─────────────────</span></span></div>
+<div class="code-line"><span class="line-num">24</span><span class="code-content"></span></div>
+<div class="code-line"><span class="line-num">25</span><span class="code-content"><span class="c-keyword">@map</span> <span class="c-type">cc:</span><span class="c-number">20</span>   <span class="c-arrow">-></span> <span class="c-target">tempo</span>              <span class="c-attr">range:</span><span class="c-bracket">[</span><span class="c-number">60</span>, <span class="c-number">180</span><span class="c-bracket">]</span></span></div>
+<div class="code-line"><span class="line-num">26</span><span class="code-content"><span class="c-keyword">@map</span> <span class="c-type">cc:</span><span class="c-number">21</span>   <span class="c-arrow">-></span> <span class="c-target">sub37.cutoff</span></span></div>
+<div class="code-line"><span class="line-num">27</span><span class="code-content"><span class="c-keyword">@map</span> <span class="c-type">cc:</span><span class="c-number">22</span>   <span class="c-arrow">-></span> <span class="c-target">drums.density</span></span></div>
+<div class="code-line"><span class="line-num">28</span><span class="code-content"><span class="c-keyword">@map</span> <span class="c-type">cc:</span><span class="c-number">23</span>   <span class="c-arrow">-></span> <span class="c-target">bass.filter</span></span></div>
+<div class="code-line"><span class="line-num">29</span><span class="code-content"></span></div>
+<div class="code-line"><span class="line-num">30</span><span class="code-content"><span class="c-keyword">@map</span> <span class="c-type">pad:</span><span class="c-number">0</span>  <span class="c-arrow">-></span> <span class="c-target">scene:intro</span></span></div>
+<div class="code-line"><span class="line-num">31</span><span class="code-content"><span class="c-keyword">@map</span> <span class="c-type">pad:</span><span class="c-number">1</span>  <span class="c-arrow">-></span> <span class="c-target">scene:buildup</span></span></div>
+<div class="code-line"><span class="line-num">32</span><span class="code-content"><span class="c-keyword">@map</span> <span class="c-type">pad:</span><span class="c-number">2</span>  <span class="c-arrow">-></span> <span class="c-target">scene:drop</span></span></div>
+<div class="code-line"><span class="line-num">33</span><span class="code-content"><span class="c-keyword">@map</span> <span class="c-type">pad:</span><span class="c-number">3</span>  <span class="c-arrow">-></span> <span class="c-target">scene:outro</span></span></div>
+        </div>
+      </div>
+
+      <!-- Bottom panel -->
+      <div class="bottom-panel">
+        <div class="bottom-tabs">
+          <div class="btab active">CONSOLE <span class="btab-count">09</span></div>
+          <div class="btab">INSPECTOR</div>
+          <div class="btab">MAPPINGS</div>
+          <div class="bottom-actions">
+            <button class="baction">CLEAR</button>
+            <button class="baction">PAUSE</button>
+          </div>
+        </div>
+
+        <div class="console">
+          <div class="log-line">
+            <span class="log-time">11:42:03</span>
+            <span class="log-tag" style="color: var(--kanopi)">kanopi</span>
+            <span class="log-msg">workspace loaded <span class="arrow">→</span> <span class="em">myset</span> <span style="color:var(--text-faint)">(</span>5 actors · 4 scenes<span style="color:var(--text-faint)">)</span></span>
+          </div>
+          <div class="log-line">
+            <span class="log-time">11:42:03</span>
+            <span class="log-tag" style="color: var(--cyan)">bridge</span>
+            <span class="log-msg">connected <span class="arrow">·</span> <span class="em">Minilab 3</span> <span style="color:var(--text-faint)">in:0 out:4</span></span>
+          </div>
+          <div class="log-line">
+            <span class="log-time">11:42:03</span>
+            <span class="log-tag" style="color: var(--cyan)">bridge</span>
+            <span class="log-msg">connected <span class="arrow">·</span> <span class="em">Subsequent 37</span> <span style="color:var(--text-faint)">in:1 out:5</span></span>
+          </div>
+          <div class="log-line">
+            <span class="log-time">11:42:05</span>
+            <span class="log-tag" style="color: var(--tidal)">tidal</span>
+            <span class="log-msg">booting GHCi <span class="arrow">→</span> tidal-<span class="num">1.9.6</span></span>
+          </div>
+          <div class="log-line">
+            <span class="log-time">11:42:07</span>
+            <span class="log-tag" style="color: var(--sc)">sc</span>
+            <span class="log-msg">scsynth ready <span class="arrow">→</span> 2i/2o @ <span class="num">48000</span>Hz</span>
+          </div>
+          <div class="log-line">
+            <span class="log-time">11:42:08</span>
+            <span class="log-tag" style="color: var(--hydra)">hydra</span>
+            <span class="log-msg">context <span class="arrow">→</span> <span class="num">960</span>×<span class="num">540</span></span>
+          </div>
+          <div class="log-line">
+            <span class="log-time">11:42:08</span>
+            <span class="log-tag" style="color: var(--python)">python</span>
+            <span class="log-msg">python <span class="num">3.11.4</span> <span class="arrow">→</span> sardine <span class="num">0.4.2</span></span>
+          </div>
+          <div class="log-line">
+            <span class="log-time">11:42:12</span>
+            <span class="log-tag" style="color: var(--kanopi)">kanopi</span>
+            <span class="log-msg">scene <span class="arrow">→</span> <span class="em" style="color:var(--amber)">drop</span></span>
+          </div>
+          <div class="log-line">
+            <span class="log-time">11:42:14</span>
+            <span class="log-tag" style="color: var(--green)">midi</span>
+            <span class="log-msg">cc:<span class="num">20</span> <span class="arrow">→</span> tempo = <span class="num">132.0</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside class="sidebar-right">
+
+      <!-- SCENES -->
+      <div class="panel-block">
+        <div class="panel-header">
+          <span class="panel-title">SCENES</span>
+          <span class="panel-count">4 / 4</span>
+        </div>
+        <div class="scene-grid">
+          <div class="scene">
+            <span class="scene-num">01</span>
+            <span class="scene-name">intro</span>
+            <div class="scene-dots">
+              <span class="s-dot"></span>
+              <span class="s-dot"></span>
+              <span class="s-dot"></span>
+              <span class="s-dot"></span>
+              <span class="s-dot on hydra"></span>
+            </div>
+          </div>
+          <div class="scene">
+            <span class="scene-num">02</span>
+            <span class="scene-name">buildup</span>
+            <div class="scene-dots">
+              <span class="s-dot on tidal"></span>
+              <span class="s-dot"></span>
+              <span class="s-dot"></span>
+              <span class="s-dot on python"></span>
+              <span class="s-dot on hydra"></span>
+            </div>
+          </div>
+          <div class="scene active">
+            <span class="scene-num">03</span>
+            <span class="scene-name">drop</span>
+            <div class="scene-dots">
+              <span class="s-dot on tidal"></span>
+              <span class="s-dot on sc"></span>
+              <span class="s-dot on sub37"></span>
+              <span class="s-dot"></span>
+              <span class="s-dot on hydra"></span>
+            </div>
+          </div>
+          <div class="scene">
+            <span class="scene-num">04</span>
+            <span class="scene-name">outro</span>
+            <div class="scene-dots">
+              <span class="s-dot"></span>
+              <span class="s-dot"></span>
+              <span class="s-dot"></span>
+              <span class="s-dot"></span>
+              <span class="s-dot on hydra"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTORS -->
+      <div class="panel-block">
+        <div class="panel-header">
+          <span class="panel-title">ACTORS</span>
+          <span class="panel-count">3 / 5</span>
+        </div>
+        <div class="actor-list">
+          <div class="actor on">
+            <span class="actor-stripe" style="background:var(--tidal); color:var(--tidal)"></span>
+            <div class="actor-body">
+              <span class="actor-name">drums</span>
+              <span class="actor-transport">tidal</span>
+            </div>
+            <div class="actor-meter"><div class="actor-meter-fill" style="width: 78%"></div></div>
+            <span class="actor-toggle"></span>
+          </div>
+          <div class="actor on">
+            <span class="actor-stripe" style="background:var(--sc); color:var(--sc)"></span>
+            <div class="actor-body">
+              <span class="actor-name">bass</span>
+              <span class="actor-transport">supercollider</span>
+            </div>
+            <div class="actor-meter"><div class="actor-meter-fill" style="width: 52%"></div></div>
+            <span class="actor-toggle"></span>
+          </div>
+          <div class="actor on">
+            <span class="actor-stripe" style="background:var(--amber); color:var(--amber)"></span>
+            <div class="actor-body">
+              <span class="actor-name">sub37</span>
+              <span class="actor-transport">osc · /sub37</span>
+            </div>
+            <div class="actor-meter"><div class="actor-meter-fill" style="width: 41%"></div></div>
+            <span class="actor-toggle"></span>
+          </div>
+          <div class="actor off">
+            <span class="actor-stripe" style="background:var(--python); color:var(--python)"></span>
+            <div class="actor-body">
+              <span class="actor-name">sensors</span>
+              <span class="actor-transport">python · sardine</span>
+            </div>
+            <div class="actor-meter"><div class="actor-meter-fill" style="width: 0%"></div></div>
+            <span class="actor-toggle"></span>
+          </div>
+          <div class="actor on">
+            <span class="actor-stripe" style="background:var(--hydra); color:var(--hydra)"></span>
+            <div class="actor-body">
+              <span class="actor-name">visuals</span>
+              <span class="actor-transport">hydra</span>
+            </div>
+            <div class="actor-meter"><div class="actor-meter-fill" style="width: 64%"></div></div>
+            <span class="actor-toggle"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- HARDWARE -->
+      <div class="panel-block">
+        <div class="panel-header">
+          <span class="panel-title">HARDWARE</span>
+          <span class="panel-count">2</span>
+        </div>
+        <div class="hw-list">
+          <div class="hw-device">
+            <span class="hw-led on"></span>
+            <span class="hw-name">Minilab 3</span>
+            <span class="hw-badge">MIDI</span>
+          </div>
+          <div class="hw-device">
+            <span class="hw-led on"></span>
+            <span class="hw-name">Subsequent 37</span>
+            <span class="hw-badge">OSC</span>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- ═══════════════ STATUSBAR ═══════════════ -->
+  <footer class="statusbar">
+    <div class="sb-group">
+      <div class="sb-item">
+        <span class="sb-dot"></span>
+        <span class="num">128.0</span>
+        <span class="dim">BPM</span>
+      </div>
+      <span class="sb-sep">│</span>
+      <div class="sb-item">
+        <span class="dim">bar</span> <span class="num">003</span>
+        <span class="dim">· beat</span> <span class="num">03.50</span>
+      </div>
+      <span class="sb-sep">│</span>
+      <div class="sb-item">
+        <span class="dim">scene</span> <span class="accent">drop</span>
+      </div>
+      <span class="sb-sep">│</span>
+      <div class="sb-item">
+        <span class="dim">clock</span> <span style="color:var(--green)">●</span> <span class="num">link</span>
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-item">
+        <span class="dim">devices</span> <span class="num">2</span>
+      </div>
+      <span class="sb-sep">│</span>
+      <div class="sb-item">
+        <span class="dim">errors</span> <span class="num" style="color:var(--text-faint)">0</span>
+      </div>
+      <span class="sb-sep">│</span>
+      <div class="sb-item">
+        <span class="dim">kanopi</span> <span class="num">v0.1.0</span><span class="dim">-alpha</span>
+      </div>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>

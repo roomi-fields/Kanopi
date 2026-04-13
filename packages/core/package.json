@@ -1,0 +1,8 @@
+{
+  "name": "@kanopi/core",
+  "version": "0.1.0-alpha",
+  "type": "module",
+  "main": "src/index.js",
+  "description": "Kanopi runtime: session parser, dispatcher, actors, scenes, map engine.",
+  "private": true
+}
