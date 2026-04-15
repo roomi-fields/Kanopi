@@ -2,6 +2,7 @@ import { workspace } from '../../stores/workspace.svelte';
 import { clock } from '../../stores/clock.svelte';
 import { scenes } from '../../stores/scenes.svelte';
 import { actors } from '../../stores/actors.svelte';
+import { ui } from '../../stores/ui.svelte';
 import {
   debounce,
   loadWorkspace,
@@ -16,7 +17,9 @@ function snapshot(): PersistedWorkspace {
     activeTabId: workspace.activeTabId,
     bpm: clock.state.bpm,
     activeScene: scenes.active?.name ?? null,
-    activeActors: actors.list.filter((a) => a.active).map((a) => a.name)
+    activeActors: actors.list.filter((a) => a.active).map((a) => a.name),
+    sidebarWidth: ui.sidebarWidth,
+    rightPanelWidth: ui.rightPanelWidth
   };
 }
 
@@ -31,6 +34,8 @@ export function restoreWorkspace(): boolean {
   workspace.activeTabId = w.activeTabId && workspace.fileById(w.activeTabId) ? w.activeTabId : null;
 
   if (typeof w.bpm === 'number') clock.setBpm(w.bpm);
+  if (typeof w.sidebarWidth === 'number') ui.setSidebarWidth(w.sidebarWidth);
+  if (typeof w.rightPanelWidth === 'number') ui.setRightPanelWidth(w.rightPanelWidth);
 
   if (w.activeScene) scenes.activate(w.activeScene);
 
@@ -70,6 +75,8 @@ export function installAutosave() {
       void clock.state.bpm;
       void scenes.active?.name;
       void actors.list.map((a) => `${a.name}:${a.active}`).join(',');
+      void ui.sidebarWidth;
+      void ui.rightPanelWidth;
       persist();
     });
   });

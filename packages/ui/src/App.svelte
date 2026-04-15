@@ -8,6 +8,7 @@
   import RightPanel from './components/right-panel/RightPanel.svelte';
   import CommandPalette from './components/palette/CommandPalette.svelte';
   import HydraCanvas from './components/runtime/HydraCanvas.svelte';
+  import Resizer from './components/layout/Resizer.svelte';
   import { ui } from './stores/ui.svelte';
   import { installGlobalKeybindings } from './lib/keybindings/bindings';
   import { installAutosave } from './lib/persistence/snapshot.svelte';
@@ -97,12 +98,20 @@
 
 <div class="app">
   <Topbar />
-  <div class="body" class:sidebar-collapsed={ui.sidebarCollapsed}>
+  <div
+    class="body"
+    class:sidebar-collapsed={ui.sidebarCollapsed}
+    style:grid-template-columns={ui.sidebarCollapsed
+      ? `44px 1fr 4px ${ui.rightPanelWidth}px`
+      : `44px ${ui.sidebarWidth}px 4px 1fr 4px ${ui.rightPanelWidth}px`}
+  >
     <ActivityBar />
     {#if !ui.sidebarCollapsed}
       <Sidebar />
+      <Resizer side="right" width={ui.sidebarWidth} onResize={(w) => ui.setSidebarWidth(w)} />
     {/if}
     <EditorArea />
+    <Resizer side="left" width={ui.rightPanelWidth} onResize={(w) => ui.setRightPanelWidth(w)} />
     <RightPanel />
   </div>
   <Statusbar />
@@ -121,12 +130,8 @@
   }
   .body {
     display: grid;
-    grid-template-columns: 44px 260px 1fr 300px;
     background: var(--bg);
     overflow: hidden;
     min-height: 0;
-  }
-  .body.sidebar-collapsed {
-    grid-template-columns: 44px 1fr 300px;
   }
 </style>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseSession } from './parser';
+import { parseSession } from './index';
 
 describe('parseSession', () => {
   it('parses actors', () => {
@@ -23,20 +23,20 @@ describe('parseSession', () => {
     expect(r.scenes[0].actors).toEqual({ a: true, b: false });
   });
 
-  it('parses mappings (cc, pad, note with channel)', () => {
+  it('parses mappings (cv, trig, gate with channel)', () => {
     const r = parseSession(`
 @actor drums drums.tidal tidal
 @scene drop drums
-@map cc:1        tempo
-@map pad:36      scene:drop
-@map cc:21/ch1   drums.toggle
-@map note:60/ch2 drums.gain
+@map cv:1        tempo
+@map trig:36     scene:drop
+@map cv:21/ch1   drums.toggle
+@map gate:60/ch2 drums.gain
 `);
     expect(r.errors).toEqual([]);
     expect(r.mappings).toHaveLength(4);
     expect(r.mappings[0].target).toEqual({ kind: 'tempo' });
     expect(r.mappings[1].target).toEqual({ kind: 'scene', ref: 'drop' });
-    expect(r.mappings[2].source).toEqual({ kind: 'cc', index: 21, ch: 1 });
+    expect(r.mappings[2].source).toEqual({ kind: 'cv', index: 21, ch: 1 });
     expect(r.mappings[3].target).toEqual({ kind: 'actor.param', ref: 'drums', param: 'gain' });
   });
 

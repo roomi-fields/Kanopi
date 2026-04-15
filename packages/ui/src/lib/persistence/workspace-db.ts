@@ -9,6 +9,8 @@ export interface PersistedWorkspace {
   bpm: number;
   activeScene: string | null;
   activeActors: string[];
+  sidebarWidth?: number;
+  rightPanelWidth?: number;
 }
 
 export function loadWorkspace(): PersistedWorkspace | undefined {

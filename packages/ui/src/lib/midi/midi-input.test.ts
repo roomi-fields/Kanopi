@@ -2,41 +2,46 @@ import { describe, it, expect } from 'vitest';
 import { matchMapping } from './midi-input';
 import type { Mapping } from '../core-mock';
 
-const cc = (id: string, index: number, ch?: number): Mapping => ({
+const cv = (id: string, index: number, ch?: number): Mapping => ({
   id,
-  source: { kind: 'cc', index, ch },
+  source: { kind: 'cv', index, ch },
   target: { kind: 'tempo' }
 });
-const pad = (id: string, index: number): Mapping => ({
+const trig = (id: string, index: number, ch?: number): Mapping => ({
   id,
-  source: { kind: 'pad', index },
+  source: { kind: 'trig', index, ch },
   target: { kind: 'tempo' }
 });
-const note = (id: string, index: number, ch?: number): Mapping => ({
+const gate = (id: string, index: number, ch?: number): Mapping => ({
   id,
-  source: { kind: 'note', index, ch },
+  source: { kind: 'gate', index, ch },
   target: { kind: 'tempo' }
 });
 
 describe('matchMapping', () => {
-  it('cc matches by index, any channel when unspecified', () => {
-    expect(matchMapping(cc('a', 1), { kind: 'cc', index: 1, value: 64, ch: 1 })).toBe(true);
-    expect(matchMapping(cc('a', 1), { kind: 'cc', index: 2, value: 64, ch: 1 })).toBe(false);
-    expect(matchMapping(cc('a', 1), { kind: 'cc', index: 1, value: 64, ch: 5 })).toBe(true);
+  it('cv matches CC, any channel when unspecified', () => {
+    expect(matchMapping(cv('a', 1), { kind: 'cv', index: 1, value: 64, ch: 1 })).toBe(true);
+    expect(matchMapping(cv('a', 1), { kind: 'cv', index: 2, value: 64, ch: 1 })).toBe(false);
+    expect(matchMapping(cv('a', 1), { kind: 'cv', index: 1, value: 64, ch: 5 })).toBe(true);
   });
 
-  it('cc filters by channel when specified', () => {
-    expect(matchMapping(cc('a', 1, 2), { kind: 'cc', index: 1, value: 64, ch: 2 })).toBe(true);
-    expect(matchMapping(cc('a', 1, 2), { kind: 'cc', index: 1, value: 64, ch: 1 })).toBe(false);
+  it('cv filters by channel when specified', () => {
+    expect(matchMapping(cv('a', 1, 2), { kind: 'cv', index: 1, value: 64, ch: 2 })).toBe(true);
+    expect(matchMapping(cv('a', 1, 2), { kind: 'cv', index: 1, value: 64, ch: 1 })).toBe(false);
   });
 
-  it('pad matches Note-On only (vel>0)', () => {
-    expect(matchMapping(pad('p', 36), { kind: 'note', index: 36, value: 100, ch: 10 })).toBe(true);
-    expect(matchMapping(pad('p', 36), { kind: 'note', index: 36, value: 0, ch: 10 })).toBe(false);
+  it('trig matches Note-On only (vel>0)', () => {
+    expect(matchMapping(trig('p', 36), { kind: 'note', index: 36, value: 100, ch: 10 })).toBe(true);
+    expect(matchMapping(trig('p', 36), { kind: 'note', index: 36, value: 0, ch: 10 })).toBe(false);
   });
 
-  it('note matches both note-on and note-off', () => {
-    expect(matchMapping(note('n', 60), { kind: 'note', index: 60, value: 64, ch: 1 })).toBe(true);
-    expect(matchMapping(note('n', 60), { kind: 'note', index: 60, value: 0, ch: 1 })).toBe(true);
+  it('gate matches both press and release', () => {
+    expect(matchMapping(gate('n', 60), { kind: 'note', index: 60, value: 64, ch: 1 })).toBe(true);
+    expect(matchMapping(gate('n', 60), { kind: 'note', index: 60, value: 0, ch: 1 })).toBe(true);
+  });
+
+  it('cv does not match note events and vice versa', () => {
+    expect(matchMapping(cv('a', 1), { kind: 'note', index: 1, value: 64, ch: 1 })).toBe(false);
+    expect(matchMapping(trig('a', 1), { kind: 'cv', index: 1, value: 64, ch: 1 })).toBe(false);
   });
 });

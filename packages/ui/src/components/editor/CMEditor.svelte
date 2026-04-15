@@ -37,8 +37,8 @@
       languageFor(lang),
       syntaxHighlighting(highlightFor(lang), { fallback: true }),
       keymap.of([
-        { key: 'Mod-k', preventDefault: true, run: () => { ui.togglePalette(); return true; } },
-        { key: 'Mod-Shift-p', preventDefault: true, run: () => { ui.togglePalette(); return true; } },
+        { key: 'Mod-k', preventDefault: true, stopPropagation: true, run: () => { ui.togglePalette(); return true; } },
+        { key: 'Mod-Shift-p', preventDefault: true, stopPropagation: true, run: () => { ui.togglePalette(); return true; } },
         {
           key: 'Mod-Enter',
           preventDefault: true,

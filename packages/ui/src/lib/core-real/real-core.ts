@@ -15,7 +15,7 @@ import type {
 } from '../core-mock/types';
 import { getAdapter, listRuntimes } from '../runtimes/registry';
 import { installConsoleBridge } from '../runtimes/console-bridge';
-import { parseSession } from '../session/parser';
+import { parseSession } from '../session';
 import { enableMidi, matchMapping, type MidiEvent } from '../midi/midi-input';
 
 class RealActors extends MockActors {

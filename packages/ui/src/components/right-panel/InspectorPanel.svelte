@@ -9,10 +9,11 @@
   const beatStr = $derived(`${fmt3(clock.state.bar)}·${fmt2(clock.state.beat + 1)}.${fmt2(Math.floor(clock.state.phase * 100))}`);
 
   function srcLabel(s: typeof inspector.mappings[number]['source']) {
+    const ch = s.ch ? '/ch' + s.ch : '';
     switch (s.kind) {
-      case 'cc': return `cc:${s.index}${s.ch ? '/ch' + s.ch : ''}`;
-      case 'note': return `note:${s.index}${s.ch ? '/ch' + s.ch : ''}`;
-      case 'pad': return `pad:${s.index}`;
+      case 'cv': return `cv:${s.index}${ch}`;
+      case 'gate': return `gate:${s.index}${ch}`;
+      case 'trig': return `trig:${s.index}${ch}`;
     }
   }
   function tgtLabel(t: typeof inspector.mappings[number]['target']) {

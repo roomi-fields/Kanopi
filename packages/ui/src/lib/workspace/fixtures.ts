@@ -15,9 +15,9 @@ const raw: { path: string; contents: string }[] = [
 @scene drop    drums visuals bass
 @scene break   visuals bass
 
-@map cc:1   tempo
-@map pad:36 scene:drop
-@map cc:21  drums.toggle
+@map cv:1    tempo
+@map trig:36 scene:drop
+@map cv:21   drums.toggle
 `
   },
   {

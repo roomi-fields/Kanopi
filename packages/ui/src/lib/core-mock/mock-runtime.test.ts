@@ -50,7 +50,7 @@ describe('mock core', () => {
 
   it('MockMaps setMappings', () => {
     const m = new MockMaps();
-    m.setMappings([{ id: 'm1', source: { kind: 'cc', index: 1 }, target: { kind: 'tempo' } }]);
+    m.setMappings([{ id: 'm1', source: { kind: 'cv', index: 1 }, target: { kind: 'tempo' } }]);
     expect(m.list()).toHaveLength(1);
   });
 });

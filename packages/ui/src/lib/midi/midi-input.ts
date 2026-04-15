@@ -1,9 +1,9 @@
 import type { Mapping } from '../core-mock';
 
 export interface MidiEvent {
-  kind: 'cc' | 'note' | 'pad';
+  kind: 'cv' | 'note'; // protocol-level: CC or note message
   index: number; // CC number, or note number
-  value: number; // 0..127
+  value: number; // 0..127 (vel for notes, value for CC)
   ch: number; // 1..16
 }
 
@@ -16,12 +16,10 @@ const portNames: string[] = [];
 function parse(msg: Uint8Array, ch: number): MidiEvent | null {
   const status = msg[0] & 0xf0;
   if (status === 0xb0) {
-    return { kind: 'cc', index: msg[1], value: msg[2], ch };
+    return { kind: 'cv', index: msg[1], value: msg[2], ch };
   }
   if (status === 0x90) {
-    // Note-on with velocity 0 == note-off; we surface velocity as value.
-    // For pads vs notes we cannot tell from MIDI alone, so we emit BOTH and the
-    // matcher decides (see matchMapping).
+    // Note-on with velocity 0 is treated as note-off by convention.
     return { kind: 'note', index: msg[1], value: msg[2], ch };
   }
   if (status === 0x80) {
@@ -65,25 +63,17 @@ export function listPorts(): string[] {
 }
 
 /**
- * A mapping matches an incoming MIDI event when source kind/index agree.
+ * Map source semantics (BPscript convention):
+ *   cv   = continuous value (CC)
+ *   gate = note on/off (fires on press AND release)
+ *   trig = note-on with vel > 0 (fires on press only, ignores release)
  * Channel filter: if mapping has no `ch`, match any channel.
- * `pad` source matches a Note-On with velocity > 0 (drum-pad convention).
  */
 export function matchMapping(m: Mapping, e: MidiEvent): boolean {
-  if (m.source.kind === 'cc') {
-    if (e.kind !== 'cc' || m.source.index !== e.index) return false;
-    if (m.source.ch !== undefined && m.source.ch !== e.ch) return false;
-    return true;
-  }
-  if (m.source.kind === 'note') {
-    if (e.kind !== 'note' || m.source.index !== e.index) return false;
-    if (m.source.ch !== undefined && m.source.ch !== e.ch) return false;
-    return true;
-  }
-  if (m.source.kind === 'pad') {
-    if (e.kind !== 'note' || m.source.index !== e.index) return false;
-    if (e.value === 0) return false;
-    return true;
-  }
+  if (m.source.ch !== undefined && m.source.ch !== e.ch) return false;
+  if (m.source.index !== e.index) return false;
+  if (m.source.kind === 'cv') return e.kind === 'cv';
+  if (m.source.kind === 'gate') return e.kind === 'note';
+  if (m.source.kind === 'trig') return e.kind === 'note' && e.value > 0;
   return false;
 }

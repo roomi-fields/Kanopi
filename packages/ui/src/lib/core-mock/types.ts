@@ -54,9 +54,9 @@ export interface SceneManager {
 }
 
 export type MapSource =
-  | { kind: 'cc'; index: number; ch?: number }
-  | { kind: 'note'; index: number; ch?: number }
-  | { kind: 'pad'; index: number };
+  | { kind: 'cv'; index: number; ch?: number } // continuous (CC)
+  | { kind: 'gate'; index: number; ch?: number } // note on/off
+  | { kind: 'trig'; index: number; ch?: number }; // note-on with vel > 0 only
 
 export type MapTarget =
   | { kind: 'tempo' }

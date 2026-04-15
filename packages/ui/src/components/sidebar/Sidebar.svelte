@@ -2,6 +2,7 @@
   import { ui } from '../../stores/ui.svelte';
   import FilesView from './FilesView.svelte';
   import HardwareView from './HardwareView.svelte';
+  import DocsView from './DocsView.svelte';
 
   const labels = {
     files: 'Files',
@@ -23,6 +24,8 @@
       <FilesView />
     {:else if ui.activeActivityView === 'hardware'}
       <HardwareView />
+    {:else if ui.activeActivityView === 'docs'}
+      <DocsView />
     {:else}
       <p class="placeholder">— {labels[ui.activeActivityView].toLowerCase()} view —</p>
     {/if}
