@@ -1,10 +1,14 @@
 <script lang="ts">
   import { workspace } from '../../stores/workspace.svelte';
+  import { actors as actorsStore } from '../../stores/actors.svelte';
 
   type Props = { id: string };
   const { id }: Props = $props();
   const file = $derived(workspace.fileById(id));
   const active = $derived(workspace.activeTabId === id);
+  const actorActive = $derived(
+    !!file && actorsStore.list.some((a) => a.active && (a.file === file.name || a.file === file.path))
+  );
 
   function onDragStart(e: DragEvent) {
     e.dataTransfer?.setData('text/x-tab-id', id);
@@ -36,6 +40,9 @@
   >
     <span class="ext ext-{file.name.split('.').pop()}"></span>
     <span class="name">{file.name}</span>
+    {#if actorActive}
+      <span class="live-dot" title="actor active"></span>
+    {/if}
     <button
       class="close"
       type="button"
@@ -78,6 +85,17 @@
   .ext-py { background: var(--python); }
   .ext-kanopi, .ext-bps { background: var(--kanopi); }
   .ext-js { background: var(--cyan); }
+  .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 5px var(--green-glow);
+    animation: live-pulse 0.9s ease-in-out infinite;
+  }
+  @keyframes live-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
   .close {
     width: 14px; height: 14px;
     line-height: 1;

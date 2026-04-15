@@ -5,28 +5,37 @@
   import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
   import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
   import { kanopiTheme } from './cm-theme';
+  import { syntaxHighlighting, bracketMatching, indentOnInput } from '@codemirror/language';
+  import { highlightFor } from './highlight-styles';
   import { ui } from '../../stores/ui.svelte';
   import { extractBlock } from '../../lib/runtimes/extract-block';
+  import { languageFor } from './lang-resolver';
+  import type { Runtime } from '../../lib/core-mock';
 
   type Props = {
     docId: string;
     doc: string;
+    runtime: Runtime;
     onChange: (text: string) => void;
     onEval?: (code: string) => void;
   };
-  const { docId, doc, onChange, onEval }: Props = $props();
+  const { docId, doc, runtime, onChange, onEval }: Props = $props();
 
   let host: HTMLDivElement;
   let view: EditorView | undefined;
   let currentDocId: string | undefined;
 
-  function makeState(initial: string): EditorState {
+  function makeState(initial: string, lang: Runtime): EditorState {
     const extensions: Extension[] = [
       lineNumbers(),
       history(),
       drawSelection(),
       highlightActiveLine(),
       highlightSelectionMatches(),
+      bracketMatching(),
+      indentOnInput(),
+      languageFor(lang),
+      syntaxHighlighting(highlightFor(lang), { fallback: true }),
       keymap.of([
         { key: 'Mod-k', preventDefault: true, run: () => { ui.togglePalette(); return true; } },
         { key: 'Mod-Shift-p', preventDefault: true, run: () => { ui.togglePalette(); return true; } },
@@ -55,7 +64,7 @@
   }
 
   onMount(() => {
-    view = new EditorView({ state: makeState(doc), parent: host });
+    view = new EditorView({ state: makeState(doc, runtime), parent: host });
     currentDocId = docId;
   });
 
@@ -69,7 +78,7 @@
     if (!view) return;
     if (docId !== currentDocId) {
       currentDocId = docId;
-      view.setState(makeState(doc));
+      view.setState(makeState(doc, runtime));
     }
   });
 </script>

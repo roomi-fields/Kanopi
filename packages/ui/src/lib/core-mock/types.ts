@@ -107,4 +107,6 @@ export interface CoreApi {
   evaluateBlock(runtime: Runtime, code: string, sourceId: string): Promise<void>;
   /** Inject a lookup so the core can resolve which file an actor refers to. */
   bindActorFiles(get: (actorName: string) => ActorFileRef | undefined): void;
+  /** Request WebMIDI access and start dispatching mappings. */
+  enableMidiInput(): Promise<void>;
 }

@@ -4,6 +4,7 @@ import { actors } from '../../stores/actors.svelte';
 import { workspace } from '../../stores/workspace.svelte';
 import { consoleLog } from '../../stores/console.svelte';
 import { clearWorkspace } from '../persistence/workspace-db';
+import { core } from '../core';
 import { suppressPersistOnce } from '../persistence/snapshot.svelte';
 
 export interface Command {
@@ -21,6 +22,7 @@ function staticCommands(): Command[] {
     { id: 'clock.toggle', title: 'Toggle play/stop', category: 'Clock', run: () => clock.toggle() },
     { id: 'clock.tap', title: 'Tap tempo', category: 'Clock', run: () => clock.tap() },
     { id: 'console.clear', title: 'Clear console', category: 'View', run: () => consoleLog.clear() },
+    { id: 'midi.enable', title: 'Enable MIDI input', category: 'Hardware', run: () => { void core.enableMidiInput(); } },
     {
       id: 'debug.dump',
       title: 'Debug: dump workspace state to console',

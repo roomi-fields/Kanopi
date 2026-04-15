@@ -16,6 +16,7 @@ import type {
 import { getAdapter, listRuntimes } from '../runtimes/registry';
 import { installConsoleBridge } from '../runtimes/console-bridge';
 import { parseSession } from '../session/parser';
+import { enableMidi, matchMapping, type MidiEvent } from '../midi/midi-input';
 
 class RealActors extends MockActors {
   // We override toggle to delegate to the real-core orchestration via a callback.
@@ -171,6 +172,44 @@ class RealCore implements CoreApi {
 
   bindActorFiles(get: (name: string) => ActorFileRef | undefined) {
     this.getActorFile = get;
+  }
+
+  async enableMidiInput(): Promise<void> {
+    const r = await enableMidi((e) => this.handleMidi(e));
+    if (r.ok) {
+      this.log({
+        runtime: 'system',
+        level: 'info',
+        msg: `midi enabled: ${r.ports.length ? r.ports.join(', ') : 'no input port detected'}`
+      });
+    } else {
+      this.log({ runtime: 'system', level: 'warn', msg: `midi: ${r.reason}` });
+    }
+  }
+
+  private handleMidi(e: MidiEvent) {
+    this.log({
+      runtime: 'system',
+      level: 'info',
+      msg: `[midi] ${e.kind}:${e.index} val:${e.value} ch:${e.ch}`
+    });
+    for (const m of this.maps.list()) {
+      if (!matchMapping(m, e)) continue;
+      this.maps.emitIncoming(m.id, e.value);
+      const tgt = m.target;
+      if (tgt.kind === 'tempo') {
+        // Map CC 0..127 → BPM 60..180 (live coding common range).
+        const bpm = 60 + (e.value / 127) * 120;
+        this.clock.setBpm(bpm);
+      } else if (tgt.kind === 'scene') {
+        if (e.value > 0) this.scenes.activate(tgt.ref);
+      } else if (tgt.kind === 'actor.toggle') {
+        if (e.value > 0) this.actors.toggle(tgt.ref);
+      } else if (tgt.kind === 'actor.param') {
+        // Param routing not implemented yet (per-actor API needed).
+        this.log({ runtime: 'system', level: 'warn', msg: `actor.param "${tgt.ref}.${tgt.param}" not yet supported` });
+      }
+    }
   }
 }
 

@@ -1,4 +1,23 @@
 import { EditorView } from '@codemirror/view';
+import { HighlightStyle } from '@codemirror/language';
+import { tags as t } from '@lezer/highlight';
+
+export const kanopiHighlight = HighlightStyle.define([
+  { tag: t.keyword, color: 'var(--amber)', fontWeight: '500' },
+  { tag: t.comment, color: 'var(--text-faint)', fontStyle: 'italic' },
+  { tag: t.string, color: 'var(--green)' },
+  { tag: t.number, color: 'var(--cyan)' },
+  { tag: t.atom, color: 'var(--tidal)' },
+  { tag: t.operator, color: 'var(--text-muted)' },
+  { tag: t.propertyName, color: 'var(--hydra)' },
+  { tag: t.variableName, color: 'var(--text)' },
+  { tag: t.definition(t.variableName), color: 'var(--amber-soft)', fontWeight: '500' },
+  { tag: t.function(t.variableName), color: 'var(--sc)' },
+  { tag: t.bool, color: 'var(--cyan)' },
+  { tag: t.invalid, color: 'var(--red)' },
+  { tag: t.bracket, color: 'var(--text-dim)' },
+  { tag: t.punctuation, color: 'var(--text-dim)' }
+]);
 
 export const kanopiTheme = EditorView.theme(
   {

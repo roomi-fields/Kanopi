@@ -229,6 +229,10 @@ class MockCore implements CoreApi {
   bindActorFiles(_get: (name: string) => unknown) {
     /* mock no-op */
   }
+
+  async enableMidiInput() {
+    /* mock no-op */
+  }
 }
 
 export function createMockCore(): CoreApi {

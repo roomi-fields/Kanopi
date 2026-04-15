@@ -1,6 +1,7 @@
 <script lang="ts">
   import { ui } from '../../stores/ui.svelte';
   import FilesView from './FilesView.svelte';
+  import HardwareView from './HardwareView.svelte';
 
   const labels = {
     files: 'Files',
@@ -20,6 +21,8 @@
   <div class="sb-body">
     {#if ui.activeActivityView === 'files'}
       <FilesView />
+    {:else if ui.activeActivityView === 'hardware'}
+      <HardwareView />
     {:else}
       <p class="placeholder">— {labels[ui.activeActivityView].toLowerCase()} view —</p>
     {/if}
