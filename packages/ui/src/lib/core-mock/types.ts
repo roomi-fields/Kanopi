@@ -94,6 +94,7 @@ export interface ConsoleBus {
 export interface ActorFileRef {
   contents: string;
   runtime: Runtime;
+  fileName?: string;
 }
 
 export interface CoreApi {

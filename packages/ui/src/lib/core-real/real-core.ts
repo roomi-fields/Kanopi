@@ -167,7 +167,28 @@ class RealCore implements CoreApi {
       this.log({ runtime, level: 'warn', msg: 'empty block' });
       return;
     }
-    await adapter.evaluate(code, { fileId: sourceId }, this.log);
+
+    // Locate the actor bound to this file (sourceId = file.name) so we can
+    // light up its LED and make the transport reflect that audio is live.
+    const matching = this.actors.list().find((a) => {
+      const ref = this.getActorFile?.(a.name);
+      return ref?.fileName === sourceId;
+    });
+
+    // Start transport so the global play button reflects reality. Safe even
+    // if no actor matches — handleTransport only re-evals *active* actors.
+    if (!this.clock.state.playing) this.clock.play();
+
+    // Flip the actor's LED without triggering handleActorToggle (which would
+    // re-evaluate the whole file — we want only the submitted block).
+    if (matching && !matching.active) {
+      const next = this.actors.list().map((a) =>
+        a.name === matching.name ? { ...a, active: true } : a
+      );
+      this.actors.setActors(next);
+    }
+
+    await adapter.evaluate(code, { actorId: matching?.name, fileId: sourceId }, this.log);
   }
 
   bindActorFiles(get: (name: string) => ActorFileRef | undefined) {
@@ -175,7 +196,7 @@ class RealCore implements CoreApi {
   }
 
   async hushAll(): Promise<void> {
-    // Stop every runtime adapter. Actors keep their visual state (LED on) — user can re-eval via play.
+    // Panic stop: silence every runtime + reset visual state (LEDs off, transport stopped).
     const seen = new Set<string>();
     for (const a of this.actors.list()) {
       const ref = this.getActorFile?.(a.name);
@@ -185,6 +206,9 @@ class RealCore implements CoreApi {
       seen.add(runtime);
       await adapter.stop({ actorId: '__hush__', fileId: '__hush__' }, this.log);
     }
+    const quieted = this.actors.list().map((a) => ({ ...a, active: false }));
+    this.actors.setActors(quieted);
+    if (this.clock.state.playing) this.clock.stop();
     this.log({ runtime: 'system', level: 'warn', msg: 'hush all' });
   }
 

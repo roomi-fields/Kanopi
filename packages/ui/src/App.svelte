@@ -22,7 +22,7 @@
       const fileRef = actor?.file;
       if (!fileRef) return undefined;
       const f = workspace.files.find((x) => x.name === fileRef || x.path === fileRef);
-      return f ? { contents: f.contents, runtime: f.runtime } : undefined;
+      return f ? { contents: f.contents, runtime: f.runtime, fileName: f.name } : undefined;
     });
     installAutosave();
 

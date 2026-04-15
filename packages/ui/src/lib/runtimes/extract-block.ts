@@ -15,10 +15,15 @@ export function extractBlock(doc: string, from: number, to: number): string {
     if (from <= lineEnd) break;
     pos = lineEnd + 1; // +1 for \n
   }
-  if (line >= lines.length) return '';
+  if (line >= lines.length) line = lines.length - 1;
 
-  // if cursor on blank line, no block
-  if (lines[line].trim() === '') return '';
+  // If cursor is on a blank line, fall back to the nearest non-blank line above.
+  if (lines[line].trim() === '') {
+    let probe = line - 1;
+    while (probe >= 0 && lines[probe].trim() === '') probe--;
+    if (probe < 0) return '';
+    line = probe;
+  }
 
   // walk up + down
   let start = line;
