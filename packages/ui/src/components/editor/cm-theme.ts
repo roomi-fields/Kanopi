@@ -56,3 +56,93 @@ export const kanopiTheme = EditorView.theme(
   },
   { dark: true }
 );
+
+// Unscoped rules — these target DOM that CM6 places outside the editor scope
+// (completion tooltips) or tokens injected by our mini-notation overlay.
+export const kanopiGlobalStyles = EditorView.baseTheme({
+  '.cm-completionInfo': {
+    padding: '0 !important',
+    maxWidth: '420px',
+    background: 'var(--elevated)',
+    border: '1px solid var(--border)',
+    color: 'var(--text)'
+  },
+  '.autocomplete-info-container': {
+    padding: '0',
+    margin: '0',
+    whiteSpace: 'normal !important'
+  },
+  '.autocomplete-info-tooltip': {
+    padding: '10px 12px',
+    lineHeight: '1.5',
+    whiteSpace: 'normal !important',
+    // Collapse whitespace text nodes that sit between block sections.
+    fontSize: '0'
+  },
+  '.autocomplete-info-tooltip > *, .autocomplete-info-tooltip > * *': {
+    fontSize: '11.5px'
+  },
+  '.autocomplete-info-function-name': {
+    margin: '0 0 2px',
+    fontSize: '13px',
+    color: 'var(--amber)',
+    fontWeight: '600',
+    letterSpacing: '0.04em'
+  },
+  '.autocomplete-info-function-synonyms': {
+    margin: '0 0 6px',
+    color: 'var(--text-muted)',
+    fontSize: '10.5px',
+    fontStyle: 'italic'
+  },
+  '.autocomplete-info-function-description': { margin: '0 0 6px' },
+  '.autocomplete-info-function-description p': { margin: '0' },
+  '.autocomplete-info-section-title': {
+    margin: '8px 0 3px',
+    fontSize: '10px',
+    color: 'var(--amber-soft)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    fontWeight: '500'
+  },
+  '.autocomplete-info-params-list': {
+    margin: '0',
+    padding: '0',
+    listStyle: 'none'
+  },
+  '.autocomplete-info-param-item': {
+    margin: '0 0 4px',
+    padding: '0'
+  },
+  '.autocomplete-info-param-name': {
+    color: 'var(--cyan)',
+    fontWeight: '500',
+    marginRight: '6px'
+  },
+  '.autocomplete-info-param-type': {
+    color: 'var(--text-muted)',
+    fontSize: '10.5px'
+  },
+  '.autocomplete-info-param-desc': {
+    color: 'var(--text-dim)',
+    fontSize: '10.5px',
+    marginTop: '1px'
+  },
+  '.autocomplete-info-example-code': {
+    margin: '3px 0 0',
+    padding: '5px 7px',
+    background: 'var(--bg)',
+    borderRadius: '2px',
+    fontFamily: 'var(--font-code)',
+    fontSize: '11px',
+    whiteSpace: 'pre-wrap',
+    color: 'var(--text)'
+  },
+  '.autocomplete-info-examples-section, .autocomplete-info-params-section': {
+    margin: '0'
+  },
+  '.cm-mini-op, .cm-mini-op > *': { color: 'var(--amber) !important', fontWeight: '500' },
+  '.cm-mini-rest, .cm-mini-rest > *': { color: 'var(--text-faint) !important' },
+  '.cm-mini-num, .cm-mini-num > *': { color: 'var(--cyan) !important' },
+  '.cm-mini-bracket, .cm-mini-bracket > *': { color: 'var(--text-muted) !important' }
+});

@@ -4,7 +4,7 @@
   import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } from '@codemirror/view';
   import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
   import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
-  import { kanopiTheme } from './cm-theme';
+  import { kanopiTheme, kanopiGlobalStyles } from './cm-theme';
   import { syntaxHighlighting, bracketMatching, indentOnInput } from '@codemirror/language';
   import { highlightFor } from './highlight-styles';
   import { ui } from '../../stores/ui.svelte';
@@ -13,6 +13,8 @@
   import type { Runtime } from '../../lib/core-mock';
   import { core } from '../../lib/core';
   import { flash, flashField, flashTheme } from './eval-flash';
+  import { strudelExtras } from './strudel-extras';
+  import { miniOverlay } from './mini-overlay';
 
   type Props = {
     docId: string;
@@ -26,8 +28,11 @@
   let host: HTMLDivElement;
   let view: EditorView | undefined;
   let currentDocId: string | undefined;
+  let strudelInstall: ((view: EditorView) => Promise<void>) | undefined;
 
   function makeState(initial: string, lang: Runtime): EditorState {
+    const strudel = strudelExtras(lang);
+    strudelInstall = strudel.install;
     const extensions: Extension[] = [
       lineNumbers(),
       history(),
@@ -38,6 +43,8 @@
       indentOnInput(),
       languageFor(lang),
       syntaxHighlighting(highlightFor(lang), { fallback: true }),
+      strudel.ext,
+      ...((lang === 'strudel' || lang === 'tidal') ? [miniOverlay] : []),
       flashField,
       flashTheme,
       keymap.of([
@@ -80,6 +87,7 @@
         ...searchKeymap
       ]),
       kanopiTheme,
+      kanopiGlobalStyles,
       EditorView.updateListener.of((u) => {
         if (u.docChanged) onChange(u.state.doc.toString());
       })
@@ -90,6 +98,7 @@
   onMount(() => {
     view = new EditorView({ state: makeState(doc, runtime), parent: host });
     currentDocId = docId;
+    if (view && strudelInstall) void strudelInstall(view);
   });
 
   onDestroy(() => {
@@ -103,6 +112,7 @@
     if (docId !== currentDocId) {
       currentDocId = docId;
       view.setState(makeState(doc, runtime));
+      if (view && strudelInstall) void strudelInstall(view);
     }
   });
 </script>
