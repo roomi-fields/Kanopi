@@ -7,18 +7,38 @@ interface StrudelMod {
   samples: (url: string | Record<string, unknown>, base?: string) => Promise<unknown>;
 }
 
+export type StrudelStatus = 'idle' | 'loading' | 'ready' | 'error';
+let status: StrudelStatus = 'idle';
+const statusListeners = new Set<(s: StrudelStatus) => void>();
+function setStatus(s: StrudelStatus) {
+  status = s;
+  for (const cb of statusListeners) cb(s);
+}
+export function strudelStatus(): StrudelStatus { return status; }
+export function onStrudelStatus(cb: (s: StrudelStatus) => void): () => void {
+  statusListeners.add(cb);
+  cb(status);
+  return () => statusListeners.delete(cb);
+}
+
 let mod: StrudelMod | undefined;
 let initPromise: Promise<unknown> | undefined;
 
 async function ensure(): Promise<StrudelMod> {
   if (!mod) {
+    setStatus('loading');
     mod = (await import('@strudel/web')) as unknown as StrudelMod;
   }
   if (!initPromise) {
     initPromise = (async () => {
-      await mod!.initStrudel();
-      // Load the standard TidalCycles "dirt" samples so bd/cp/hh/... work out of the box.
-      await mod!.samples('github:tidalcycles/dirt-samples');
+      try {
+        await mod!.initStrudel();
+        await mod!.samples('github:tidalcycles/dirt-samples');
+        setStatus('ready');
+      } catch (err) {
+        setStatus('error');
+        throw err;
+      }
     })();
   }
   await initPromise;

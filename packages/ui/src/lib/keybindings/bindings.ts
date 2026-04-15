@@ -1,5 +1,6 @@
 import { ui } from '../../stores/ui.svelte';
 import { clock } from '../../stores/clock.svelte';
+import { core } from '../core';
 
 export function isMod(e: KeyboardEvent) {
   return e.metaKey || e.ctrlKey;
@@ -22,6 +23,12 @@ export function handleGlobalKey(e: KeyboardEvent) {
   if (isMod(e) && e.shiftKey && (e.key === 'p' || e.key === 'P')) {
     e.preventDefault();
     ui.togglePalette();
+    return;
+  }
+  // Cmd/Ctrl + . → hush all (Tidal convention)
+  if (isMod(e) && !e.shiftKey && !e.altKey && e.key === '.') {
+    e.preventDefault();
+    void core.hushAll();
     return;
   }
   // Space toggles play/stop only if not editing

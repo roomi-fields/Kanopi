@@ -11,6 +11,8 @@
   import { extractBlock } from '../../lib/runtimes/extract-block';
   import { languageFor } from './lang-resolver';
   import type { Runtime } from '../../lib/core-mock';
+  import { core } from '../../lib/core';
+  import { flash, flashField, flashTheme } from './eval-flash';
 
   type Props = {
     docId: string;
@@ -36,17 +38,39 @@
       indentOnInput(),
       languageFor(lang),
       syntaxHighlighting(highlightFor(lang), { fallback: true }),
+      flashField,
+      flashTheme,
       keymap.of([
         { key: 'Mod-k', preventDefault: true, stopPropagation: true, run: () => { ui.togglePalette(); return true; } },
         { key: 'Mod-Shift-p', preventDefault: true, stopPropagation: true, run: () => { ui.togglePalette(); return true; } },
+        { key: 'Mod-.', preventDefault: true, stopPropagation: true, run: () => { void core.hushAll(); return true; } },
         {
           key: 'Mod-Enter',
           preventDefault: true,
           run: (v) => {
             if (!onEval) return false;
             const sel = v.state.selection.main;
-            const code = extractBlock(v.state.doc.toString(), sel.from, sel.to);
-            if (code) onEval(code);
+            const docText = v.state.doc.toString();
+            const code = extractBlock(docText, sel.from, sel.to);
+            if (!code) return true;
+            const blockStart = docText.indexOf(code);
+            const range = blockStart >= 0 ? [blockStart, blockStart + code.length] : [sel.from, sel.to];
+            onEval(code);
+            flash(v, range[0], range[1], 'ok');
+            return true;
+          }
+        },
+        {
+          key: 'Shift-Enter',
+          preventDefault: true,
+          run: (v) => {
+            if (!onEval) return false;
+            const sel = v.state.selection.main;
+            const line = v.state.doc.lineAt(sel.head);
+            const code = line.text.trim();
+            if (!code) return true;
+            onEval(code);
+            flash(v, line.from, line.to, 'ok');
             return true;
           }
         },

@@ -233,6 +233,10 @@ class MockCore implements CoreApi {
   async enableMidiInput() {
     /* mock no-op */
   }
+
+  async hushAll() {
+    /* mock no-op */
+  }
 }
 
 export function createMockCore(): CoreApi {

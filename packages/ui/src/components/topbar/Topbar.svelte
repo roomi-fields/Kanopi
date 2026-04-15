@@ -1,5 +1,6 @@
 <script lang="ts">
   import TransportCluster from './TransportCluster.svelte';
+  import StrudelStatusPill from './StrudelStatusPill.svelte';
   import { ui } from '../../stores/ui.svelte';
 </script>
 
@@ -22,6 +23,7 @@
   </div>
 
   <div class="topbar-right">
+    <StrudelStatusPill />
     <button class="cmdk-pill" type="button" onclick={() => ui.togglePalette()}>
       <kbd>⌘</kbd><kbd>K</kbd>
       <span>command</span>

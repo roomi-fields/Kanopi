@@ -109,4 +109,6 @@ export interface CoreApi {
   bindActorFiles(get: (actorName: string) => ActorFileRef | undefined): void;
   /** Request WebMIDI access and start dispatching mappings. */
   enableMidiInput(): Promise<void>;
+  /** Hard-stop every runtime (panic): clears Strudel patterns, blanks Hydra, kills WebAudio sources. */
+  hushAll(): Promise<void>;
 }

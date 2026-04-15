@@ -174,6 +174,20 @@ class RealCore implements CoreApi {
     this.getActorFile = get;
   }
 
+  async hushAll(): Promise<void> {
+    // Stop every runtime adapter. Actors keep their visual state (LED on) — user can re-eval via play.
+    const seen = new Set<string>();
+    for (const a of this.actors.list()) {
+      const ref = this.getActorFile?.(a.name);
+      const runtime = ref?.runtime ?? a.runtime;
+      const adapter = getAdapter(runtime);
+      if (!adapter || seen.has(runtime)) continue;
+      seen.add(runtime);
+      await adapter.stop({ actorId: '__hush__', fileId: '__hush__' }, this.log);
+    }
+    this.log({ runtime: 'system', level: 'warn', msg: 'hush all' });
+  }
+
   async enableMidiInput(): Promise<void> {
     const r = await enableMidi((e) => this.handleMidi(e));
     if (r.ok) {
