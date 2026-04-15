@@ -1,0 +1,13 @@
+[build]
+  base    = "packages/ui"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA fallback so hard-reloads on any path still hit index.html.
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
