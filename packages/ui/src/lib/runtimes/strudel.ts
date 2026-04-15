@@ -45,6 +45,23 @@ async function ensure(): Promise<StrudelMod> {
   return mod;
 }
 
+// Per-actor code slots. Strudel evaluates one big program at a time, so we
+// keep each actor's source around and recombine as "$: <code>" lines on every
+// eval/stop. That lets multiple actors coexist in the same Strudel runtime.
+const slots = new Map<string, string>();
+
+function composite(): string {
+  return [...slots.values()].map((c) => `$: (${c.trim()})`).join('\n\n');
+}
+
+async function flush(m: StrudelMod): Promise<void> {
+  if (slots.size === 0) {
+    m.hush();
+    return;
+  }
+  await m.evaluate(composite());
+}
+
 export const strudelAdapter: RuntimeAdapter = {
   id: 'strudel',
   setBpm(bpm: number, _log: LogPush) {
@@ -58,26 +75,37 @@ export const strudelAdapter: RuntimeAdapter = {
       /* setcps may not be installed yet */
     }
   },
-  async evaluate(code: string, _src: EvalSource, log: LogPush) {
+  async evaluate(code: string, src: EvalSource, log: LogPush) {
     try {
       const m = await ensure();
-      await m.evaluate(code);
-      log({ runtime: 'strudel', level: 'info', msg: `eval ok (${code.length}b)` });
+      const slot = src?.actorId ?? src?.fileId ?? '__scratch__';
+      slots.set(slot, code);
+      await flush(m);
+      log({ runtime: 'strudel', level: 'info', msg: `eval ok [${slot}] (${code.length}b)` });
     } catch (err) {
       log({ runtime: 'strudel', level: 'error', msg: String(err) });
     }
   },
-  async stop(_src: EvalSource, log: LogPush) {
+  async stop(src: EvalSource, log: LogPush) {
     try {
       const m = await ensure();
-      m.hush();
-      log({ runtime: 'strudel', level: 'info', msg: 'hush' });
+      const slot = src?.actorId ?? src?.fileId;
+      if (!slot || slot === '__hush__') {
+        slots.clear();
+        m.hush();
+        log({ runtime: 'strudel', level: 'info', msg: 'hush (all slots)' });
+        return;
+      }
+      slots.delete(slot);
+      await flush(m);
+      log({ runtime: 'strudel', level: 'info', msg: `stop [${slot}]` });
     } catch (err) {
       log({ runtime: 'strudel', level: 'error', msg: String(err) });
     }
   },
   async dispose() {
     try {
+      slots.clear();
       mod?.hush();
     } catch {
       /* ignore */

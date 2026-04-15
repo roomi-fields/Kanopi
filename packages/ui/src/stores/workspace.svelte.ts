@@ -67,6 +67,24 @@ class WorkspaceStore {
     ];
     return id;
   }
+
+  /** Replace every file + tab with a fresh set and focus the given path (if any). */
+  loadFiles(files: { path: string; contents: string }[], focusPath?: string) {
+    const next: VirtualFile[] = files.map((f, i) => ({
+      id: `f${Date.now()}-${i}`,
+      path: f.path,
+      name: f.path.split('/').pop() ?? f.path,
+      contents: f.contents,
+      runtime: runtimeFromExt(f.path)
+    }));
+    this.files = next;
+    this.openTabIds = [];
+    this.activeTabId = null;
+    if (focusPath) {
+      const target = next.find((f) => f.path === focusPath);
+      if (target) this.openFile(target.id);
+    }
+  }
 }
 
 export const workspace = new WorkspaceStore();
