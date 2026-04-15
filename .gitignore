@@ -8,3 +8,6 @@ build/
 .env.local
 target/
 src-tauri/target/
+
+# RTFM local database
+.rtfm/
