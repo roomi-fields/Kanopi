@@ -144,5 +144,32 @@ export const kanopiGlobalStyles = EditorView.baseTheme({
   '.cm-mini-op, .cm-mini-op > *': { color: 'var(--amber) !important', fontWeight: '500' },
   '.cm-mini-rest, .cm-mini-rest > *': { color: 'var(--text-faint) !important' },
   '.cm-mini-num, .cm-mini-num > *': { color: 'var(--cyan) !important' },
-  '.cm-mini-bracket, .cm-mini-bracket > *': { color: 'var(--text-muted) !important' }
+  '.cm-mini-bracket, .cm-mini-bracket > *': { color: 'var(--text-muted) !important' },
+  '.cm-lintRange-error': {
+    backgroundImage: 'linear-gradient(135deg, transparent 40%, rgba(200, 50, 50, 0.9) 40%, rgba(200, 50, 50, 0.9) 60%, transparent 60%)',
+    backgroundRepeat: 'repeat-x',
+    backgroundSize: '6px 2px',
+    backgroundPosition: 'left bottom',
+    paddingBottom: '1px'
+  },
+  '.cm-lintRange-warning': {
+    backgroundImage: 'linear-gradient(135deg, transparent 40%, rgba(232, 156, 62, 0.8) 40%, rgba(232, 156, 62, 0.8) 60%, transparent 60%)',
+    backgroundRepeat: 'repeat-x',
+    backgroundSize: '6px 2px',
+    backgroundPosition: 'left bottom',
+    paddingBottom: '1px'
+  },
+  '.cm-diagnostic': {
+    fontFamily: 'var(--font-mono)',
+    fontSize: '11px',
+    padding: '6px 10px',
+    background: 'var(--elevated)',
+    borderLeft: '3px solid var(--red)',
+    color: 'var(--text)'
+  },
+  '.cm-diagnostic-warning': { borderLeftColor: 'var(--amber)' },
+  '.cm-diagnostic-error': { borderLeftColor: 'var(--red)' },
+  '.cm-lint-marker': { width: '10px', height: '10px' },
+  '.cm-lint-marker-error': { color: 'var(--red)' },
+  '.cm-lint-marker-warning': { color: 'var(--amber)' }
 });

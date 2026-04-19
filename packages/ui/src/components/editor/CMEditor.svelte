@@ -16,6 +16,8 @@
   import { rememberEval } from './eval-tracker';
   import { strudelExtras } from './strudel-extras';
   import { miniOverlay } from './mini-overlay';
+  import { kanopiLinter } from './kanopi-lint';
+  import { lintGutter } from '@codemirror/lint';
 
   type Props = {
     docId: string;
@@ -60,6 +62,7 @@
       syntaxHighlighting(highlightFor(lang), { fallback: true }),
       strudel.ext,
       ...((lang === 'strudel' || lang === 'tidal') ? [miniOverlay] : []),
+      ...(lang === 'kanopi' ? [kanopiLinter, lintGutter()] : []),
       flashField,
       flashTheme,
       Prec.highest(keymap.of([
