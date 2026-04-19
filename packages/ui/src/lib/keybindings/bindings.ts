@@ -44,6 +44,16 @@ export function handleGlobalKey(e: KeyboardEvent) {
     }
     return;
   }
+  // Alt + 1..9 → activate scene N (Kanopi-specific; Tidal has no scene concept).
+  if (!isMod(e) && !e.shiftKey && e.altKey && /^[1-9]$/.test(e.key)) {
+    const n = Number(e.key);
+    const target = core.scenes.list()[n - 1];
+    if (target) {
+      e.preventDefault();
+      core.scenes.activate(target.name);
+    }
+    return;
+  }
   // Space toggles play/stop only if not editing
   if (e.code === 'Space' && !inEditableTarget(e) && !isMod(e) && !e.altKey) {
     e.preventDefault();

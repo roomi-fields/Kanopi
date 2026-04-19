@@ -81,8 +81,11 @@ class RealCore implements CoreApi {
   }
 
   private async handleSceneActivate(scene: Scene) {
-    // For each actor in the scene, set its active state to the requested value.
-    // Toggle via the public API so the onToggle hook fires (= evaluate/stop through adapters).
+    // Activating a scene arms its actors AND starts the transport if it was
+    // stopped — the intent is "play this scene," not just "arm these LEDs."
+    // Start the clock first so the actor toggles that follow can eval through
+    // handleActorToggle (which only evaluates when the clock is running).
+    if (!this.clock.state.playing) this.clock.play();
     const current = new Map(this.actors.list().map((a) => [a.name, a.active]));
     for (const [actorName, wantOn] of Object.entries(scene.actors)) {
       const isOn = current.get(actorName);

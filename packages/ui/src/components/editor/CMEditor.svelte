@@ -55,6 +55,16 @@
           key: 'Mod-Enter',
           preventDefault: true,
           run: (v) => {
+            // In a .kanopi session, Mod-Enter launches the session:
+            // activate the currently-active scene, or the first one otherwise.
+            if (lang === 'kanopi') {
+              const scenes = core.scenes.list();
+              if (!scenes.length) return true;
+              const target = scenes.find((s) => s.active) ?? scenes[0];
+              core.scenes.activate(target.name);
+              flash(v, 0, v.state.doc.length, 'ok');
+              return true;
+            }
             if (!onEval) return false;
             const sel = v.state.selection.main;
             const docText = v.state.doc.toString();
