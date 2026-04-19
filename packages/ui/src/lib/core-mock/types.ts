@@ -33,11 +33,15 @@ export interface Actor {
   file?: string;
   runtime: Runtime;
   active: boolean;
+  muted?: boolean;
 }
 
 export interface ActorManager {
   list(): Actor[];
   toggle(name: string): void;
+  setMuted(name: string, muted: boolean): void;
+  toggleMute(name: string): void;
+  unmuteAll(): void;
   subscribe(cb: (actors: Actor[]) => void): Unsubscribe;
 }
 

@@ -21,9 +21,13 @@ import { enableMidi, matchMapping, type MidiEvent } from '../midi/midi-input';
 class RealActors extends MockActors {
   // We override toggle to delegate to the real-core orchestration via a callback.
   private onToggle?: (a: Actor, willBeActive: boolean) => void;
+  private onMute?: (a: Actor, willBeMuted: boolean) => void;
 
   setOnToggle(fn: (a: Actor, willBeActive: boolean) => void) {
     this.onToggle = fn;
+  }
+  setOnMute(fn: (a: Actor, willBeMuted: boolean) => void) {
+    this.onMute = fn;
   }
 
   toggle(name: string) {
@@ -33,6 +37,14 @@ class RealActors extends MockActors {
     if (before && after && this.onToggle) {
       this.onToggle(after, after.active);
     }
+  }
+
+  setMuted(name: string, muted: boolean) {
+    const before = this.list().find((a) => a.name === name);
+    if (!before || !!before.muted === muted) return;
+    super.setMuted(name, muted);
+    const after = this.list().find((a) => a.name === name);
+    if (after && this.onMute) this.onMute(after, muted);
   }
 }
 
@@ -50,6 +62,9 @@ class RealCore implements CoreApi {
     installConsoleBridge((e) => this.console.push(e));
     this.actors.setOnToggle((a, willBeActive) => {
       void this.handleActorToggle(a, willBeActive);
+    });
+    this.actors.setOnMute((a, willBeMuted) => {
+      void this.handleActorMute(a, willBeMuted);
     });
     this.clock.setOnTransport((playing) => {
       void this.handleTransport(playing);
@@ -104,6 +119,23 @@ class RealCore implements CoreApi {
 
   private log = (e: { runtime: Runtime; level: LogEntry['level']; msg: string }) =>
     this.console.push(e);
+
+  private async handleActorMute(a: Actor, willBeMuted: boolean) {
+    // Only affects audio if the actor is currently armed and the transport runs.
+    if (!a.active || !this.clock.state.playing) return;
+    const ref = this.getActorFile?.(a.name);
+    if (!ref) return;
+    const adapter = getAdapter(ref.runtime);
+    if (!adapter) return;
+    const src = { actorId: a.name, fileId: a.name };
+    if (willBeMuted) {
+      await adapter.stop(src, this.log);
+      this.log({ runtime: ref.runtime, level: 'info', msg: `mute [${a.name}]` });
+    } else {
+      await adapter.evaluate(ref.contents, src, this.log);
+      this.log({ runtime: ref.runtime, level: 'info', msg: `unmute [${a.name}]` });
+    }
+  }
 
   private async handleActorToggle(a: Actor, willBeActive: boolean) {
     const ref = this.getActorFile?.(a.name);

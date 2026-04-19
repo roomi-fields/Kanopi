@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { EditorState, type Extension } from '@codemirror/state';
+  import { EditorState, Prec, type Extension } from '@codemirror/state';
   import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } from '@codemirror/view';
   import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
   import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
@@ -47,7 +47,7 @@
       ...((lang === 'strudel' || lang === 'tidal') ? [miniOverlay] : []),
       flashField,
       flashTheme,
-      keymap.of([
+      Prec.highest(keymap.of([
         { key: 'Mod-k', preventDefault: true, stopPropagation: true, run: () => { ui.togglePalette(); return true; } },
         { key: 'Mod-Shift-p', preventDefault: true, stopPropagation: true, run: () => { ui.togglePalette(); return true; } },
         { key: 'Mod-.', preventDefault: true, stopPropagation: true, run: () => { void core.hushAll(); return true; } },
@@ -85,7 +85,7 @@
         ...defaultKeymap,
         ...historyKeymap,
         ...searchKeymap
-      ]),
+      ])),
       kanopiTheme,
       kanopiGlobalStyles,
       EditorView.updateListener.of((u) => {

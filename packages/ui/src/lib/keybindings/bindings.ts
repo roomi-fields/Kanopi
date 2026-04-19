@@ -31,6 +31,19 @@ export function handleGlobalKey(e: KeyboardEvent) {
     void core.hushAll();
     return;
   }
+  // Cmd/Ctrl + 1..9 → toggle mute on the Nth actor (atom-tidalcycles).
+  // Cmd/Ctrl + 0 → unmute every actor.
+  if (isMod(e) && !e.shiftKey && !e.altKey && /^[0-9]$/.test(e.key)) {
+    const n = Number(e.key);
+    e.preventDefault();
+    if (n === 0) {
+      core.actors.unmuteAll();
+    } else {
+      const target = core.actors.list()[n - 1];
+      if (target) core.actors.toggleMute(target.name);
+    }
+    return;
+  }
   // Space toggles play/stop only if not editing
   if (e.code === 'Space' && !inEditableTarget(e) && !isMod(e) && !e.altKey) {
     e.preventDefault();
@@ -39,6 +52,8 @@ export function handleGlobalKey(e: KeyboardEvent) {
 }
 
 export function installGlobalKeybindings() {
-  window.addEventListener('keydown', handleGlobalKey);
-  return () => window.removeEventListener('keydown', handleGlobalKey);
+  // Capture phase so we beat the browser's Ctrl+1..9 tab-switch accelerator.
+  const opts: AddEventListenerOptions = { capture: true };
+  window.addEventListener('keydown', handleGlobalKey, opts);
+  return () => window.removeEventListener('keydown', handleGlobalKey, opts);
 }

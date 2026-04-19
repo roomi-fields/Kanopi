@@ -10,10 +10,10 @@
 </script>
 
 <ul class="actors">
-  {#each actors.list as a (a.name)}
-    <li class="actor" class:active={a.active}>
+  {#each actors.list as a, i (a.name)}
+    <li class="actor" class:active={a.active} class:muted={a.muted}>
       <button class="toggle" type="button" title="toggle {a.name}" onclick={() => actors.toggle(a.name)}>
-        <span class="led" class:on={a.active}></span>
+        <span class="led" class:on={a.active} class:muted={a.muted}></span>
       </button>
       <button class="info" type="button" onclick={() => openFile(a.file)}>
         <span class="name">{a.name}</span>
@@ -22,6 +22,16 @@
           {#if a.file}<span class="file">{a.file}</span>{/if}
         </span>
       </button>
+      {#if i < 9}
+        <button
+          class="mute"
+          type="button"
+          title="mute {a.name} (Ctrl+{i + 1})"
+          onclick={() => actors.toggleMute(a.name)}
+        >
+          {a.muted ? 'M' : '·'}
+        </button>
+      {/if}
     </li>
   {/each}
 </ul>
@@ -52,6 +62,29 @@
     background: var(--green);
     box-shadow: 0 0 6px var(--green-glow);
   }
+  .led.on.muted {
+    background: var(--text-muted);
+    box-shadow: none;
+    opacity: 0.5;
+  }
+  .actor.muted .name { opacity: 0.5; }
+  .mute {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    transition: all 0.12s;
+  }
+  .mute:hover { color: var(--text-muted); border-color: var(--border); }
+  .actor.muted .mute { color: var(--amber); border-color: var(--amber-dim); }
   .info {
     flex: 1;
     text-align: left;

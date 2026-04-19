@@ -123,6 +123,19 @@ export class MockActors implements ActorManager {
     this.actors = this.actors.map((a) => (a.name === name ? { ...a, active: !a.active } : a));
     this.b.emit(this.actors);
   }
+  setMuted(name: string, muted: boolean) {
+    this.actors = this.actors.map((a) => (a.name === name ? { ...a, muted } : a));
+    this.b.emit(this.actors);
+  }
+  toggleMute(name: string) {
+    const a = this.actors.find((x) => x.name === name);
+    if (!a) return;
+    this.setMuted(name, !a.muted);
+  }
+  unmuteAll() {
+    this.actors = this.actors.map((a) => (a.muted ? { ...a, muted: false } : a));
+    this.b.emit(this.actors);
+  }
   setActors(list: Actor[]) {
     this.actors = list;
     this.b.emit(this.actors);
