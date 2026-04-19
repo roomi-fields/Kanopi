@@ -34,6 +34,35 @@ Kanopi is the IDE product. BPscript is the optional native sequencer language (s
 - Desktop packaging: Tauri (later)
 - Runtime: TypeScript, Web Audio, Web MIDI, WebSocket (for osc-bridge)
 
+## Environment
+
+This project is developed on **WSL2**. Vite's file watcher does NOT reliably catch edits across the Windows/Linux boundary without polling. `packages/ui/vite.config.ts` ships with `server.watch.usePolling: true` — if you remove it or HMR breaks, run the `vite-hmr-reset` skill.
+
+Dev server: `cd packages/ui && npm run dev` (polling is the default in config).
+Belt-and-braces: `VITE_FORCE_POLLING=1 CHOKIDAR_USEPOLLING=1 npm run dev`.
+
+## Visual verification is mandatory, not optional
+
+Claude cannot see the UI on its own. Any change under `packages/ui/src/` that affects rendered pixels, editor behavior, or Strudel/Hydra wiring MUST be verified before declaring "done". The **`live-coding-verify` skill** describes the full protocol.
+
+The baseline tool is **Playwright MCP**. If it is not installed in this session:
+
+```
+claude mcp add playwright npx @playwright/mcp@latest
+```
+
+With Playwright MCP available, Claude navigates to `localhost:5173`, takes screenshots, clicks, presses keys, and reads `browser_console_messages` itself — no human-in-the-loop ping-pong. Without it, Claude must say "I cannot verify visually" explicitly instead of guessing.
+
+Forbidden answers: "c'est fait, recharge", "ça devrait marcher maintenant", "tu peux tester ?" without having verified or having explicitly flagged the inability to verify.
+
+## Skills (project scope)
+
+Located in `.claude/skills/`:
+
+- **`live-coding-verify`** — triggers on any UI/Svelte/CSS/CM6 edit. Forces Playwright-based verification before "done".
+- **`svelte-5-patterns`** — Svelte 5 runes rules ($state / $derived / $effect / $props / $bindable), compiler traps (await rewriting), CodeMirror-inside-Svelte pattern.
+- **`vite-hmr-reset`** — deterministic WSL2 HMR recovery procedure. Use the moment HMR misbehaves.
+
 ## Memory
 
 Kanopi session-specific memory at `~/.claude/projects/-mnt-d-Claude-kanopi/memory/` (separate from BPscript memory).

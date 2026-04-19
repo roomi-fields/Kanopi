@@ -108,7 +108,7 @@ export interface CoreApi {
   maps: MapEngine;
   console: ConsoleBus;
   loadSession(text: string): Promise<void>;
-  /** Evaluate a code block in the given runtime. */
+  /** Evaluate a code block in the given runtime. Rejects on eval error. */
   evaluateBlock(runtime: Runtime, code: string, sourceId: string): Promise<void>;
   /** Inject a lookup so the core can resolve which file an actor refers to. */
   bindActorFiles(get: (actorName: string) => ActorFileRef | undefined): void;

@@ -26,14 +26,14 @@ export const flashField = StateField.define<DecorationSet>({
 
 export const flashTheme = EditorView.baseTheme({
   '.cm-flash-ok': {
-    backgroundColor: 'rgba(126, 200, 115, 0.22)',
+    backgroundColor: 'rgba(150, 240, 130, 0.4)',
     transition: 'background-color 0.4s ease-out',
-    boxShadow: 'inset 0 0 0 1px rgba(126, 200, 115, 0.4)'
+    boxShadow: 'inset 0 0 0 1px rgba(150, 240, 130, 0.7)'
   },
   '.cm-flash-err': {
-    backgroundColor: 'rgba(200, 107, 107, 0.22)',
+    backgroundColor: 'rgba(170, 40, 40, 0.55)',
     transition: 'background-color 0.4s ease-out',
-    boxShadow: 'inset 0 0 0 1px rgba(200, 107, 107, 0.5)'
+    boxShadow: 'inset 0 0 0 1px rgba(200, 50, 50, 0.85)'
   }
 });
 

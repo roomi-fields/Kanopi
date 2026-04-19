@@ -67,7 +67,19 @@
     border-right: 1px solid var(--border-dim);
     cursor: pointer;
     user-select: none;
+    flex: 1 1 auto;
+    min-width: 40px;
+    max-width: 180px;
+    overflow: hidden;
   }
+  .name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .ext, .live-dot, .close { flex: 0 0 auto; }
   .tab:hover { color: var(--text); background: rgba(255, 255, 255, 0.02); }
   .tab.active {
     color: var(--text);

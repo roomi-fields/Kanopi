@@ -98,13 +98,19 @@ class RealCore implements CoreApi {
   private async handleTransport(playing: boolean) {
     const actives = this.actors.list().filter((a) => a.active);
     if (playing) {
-      // re-evaluate all active actors
+      // re-evaluate all active actors; swallow per-actor failures so one
+      // broken file doesn't abort the whole scene and surface as an
+      // unhandled rejection (clock.play isn't awaited by its callers).
       for (const a of actives) {
         const ref = this.getActorFile?.(a.name);
         if (!ref) continue;
         const adapter = getAdapter(ref.runtime);
         if (!adapter) continue;
-        await adapter.evaluate(ref.contents, { actorId: a.name, fileId: a.name }, this.log);
+        try {
+          await adapter.evaluate(ref.contents, { actorId: a.name, fileId: a.name }, this.log);
+        } catch {
+          /* error already logged by adapter */
+        }
       }
       this.log({ runtime: 'system', level: 'info', msg: `play: ${actives.length} actor(s)` });
     } else {
@@ -192,11 +198,11 @@ class RealCore implements CoreApi {
     });
   }
 
-  async evaluateBlock(runtime: Runtime, code: string, sourceId: string) {
+  async evaluateBlock(runtime: Runtime, code: string, sourceId: string): Promise<void> {
     const adapter = getAdapter(runtime);
     if (!adapter) {
       this.log({ runtime, level: 'warn', msg: `no adapter for runtime "${runtime}"` });
-      return;
+      throw new Error(`no adapter for runtime "${runtime}"`);
     }
     if (!code.trim()) {
       this.log({ runtime, level: 'warn', msg: 'empty block' });
@@ -210,20 +216,17 @@ class RealCore implements CoreApi {
       return ref?.fileName === sourceId;
     });
 
-    // Start transport so the global play button reflects reality. Safe even
-    // if no actor matches — handleTransport only re-evals *active* actors.
-    if (!this.clock.state.playing) this.clock.play();
+    // Eval first — if it throws, we leave transport+LED alone so a broken
+    // block doesn't falsely mark the scene as playing.
+    await adapter.evaluate(code, { actorId: matching?.name, fileId: sourceId }, this.log);
 
-    // Flip the actor's LED without triggering handleActorToggle (which would
-    // re-evaluate the whole file — we want only the submitted block).
+    if (!this.clock.state.playing) this.clock.play();
     if (matching && !matching.active) {
       const next = this.actors.list().map((a) =>
         a.name === matching.name ? { ...a, active: true } : a
       );
       this.actors.setActors(next);
     }
-
-    await adapter.evaluate(code, { actorId: matching?.name, fileId: sourceId }, this.log);
   }
 
   bindActorFiles(get: (name: string) => ActorFileRef | undefined) {

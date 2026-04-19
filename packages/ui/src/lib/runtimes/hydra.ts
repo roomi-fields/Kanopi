@@ -34,7 +34,7 @@ export const hydraAdapter: RuntimeAdapter = {
     (globalThis as unknown as { bpm: number }).bpm = bpm;
   },
   async evaluate(code: string, _src: EvalSource, log: LogPush) {
-    if (!(await ensure(log))) return;
+    if (!(await ensure(log))) throw new Error('hydra not ready');
     try {
       // hydra-synth API exposes globals (osc, noise, out...) when makeGlobal: true
       // eslint-disable-next-line no-new-func
@@ -43,6 +43,7 @@ export const hydraAdapter: RuntimeAdapter = {
       log({ runtime: 'hydra', level: 'info', msg: `eval ok (${code.length}b)` });
     } catch (err) {
       log({ runtime: 'hydra', level: 'error', msg: String(err) });
+      throw err;
     }
   },
   async stop(_src: EvalSource, log: LogPush) {

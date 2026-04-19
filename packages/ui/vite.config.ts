@@ -57,8 +57,42 @@ export default defineConfig({
   define: {
     global: 'globalThis'
   },
+  // Strudel ships the same @strudel/core as a dep of @strudel/web AND
+  // @strudel/codemirror. Without this, Vite pre-bundles two copies and the
+  // runtime complains ("@strudel/core was loaded more than once"), patterns
+  // created in one never register with the other's scheduler → silence.
+  resolve: {
+    dedupe: [
+      '@strudel/core',
+      '@strudel/mini',
+      '@strudel/transpiler',
+      '@strudel/tonal',
+      '@strudel/draw',
+      '@strudel/webaudio'
+    ]
+  },
+  optimizeDeps: {
+    include: [
+      '@strudel/web',
+      '@strudel/codemirror',
+      '@strudel/core',
+      '@strudel/mini',
+      '@strudel/transpiler',
+      '@strudel/tonal',
+      '@strudel/draw',
+      '@strudel/webaudio'
+    ]
+  },
   server: {
     port: 5173,
-    strictPort: false
+    strictPort: false,
+    // WSL2: native inotify events don't propagate reliably across the
+    // Windows/Linux boundary. Polling is the only way HMR catches edits
+    // made from Windows-side editors or from Claude Code sessions running
+    // in WSL on a Windows-mounted path. See .claude/skills/vite-hmr-reset/.
+    watch: {
+      usePolling: true,
+      interval: 200
+    }
   }
 });

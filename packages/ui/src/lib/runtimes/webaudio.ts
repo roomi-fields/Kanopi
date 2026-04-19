@@ -33,6 +33,7 @@ export const jsAdapter: RuntimeAdapter = {
       log({ runtime: 'js', level: 'info', msg: `eval ok (${code.length}b)` });
     } catch (err) {
       log({ runtime: 'js', level: 'error', msg: String(err) });
+      throw err;
     }
   },
   async stop(src: EvalSource, log: LogPush) {

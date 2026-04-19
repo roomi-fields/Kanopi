@@ -15,6 +15,7 @@
   import { core } from './lib/core';
   import { workspace } from './stores/workspace.svelte';
   import { actors as actorsStore } from './stores/actors.svelte';
+  import { markLastEvalError } from './components/editor/eval-tracker';
 
   onMount(() => {
     core.bindActorFiles((name) => {
@@ -25,6 +26,13 @@
       return f ? { contents: f.contents, runtime: f.runtime, fileName: f.name } : undefined;
     });
     installAutosave();
+
+    // Strudel logs async pattern errors via its own logger (repl's catch,
+    // scheduler-tick errorLogger) without rejecting the evaluate() promise.
+    // Hook the official callbacks to re-flash the last-evaluated range red.
+    void import('./lib/runtimes/strudel').then(({ onStrudelError }) => {
+      onStrudelError(() => markLastEvalError());
+    });
 
     let lastSessionId: string | null = null;
     let lastSessionText: string | null = null;
@@ -82,7 +90,11 @@
           if (!a.file) continue;
           const exists = workspace.files.some((x) => x.name === a.file || x.path === a.file);
           if (!exists) {
-            workspace.addFile(a.file, `# ${a.name} (${a.runtime}) — empty\n`);
+            // Comment syntax per runtime: Strudel/Tidal/Hydra/JS are JS-based,
+            // .scd uses // too, .kanopi/.py use #.
+            const hash = a.runtime === 'kanopi' || a.runtime === 'python';
+            const prefix = hash ? '#' : '//';
+            workspace.addFile(a.file, `${prefix} ${a.name} (${a.runtime}) — empty\n`);
           }
         }
       });

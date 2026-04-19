@@ -29,7 +29,8 @@
     height: 32px;
     border-bottom: 1px solid var(--border);
     background: var(--panel);
-    overflow-x: auto;
+    overflow: hidden;
+    min-width: 0;
   }
   .empty {
     align-self: center;

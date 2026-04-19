@@ -13,6 +13,7 @@
   import type { Runtime } from '../../lib/core-mock';
   import { core } from '../../lib/core';
   import { flash, flashField, flashTheme } from './eval-flash';
+  import { rememberEval } from './eval-tracker';
   import { strudelExtras } from './strudel-extras';
   import { miniOverlay } from './mini-overlay';
 
@@ -21,7 +22,7 @@
     doc: string;
     runtime: Runtime;
     onChange: (text: string) => void;
-    onEval?: (code: string) => void;
+    onEval?: (code: string) => void | Promise<boolean | void>;
   };
   const { docId, doc, runtime, onChange, onEval }: Props = $props();
 
@@ -29,6 +30,20 @@
   let view: EditorView | undefined;
   let currentDocId: string | undefined;
   let strudelInstall: ((view: EditorView) => Promise<void>) | undefined;
+
+  // Wrapped as a pure Promise chain (no async/await touching $props — Svelte 5
+  // mangles those). onEval now throws on any eval error; we catch and mark err.
+  // Pure Promise chain — Svelte 5 mangles await on $props.
+  function runEval(code: string, v: EditorView, from: number, to: number) {
+    if (!onEval) return;
+    rememberEval(v, from, to);
+    Promise.resolve()
+      .then(() => onEval(code))
+      .then(
+        () => flash(v, from, to, 'ok'),
+        () => flash(v, from, to, 'err')
+      );
+  }
 
   function makeState(initial: string, lang: Runtime): EditorState {
     const strudel = strudelExtras(lang);
@@ -72,8 +87,7 @@
             if (!code) return true;
             const blockStart = docText.indexOf(code);
             const range = blockStart >= 0 ? [blockStart, blockStart + code.length] : [sel.from, sel.to];
-            onEval(code);
-            flash(v, range[0], range[1], 'ok');
+            runEval(code, v, range[0], range[1]);
             return true;
           }
         },
@@ -86,8 +100,7 @@
             const line = v.state.doc.lineAt(sel.head);
             const code = line.text.trim();
             if (!code) return true;
-            onEval(code);
-            flash(v, line.from, line.to, 'ok');
+            runEval(code, v, line.from, line.to);
             return true;
           }
         },

@@ -11,3 +11,6 @@ src-tauri/target/
 
 # RTFM local database
 .rtfm/
+
+# Playwright MCP artefacts
+.playwright-mcp/

@@ -6,6 +6,7 @@ export type LogPush = (e: { runtime: Runtime; level: 'info' | 'warn' | 'error'; 
 
 export interface RuntimeAdapter {
   readonly id: Runtime;
+  /** Resolves when the code evaluated cleanly; throws on any eval error. */
   evaluate(code: string, src: EvalSource, log: LogPush): Promise<void>;
   /**
    * Stop a specific source (actor or block). For runtimes that don't support

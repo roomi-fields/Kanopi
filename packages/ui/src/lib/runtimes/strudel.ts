@@ -7,6 +7,18 @@ interface StrudelMod {
   samples: (url: string | Record<string, unknown>, base?: string) => Promise<unknown>;
 }
 
+// Anything listening for "the last Strudel eval failed" — used by CMEditor's
+// eval-tracker so we can turn an async runtime error into a red flash.
+export type StrudelErrorListener = (err: unknown) => void;
+const errorListeners = new Set<StrudelErrorListener>();
+export function onStrudelError(cb: StrudelErrorListener): () => void {
+  errorListeners.add(cb);
+  return () => errorListeners.delete(cb);
+}
+function emitError(err: unknown) {
+  for (const cb of errorListeners) cb(err);
+}
+
 export type StrudelStatus = 'idle' | 'loading' | 'ready' | 'error';
 let status: StrudelStatus = 'idle';
 const statusListeners = new Set<(s: StrudelStatus) => void>();
@@ -24,6 +36,11 @@ export function onStrudelStatus(cb: (s: StrudelStatus) => void): () => void {
 let mod: StrudelMod | undefined;
 let initPromise: Promise<unknown> | undefined;
 
+// Strudel's async errors fire via onEvalError / strudel.log DURING our
+// await m.evaluate() — not after. We latch the last one so the adapter's
+// evaluate() can throw on exit and the outer .then chain never resolves as ok.
+let latchedError: unknown | undefined;
+
 async function ensure(): Promise<StrudelMod> {
   if (!mod) {
     setStatus('loading');
@@ -32,7 +49,27 @@ async function ensure(): Promise<StrudelMod> {
   if (!initPromise) {
     initPromise = (async () => {
       try {
-        await mod!.initStrudel();
+        // Strudel's async errors never reject m.evaluate() — they surface
+        // through these callbacks DURING the evaluate await, and through a
+        // 'strudel.log' DOM event as a safety net for scheduler ticks.
+        await mod!.initStrudel({
+          onEvalError: (err: unknown) => {
+            latchedError = err;
+            emitError(err);
+          },
+          onError: (err: unknown) => {
+            latchedError = err;
+            emitError(err);
+          }
+        } as Record<string, unknown>);
+        document.addEventListener('strudel.log', (e) => {
+          const detail = (e as CustomEvent).detail as { message?: string; type?: string };
+          if (detail?.type === 'error') {
+            const err = new Error(detail.message ?? 'strudel error');
+            latchedError = err;
+            emitError(err);
+          }
+        });
         await mod!.samples('github:tidalcycles/dirt-samples');
         setStatus('ready');
       } catch (err) {
@@ -76,15 +113,39 @@ export const strudelAdapter: RuntimeAdapter = {
     }
   },
   async evaluate(code: string, src: EvalSource, log: LogPush) {
+    // Strudel's evaluate logs parse/runtime errors via its internal logger
+    // WITHOUT rejecting — so red flash there would need to sniff console.
+    // We do catch syntax errors here via new Function(), after stripping
+    // hash-comment lines (Kanopi's auto-generated file headers use `#`).
+    const stripped = code.replace(/^\s*#[^\n]*$/gm, '');
     try {
-      const m = await ensure();
-      const slot = src?.actorId ?? src?.fileId ?? '__scratch__';
-      slots.set(slot, code);
+      // eslint-disable-next-line no-new, no-new-func
+      new Function(stripped);
+    } catch (err) {
+      log({ runtime: 'strudel', level: 'error', msg: `parse: ${String(err)}` });
+      throw err;
+    }
+
+    const m = await ensure();
+    const slot = src?.actorId ?? src?.fileId ?? '__scratch__';
+    slots.set(slot, code);
+    // Strudel swallows runtime errors into its logger, which fires onEvalError
+    // DURING the await below. We clear the latch first, then throw after if an
+    // error was captured, so the outer .then() chain sees a real rejection.
+    latchedError = undefined;
+    try {
       await flush(m);
-      log({ runtime: 'strudel', level: 'info', msg: `eval ok [${slot}] (${code.length}b)` });
     } catch (err) {
       log({ runtime: 'strudel', level: 'error', msg: String(err) });
+      throw err;
     }
+    if (latchedError !== undefined) {
+      const err = latchedError;
+      latchedError = undefined;
+      log({ runtime: 'strudel', level: 'error', msg: String(err) });
+      throw err instanceof Error ? err : new Error(String(err));
+    }
+    log({ runtime: 'strudel', level: 'info', msg: `eval ok [${slot}] (${code.length}b)` });
   },
   async stop(src: EvalSource, log: LogPush) {
     try {

@@ -235,7 +235,7 @@ class MockCore implements CoreApi {
     this.console.push({ runtime: 'system', level: 'info', msg: 'loadSession (mock)' });
   }
 
-  async evaluateBlock(runtime: Runtime, code: string, sourceId: string) {
+  async evaluateBlock(runtime: Runtime, code: string, sourceId: string): Promise<void> {
     this.console.push({ runtime, level: 'info', msg: `eval mock (${code.length}b @ ${sourceId})` });
   }
 
