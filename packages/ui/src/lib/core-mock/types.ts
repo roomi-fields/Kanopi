@@ -111,8 +111,13 @@ export interface CoreApi {
   console: ConsoleBus;
   events: EventBus;
   loadSession(text: string): Promise<void>;
-  /** Evaluate a code block in the given runtime. Rejects on eval error. */
-  evaluateBlock(runtime: Runtime, code: string, sourceId: string): Promise<void>;
+  /**
+   * Evaluate a code block in the given runtime. Rejects on eval error.
+   * `docOffset` is the position of the block inside the source document,
+   * used by visualizers to place highlights on the actual evaluated range
+   * instead of the start of the doc. Defaults to 0 (whole-file eval).
+   */
+  evaluateBlock(runtime: Runtime, code: string, sourceId: string, docOffset?: number): Promise<void>;
   /** Inject a lookup so the core can resolve which file an actor refers to. */
   bindActorFiles(get: (actorName: string) => ActorFileRef | undefined): void;
   /** Request WebMIDI access and start dispatching mappings. */

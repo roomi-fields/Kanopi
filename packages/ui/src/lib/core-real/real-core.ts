@@ -214,7 +214,7 @@ class RealCore implements CoreApi {
     });
   }
 
-  async evaluateBlock(runtime: Runtime, code: string, sourceId: string): Promise<void> {
+  async evaluateBlock(runtime: Runtime, code: string, sourceId: string, docOffset: number = 0): Promise<void> {
     const adapter = getAdapter(runtime);
     if (!adapter) {
       this.log({ runtime, level: 'warn', msg: `no adapter for runtime "${runtime}"` });
@@ -234,7 +234,7 @@ class RealCore implements CoreApi {
 
     // Eval first — if it throws, we leave transport+LED alone so a broken
     // block doesn't falsely mark the scene as playing.
-    await adapter.evaluate(code, { actorId: matching?.name, fileId: sourceId }, this.log);
+    await adapter.evaluate(code, { actorId: matching?.name, fileId: sourceId, docOffset }, this.log);
 
     if (!this.clock.state.playing) this.clock.play();
     if (matching && !matching.active) {

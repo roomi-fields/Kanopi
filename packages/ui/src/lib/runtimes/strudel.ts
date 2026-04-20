@@ -280,7 +280,7 @@ async function ensure(): Promise<StrudelMod> {
 // Per-actor code slots. Strudel evaluates one big program at a time, so we
 // keep each actor's source around and recombine as "$: <code>" lines on every
 // eval/stop. That lets multiple actors coexist in the same Strudel runtime.
-const slots = new Map<string, { code: string; fileId: string }>();
+const slots = new Map<string, { code: string; fileId: string; docOffset: number }>();
 
 // Per-slot composite-offset bookkeeping for mapping hap.context.locations
 // (which come from the transpiler operating on the composite source) back to
@@ -290,6 +290,7 @@ interface CompositeRange {
   codeStart: number; // offset of the first char of user code inside composite
   codeEnd: number;   // exclusive
   leadingOffset: number; // chars trimmed from the start of original code
+  docOffset: number; // position of the evaluated block inside the source doc
 }
 let compositeRanges: CompositeRange[] = [];
 
@@ -317,7 +318,8 @@ function buildComposite(): string {
       fileId: slot.fileId,
       codeStart,
       codeEnd,
-      leadingOffset
+      leadingOffset,
+      docOffset: slot.docOffset
     });
     parts.push(trimmedEnd);
     pos = codeEnd;
@@ -335,8 +337,8 @@ function mapCompositeToSource(
   for (const r of compositeRanges) {
     if (from >= r.codeStart && to <= r.codeEnd) {
       return {
-        from: from - r.codeStart + r.leadingOffset,
-        to: to - r.codeStart + r.leadingOffset,
+        from: from - r.codeStart + r.leadingOffset + r.docOffset,
+        to: to - r.codeStart + r.leadingOffset + r.docOffset,
         fileId: r.fileId
       };
     }
@@ -384,7 +386,8 @@ export const strudelAdapter: RuntimeAdapter = {
     const m = await ensure();
     const slot = src?.actorId ?? src?.fileId ?? '__scratch__';
     const fileId = src?.fileId ?? slot;
-    slots.set(slot, { code, fileId });
+    const docOffset = src?.docOffset ?? 0;
+    slots.set(slot, { code, fileId, docOffset });
     activeFileId = fileId;
     stopped = false;
     // Strudel swallows runtime errors into its logger, which fires onEvalError

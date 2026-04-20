@@ -17,7 +17,7 @@
         doc={file.contents}
         runtime={file.runtime}
         onChange={(text) => workspace.updateContents(file.id, text)}
-        onEval={(code) => core.evaluateBlock(file.runtime, code, file.name)}
+        onEval={(code, docOffset) => core.evaluateBlock(file.runtime, code, file.name, docOffset)}
       />
     {:else}
       <p class="hint">Open a file from the sidebar.</p>

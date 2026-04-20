@@ -1,7 +1,17 @@
 import type { Runtime } from '../core-mock';
 import type { EventBus } from '../events/types';
 
-export type EvalSource = { actorId?: string; fileId: string };
+export type EvalSource = {
+  actorId?: string;
+  fileId: string;
+  /**
+   * Offset of the evaluated code inside the source document. 0 when the
+   * whole file is evaluated (actor toggle). Non-zero when Ctrl+Enter
+   * evaluates a partial block — without this, visualizer `locations`
+   * would point to the start of the doc instead of the eval'd block.
+   */
+  docOffset?: number;
+};
 
 export type LogPush = (e: { runtime: Runtime; level: 'info' | 'warn' | 'error'; msg: string }) => void;
 

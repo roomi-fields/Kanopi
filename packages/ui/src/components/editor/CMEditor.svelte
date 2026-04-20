@@ -26,7 +26,7 @@
     doc: string;
     runtime: Runtime;
     onChange: (text: string) => void;
-    onEval?: (code: string) => void | Promise<boolean | void>;
+    onEval?: (code: string, docOffset: number) => void | Promise<boolean | void>;
   };
   const { docId, fileName, doc, runtime, onChange, onEval }: Props = $props();
 
@@ -42,7 +42,7 @@
     if (!onEval) return;
     rememberEval(v, from, to);
     Promise.resolve()
-      .then(() => onEval(code))
+      .then(() => onEval(code, from))
       .then(
         () => flash(v, from, to, 'ok'),
         () => flash(v, from, to, 'err')
