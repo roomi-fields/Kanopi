@@ -1,11 +1,33 @@
 <script lang="ts">
   import { actors } from '../../stores/actors.svelte';
   import { workspace } from '../../stores/workspace.svelte';
+  import { openBlocks } from '../../stores/blocks.svelte';
+  import { core } from '../../lib/core';
+  import type { OpenBlock } from '../../stores/blocks.svelte';
 
   function openFile(fileName?: string) {
     if (!fileName) return;
     const f = workspace.files.find((x) => x.name === fileName);
     if (f) workspace.openFile(f.id);
+  }
+
+  // A block is "covered" by a declared @actor if the latter's `file` field
+  // matches the block's source file. We hide covered blocks from the detected
+  // list to avoid duplicating the same name twice in the panel — declared
+  // @actors keep their existing row (with toggle + mute), detected blocks
+  // surface as a *supplementary* list below.
+  const declaredFiles = $derived(new Set(actors.list.map((a) => a.file).filter(Boolean) as string[]));
+  const detected = $derived<OpenBlock[]>(
+    openBlocks.list.filter((b) => !declaredFiles.has(b.fileName))
+  );
+
+  function evalBlock(b: OpenBlock) {
+    const file = workspace.fileById(b.fileId);
+    if (!file) return;
+    const code = file.contents.slice(b.block.from, b.block.to);
+    void core.evaluateBlock(b.runtime, code, b.fileName, b.block.from);
+    // Also jump the user to the file so they can see the flash.
+    workspace.openFile(b.fileId);
   }
 </script>
 
@@ -35,6 +57,29 @@
     </li>
   {/each}
 </ul>
+
+{#if detected.length > 0}
+  <div class="blocks-header">
+    <span>open blocks</span>
+    <span class="blocks-count">{detected.length}</span>
+  </div>
+  <ul class="blocks">
+    {#each detected as b (b.fileId + ':' + b.block.name)}
+      <li class="block" class:positional={b.block.kind === 'positional'}>
+        <button class="play" type="button" title="eval {b.qualifiedName}" onclick={() => evalBlock(b)}>
+          <svg viewBox="0 0 12 12" fill="currentColor"><path d="M3 2 L10 6 L3 10 Z" /></svg>
+        </button>
+        <button class="info" type="button" onclick={() => openFile(b.fileName)}>
+          <span class="name">{b.qualifiedName}</span>
+          <span class="meta">
+            <span class="rt rt-{b.runtime}">{b.runtime}</span>
+            <span class="kind">{b.block.kind}</span>
+          </span>
+        </button>
+      </li>
+    {/each}
+  </ul>
+{/if}
 
 <style>
   .actors { list-style: none; margin: 0; padding: 4px 0; }
@@ -117,4 +162,61 @@
   .rt-kanopi { color: var(--kanopi); }
   .rt-js { color: var(--cyan); }
   .file { color: var(--text-faint); font-family: var(--font-code); }
+
+  .blocks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px 4px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-top: 1px solid var(--border-dim);
+    margin-top: 4px;
+  }
+  .blocks-count {
+    font-size: 9px;
+    color: var(--text-faint);
+    letter-spacing: 0;
+    text-transform: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .blocks { list-style: none; margin: 0; padding: 0 0 4px; }
+  .block {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+  }
+  .block .play {
+    width: 22px; height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    border-radius: 3px;
+    transition: all 0.12s;
+  }
+  .block .play:hover { color: var(--amber); background: rgba(232, 156, 62, 0.08); }
+  .block .play svg { width: 9px; height: 9px; }
+  .block .info {
+    flex: 1;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .block .name {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+  .block.positional .name { color: var(--text-faint); font-style: italic; }
+  .block .kind {
+    font-size: 9px;
+    color: var(--text-faint);
+    letter-spacing: 0.08em;
+  }
 </style>
