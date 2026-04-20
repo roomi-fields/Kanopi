@@ -2,21 +2,19 @@
   import Pianoroll from './Pianoroll.svelte';
   import Scope from './Scope.svelte';
   import Spectrum from './Spectrum.svelte';
-
-  type VizTab = 'pianoroll' | 'scope' | 'spectrum';
-  let active = $state<VizTab>('pianoroll');
+  import { ui } from '../../stores/ui.svelte';
 </script>
 
 <div class="viz-panel">
   <header>
-    <button class:on={active === 'pianoroll'} onclick={() => (active = 'pianoroll')}>Pianoroll</button>
-    <button class:on={active === 'scope'} onclick={() => (active = 'scope')}>Scope</button>
-    <button class:on={active === 'spectrum'} onclick={() => (active = 'spectrum')}>Spectrum</button>
+    <button class:on={ui.vizTab === 'pianoroll'} onclick={() => (ui.vizTab = 'pianoroll')}>Pianoroll</button>
+    <button class:on={ui.vizTab === 'scope'} onclick={() => (ui.vizTab = 'scope')}>Scope</button>
+    <button class:on={ui.vizTab === 'spectrum'} onclick={() => (ui.vizTab = 'spectrum')}>Spectrum</button>
   </header>
   <div class="viz-body">
-    {#if active === 'pianoroll'}<Pianoroll />
-    {:else if active === 'scope'}<Scope />
-    {:else if active === 'spectrum'}<Spectrum />
+    {#if ui.vizTab === 'pianoroll'}<Pianoroll />
+    {:else if ui.vizTab === 'scope'}<Scope />
+    {:else if ui.vizTab === 'spectrum'}<Spectrum />
     {/if}
   </div>
 </div>

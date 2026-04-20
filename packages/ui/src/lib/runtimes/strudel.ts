@@ -261,6 +261,25 @@ async function ensure(): Promise<StrudelMod> {
             emitError(err);
           }
         });
+        // Make `.scope()`, `.pianoroll()`, `.spectrum()` chainable no-ops on
+        // Pattern prototypes. @strudel/web doesn't ship @strudel/draw, so these
+        // native Strudel methods would throw `scope is not a function`. Kanopi
+        // handles the actual rendering via `ui.showViz(...)` — the methods in
+        // the pattern chain just serve as hints. Returning `this` preserves
+        // chaining so `note("c4").scope().gain(0.1)` keeps working.
+        try {
+          const mAny = mod as unknown as { Pattern?: { prototype?: Record<string, unknown> } };
+          const proto = mAny.Pattern?.prototype;
+          if (proto) {
+            for (const fn of ['scope', 'pianoroll', 'spectrum'] as const) {
+              if (typeof proto[fn] !== 'function') {
+                proto[fn] = function(this: unknown) { return this; };
+              }
+            }
+          }
+        } catch {
+          /* best-effort — if the Pattern class isn't at mod.Pattern, skip */
+        }
         // Sample banks are no longer hardcoded — the session declares them
         // via `@library <id>`, which `real-core.loadSession` applies through
         // `loadSampleBank(source)` below. Out-of-the-box the default session
@@ -410,6 +429,22 @@ async function flush(m: StrudelMod): Promise<void> {
  * whatever Strudel accepts: `github:user/repo`, full URL to strudel.json, etc.
  */
 const loadedBanks = new Set<string>();
+/**
+ * Detect code-driven viz hints in Strudel source. Native Strudel exposes
+ * `.scope()`, `.pianoroll()`, `.spectrum()` chain methods that render into
+ * a dedicated draw target — Kanopi translates these into a panel reveal so
+ * the user doesn't need to click into the Viz tab manually.
+ *
+ * Priority order: pianoroll > scope > spectrum. Multiple chain calls in one
+ * block collapse to the most informative one.
+ */
+export function detectVizHint(code: string): 'scope' | 'pianoroll' | 'spectrum' | undefined {
+  if (/\.pianoroll\s*\(/.test(code)) return 'pianoroll';
+  if (/\.scope\s*\(/.test(code)) return 'scope';
+  if (/\.spectrum\s*\(/.test(code)) return 'spectrum';
+  return undefined;
+}
+
 export async function loadSampleBank(source: string): Promise<void> {
   if (loadedBanks.has(source)) return;
   const m = await ensure();

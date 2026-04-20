@@ -21,6 +21,7 @@
   import { patternHighlightExtension } from '../viz/pattern-highlight';
   import { extractBlocks } from '../../lib/blocks/extract-blocks';
   import { openBlocks } from '../../stores/blocks.svelte';
+  import { detectVizHint } from '../../lib/runtimes/strudel';
 
   type Props = {
     docId: string;
@@ -43,6 +44,14 @@
   function runEval(code: string, v: EditorView, from: number, to: number, actorId?: string) {
     if (!onEval) return;
     rememberEval(v, from, to);
+    // Reveal the matching viz panel if the code contains a native hint like
+    // `.scope()` / `.pianoroll()` / `.spectrum()`. Only fires for Strudel/Tidal
+    // — other runtimes have their own conventions (Hydra canvas, SC scope
+    // window) handled elsewhere.
+    if (runtime === 'strudel' || runtime === 'tidal') {
+      const hint = detectVizHint(code);
+      if (hint) ui.showViz(hint);
+    }
     Promise.resolve()
       .then(() => onEval(code, from, actorId))
       .then(
