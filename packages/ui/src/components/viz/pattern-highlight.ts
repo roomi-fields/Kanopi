@@ -127,7 +127,20 @@ export function patternHighlightPlugin(getFileId: () => string) {
         const next = kept.concat(this.pending);
         this.pending = [];
         this.active = next;
-        this.view.dispatch({ effects: setActivePulses.of(next) });
+        // Clamp positions to the current document length. Strudel's inline
+        // widgets insert block decorations that grow the doc height, and if
+        // we hand the decoration range-set stale positions CM6 throws
+        // `Position X out of range for changeset of length Y`.
+        const docLen = this.view.state.doc.length;
+        const safe = next
+          .map((p) => ({
+            from: Math.min(p.from, docLen),
+            to: Math.min(p.to, docLen),
+            startAt: p.startAt,
+            until: p.until
+          }))
+          .filter((p) => p.from < p.to);
+        this.view.dispatch({ effects: setActivePulses.of(safe) });
         // Re-schedule while there's any pulse that still needs to flip
         // state — either waiting to start (startAt in the future) or to end
         // (until in the future). Avoids staying silent during the lookahead

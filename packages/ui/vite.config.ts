@@ -70,7 +70,8 @@ export default defineConfig({
       '@strudel/transpiler',
       '@strudel/tonal',
       '@strudel/draw',
-      '@strudel/webaudio'
+      '@strudel/webaudio',
+      '@strudel/codemirror'
     ]
   },
   optimizeDeps: {

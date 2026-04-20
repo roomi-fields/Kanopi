@@ -243,6 +243,36 @@ async function ensure(): Promise<StrudelMod> {
               }, false);
             }
             return pattern;
+          },
+          // afterEval runs after the transpiler has produced widget configs
+          // for `._pianoroll()` / `._scope()` / `._spectrum()` calls. We ship
+          // them to the active CMEditor via `updateWidgets` from
+          // @strudel/codemirror — that's how strudel.cc renders its inline
+          // canvases directly under the code that produced them.
+          afterEval: (options: { meta?: { widgets?: unknown[] } }) => {
+            // WIP: inline widget dispatch. @strudel/codemirror's updateWidgets
+            // + our widgetPlugin extension plumbing is in place (CMEditor
+            // registers the view, this hook fires with widget configs). The
+            // widget canvases still don't appear in the DOM — likely because
+            // @strudel/codemirror is loaded through two distinct ESM graphs
+            // (one via @strudel/web's webaudioRepl, one via our import), so
+            // `setWidget(id, el)` in graph A populates a widgetElements map
+            // that `BlockWidget.toDOM()` in graph B never sees. Fix TBD.
+            const widgets = options?.meta?.widgets ?? [];
+            if (!widgets.length) return;
+            const view = currentEditorView();
+            if (!view) return;
+            // Lazy-require to avoid pulling @strudel/codemirror on first load
+            // when no Strudel editor is active yet.
+            import('@strudel/codemirror').then((m) => {
+              const updateWidgets = (m as unknown as { updateWidgets?: (v: unknown, w: unknown[]) => void }).updateWidgets;
+              if (!updateWidgets) return;
+              try {
+                updateWidgets(view, widgets.filter((w: unknown) => (w as { type?: string }).type !== 'slider'));
+              } catch {
+                /* best-effort — widget update shouldn't break eval */
+              }
+            });
           }
         } as Record<string, unknown>);
         document.addEventListener('strudel.log', (e) => {
@@ -271,16 +301,38 @@ async function ensure(): Promise<StrudelMod> {
         // Override unconditionally with chainable no-ops. The methods stay
         // valid Strudel syntax so the user writes native code, Kanopi just
         // owns the rendering surface via `ui.showViz(hint)`.
+        // Preserve native pianoroll/scope/spectrum implementations before we
+        // install the no-op overrides — the underscored variants below need
+        // to delegate to the real impls (with a canvas ctx) to actually draw.
+        const nativeViz: Record<string, unknown> = {};
         try {
           const mAny = mod as unknown as { Pattern?: { prototype?: Record<string, unknown> } };
           const proto = mAny.Pattern?.prototype;
           if (proto) {
             for (const fn of ['scope', 'pianoroll', 'spectrum', 'tscope', 'tpianoroll'] as const) {
+              if (typeof proto[fn] === 'function') nativeViz[fn] = proto[fn];
               proto[fn] = function(this: unknown) { return this; };
             }
           }
         } catch {
           /* best-effort — if the Pattern class isn't at mod.Pattern, skip */
+        }
+        // The fullscreen `#test-canvas` auto-created by @strudel/draw's
+        // getDrawContext is still inserted into document.body even with
+        // our no-op overrides above (the call chain runs before the no-op
+        // short-circuits). Hide it via CSS so it never paints over the IDE.
+        // Side note: `nativeViz` remains defined above in case a future phase
+        // wires inline `._pianoroll()` widgets — we'll need the original
+        // impls to delegate to at that point.
+        void nativeViz;
+        if (typeof document !== 'undefined') {
+          const styleId = 'kanopi-strudel-hide-fullscreen-canvas';
+          if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = '#test-canvas { display: none !important; }';
+            document.head.appendChild(style);
+          }
         }
         // Sample banks are no longer hardcoded — the session declares them
         // via `@library <id>`, which `real-core.loadSession` applies through
@@ -432,19 +484,24 @@ async function flush(m: StrudelMod): Promise<void> {
  */
 const loadedBanks = new Set<string>();
 /**
- * Detect code-driven viz hints in Strudel source. Native Strudel exposes
- * `.scope()`, `.pianoroll()`, `.spectrum()` chain methods that render into
- * a dedicated draw target — Kanopi translates these into a panel reveal so
- * the user doesn't need to click into the Viz tab manually.
+ * Inline-widget support for Strudel's `._pianoroll()`, `._scope()`,
+ * `._spectrum()` chain calls. @strudel/codemirror's `widgetPlugin` extension
+ * does the CM6-side decoration work; we just need to dispatch the widget
+ * configs produced by the transpiler (stashed on `options.meta.widgets`
+ * during `afterEval`) into the right EditorView.
  *
- * Priority order: pianoroll > scope > spectrum. Multiple chain calls in one
- * block collapse to the most informative one.
+ * Kanopi can have several Strudel files open at once, so we key views by
+ * fileName and look them up from the active `src.fileId` at eval time.
  */
-export function detectVizHint(code: string): 'scope' | 'pianoroll' | 'spectrum' | undefined {
-  if (/\.pianoroll\s*\(/.test(code)) return 'pianoroll';
-  if (/\.scope\s*\(/.test(code)) return 'scope';
-  if (/\.spectrum\s*\(/.test(code)) return 'spectrum';
-  return undefined;
+const strudelEditorViews = new Map<string, unknown>();
+export function registerStrudelEditorView(fileId: string, view: unknown): void {
+  strudelEditorViews.set(fileId, view);
+}
+export function unregisterStrudelEditorView(fileId: string): void {
+  strudelEditorViews.delete(fileId);
+}
+function currentEditorView(): unknown | undefined {
+  return strudelEditorViews.get(activeFileId);
 }
 
 export async function loadSampleBank(source: string): Promise<void> {

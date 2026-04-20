@@ -28,14 +28,13 @@ class UiStore {
   }
 
   /**
-   * Route a code-driven viz hint to the right panel. Called by the Strudel
-   * adapter when the evaluated code contains `.scope()`, `.pianoroll()` or
-   * similar — the panel auto-reveals with the requested viz selected.
-   * Mirrors the Strudel REPL convention: `$: s("bd").scope()` opens a scope.
+   * Select which viz is showing in the right-panel Viz tab. Unlike the
+   * inline block widgets (`._pianoroll()` etc., rendered by @strudel/codemirror
+   * as CM6 decorations), the right panel is an always-on global overview.
+   * Kept as an opt-in surface — no auto-reveal.
    */
   showViz(which: VizTab) {
     this.vizTab = which;
-    this.rightPanelTab = 'viz';
   }
 
   togglePalette() {

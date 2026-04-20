@@ -19,9 +19,13 @@
   import { kanopiLinter } from './kanopi-lint';
   import { lintGutter } from '@codemirror/lint';
   import { patternHighlightExtension } from '../viz/pattern-highlight';
+  import * as strudelCM from '@strudel/codemirror';
+  import { registerStrudelEditorView, unregisterStrudelEditorView } from '../../lib/runtimes/strudel';
+  // `widgetPlugin` is exported by @strudel/codemirror at runtime (widget.mjs)
+  // but not surfaced in its .d.ts — hence the cast.
+  const widgetPlugin = (strudelCM as unknown as { widgetPlugin: Extension[] }).widgetPlugin;
   import { extractBlocks } from '../../lib/blocks/extract-blocks';
   import { openBlocks } from '../../stores/blocks.svelte';
-  import { detectVizHint } from '../../lib/runtimes/strudel';
 
   type Props = {
     docId: string;
@@ -44,14 +48,6 @@
   function runEval(code: string, v: EditorView, from: number, to: number, actorId?: string) {
     if (!onEval) return;
     rememberEval(v, from, to);
-    // Reveal the matching viz panel if the code contains a native hint like
-    // `.scope()` / `.pianoroll()` / `.spectrum()`. Only fires for Strudel/Tidal
-    // — other runtimes have their own conventions (Hydra canvas, SC scope
-    // window) handled elsewhere.
-    if (runtime === 'strudel' || runtime === 'tidal') {
-      const hint = detectVizHint(code);
-      if (hint) ui.showViz(hint);
-    }
     Promise.resolve()
       .then(() => onEval(code, from, actorId))
       .then(
@@ -88,7 +84,7 @@
       languageFor(lang),
       syntaxHighlighting(highlightFor(lang), { fallback: true }),
       strudel.ext,
-      ...((lang === 'strudel' || lang === 'tidal') ? [miniOverlay, patternHighlightExtension(() => fileName)] : []),
+      ...((lang === 'strudel' || lang === 'tidal') ? [miniOverlay, patternHighlightExtension(() => fileName), ...widgetPlugin] : []),
       ...(lang === 'kanopi' ? [kanopiLinter, lintGutter()] : []),
       flashField,
       flashTheme,
@@ -170,9 +166,18 @@
     view = new EditorView({ state: makeState(doc, runtime), parent: host });
     currentDocId = docId;
     if (view && strudelInstall) void strudelInstall(view);
+    // Register this view as the target for Strudel's inline widgets
+    // (_pianoroll, _scope, _spectrum). Keyed by fileName so the dispatch
+    // lands on the right editor when several Strudel files are open.
+    if (runtime === 'strudel' || runtime === 'tidal') {
+      registerStrudelEditorView(fileName, view);
+    }
   });
 
   onDestroy(() => {
+    if (runtime === 'strudel' || runtime === 'tidal') {
+      unregisterStrudelEditorView(fileName);
+    }
     view?.destroy();
     view = undefined;
   });
@@ -184,6 +189,9 @@
       currentDocId = docId;
       view.setState(makeState(doc, runtime));
       if (view && strudelInstall) void strudelInstall(view);
+      if (runtime === 'strudel' || runtime === 'tidal') {
+        registerStrudelEditorView(fileName, view);
+      }
     }
   });
 </script>
