@@ -24,12 +24,11 @@ interface StrudelHap {
   };
 }
 
-function normalizeLocation(
-  loc: unknown,
-  fileId: string
-): [number, number, string] | undefined {
+// Extract (from,to) composite offsets from a strudel location object.
+// Handles both legacy [from,to] tuples and current {start:number,end:number}.
+function rawOffsetsFromLocation(loc: unknown): [number, number] | undefined {
   if (Array.isArray(loc) && typeof loc[0] === 'number' && typeof loc[1] === 'number') {
-    return [loc[0], loc[1], fileId];
+    return [loc[0], loc[1]];
   }
   if (loc && typeof loc === 'object') {
     const o = loc as { start?: unknown; end?: unknown };
@@ -43,8 +42,9 @@ function normalizeLocation(
       : typeof o.end === 'number'
       ? o.end
       : undefined;
-    if (typeof fromOffset === 'number' && typeof toOffset === 'number' && !Number.isNaN(fromOffset) && !Number.isNaN(toOffset)) {
-      return [fromOffset, toOffset, fileId];
+    if (typeof fromOffset === 'number' && typeof toOffset === 'number'
+        && !Number.isNaN(fromOffset) && !Number.isNaN(toOffset)) {
+      return [fromOffset, toOffset];
     }
   }
   return undefined;
@@ -131,14 +131,19 @@ function emitTokenFromHap(
   const rawLocs = hap.context?.locations;
   const locations: TokenLocation[] | undefined = rawLocs
     ? (rawLocs
-        .map((l) => normalizeLocation(l, activeFileId))
-        .filter((l): l is [number, number, string] => l !== undefined) as TokenLocation[])
+        .map((l) => rawOffsetsFromLocation(l))
+        .map((pair) => (pair ? mapCompositeToSource(pair[0], pair[1]) : undefined))
+        .filter((m): m is { from: number; to: number; fileId: string } => m !== undefined)
+        .map((m) => [m.from, m.to, m.fileId] as TokenLocation))
     : undefined;
+  // Fall back to the file bound by the latest evaluate() if the mapping
+  // didn't resolve (e.g. locations carry an odd shape we don't know).
+  const source = locations?.[0]?.[2] ?? activeFileId;
   adapterEvents.emit({
     schemaVersion: 1,
     type: 'token',
     runtime: 'strudel',
-    source: activeFileId,
+    source,
     t,
     name: name.normalize('NFC'),
     pitch,
@@ -210,18 +215,77 @@ async function ensure(): Promise<StrudelMod> {
 // Per-actor code slots. Strudel evaluates one big program at a time, so we
 // keep each actor's source around and recombine as "$: <code>" lines on every
 // eval/stop. That lets multiple actors coexist in the same Strudel runtime.
-const slots = new Map<string, string>();
+const slots = new Map<string, { code: string; fileId: string }>();
 
-function composite(): string {
-  return [...slots.values()].map((c) => `$: (${c.trim()})`).join('\n\n');
+// Per-slot composite-offset bookkeeping for mapping hap.context.locations
+// (which come from the transpiler operating on the composite source) back to
+// offsets inside the user's original file.
+interface CompositeRange {
+  fileId: string;
+  codeStart: number; // offset of the first char of user code inside composite
+  codeEnd: number;   // exclusive
+  leadingOffset: number; // chars trimmed from the start of original code
+}
+let compositeRanges: CompositeRange[] = [];
+
+function buildComposite(): string {
+  compositeRanges = [];
+  const parts: string[] = [];
+  let pos = 0;
+  const sep = '\n\n';
+  const prefix = '$: (';
+  const suffix = ')';
+  let first = true;
+  for (const [, slot] of slots) {
+    if (!first) {
+      parts.push(sep);
+      pos += sep.length;
+    }
+    parts.push(prefix);
+    pos += prefix.length;
+    const trimmed = slot.code.trimStart();
+    const leadingOffset = slot.code.length - trimmed.length;
+    const trimmedEnd = trimmed.trimEnd();
+    const codeStart = pos;
+    const codeEnd = pos + trimmedEnd.length;
+    compositeRanges.push({
+      fileId: slot.fileId,
+      codeStart,
+      codeEnd,
+      leadingOffset
+    });
+    parts.push(trimmedEnd);
+    pos = codeEnd;
+    parts.push(suffix);
+    pos += suffix.length;
+    first = false;
+  }
+  return parts.join('');
+}
+
+function mapCompositeToSource(
+  from: number,
+  to: number
+): { from: number; to: number; fileId: string } | undefined {
+  for (const r of compositeRanges) {
+    if (from >= r.codeStart && to <= r.codeEnd) {
+      return {
+        from: from - r.codeStart + r.leadingOffset,
+        to: to - r.codeStart + r.leadingOffset,
+        fileId: r.fileId
+      };
+    }
+  }
+  return undefined;
 }
 
 async function flush(m: StrudelMod): Promise<void> {
   if (slots.size === 0) {
+    compositeRanges = [];
     m.hush();
     return;
   }
-  await m.evaluate(composite());
+  await m.evaluate(buildComposite());
 }
 
 export const strudelAdapter: RuntimeAdapter = {
@@ -254,8 +318,9 @@ export const strudelAdapter: RuntimeAdapter = {
 
     const m = await ensure();
     const slot = src?.actorId ?? src?.fileId ?? '__scratch__';
-    slots.set(slot, code);
-    activeFileId = src?.fileId ?? slot;
+    const fileId = src?.fileId ?? slot;
+    slots.set(slot, { code, fileId });
+    activeFileId = fileId;
     stopped = false;
     // Strudel swallows runtime errors into its logger, which fires onEvalError
     // DURING the await below. We clear the latch first, then throw after if an

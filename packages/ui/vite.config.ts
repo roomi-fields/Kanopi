@@ -58,9 +58,11 @@ export default defineConfig({
     global: 'globalThis'
   },
   // Strudel ships the same @strudel/core as a dep of @strudel/web AND
-  // @strudel/codemirror. Without this, Vite pre-bundles two copies and the
-  // runtime complains ("@strudel/core was loaded more than once"), patterns
-  // created in one never register with the other's scheduler → silence.
+  // @strudel/codemirror. Vite pre-bundling still creates two prebundled
+  // chunks (one per top-level package), so the "@strudel/core loaded more
+  // than once" warning persists in dev — but dedupe below guarantees both
+  // chunks resolve the same module graph, so only one scheduler runs and
+  // haps aren't duplicated. Verified via a per-hap counter run on 2026-04-19.
   resolve: {
     dedupe: [
       '@strudel/core',
