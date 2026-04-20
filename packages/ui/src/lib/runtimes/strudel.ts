@@ -261,10 +261,11 @@ async function ensure(): Promise<StrudelMod> {
             emitError(err);
           }
         });
-        // Sample banks are NOT loaded here. The Library panel (see Phase F)
-        // is responsible for enabling banks explicitly so users pay only for
-        // what they want. Until a bank is enabled, only built-in synths work:
-        // sine, sawtooth, square, triangle, pink, white, brown.
+        // TEMPORARY: load dirt-samples by default so s("bd sd hh cp") works
+        // out of the box. Phase F (Library panel) will make this opt-in and
+        // move the hardcoded list into a catalog. Removing this before
+        // Library exists leaves the flagship Strudel flow mute.
+        await mod!.samples('github:tidalcycles/dirt-samples');
         setStatus('ready');
       } catch (err) {
         setStatus('error');
