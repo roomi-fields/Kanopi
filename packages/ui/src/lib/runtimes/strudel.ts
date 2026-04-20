@@ -248,12 +248,23 @@ async function ensure(): Promise<StrudelMod> {
         document.addEventListener('strudel.log', (e) => {
           const detail = (e as CustomEvent).detail as { message?: string; type?: string };
           if (detail?.type === 'error') {
-            const err = new Error(detail.message ?? 'strudel error');
+            let msg = detail.message ?? 'strudel error';
+            // Turn strudel's terse "sound X not found!" into a hint that
+            // actually tells the user what to do. Surfaces in the Console
+            // panel and re-flashes the last-evaluated block red.
+            const missing = /sound (\S+) not found/i.exec(msg);
+            if (missing) {
+              msg = `sound "${missing[1]}" is not loaded. Use a built-in synth (sine, sawtooth, square, triangle) or enable a sample bank via the Library panel.`;
+            }
+            const err = new Error(msg);
             latchedError = err;
             emitError(err);
           }
         });
-        await mod!.samples('github:tidalcycles/dirt-samples');
+        // Sample banks are NOT loaded here. The Library panel (see Phase F)
+        // is responsible for enabling banks explicitly so users pay only for
+        // what they want. Until a bank is enabled, only built-in synths work:
+        // sine, sawtooth, square, triangle, pink, white, brown.
         setStatus('ready');
       } catch (err) {
         setStatus('error');

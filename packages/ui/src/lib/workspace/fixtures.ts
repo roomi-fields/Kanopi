@@ -32,7 +32,7 @@ const raw: { path: string; contents: string }[] = [
   },
   {
     path: 'melody.strudel',
-    contents: `note("c4 e4 g4 b4").sound("piano").slow(2)
+    contents: `note("c4 e4 g4 b4").s("sawtooth").gain(0.4).slow(2)
 `
   },
   {
