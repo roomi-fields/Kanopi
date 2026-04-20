@@ -19,17 +19,26 @@
     }
   });
 
-  // Keep the highlighted row in view as arrow keys move the selection past
-  // the viewport. Without this, holding ArrowDown moves the invisible cursor
-  // but the list stays stuck at the top.
+  // Keep the highlighted row in view as arrow keys move past the viewport.
+  // `scrollIntoView({block:'nearest'})` doesn't reliably scroll the container
+  // in every browser/layout; manipulate scrollTop directly against the list
+  // element instead, using bounding rects so we don't depend on offsetParent.
   $effect(() => {
     if (!ui.paletteOpen) return;
-    // Depend on `selected` so this re-runs on every arrow press.
     const _ = selected;
     void _;
     tick().then(() => {
-      const row = listEl?.querySelector<HTMLElement>('.row.selected');
-      row?.scrollIntoView({ block: 'nearest' });
+      if (!listEl) return;
+      const row = listEl.querySelector<HTMLElement>('.row.selected');
+      if (!row) return;
+      const rowRect = row.getBoundingClientRect();
+      const listRect = listEl.getBoundingClientRect();
+      const rowTop = rowRect.top - listRect.top + listEl.scrollTop;
+      const rowBottom = rowTop + rowRect.height;
+      const viewTop = listEl.scrollTop;
+      const viewBottom = viewTop + listEl.clientHeight;
+      if (rowTop < viewTop) listEl.scrollTop = rowTop;
+      else if (rowBottom > viewBottom) listEl.scrollTop = rowBottom - listEl.clientHeight;
     });
   });
 
