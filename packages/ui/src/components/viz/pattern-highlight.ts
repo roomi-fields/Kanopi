@@ -13,7 +13,8 @@ import type { TokenEvent } from '../../lib/events/types';
 interface ActivePulse {
   from: number;
   to: number;
-  until: number; // wall-clock ms
+  startAt: number; // wall-clock ms — don't show before this time
+  until: number; // wall-clock ms — dismiss at/after this time
 }
 
 const setActivePulses = StateEffect.define<ActivePulse[]>();
@@ -31,6 +32,7 @@ const pulseField = StateField.define<ActivePulse[]>({
         .map((p) => ({
           from: tr.changes.mapPos(p.from),
           to: tr.changes.mapPos(p.to),
+          startAt: p.startAt,
           until: p.until
         }))
         .filter((p) => p.from < p.to);
@@ -47,8 +49,14 @@ const pulsesToDecorations = EditorView.decorations.compute(
   (state) => {
     const pulses = state.field(pulseField, false) ?? [];
     const docLen = state.doc.length;
+    const now = performance.now();
     const b = new RangeSetBuilder<Decoration>();
-    const sorted = [...pulses].sort((a, b) => a.from - b.from || a.to - b.to);
+    // Only show pulses whose startAt has been reached. Pulses scheduled in the
+    // future sit in the field but stay invisible until the frame tick catches
+    // up — this aligns the visual flash with the audible onset rather than
+    // firing at event-receive time (scheduler lookahead ~100ms).
+    const visible = pulses.filter((p) => p.startAt <= now);
+    const sorted = [...visible].sort((a, b) => a.from - b.from || a.to - b.to);
     let lastFrom = -1;
     let lastTo = -1;
     for (const p of sorted) {
@@ -93,13 +101,17 @@ export function patternHighlightPlugin(getFileId: () => string) {
           if (!e.locations?.length) return;
           const fileId = getFileId();
           if (!fileId) return;
-          const now = performance.now();
-          const until = Math.max(now + 80, e.t + Math.max(60, e.duration));
+          // `e.t` is wall-clock ms of the audible onset (converted from the
+          // Strudel scheduler's audio-clock lookahead). Using it as `startAt`
+          // keeps the flash visually aligned with the sound instead of firing
+          // at event-receive time (which would be ~100ms ahead).
+          const startAt = e.t;
+          const until = Math.max(startAt + 80, startAt + Math.max(60, e.duration));
           for (const [from, to, locFileId] of e.locations) {
             if (locFileId !== fileId) continue;
             if (typeof from !== 'number' || typeof to !== 'number') continue;
             if (to <= from) continue;
-            this.pending.push({ from, to, until });
+            this.pending.push({ from, to, startAt, until });
           }
           if (this.pending.length && !this.rafId) {
             this.rafId = requestAnimationFrame(this.frame);
@@ -116,11 +128,13 @@ export function patternHighlightPlugin(getFileId: () => string) {
         this.pending = [];
         this.active = next;
         this.view.dispatch({ effects: setActivePulses.of(next) });
-        // Re-schedule if there are still active pulses that need to expire.
+        // Re-schedule while there's any pulse that still needs to flip
+        // state — either waiting to start (startAt in the future) or to end
+        // (until in the future). Avoids staying silent during the lookahead
+        // window before any pulse has crossed its startAt.
         if (next.some((p) => p.until > now)) {
           this.rafId = requestAnimationFrame(this.frame);
         } else if (next.length > 0) {
-          // All expired at this exact frame — clear next tick.
           this.rafId = requestAnimationFrame(this.frame);
         }
       }
