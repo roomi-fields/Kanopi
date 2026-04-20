@@ -90,21 +90,29 @@ SessionParser → AST actors/scenes/maps
      │
      ▼
 CoreRuntime (orchestrateur)
-     ├─► Clock ─────────► tick bus (beat/bar events)
-     │
-     ├─► ActorManager ──► charge fichiers code par runtime
-     │
-     ├─► SceneManager ──► applique snapshots on/off
-     │
-     ├─► MapEngine ─────► route CC/OSC/note → actions
-     │
-     └─► Dispatcher ────► schedule events → Transports
+     ├─► Clock ─────────► tick bus (beat/bar events)  ──┐
+     │                                                  │
+     ├─► ActorManager ──► charge fichiers code          │
+     │                    par runtime                    │
+     ├─► SceneManager ──► applique snapshots on/off     │
+     │                                                  │
+     ├─► MapEngine ─────► route CC/OSC/note → actions   │
+     │                                                  │
+     ├─► EventBus ──────► KanopiEvent unifié ◄──────────┤
+     │                    (cf. EVENTS.md)               │
+     │                                                  │
+     └─► Dispatcher ────► schedule events → Transports ◄┘
                                │
                                ├─► MIDI (WebMIDI)
                                ├─► OSC (WebSocket → osc-bridge)
                                ├─► WebAudio
                                └─► Runtime-specific (Strudel API, Hydra, SC…)
 ```
+
+Le **EventBus UI** (`core.events`) est le point d'entrée unique pour tout
+consommateur qui a besoin de réagir à ce que produit un runtime ou le clock :
+visualizers, devtools, futur pont OSC. Les adapters runtime publient dedans
+via un bus local relayé par le core. Spécification complète : [`EVENTS.md`](EVENTS.md).
 
 ## Session parser
 

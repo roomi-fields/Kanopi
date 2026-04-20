@@ -13,6 +13,8 @@ import type {
   SceneManager,
   Unsubscribe
 } from './types';
+import { createEventBus } from '../events/bus';
+import type { EventBus } from '../events/types';
 
 function bus<T>() {
   const subs = new Set<(v: T) => void>();
@@ -35,12 +37,19 @@ export class MockClock implements Clock {
   private rafId = 0;
   private onTransport?: (playing: boolean) => void;
   private onTempo?: (bpm: number) => void;
+  private absBeat = 0;
+  private absBar = 0;
+  private absPhase = 0;
+  private eventsBus?: EventBus;
 
   setOnTransport(fn: (playing: boolean) => void) {
     this.onTransport = fn;
   }
   setOnTempo(fn: (bpm: number) => void) {
     this.onTempo = fn;
+  }
+  setEventBus(bus: EventBus) {
+    this.eventsBus = bus;
   }
 
   constructor() {
@@ -53,16 +62,45 @@ export class MockClock implements Clock {
     this.lastTick = now;
     if (this.state.playing) {
       const beatsPerSec = this.state.bpm / 60;
-      const totalPhase = this.state.beat + this.state.phase + dt * beatsPerSec;
-      const beat = Math.floor(totalPhase) % 4;
-      const barInc = Math.floor(totalPhase / 4);
+      const prevAbsPhase = this.absPhase;
+      this.absPhase += dt * beatsPerSec;
+      const newBeatAbs = Math.floor(this.absPhase);
+      const beatInc = newBeatAbs - Math.floor(prevAbsPhase);
+      const newBarAbs = Math.floor(newBeatAbs / 4);
+      const barInc = newBarAbs - Math.floor(Math.floor(prevAbsPhase) / 4);
       this.state = {
         ...this.state,
-        beat,
-        phase: totalPhase - Math.floor(totalPhase),
-        bar: this.state.bar + barInc
+        beat: newBeatAbs % 4,
+        phase: this.absPhase - newBeatAbs,
+        bar: 1 + newBarAbs
       };
       this.b.emit(this.state);
+      if (beatInc > 0 && this.eventsBus) {
+        for (let i = 0; i < beatInc; i++) {
+          this.absBeat += 1;
+          this.eventsBus.emit({
+            schemaVersion: 1,
+            type: 'beat',
+            runtime: 'clock',
+            t: now,
+            count: this.absBeat,
+            bpm: this.state.bpm,
+            phase: this.state.phase
+          });
+        }
+      }
+      if (barInc > 0 && this.eventsBus) {
+        for (let i = 0; i < barInc; i++) {
+          this.absBar += 1;
+          this.eventsBus.emit({
+            schemaVersion: 1,
+            type: 'bar',
+            runtime: 'clock',
+            t: now,
+            count: this.absBar
+          });
+        }
+      }
     }
     this.rafId = requestAnimationFrame(this.loop);
   }
@@ -71,13 +109,36 @@ export class MockClock implements Clock {
     const was = this.state.playing;
     this.state = { ...this.state, playing: true };
     this.b.emit(this.state);
-    if (!was) this.onTransport?.(true);
+    if (!was) {
+      this.onTransport?.(true);
+      this.eventsBus?.emit({
+        schemaVersion: 1,
+        type: 'transport',
+        runtime: 'clock',
+        t: performance.now(),
+        playing: true,
+        bpm: this.state.bpm
+      });
+    }
   }
   stop() {
     const was = this.state.playing;
     this.state = { ...this.state, playing: false, bar: 1, beat: 0, phase: 0 };
     this.b.emit(this.state);
-    if (was) this.onTransport?.(false);
+    if (was) {
+      this.absBeat = 0;
+      this.absBar = 0;
+      this.absPhase = 0;
+      this.onTransport?.(false);
+      this.eventsBus?.emit({
+        schemaVersion: 1,
+        type: 'transport',
+        runtime: 'clock',
+        t: performance.now(),
+        playing: false,
+        bpm: this.state.bpm
+      });
+    }
   }
   toggle() {
     if (this.state.playing) this.stop();
@@ -226,8 +287,10 @@ class MockCore implements CoreApi {
   scenes = new MockScenes();
   maps = new MockMaps();
   console = new MockConsole();
+  events: EventBus = createEventBus();
 
   constructor() {
+    this.clock.setEventBus(this.events);
     this.console.push({ runtime: 'system', level: 'info', msg: 'kanopi mock runtime online' });
   }
 

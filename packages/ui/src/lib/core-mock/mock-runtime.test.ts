@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createMockCore } from './mock-runtime';
 import { MockActors, MockScenes, MockMaps } from './mock-runtime';
+import type { KanopiEvent } from '../events/types';
 
 describe('mock core', () => {
   it('starts empty (populated via loadSession)', () => {
@@ -52,5 +53,30 @@ describe('mock core', () => {
     const m = new MockMaps();
     m.setMappings([{ id: 'm1', source: { kind: 'cv', index: 1 }, target: { kind: 'tempo' } }]);
     expect(m.list()).toHaveLength(1);
+  });
+
+  it('clock.play emits a transport event on the event bus', () => {
+    const core = createMockCore();
+    const spy = vi.fn();
+    core.events.on('transport', spy);
+    core.clock.play();
+    expect(spy).toHaveBeenCalledTimes(1);
+    const ev = spy.mock.calls[0][0] as KanopiEvent;
+    expect(ev.type).toBe('transport');
+    if (ev.type === 'transport') {
+      expect(ev.playing).toBe(true);
+      expect(ev.runtime).toBe('clock');
+    }
+    core.clock.stop();
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it('clock emits no duplicate transport when play called twice', () => {
+    const core = createMockCore();
+    const spy = vi.fn();
+    core.events.on('transport', spy);
+    core.clock.play();
+    core.clock.play();
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 });

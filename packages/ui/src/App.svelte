@@ -8,6 +8,7 @@
   import RightPanel from './components/right-panel/RightPanel.svelte';
   import CommandPalette from './components/palette/CommandPalette.svelte';
   import HydraCanvas from './components/runtime/HydraCanvas.svelte';
+  import EventsOverlay from './components/devtools/EventsOverlay.svelte';
   import Resizer from './components/layout/Resizer.svelte';
   import { ui } from './stores/ui.svelte';
   import { installGlobalKeybindings } from './lib/keybindings/bindings';
@@ -16,6 +17,9 @@
   import { workspace } from './stores/workspace.svelte';
   import { actors as actorsStore } from './stores/actors.svelte';
   import { markLastEvalError } from './components/editor/eval-tracker';
+
+  const showEventsOverlay =
+    typeof location !== 'undefined' && new URLSearchParams(location.search).has('events');
 
   onMount(() => {
     core.bindActorFiles((name) => {
@@ -131,6 +135,9 @@
 
 <HydraCanvas />
 <CommandPalette />
+{#if showEventsOverlay}
+  <EventsOverlay />
+{/if}
 
 <style>
   .app {

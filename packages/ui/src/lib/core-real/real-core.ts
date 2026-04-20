@@ -17,6 +17,8 @@ import { getAdapter, listRuntimes } from '../runtimes/registry';
 import { installConsoleBridge } from '../runtimes/console-bridge';
 import { parseSession } from '../session';
 import { enableMidi, matchMapping, type MidiEvent } from '../midi/midi-input';
+import { createEventBus } from '../events/bus';
+import type { EventBus } from '../events/types';
 
 class RealActors extends MockActors {
   // We override toggle to delegate to the real-core orchestration via a callback.
@@ -54,10 +56,16 @@ class RealCore implements CoreApi {
   scenes = new MockScenes();
   maps = new MockMaps();
   console = new MockConsole();
+  events: EventBus = createEventBus();
 
   private getActorFile?: (name: string) => ActorFileRef | undefined;
 
   constructor() {
+    this.clock.setEventBus(this.events);
+    for (const id of listRuntimes()) {
+      const a = getAdapter(id);
+      if (a?.events) a.events.onAny((e) => this.events.emit(e));
+    }
     this.console.push({ runtime: 'system', level: 'info', msg: 'kanopi runtime online' });
     installConsoleBridge((e) => this.console.push(e));
     this.actors.setOnToggle((a, willBeActive) => {

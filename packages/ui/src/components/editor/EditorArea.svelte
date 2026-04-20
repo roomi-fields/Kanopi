@@ -13,6 +13,7 @@
     {#if file}
       <CMEditor
         docId={file.id}
+        fileName={file.name}
         doc={file.contents}
         runtime={file.runtime}
         onChange={(text) => workspace.updateContents(file.id, text)}

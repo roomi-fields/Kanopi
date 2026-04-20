@@ -1,4 +1,5 @@
 import type { Runtime } from '../core-mock';
+import type { EventBus } from '../events/types';
 
 export type EvalSource = { actorId?: string; fileId: string };
 
@@ -15,5 +16,10 @@ export interface RuntimeAdapter {
   stop(src: EvalSource, log: LogPush): Promise<void>;
   /** Propagate global tempo change. Optional. */
   setBpm?(bpm: number, log: LogPush): void;
+  /**
+   * Optional per-adapter event bus. If present, the core relays `onAny` into
+   * `core.events` at init so visualizers consume a single unified stream.
+   */
+  readonly events?: EventBus;
   dispose(): Promise<void>;
 }

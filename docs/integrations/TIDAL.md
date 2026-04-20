@@ -373,6 +373,13 @@ need to keep it and forward `onTrigger` to a Kanopi bus). Combining **both**
 approaches (Tier 1 static + Tier 2 event-timed) would make Kanopi strictly
 better than any single reference editor.
 
+In Kanopi, the forwarding target is the unified `KanopiEvent` bus (`core.events`)
+specified in [`../design/EVENTS.md`](../design/EVENTS.md). The Strudel adapter
+converts each `hap` to a `token` event (wall-clock `t`, `locations` from
+`hap.context.locations`), so the visualizer layer (`PatternHighlight`, `Pianoroll`)
+is runtime-agnostic — the same CM6 extension lights up mini-notation for any
+future runtime that emits `token` with `locations`.
+
 ### 8.3 Parsing mini-notation inside JS strings
 
 - **Tagged template approach (not used by Strudel)**: `` mini`bd sd*2` `` would

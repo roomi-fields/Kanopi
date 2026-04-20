@@ -18,15 +18,17 @@
   import { miniOverlay } from './mini-overlay';
   import { kanopiLinter } from './kanopi-lint';
   import { lintGutter } from '@codemirror/lint';
+  import { patternHighlightExtension } from '../viz/pattern-highlight';
 
   type Props = {
     docId: string;
+    fileName: string;
     doc: string;
     runtime: Runtime;
     onChange: (text: string) => void;
     onEval?: (code: string) => void | Promise<boolean | void>;
   };
-  const { docId, doc, runtime, onChange, onEval }: Props = $props();
+  const { docId, fileName, doc, runtime, onChange, onEval }: Props = $props();
 
   let host: HTMLDivElement;
   let view: EditorView | undefined;
@@ -61,7 +63,7 @@
       languageFor(lang),
       syntaxHighlighting(highlightFor(lang), { fallback: true }),
       strudel.ext,
-      ...((lang === 'strudel' || lang === 'tidal') ? [miniOverlay] : []),
+      ...((lang === 'strudel' || lang === 'tidal') ? [miniOverlay, patternHighlightExtension(() => fileName)] : []),
       ...(lang === 'kanopi' ? [kanopiLinter, lintGutter()] : []),
       flashField,
       flashTheme,

@@ -1,3 +1,5 @@
+import type { EventBus } from '../events/types';
+
 export type Unsubscribe = () => void;
 
 export type Runtime =
@@ -107,6 +109,7 @@ export interface CoreApi {
   scenes: SceneManager;
   maps: MapEngine;
   console: ConsoleBus;
+  events: EventBus;
   loadSession(text: string): Promise<void>;
   /** Evaluate a code block in the given runtime. Rejects on eval error. */
   evaluateBlock(runtime: Runtime, code: string, sourceId: string): Promise<void>;
