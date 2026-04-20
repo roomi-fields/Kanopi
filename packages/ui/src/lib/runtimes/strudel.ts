@@ -294,15 +294,45 @@ interface CompositeRange {
 }
 let compositeRanges: CompositeRange[] = [];
 
+// Per-slot evaluation errors captured during the last `flush`. When a slot's
+// IIFE wrapper catches a ReferenceError (typo like `no(...)` instead of
+// `note(...)`) or any other runtime throw, we record it here keyed by slotId.
+// `adapter.evaluate` consults this map for the current-eval's slotId and
+// re-throws so the editor flashes red on the exact block at fault — without
+// taking down the other armed slots, which keep their composite entry.
+const slotErrors = new Map<string, Error>();
+
+// Global error-report hook the wrapped slot code calls on catch. Exposed on
+// `window` so the eval'd source can reach it (it runs inside Strudel's own
+// `evaluate` sandbox, which doesn't share module scope). Strudel transpiles
+// every string literal into a mini-notation Pattern, so we can't pass the
+// slotId as a string — we use a numeric index that maps to the slotId via
+// `compositeSlotIds`, rebuilt each `buildComposite` call.
+const REPORT_FN = '__kanopiSlotError';
+let compositeSlotIds: string[] = [];
+if (typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>)[REPORT_FN] = (slotIdx: number, err: unknown) => {
+    const id = compositeSlotIds[slotIdx];
+    if (!id) return;
+    slotErrors.set(id, err instanceof Error ? err : new Error(String(err)));
+  };
+}
+
 function buildComposite(): string {
   compositeRanges = [];
+  compositeSlotIds = [];
   const parts: string[] = [];
   let pos = 0;
   const sep = '\n\n';
-  const prefix = '$: (';
-  const suffix = ')';
+  // Each slot becomes: `$: ((() => { try { return <code>; } catch (e) { ... return silence } })())`
+  // - The IIFE isolates the slot's execution: a runtime throw is caught,
+  //   reported to the global `__kanopiSlotError` hook, and replaced with
+  //   Strudel's `silence` pattern so composite evaluation keeps going.
+  // - Code offsets for `compositeRanges` point at the user code inside the
+  //   `return` statement, so mini-notation location mapping still works.
+  const prefix = '$: ((() => { try { return ';
   let first = true;
-  for (const [, slot] of slots) {
+  for (const [slotId, slot] of slots) {
     if (!first) {
       parts.push(sep);
       pos += sep.length;
@@ -323,8 +353,13 @@ function buildComposite(): string {
     });
     parts.push(trimmedEnd);
     pos = codeEnd;
-    parts.push(suffix);
-    pos += suffix.length;
+    // Numeric index into compositeSlotIds — Strudel transpile turns string
+    // literals into mini-notation Patterns, numbers are left untouched.
+    const idx = compositeSlotIds.length;
+    compositeSlotIds.push(slotId);
+    const tail = `; } catch (e) { ${REPORT_FN}(${idx}, e); return silence; } })())`;
+    parts.push(tail);
+    pos += tail.length;
     first = false;
   }
   return parts.join('');
@@ -394,6 +429,9 @@ export const strudelAdapter: RuntimeAdapter = {
     // DURING the await below. We clear the latch first, then throw after if an
     // error was captured, so the outer .then() chain sees a real rejection.
     latchedError = undefined;
+    // Clear just this slot's previous error so a successful re-eval clears
+    // the red state. Other slots keep their error status until re-evaluated.
+    slotErrors.delete(slot);
     try {
       await flush(m);
     } catch (err) {
@@ -405,6 +443,16 @@ export const strudelAdapter: RuntimeAdapter = {
       latchedError = undefined;
       log({ runtime: 'strudel', level: 'error', msg: String(err) });
       throw err instanceof Error ? err : new Error(String(err));
+    }
+    // After composite eval, the IIFE wrapper has populated slotErrors for any
+    // slot that threw at runtime. Re-throw only for the current slot — the
+    // caller (CMEditor's runEval) flashes red on the right block. Other slots
+    // with errors stay silent in the composite and keep their red state until
+    // re-evaluated.
+    const slotErr = slotErrors.get(slot);
+    if (slotErr) {
+      log({ runtime: 'strudel', level: 'error', msg: `[${slot}] ${slotErr.message}` });
+      throw slotErr;
     }
     // First successful eval: tap the superdough master gain to feed scope/
     // spectrum visualizers. Safe to call repeatedly — attachAnalyserOnce is
@@ -419,11 +467,13 @@ export const strudelAdapter: RuntimeAdapter = {
       if (!slot || slot === '__hush__') {
         stopped = true;
         slots.clear();
+        slotErrors.clear();
         m.hush();
         log({ runtime: 'strudel', level: 'info', msg: 'hush (all slots)' });
         return;
       }
       slots.delete(slot);
+      slotErrors.delete(slot);
       if (slots.size === 0) stopped = true;
       await flush(m);
       log({ runtime: 'strudel', level: 'info', msg: `stop [${slot}]` });
