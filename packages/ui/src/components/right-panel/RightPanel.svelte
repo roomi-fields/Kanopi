@@ -4,12 +4,14 @@
   import ScenesPanel from './ScenesPanel.svelte';
   import InspectorPanel from './InspectorPanel.svelte';
   import ConsolePanel from './ConsolePanel.svelte';
+  import VizPanel from '../viz/VizPanel.svelte';
 
   const tabs: { id: RightPanelTab; label: string }[] = [
     { id: 'actors', label: 'Actors' },
     { id: 'scenes', label: 'Scenes' },
     { id: 'inspector', label: 'Inspector' },
-    { id: 'console', label: 'Console' }
+    { id: 'console', label: 'Console' },
+    { id: 'viz', label: 'Viz' }
   ];
 </script>
 
@@ -31,6 +33,7 @@
     {:else if ui.rightPanelTab === 'scenes'}<ScenesPanel />
     {:else if ui.rightPanelTab === 'inspector'}<InspectorPanel />
     {:else if ui.rightPanelTab === 'console'}<ConsolePanel />
+    {:else if ui.rightPanelTab === 'viz'}<VizPanel />
     {/if}
   </div>
 </aside>

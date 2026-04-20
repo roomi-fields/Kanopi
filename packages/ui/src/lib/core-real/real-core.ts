@@ -122,13 +122,21 @@ class RealCore implements CoreApi {
       }
       this.log({ runtime: 'system', level: 'info', msg: `play: ${actives.length} actor(s)` });
     } else {
-      // stop all active actors
-      for (const a of actives) {
-        const ref = this.getActorFile?.(a.name);
-        const runtime = ref?.runtime ?? a.runtime;
-        const adapter = getAdapter(runtime);
+      // Stop every known runtime, not just the active actors. A Ctrl+Enter
+      // eval on a file that isn't bound to an @actor still leaves Strudel
+      // playing — hushing by runtime id is the only way to be sure the
+      // transport stop actually stops audio.
+      const seen = new Set<string>();
+      for (const id of listRuntimes()) {
+        if (seen.has(id)) continue;
+        seen.add(id);
+        const adapter = getAdapter(id);
         if (!adapter) continue;
-        await adapter.stop({ actorId: a.name, fileId: a.name }, this.log);
+        try {
+          await adapter.stop({ actorId: '__hush__', fileId: '__hush__' }, this.log);
+        } catch {
+          /* swallow — stop must be best-effort */
+        }
       }
       this.log({ runtime: 'system', level: 'info', msg: 'stop: all runtimes' });
     }

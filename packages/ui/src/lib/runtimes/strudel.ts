@@ -8,6 +8,47 @@ interface StrudelMod {
   hush: () => void;
   samples: (url: string | Record<string, unknown>, base?: string) => Promise<unknown>;
   getAudioContext?: () => AudioContext;
+  getSuperdoughAudioController?: () => {
+    output?: {
+      destinationGain?: GainNode;
+    };
+  };
+}
+
+let analyserAttached = false;
+let currentAnalyser: AnalyserNode | undefined;
+
+/**
+ * Returns the Strudel master AnalyserNode if the audio path has been tapped.
+ * Visualizers use this to recover state when they mount AFTER the one-shot
+ * `audio-attach` event has already fired.
+ */
+export function getStrudelAnalyser(): AnalyserNode | undefined {
+  return currentAnalyser;
+}
+
+function attachAnalyserOnce() {
+  if (analyserAttached) return;
+  if (!mod) return;
+  const ctrl = mod.getSuperdoughAudioController?.();
+  const master = ctrl?.output?.destinationGain;
+  const ctx = mod.getAudioContext?.();
+  if (!master || !ctx) return;
+  const analyser = ctx.createAnalyser();
+  analyser.fftSize = 2048;
+  analyser.smoothingTimeConstant = 0.5;
+  master.connect(analyser);
+  analyserAttached = true;
+  currentAnalyser = analyser;
+  adapterEvents.emit({
+    schemaVersion: 1,
+    type: 'audio-attach',
+    runtime: 'strudel',
+    source: 'master',
+    t: performance.now(),
+    analyser,
+    channels: 2
+  });
 }
 
 // Strudel hap: the minimum surface we rely on at runtime. Kept loose on
@@ -22,6 +63,20 @@ interface StrudelHap {
     locations?: Array<unknown>;
     [k: string]: unknown;
   };
+}
+
+// Parse a Strudel note literal ("c4", "f#3", "eb5", "C4", "C#4"...) into a
+// MIDI note number. Returns undefined for anything we can't confidently map.
+const NOTE_BASE: Record<string, number> = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 };
+function parseNoteToMidi(s: string): number | undefined {
+  const m = /^([a-gA-G])([#b]?)(-?\d+)$/.exec(s.trim());
+  if (!m) return undefined;
+  const base = NOTE_BASE[m[1].toLowerCase()];
+  if (base === undefined) return undefined;
+  const acc = m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0;
+  const oct = parseInt(m[3], 10);
+  // MIDI: C-1 = 0, C4 = 60 (octave + 1) × 12 offset.
+  return (oct + 1) * 12 + base + acc;
 }
 
 // Extract (from,to) composite offsets from a strudel location object.
@@ -115,15 +170,13 @@ function emitTokenFromHap(
     if (typeof obj.s === 'string') name = obj.s;
     else if (typeof obj.sound === 'string') name = obj.sound as string;
     else if (typeof obj.note === 'string') name = obj.note as string;
-    else if (typeof obj.note === 'number') {
-      pitch = obj.note as number;
-      name = String(obj.note);
-    }
-    if (typeof obj.note === 'number' && pitch === undefined) pitch = obj.note as number;
-    if (typeof obj.n === 'number') pitch = pitch ?? (obj.n as number);
+    if (typeof obj.note === 'number') pitch = obj.note as number;
+    else if (typeof obj.note === 'string') pitch = parseNoteToMidi(obj.note as string);
+    if (typeof obj.n === 'number' && pitch === undefined) pitch = obj.n as number;
     if (typeof obj.gain === 'number') gain = obj.gain as number;
   } else if (typeof v === 'string') {
     name = v;
+    pitch = parseNoteToMidi(v);
   } else if (typeof v === 'number') {
     name = String(v);
     pitch = v;
@@ -338,6 +391,10 @@ export const strudelAdapter: RuntimeAdapter = {
       log({ runtime: 'strudel', level: 'error', msg: String(err) });
       throw err instanceof Error ? err : new Error(String(err));
     }
+    // First successful eval: tap the superdough master gain to feed scope/
+    // spectrum visualizers. Safe to call repeatedly — attachAnalyserOnce is
+    // idempotent and only runs once per AudioContext lifetime.
+    attachAnalyserOnce();
     log({ runtime: 'strudel', level: 'info', msg: `eval ok [${slot}] (${code.length}b)` });
   },
   async stop(src: EvalSource, log: LogPush) {

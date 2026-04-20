@@ -1,5 +1,5 @@
 export type ActivityView = 'files' | 'library' | 'search' | 'hardware' | 'git' | 'docs' | 'account';
-export type RightPanelTab = 'actors' | 'scenes' | 'inspector' | 'console';
+export type RightPanelTab = 'actors' | 'scenes' | 'inspector' | 'console' | 'viz';
 
 class UiStore {
   activeActivityView = $state<ActivityView>('files');
