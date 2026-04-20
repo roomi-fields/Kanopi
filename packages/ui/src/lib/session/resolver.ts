@@ -19,10 +19,16 @@ const RUNTIMES = new Set<Runtime>([
   'system'
 ]);
 
+export interface TimeSignature {
+  num: number;
+  den: number;
+}
+
 export interface ResolveResult {
   actors: Actor[];
   scenes: Scene[];
   mappings: Mapping[];
+  timeSignature?: TimeSignature;
   diagnostics: Diagnostic[];
 }
 
@@ -31,10 +37,24 @@ export function resolve(ast: SessionAST): ResolveResult {
   const scenes: Scene[] = [];
   const mappings: Mapping[] = [];
   const diagnostics: Diagnostic[] = [...ast.diagnostics];
+  let timeSignature: TimeSignature | undefined;
   let mappingSeq = 0;
 
   for (const node of ast.nodes) {
-    if (node.type === 'actor') {
+    if (node.type === 'time') {
+      // Last @time wins; warn if redeclared so the user sees the override.
+      if (timeSignature) {
+        diagnostics.push({
+          severity: 'warning',
+          message: `@time redeclared (previous value overridden)`,
+          range: node.range
+        });
+      }
+      timeSignature = {
+        num: parseInt(node.num.text, 10),
+        den: node.den ? parseInt(node.den.text, 10) : 4
+      };
+    } else if (node.type === 'actor') {
       const runtime = node.runtime.text;
       if (!RUNTIMES.has(runtime as Runtime)) {
         diagnostics.push({ severity: 'error', message: `unknown runtime "${runtime}"`, range: node.runtime.range });
@@ -118,7 +138,7 @@ export function resolve(ast: SessionAST): ResolveResult {
     }
   }
 
-  return { actors, scenes, mappings, diagnostics };
+  return { actors, scenes, mappings, timeSignature, diagnostics };
 }
 
 function liftSource(node: import('./ast').MapSourceNode): MapSource {

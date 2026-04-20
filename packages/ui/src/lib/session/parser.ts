@@ -22,7 +22,43 @@ export function parseSession(source: string): SessionAST {
     const args = l.tokens.slice(1);
     const range: Range = spanOf(l.tokens, lineRange(l));
 
-    if (head.text === '@actor') {
+    if (head.text === '@time') {
+      if (args.length < 1) {
+        nodes.push({ type: 'malformed', text: l.text, reason: '@time expects: @time N or @time N/D', range });
+        diagnostics.push({ severity: 'error', message: '@time expects a value (e.g. 4 or 3/4)', range });
+        continue;
+      }
+      const raw = args[0];
+      const m = /^(\d+)(?:\/(\d+))?$/.exec(raw.text);
+      if (!m) {
+        nodes.push({ type: 'malformed', text: l.text, reason: `@time "${raw.text}" invalid (expect N or N/D, e.g. 3/4)`, range });
+        diagnostics.push({ severity: 'error', message: `@time "${raw.text}" invalid — expected N or N/D like 3/4`, range: raw.range });
+        continue;
+      }
+      const num = parseInt(m[1], 10);
+      const den = m[2] ? parseInt(m[2], 10) : undefined;
+      if (num < 1 || num > 32) {
+        diagnostics.push({ severity: 'error', message: `@time numerator must be 1..32 (got ${num})`, range: raw.range });
+        continue;
+      }
+      if (den !== undefined && ![1, 2, 4, 8, 16, 32].includes(den)) {
+        diagnostics.push({ severity: 'warning', message: `@time denominator ${den} unusual (expected 1/2/4/8/16/32)`, range: raw.range });
+      }
+      const baseStart = raw.range.start;
+      const subToken = (text: string, off: number): Token => ({
+        text,
+        range: {
+          start: { line: baseStart.line, col: baseStart.col + off, offset: baseStart.offset + off },
+          end: { line: baseStart.line, col: baseStart.col + off + text.length, offset: baseStart.offset + off + text.length }
+        }
+      });
+      nodes.push({
+        type: 'time',
+        num: subToken(m[1], 0),
+        den: m[2] ? subToken(m[2], m[1].length + 1) : undefined,
+        range
+      });
+    } else if (head.text === '@actor') {
       if (args.length < 3) {
         nodes.push({ type: 'malformed', text: l.text, reason: '@actor expects: @actor <name> <file> <runtime>', range });
         diagnostics.push({ severity: 'error', message: '@actor expects 3 arguments', range });

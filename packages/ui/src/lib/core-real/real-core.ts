@@ -203,6 +203,10 @@ class RealCore implements CoreApi {
 
     this.maps.setMappings(r.mappings);
 
+    // Apply @time signature if declared. Default 4/4 if absent so reopening a
+    // session that dropped the directive resets to the standard signature.
+    this.clock.setTimeSignature(r.timeSignature?.num ?? 4);
+
     for (const e of r.errors) {
       const where = e.line > 0 ? ` (line ${e.line})` : '';
       this.log({ runtime: 'kanopi', level: 'error', msg: `session: ${e.msg}${where}` });

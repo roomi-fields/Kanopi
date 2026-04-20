@@ -30,7 +30,7 @@ function bus<T>() {
 }
 
 export class MockClock implements Clock {
-  state: ClockState = { bpm: 128, bar: 1, beat: 0, phase: 0, playing: false };
+  state: ClockState = { bpm: 128, bar: 1, beat: 0, beatsPerBar: 4, phase: 0, playing: false };
   private lastTick = performance.now();
   private tapTimes: number[] = [];
   private b = bus<ClockState>();
@@ -66,11 +66,12 @@ export class MockClock implements Clock {
       this.absPhase += dt * beatsPerSec;
       const newBeatAbs = Math.floor(this.absPhase);
       const beatInc = newBeatAbs - Math.floor(prevAbsPhase);
-      const newBarAbs = Math.floor(newBeatAbs / 4);
-      const barInc = newBarAbs - Math.floor(Math.floor(prevAbsPhase) / 4);
+      const bpb = this.state.beatsPerBar || 4;
+      const newBarAbs = Math.floor(newBeatAbs / bpb);
+      const barInc = newBarAbs - Math.floor(Math.floor(prevAbsPhase) / bpb);
       this.state = {
         ...this.state,
-        beat: newBeatAbs % 4,
+        beat: newBeatAbs % bpb,
         phase: this.absPhase - newBeatAbs,
         bar: 1 + newBarAbs
       };
@@ -123,7 +124,7 @@ export class MockClock implements Clock {
   }
   stop() {
     const was = this.state.playing;
-    this.state = { ...this.state, playing: false, bar: 1, beat: 0, phase: 0 };
+    this.state = { ...this.state, playing: false, bar: 1, beat: 0, phase: 0 }; // preserve beatsPerBar on stop
     this.b.emit(this.state);
     if (was) {
       this.absBeat = 0;
@@ -150,6 +151,12 @@ export class MockClock implements Clock {
     this.state = { ...this.state, bpm };
     this.b.emit(this.state);
     if (prev !== bpm) this.onTempo?.(bpm);
+  }
+  setTimeSignature(beatsPerBar: number) {
+    const n = Math.max(1, Math.min(32, Math.round(beatsPerBar)));
+    if (this.state.beatsPerBar === n) return;
+    this.state = { ...this.state, beatsPerBar: n };
+    this.b.emit(this.state);
   }
   tap() {
     const now = performance.now();

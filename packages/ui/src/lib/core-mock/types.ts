@@ -15,7 +15,8 @@ export type Runtime =
 export interface ClockState {
   bpm: number;
   bar: number;
-  beat: number; // 0..3
+  beat: number; // 0..(beatsPerBar-1)
+  beatsPerBar: number; // numerator of the current @time signature (default 4)
   phase: number; // 0..1 within current beat
   playing: boolean;
 }
@@ -26,6 +27,7 @@ export interface Clock {
   stop(): void;
   toggle(): void;
   setBpm(n: number): void;
+  setTimeSignature(beatsPerBar: number): void;
   tap(): void;
   subscribe(cb: (s: ClockState) => void): Unsubscribe;
 }

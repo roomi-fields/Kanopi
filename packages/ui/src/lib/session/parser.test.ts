@@ -67,4 +67,41 @@ prose line is ignored
     expect(r.actors).toHaveLength(1);
     expect(r.scenes).toHaveLength(1);
   });
+
+  it('parses @time N/D', () => {
+    const r = parseSession(`@time 3/4`);
+    expect(r.errors).toEqual([]);
+    expect(r.timeSignature).toEqual({ num: 3, den: 4 });
+  });
+
+  it('parses @time N (implicit denominator)', () => {
+    const r = parseSession(`@time 7`);
+    expect(r.errors).toEqual([]);
+    expect(r.timeSignature).toEqual({ num: 7, den: 4 });
+  });
+
+  it('omits timeSignature when @time absent', () => {
+    const r = parseSession(`@actor x x.tidal tidal`);
+    expect(r.timeSignature).toBeUndefined();
+  });
+
+  it('rejects @time with invalid value', () => {
+    const r = parseSession(`@time foo`);
+    expect(r.errors.length).toBeGreaterThan(0);
+    expect(r.timeSignature).toBeUndefined();
+  });
+
+  it('rejects @time with numerator out of range', () => {
+    const r = parseSession(`@time 99/4`);
+    expect(r.errors.some((e) => /1\.\.32/.test(e.msg))).toBe(true);
+  });
+
+  it('last @time wins (redeclaration warning)', () => {
+    const r = parseSession(`
+@time 4/4
+@time 3/4
+`);
+    expect(r.timeSignature).toEqual({ num: 3, den: 4 });
+    expect(r.errors.some((e) => /redeclared/.test(e.msg))).toBe(true);
+  });
 });

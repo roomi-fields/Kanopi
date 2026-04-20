@@ -25,6 +25,7 @@ export type Node =
   | ActorDecl
   | SceneDecl
   | MapDecl
+  | TimeSignatureDecl
   | UnknownDirective
   | MalformedLine;
 
@@ -62,6 +63,19 @@ export type MapTargetNode =
   | { type: 'scene'; ref: Token; range: Range }
   | { type: 'actor.toggle'; actor: Token; range: Range }
   | { type: 'actor.param'; actor: Token; param: Token; range: Range };
+
+/**
+ * `@time N/D` — time signature.
+ * v1 only tracks the numerator (beats per bar). Denominator is parsed and
+ * stored for display / future use (e.g. a `@time 6/8` feels different from
+ * `@time 3/4` but both have N=6 and N=3 respectively).
+ */
+export interface TimeSignatureDecl {
+  type: 'time';
+  num: Token;
+  den?: Token;
+  range: Range;
+}
 
 export interface UnknownDirective {
   type: 'unknown';

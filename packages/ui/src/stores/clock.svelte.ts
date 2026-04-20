@@ -14,6 +14,7 @@ class ClockStore {
   stop() { core.clock.stop(); }
   toggle() { core.clock.toggle(); }
   setBpm(n: number) { core.clock.setBpm(n); }
+  setTimeSignature(bpb: number) { core.clock.setTimeSignature(bpb); }
   tap() { core.clock.tap(); }
 }
 
