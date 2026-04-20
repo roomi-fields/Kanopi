@@ -261,20 +261,22 @@ async function ensure(): Promise<StrudelMod> {
             emitError(err);
           }
         });
-        // Make `.scope()`, `.pianoroll()`, `.spectrum()` chainable no-ops on
-        // Pattern prototypes. @strudel/web doesn't ship @strudel/draw, so these
-        // native Strudel methods would throw `scope is not a function`. Kanopi
-        // handles the actual rendering via `ui.showViz(...)` — the methods in
-        // the pattern chain just serve as hints. Returning `this` preserves
-        // chaining so `note("c4").scope().gain(0.1)` keeps working.
+        // Neutralize `.scope()`, `.pianoroll()`, `.spectrum()` — @strudel/webaudio
+        // patches these on Pattern.prototype and they call into @strudel/draw,
+        // which spawns a FULLSCREEN `position:fixed` canvas on document.body
+        // (see draw.mjs:17). That canvas overlays the whole IDE with Strudel's
+        // own viz — wrong rendering surface for Kanopi, which routes rendering
+        // to its own VizPanel.
+        //
+        // Override unconditionally with chainable no-ops. The methods stay
+        // valid Strudel syntax so the user writes native code, Kanopi just
+        // owns the rendering surface via `ui.showViz(hint)`.
         try {
           const mAny = mod as unknown as { Pattern?: { prototype?: Record<string, unknown> } };
           const proto = mAny.Pattern?.prototype;
           if (proto) {
-            for (const fn of ['scope', 'pianoroll', 'spectrum'] as const) {
-              if (typeof proto[fn] !== 'function') {
-                proto[fn] = function(this: unknown) { return this; };
-              }
+            for (const fn of ['scope', 'pianoroll', 'spectrum', 'tscope', 'tpianoroll'] as const) {
+              proto[fn] = function(this: unknown) { return this; };
             }
           }
         } catch {
