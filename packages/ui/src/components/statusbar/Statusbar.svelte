@@ -11,9 +11,12 @@
     return n.toString().padStart(3, '0');
   }
 
+  // Ableton-style Bar.Beat — both 1-indexed, beats per bar from time signature.
+  // `state.beat` is 0..(N-1) internally; display adds 1 so Ableton convention
+  // holds (first beat is 1, not 0). Absolute beat count stays available in the
+  // event overlay (`?events=1`) for debugging.
   const bpmStr = $derived(clock.state.bpm.toFixed(1));
-  const barStr = $derived(fmt3(clock.state.bar));
-  const beatStr = $derived(fmt2(clock.state.beat + 1) + '.' + fmt2(Math.floor(clock.state.phase * 100)));
+  const posStr = $derived(fmt3(clock.state.bar) + '.' + fmt2(clock.state.beat + 1));
   const sceneName = $derived(scenes.active?.name ?? '—');
   const activeRuntimes = $derived(new Set(actors.list.filter((a) => a.active).map((a) => a.runtime)).size);
   const errors = $derived(consoleLog.entries.filter((e) => e.level === 'error').length);
@@ -27,9 +30,8 @@
       <span class="dim">BPM</span>
     </div>
     <span class="sb-sep">│</span>
-    <div class="sb-item">
-      <span class="dim">bar</span> <span class="num">{barStr}</span>
-      <span class="dim">· beat</span> <span class="num">{beatStr}</span>
+    <div class="sb-item" title="bar.beat (Ableton-style, 1-indexed)">
+      <span class="dim">bar.beat</span> <span class="num">{posStr}</span>
     </div>
     <span class="sb-sep">│</span>
     <div class="sb-item">
