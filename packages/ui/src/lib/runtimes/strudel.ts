@@ -301,6 +301,19 @@ let compositeRanges: CompositeRange[] = [];
 // re-throws so the editor flashes red on the exact block at fault — without
 // taking down the other armed slots, which keep their composite entry.
 const slotErrors = new Map<string, Error>();
+// Subscribers notified whenever slotErrors changes (set/delete/clear). Used
+// by the Actors panel to paint a block's LED red while it's erroring.
+const slotErrorListeners = new Set<() => void>();
+function notifySlotErrors() {
+  for (const cb of slotErrorListeners) cb();
+}
+export function onSlotErrorChange(cb: () => void): () => void {
+  slotErrorListeners.add(cb);
+  return () => slotErrorListeners.delete(cb);
+}
+export function getSlotErrors(): ReadonlyMap<string, Error> {
+  return slotErrors;
+}
 
 // Global error-report hook the wrapped slot code calls on catch. Exposed on
 // `window` so the eval'd source can reach it (it runs inside Strudel's own
@@ -315,6 +328,7 @@ if (typeof window !== 'undefined') {
     const id = compositeSlotIds[slotIdx];
     if (!id) return;
     slotErrors.set(id, err instanceof Error ? err : new Error(String(err)));
+    notifySlotErrors();
   };
 }
 
@@ -431,7 +445,7 @@ export const strudelAdapter: RuntimeAdapter = {
     latchedError = undefined;
     // Clear just this slot's previous error so a successful re-eval clears
     // the red state. Other slots keep their error status until re-evaluated.
-    slotErrors.delete(slot);
+    if (slotErrors.delete(slot)) notifySlotErrors();
     try {
       await flush(m);
     } catch (err) {
@@ -467,13 +481,16 @@ export const strudelAdapter: RuntimeAdapter = {
       if (!slot || slot === '__hush__') {
         stopped = true;
         slots.clear();
-        slotErrors.clear();
+        if (slotErrors.size > 0) {
+          slotErrors.clear();
+          notifySlotErrors();
+        }
         m.hush();
         log({ runtime: 'strudel', level: 'info', msg: 'hush (all slots)' });
         return;
       }
       slots.delete(slot);
-      slotErrors.delete(slot);
+      if (slotErrors.delete(slot)) notifySlotErrors();
       if (slots.size === 0) stopped = true;
       await flush(m);
       log({ runtime: 'strudel', level: 'info', msg: `stop [${slot}]` });

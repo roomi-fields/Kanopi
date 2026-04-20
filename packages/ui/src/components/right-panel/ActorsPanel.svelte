@@ -57,15 +57,21 @@
   </div>
   <ul class="actors">
     {#each detected as b (b.fileId + ':' + b.block.name)}
-      <li class="actor" class:active={openBlocks.isArmed(b.qualifiedName)} class:positional={b.block.kind === 'positional'}>
-        <button class="toggle" type="button" title="arm {b.qualifiedName}" onclick={() => toggleBlock(b)}>
-          <span class="led" class:on={openBlocks.isArmed(b.qualifiedName)}></span>
+      <li
+        class="actor"
+        class:active={openBlocks.isArmed(b.qualifiedName)}
+        class:positional={b.block.kind === 'positional'}
+        class:errored={openBlocks.isErrored(b.qualifiedName)}
+      >
+        <button class="toggle" type="button" title={openBlocks.isErrored(b.qualifiedName) ? `error: ${b.qualifiedName}` : `arm ${b.qualifiedName}`} onclick={() => toggleBlock(b)}>
+          <span class="led" class:on={openBlocks.isArmed(b.qualifiedName)} class:err={openBlocks.isErrored(b.qualifiedName)}></span>
         </button>
         <button class="info" type="button" onclick={() => openFile(b.fileName)}>
           <span class="name">{b.qualifiedName}</span>
           <span class="meta">
             <span class="rt rt-{b.runtime}">{b.runtime}</span>
             <span class="kind">{b.block.kind}</span>
+            {#if openBlocks.isErrored(b.qualifiedName)}<span class="err-tag">error</span>{/if}
           </span>
         </button>
       </li>
@@ -180,5 +186,17 @@
     font-size: 9px;
     color: var(--text-faint);
     letter-spacing: 0.08em;
+  }
+  .led.err {
+    background: var(--red, #c84040);
+    box-shadow: 0 0 6px rgba(200, 64, 64, 0.6);
+  }
+  .actor.errored .name { color: var(--red, #c84040); }
+  .err-tag {
+    font-size: 9px;
+    color: var(--red, #c84040);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
   }
 </style>

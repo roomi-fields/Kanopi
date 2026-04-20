@@ -4,6 +4,7 @@ import type { CodeBlock } from '../lib/blocks/extract-blocks';
 import type { Runtime } from '../lib/core';
 import { core } from '../lib/core';
 import { getAdapter } from '../lib/runtimes/registry';
+import { onSlotErrorChange, getSlotErrors } from '../lib/runtimes/strudel';
 import { clock } from './clock.svelte';
 
 /**
@@ -34,8 +35,26 @@ class OpenBlocksStore {
    */
   armed = $state<Set<string>>(new Set());
 
+  /**
+   * Blocks that errored during their last evaluation (by qualifiedName).
+   * Driven by the Strudel adapter's per-slot error map so the panel can paint
+   * the LED red. Populated on error, cleared on successful re-eval or stop.
+   */
+  errored = $state<Set<string>>(new Set());
+
   isArmed(q: string): boolean {
     return this.armed.has(q);
+  }
+
+  isErrored(q: string): boolean {
+    return this.errored.has(q);
+  }
+
+  /** Refresh the errored set from the adapter. Called on every slot-error change. */
+  _refreshErrored() {
+    const next = new Set<string>();
+    for (const id of getSlotErrors().keys()) next.add(id);
+    this.errored = next;
   }
 
   /** Arm + eval. If transport stopped, only arms (eval will fire on play). */
@@ -135,6 +154,8 @@ export function installBlockReplay() {
     }
     wasPlaying = s.playing;
   });
+  // Mirror Strudel slot errors into the panel's reactive errored set.
+  onSlotErrorChange(() => openBlocks._refreshErrored());
 }
 
 // Re-export for consumers that want to call extractBlocks directly.
