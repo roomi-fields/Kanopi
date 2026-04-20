@@ -7,6 +7,8 @@ const raw: { path: string; contents: string }[] = [
     contents: `# myset — main session
 # Edit and save: actors/scenes/maps reload on the fly.
 
+@library dirt-samples
+
 @actor drums   drums.tidal    tidal
 @actor visuals visuals.hydra  hydra
 @actor bass    bass.scd       sc

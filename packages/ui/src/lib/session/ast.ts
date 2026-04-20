@@ -26,6 +26,7 @@ export type Node =
   | SceneDecl
   | MapDecl
   | TimeSignatureDecl
+  | LibraryDecl
   | UnknownDirective
   | MalformedLine;
 
@@ -74,6 +75,16 @@ export interface TimeSignatureDecl {
   type: 'time';
   num: Token;
   den?: Token;
+  range: Range;
+}
+
+/**
+ * `@library <id>` — load an audio bank from the Kanopi catalog.
+ * `id` must match an entry in `lib/library/audio-banks/catalog.json`.
+ */
+export interface LibraryDecl {
+  type: 'library';
+  id: Token;
   range: Range;
 }
 

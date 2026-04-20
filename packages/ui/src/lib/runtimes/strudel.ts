@@ -261,11 +261,11 @@ async function ensure(): Promise<StrudelMod> {
             emitError(err);
           }
         });
-        // TEMPORARY: load dirt-samples by default so s("bd sd hh cp") works
-        // out of the box. Phase F (Library panel) will make this opt-in and
-        // move the hardcoded list into a catalog. Removing this before
-        // Library exists leaves the flagship Strudel flow mute.
-        await mod!.samples('github:tidalcycles/dirt-samples');
+        // Sample banks are no longer hardcoded — the session declares them
+        // via `@library <id>`, which `real-core.loadSession` applies through
+        // `loadSampleBank(source)` below. Out-of-the-box the default session
+        // starts with `@library dirt-samples` so `s("bd sd hh cp")` keeps
+        // working without manual setup.
         setStatus('ready');
       } catch (err) {
         setStatus('error');
@@ -402,6 +402,19 @@ async function flush(m: StrudelMod): Promise<void> {
     return;
   }
   await m.evaluate(buildComposite());
+}
+
+/**
+ * Load a sample bank via Strudel's `samples(source)`. De-duplicated so the
+ * same bank isn't fetched twice on repeated `loadSession` calls. Source is
+ * whatever Strudel accepts: `github:user/repo`, full URL to strudel.json, etc.
+ */
+const loadedBanks = new Set<string>();
+export async function loadSampleBank(source: string): Promise<void> {
+  if (loadedBanks.has(source)) return;
+  const m = await ensure();
+  await m.samples(source);
+  loadedBanks.add(source);
 }
 
 export const strudelAdapter: RuntimeAdapter = {

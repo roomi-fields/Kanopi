@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "banks": [
+    {
+      "id": "dirt-samples",
+      "name": "Dirt Samples",
+      "description": "Canonical TidalCycles / SuperDirt sample bank. Drum machines, synths, foleys.",
+      "source": "github:tidalcycles/dirt-samples",
+      "tags": ["drums", "classic", "tidal"]
+    },
+    {
+      "id": "tidal-drum-machines",
+      "name": "Tidal Drum Machines",
+      "description": "Multisampled drum machines (TR-808, 909, LinnDrum, CR-78…) curated by Ritchse.",
+      "source": "github:ritchse/tidal-drum-machines",
+      "tags": ["drums", "machines"]
+    },
+    {
+      "id": "emu-sp12",
+      "name": "E-mu SP-12",
+      "description": "E-mu SP-12 drum machine samples — lofi, 12-bit hip-hop staples.",
+      "source": "github:RobertStolarz/EmuSP12",
+      "tags": ["drums", "lofi", "12-bit"]
+    }
+  ]
+}

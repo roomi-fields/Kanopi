@@ -15,6 +15,7 @@ export interface SessionParseResult {
   scenes: Scene[];
   mappings: Mapping[];
   timeSignature?: TimeSignature;
+  libraries: string[];
   errors: { line: number; msg: string }[];
 }
 
@@ -26,6 +27,7 @@ export function parseSession(source: string): SessionParseResult {
     scenes: r.scenes,
     mappings: r.mappings,
     timeSignature: r.timeSignature,
+    libraries: r.libraries,
     errors: r.diagnostics.map((d: Diagnostic) => ({
       line: d.range.start.line,
       msg: d.message

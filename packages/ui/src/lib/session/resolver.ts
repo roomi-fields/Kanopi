@@ -7,6 +7,7 @@ import type {
   Scene
 } from '../core-mock';
 import type { Diagnostic, Range, SessionAST } from './ast';
+import { findBank, bankIds } from '../library/audio-banks';
 
 const RUNTIMES = new Set<Runtime>([
   'kanopi',
@@ -29,6 +30,8 @@ export interface ResolveResult {
   scenes: Scene[];
   mappings: Mapping[];
   timeSignature?: TimeSignature;
+  /** Ordered list of audio bank ids declared via `@library`. */
+  libraries: string[];
   diagnostics: Diagnostic[];
 }
 
@@ -36,12 +39,32 @@ export function resolve(ast: SessionAST): ResolveResult {
   const actors: Actor[] = [];
   const scenes: Scene[] = [];
   const mappings: Mapping[] = [];
+  const libraries: string[] = [];
   const diagnostics: Diagnostic[] = [...ast.diagnostics];
   let timeSignature: TimeSignature | undefined;
   let mappingSeq = 0;
 
   for (const node of ast.nodes) {
-    if (node.type === 'time') {
+    if (node.type === 'library') {
+      const id = node.id.text;
+      if (!findBank(id)) {
+        diagnostics.push({
+          severity: 'error',
+          message: `@library "${id}" unknown. Available: ${bankIds().join(', ')}`,
+          range: node.id.range
+        });
+        continue;
+      }
+      if (libraries.includes(id)) {
+        diagnostics.push({
+          severity: 'warning',
+          message: `@library "${id}" declared more than once`,
+          range: node.id.range
+        });
+        continue;
+      }
+      libraries.push(id);
+    } else if (node.type === 'time') {
       // Last @time wins; warn if redeclared so the user sees the override.
       if (timeSignature) {
         diagnostics.push({
@@ -138,7 +161,7 @@ export function resolve(ast: SessionAST): ResolveResult {
     }
   }
 
-  return { actors, scenes, mappings, timeSignature, diagnostics };
+  return { actors, scenes, mappings, timeSignature, libraries, diagnostics };
 }
 
 function liftSource(node: import('./ast').MapSourceNode): MapSource {

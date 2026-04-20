@@ -16,6 +16,8 @@ import type {
 import { getAdapter, listRuntimes } from '../runtimes/registry';
 import { installConsoleBridge } from '../runtimes/console-bridge';
 import { parseSession } from '../session';
+import { findBank } from '../library/audio-banks';
+import { loadSampleBank } from '../runtimes/strudel';
 import { enableMidi, matchMapping, type MidiEvent } from '../midi/midi-input';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
@@ -206,6 +208,18 @@ class RealCore implements CoreApi {
     // Apply @time signature if declared. Default 4/4 if absent so reopening a
     // session that dropped the directive resets to the standard signature.
     this.clock.setTimeSignature(r.timeSignature?.num ?? 4);
+
+    // Fire-and-forget: load each @library bank via Strudel's samples().
+    // De-duped inside loadSampleBank, so repeated loadSession calls with the
+    // same libraries don't re-fetch. Errors are logged but non-fatal — the
+    // session still loads even if the sample server is down.
+    for (const id of r.libraries) {
+      const bank = findBank(id);
+      if (!bank) continue;
+      void loadSampleBank(bank.source)
+        .then(() => this.log({ runtime: 'strudel', level: 'info', msg: `library loaded: ${bank.name}` }))
+        .catch((err) => this.log({ runtime: 'strudel', level: 'error', msg: `library ${id}: ${String(err)}` }));
+    }
 
     for (const e of r.errors) {
       const where = e.line > 0 ? ` (line ${e.line})` : '';

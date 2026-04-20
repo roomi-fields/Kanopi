@@ -22,7 +22,14 @@ export function parseSession(source: string): SessionAST {
     const args = l.tokens.slice(1);
     const range: Range = spanOf(l.tokens, lineRange(l));
 
-    if (head.text === '@time') {
+    if (head.text === '@library') {
+      if (args.length < 1) {
+        nodes.push({ type: 'malformed', text: l.text, reason: '@library expects: @library <bank-id>', range });
+        diagnostics.push({ severity: 'error', message: '@library expects a bank id (e.g. dirt-samples)', range });
+        continue;
+      }
+      nodes.push({ type: 'library', id: args[0], range });
+    } else if (head.text === '@time') {
       if (args.length < 1) {
         nodes.push({ type: 'malformed', text: l.text, reason: '@time expects: @time N or @time N/D', range });
         diagnostics.push({ severity: 'error', message: '@time expects a value (e.g. 4 or 3/4)', range });

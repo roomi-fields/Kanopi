@@ -104,4 +104,30 @@ prose line is ignored
     expect(r.timeSignature).toEqual({ num: 3, den: 4 });
     expect(r.errors.some((e) => /redeclared/.test(e.msg))).toBe(true);
   });
+
+  it('parses @library with a known bank id', () => {
+    const r = parseSession(`@library dirt-samples`);
+    expect(r.errors).toEqual([]);
+    expect(r.libraries).toEqual(['dirt-samples']);
+  });
+
+  it('rejects @library with unknown bank id', () => {
+    const r = parseSession(`@library nope-nope-nope`);
+    expect(r.errors.some((e) => /unknown/.test(e.msg))).toBe(true);
+    expect(r.libraries).toEqual([]);
+  });
+
+  it('@library redeclaration warns once and keeps only one entry', () => {
+    const r = parseSession(`
+@library dirt-samples
+@library dirt-samples
+`);
+    expect(r.libraries).toEqual(['dirt-samples']);
+    expect(r.errors.some((e) => /more than once/.test(e.msg))).toBe(true);
+  });
+
+  it('@library rejects empty value', () => {
+    const r = parseSession(`@library`);
+    expect(r.errors.some((e) => /@library/.test(e.msg))).toBe(true);
+  });
 });
