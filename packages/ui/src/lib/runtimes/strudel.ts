@@ -417,6 +417,29 @@ export async function loadSampleBank(source: string): Promise<void> {
   loadedBanks.add(source);
 }
 
+/** Bank sources that should be in memory per the current session. */
+let declaredBankSources = new Set<string>();
+
+/**
+ * Sync library declarations from `loadSession` against what's loaded.
+ * Returns the list of sources that were removed from the declaration but
+ * can't be truly unloaded — Strudel's `samples()` has no reverse (see
+ * @strudel/webaudio's global soundMap, no `unloadSamples` API). The caller
+ * surfaces these to the console so the user knows a page reload is needed
+ * to actually drop them from memory.
+ */
+export function setDeclaredBanks(sources: string[]): { lingering: string[] } {
+  const next = new Set(sources);
+  const lingering: string[] = [];
+  for (const src of loadedBanks) {
+    if (!next.has(src) && declaredBankSources.has(src)) {
+      lingering.push(src);
+    }
+  }
+  declaredBankSources = next;
+  return { lingering };
+}
+
 export const strudelAdapter: RuntimeAdapter = {
   id: 'strudel',
   events: adapterEvents,

@@ -17,7 +17,7 @@ import { getAdapter, listRuntimes } from '../runtimes/registry';
 import { installConsoleBridge } from '../runtimes/console-bridge';
 import { parseSession } from '../session';
 import { findBank } from '../library/audio-banks';
-import { loadSampleBank } from '../runtimes/strudel';
+import { loadSampleBank, setDeclaredBanks } from '../runtimes/strudel';
 import { enableMidi, matchMapping, type MidiEvent } from '../midi/midi-input';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
@@ -213,12 +213,26 @@ class RealCore implements CoreApi {
     // De-duped inside loadSampleBank, so repeated loadSession calls with the
     // same libraries don't re-fetch. Errors are logged but non-fatal — the
     // session still loads even if the sample server is down.
+    const bankSources: string[] = [];
     for (const id of r.libraries) {
       const bank = findBank(id);
       if (!bank) continue;
+      bankSources.push(bank.source);
       void loadSampleBank(bank.source)
         .then(() => this.log({ runtime: 'strudel', level: 'info', msg: `library loaded: ${bank.name}` }))
         .catch((err) => this.log({ runtime: 'strudel', level: 'error', msg: `library ${id}: ${String(err)}` }));
+    }
+    // Warn about libraries that were declared earlier and are now removed.
+    // Strudel's `samples()` has no reverse, so they stay in the sound map
+    // until the page is reloaded. Telling the user explicitly prevents the
+    // "I removed @library but `s("bd")` still works" surprise.
+    const { lingering } = setDeclaredBanks(bankSources);
+    for (const src of lingering) {
+      this.log({
+        runtime: 'strudel',
+        level: 'warn',
+        msg: `library ${src} removed from session but its samples are still in memory — reload the page to truly drop them`
+      });
     }
 
     for (const e of r.errors) {
