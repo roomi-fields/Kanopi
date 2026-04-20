@@ -13,6 +13,9 @@
   const barStr = $derived(fmt3(clock.state.bar));
   const beatStr = $derived(fmt2(clock.state.beat + 1));
   const phaseStr = $derived('.' + fmt2(Math.floor(clock.state.phase * 100)));
+  // One dot per beat in the current time signature. Driven by `beatsPerBar`
+  // so `@time 3/4` shows 3 dots, `@time 7/8` shows 7, etc.
+  const dots = $derived(Array.from({ length: clock.state.beatsPerBar || 4 }, (_, i) => i));
 </script>
 
 <div class="transport-cluster">
@@ -38,7 +41,7 @@
 
   <div class="beat-meter">
     <div class="beat-dots">
-      {#each [0, 1, 2, 3] as i (i)}
+      {#each dots as i (i)}
         <span class="beat-dot" class:active={i === clock.state.beat && clock.state.playing}></span>
       {/each}
     </div>

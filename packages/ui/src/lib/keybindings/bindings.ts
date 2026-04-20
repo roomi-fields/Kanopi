@@ -1,6 +1,7 @@
 import { ui } from '../../stores/ui.svelte';
 import { clock } from '../../stores/clock.svelte';
 import { core } from '../core';
+import { flushPersist } from '../persistence/snapshot.svelte';
 
 export function isMod(e: KeyboardEvent) {
   return e.metaKey || e.ctrlKey;
@@ -29,6 +30,16 @@ export function handleGlobalKey(e: KeyboardEvent) {
   if (isMod(e) && !e.shiftKey && !e.altKey && e.key === '.') {
     e.preventDefault();
     void core.hushAll();
+    return;
+  }
+  // Cmd/Ctrl + S → force-save workspace. Autosave already persists on every
+  // mutation, but the browser's default behavior (save HTML page) is jarring
+  // and a user's finger-memory expects *something* to happen. We swallow the
+  // event and flush synchronously; a debug log shows up in the console.
+  if (isMod(e) && !e.shiftKey && !e.altKey && (e.key === 's' || e.key === 'S')) {
+    e.preventDefault();
+    flushPersist();
+    core.console.push({ runtime: 'kanopi', level: 'info', msg: 'workspace saved' });
     return;
   }
   // Cmd/Ctrl + 1..9 → toggle mute on the Nth actor (atom-tidalcycles).

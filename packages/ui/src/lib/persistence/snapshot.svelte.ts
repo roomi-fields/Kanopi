@@ -56,6 +56,12 @@ const persist = debounce(() => {
   saveWorkspace(snapshot());
 }, 50);
 
+/** Synchronous flush — bound to Ctrl+S so the user can force-save. */
+export function flushPersist() {
+  if (suppressPersist) return;
+  saveWorkspace(snapshot());
+}
+
 // Flush synchronously before the tab/reload unloads (localStorage is sync).
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', () => {
