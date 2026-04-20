@@ -19,6 +19,8 @@
   import { kanopiLinter } from './kanopi-lint';
   import { lintGutter } from '@codemirror/lint';
   import { patternHighlightExtension } from '../viz/pattern-highlight';
+  import { extractBlocks } from '../../lib/blocks/extract-blocks';
+  import { openBlocks } from '../../stores/blocks.svelte';
 
   type Props = {
     docId: string;
@@ -26,7 +28,7 @@
     doc: string;
     runtime: Runtime;
     onChange: (text: string) => void;
-    onEval?: (code: string, docOffset: number) => void | Promise<boolean | void>;
+    onEval?: (code: string, docOffset: number, actorId?: string) => void | Promise<boolean | void>;
   };
   const { docId, fileName, doc, runtime, onChange, onEval }: Props = $props();
 
@@ -38,15 +40,29 @@
   // Wrapped as a pure Promise chain (no async/await touching $props — Svelte 5
   // mangles those). onEval now throws on any eval error; we catch and mark err.
   // Pure Promise chain — Svelte 5 mangles await on $props.
-  function runEval(code: string, v: EditorView, from: number, to: number) {
+  function runEval(code: string, v: EditorView, from: number, to: number, actorId?: string) {
     if (!onEval) return;
     rememberEval(v, from, to);
     Promise.resolve()
-      .then(() => onEval(code, from))
+      .then(() => onEval(code, from, actorId))
       .then(
         () => flash(v, from, to, 'ok'),
         () => flash(v, from, to, 'err')
       );
+  }
+
+  // Find the detected block that contains the given doc offset, if any.
+  // Returns the block + qualifiedName used as slot id so Ctrl+Enter lands in
+  // the block's own slot (not the whole-file slot).
+  function blockAtOffset(docText: string, pos: number): { from: number; to: number; qualifiedName: string } | undefined {
+    const blocks = extractBlocks(docText, runtime);
+    const base = fileName.includes('.') ? fileName.slice(0, fileName.lastIndexOf('.')) : fileName;
+    for (const b of blocks) {
+      if (pos >= b.from && pos <= b.to) {
+        return { from: b.from, to: b.to, qualifiedName: `${base}.${b.name}` };
+      }
+    }
+    return undefined;
   }
 
   function makeState(initial: string, lang: Runtime): EditorState {
@@ -88,6 +104,24 @@
             if (!onEval) return false;
             const sel = v.state.selection.main;
             const docText = v.state.doc.toString();
+            // Prefer the block-level detector: it knows about `$:`, assignments
+            // and positional fallback, and gives us a qualifiedName to arm.
+            // Fall back to the line-paragraph heuristic if the detector hits
+            // runtime it doesn't handle (.scd still unsupported runs etc).
+            const block = blockAtOffset(docText, sel.head);
+            if (block) {
+              const code = docText.slice(block.from, block.to);
+              if (!code.trim()) return true;
+              // Arm the block (UI LED lights up) and eval it in its own slot.
+              if (!openBlocks.isArmed(block.qualifiedName)) {
+                // Arm without re-evaluating (runEval below does the eval itself).
+                const next = new Set(openBlocks.armed);
+                next.add(block.qualifiedName);
+                openBlocks.armed = next;
+              }
+              runEval(code, v, block.from, block.to, block.qualifiedName);
+              return true;
+            }
             const code = extractBlock(docText, sel.from, sel.to);
             if (!code) return true;
             const blockStart = docText.indexOf(code);

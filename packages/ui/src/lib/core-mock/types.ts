@@ -119,7 +119,7 @@ export interface CoreApi {
    * used by visualizers to place highlights on the actual evaluated range
    * instead of the start of the doc. Defaults to 0 (whole-file eval).
    */
-  evaluateBlock(runtime: Runtime, code: string, sourceId: string, docOffset?: number): Promise<void>;
+  evaluateBlock(runtime: Runtime, code: string, sourceId: string, docOffset?: number, actorId?: string): Promise<void>;
   /** Inject a lookup so the core can resolve which file an actor refers to. */
   bindActorFiles(get: (actorName: string) => ActorFileRef | undefined): void;
   /** Request WebMIDI access and start dispatching mappings. */
