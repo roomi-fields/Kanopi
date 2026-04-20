@@ -6,6 +6,7 @@
   let query = $state('');
   let selected = $state(0);
   let inputEl: HTMLInputElement | undefined = $state();
+  let listEl: HTMLUListElement | undefined = $state();
 
   const all = $derived<Command[]>(ui.paletteOpen ? listCommands() : []);
   const filtered = $derived<Command[]>(filterCommands(all, query));
@@ -16,6 +17,20 @@
       selected = 0;
       tick().then(() => inputEl?.focus());
     }
+  });
+
+  // Keep the highlighted row in view as arrow keys move the selection past
+  // the viewport. Without this, holding ArrowDown moves the invisible cursor
+  // but the list stays stuck at the top.
+  $effect(() => {
+    if (!ui.paletteOpen) return;
+    // Depend on `selected` so this re-runs on every arrow press.
+    const _ = selected;
+    void _;
+    tick().then(() => {
+      const row = listEl?.querySelector<HTMLElement>('.row.selected');
+      row?.scrollIntoView({ block: 'nearest' });
+    });
   });
 
   function close() {
@@ -68,7 +83,7 @@
         spellcheck="false"
         autocomplete="off"
       />
-      <ul class="results">
+      <ul class="results" bind:this={listEl}>
         {#if filtered.length === 0}
           <li class="empty">No matching command</li>
         {:else}
@@ -128,10 +143,16 @@
   .results {
     list-style: none;
     margin: 0;
-    padding: 4px 0;
+    /* No padding on the scroll container — `scrollIntoView({block:'nearest'})`
+       stops at the border, not the padding, which would leave the last row
+       a few pixels clipped. Use margin on the inner li:first/last-child
+       instead if spacing is needed. */
+    padding: 0;
     max-height: 50vh;
     overflow-y: auto;
   }
+  .results > li:first-child > .row { margin-top: 4px; }
+  .results > li:last-child > .row { margin-bottom: 4px; }
   .row {
     width: 100%;
     text-align: left;
