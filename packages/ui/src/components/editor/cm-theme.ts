@@ -29,7 +29,11 @@ export const kanopiTheme = EditorView.theme(
       fontSize: '13px'
     },
     '.cm-content': {
-      padding: '14px 18px',
+      // Horizontal padding kept minimal: a wide gap (ex. 18px) makes
+      // full-line selections visually extend into the next line's
+      // left padding, which reads like "two extra chars selected".
+      // 8px is enough to separate caret from gutter without that bleed.
+      padding: '14px 8px 14px 4px',
       caretColor: 'var(--amber)'
     },
     '.cm-scroller': {
