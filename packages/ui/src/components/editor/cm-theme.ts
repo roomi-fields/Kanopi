@@ -29,11 +29,13 @@ export const kanopiTheme = EditorView.theme(
       fontSize: '13px'
     },
     '.cm-content': {
-      // Horizontal padding kept minimal: a wide gap (ex. 18px) makes
-      // full-line selections visually extend into the next line's
-      // left padding, which reads like "two extra chars selected".
-      // 8px is enough to separate caret from gutter without that bleed.
-      padding: '14px 8px 14px 4px',
+      // padding-left = 0 is intentional: anything > 0 becomes a
+      // zone where CM6 draws a thin selection rectangle for every
+      // line break, visually bleeding into the next line on
+      // full-line selections (triple-click). The breathing room
+      // between gutter and code is moved onto the gutter itself
+      // via `padding-right` below.
+      padding: '14px 8px 14px 0',
       caretColor: 'var(--amber)'
     },
     '.cm-scroller': {
@@ -43,7 +45,11 @@ export const kanopiTheme = EditorView.theme(
     '.cm-gutters': {
       backgroundColor: 'var(--panel)',
       color: 'var(--text-faint)',
-      borderRight: '1px solid var(--border-dim)'
+      borderRight: '1px solid var(--border-dim)',
+      // Breathing room on the gutter side so digits don't touch the
+      // code. Lives here (not on .cm-content) to avoid the selection
+      // bleed described above.
+      paddingRight: '6px'
     },
     '.cm-activeLine': { backgroundColor: 'rgba(255, 255, 255, 0.025)' },
     '.cm-activeLineGutter': { backgroundColor: 'rgba(232, 156, 62, 0.05)', color: 'var(--amber)' },
