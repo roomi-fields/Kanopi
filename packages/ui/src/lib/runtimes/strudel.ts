@@ -308,12 +308,23 @@ async function ensure(): Promise<StrudelMod> {
         // Preserve native pianoroll/scope/spectrum implementations before we
         // install the no-op overrides — the underscored variants below need
         // to delegate to the real impls (with a canvas ctx) to actually draw.
+        // Fullscreen variants (.scope/.pianoroll/.spectrum) are neutralized
+        // for the reason above. Inline variants (._scope/._pianoroll/
+        // ._spectrum) SHOULD be real widget calls once phase 2.1 task 1.3
+        // wires @strudel/codemirror's widgetPlugin correctly, but until
+        // then they throw `_X is not a function` at hap-schedule time
+        // because the double-load of @strudel/codemirror registers them
+        // on the wrong Pattern graph. Fall them back to chainable no-ops
+        // so user code with `._pianoroll()` still evals and plays audio.
         const nativeViz: Record<string, unknown> = {};
         try {
           const mAny = mod as unknown as { Pattern?: { prototype?: Record<string, unknown> } };
           const proto = mAny.Pattern?.prototype;
           if (proto) {
-            for (const fn of ['scope', 'pianoroll', 'spectrum', 'tscope', 'tpianoroll'] as const) {
+            for (const fn of [
+              'scope', 'pianoroll', 'spectrum', 'tscope', 'tpianoroll',
+              '_scope', '_pianoroll', '_spectrum'
+            ] as const) {
               if (typeof proto[fn] === 'function') nativeViz[fn] = proto[fn];
               proto[fn] = function(this: unknown) { return this; };
             }
