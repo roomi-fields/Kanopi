@@ -4,6 +4,7 @@
   import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } from '@codemirror/view';
   import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
   import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
+  import { acceptCompletion, completionStatus } from '@codemirror/autocomplete';
   import { kanopiTheme, kanopiGlobalStyles } from './cm-theme';
   import { syntaxHighlighting, bracketMatching, indentOnInput } from '@codemirror/language';
   import { highlightFor } from './highlight-styles';
@@ -147,6 +148,10 @@
             runEval(code, v, line.from, line.to);
             return true;
           }
+        },
+        {
+          key: 'Tab',
+          run: (v) => (completionStatus(v.state) === 'active' ? acceptCompletion(v) : false)
         },
         indentWithTab,
         ...defaultKeymap,
