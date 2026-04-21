@@ -20,11 +20,8 @@
   import { kanopiLinter } from './kanopi-lint';
   import { lintGutter } from '@codemirror/lint';
   import { patternHighlightExtension } from '../viz/pattern-highlight';
-  import * as strudelCM from '@strudel/codemirror';
+  import { widgetPlugin } from '../../lib/runtimes/strudel-cm';
   import { registerStrudelEditorView, unregisterStrudelEditorView } from '../../lib/runtimes/strudel';
-  // `widgetPlugin` is exported by @strudel/codemirror at runtime (widget.mjs)
-  // but not surfaced in its .d.ts — hence the cast.
-  const widgetPlugin = (strudelCM as unknown as { widgetPlugin: Extension[] }).widgetPlugin;
   import { extractBlocks } from '../../lib/blocks/extract-blocks';
   import { openBlocks } from '../../stores/blocks.svelte';
 

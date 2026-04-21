@@ -18,10 +18,7 @@ export function strudelExtras(runtime: Runtime): {
   const install = async (view: EditorView) => {
     if (!needs) return;
     try {
-      const mod = (await import('@strudel/codemirror')) as {
-        extensions: Record<string, (v: unknown) => Extension>;
-        highlightExtension: Extension;
-      };
+      const mod = await import('../../lib/runtimes/strudel-cm');
       // Strudel exposes togglable extensions through a single `extensions` map
       // rather than named exports (names are mangled in the dist bundle).
       const toggles = mod.extensions;

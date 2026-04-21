@@ -262,13 +262,17 @@ async function ensure(): Promise<StrudelMod> {
             if (!widgets.length) return;
             const view = currentEditorView();
             if (!view) return;
-            // Lazy-require to avoid pulling @strudel/codemirror on first load
-            // when no Strudel editor is active yet.
-            import('@strudel/codemirror').then((m) => {
-              const updateWidgets = (m as unknown as { updateWidgets?: (v: unknown, w: unknown[]) => void }).updateWidgets;
+            // Lazy-load strudel-cm proxy to avoid pulling @strudel/codemirror
+            // on first load when no Strudel editor is active yet.
+            import('./strudel-cm').then(({ updateWidgets }) => {
               if (!updateWidgets) return;
               try {
-                updateWidgets(view, widgets.filter((w: unknown) => (w as { type?: string }).type !== 'slider'));
+                // `view` is kept as `unknown` at this layer to avoid pulling
+                // CM6 types into the runtime module; cast at the proxy call.
+                updateWidgets(
+                  view as Parameters<typeof updateWidgets>[0],
+                  widgets.filter((w: unknown) => (w as { type?: string }).type !== 'slider')
+                );
               } catch {
                 /* best-effort — widget update shouldn't break eval */
               }
