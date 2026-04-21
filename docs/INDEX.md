@@ -1,17 +1,13 @@
 # Kanopi Docs — Index
 
-## Plan stratégique
-- [ROADMAP.md](plan/ROADMAP.md) — phases, jalons, timeline jusqu'à ICLC 2027
-- [V1_FEATURES.md](plan/V1_FEATURES.md) — checklist P0/P1/P2 de la v1
-- [POSITIONING.md](plan/POSITIONING.md) — pitch, différenciation, concurrents
-- [UI_WEB.md](plan/UI_WEB.md) — plan UI web 3 niveaux (référence historique)
-- [MARKET_STUDY.md](plan/MARKET_STUDY.md) — étude marché complète (~20 outils)
-- [ICLC_2027.md](plan/ICLC_2027.md) — plan publication académique
-
 ## Design architecture
 - [ARCHITECTURE.md](design/ARCHITECTURE.md) — stack tech, topologie repos, data flow
+- [EVENTS.md](design/EVENTS.md) — spec du bus `KanopiEvent`
 - [LIBRARY.md](design/LIBRARY.md) — système library 3 sources (bundled / mine / community)
 - [SCENES.md](design/SCENES.md) — hiérarchie scènes + scoping flags
+
+## Intégrations
+- [TIDAL.md](integrations/TIDAL.md) — matrice Tidal/Strudel, keymap, coloration, autocomplete
 
 ## Référence
 - [HARDWARE_COLLECTION.md](reference/HARDWARE_COLLECTION.md) — collection Romi + stratégie contrôleurs

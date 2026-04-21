@@ -2,7 +2,7 @@
 
 **The VSCode of live coding.** A local-first multi-runtime IDE for live coding music — Tidal, SuperCollider, Strudel, Hydra, Python, BPscript, and more, orchestrated in one workspace with shared clock, scenes, and hardware.
 
-Status: **v0.1.0-alpha — in design**. See `docs/plan/UI_WEB.md` for the master plan.
+Status: **v0.1.0-alpha — in design**.
 
 ## Why
 
@@ -22,10 +22,11 @@ No existing tool integrates multiple live-coding runtimes with shared temporal s
 
 ## Docs
 
-- `docs/plan/UI_WEB.md` — master plan, 3-level progressive enhancement
-- `docs/plan/MARKET_STUDY.md` — competitive landscape
-- `docs/plan/ICLC_2027.md` — academic publication plan
+- `docs/design/ARCHITECTURE.md` — stack, repo topology, data flow
 - `docs/design/SCENES.md` — scene hierarchy + flag scoping
+- `docs/design/EVENTS.md` — `KanopiEvent` bus spec
+- `docs/design/LIBRARY.md` — library system (bundled / mine / community)
+- `docs/integrations/TIDAL.md` — Tidal/Strudel integration matrix
 - `docs/mockups/kanopi-v1-mockup.html` — v1 UI mockup
 - `docs/reference/HARDWARE_COLLECTION.md` — target hardware surfaces
 

@@ -12,7 +12,7 @@ Recoder un visualizer par runtime est intenable. Cette spec définit :
 
 Les visualizers sont **écrits une fois**, agnostiques du runtime, paramétrés par `{ runtime, source }` seulement si nécessaire.
 
-Cette spec s'aligne sur le namespace OSC `/bps/*` déjà décrit dans [`docs/plan/UI_WEB.md`](../plan/UI_WEB.md) §6.2 pour faciliter le pont OSC externe plus tard (Phase 6).
+Cette spec s'aligne sur le namespace OSC `/bps/*` pour faciliter le pont OSC externe plus tard (Phase 6).
 
 ## Architecture
 
@@ -138,10 +138,13 @@ interface TokenEvent extends KanopiEventBase {
   gain?: number;                                           // 0..1 si applicable
   duration: number;                                        // ms
   locations?: Array<[from: number, to: number, fileId: string]>;
+  audioTime?: number;                                      // AudioContext.currentTime (s) si émetteur WebAudio-based
 }
 ```
 
 `locations` : offsets source dans le fichier actif du runtime. Optionnel — tous les runtimes ne peuvent pas le fournir (Tidal/GHCi, SC via OSC…). Si absent, PatternHighlight ne dessine rien mais Pianoroll/Scope marchent.
+
+`audioTime` : horloge audio native en secondes `AudioContext.currentTime`, **fournie seulement par les adapters WebAudio-based** (Strudel, WebAudio JS). Les consommateurs audio-critiques (re-scheduler MIDI out, AudioWorklet) l'utilisent pour un scheduling sample-accurate ; les visualizers l'ignorent et consomment `t` (wall-clock ms). Les adapters non-WebAudio (Hydra rAF, SC via OSC, Tidal GHCi) n'ont pas de `audioTime` crédible — champ absent. Cf. [ARCHITECTURE.md §Précision d'horloge](ARCHITECTURE.md).
 
 Correspondance OSC : `/bps/token name time dur`.
 
@@ -332,7 +335,6 @@ const listener = core.events.on('token', (e) => {
 - Adapter Strudel : `packages/ui/src/lib/runtimes/strudel.ts`
 - Visualizer générique : `packages/ui/src/components/viz/pattern-highlight.ts`
 - DevTools : `packages/ui/src/components/devtools/EventsOverlay.svelte`
-- Bus OSC externe (futur) : [`../plan/UI_WEB.md`](../plan/UI_WEB.md) §6.2
 - Tick bus et dispatcher : [`ARCHITECTURE.md`](ARCHITECTURE.md) §Data flow runtime
 - `sys.beat` / `sys.bar` / triggers scène : [`SCENES.md`](SCENES.md)
 - Haps Strudel : [`../integrations/TIDAL.md`](../integrations/TIDAL.md) §3.3 et §8.2

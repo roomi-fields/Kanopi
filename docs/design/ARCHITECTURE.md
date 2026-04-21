@@ -169,6 +169,36 @@ Hérités de `BPscript/src/dispatcher/` et `src/bridge/`. À migrer progressivem
 
 - **Load time** : < 2s sur laptop moyen (comme openDAW)
 - **Audio latency** : < 10 ms via WebAudio, < 5 ms via bridge local
-- **MIDI jitter** : < 2 ms
+- **MIDI jitter** : < 2 ms (web), < 0.5 ms (Tauri v2)
 - **Scheduler tick rate** : 1 kHz minimum
 - **UI 60 fps** en utilisation normale
+
+## Précision d'horloge — limites et stratégie
+
+### Sources d'horloge disponibles sur le web
+
+| Horloge | Précision effective | Usage Kanopi |
+|---|---|---|
+| `AudioContext.currentTime` | sample-accurate (~22 μs @ 44.1 kHz) | **seule** source fiable pour scheduling audio |
+| `performance.now()` | 0.1–1 ms (dégrade sous Spectre mitigation) | wall-clock des `KanopiEvent` (visualizers, logs) |
+| `setTimeout` / event loop | 4–16 ms jitter ; **1 s** en onglet caché | **jamais** utiliser pour l'audio |
+| `requestAnimationFrame` | ~16.6 ms @ 60 Hz | visuels uniquement |
+| WebMIDI `send(data, timestamp)` | ~1–2 ms jitter sous charge (Chrome > Firefox) | bon pour la plupart, pas pour IDM sub-ms |
+| Ableton Link | sub-ms en natif | **inaccessible** depuis le navigateur (UDP multicast) |
+
+### Règles de conception
+
+1. **AudioContext clock = source de vérité audio**, pattern "Two clocks" (Chris Wilson). Lookahead ~25 ms + scheduler JS qui écrit dans le futur AudioContext.
+2. **`performance.now()` = source de vérité visualizer/event bus**. Chaque adapter convertit son horloge native en wall-clock ms à l'émission (cf. [EVENTS.md §`t`](EVENTS.md)).
+3. **Pour les events audio-critiques** (`token` Strudel/WebAudio) → `KanopiEvent` expose un champ optionnel `audioTime` (secondes AudioContext) en plus de `t`, consommé par les re-schedulers audio, ignoré par les visualizers.
+4. **Onglet en arrière-plan = mort.** Chrome throttle à 1 Hz. Deal-breaker pour un live. À gérer via `navigator.wakeLock` + warning UI explicite ("gardez l'onglet focus").
+
+### Ableton Link
+
+- **V1 web** : via osc-bridge (relay UDP multicast Link ↔ WebSocket). Fonctionne si osc-bridge est installé.
+- **V2 Tauri** : binding natif Rust (crate `ableton-link-sys` ou équivalent), thread audio RT-priority.
+- **Pas de Link pur-web** : la spec Link = UDP multicast, hors navigateur par design.
+
+### Synchro inter-runtime
+
+Strudel schedule sur AudioContext (précis), Hydra est calé sur rAF (16 ms jitter), un adapter JS pur peut être sur l'un ou l'autre. Trois natures d'horloges coexistent. Le bus `KanopiEvent` unifie les *timestamps wall-clock* pour les visualizers. Pour le *planning audio cross-runtime*, chaque runtime reste sur son horloge native — on ne promet pas une synchro sub-ms entre un trigger Strudel et un flash Hydra.

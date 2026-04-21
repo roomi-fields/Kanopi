@@ -18,7 +18,7 @@ Kanopi is the IDE product. BPscript is the optional native sequencer language (s
 - `packages/core/` — runtime (dispatcher, map-engine, bridge)
 - `packages/ui/` — Svelte 5 + CodeMirror 6 app
 - `packages/library/` — bundled content
-- `docs/plan/` — strategic plans
+- `docs/plan/` — strategic plans (local only, gitignored)
 - `docs/design/` — architecture
 - `docs/mockups/` — UI mockups
 

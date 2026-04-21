@@ -423,6 +423,44 @@ future runtime that emits `token` with `locations`.
   and—Kanopi-specific—actor cross-references (e.g. `@bass.note` proposals
   for our upcoming inter-actor modulation syntax).
 
+### 8.6 `.tidal` vs `.strudel` — two extensions, one adapter (today)
+
+Kanopi accepts both `.tidal` and `.strudel` file extensions. Both route to
+the same `strudelAdapter` today (`runtimeFromExt` in `packages/ui/src/lib/runtimes/adapter.ts`
+returns `'strudel'` for `.tidal` and `.strudel` alike, and `runtimes.ts`
+aliases `tidalAdapter = strudelAdapter`).
+
+**Why keep both extensions instead of picking one?**
+
+1. **Import/export parity** — a live coder walking in from atom-tidal /
+   vscode-tidal has hundreds of `.tidal` files from their personal library.
+   Making them rename is a silly barrier. Strudel users expect `.strudel`.
+   Both communities find what they expect.
+2. **Syntax convergence in v1** — in Phase 1 (browser-only) Kanopi runs
+   Strudel, which is *JS with mini-notation*. A real `.tidal` file is
+   Haskell — mostly incompatible. But the **usable Strudel subset of
+   Tidal** (sound + gain + pan + mini-notation chains) is source-compatible.
+   For that subset, same adapter, same ergonomics, either extension works.
+3. **Future `.tidal` → GHCi (Tauri v2)** — the real Tidal path (native
+   GHCi + SuperDirt via osc-bridge) is scoped for Phase 2. When that lands,
+   `runtimeFromExt('.tidal')` switches to the actual `ghciAdapter` and
+   `.tidal` files get real Haskell semantics. `.strudel` stays on
+   `strudelAdapter`. The distinction becomes load-bearing at that point.
+
+**Until then (v1 web)**: `.tidal` is an alias. Syntax coloring, autocomplete,
+runtime — identical. The adapter logs a one-time debug warning on first
+`.tidal` eval ("treating as Strudel — real GHCi Tidal available in Tauri v2")
+to set expectations.
+
+**What breaks this decision?** If a user pastes a Haskell-only Tidal
+pattern (`do let foo = …; d1 $ …` block form, operator `#`, `|+|`, `BootTidal.hs`
+imports) into a `.tidal` file in Kanopi v1, it won't run — Strudel doesn't
+parse Haskell. That's documented as a known limitation, not a bug.
+
+**Panel Actors naming** — both extensions use the same slot detection:
+Strudel `$:` slots in `.strudel`, Tidal `d1..d16` slots (not yet supported)
+in `.tidal`, fallback `file.#N` positional.
+
 ---
 
 ## 9. Out of scope in Phase 1 (require osc-bridge / Tauri / BPx)

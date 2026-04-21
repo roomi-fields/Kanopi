@@ -1,8 +1,7 @@
 # Scenes — Hierarchie, scoping et communication inter-scenes
 
 > Voir aussi : [ARCHITECTURE.md](ARCHITECTURE.md) pour le pipeline dispatcher,
-> [SOUNDS.md](SOUNDS.md) pour le modele acteur,
-> [UI_WEB.md](../plan/UI_WEB.md) Phase 6 pour le bus OSC/Link.
+> [SOUNDS.md](SOUNDS.md) pour le modele acteur.
 
 ## Vue d'ensemble
 
