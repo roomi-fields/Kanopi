@@ -378,14 +378,24 @@ async function ensure(): Promise<StrudelMod> {
           },
           // Drawer lifecycle — mirrors StrudelMirror's onToggle (codemirror.mjs:
           // 186-203). On start, the drawer subscribes to the scheduler and
-          // begins iterating painters each animation frame. On stop, it halts
-          // and cleanupDraw clears every lingering `.draw()` rAF + the
-          // #test-canvas contents.
+          // begins iterating painters each animation frame. On stop, it halts,
+          // cleanupDraw clears every lingering `.draw()` rAF + the #test-canvas
+          // contents, AND updateMiniLocations(view, []) clears the base
+          // mini-notation decorations — without this the last active char
+          // stays outlined after Ctrl+. because the visibleMiniLocations
+          // StateField never receives a fresh dispatch.
           onToggle: (started: boolean) => {
             if (!drawer || !scheduler) return;
             try {
               if (started) drawer.start(scheduler);
-              else { drawer.stop(); cleanupDraw?.(true); }
+              else {
+                drawer.stop();
+                cleanupDraw?.(true);
+                const view = currentEditorView() as Parameters<typeof cmProxy.updateMiniLocations>[0] | undefined;
+                if (view && typeof cmProxy.updateMiniLocations === 'function') {
+                  try { cmProxy.updateMiniLocations(view, []); } catch { /* best-effort */ }
+                }
+              }
             } catch (err) { console.warn('[kanopi/strudel] drawer toggle', err); }
           },
           // afterEval fires after the transpiler has produced widget configs

@@ -4,14 +4,17 @@
   import ScenesPanel from './ScenesPanel.svelte';
   import InspectorPanel from './InspectorPanel.svelte';
   import ConsolePanel from './ConsolePanel.svelte';
-  import VizPanel from '../viz/VizPanel.svelte';
 
+  // No dedicated Viz tab anymore — upstream fullscreen canvas
+  // (#test-canvas, phase 2.1 task 1.2) + inline widgets (task 1.3bis) +
+  // mini-notation highlight (task 1.4) render directly in the editor.
+  // The `'viz'` RightPanelTab literal and ui.vizTab/showViz will be
+  // removed in task 1.6 along with other leftover viz plumbing.
   const tabs: { id: RightPanelTab; label: string }[] = [
     { id: 'actors', label: 'Actors' },
     { id: 'scenes', label: 'Scenes' },
     { id: 'inspector', label: 'Inspector' },
-    { id: 'console', label: 'Console' },
-    { id: 'viz', label: 'Viz' }
+    { id: 'console', label: 'Console' }
   ];
 </script>
 
@@ -33,7 +36,6 @@
     {:else if ui.rightPanelTab === 'scenes'}<ScenesPanel />
     {:else if ui.rightPanelTab === 'inspector'}<InspectorPanel />
     {:else if ui.rightPanelTab === 'console'}<ConsolePanel />
-    {:else if ui.rightPanelTab === 'viz'}<VizPanel />
     {/if}
   </div>
 </aside>

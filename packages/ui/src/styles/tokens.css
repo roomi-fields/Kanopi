@@ -12,6 +12,12 @@
   --text-dim: #55585d;
   --text-faint: #3a3d42;
 
+  /* --foreground: upstream @strudel/codemirror uses it as the default outline
+     color for mini-notation highlight when no `.color()` is set
+     (highlight.mjs:95). Alias to amber so the pulse is visible against the
+     dark editor background. */
+  --foreground: var(--amber);
+
   --amber: #e89c3e;
   --amber-soft: #f5b25a;
   --amber-glow: rgba(232, 156, 62, 0.35);
