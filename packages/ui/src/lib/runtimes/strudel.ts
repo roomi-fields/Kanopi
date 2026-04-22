@@ -295,59 +295,30 @@ async function ensure(): Promise<StrudelMod> {
             emitError(err);
           }
         });
-        // Neutralize `.scope()`, `.pianoroll()`, `.spectrum()` — @strudel/webaudio
-        // patches these on Pattern.prototype and they call into @strudel/draw,
-        // which spawns a FULLSCREEN `position:fixed` canvas on document.body
-        // (see draw.mjs:17). That canvas overlays the whole IDE with Strudel's
-        // own viz — wrong rendering surface for Kanopi, which routes rendering
-        // to its own VizPanel.
+        // Inline variants `._scope()`, `._pianoroll()`, `._spectrum()` throw
+        // `_X is not a function` at hap-schedule time in our setup because
+        // @strudel/codemirror's double-load registers them on the wrong
+        // Pattern graph. Fall them back to chainable no-ops so user code
+        // with `._pianoroll()` still evals and plays audio; phase 2.1 task
+        // 1.3 will wire the real widget dispatch through our single-source
+        // proxy (see strudel-cm.ts).
         //
-        // Override unconditionally with chainable no-ops. The methods stay
-        // valid Strudel syntax so the user writes native code, Kanopi just
-        // owns the rendering surface via `ui.showViz(hint)`.
-        // Preserve native pianoroll/scope/spectrum implementations before we
-        // install the no-op overrides — the underscored variants below need
-        // to delegate to the real impls (with a canvas ctx) to actually draw.
-        // Fullscreen variants (.scope/.pianoroll/.spectrum) are neutralized
-        // for the reason above. Inline variants (._scope/._pianoroll/
-        // ._spectrum) SHOULD be real widget calls once phase 2.1 task 1.3
-        // wires @strudel/codemirror's widgetPlugin correctly, but until
-        // then they throw `_X is not a function` at hap-schedule time
-        // because the double-load of @strudel/codemirror registers them
-        // on the wrong Pattern graph. Fall them back to chainable no-ops
-        // so user code with `._pianoroll()` still evals and plays audio.
-        const nativeViz: Record<string, unknown> = {};
+        // Fullscreen variants (`.scope() / .pianoroll() / .spectrum() /
+        // .tscope() / .tpianoroll()`) now run natively: CMEditor.svelte
+        // pre-injects a `#test-canvas` inside the editor host, so
+        // @strudel/draw's getDrawContext() (draw.mjs:11) picks it up instead
+        // of prepending a fullscreen overlay on document.body. Phase 2.1
+        // task 1.2.
         try {
           const mAny = mod as unknown as { Pattern?: { prototype?: Record<string, unknown> } };
           const proto = mAny.Pattern?.prototype;
           if (proto) {
-            for (const fn of [
-              'scope', 'pianoroll', 'spectrum', 'tscope', 'tpianoroll',
-              '_scope', '_pianoroll', '_spectrum'
-            ] as const) {
-              if (typeof proto[fn] === 'function') nativeViz[fn] = proto[fn];
+            for (const fn of ['_scope', '_pianoroll', '_spectrum'] as const) {
               proto[fn] = function(this: unknown) { return this; };
             }
           }
         } catch {
           /* best-effort — if the Pattern class isn't at mod.Pattern, skip */
-        }
-        // The fullscreen `#test-canvas` auto-created by @strudel/draw's
-        // getDrawContext is still inserted into document.body even with
-        // our no-op overrides above (the call chain runs before the no-op
-        // short-circuits). Hide it via CSS so it never paints over the IDE.
-        // Side note: `nativeViz` remains defined above in case a future phase
-        // wires inline `._pianoroll()` widgets — we'll need the original
-        // impls to delegate to at that point.
-        void nativeViz;
-        if (typeof document !== 'undefined') {
-          const styleId = 'kanopi-strudel-hide-fullscreen-canvas';
-          if (!document.getElementById(styleId)) {
-            const style = document.createElement('style');
-            style.id = styleId;
-            style.textContent = '#test-canvas { display: none !important; }';
-            document.head.appendChild(style);
-          }
         }
         // Sample banks are no longer hardcoded — the session declares them
         // via `@library <id>`, which `real-core.loadSession` applies through

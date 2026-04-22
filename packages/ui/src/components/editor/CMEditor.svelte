@@ -36,9 +36,12 @@
   const { docId, fileName, doc, runtime, onChange, onEval }: Props = $props();
 
   let host: HTMLDivElement;
+  let canvas: HTMLCanvasElement | undefined = $state();
   let view: EditorView | undefined;
   let currentDocId: string | undefined;
   let strudelInstall: ((view: EditorView) => Promise<void>) | undefined;
+
+  const isStrudelLike = $derived(runtime === 'strudel' || runtime === 'tidal');
 
   // Wrapped as a pure Promise chain (no async/await touching $props — Svelte 5
   // mangles those). onEval now throws on any eval error; we catch and mark err.
@@ -196,9 +199,32 @@
       }
     }
   });
+
+  // Size the pre-injected #test-canvas to the editor box with DPR scaling, so
+  // @strudel/draw's getDrawContext() picks up our canvas (see strudel.ts and
+  // node_modules/@strudel/draw/draw.mjs:9) and .pianoroll() / .scope() /
+  // .spectrum() render inside the editor area instead of a fullscreen overlay.
+  // Phase 2.1 task 1.2.
+  $effect(() => {
+    if (!canvas || !host) return;
+    const el = canvas;
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      el.width = Math.max(1, Math.round(host.clientWidth * dpr));
+      el.height = Math.max(1, Math.round(host.clientHeight * dpr));
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(host);
+    return () => ro.disconnect();
+  });
 </script>
 
-<div class="cm-host" bind:this={host}></div>
+<div class="cm-host" bind:this={host}>
+  {#if isStrudelLike}
+    <canvas id="test-canvas" bind:this={canvas} aria-hidden="true"></canvas>
+  {/if}
+</div>
 
 <style>
   .cm-host {
@@ -206,6 +232,7 @@
     min-height: 0;
     overflow: hidden;
     display: flex;
+    position: relative;
   }
   .cm-host :global(.cm-editor) {
     flex: 1;
@@ -214,5 +241,15 @@
   }
   .cm-host :global(.cm-editor.cm-focused) {
     outline: none;
+  }
+  /* Pre-injected Strudel draw target. `#test-canvas` is the default id that
+     @strudel/draw's getDrawContext() queries for. Phase 2.1 task 1.2. */
+  .cm-host > canvas#test-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
   }
 </style>
