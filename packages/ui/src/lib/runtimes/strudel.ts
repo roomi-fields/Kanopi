@@ -13,6 +13,12 @@ interface StrudelMod {
       destinationGain?: GainNode;
     };
   };
+  // Re-exported from @strudel/core / @strudel/transpiler inlined in web's dist.
+  // Used by bridgeInlineWidgets() below to teach web's transpiler about the
+  // inline widget methods and to patch Pattern.prototype without going
+  // through @strudel/codemirror (whose dist has its own Pattern / transpiler).
+  Pattern: { prototype: Record<string, (...args: unknown[]) => unknown> };
+  registerWidgetType: (type: string) => void;
 }
 
 let analyserAttached = false;
@@ -206,6 +212,84 @@ function emitTokenFromHap(
   });
 }
 
+/**
+ * Bridge Strudel's inline-widget wiring across the dist-bundle boundary.
+ *
+ * @strudel/codemirror/widget.mjs would normally be the one that patches
+ * `_pianoroll / _scope / _spectrum` on Pattern.prototype and registers them
+ * with the transpiler. But cm's dist ships its OWN inlined Pattern and
+ * transpiler — so those patches don't reach @strudel/web's Pattern, which is
+ * what user code actually evaluates against. We use web's exported
+ * `registerWidgetType` + `Pattern.prototype` and route canvas registration
+ * through `setWidget` from our strudel-cm proxy, which targets cm's shared
+ * `widgetElements` map (what `BlockWidget.toDOM()` reads from).
+ *
+ * Invoked once per Strudel init (phase 2.1 task 1.3).
+ */
+async function bridgeInlineWidgets(m: StrudelMod): Promise<void> {
+  try {
+    const { setWidget } = await import('./strudel-cm');
+    if (typeof setWidget !== 'function') return;
+    if (typeof m.registerWidgetType !== 'function') return;
+    if (!m.Pattern?.prototype) return;
+
+    // Teach web's transpiler which chain methods are widget calls so it
+    // rewrites `._pianoroll()` → `._pianoroll('<generated-id>')` and emits
+    // a widget config entry on `options.meta.widgets` for `afterEval`.
+    for (const type of ['_pianoroll', '_scope', '_spectrum'] as const) {
+      m.registerWidgetType(type);
+    }
+
+    // Port of @strudel/codemirror/widget.mjs:getCanvasWidget. Creates/reuses
+    // a <canvas> keyed by the transpiler-generated id and registers it with
+    // cm's widgetElements via setWidget(). BlockWidget.toDOM() then finds
+    // the same element when the addWidget effect fires.
+    const getCanvasWidget = (id: string, options: Record<string, unknown> = {}): HTMLCanvasElement => {
+      const width = typeof options.width === 'number' ? options.width : 500;
+      const height = typeof options.height === 'number' ? options.height : 60;
+      const pixelRatio = typeof options.pixelRatio === 'number'
+        ? options.pixelRatio
+        : (window.devicePixelRatio || 1);
+      let canvas = document.getElementById(id) as HTMLCanvasElement | null;
+      if (!canvas) canvas = document.createElement('canvas');
+      canvas.width = width * pixelRatio;
+      canvas.height = height * pixelRatio;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      setWidget(id, canvas);
+      return canvas;
+    };
+
+    const proto = m.Pattern.prototype;
+    proto._pianoroll = function (...args: unknown[]) {
+      const id = String(args[0] ?? '');
+      const options = (args[1] as Record<string, unknown> | undefined) ?? {};
+      const ctx = getCanvasWidget(id, options).getContext('2d');
+      const pat = this as unknown as { tag: (id: string) => { pianoroll: (o: unknown) => unknown } };
+      return pat.tag(id).pianoroll({ fold: 1, ...options, ctx, id });
+    };
+    proto._scope = function (...args: unknown[]) {
+      const id = String(args[0] ?? '');
+      const options = (args[1] as Record<string, unknown> | undefined) ?? {};
+      const merged = { width: 500, height: 60, pos: 0.5, scale: 1, ...options };
+      const ctx = getCanvasWidget(id, merged).getContext('2d');
+      const pat = this as unknown as { tag: (id: string) => { scope: (o: unknown) => unknown } };
+      return pat.tag(id).scope({ ...merged, ctx, id });
+    };
+    proto._spectrum = function (...args: unknown[]) {
+      const id = String(args[0] ?? '');
+      const options = (args[1] as Record<string, unknown> | undefined) ?? {};
+      const size = typeof options.size === 'number' ? options.size : 200;
+      const merged: Record<string, unknown> = { width: size, height: size, ...options, size: size / 5 };
+      const ctx = getCanvasWidget(id, merged).getContext('2d');
+      const pat = this as unknown as { spectrum: (o: unknown) => unknown };
+      return pat.spectrum({ ...merged, ctx, id });
+    };
+  } catch (err) {
+    console.error('[kanopi/strudel] inline-widget bridge failed', err);
+  }
+}
+
 async function ensure(): Promise<StrudelMod> {
   if (!mod) {
     setStatus('loading');
@@ -249,32 +333,44 @@ async function ensure(): Promise<StrudelMod> {
           // them to the active CMEditor via `updateWidgets` from
           // @strudel/codemirror — that's how strudel.cc renders its inline
           // canvases directly under the code that produced them.
+          // afterEval fires after the transpiler has walked the composite
+          // and produced widget configs for `._pianoroll() / ._scope() /
+          // ._spectrum()` calls. Each config carries a `to` offset measured
+          // in the TRANSPILED composite (our IIFE wrapper + Strudel's own
+          // string→mini rewrites), so we remap it back to the user's source
+          // doc via `mapCompositeToSource` before dispatching — otherwise
+          // CM6 throws "Position N out of range for changeset of length M".
+          // We also drop widgets that can't be mapped (past end of doc,
+          // inside machinery code) and skip slider widgets (handled
+          // elsewhere).
           afterEval: (options: { meta?: { widgets?: unknown[] } }) => {
-            // WIP: inline widget dispatch. @strudel/codemirror's updateWidgets
-            // + our widgetPlugin extension plumbing is in place (CMEditor
-            // registers the view, this hook fires with widget configs). The
-            // widget canvases still don't appear in the DOM — likely because
-            // @strudel/codemirror is loaded through two distinct ESM graphs
-            // (one via @strudel/web's webaudioRepl, one via our import), so
-            // `setWidget(id, el)` in graph A populates a widgetElements map
-            // that `BlockWidget.toDOM()` in graph B never sees. Fix TBD.
-            const widgets = options?.meta?.widgets ?? [];
-            if (!widgets.length) return;
-            const view = currentEditorView();
+            const raw = options?.meta?.widgets ?? [];
+            if (!raw.length) return;
+            const view = currentEditorView() as { state?: { doc?: { length: number } } } | undefined;
             if (!view) return;
+            const docLen = view.state?.doc?.length ?? 0;
+            const widgets: unknown[] = [];
+            for (const w of raw) {
+              const cfg = w as { type?: string; to?: number; id?: string; from?: number };
+              if (cfg.type === 'slider') continue;
+              if (typeof cfg.to !== 'number') continue;
+              const mapped = mapCompositeToSource(cfg.to, cfg.to);
+              if (!mapped) continue;
+              if (mapped.to < 0 || mapped.to > docLen) continue;
+              widgets.push({ ...cfg, to: mapped.to, from: mapped.from });
+            }
+            if (!widgets.length) return;
             // Lazy-load strudel-cm proxy to avoid pulling @strudel/codemirror
             // on first load when no Strudel editor is active yet.
             import('./strudel-cm').then(({ updateWidgets }) => {
               if (!updateWidgets) return;
               try {
-                // `view` is kept as `unknown` at this layer to avoid pulling
-                // CM6 types into the runtime module; cast at the proxy call.
                 updateWidgets(
                   view as Parameters<typeof updateWidgets>[0],
-                  widgets.filter((w: unknown) => (w as { type?: string }).type !== 'slider')
+                  widgets
                 );
-              } catch {
-                /* best-effort — widget update shouldn't break eval */
+              } catch (err) {
+                console.warn('[kanopi/strudel] widget dispatch failed', err);
               }
             });
           }
@@ -295,31 +391,23 @@ async function ensure(): Promise<StrudelMod> {
             emitError(err);
           }
         });
-        // Inline variants `._scope()`, `._pianoroll()`, `._spectrum()` throw
-        // `_X is not a function` at hap-schedule time in our setup because
-        // @strudel/codemirror's double-load registers them on the wrong
-        // Pattern graph. Fall them back to chainable no-ops so user code
-        // with `._pianoroll()` still evals and plays audio; phase 2.1 task
-        // 1.3 will wire the real widget dispatch through our single-source
-        // proxy (see strudel-cm.ts).
+        // `.pianoroll() / .scope() / .spectrum() / .tscope() / .tpianoroll()`
+        // (fullscreen variants) run natively: CMEditor.svelte pre-injects a
+        // `#test-canvas` inside the editor host so @strudel/draw's
+        // getDrawContext() (draw.mjs:11) picks it up instead of prepending a
+        // fullscreen overlay on document.body. Phase 2.1 task 1.2.
         //
-        // Fullscreen variants (`.scope() / .pianoroll() / .spectrum() /
-        // .tscope() / .tpianoroll()`) now run natively: CMEditor.svelte
-        // pre-injects a `#test-canvas` inside the editor host, so
-        // @strudel/draw's getDrawContext() (draw.mjs:11) picks it up instead
-        // of prepending a fullscreen overlay on document.body. Phase 2.1
-        // task 1.2.
-        try {
-          const mAny = mod as unknown as { Pattern?: { prototype?: Record<string, unknown> } };
-          const proto = mAny.Pattern?.prototype;
-          if (proto) {
-            for (const fn of ['_scope', '_pianoroll', '_spectrum'] as const) {
-              proto[fn] = function(this: unknown) { return this; };
-            }
-          }
-        } catch {
-          /* best-effort — if the Pattern class isn't at mod.Pattern, skip */
-        }
+        // `._pianoroll() / ._scope() / ._spectrum()` (inline variants):
+        // @strudel/codemirror/widget.mjs patches these on ITS OWN Pattern
+        // (inlined in its dist bundle) and registers the widget types on ITS
+        // OWN transpiler. @strudel/web has a separate Pattern + transpiler
+        // instance (also inlined in its dist), so cm's patches never reach
+        // user code. We bridge manually: register widget types on web's
+        // transpiler, and install the inline-widget methods on web's
+        // Pattern.prototype using setWidget() from our proxy — which points
+        // at cm's shared widgetElements map so cm's BlockWidget.toDOM() can
+        // still locate the canvas. Phase 2.1 task 1.3.
+        await bridgeInlineWidgets(mod!);
         // Sample banks are no longer hardcoded — the session declares them
         // via `@library <id>`, which `real-core.loadSession` applies through
         // `loadSampleBank(source)` below. Out-of-the-box the default session

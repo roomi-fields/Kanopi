@@ -63,6 +63,15 @@ export default defineConfig({
   // than once" warning persists in dev — but dedupe below guarantees both
   // chunks resolve the same module graph, so only one scheduler runs and
   // haps aren't duplicated. Verified via a per-hap counter run on 2026-04-19.
+  //
+  // NOTE (phase 2.1 task 1.3, 2026-04-22): even with dedupe, each dist
+  // bundle has its own inlined Pattern/transpiler — so inline widgets
+  // (`._pianoroll()` etc.) can't travel via @strudel/codemirror's
+  // Pattern.prototype patch. strudel.ts runtime-bridges the widget types
+  // onto @strudel/web's Pattern/transpiler instead of fighting the bundler.
+  // Going source-only (aliasing each @strudel/* to its *.mjs source) was
+  // tried and rolled back: @strudel/codemirror's source imports an
+  // upstream-monorepo-only `../../doc.json` that isn't shipped in npm.
   resolve: {
     dedupe: [
       '@strudel/core',
