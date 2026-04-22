@@ -92,6 +92,29 @@ function parseNoteToMidi(s: string): number | undefined {
   return (oct + 1) * 12 + base + acc;
 }
 
+// Filter + remap a hap's `context.locations` from composite-space to
+// source-doc space. Returns a shallow-cloned hap with its locations rewritten
+// as `{start, end}` objects (the shape `highlightMiniLocations` expects per
+// highlight.mjs:63). Returns undefined when the hap is inactive or its
+// locations don't map to the current file — dropping it prevents the
+// visibleMiniLocations StateField from keying on stale composite offsets.
+function hapWithMappedLocations(hap: StrudelHap, time: number): unknown | undefined {
+  const active = (hap as unknown as { isActive?: (t: number) => boolean }).isActive;
+  if (typeof active !== 'function' || !active.call(hap, time)) return undefined;
+  const rawLocs = hap.context?.locations;
+  if (!rawLocs || !rawLocs.length) return undefined;
+  const mapped: Array<{ start: number; end: number }> = [];
+  for (const raw of rawLocs) {
+    const pair = rawOffsetsFromLocation(raw);
+    if (!pair) continue;
+    const src = mapCompositeToSource(pair[0], pair[1]);
+    if (!src) continue;
+    mapped.push({ start: src.from, end: src.to });
+  }
+  if (!mapped.length) return undefined;
+  return { ...hap, context: { ...(hap.context ?? {}), locations: mapped } };
+}
+
 // Extract (from,to) composite offsets from a strudel location object.
 // Handles both legacy [from,to] tuples and current {start:number,end:number}.
 function rawOffsetsFromLocation(loc: unknown): [number, number] | undefined {
@@ -292,11 +315,34 @@ async function ensure(): Promise<StrudelMod> {
         // `drawTime = [lookbehind, lookahead]` seconds. Upstream StrudelMirror
         // uses [-2, 2] when painters are active, [0, 0] otherwise to avoid
         // querying a 4-second window when only highlight is needed.
+        // Cache the cm proxy exports — the Drawer callback runs on every
+        // animation frame, and re-`import()`ing is wasteful even when Vite
+        // memoizes the promise. Resolve once, read pointers every frame.
+        const cmProxy = await import('./strudel-cm');
+
         let drawer: DrawerInstance | undefined;
         let scheduler: unknown;
         if (typeof DrawerCtor === 'function' && typeof getDrawContext === 'function') {
           drawer = new DrawerCtor((haps: unknown[], time: number, _: unknown, painters: Array<(ctx: CanvasRenderingContext2D, t: number, h: unknown[], dt: readonly number[]) => void>) => {
             const ctx = getDrawContext();
+            // Mini-notation highlight — mirrors StrudelMirror's per-frame call
+            // (codemirror.mjs:175-178). Upstream highlightMiniLocations reads
+            // `hap.context.locations` which arrive in composite-space (Kanopi
+            // wraps each slot in an IIFE, shifting every offset). We remap to
+            // source-space so the `start:end` IDs match those from
+            // updateMiniLocations() in afterEval — otherwise the
+            // visibleMiniLocations StateField keys never intersect with
+            // miniLocations and nothing highlights.
+            const view = currentEditorView() as Parameters<typeof cmProxy.highlightMiniLocations>[0] | undefined;
+            if (view && typeof cmProxy.highlightMiniLocations === 'function') {
+              const activeHaps: unknown[] = [];
+              for (const h of haps as StrudelHap[]) {
+                const mapped = hapWithMappedLocations(h, time);
+                if (mapped) activeHaps.push(mapped);
+              }
+              try { cmProxy.highlightMiniLocations(view, time, activeHaps); }
+              catch { /* dispatch race shouldn't halt the frame */ }
+            }
             painters?.forEach((p) => {
               try { p(ctx, time, haps, [-2, 2]); } catch { /* painter glitch shouldn't halt the frame */ }
             });
@@ -358,13 +404,17 @@ async function ensure(): Promise<StrudelMod> {
           // `.onPaint`-registered painters on the freshly-evaluated pattern
           // get collected for the next frame. Without this, spiral / pitchwheel
           // / punchcard remain blank after eval.
-          afterEval: (options: { meta?: { widgets?: unknown[] }; pattern?: unknown }) => {
-            const raw = options?.meta?.widgets ?? [];
+          afterEval: (options: { meta?: { widgets?: unknown[]; miniLocations?: number[][] }; pattern?: unknown }) => {
+            const rawWidgets = options?.meta?.widgets ?? [];
+            const rawMini = options?.meta?.miniLocations ?? [];
             const view = currentEditorView() as { state?: { doc?: { length: number } } } | undefined;
-            if (view && raw.length) {
+            if (view) {
               const docLen = view.state?.doc?.length ?? 0;
+
+              // Widget configs — remap composite-space `to` → source-doc, drop
+              // out-of-range and slider widgets (task 1.5 will wire sliders).
               const widgets: unknown[] = [];
-              for (const w of raw) {
+              for (const w of rawWidgets) {
                 const cfg = w as { type?: string; to?: number; id?: string; from?: number };
                 if (cfg.type === 'slider') continue;
                 if (typeof cfg.to !== 'number') continue;
@@ -373,15 +423,29 @@ async function ensure(): Promise<StrudelMod> {
                 if (mapped.to < 0 || mapped.to > docLen) continue;
                 widgets.push({ ...cfg, to: mapped.to, from: mapped.from });
               }
-              if (widgets.length) {
-                import('./strudel-cm').then(({ updateWidgets }) => {
-                  if (!updateWidgets) return;
-                  try {
-                    updateWidgets(view as Parameters<typeof updateWidgets>[0], widgets);
-                  } catch (err) {
-                    console.warn('[kanopi/strudel] widget dispatch failed', err);
-                  }
-                });
+              if (widgets.length && typeof cmProxy.updateWidgets === 'function') {
+                try { cmProxy.updateWidgets(view as Parameters<typeof cmProxy.updateWidgets>[0], widgets); }
+                catch (err) { console.warn('[kanopi/strudel] widget dispatch failed', err); }
+              }
+
+              // Mini-notation locations — transpiler emits tuples [from, to,
+              // value]; upstream highlight.mjs:27-38 only reads [from, to].
+              // Same composite→source remap as widgets. `updateMiniLocations`
+              // sets the base `miniLocations` StateField; per-frame
+              // `highlightMiniLocations` (in the Drawer) picks which IDs to
+              // outline. Without this call, the highlight StateField has no
+              // ranges to intersect with active haps and nothing lights up.
+              const mini: Array<[number, number]> = [];
+              for (const loc of rawMini) {
+                if (!Array.isArray(loc) || typeof loc[0] !== 'number' || typeof loc[1] !== 'number') continue;
+                const mapped = mapCompositeToSource(loc[0], loc[1]);
+                if (!mapped) continue;
+                if (mapped.from < 0 || mapped.to > docLen) continue;
+                mini.push([mapped.from, mapped.to]);
+              }
+              if (typeof cmProxy.updateMiniLocations === 'function') {
+                try { cmProxy.updateMiniLocations(view as Parameters<typeof cmProxy.updateMiniLocations>[0], mini); }
+                catch (err) { console.warn('[kanopi/strudel] miniLocations dispatch failed', err); }
               }
             }
             if (drawer && scheduler && options?.pattern) {

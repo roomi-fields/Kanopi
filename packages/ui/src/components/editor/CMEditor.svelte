@@ -19,7 +19,6 @@
   import { miniOverlay } from './mini-overlay';
   import { kanopiLinter } from './kanopi-lint';
   import { lintGutter } from '@codemirror/lint';
-  import { patternHighlightExtension } from '../viz/pattern-highlight';
   import { widgetPlugin } from '../../lib/runtimes/strudel-cm';
   import { registerStrudelEditorView, unregisterStrudelEditorView } from '../../lib/runtimes/strudel';
   import { extractBlocks } from '../../lib/blocks/extract-blocks';
@@ -85,7 +84,7 @@
       languageFor(lang),
       syntaxHighlighting(highlightFor(lang), { fallback: true }),
       strudel.ext,
-      ...((lang === 'strudel' || lang === 'tidal') ? [miniOverlay, patternHighlightExtension(() => fileName), ...widgetPlugin] : []),
+      ...((lang === 'strudel' || lang === 'tidal') ? [miniOverlay, ...widgetPlugin] : []),
       ...(lang === 'kanopi' ? [kanopiLinter, lintGutter()] : []),
       flashField,
       flashTheme,

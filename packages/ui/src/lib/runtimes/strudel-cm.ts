@@ -32,6 +32,7 @@ type StrudelCM = {
   extensions: Record<string, (v: unknown) => Extension>;
   highlightExtension: Extension;
   highlightMiniLocations: (view: EditorView, time: number, haps: unknown[]) => void;
+  updateMiniLocations: (view: EditorView, locations: Array<[number, number]>) => void;
 };
 
 const cmAny = cm as unknown as StrudelCM;
@@ -43,3 +44,4 @@ export const addWidget = cmAny.addWidget;
 export const extensions = cmAny.extensions;
 export const highlightExtension = cmAny.highlightExtension;
 export const highlightMiniLocations = cmAny.highlightMiniLocations;
+export const updateMiniLocations = cmAny.updateMiniLocations;

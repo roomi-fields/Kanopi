@@ -26,8 +26,12 @@ export function strudelExtras(runtime: Runtime): {
         effects: c.reconfigure([
           toggles.isAutoCompletionEnabled?.(true) ?? [],
           toggles.isTooltipEnabled?.(true) ?? [],
-          toggles.isPatternHighlightingEnabled?.(true) ?? [],
-          mod.highlightExtension
+          // `isPatternHighlightingEnabled(true)` already returns
+          // `Prec.highest(highlightExtension)` (highlight.mjs:137). Adding
+          // `mod.highlightExtension` a second time registered the same three
+          // StateFields twice and prevented upstream highlighting from
+          // working — fixed in phase 2.1 task 1.4.
+          toggles.isPatternHighlightingEnabled?.(true) ?? []
         ])
       });
     } catch (err) {
