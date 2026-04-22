@@ -2,6 +2,15 @@ import type { RuntimeAdapter, EvalSource, LogPush } from './adapter';
 import { createEventBus } from '../events/bus';
 import type { EventBus, TokenLocation } from '../events/types';
 
+// Shape of a @strudel/draw Drawer instance (draw.mjs:136). Kept local — we
+// don't call through a type-checked import, we consume the dynamic module.
+interface DrawerInstance {
+  start: (scheduler: unknown) => void;
+  stop: () => void;
+  invalidate: (scheduler: unknown, t?: number) => void;
+  setDrawTime?: (drawTime: readonly number[]) => void;
+}
+
 interface StrudelMod {
   initStrudel: (opts?: Record<string, unknown>) => Promise<unknown>;
   evaluate: (code: string, autoplay?: boolean) => Promise<unknown>;
@@ -267,7 +276,34 @@ async function ensure(): Promise<StrudelMod> {
         // Strudel's async errors never reject m.evaluate() — they surface
         // through these callbacks DURING the evaluate await, and through a
         // 'strudel.log' DOM event as a safety net for scheduler ticks.
-        await mod!.initStrudel({
+        // Drawer wiring, in mirror of @strudel/codemirror/codemirror.mjs
+        // (StrudelMirror's drawer — codemirror.mjs:175-224, 287-288). Needed
+        // for viz methods that register painters via `Pattern.prototype.onPaint`
+        // (spiral / pitchwheel / punchcard / wordfall + their `_X` widget
+        // variants), since `onPaint` is inert without a Drawer iterating
+        // `state.controls.painters` each frame. `.draw()`-based viz
+        // (pianoroll/scope/spectrum/fscope) runs its own rAF loop and
+        // doesn't need this. Phase 2.1 task 1.3ter.
+        // @ts-expect-error — @strudel/draw has no .d.ts
+        const drawMod = await import('@strudel/draw');
+        const DrawerCtor = (drawMod as { Drawer?: new (...a: unknown[]) => DrawerInstance }).Drawer;
+        const getDrawContext = (drawMod as { getDrawContext?: () => CanvasRenderingContext2D }).getDrawContext;
+        const cleanupDraw = (drawMod as { cleanupDraw?: (clear?: boolean, id?: string) => void }).cleanupDraw;
+        // `drawTime = [lookbehind, lookahead]` seconds. Upstream StrudelMirror
+        // uses [-2, 2] when painters are active, [0, 0] otherwise to avoid
+        // querying a 4-second window when only highlight is needed.
+        let drawer: DrawerInstance | undefined;
+        let scheduler: unknown;
+        if (typeof DrawerCtor === 'function' && typeof getDrawContext === 'function') {
+          drawer = new DrawerCtor((haps: unknown[], time: number, _: unknown, painters: Array<(ctx: CanvasRenderingContext2D, t: number, h: unknown[], dt: readonly number[]) => void>) => {
+            const ctx = getDrawContext();
+            painters?.forEach((p) => {
+              try { p(ctx, time, haps, [-2, 2]); } catch { /* painter glitch shouldn't halt the frame */ }
+            });
+          }, [-2, 2]);
+        }
+
+        const repl = await mod!.initStrudel({
           onEvalError: (err: unknown) => {
             latchedError = err;
             emitError(err);
@@ -294,6 +330,18 @@ async function ensure(): Promise<StrudelMod> {
             }
             return pattern;
           },
+          // Drawer lifecycle — mirrors StrudelMirror's onToggle (codemirror.mjs:
+          // 186-203). On start, the drawer subscribes to the scheduler and
+          // begins iterating painters each animation frame. On stop, it halts
+          // and cleanupDraw clears every lingering `.draw()` rAF + the
+          // #test-canvas contents.
+          onToggle: (started: boolean) => {
+            if (!drawer || !scheduler) return;
+            try {
+              if (started) drawer.start(scheduler);
+              else { drawer.stop(); cleanupDraw?.(true); }
+            } catch (err) { console.warn('[kanopi/strudel] drawer toggle', err); }
+          },
           // afterEval fires after the transpiler has produced widget configs
           // for inline `._X()` calls. Each config carries `to` as an offset
           // into the TRANSPILED COMPOSITE (our IIFE wrapper + Strudel's own
@@ -305,36 +353,49 @@ async function ensure(): Promise<StrudelMod> {
           //
           // Slider widgets are filtered out here until phase 2.1 task 1.5
           // wires the bidirectional slider<->state sync.
-          afterEval: (options: { meta?: { widgets?: unknown[] } }) => {
+          //
+          // Finally, the drawer is invalidated (codemirror.mjs:221-224) so
+          // `.onPaint`-registered painters on the freshly-evaluated pattern
+          // get collected for the next frame. Without this, spiral / pitchwheel
+          // / punchcard remain blank after eval.
+          afterEval: (options: { meta?: { widgets?: unknown[] }; pattern?: unknown }) => {
             const raw = options?.meta?.widgets ?? [];
-            if (!raw.length) return;
             const view = currentEditorView() as { state?: { doc?: { length: number } } } | undefined;
-            if (!view) return;
-            const docLen = view.state?.doc?.length ?? 0;
-            const widgets: unknown[] = [];
-            for (const w of raw) {
-              const cfg = w as { type?: string; to?: number; id?: string; from?: number };
-              if (cfg.type === 'slider') continue;
-              if (typeof cfg.to !== 'number') continue;
-              const mapped = mapCompositeToSource(cfg.to, cfg.to);
-              if (!mapped) continue;
-              if (mapped.to < 0 || mapped.to > docLen) continue;
-              widgets.push({ ...cfg, to: mapped.to, from: mapped.from });
-            }
-            if (!widgets.length) return;
-            import('./strudel-cm').then(({ updateWidgets }) => {
-              if (!updateWidgets) return;
-              try {
-                updateWidgets(
-                  view as Parameters<typeof updateWidgets>[0],
-                  widgets
-                );
-              } catch (err) {
-                console.warn('[kanopi/strudel] widget dispatch failed', err);
+            if (view && raw.length) {
+              const docLen = view.state?.doc?.length ?? 0;
+              const widgets: unknown[] = [];
+              for (const w of raw) {
+                const cfg = w as { type?: string; to?: number; id?: string; from?: number };
+                if (cfg.type === 'slider') continue;
+                if (typeof cfg.to !== 'number') continue;
+                const mapped = mapCompositeToSource(cfg.to, cfg.to);
+                if (!mapped) continue;
+                if (mapped.to < 0 || mapped.to > docLen) continue;
+                widgets.push({ ...cfg, to: mapped.to, from: mapped.from });
               }
-            });
+              if (widgets.length) {
+                import('./strudel-cm').then(({ updateWidgets }) => {
+                  if (!updateWidgets) return;
+                  try {
+                    updateWidgets(view as Parameters<typeof updateWidgets>[0], widgets);
+                  } catch (err) {
+                    console.warn('[kanopi/strudel] widget dispatch failed', err);
+                  }
+                });
+              }
+            }
+            if (drawer && scheduler && options?.pattern) {
+              try {
+                const getPainters = (options.pattern as { getPainters?: () => unknown[] }).getPainters;
+                const hasPainters = typeof getPainters === 'function'
+                  && getPainters.call(options.pattern).length > 0;
+                drawer.setDrawTime?.(hasPainters ? [-2, 2] : [0, 0]);
+                drawer.invalidate(scheduler);
+              } catch (err) { console.warn('[kanopi/strudel] drawer invalidate', err); }
+            }
           }
-        } as Record<string, unknown>);
+        } as Record<string, unknown>) as { scheduler?: unknown };
+        scheduler = repl?.scheduler;
         document.addEventListener('strudel.log', (e) => {
           const detail = (e as CustomEvent).detail as { message?: string; type?: string };
           if (detail?.type === 'error') {
