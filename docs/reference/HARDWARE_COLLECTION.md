@@ -4,7 +4,7 @@ description: Inventaire synthés/contrôleurs de Romi + classement pour surfaces
 type: project
 originSessionId: 113501ab-5395-4eb5-a25d-c8afebd2cad1
 ---
-## Collection (source: /mnt/d/Claude/matrixbrute/docs/Synthèse complète matériel musical.docx + organisation.xlsx)
+## Collection (source: /home/romi/dev/music/matrixbrute/docs/Synthèse complète matériel musical.docx + organisation.xlsx)
 
 **Synthés clés:** Moog Subsequent 37, Osmose (MPE), Subharmonicon, DFAM×3, Spectravox, Labyrinth, Mother32, GR-Mega, Loopscaper, Torso T-1, Polyend Synth.
 **Semi-modulaire/modulaire:** Nifty-case avec FH-2 (MIDI↔CV bidi, Lua), Pamela's PRO, Disting EX, Quadrax, Morph 4, Mojave, ATOM, etc.

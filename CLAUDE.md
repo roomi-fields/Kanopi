@@ -24,8 +24,8 @@ Kanopi is the IDE product. BPscript is the optional native sequencer language (s
 
 ## Related repos
 
-- `/mnt/d/Claude/BPscript/` — the language (parser, encoder, BPx engine spec)
-- `/mnt/d/Claude/matrixbrute/osc-bridge/` — hardware bridge
+- `/home/romi/dev/bp/BPscript/` — the language (parser, encoder, BPx engine spec)
+- `/home/romi/dev/music/osc-bridge/` — hardware bridge
 - bp3-engine submodule
 
 ## Stack
