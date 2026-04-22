@@ -28,42 +28,6 @@ interface StrudelMod {
   registerWidgetType?: (type: string) => void;
 }
 
-let analyserAttached = false;
-let currentAnalyser: AnalyserNode | undefined;
-
-/**
- * Returns the Strudel master AnalyserNode if the audio path has been tapped.
- * Visualizers use this to recover state when they mount AFTER the one-shot
- * `audio-attach` event has already fired.
- */
-export function getStrudelAnalyser(): AnalyserNode | undefined {
-  return currentAnalyser;
-}
-
-function attachAnalyserOnce() {
-  if (analyserAttached) return;
-  if (!mod) return;
-  const ctrl = mod.getSuperdoughAudioController?.();
-  const master = ctrl?.output?.destinationGain;
-  const ctx = mod.getAudioContext?.();
-  if (!master || !ctx) return;
-  const analyser = ctx.createAnalyser();
-  analyser.fftSize = 2048;
-  analyser.smoothingTimeConstant = 0.5;
-  master.connect(analyser);
-  analyserAttached = true;
-  currentAnalyser = analyser;
-  adapterEvents.emit({
-    schemaVersion: 1,
-    type: 'audio-attach',
-    runtime: 'strudel',
-    source: 'master',
-    t: performance.now(),
-    analyser,
-    channels: 2
-  });
-}
-
 // Strudel hap: the minimum surface we rely on at runtime. Kept loose on
 // purpose — Strudel's internals drift; we only touch well-known fields.
 interface StrudelHap {
@@ -770,10 +734,6 @@ export const strudelAdapter: RuntimeAdapter = {
       log({ runtime: 'strudel', level: 'error', msg: `[${slot}] ${slotErr.message}` });
       throw slotErr;
     }
-    // First successful eval: tap the superdough master gain to feed scope/
-    // spectrum visualizers. Safe to call repeatedly — attachAnalyserOnce is
-    // idempotent and only runs once per AudioContext lifetime.
-    attachAnalyserOnce();
     log({ runtime: 'strudel', level: 'info', msg: `eval ok [${slot}] (${code.length}b)` });
   },
   async stop(src: EvalSource, log: LogPush) {

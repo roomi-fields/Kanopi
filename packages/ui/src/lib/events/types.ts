@@ -55,25 +55,13 @@ export interface FlagEvent extends KanopiEventBase {
   readonly value: number | string | boolean;
 }
 
-export interface AudioAttachEvent extends KanopiEventBase {
-  readonly type: 'audio-attach';
-  readonly analyser: AnalyserNode;
-  readonly channels?: number;
-}
-
-export interface AudioDetachEvent extends KanopiEventBase {
-  readonly type: 'audio-detach';
-}
-
 export type KanopiEvent =
   | BeatEvent
   | BarEvent
   | TransportEvent
   | TriggerEvent
   | TokenEvent
-  | FlagEvent
-  | AudioAttachEvent
-  | AudioDetachEvent;
+  | FlagEvent;
 
 export type EventType = KanopiEvent['type'];
 export type EventOf<T extends EventType> = Extract<KanopiEvent, { type: T }>;

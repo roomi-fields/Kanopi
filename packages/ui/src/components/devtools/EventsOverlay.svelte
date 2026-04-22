@@ -42,10 +42,6 @@
         return `${e.name}${e.pitch !== undefined ? ` p${e.pitch}` : ''} d${e.duration.toFixed(0)}ms${e.locations ? ` [${e.locations.length} loc]` : ''}`;
       case 'flag':
         return `${e.name}=${String(e.value)}`;
-      case 'audio-attach':
-        return `fft=${e.analyser.fftSize}`;
-      case 'audio-detach':
-        return '—';
     }
   }
 
@@ -65,8 +61,6 @@
       <option value="trigger">trigger</option>
       <option value="token">token</option>
       <option value="flag">flag</option>
-      <option value="audio-attach">audio-attach</option>
-      <option value="audio-detach">audio-detach</option>
     </select>
     <select bind:value={filterRuntime}>
       <option value="all">all rt</option>

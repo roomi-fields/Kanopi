@@ -1,12 +1,10 @@
 export type ActivityView = 'files' | 'library' | 'search' | 'hardware' | 'git' | 'docs' | 'account';
-export type RightPanelTab = 'actors' | 'scenes' | 'inspector' | 'console' | 'viz';
-export type VizTab = 'pianoroll' | 'scope' | 'spectrum';
+export type RightPanelTab = 'actors' | 'scenes' | 'inspector' | 'console';
 
 class UiStore {
   activeActivityView = $state<ActivityView>('files');
   sidebarCollapsed = $state(false);
   rightPanelTab = $state<RightPanelTab>('actors');
-  vizTab = $state<VizTab>('pianoroll');
   paletteOpen = $state(false);
   sidebarWidth = $state(260);
   rightPanelWidth = $state(300);
@@ -25,16 +23,6 @@ class UiStore {
 
   setRightPanel(t: RightPanelTab) {
     this.rightPanelTab = t;
-  }
-
-  /**
-   * Select which viz is showing in the right-panel Viz tab. Unlike the
-   * inline block widgets (`._pianoroll()` etc., rendered by @strudel/codemirror
-   * as CM6 decorations), the right panel is an always-on global overview.
-   * Kept as an opt-in surface — no auto-reveal.
-   */
-  showViz(which: VizTab) {
-    this.vizTab = which;
   }
 
   togglePalette() {
