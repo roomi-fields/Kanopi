@@ -2,6 +2,14 @@ import { EditorView } from '@codemirror/view';
 import { HighlightStyle } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 
+// A Strudel `.s("sine")` and a Hydra `.modulate(...)` are both method calls in
+// JS-parser terms, tagged `propertyName` — not `function(variableName)` (that's
+// only for standalone calls like `note(...)` / `osc(...)`). Tying propertyName
+// and function to the same color keeps every callable one visual class, which
+// matters in Strudel/Hydra where 90% of code is chained methods. The cost is
+// that non-callable properties (rare in live-coding code) also land on this
+// color — acceptable tradeoff for the vision principle 5 ("a function is the
+// same color everywhere").
 export const kanopiHighlight = HighlightStyle.define([
   { tag: t.keyword, color: 'var(--amber)', fontWeight: '500' },
   { tag: t.comment, color: 'var(--text-faint)', fontStyle: 'italic' },
@@ -9,10 +17,9 @@ export const kanopiHighlight = HighlightStyle.define([
   { tag: t.number, color: 'var(--cyan)' },
   { tag: t.atom, color: 'var(--tidal)' },
   { tag: t.operator, color: 'var(--text-muted)' },
-  { tag: t.propertyName, color: 'var(--hydra)' },
+  { tag: [t.propertyName, t.function(t.variableName)], color: 'var(--sc)' },
   { tag: t.variableName, color: 'var(--text)' },
   { tag: t.definition(t.variableName), color: 'var(--amber-soft)', fontWeight: '500' },
-  { tag: t.function(t.variableName), color: 'var(--sc)' },
   { tag: t.bool, color: 'var(--cyan)' },
   { tag: t.invalid, color: 'var(--red)' },
   { tag: t.bracket, color: 'var(--text-dim)' },
