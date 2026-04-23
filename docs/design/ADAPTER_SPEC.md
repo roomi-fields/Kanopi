@@ -19,9 +19,12 @@ Source : `packages/ui/src/lib/runtimes/adapter.ts`
 ```ts
 export interface RuntimeAdapter {
   readonly id: Runtime;
+  readonly extensions: readonly string[];     // ['.hydra'], ['.p5'], …
   evaluate(code: string, src: EvalSource, log: LogPush): Promise<void>;
   stop(src: EvalSource, log: LogPush): Promise<void>;
   setBpm?(bpm: number, log: LogPush): void;
+  onBeat?(count: number, log: LogPush): void;
+  onBar?(count: number, log: LogPush): void;
   readonly events?: EventBus;
   dispose(): Promise<void>;
 }
@@ -39,8 +42,16 @@ export type LogPush = (e: {
 }) => void;
 ```
 
-Un adapter minimal implémente uniquement `id`, `evaluate`, `stop`,
+Un adapter minimal implémente `id`, `extensions`, `evaluate`, `stop`,
 `dispose`. Tout le reste est optionnel mais recommandé.
+
+**`extensions`** est la source de vérité pour les formats de fichier
+revendiqués par l'adapter. Le registry dérive automatiquement la liste
+globale (`knownExtensions()`) et le lookup `extension → runtime`. Ajouter
+un nouveau langage signifie : (1) déclarer `extensions: ['.<ext>']` sur
+l'adapter, (2) l'inscrire dans le registry. Rien d'autre à toucher — la
+boîte de dialogue « + New file », `runtimeFromExt`, le tab icon, etc.
+consomment la liste dérivée.
 
 ---
 
@@ -424,3 +435,8 @@ spécifiques à un adapter, consommées par les composants UI dédiés.
   `new Function`) retenu ; Plan B (iframe par runtime) documenté mais
   non retenu v1 (coût latence incompatible budget `§6`). À appliquer en
   refactor sur Hydra avant d'implémenter p5, puis audit Strudel.
+- **2026-04-23 (soir bis)** : ajout du champ `extensions: readonly
+  string[]` à l'interface. Chaque adapter déclare désormais ses
+  extensions (`['.hydra']`, `['.p5']`…) et `registry.ts` dérive le
+  mapping global. Remplace la table `EXTENSION_TO_RUNTIME` standalone,
+  ajouter un langage devient vraiment self-contained.
