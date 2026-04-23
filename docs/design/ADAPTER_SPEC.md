@@ -277,6 +277,32 @@ Un adapter qui dépasse ces cibles doit justifier l'écart ou être refusé
 
 ---
 
+## 7 · Primitives exportées
+
+Surface publique de l'adapter API. Les signatures précises vivent dans
+les types TypeScript ; cette table est un index pour la découverte. Une
+API reference générée (typedoc) est prévue post-2.4, cf `PROGRESS.md §2.7`.
+
+| Primitive                       | Kind      | Source                                    | Rôle                                         |
+| ------------------------------- | --------- | ----------------------------------------- | -------------------------------------------- |
+| `RuntimeAdapter`                | interface | `lib/runtimes/adapter.ts:18`             | Contrat implémenté par chaque adapter        |
+| `EvalSource`                    | type      | `lib/runtimes/adapter.ts:4`              | `{ actorId?, fileId, docOffset? }`           |
+| `LogPush`                       | type      | `lib/runtimes/adapter.ts:16`             | Callback vers Console panel                  |
+| `EventBus`                      | interface | `lib/events/types.ts:72`                 | Bus d'événements optionnel par adapter       |
+| `getAdapter(runtime)`           | fn        | `lib/runtimes/registry.ts:14`            | Résolution `Runtime → RuntimeAdapter`        |
+| `listRuntimes()`                | fn        | `lib/runtimes/registry.ts:18`            | Liste des runtimes enregistrés               |
+| `strudelAdapter` / `tidalAdapter` | const   | `lib/runtimes/strudel.ts:673,774`         | Adapter Strudel + Tidal (port JS)             |
+| `hydraAdapter`                  | const     | `lib/runtimes/hydra.ts:45`               | Adapter Hydra (hydra-synth)                  |
+| `jsAdapter`                     | const     | `lib/runtimes/webaudio.ts:30`            | Adapter JS/WebAudio brut                     |
+| `attachHydraCanvas(el)`         | fn        | `lib/runtimes/hydra.ts:40`               | Monte le canvas au boot                      |
+| `registerStrudelEditorView(fileId, view)` | fn | `lib/runtimes/strudel.ts:633`         | Déclare l'EditorView pour highlight + viz    |
+
+Seuls `strudel*`, `hydra*`, `js*` sont des adapters listés. Les helpers
+(`attachHydraCanvas`, `registerStrudelEditorView`, …) sont des APIs
+spécifiques à un adapter, consommées par les composants UI dédiés.
+
+---
+
 ## Historique de révision
 
 - **2026-04-23** : rédaction initiale (phase 2.3 task 2). Structure en
