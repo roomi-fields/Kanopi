@@ -39,7 +39,12 @@ function emitLifecycle(name: 'eval' | 'stop', fileId: string) {
  * `console.warn` globally and suppress any duplicate flood signature within
  * a short window while letting the first occurrence through to our log bus.
  */
-const FLOOD_SIGNATURES = ['shader could not compile', 'ERROR', 'Error during tick'];
+const FLOOD_SIGNATURES = [
+  'shader could not compile',
+  'ERROR',                                // format-arguments.js:82 (uniform cb throw)
+  'function does not return a number',    // format-arguments.js:78 (wrong return)
+  'Error during tick'                     // hydra-synth.js:476
+];
 function installWarnShadow(log: LogPush) {
   if (warnInstalled) return;
   warnInstalled = true;
@@ -73,13 +78,26 @@ function installWarnShadow(log: LogPush) {
  * own `speed` and `bpm` as pattern-method functions onto `globalThis`, which
  * then poison Hydra's render loop: `this.synth.time += dt * 0.001 * <fn>`
  * evaluates to NaN, and `time=NaN` as a GLSL uniform makes every shader
- * render fully black. Call this before any Hydra frame can fire to
+ * render fully black.
+ *
+ * `beat` and `bar` are exposed by Kanopi's onBeat/onBar hooks so patches can
+ * write `.rotate(() => bar * 0.1)`. But those hooks only fire once the
+ * transport is playing — before the first beat, they're `undefined` and
+ * `undefined * x === NaN`, which turns any uniform callback into a NaN
+ * feed. Default them to 0 so patches bound to transport still render while
+ * the user has not yet pressed Play.
+ *
+ * Called before any Hydra frame can fire (in ensure, evaluate, stop) to
  * re-assert the numeric defaults.
  */
 function rescueHydraGlobals() {
-  const g = globalThis as unknown as { speed?: unknown; fps?: unknown };
+  const g = globalThis as unknown as {
+    speed?: unknown; fps?: unknown; beat?: unknown; bar?: unknown;
+  };
   if (typeof g.speed !== 'number') g.speed = 1;
   if (typeof g.fps !== 'undefined' && typeof g.fps !== 'number') g.fps = undefined;
+  if (typeof g.beat !== 'number') g.beat = 0;
+  if (typeof g.bar !== 'number') g.bar = 0;
 }
 
 /**
