@@ -279,6 +279,95 @@ Cette procédure est explicitée dans
 
 ---
 
+## 5bis · Isolation par scope (contrat)
+
+Chaque langage vit dans **sa propre bulle de noms**. Le user code d'un
+bloc Hydra ne voit pas les globals d'un bloc Strudel ni de p5. Les
+échanges cross-runtime passent **exclusivement** par le bus
+`KanopiEvent` (cf `§C`), jamais par variables partagées sur
+`globalThis`.
+
+Ce principe n'existait pas formellement dans la v1 de cette spec et a
+été violé implicitement par Hydra (`makeGlobal: true`) : une collision
+silencieuse sur `window.speed` entre hydra-synth et `@strudel/web` a
+corrompu `synth.time` à `NaN` et rendu tous les shaders Hydra noirs
+après un premier Play Strudel. Cf `project_hydra_adapter_quirks` +
+commits `d404a2b..504310e`.
+
+### Contrat
+
+Un `RuntimeAdapter` doit :
+
+1. **Ne pas polluer `globalThis`** avec les primitives de son langage.
+   Les libs upstream qui proposent un flag `makeGlobal` (hydra-synth,
+   p5, Strudel dans une certaine mesure) doivent être construites en
+   instance mode.
+2. **Exposer son scope** sous la forme d'un objet
+   `Record<string, unknown>` qui liste toutes les primitives
+   disponibles au user code — typiquement la surface publique de la
+   lib (`{ osc, solid, noise, out, o0, … }` pour Hydra).
+3. **Évaluer le user code dans ce scope** via
+   `new Function(...names, userCode)(...values)`. Le user écrit la
+   syntaxe canonique du langage (`osc(10).out()`,
+   `ellipse(50, 50, 20)`) et ces identifiants résolvent vers le scope
+   injecté, pas vers `globalThis`.
+4. **Synchroniser avec les autres runtimes uniquement via événements**
+   — clock (`onBeat`/`onBar`), events adapter, ou
+   `KanopiEvent` bus. Les valeurs dérivées de l'horloge (ex :
+   `beat`, `bar`, `bpm` exposés à un patch Hydra) vont dans le scope
+   de l'adapter concerné, pas sur `globalThis`.
+
+### Plan A : scope injection via `new Function` (retenu)
+
+Implémenté par enrichissement du scope et exécution dans une closure
+non-strict. Le user code écrit la syntaxe canonique, les identifiants
+résolvent aux params injectés.
+
+```ts
+function evalInScope(scope: Record<string, unknown>, code: string) {
+  const names = Object.keys(scope);
+  const values = Object.values(scope);
+  // eslint-disable-next-line no-new-func
+  return new Function(...names, code)(...values);
+}
+```
+
+**Limite connue** : si le user code référence explicitement
+`globalThis.X` ou `window.X`, il lit / écrit le vrai `globalThis`
+du host et contourne l'isolation. Cas rare en live coding (aucun
+tutoriel Hydra/p5/Strudel n'emploie cette syntaxe), accepté comme
+compromis Plan A.
+
+### Plan B : iframe par runtime (envisagé, non retenu v1)
+
+Chaque adapter monte son propre iframe avec son propre `window` /
+`globalThis`. Le user code s'exécute dans l'iframe, communication
+avec Kanopi via `postMessage`. Isolation **réelle**, `globalThis`
+effectivement différent par langage.
+
+**Non retenu v1** :
+
+- **Latence** : `postMessage` ajoute un saut asynchrone à chaque eval
+  et à chaque tick de synchronisation (beat/bar). Incompatible avec le
+  budget `Ctrl+Enter → prochain tick de beat < 50 ms` de `§6`.
+- **Partage d'AudioContext** entre iframes est contraint (cross-origin
+  restrictions, lifecycle complexe).
+- **Canvas Hydra/p5** dans l'iframe = contexte WebGL isolé, repositioning
+  DOM complexe pour le z-index Kanopi.
+- **Bundle + boot** : chaque iframe charge son propre runtime + ses
+  dépendances. Multiplie la consommation mémoire.
+
+Plan B reste une piste viable pour un v2 / v3 si (a) les user codes se
+complexifient au point d'avoir besoin de sandboxing sécurité, ou (b) un
+langage exotique requiert un `globalThis` vraiment séparé. Pas de besoin
+aujourd'hui.
+
+Alternative future à surveiller : **ShadowRealm** (proposition TC39,
+stage 3) — isolation de realm sans iframe, overhead plus faible. Pas
+encore stable côté browsers (Chrome flag only au 2026-04).
+
+---
+
 ## 6 · Budget latence
 
 Cibles par zone (de l'action user au retour audible/visible) :
@@ -329,3 +418,9 @@ spécifiques à un adapter, consommées par les composants UI dédiés.
   lifecycle), ce qui a causé le chaos des widgets inline et du highlight
   custom réécrit pour rien. L'ajout explicite de « B. Native editor UX »
   vise à éviter le même piège pour Tidal, Hydra, SC.
+- **2026-04-23 (soir)** : ajout §5bis « Isolation par scope ». Principe
+  formalisé après la collision `speed` Strudel↔Hydra qui a rendu tous
+  les shaders noirs pendant la phase 2.4. Plan A (scope injection via
+  `new Function`) retenu ; Plan B (iframe par runtime) documenté mais
+  non retenu v1 (coût latence incompatible budget `§6`). À appliquer en
+  refactor sur Hydra avant d'implémenter p5, puis audit Strudel.
