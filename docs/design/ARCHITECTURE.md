@@ -5,16 +5,16 @@ plugins langage) de Kanopi.
 
 ## Specs connexes
 
-| Document                  | Couvre                                                     |
-| ------------------------- | ---------------------------------------------------------- |
-| `KANOPI_PRINCIPLES.md`    | 10 principes fondateurs (arbitrages inclus)                 |
-| `ADAPTER_SPEC.md`         | Contract `RuntimeAdapter` : moteur + UX native + events     |
-| `LANGUAGE_SPEC.md`        | Parsers CM6 + tags Lezer + colorimétrie                     |
-| `LIBRARY_SPEC.md`         | Format `catalog.json` + items par catégorie                 |
-| `EVENTS.md`               | Bus `KanopiEvent` — schéma et consommateurs                 |
-| `SCENES.md`               | Système de scènes (`@scene`)                                |
-| `LIBRARY.md`              | Product doc library (vision, UX, roadmap)                   |
-| `spec/KANOPI_LANGUAGE.md` | Syntaxe du langage `.kanopi`                                |
+| Document                  | Couvre                                                  |
+| ------------------------- | ------------------------------------------------------- |
+| `KANOPI_PRINCIPLES.md`    | 10 principes fondateurs (arbitrages inclus)             |
+| `ADAPTER_SPEC.md`         | Contract `RuntimeAdapter` : moteur + UX native + events |
+| `LANGUAGE_SPEC.md`        | Parsers CM6 + tags Lezer + colorimétrie                 |
+| `LIBRARY_SPEC.md`         | Format `catalog.json` + items par catégorie             |
+| `EVENTS.md`               | Bus `KanopiEvent` — schéma et consommateurs             |
+| `SCENES.md`               | Système de scènes (`@scene`)                            |
+| `LIBRARY.md`              | Product doc library (vision, UX, roadmap)               |
+| `spec/KANOPI_LANGUAGE.md` | Syntaxe du langage `.kanopi`                            |
 
 ## Topologie repos
 
@@ -98,11 +98,11 @@ pour les 6 zones d'intégration détaillées.
 
 ## Progressive enhancement : 3 niveaux
 
-| Niveau | Install | Runtimes | Moteur |
-|--------|---------|----------|--------|
-| **1. Web pur** | Rien | BPscript, JS, WebAudio, WebMIDI | WASM |
-| **2. Web enrichi** | Rien | + Strudel, SC-lite, Csound, Faust, Hydra, p5.js, ORCA, Gibber | WASM |
-| **3. Package local** | Tauri desktop + osc-bridge | + SC natif, Tidal, Python, Sonic Pi, Chuck, Pd, Max | Natif |
+| Niveau               | Install                    | Runtimes                                                      | Moteur |
+| -------------------- | -------------------------- | ------------------------------------------------------------- | ------ |
+| **1. Web pur**       | Rien                       | BPscript, JS, WebAudio, WebMIDI                               | WASM   |
+| **2. Web enrichi**   | Rien                       | + Strudel, SC-lite, Csound, Faust, Hydra, p5.js, ORCA, Gibber | WASM   |
+| **3. Package local** | Tauri desktop + osc-bridge | + SC natif, Tidal, Python, Sonic Pi, Chuck, Pd, Max           | Natif  |
 
 L'UI détecte automatiquement le bridge local (WebSocket localhost:7777). Présent → niveau 3 actif. Absent → niveaux 1-2.
 
@@ -181,6 +181,66 @@ consommateur qui a besoin de réagir à ce que produit un runtime ou le clock :
 visualizers, devtools, futur pont OSC. Les adapters runtime publient dedans
 via un bus local relayé par le core. Spécification complète : [`EVENTS.md`](EVENTS.md).
 
+## Bridge OSC (hardware)
+
+Kanopi tourne dans le navigateur et ne peut pas ouvrir de sockets UDP ni
+parler SysEx directement. Le **bridge OSC** est un sidecar (process
+séparé) qui traduit les messages entre Kanopi (WebSocket) et le monde
+hardware (UDP, MIDI, SysEx).
+
+### Séparation des responsabilités
+
+| Canal              | Transport                         | Quand l'utiliser                         |
+| ------------------ | --------------------------------- | ---------------------------------------- |
+| WebMIDI            | browser natif (USB-MIDI direct)   | CC, notes, clock, SysEx simple. Couvre ~80% des besoins. |
+| WebSocket → osc-bridge | WS (Kanopi) → UDP (SC) ou SysEx (synths) | Routage OSC (SuperCollider, SuperDirt), SysEx complexes, réseau, multi-device orchestration. |
+
+Règle : tant que WebMIDI suffit, on reste sur WebMIDI (pas de dépendance
+à un process externe). Le bridge est pour les cas où Node/Rust natif est
+nécessaire (OSC UDP, SysEx avancés, Ableton Link plus tard).
+
+### Deux implémentations à distinguer
+
+- **`packages/core/src/bridge/osc-bridge.js`** (~80 lignes) — mini-bridge
+  Node.js de développement. Relai WebSocket → UDP OSC nu, sans logique
+  par device. Fourni pour tests locaux SuperCollider
+  (ws://localhost:9000 → udp://localhost:57120). **Pas la cible prod.**
+- **[`osc-bridge`](https://github.com/roomi-fields/osc-bridge)** (repo
+  Rust séparé, cf §Topologie repos) — **le vrai pont**. Déclaratif JSON
+  par device (840+ synths supportés), bidirectionnel, multi-client,
+  orchestration N-to-N. Écoute par défaut sur **UDP 7777**. Consommé par
+  Kanopi via un client WebSocket (à écrire côté Kanopi, prévu v2 Tauri).
+
+### Détection côté Kanopi
+
+Au boot, `packages/core/src/bridge/` (à venir, pas encore livré)
+tente un handshake WebSocket sur `ws://localhost:7777`. Trois issues :
+
+- Connecté → niveau 3 « package local » actif. Les adapters SC / Tidal
+  natif / synths hardware deviennent disponibles.
+- Timeout/refus → niveau 3 désactivé, UI n'affiche pas les adapters
+  dépendants, runtime-status pills restent grises.
+- Disconnect pendant session → bannière d'alerte + retry exponentiel en
+  arrière-plan.
+
+### Protocole
+
+Le repo osc-bridge expose à la fois OSC natif (UDP) et un endpoint
+WebSocket. Kanopi parle OSC-over-WebSocket avec un frame JSON ≈
+`{ address: "/synth/cutoff", args: [0.5] }`. L'encodage binaire OSC (cf
+le mini-bridge dev) n'est utilisé que quand Kanopi doit parler direct
+à un client OSC non-bridge (rare).
+
+### Lifecycle des cibles V1 / V2
+
+- **V1 web** : WebMIDI pour tout ce qui est faisable sans sidecar. Pour
+  Ableton Link, SC natif, Tidal-GHCi → exiger l'install manuelle de
+  osc-bridge comme daemon local.
+- **V2 Tauri** : osc-bridge bundlé et lancé automatiquement comme
+  process enfant. L'utilisateur n'a rien à installer.
+
+Doc osc-bridge détaillée : [README upstream](https://github.com/roomi-fields/osc-bridge).
+
 ## Session parser
 
 V1 subset de BPscript exposé à l'utilisateur :
@@ -207,19 +267,19 @@ V1 subset de BPscript exposé à l'utilisateur :
 
 ## Module `core` (packages/core/src/)
 
-| Module | Rôle |
-|--------|------|
-| `dispatcher/clock.js` | clock partagé, tick bus |
-| `dispatcher/dispatcher.js` | scheduler central |
-| `dispatcher/scene-manager.js` | gestion scènes |
-| `dispatcher/map-engine.js` | routage CC/OSC/note |
-| `dispatcher/resolver.js` | résolution note names → fréquence |
-| `dispatcher/transports/midi.js` | WebMIDI in/out |
-| `dispatcher/transports/osc.js` | OSC via WebSocket |
-| `dispatcher/transports/webaudio.js` | synthèse native |
-| `dispatcher/evals/sclang.js` | adapter SuperCollider |
-| `dispatcher/evals/python.js` | adapter Python (Sardine via WebSocket) |
-| `bridge/osc-bridge.js` | client WebSocket vers osc-bridge |
+| Module                              | Rôle                                   |
+| ----------------------------------- | -------------------------------------- |
+| `dispatcher/clock.js`               | clock partagé, tick bus                |
+| `dispatcher/dispatcher.js`          | scheduler central                      |
+| `dispatcher/scene-manager.js`       | gestion scènes                         |
+| `dispatcher/map-engine.js`          | routage CC/OSC/note                    |
+| `dispatcher/resolver.js`            | résolution note names → fréquence      |
+| `dispatcher/transports/midi.js`     | WebMIDI in/out                         |
+| `dispatcher/transports/osc.js`      | OSC via WebSocket                      |
+| `dispatcher/transports/webaudio.js` | synthèse native                        |
+| `dispatcher/evals/sclang.js`        | adapter SuperCollider                  |
+| `dispatcher/evals/python.js`        | adapter Python (Sardine via WebSocket) |
+| `bridge/osc-bridge.js`              | client WebSocket vers osc-bridge       |
 
 Hérités de `BPscript/src/dispatcher/` et `src/bridge/`. À migrer progressivement vers TypeScript.
 
@@ -244,14 +304,14 @@ Hérités de `BPscript/src/dispatcher/` et `src/bridge/`. À migrer progressivem
 
 ### Sources d'horloge disponibles sur le web
 
-| Horloge | Précision effective | Usage Kanopi |
-|---|---|---|
-| `AudioContext.currentTime` | sample-accurate (~22 μs @ 44.1 kHz) | **seule** source fiable pour scheduling audio |
-| `performance.now()` | 0.1–1 ms (dégrade sous Spectre mitigation) | wall-clock des `KanopiEvent` (visualizers, logs) |
-| `setTimeout` / event loop | 4–16 ms jitter ; **1 s** en onglet caché | **jamais** utiliser pour l'audio |
-| `requestAnimationFrame` | ~16.6 ms @ 60 Hz | visuels uniquement |
-| WebMIDI `send(data, timestamp)` | ~1–2 ms jitter sous charge (Chrome > Firefox) | bon pour la plupart, pas pour IDM sub-ms |
-| Ableton Link | sub-ms en natif | **inaccessible** depuis le navigateur (UDP multicast) |
+| Horloge                         | Précision effective                           | Usage Kanopi                                          |
+| ------------------------------- | --------------------------------------------- | ----------------------------------------------------- |
+| `AudioContext.currentTime`      | sample-accurate (~22 μs @ 44.1 kHz)           | **seule** source fiable pour scheduling audio         |
+| `performance.now()`             | 0.1–1 ms (dégrade sous Spectre mitigation)    | wall-clock des `KanopiEvent` (visualizers, logs)      |
+| `setTimeout` / event loop       | 4–16 ms jitter ; **1 s** en onglet caché      | **jamais** utiliser pour l'audio                      |
+| `requestAnimationFrame`         | ~16.6 ms @ 60 Hz                              | visuels uniquement                                    |
+| WebMIDI `send(data, timestamp)` | ~1–2 ms jitter sous charge (Chrome > Firefox) | bon pour la plupart, pas pour IDM sub-ms              |
+| Ableton Link                    | sub-ms en natif                               | **inaccessible** depuis le navigateur (UDP multicast) |
 
 ### Règles de conception
 
