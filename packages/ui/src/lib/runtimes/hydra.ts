@@ -104,6 +104,14 @@ async function ensure(log: LogPush): Promise<boolean> {
     HydraClass = m.default;
   }
   if (!instance) {
+    // Critical: rescue BEFORE construction. hydra-synth's constructor
+    // starts the rAF loop on line 124 and creates the sandbox on line 127,
+    // so the first frames read `window.speed` directly. If Strudel has
+    // already clobbered it with a pattern-method function, the very first
+    // tick corrupts `this.synth.time` to NaN — and the first user eval
+    // renders black until the next rescueHydraTime() call. Resetting
+    // the globals here lets Hydra boot with clean numeric defaults.
+    rescueHydraGlobals();
     instance = new HydraClass({ canvas: canvasEl, detectAudio: false, makeGlobal: true });
     installWarnShadow(log);
   }
