@@ -2,12 +2,37 @@ import type { RuntimeAdapter, EvalSource, LogPush } from './adapter';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
 
+/**
+ * The live synth state hydra-synth exposes on `this.synth`. With
+ * `makeGlobal: false` it does NOT also mirror these onto `window.*`,
+ * so Kanopi's user-code scope reads them from this object only.
+ */
+interface HydraSynthState {
+  time: number;
+  bpm: number;
+  speed: number;
+  width: number;
+  height: number;
+  // Kanopi adds these transport fields so patches can do `.rotate(beat)`.
+  beat: number;
+  bar: number;
+  // Generator factory functions + output + source registries. hydra-synth
+  // attaches more properties at runtime (osc, solid, noise, shape, o0…o3,
+  // s0…s3, render, hush, setResolution, setFunction, update, afterUpdate).
+  // An index signature keeps us from enumerating the ~40-odd surface.
+  [key: string]: unknown;
+}
+
 interface HydraInstance {
   hush: () => void;
-  // Internal state we reach into to rescue NaN time (see rescueHydraTime).
-  synth: { time: number };
+  synth: HydraSynthState;
 }
-type HydraCtor = new (opts: { canvas: HTMLCanvasElement; detectAudio?: boolean; makeGlobal?: boolean }) => HydraInstance;
+
+type HydraCtor = new (opts: {
+  canvas: HTMLCanvasElement;
+  detectAudio?: boolean;
+  makeGlobal?: boolean;
+}) => HydraInstance;
 
 let HydraClass: HydraCtor | undefined;
 let instance: HydraInstance | undefined;
@@ -36,8 +61,9 @@ function emitLifecycle(name: 'eval' | 'stop', fileId: string) {
  *     callback throws (e.g. `osc(() => undefinedVar).out()`)
  *   - hydra-synth.js:476 `console.warn('Error during tick():', e)`
  * None of these are routed through a public error event. We shadow
- * `console.warn` globally and suppress any duplicate flood signature within
- * a short window while letting the first occurrence through to our log bus.
+ * `console.warn` globally and suppress duplicate flood signatures within
+ * a 2s window while letting the first occurrence through to our log bus
+ * and auto-hushing to break the loop.
  */
 const FLOOD_SIGNATURES = [
   'shader could not compile',
@@ -60,56 +86,12 @@ function installWarnShadow(log: LogPush) {
         seen.set(sig, now);
         const detail = args.length > 1 ? String(args[1]) : '';
         log({ runtime: 'hydra', level: 'error', msg: `${sig}: ${detail}` });
-        // First occurrence of a flood signature: auto-hush so the broken
-        // chain stops firing every frame. Matches a user Ctrl+. exactly.
         try { instance?.hush(); } catch { /* best-effort */ }
       }
-      // Suppress the per-frame duplicates (both in the browser console and
-      // in our log bus). Original warn is swallowed intentionally.
       return;
     }
     originalWarn.apply(console, args);
   };
-}
-
-/**
- * hydra-synth's EvalSandbox copies `window[speed|bpm|fps|update|afterUpdate]`
- * into `this.synth.*` on every tick. Strudel's `@strudel/web` injects its
- * own `speed` and `bpm` as pattern-method functions onto `globalThis`, which
- * then poison Hydra's render loop: `this.synth.time += dt * 0.001 * <fn>`
- * evaluates to NaN, and `time=NaN` as a GLSL uniform makes every shader
- * render fully black.
- *
- * `beat` and `bar` are exposed by Kanopi's onBeat/onBar hooks so patches can
- * write `.rotate(() => bar * 0.1)`. But those hooks only fire once the
- * transport is playing — before the first beat, they're `undefined` and
- * `undefined * x === NaN`, which turns any uniform callback into a NaN
- * feed. Default them to 0 so patches bound to transport still render while
- * the user has not yet pressed Play.
- *
- * Called before any Hydra frame can fire (in ensure, evaluate, stop) to
- * re-assert the numeric defaults.
- */
-function rescueHydraGlobals() {
-  const g = globalThis as unknown as {
-    speed?: unknown; fps?: unknown; beat?: unknown; bar?: unknown;
-  };
-  if (typeof g.speed !== 'number') g.speed = 1;
-  if (typeof g.fps !== 'undefined' && typeof g.fps !== 'number') g.fps = undefined;
-  if (typeof g.beat !== 'number') g.beat = 0;
-  if (typeof g.bar !== 'number') g.bar = 0;
-}
-
-/**
- * Once `this.synth.time` becomes NaN (from a polluted `speed` during the
- * first ticks after construction), every subsequent `synth.time += dt * …`
- * stays NaN — and the `time` GLSL uniform passed to every shader is NaN,
- * which the driver typically renders as fully black. hydra-synth has no
- * public API to reset time, so we poke the internal field directly.
- */
-function rescueHydraTime() {
-  if (!instance) return;
-  if (!Number.isFinite(instance.synth.time)) instance.synth.time = 0;
 }
 
 async function ensure(log: LogPush): Promise<boolean> {
@@ -122,18 +104,18 @@ async function ensure(log: LogPush): Promise<boolean> {
     HydraClass = m.default;
   }
   if (!instance) {
-    // Critical: rescue BEFORE construction. hydra-synth's constructor
-    // starts the rAF loop on line 124 and creates the sandbox on line 127,
-    // so the first frames read `window.speed` directly. If Strudel has
-    // already clobbered it with a pattern-method function, the very first
-    // tick corrupts `this.synth.time` to NaN — and the first user eval
-    // renders black until the next rescueHydraTime() call. Resetting
-    // the globals here lets Hydra boot with clean numeric defaults.
-    rescueHydraGlobals();
-    instance = new HydraClass({ canvas: canvasEl, detectAudio: false, makeGlobal: true });
+    // makeGlobal: false — hydra-synth stops writing `window.osc`, `window.time`,
+    // `window.speed`, etc. Its internal tick reads from `this.synth` (not
+    // `window`), so Strudel/p5 can't poison shader uniforms via name collision.
+    // User code gets every primitive via scope injection in `evaluate()`.
+    // Cf ADAPTER_SPEC §5bis.
+    instance = new HydraClass({ canvas: canvasEl, detectAudio: false, makeGlobal: false });
     installWarnShadow(log);
+    // Seed Kanopi transport additions on synth so patches built around
+    // `beat`/`bar` render correctly before the first transport tick.
+    instance.synth.beat = 0;
+    instance.synth.bar = 0;
   }
-  rescueHydraGlobals();
   return true;
 }
 
@@ -142,30 +124,40 @@ export function attachHydraCanvas(el: HTMLCanvasElement) {
   if (pending && el === pending) pending = undefined;
 }
 
+/**
+ * Evaluate user code inside the Hydra scope. `with (scope)` resolves every
+ * bare identifier (`osc`, `solid`, `noise`, `o0`, `time`, `beat`, …) against
+ * the synth object before falling back to the enclosing scope. `new Function`
+ * bodies are non-strict by default, so `with` is legal here.
+ */
+function evalInHydraScope(code: string): void {
+  if (!instance) throw new Error('hydra not ready');
+  // eslint-disable-next-line no-new-func
+  const fn = new Function('__scope__', `with (__scope__) { ${code}\n}`);
+  fn(instance.synth);
+}
+
 export const hydraAdapter: RuntimeAdapter = {
   id: 'hydra',
   events: adapterEvents,
   setBpm(bpm: number, _log: LogPush) {
-    // Expose as a global so hydra patches can reference `bpm` (e.g. speed = bpm/120)
-    (globalThis as unknown as { bpm: number }).bpm = bpm;
+    // Write directly to synth (not globalThis) so Hydra patches reading
+    // `bpm` from their scope see Kanopi's transport value, not the
+    // hydra-synth default of 30.
+    if (instance) instance.synth.bpm = bpm;
   },
   onBeat(count: number, _log: LogPush) {
-    // Hydra patches can now do `.rotate(beat)`, `.scrollX(beat/8)`, etc.
     // `count` is monotonic since transport start; patches take `beat % 4`
     // if they want the position-in-bar.
-    (globalThis as unknown as { beat: number }).beat = count;
+    if (instance) instance.synth.beat = count;
   },
   onBar(count: number, _log: LogPush) {
-    (globalThis as unknown as { bar: number }).bar = count;
+    if (instance) instance.synth.bar = count;
   },
   async evaluate(code: string, src: EvalSource, log: LogPush) {
     if (!(await ensure(log))) throw new Error('hydra not ready');
-    rescueHydraGlobals();
-    rescueHydraTime();
     try {
-      // hydra-synth API exposes globals (osc, noise, out...) when makeGlobal: true
-      // eslint-disable-next-line no-new-func
-      new Function(code)();
+      evalInHydraScope(code);
       log({ runtime: 'hydra', level: 'info', msg: `eval ok (${code.length}b)` });
       emitLifecycle('eval', src.fileId);
     } catch (err) {
@@ -175,18 +167,12 @@ export const hydraAdapter: RuntimeAdapter = {
   },
   async stop(src: EvalSource, log: LogPush) {
     if (!(await ensure(log))) return;
-    rescueHydraGlobals();
-    rescueHydraTime();
     try {
-      // Use the instance's hush() — same path as a Ctrl+. in hydra-editor.
-      // It clears all sources, zeroes every output (not just o0), resets
-      // update/afterUpdate callbacks, and calls synth.render(o[0]).
-      //
-      // NOTE: we never toggle `canvas.style.display`. Chrome drops the WebGL
-      // context on hidden canvases, and regl can't recover when the canvas
-      // comes back — subsequent re-evals render black. A hushed canvas is
-      // already visually transparent (solid(0,0,0,0) + CSS opacity 0.85),
-      // so there's nothing to hide.
+      // Same path as a Ctrl+. in hydra-editor: clears sources, zeroes every
+      // output, resets update/afterUpdate callbacks, renders o[0].
+      // No canvas display toggling — Chrome drops WebGL contexts on hidden
+      // canvases and regl can't recover. A hushed canvas is already
+      // visually transparent (solid(0,0,0,0) + CSS opacity 0.85).
       instance?.hush();
       log({ runtime: 'hydra', level: 'info', msg: 'cleared' });
       emitLifecycle('stop', src.fileId);
