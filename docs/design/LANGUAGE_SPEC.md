@@ -152,13 +152,13 @@ documenter dans §3.
 Index pour la découverte. Signatures précises dans les types TypeScript.
 API reference auto-générée prévue post-2.4 (cf `PROGRESS.md §2.7`).
 
-| Primitive             | Kind          | Source                                         | Rôle                                            |
-| --------------------- | ------------- | ---------------------------------------------- | ----------------------------------------------- |
-| `languageFor(runtime)` | fn            | `components/editor/lang-resolver.ts:7`         | Résout `Runtime → Extension` CM6                |
-| `kanopiLanguage`      | Extension     | `components/editor/lang-kanopi.ts:10`          | StreamLanguage custom pour `.kanopi`             |
-| `kanopiHighlight`     | HighlightStyle | `components/editor/cm-theme.ts:13`            | Palette Kanopi unique (12 tags → CSS vars)       |
-| `kanopiTheme`         | Extension     | `components/editor/cm-theme.ts:29`             | Theme CM6 (couleurs panel/gutter/selection)      |
-| `kanopiGlobalStyles`  | Extension     | `components/editor/cm-theme.ts:79`             | Styles unscoped (tooltips autocomplete, lint)    |
+| Primitive              | Kind           | Source                                 | Rôle                                          |
+| ---------------------- | -------------- | -------------------------------------- | --------------------------------------------- |
+| `languageFor(runtime)` | fn             | `components/editor/lang-resolver.ts:7` | Résout `Runtime → Extension` CM6              |
+| `kanopiLanguage`       | Extension      | `components/editor/lang-kanopi.ts:10`  | StreamLanguage custom pour `.kanopi`          |
+| `kanopiHighlight`      | HighlightStyle | `components/editor/cm-theme.ts:13`     | Palette Kanopi unique (12 tags → CSS vars)    |
+| `kanopiTheme`          | Extension      | `components/editor/cm-theme.ts:29`     | Theme CM6 (couleurs panel/gutter/selection)   |
+| `kanopiGlobalStyles`   | Extension      | `components/editor/cm-theme.ts:79`     | Styles unscoped (tooltips autocomplete, lint) |
 
 ---
 

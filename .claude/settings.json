@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pkill -f vite*)",
+      "Bash(cd packages/ui && npm run dev*)",
+      "Bash(rm -rf packages/ui/node_modules/.vite*)",
+      "Bash(VITE_FORCE_POLLING=1*)",
+      "Bash(CHOKIDAR_USEPOLLING=1*)",
+      "Bash(npm run check*)",
+      "Bash(npm run lint*)",
+      "Bash(npm run test*)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "rtfm"
+  ],
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/romi/.local/share/pipx/venvs/rtfm-ai/bin/python \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/rtfm_sync.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/romi/.local/share/pipx/venvs/rtfm-ai/bin/python \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/rtfm_stop_sync.py",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
