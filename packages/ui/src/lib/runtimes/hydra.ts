@@ -2,10 +2,13 @@ import type { RuntimeAdapter, EvalSource, LogPush } from './adapter';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
 
-type HydraCtor = new (opts: { canvas: HTMLCanvasElement; detectAudio?: boolean; makeGlobal?: boolean }) => unknown;
+interface HydraInstance {
+  hush: () => void;
+}
+type HydraCtor = new (opts: { canvas: HTMLCanvasElement; detectAudio?: boolean; makeGlobal?: boolean }) => HydraInstance;
 
 let HydraClass: HydraCtor | undefined;
-let instance: unknown;
+let instance: HydraInstance | undefined;
 let canvasEl: HTMLCanvasElement | undefined;
 let pending: HTMLCanvasElement | undefined;
 
@@ -80,6 +83,14 @@ export const hydraAdapter: RuntimeAdapter = {
       new Function(code)();
       if (canvasEl) canvasEl.style.display = 'block';
       if (glslError) {
+        // Broken shader. Stop the render loop so hydra-synth doesn't re-attempt
+        // compilation every rAF and flood the console with stack traces (the
+        // failing chain would keep firing `console.warn('shader could not
+        // compile', …)` at 60 Hz otherwise). `instance.hush()` re-applies
+        // solid(0,0,0,0) on every output and resets source buffers cleanly —
+        // same path as a Ctrl+. from the user, no residue.
+        try { instance?.hush(); } catch { /* best-effort */ }
+        if (canvasEl) canvasEl.style.display = 'none';
         log({ runtime: 'hydra', level: 'error', msg: `glsl: ${glslError.message}` });
         throw glslError;
       }
