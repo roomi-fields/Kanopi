@@ -8,6 +8,7 @@
   import RightPanel from './components/right-panel/RightPanel.svelte';
   import CommandPalette from './components/palette/CommandPalette.svelte';
   import HydraCanvas from './components/runtime/HydraCanvas.svelte';
+  import P5Canvas from './components/runtime/P5Canvas.svelte';
   import EventsOverlay from './components/devtools/EventsOverlay.svelte';
   import Resizer from './components/layout/Resizer.svelte';
   import { ui } from './stores/ui.svelte';
@@ -133,6 +134,7 @@
   <Statusbar />
 </div>
 
+<P5Canvas />
 <HydraCanvas />
 <CommandPalette />
 {#if showEventsOverlay}

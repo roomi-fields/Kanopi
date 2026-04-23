@@ -32,6 +32,8 @@ export function extractBlocks(code: string, runtime: Runtime): CodeBlock[] {
       return extractStrudelOrTidal(code, runtime);
     case 'hydra':
       return extractHydra(code);
+    case 'p5':
+      return extractWholeFile(code, 'p5');
     case 'sc':
       return extractSuperCollider(code);
     case 'js':
@@ -39,6 +41,18 @@ export function extractBlocks(code: string, runtime: Runtime): CodeBlock[] {
     default:
       return extractPositional(code);
   }
+}
+
+/* ---------------------------------------------------------------- whole-file */
+
+/**
+ * Runtimes where the entire file is a single sketch (setup + draw + helpers
+ * in p5; similar for future shader-pipeline languages). Blank lines inside
+ * are not block separators — Ctrl+Enter anywhere evaluates everything.
+ */
+function extractWholeFile(code: string, label: string): CodeBlock[] {
+  if (code.trim() === '') return [];
+  return [{ name: label, kind: 'positional', from: 0, to: code.length }];
 }
 
 /* ---------------------------------------------------------------- positional */

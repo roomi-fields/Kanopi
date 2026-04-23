@@ -6,6 +6,7 @@ export type Runtime =
   | 'kanopi'
   | 'strudel'
   | 'hydra'
+  | 'p5'
   | 'tidal'
   | 'sc'
   | 'python'

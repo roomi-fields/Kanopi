@@ -22,6 +22,7 @@ export function runtimeFromExt(name: string): Runtime {
     case 'tidal': return 'tidal';
     case 'scd': return 'sc';
     case 'hydra': return 'hydra';
+    case 'p5': return 'p5';
     case 'strudel': return 'strudel';
     case 'py': return 'python';
     case 'js': return 'js';

@@ -13,9 +13,11 @@
   }
 
   function loadVisual(v: VisualItem) {
-    // Append a new .hydra file pre-filled with the snippet and open it.
+    // Extension picked from the item's first runtime. `.hydra` for Hydra
+    // snippets, `.p5` for p5, etc. — runtimeFromExt maps them back.
     // Non-destructive: the current workspace is preserved.
-    const id = workspace.addFile(`${v.id}.hydra`, v.content);
+    const ext = v.runtimes[0] ?? 'hydra';
+    const id = workspace.addFile(`${v.id}.${ext}`, v.content);
     workspace.openFile(id);
   }
 </script>
