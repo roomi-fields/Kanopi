@@ -29,6 +29,7 @@ function emitLifecycle(name: 'eval' | 'stop', fileId: string) {
 
 export const jsAdapter: RuntimeAdapter = {
   id: 'js',
+  extensions: ['.js'],
   events: adapterEvents,
   async evaluate(code: string, src: EvalSource, log: LogPush) {
     try {

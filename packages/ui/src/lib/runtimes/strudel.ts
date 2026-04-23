@@ -672,6 +672,7 @@ export function setDeclaredBanks(sources: string[]): { lingering: string[] } {
 
 export const strudelAdapter: RuntimeAdapter = {
   id: 'strudel',
+  extensions: ['.strudel'],
   events: adapterEvents,
   setBpm(bpm: number, _log: LogPush) {
     // Tidal convention: 1 cycle = 4 beats. CPS = bpm/60/4.
@@ -774,5 +775,6 @@ export const strudelAdapter: RuntimeAdapter = {
 export const tidalAdapter: RuntimeAdapter = {
   ...strudelAdapter,
   id: 'tidal',
+  extensions: ['.tidal'],
   setBpm: strudelAdapter.setBpm?.bind(strudelAdapter)
 };

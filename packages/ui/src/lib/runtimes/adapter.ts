@@ -17,6 +17,15 @@ export type LogPush = (e: { runtime: Runtime; level: 'info' | 'warn' | 'error'; 
 
 export interface RuntimeAdapter {
   readonly id: Runtime;
+  /**
+   * File extensions owned by this adapter, with the leading dot (`.hydra`,
+   * `.p5`). The FilesView `+ New file` dialog, `runtimeFromExt`, and any
+   * future dispatcher that needs to map an extension to a runtime derive
+   * from these lists. Adding a new language is therefore entirely
+   * self-contained in its adapter — no separate mapping table to keep
+   * in sync.
+   */
+  readonly extensions: readonly string[];
   /** Resolves when the code evaluated cleanly; throws on any eval error. */
   evaluate(code: string, src: EvalSource, log: LogPush): Promise<void>;
   /**

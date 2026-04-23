@@ -139,6 +139,7 @@ function evalInHydraScope(code: string): void {
 
 export const hydraAdapter: RuntimeAdapter = {
   id: 'hydra',
+  extensions: ['.hydra'],
   events: adapterEvents,
   setBpm(bpm: number, _log: LogPush) {
     // Write directly to synth (not globalThis) so Hydra patches reading

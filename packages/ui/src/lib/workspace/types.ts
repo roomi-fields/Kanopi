@@ -1,4 +1,5 @@
 import type { Runtime } from '../core-mock';
+import { knownExtensions, runtimeFromExtension } from '../runtimes/registry';
 
 export interface VirtualFile {
   id: string;
@@ -17,28 +18,15 @@ export interface TreeNode {
 }
 
 /**
- * Single source of truth for `extension → runtime` mapping. FilesView
- * and any other code that needs the allowed extension list derives from
- * this table so adding a new language only touches one spot.
+ * Dotted extensions accepted by `+ New file` and recognised by
+ * `runtimeFromExt`. Derived dynamically from the runtime registry so
+ * adding a new language is self-contained in its adapter (the adapter
+ * declares its `extensions: ['.foo']` and everything else follows).
  */
-export const EXTENSION_TO_RUNTIME: Record<string, Runtime> = {
-  tidal: 'tidal',
-  scd: 'sc',
-  hydra: 'hydra',
-  strudel: 'strudel',
-  p5: 'p5',
-  py: 'python',
-  js: 'js',
-  kanopi: 'kanopi',
-  bps: 'kanopi'
-};
-
-/** Dotted form, e.g. `.p5`, for UI prompts / validation. */
-export const KNOWN_EXTENSIONS: string[] = Object.keys(EXTENSION_TO_RUNTIME).map(
-  (e) => '.' + e
-);
+export const KNOWN_EXTENSIONS: string[] = knownExtensions();
 
 export function runtimeFromExt(name: string): Runtime {
-  const ext = name.split('.').pop()?.toLowerCase() ?? '';
-  return EXTENSION_TO_RUNTIME[ext] ?? 'kanopi';
+  const idx = name.lastIndexOf('.');
+  if (idx < 0) return 'kanopi';
+  return runtimeFromExtension(name.slice(idx));
 }
