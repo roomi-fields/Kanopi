@@ -5,9 +5,8 @@
   import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
   import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
   import { acceptCompletion, completionStatus } from '@codemirror/autocomplete';
-  import { kanopiTheme, kanopiGlobalStyles } from './cm-theme';
+  import { kanopiTheme, kanopiGlobalStyles, kanopiHighlight } from './cm-theme';
   import { syntaxHighlighting, bracketMatching, indentOnInput } from '@codemirror/language';
-  import { highlightFor } from './highlight-styles';
   import { ui } from '../../stores/ui.svelte';
   import { extractBlock } from '../../lib/runtimes/extract-block';
   import { languageFor } from './lang-resolver';
@@ -82,7 +81,7 @@
       bracketMatching(),
       indentOnInput(),
       languageFor(lang),
-      syntaxHighlighting(highlightFor(lang), { fallback: true }),
+      syntaxHighlighting(kanopiHighlight, { fallback: true }),
       strudel.ext,
       ...((lang === 'strudel' || lang === 'tidal') ? [miniOverlay, ...widgetPlugin] : []),
       ...(lang === 'kanopi' ? [kanopiLinter, lintGutter()] : []),
