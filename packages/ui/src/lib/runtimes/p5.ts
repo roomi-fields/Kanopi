@@ -31,6 +31,51 @@ type P5Ctor = new (sketch: (p: P5Instance) => void, container?: HTMLElement) => 
 let P5Class: P5Ctor | undefined;
 let instance: P5Instance | undefined;
 let containerEl: HTMLElement | undefined;
+/**
+ * Timestamp of the most recent successful evaluate(). Kanopi's transport
+ * emits a synthetic re-eval of every armed block right after a Ctrl+Enter
+ * that starts the clock (real-core.evaluateBlock line 301 → clock.play()
+ * → installBlockReplay subscribe → openBlocks.replayArmed()). Hydra and
+ * Strudel both replace their existing state on re-eval, so the duplicate
+ * is harmless there; p5 constructs a brand-new instance each call, which
+ * spawns a second canvas until the first `remove()` catches up. A user
+ * cannot Ctrl+Enter twice by hand inside 50ms, so we drop any eval that
+ * fires within that window of the previous one.
+ */
+let lastEvalTime = 0;
+const REEVAL_DEDUP_MS = 50;
+
+/**
+ * Remove every canvas currently living inside our container and ask p5
+ * for each canvas's owning instance (`_pInst`, set by p5 on the canvas
+ * during createCanvas) to dispose. A module-level `let instance` is
+ * reset to `undefined` on Vite HMR swap, but the live p5 keeps its
+ * rAF loop forever — its canvas lingers in the DOM and the sketch
+ * keeps drawing over the new one. Clearing defensively before any
+ * new instance boots guarantees a single canvas at a time.
+ */
+function cleanupOrphans() {
+  if (!containerEl) return;
+  const canvases = Array.from(containerEl.querySelectorAll('canvas'));
+  for (const cv of canvases) {
+    const p = (cv as unknown as { _pInst?: P5Instance })._pInst;
+    if (p && typeof p.remove === 'function') {
+      try { p.remove(); } catch { /* best-effort */ }
+    } else {
+      cv.remove();
+    }
+  }
+}
+
+// Vite HMR: dispose of the live p5 BEFORE the module swaps, so the new
+// module boots with a clean container instead of a ghost sketch.
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    try { instance?.remove(); } catch { /* best-effort */ }
+    cleanupOrphans();
+    instance = undefined;
+  });
+}
 
 const adapterEvents: EventBus = createEventBus();
 
@@ -109,14 +154,23 @@ export const p5Adapter: RuntimeAdapter = {
   },
   async evaluate(code: string, src: EvalSource, log: LogPush) {
     if (!(await ensureP5Ctor(log))) throw new Error('p5 not ready');
+    const now = performance.now();
+    if (now - lastEvalTime < REEVAL_DEDUP_MS) {
+      // Synthetic re-eval from Kanopi's transport replay — see comment on
+      // lastEvalTime. The user's intent was evaluated a few ms ago.
+      return;
+    }
+    lastEvalTime = now;
     try {
       // Destroy the previous sketch before starting the new one. p5 keeps
       // rAF loops per instance, so skipping remove() accumulates ghost
-      // sketches that keep redrawing with stale state.
+      // sketches that keep redrawing with stale state. cleanupOrphans()
+      // also handles HMR ghosts that our `instance` reference has lost.
       if (instance) {
         try { instance.remove(); } catch { /* best-effort */ }
         instance = undefined;
       }
+      cleanupOrphans();
       // p5 passes the instance into the sketch callback ONCE, during
       // construction. We run user code inside that callback so the user
       // can declare setup/draw/etc. on the closure and have them lifted
@@ -143,6 +197,9 @@ export const p5Adapter: RuntimeAdapter = {
         try { instance.remove(); } catch { /* best-effort */ }
         instance = undefined;
       }
+      // Belt-and-braces: kill any ghost canvas the `instance` reference
+      // didn't cover (HMR can orphan one before we get here).
+      cleanupOrphans();
       log({ runtime: 'p5', level: 'info', msg: 'cleared' });
       emitLifecycle('stop', src.fileId);
     } catch (err) {
