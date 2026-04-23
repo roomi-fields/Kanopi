@@ -16,7 +16,7 @@ export interface AudioBank {
 
 export interface AudioBankCatalog {
   schemaVersion: number;
-  banks: AudioBank[];
+  items: AudioBank[];
 }
 
 /** Parsed catalog, loaded at build-time from catalog.json. Source of truth. */
@@ -24,10 +24,10 @@ export const catalog: AudioBankCatalog = catalogJson as AudioBankCatalog;
 
 /** Look up a bank by id. */
 export function findBank(id: string): AudioBank | undefined {
-  return catalog.banks.find((b) => b.id === id);
+  return catalog.items.find((b) => b.id === id);
 }
 
 /** Every bank id in the catalog (for diagnostics / autocomplete). */
 export function bankIds(): string[] {
-  return catalog.banks.map((b) => b.id);
+  return catalog.items.map((b) => b.id);
 }

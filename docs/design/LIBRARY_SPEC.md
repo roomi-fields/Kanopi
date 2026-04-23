@@ -18,8 +18,8 @@ endpoint community). Il contient :
 
 ```ts
 interface Catalog<Item> {
-  schemaVersion: number;  // actuel : 1
-  banks: Item[];           // nom historique hérité de audio-banks ; voir §5
+  schemaVersion: number;  // actuel : 2
+  items: Item[];
 }
 ```
 
@@ -65,8 +65,8 @@ n'est pas re-spécifié ici — cf `@strudel/webaudio` docs.
 
 ```json
 {
-  "schemaVersion": 1,
-  "banks": [
+  "schemaVersion": 2,
+  "items": [
     {
       "id": "dirt-samples",
       "name": "Dirt Samples",
@@ -158,19 +158,21 @@ démarreront à `1` à leur introduction.
 
 ---
 
-## 5 · Dette technique à résoudre
+## 5 · Dette technique — résolue
 
-Le catalog audio-banks utilise le champ `banks[]` — historiquement motivé
-par le fait qu'il n'y avait qu'une catégorie. Quand une seconde catégorie
-arrive, deux options :
+Le catalog audio-banks utilisait historiquement le champ `banks[]` quand
+il n'y avait qu'une catégorie. Deux options étaient envisagées pour la
+seconde :
 
 - **A.** Un `catalog.json` global avec `items[]` typé par `category`.
 - **B.** Un `catalog.json` par catégorie avec `items[]` (renommer `banks[]`
   en `items[]` au passage, bump `schemaVersion: 2`).
 
-Option B est préférable (séparation des concerns, fetch parallèle
-possible), mais casse les imports existants — à gérer lors du premier
-ajout de catégorie. Loggué dans `PROGRESS.md §5`.
+**Option B retenue** (séparation des concerns, fetch parallèle possible).
+Migration appliquée en phase 2.4 Hydra : `schemaVersion: 2`, champ
+`items[]` uniforme. Helpers `findBank()` / `bankIds()` conservés comme
+wrappers domaine sur `catalog.items`. Les catégories futures partent
+directement sur la forme `items[]`.
 
 ---
 

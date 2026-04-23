@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 1,
-  "banks": [
+  "schemaVersion": 2,
+  "items": [
     {
       "id": "dirt-samples",
       "name": "Dirt Samples",

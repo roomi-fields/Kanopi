@@ -36,7 +36,7 @@
     <code>@library &lt;id&gt;</code>. Loaded on the fly by the Strudel adapter.
   </p>
   <ul class="list">
-    {#each catalog.banks as b (b.id)}
+    {#each catalog.items as b (b.id)}
       <li class="card">
         <header>
           <span class="name">{b.name}</span>
