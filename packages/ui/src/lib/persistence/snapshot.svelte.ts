@@ -30,7 +30,12 @@ export function restoreWorkspace(): boolean {
   if (w.files?.length) {
     workspace.files = w.files;
   }
-  workspace.openTabIds = w.openTabIds.filter((id) => workspace.fileById(id));
+  // De-duplicate AND filter out stale ids. Older persisted states could
+  // hold duplicates because workspace.openTabIds was written directly from
+  // restore without a Set pass.
+  workspace.openTabIds = Array.from(new Set(w.openTabIds ?? [])).filter((id) =>
+    workspace.fileById(id)
+  );
   workspace.activeTabId = w.activeTabId && workspace.fileById(w.activeTabId) ? w.activeTabId : null;
 
   if (typeof w.bpm === 'number') clock.setBpm(w.bpm);

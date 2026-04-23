@@ -114,7 +114,17 @@ class OpenBlocksStore {
 
 function computeOpenBlocks(): OpenBlock[] {
   const out: OpenBlock[] = [];
+  // Dedupe tab ids defensively. `workspace.openFile` dedupes on insert, but
+  // `restoreWorkspace` writes the persisted array directly — and a stale
+  // persist from before the dedupe landed could surface duplicates that
+  // would crash the keyed {#each} in ActorsPanel.
+  const seenTabs = new Set<string>();
+  // Keys `fileId:blockName` already emitted. Guards against extractor bugs
+  // emitting two blocks with the same name for one file.
+  const seenKeys = new Set<string>();
   for (const tabId of workspace.openTabIds) {
+    if (seenTabs.has(tabId)) continue;
+    seenTabs.add(tabId);
     const file = workspace.fileById(tabId);
     if (!file) continue;
     // Skip session files — they're composed of directives, not runnable blocks.
@@ -122,6 +132,9 @@ function computeOpenBlocks(): OpenBlock[] {
     const blocks = extractBlocks(file.contents, file.runtime);
     const base = basename(file.name);
     for (const b of blocks) {
+      const key = `${file.id}:${b.name}`;
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
       out.push({
         fileId: file.id,
         fileName: file.name,
