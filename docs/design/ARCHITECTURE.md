@@ -1,5 +1,21 @@
 # Kanopi Architecture
 
+Topologie physique (repos, dépendances, flux) et logique (hub + adapters +
+plugins langage) de Kanopi.
+
+## Specs connexes
+
+| Document                  | Couvre                                                     |
+| ------------------------- | ---------------------------------------------------------- |
+| `KANOPI_PRINCIPLES.md`    | 10 principes fondateurs (arbitrages inclus)                 |
+| `ADAPTER_SPEC.md`         | Contract `RuntimeAdapter` : moteur + UX native + events     |
+| `LANGUAGE_SPEC.md`        | Parsers CM6 + tags Lezer + colorimétrie                     |
+| `LIBRARY_SPEC.md`         | Format `catalog.json` + items par catégorie                 |
+| `EVENTS.md`               | Bus `KanopiEvent` — schéma et consommateurs                 |
+| `SCENES.md`               | Système de scènes (`@scene`)                                |
+| `LIBRARY.md`              | Product doc library (vision, UX, roadmap)                   |
+| `spec/KANOPI_LANGUAGE.md` | Syntaxe du langage `.kanopi`                                |
+
 ## Topologie repos
 
 ```
@@ -30,6 +46,55 @@ kanopi ──┬── bpscript (npm import: parser + BPx engine)
 ```
 
 Dépendances linéaires, aucune circulaire.
+
+## Topologie logique : hub + adapters + plugins langage
+
+Séparation stricte imposée par `KANOPI_PRINCIPLES §9`. Un adapter
+n'importe **que** depuis le hub et depuis son module langage upstream —
+jamais d'autres adapters, jamais de code UI langage-spécifique dans le
+hub.
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                        HUB Kanopi                              │
+│                                                                │
+│  ┌──────────────┐   ┌───────────────┐   ┌──────────────────┐   │
+│  │  Transport   │   │  EventBus     │   │  Session parser  │   │
+│  │  (Clock,     │◄──│  KanopiEvent  │◄──│  .kanopi →       │   │
+│  │   BPM, bar)  │   │               │   │   actors/scenes  │   │
+│  └──────┬───────┘   └───────┬───────┘   └─────────┬────────┘   │
+│         │                   │                     │            │
+│  ┌──────▼────────────────────▼─────────────────────▼────────┐  │
+│  │     Dispatcher (scene-manager, map-engine, resolver)     │  │
+│  └──────┬────────┬────────┬────────┬────────┬──────────┬────┘  │
+└─────────┼────────┼────────┼────────┼────────┼──────────┼───────┘
+          │        │        │        │        │          │
+          ▼        ▼        ▼        ▼        ▼          ▼
+     ┌────────┐┌──────┐┌──────┐┌──────┐┌──────┐┌────────────┐
+     │ Strudel││ Tidal││ Hydra││  JS  ││  SC  ││ …autres    │
+     │ adapter││adapter││adapter││adapter││adapter││           │
+     └───┬────┘└──┬───┘└──┬───┘└──┬───┘└──┬───┘└─────┬──────┘
+         │        │       │       │       │          │
+         ▼        ▼       ▼       ▼       ▼          ▼
+   ┌─────────┐┌──────┐┌──────────┐┌───────┐┌──────┐┌────────┐
+   │@strudel ││idem  ││hydra-    ││WebAudio││osc-  ││plugins │
+   │/web     ││(port)││synth     ││native ││bridge││langage │
+   │/codemir ││      ││          ││       ││      ││        │
+   │/draw    ││      ││          ││       ││      ││        │
+   └─────────┘└──────┘└──────────┘└───────┘└──────┘└────────┘
+
+   └── MOTEURS + MODULES ÉDITEUR UPSTREAM (npm ou externes) ──┘
+```
+
+Un adapter fait **trois** choses, rien de plus :
+
+1. Charger son moteur upstream et lui transmettre le code à évaluer.
+2. Installer les extensions CM6 upstream dans l'éditeur Kanopi (widgets,
+   highlight, autocomplete natifs du langage).
+3. Publier ses events dans `KanopiEvent` et consommer le transport.
+
+Toute logique métier du langage reste upstream. Cf `ADAPTER_SPEC.md §2`
+pour les 6 zones d'intégration détaillées.
 
 ## Progressive enhancement : 3 niveaux
 
@@ -68,11 +133,13 @@ L'UI détecte automatiquement le bridge local (WebSocket localhost:7777). Prése
 - **WebSocket** pour bridge OSC local
 - **IndexedDB** pour persistance (workspaces, library MINE)
 
-### Library (`packages/library/`)
+### Library (`packages/library/` + `packages/ui/src/lib/library/`)
 
-- JSON bundled dans le repo (starters, scenes, devices, scales)
+- JSON bundled dans le repo (audio-banks aujourd'hui ; starters, scenes,
+  snippets, devices, scales à venir)
 - Loader qui unifie sources BUNDLED / MINE / COMMUNITY
-- Voir [LIBRARY.md](LIBRARY.md)
+- Product doc : [LIBRARY.md](LIBRARY.md). Format technique (catalog +
+  items) : [LIBRARY_SPEC.md](LIBRARY_SPEC.md).
 
 ### Desktop (v2, reporté)
 
@@ -202,3 +269,13 @@ Hérités de `BPscript/src/dispatcher/` et `src/bridge/`. À migrer progressivem
 ### Synchro inter-runtime
 
 Strudel schedule sur AudioContext (précis), Hydra est calé sur rAF (16 ms jitter), un adapter JS pur peut être sur l'un ou l'autre. Trois natures d'horloges coexistent. Le bus `KanopiEvent` unifie les *timestamps wall-clock* pour les visualizers. Pour le *planning audio cross-runtime*, chaque runtime reste sur son horloge native — on ne promet pas une synchro sub-ms entre un trigger Strudel et un flash Hydra.
+
+---
+
+## Historique de révision
+
+- **2026-04-15** : rédaction initiale.
+- **2026-04-23** : phase 2.3 task 5. Ajout de la table « Specs connexes »
+  en tête, du diagramme **hub + adapters + plugins langage** (principe 9)
+  après la topologie repos, et mise à jour du pointeur library vers le
+  nouveau `LIBRARY_SPEC.md`.
