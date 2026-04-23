@@ -138,48 +138,48 @@ library. Catégorie Library Kanopi à considérer :
 ## Décision de scope (2026-04-23)
 
 SC tombe dans une catégorie nouvelle par rapport à Strudel/Hydra : **il
-n'y a tout simplement pas de runtime browser-ready**. Les 3 options
-réalistes :
+n'y a tout simplement pas de runtime browser-ready**. Dans la
+terminologie des 3 niveaux d'`ARCHITECTURE.md §progressive enhancement` :
 
-- **Option 1 : Defer à v2 Tauri** (recommandé). Phase 2.4 SC = Phase 0
-  audit + décision de report explicite. On passe à Tidal ensuite (même
-  catégorie : natif GHCi, bloqué en browser), puis on considère que
-  phase 2.4 s'arrête sur le **couple Strudel + Hydra validé**. Phase 3
-  browser-native scope est terminée, v2 Tauri démarre avec SC + Tidal.
+- Strudel, Hydra → **niveau 2 (web enrichi)**, v1 public
+- SC (sclang + scsynth réels) → **niveau 3 (package local)**, v2 Tauri
 
-- **Option 2 : SuperSonic en browser** — **limité** : user sélectionne
-  synthdefs prédéfinis, pas de live coding SC réel. Utile si Kanopi veut
-  offrir « jouer des sons SC » sans coder. **Trahit le positionnement
-  live-coding**.
+SC est ainsi **reporté au niveau 3**. Phase 2.4 SC s'arrête à la
+livraison de cet audit. Phase 1/2/3 d'implémentation redémarrent à la
+release Tauri v2 via `osc-bridge` (WebSocket localhost:7777 → process
+sclang local). Même pattern que Flok mode `sclang`.
 
-- **Option 3 : sc.wasm** — **aventureux** : assumer la fragilité,
-  forker si l'upstream lâche. Hors principe 7.
+Options non-retenues :
 
-**Recommandation** : Option 1. Documenter SC comme « v2 Tauri » dans
-ROADMAP/PROGRESS, passer à Tidal (même décision attendue), puis conclure
-phase 2.4 sur Strudel + Hydra. La « validation du concept » 4 langages
-reste valide tant qu'on annonce honnêtement v1 browser = 2 langages
-(Strudel + Hydra), v2 Tauri = +2 (SC + Tidal).
+- **SuperSonic en browser** (synthdefs précompilés, pas de live coding)
+  → trahit le positionnement live-coding Kanopi.
+- **sc.wasm** (fragile, hors principe 7) → pas de maintenance Kanopi
+  d'un runtime upstream.
+
+La « validation du concept 4 langages » annoncée reste honnête : **v1
+public = 2 langages live browser (Strudel + Hydra)**, **v2 Tauri = +2
+niveau 3 (SC + Tidal)**.
 
 ---
 
-## Livrables Phase 1 (si Option 1 retenue)
+## Livrables Phase 1 — SC report niveau 3
 
-Pas de livraison code. Juste :
+Pas de livraison code en v1. Juste :
 
-1. Mettre à jour `PROGRESS.md §2.4` : marquer SC comme « reported to v2
-   Tauri » avec lien vers cet audit.
-2. Mettre à jour `ROADMAP.md` (local `docs/plan/`) : phase Tauri v2 ouvre
-   sur intégration SC + Tidal via osc-bridge.
-3. Mettre à jour `ARCHITECTURE.md` si besoin : section osc-bridge déjà
-   en place ; éventuellement ajouter note sur les runtimes browser vs
-   desktop.
+1. Mettre à jour `PROGRESS.md §2.4` : marquer SC comme « reported to
+   niveau 3 (v2 Tauri) » avec lien vers cet audit.
+2. `ROADMAP.md` (local `docs/plan/`) : phase Tauri v2 ouvre sur
+   intégration SC + Tidal via osc-bridge.
+3. `ARCHITECTURE.md §progressive enhancement` : déjà listé SC en
+   niveau 3, rien à modifier.
 
 ---
 
 ## Historique de révision
 
 - **2026-04-23** : Phase 0 audit initial. Point critique identifié :
-  aucun module npm browser-ready pour eval SC live. Recommandation :
-  reporter à v2 Tauri (mode osc-bridge → sclang local, précédent Flok).
-  Pas de livraison code en phase 2.4 pour SC.
+  aucun module npm browser-ready pour eval SC live. Décision :
+  **reporter SC au niveau 3** (v2 Tauri, osc-bridge → sclang local,
+  même pattern que Flok mode `sclang`). Pas de livraison code en phase
+  2.4 pour SC ; phase 1/2/3 d'implémentation redémarreront à la
+  release Tauri v2.
