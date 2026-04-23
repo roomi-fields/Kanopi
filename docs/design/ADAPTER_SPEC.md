@@ -271,7 +271,7 @@ aucune logique métier du parser Strudel n'est dupliquée — tout est glue.
 
 ## 5 · Checklist pour un nouveau langage
 
-Avant d'écrire une seule ligne de code :
+### 5.1 · Phases (avant d'écrire une seule ligne de code)
 
 - [ ] **Phase 0 audit** : `docs/integrations/<LANG>.md` — inventorier les
       6 zones d'intégration. Identifier les composants upstream
@@ -287,6 +287,63 @@ Avant d'écrire une seule ligne de code :
 
 Cette procédure est explicitée dans
 `~/.claude/projects/-home-romi-dev-music-kanopi/memory/feedback_language_integration_procedure.md`.
+
+### 5.2 · Points de touchement code pour un langage niveau 2
+
+Une fois Phase 0–2 validées, **ajouter un langage c'est toucher 3
+fichiers** grâce à la structure dérivée du registry d'adapters :
+
+1. **`packages/ui/src/lib/core-mock/types.ts`** — ajouter la valeur au
+   type union `Runtime` :
+   ```ts
+   export type Runtime =
+     | 'kanopi' | 'strudel' | 'hydra' | 'p5' | 'mercury'   // ← new
+     | …;
+   ```
+
+2. **`packages/ui/src/lib/runtimes/<lang>.ts`** — l'adapter lui-même, qui
+   implémente `RuntimeAdapter` et déclare en particulier :
+   ```ts
+   export const mercuryAdapter: RuntimeAdapter = {
+     id: 'mercury',
+     extensions: ['.mercury'],
+     async evaluate(code, src, log) { … },
+     async stop(src, log) { … },
+     async dispose() { … }
+   };
+   ```
+
+3. **`packages/ui/src/lib/runtimes/registry.ts`** — inscrire l'adapter
+   dans la Map :
+   ```ts
+   import { mercuryAdapter } from './mercury';
+   const adapters = new Map<Runtime, RuntimeAdapter>([
+     …,
+     ['mercury', mercuryAdapter]
+   ]);
+   ```
+
+**Tout le reste est automatiquement dérivé** :
+
+| Derivation                               | Source                       |
+| ---------------------------------------- | ---------------------------- |
+| `+ New file` accepte `.mercury`          | `knownExtensions()` du registry (lit `adapter.extensions`) |
+| `runtimeFromExt('x.mercury')` → `'mercury'` | `runtimeFromExtension()` du registry |
+| Les tabs affichent le bon runtime        | `VirtualFile.runtime` mis via `runtimeFromExt` |
+| Core dispatcher route `Ctrl+Enter`       | `getAdapter(file.runtime)`   |
+| Extraction de blocs                      | `extractBlocks(code, runtime)` dans `lib/blocks/extract-blocks.ts` (à étendre si le langage a une sémantique de bloc propre, sinon la fallback `extractPositional` s'applique) |
+
+Si le langage a besoin d'un canvas visuel (comme Hydra, p5), ajouter un
+composant `<Lang>Canvas.svelte` monté dans `App.svelte` et une fonction
+`attach<Lang>Canvas(el)` côté adapter.
+
+Si le langage a une extension CM6 upstream
+(`@<lang>/codemirror` ou équivalent), la câbler dans
+`packages/ui/src/components/editor/CMEditor.svelte` selon le même
+pattern que Strudel. Sinon, cas (b) d'ADAPTER_SPEC §B → highlight JS /
+équivalent générique + items backlog PROGRESS §5.4.
+
+**C'est tout.** La logique métier du langage reste upstream.
 
 ---
 
