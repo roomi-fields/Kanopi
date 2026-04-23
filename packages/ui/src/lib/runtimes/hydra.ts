@@ -60,16 +60,38 @@ export const hydraAdapter: RuntimeAdapter = {
   },
   async evaluate(code: string, src: EvalSource, log: LogPush) {
     if (!(await ensure(log))) throw new Error('hydra not ready');
+    // hydra-synth swallows GLSL compile errors silently via
+    // console.warn('shader could not compile', err) (cf glsl-source.js:30).
+    // There's no public API to subscribe to shader errors, so we briefly
+    // shadow console.warn during the eval to capture them. The JS parse/
+    // runtime path still throws normally through new Function().
+    const originalWarn = console.warn;
+    let glslError: Error | undefined;
+    console.warn = (...args: unknown[]) => {
+      if (typeof args[0] === 'string' && args[0].includes('shader could not compile')) {
+        const detail = args.length > 1 ? String(args[1]) : '(no detail)';
+        glslError = new Error(`[GLSL] ${detail}`);
+      }
+      originalWarn.apply(console, args);
+    };
     try {
       // hydra-synth API exposes globals (osc, noise, out...) when makeGlobal: true
       // eslint-disable-next-line no-new-func
       new Function(code)();
       if (canvasEl) canvasEl.style.display = 'block';
+      if (glslError) {
+        log({ runtime: 'hydra', level: 'error', msg: `glsl: ${glslError.message}` });
+        throw glslError;
+      }
       log({ runtime: 'hydra', level: 'info', msg: `eval ok (${code.length}b)` });
       emitLifecycle('eval', src.fileId);
     } catch (err) {
-      log({ runtime: 'hydra', level: 'error', msg: String(err) });
+      if (!glslError) {
+        log({ runtime: 'hydra', level: 'error', msg: `js: ${String(err)}` });
+      }
       throw err;
+    } finally {
+      console.warn = originalWarn;
     }
   },
   async stop(src: EvalSource, log: LogPush) {
