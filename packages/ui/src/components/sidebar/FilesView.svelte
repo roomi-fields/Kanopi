@@ -1,12 +1,13 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import { workspace } from '../../stores/workspace.svelte';
+  import { KNOWN_EXTENSIONS } from '../../lib/workspace/types';
   import FileTree from './FileTree.svelte';
 
-  // Allowed extensions — kept in sync with runtimeFromExt so every created
-  // file routes to a real adapter. Leaving the extension off defaults to
+  // Allowed extensions pulled from the single `EXTENSION_TO_RUNTIME`
+  // table in lib/workspace/types. Leaving the extension off defaults to
   // .kanopi (session file) to match the typical "new scratch session" flow.
-  const exts = ['.tidal', '.strudel', '.hydra', '.js', '.scd', '.py', '.kanopi'];
+  const exts = KNOWN_EXTENSIONS;
 
   let creating = $state(false);
   let newName = $state('');
