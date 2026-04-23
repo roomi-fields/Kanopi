@@ -27,6 +27,14 @@ export interface RuntimeAdapter {
   /** Propagate global tempo change. Optional. */
   setBpm?(bpm: number, log: LogPush): void;
   /**
+   * Notifications de battement du clock central. `count` est l'indice
+   * monotonic (absBeat/absBar) depuis start. Permet à un adapter dont
+   * le langage s'appuie sur une horloge visuelle (ex: Hydra `.rotate(beat)`)
+   * de rester calé sur le transport Kanopi. Optionnels.
+   */
+  onBeat?(count: number, log: LogPush): void;
+  onBar?(count: number, log: LogPush): void;
+  /**
    * Optional per-adapter event bus. If present, the core relays `onAny` into
    * `core.events` at init so visualizers consume a single unified stream.
    */

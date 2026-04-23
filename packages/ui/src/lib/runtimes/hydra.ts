@@ -49,6 +49,15 @@ export const hydraAdapter: RuntimeAdapter = {
     // Expose as a global so hydra patches can reference `bpm` (e.g. speed = bpm/120)
     (globalThis as unknown as { bpm: number }).bpm = bpm;
   },
+  onBeat(count: number, _log: LogPush) {
+    // Hydra patches can now do `.rotate(beat)`, `.scrollX(beat/8)`, etc.
+    // `count` is monotonic since transport start; patches take `beat % 4`
+    // if they want the position-in-bar.
+    (globalThis as unknown as { beat: number }).beat = count;
+  },
+  onBar(count: number, _log: LogPush) {
+    (globalThis as unknown as { bar: number }).bar = count;
+  },
   async evaluate(code: string, src: EvalSource, log: LogPush) {
     if (!(await ensure(log))) throw new Error('hydra not ready');
     try {

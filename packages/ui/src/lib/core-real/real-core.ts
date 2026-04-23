@@ -88,6 +88,22 @@ class RealCore implements CoreApi {
         adapter?.setBpm?.(bpm, this.log);
       }
     });
+    // Relay beat/bar events from the clock to any adapter that opts in.
+    // Symmetric with `setBpm` above; lets adapters whose language exposes a
+    // visual clock (Hydra `beat` / `bar` globals) stay in sync without each
+    // re-subscribing to core.events.
+    this.events.on('beat', (e) => {
+      for (const id of listRuntimes()) {
+        const adapter = getAdapter(id);
+        adapter?.onBeat?.(e.count, this.log);
+      }
+    });
+    this.events.on('bar', (e) => {
+      for (const id of listRuntimes()) {
+        const adapter = getAdapter(id);
+        adapter?.onBar?.(e.count, this.log);
+      }
+    });
   }
 
   private async handleSceneActivate(scene: Scene) {
