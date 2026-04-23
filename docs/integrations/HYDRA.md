@@ -160,39 +160,48 @@ Strudel, il faut passer le même AudioContext aux deux.
 | 5 | Sync `beat`/`bar` exposés en globals   | C    | 2h       | Faible (polish)                     |
 | 6 | Flash rouge distingué JS vs GLSL        | E    | 1h       | Faible                              |
 
-Priorité proposée pour Phase 2 (plan d'implémentation) : **1 + 2 d'abord**
-(livrent 80% du gain user), puis 3 et 4 (nouvelles features), puis 5-6
-(polish).
+## Décision de scope (2026-04-23)
 
-## Livrables Phase 1 (gap) : ce doc
+Hydra tombe dans le **cas (b)** d'`ADAPTER_SPEC §B` : pas de module CM6
+upstream. La règle est donc « phase 2.4 minimal viable, extensions CM6
+custom → backlog ». Concrètement :
 
-## Livrables Phase 2 (plan) : à rédiger ensuite
+- **Dans la phase 2.4 Hydra** : gaps #3 (audio detection), #4 (library
+  visuals), #5 (beat globals), #6 (flash JS/GLSL). Zones A/C/D/E/F.
+- **Parkés dans `PROGRESS.md §5.4` (backlog CM6 custom)** : gaps #1
+  (autocomplete + tooltips + exemples), #2 (hide/show code shortcut),
+  #3 bis (squiggles GLSL compile errors côté CM6). Zone B.
 
-Inclure :
+État de l'art : Flok se contente aussi du highlight JS générique pour
+Hydra, donc l'alignement concurrence est OK sans toucher à B. Les items
+backlog B sont du bonus Kanopi (principe 2) à livrer sur quota résiduel.
 
-- Architecture du module `lib/runtimes/hydra-cm/` (extensions CM6
-  spécifiques Hydra : autocomplete + tooltip + hide/show)
-- Script `scripts/build-hydra-functions.js` qui extrait depuis
-  `hydra-functions` upstream et produit `functions.json`
-- Update `LIBRARY_SPEC` pour catégorie `visuals`
+## Livrables Phase 2 (plan 2.4 Hydra) : zones A/C/D/E/F seulement
+
+À rédiger ensuite. Inclut :
+
+- Audio detection partagée avec le transport Kanopi (A+C)
+- Nouvelle catégorie Library `visuals` (D)
+- Exposer `beat` / `bar` en globals Hydra (C polish)
+- Flash rouge JS/GLSL distingué (E polish)
 - Procédure de test manuelle pour Phase 3
 
-## Livrables Phase 3 (implementation) : après validation Phase 2
+## Livrables Phase 3 (implementation) : après Phase 2 validée
 
 Par ordre :
 
-1. Tâches 1-2 (autocomplete + hide code) → commit
-2. Test procedure (live-coding-verify)
-3. Tâches 3-4 (audio + visuals library)
-4. Tâches 5-6 (polish)
+1. Audio detection + visuals library → commit
+2. Beat globals + flash JS/GLSL → commit
+3. Test procedure live-coding-verify
 
 ---
 
 ## Historique de révision
 
 - **2026-04-23** : Phase 0 audit initial. Point critique identifié : pas
-  de module éditeur Hydra packagé upstream, donc l'UX native riche
-  (autocomplete, tooltips, exemples) exige une extraction des données
-  depuis `hydra-functions` + écriture de la glue CM6 côté Kanopi. Reste
-  cohérent avec principe 7 tant qu'on consomme les données source, pas
-  qu'on réécrit le parser GLSL.
+  de module éditeur Hydra packagé upstream. Décision scope le même jour :
+  rester sur highlight JS générique (alignement Flok), parker les
+  extensions CM6 custom (autocomplete/tooltips/hide-code) dans
+  `PROGRESS.md §5.4`. Reste cohérent avec principe 7 car on ne réécrit
+  rien ; simplement, la phase 2.4 priorise la cible « 4 langages
+  tournent » avant le bonus éditeur langue-spécifique.

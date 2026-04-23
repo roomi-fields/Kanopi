@@ -111,6 +111,24 @@ Checklist UX native à auditer avant intégration (Phase 0) :
 Pour chaque case cochée, l'adapter utilise **le module upstream**, pas
 une réécriture.
 
+#### Politique d'intégration par cas (2026-04-23)
+
+Upstream n'expose pas toujours un module CM6 prêt à installer. Deux cas :
+
+| Cas                                                                 | Exemple        | Action                                                              |
+| ------------------------------------------------------------------- | -------------- | ------------------------------------------------------------------- |
+| **(a) Un module CM6 upstream existe** (packagé npm, extensions prêtes) | Strudel → `@strudel/codemirror` | L'intégrer tel quel dans phase 2.4 (glue minimale, cohérent principe 7). |
+| **(b) Pas de module CM6 upstream**, seulement données brutes (JSON / JS de ref) | Hydra → `hydra-functions`, SC → `scdoc` | **Backlog.** La phase 2.4 se limite alors à A/C/D/E/F + highlight JS générique. Les extensions CM6 custom (autocomplete, tooltips, squiggles langue-spécifiques) attendent une itération séparée. |
+
+Raison : construire nous-mêmes une extension CM6 par langage casse le
+budget phase 2.4 (2-4j par langage) et retarde la cible validation du
+concept (4 langages tournent). Mieux vaut **matcher l'état de l'art**
+(Flok se contente aussi du highlight JS générique pour Hydra/SC) puis
+ajouter le bonus Kanopi en phase ultérieure.
+
+À chaque nouveau langage, le Phase 0 audit doit expliciter dans quel cas
+on est (a/b) dès la zone B.
+
 ### C. Event surface
 
 L'adapter peut exposer un `EventBus` optionnel (`adapter.events`). Le hub
