@@ -4,10 +4,11 @@ Contrat technique du système library : format des fichiers `catalog.json`,
 structure d'un item, règles de consommation par les adapters. Complète
 `LIBRARY.md` (product doc : vision, catégories, UX, roadmap).
 
-Aujourd'hui seule la catégorie **audio-banks** est implémentée
-(`packages/ui/src/lib/library/audio-banks/`). Le reste des catégories
-(starters, scenes, snippets, devices, scales) est cadré ici pour que leur
-ajout ultérieur reste cohérent.
+Deux catégories sont implémentées : **audio-banks**
+(`packages/ui/src/lib/library/audio-banks/`) et **visuals**
+(`packages/ui/src/lib/library/visuals/`). Les autres catégories (starters,
+scenes, snippets, devices, scales) sont cadrées ici pour que leur ajout
+ultérieur reste cohérent.
 
 ---
 
@@ -91,6 +92,42 @@ Erreurs :
   entrée dans le Console panel.
 - Double déclaration → warning.
 - Bank retirée pendant une session → warning différé.
+
+---
+
+## 2bis · Catégorie implémentée : `visuals`
+
+Source : `packages/ui/src/lib/library/visuals/catalog.json`.
+
+### Format
+
+```ts
+interface VisualItem {
+  id: string;            // unique ; kebab-case
+  name: string;
+  description: string;
+  content: string;       // snippet Hydra pré-rempli dans l'éditeur
+  runtimes: Runtime[];   // aujourd'hui ["hydra"] uniquement
+  tags?: string[];
+}
+```
+
+### Consommation
+
+Depuis la sidebar Library, un clic « load » sur un item appelle
+`workspace.addFile(`${id}.hydra`, content)` puis `openFile` — le fichier
+est ajouté sans remplacer le workspace existant (contrairement aux
+starters). L'utilisateur peut ensuite Ctrl+Enter dessus comme sur
+n'importe quel `.hydra`.
+
+### Pourquoi inline plutôt qu'URL externe
+
+Les shaders Hydra restent courts (3–10 lignes), livrés en clair dans le
+catalog. Pas de fetch runtime, pas d'asset externe à gérer. Le jour où
+la catégorie accueille des images/vidéos consommées via `s0.initImage()`
+/ `s0.initVideo()`, le champ `content` deviendra un union type
+`{ content: string } | { assetUrl: string }` — sans casser les items
+inline existants.
 
 ---
 
@@ -220,6 +257,11 @@ items. Seuil à réévaluer quand COMMUNITY décolle.
 | `bankIds()`            | fn          | `lib/library/audio-banks.ts:31`          | Liste des ids disponibles (diag / autocomplete)     |
 | `loadSampleBank(src)`  | fn          | `lib/runtimes/strudel.ts:643`            | Charge une bank dans Strudel `samples(...)`          |
 | `setDeclaredBanks(srcs)` | fn        | `lib/runtimes/strudel.ts:661`            | Sync des banks déclarées vs chargées                 |
+| `VisualItem`           | interface   | `lib/library/visuals.ts:4`               | Entrée visual du catalog                             |
+| `VisualsCatalog`       | interface   | `lib/library/visuals.ts:15`              | Type du fichier `catalog.json` (visuals)             |
+| `visualsCatalog`       | const       | `lib/library/visuals.ts:21`              | Catalog visuals parsé, source de vérité build-time   |
+| `findVisual(id)`       | fn          | `lib/library/visuals.ts:24`              | Résolution `id → VisualItem`                          |
+| `visualIds()`          | fn          | `lib/library/visuals.ts:29`              | Liste des ids visuals disponibles                     |
 
 Les primitives pour les catégories futures seront ajoutées ici au fur
 et à mesure de leur implémentation.
@@ -233,3 +275,7 @@ et à mesure de leur implémentation.
   catégories futures sans les sur-spécifier. La dette `banks[] → items[]`
   est loggée explicitement en §5 pour que l'introduction de la 2e
   catégorie la résolve au passage.
+- **2026-04-23 (soir)** : phase 2.4 Hydra task #4. Dette §5 résolue
+  (migration `banks[]` → `items[]`, `schemaVersion: 2`). Ajout de la
+  catégorie `visuals` (§2bis) avec 3 shader snippets Hydra curated,
+  payload inline, et intégration UI dans LibraryView.

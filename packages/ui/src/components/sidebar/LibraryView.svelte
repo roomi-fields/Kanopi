@@ -1,6 +1,7 @@
 <script lang="ts">
   import { STARTERS, type Starter } from '../../lib/library/starters';
   import { catalog } from '../../lib/library/audio-banks';
+  import { visualsCatalog, type VisualItem } from '../../lib/library/visuals';
   import { workspace } from '../../stores/workspace.svelte';
 
   function load(s: Starter) {
@@ -9,6 +10,13 @@
     );
     if (!ok) return;
     workspace.loadFiles(s.files, s.sessionFile);
+  }
+
+  function loadVisual(v: VisualItem) {
+    // Append a new .hydra file pre-filled with the snippet and open it.
+    // Non-destructive: the current workspace is preserved.
+    const id = workspace.addFile(`${v.id}.hydra`, v.content);
+    workspace.openFile(id);
   }
 </script>
 
@@ -26,6 +34,29 @@
         </header>
         <p class="desc">{s.description}</p>
         <button type="button" class="load" onclick={() => load(s)}>load</button>
+      </li>
+    {/each}
+  </ul>
+
+  <h3 class="section-title">Visuals</h3>
+  <p class="intro">
+    Hydra snippets loaded as a new <code>.hydra</code> file in the current
+    workspace.
+  </p>
+  <ul class="list">
+    {#each visualsCatalog.items as v (v.id)}
+      <li class="card">
+        <header>
+          <span class="name">{v.name}</span>
+          <span class="tag">{v.id}</span>
+        </header>
+        <p class="desc">{v.description}</p>
+        {#if v.tags?.length}
+          <div class="tags">
+            {#each v.tags as t (t)}<span class="chip">{t}</span>{/each}
+          </div>
+        {/if}
+        <button type="button" class="load" onclick={() => loadVisual(v)}>load</button>
       </li>
     {/each}
   </ul>
