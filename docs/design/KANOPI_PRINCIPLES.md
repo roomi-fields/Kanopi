@@ -48,6 +48,45 @@ dans d'autres langages. Il ne remplace pas Strudel ni Tidal ni Hydra.
 À terme on le remplacera par **BPscript** (repo séparé) pour la notation musicale
 native. On commence simple avec `.kanopi`.
 
+### Dualité structure vs expressivité
+
+Kanopi sépare explicitement deux axes :
+
+- **Expressivité** (textures, sons, gestes, contenu mélodique) = territoire
+  des langages intégrés (Strudel, Hydra, p5, Mercury…).
+- **Structure** (sections, variations, enchaînements, mappings, morphing)
+  = territoire du langage de session `.kanopi`, de BPscript, et à terme
+  de BPx.
+
+Un patch Strudel, Mercury, Hydra écrit pour son environnement natif tourne
+identiquement dans Kanopi **sur le plan expressif** — c'est le principe 2
+appliqué à ce qu'un langage sait exprimer en solo.
+
+### Corollaire : les features cross-runtime upstream sont désactivées
+
+Certains langages fournissent des hooks cross-runtime en interne (Mercury
+`visual(['osc(10).out()'])` qui déclenche du Hydra à chaque trigger d'un
+instrument, Strudel `hush` globalisé, Tidal OSC hors cadre, etc.). Ces
+features sont **désactivées côté adapter Kanopi**.
+
+Raison : elles raisonnent en silo (un langage connaît un bout d'un autre
+sans modèle structurel global). Kanopi remplace ce silo par une couche
+qui *pense* la structure (bus `KanopiEvent` + directives `.kanopi` +
+BPscript). Dupliquer les deux mécaniques sèmerait la confusion sans
+apporter de valeur.
+
+**Trade-off assumé** : un patch qui dépendait d'une feature cross-runtime
+upstream (ex: Mercury `visual()`) ne fonctionne pas à l'identique dans
+Kanopi et dans l'environnement natif du langage. L'équivalent Kanopi-natif
+est documenté dans `docs/integrations/<LANG>.md`. Le principe 7
+(portabilité) s'applique au code intra-runtime (expressivité), pas aux
+features cross-runtime upstream.
+
+**Raison stratégique du trade-off** : on sert un segment d'users qui
+valorise la pensée structurelle textuelle. Ce segment n'a pas besoin des
+features cross-runtime upstream (elles sont faibles par rapport à ce que
+Kanopi orchestre). On ne sacrifie rien qui servirait la cible.
+
 ## 4 · IDE moderne à la VSCode
 
 Pour **tous les langages supportés** (pas juste Strudel) :
@@ -169,3 +208,8 @@ Quand deux principes semblent en tension :
   Précisions ajoutées à partir du retour d'expérience phase 2.1 (intégration
   @strudel/codemirror, pas juste @strudel/web) et phase 2.2 (colorimétrie :
   « callable = bleu partout » inclut `propertyName` pour méthodes chainées).
+- **2026-04-23 (soir)** : extension du principe 3 avec la dualité
+  structure/expressivité et le corollaire « cross-runtime upstream
+  désactivé ». Formalisé avant d'intégrer Mercury (premier langage avec
+  feature cross-runtime native via `visual()`). Trade-off portabilité
+  explicité.
