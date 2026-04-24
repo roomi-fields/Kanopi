@@ -15,7 +15,7 @@ type CsoundInstance = {
   destroy: () => Promise<undefined>;
   /** `compileCSD(text, 1)` compiles a CSD from an in-memory string (mode=1). */
   compileCSD: (pathOrText: string, mode?: number) => Promise<number>;
-  evalCode: (orc: string) => Promise<number>;
+  compileOrc: (orc: string) => Promise<number>;
   readScore: (score: string) => Promise<undefined>;
   on: (event: string, listener: (arg: unknown) => void) => unknown;
 };
@@ -99,15 +99,18 @@ export const csoundAdapter: RuntimeAdapter = {
         }
       } else if (isInstrBlock) {
         // Redefine an instrument or UDO at runtime, no engine restart.
-        const status = await instance!.evalCode(code);
-        if (status < 0) throw new Error(`csound evalCode error (status ${status})`);
+        // `compileOrc` adds the block to the running performance; `evalCode`
+        // only parses/validates without applying. For live redefinition we
+        // need the former (confirmed by kunstmusik/csound-live-code workflow).
+        const status = await instance!.compileOrc(code);
+        if (status < 0) throw new Error(`csound compileOrc error (status ${status})`);
       } else if (isScoreEvent) {
         // Append a score event to the running timeline.
         await instance!.readScore(code);
       } else {
-        // Fragment we couldn't classify — let evalCode handle it.
-        const status = await instance!.evalCode(code);
-        if (status < 0) throw new Error(`csound evalCode error (status ${status})`);
+        // Fragment we couldn't classify — try compileOrc as a safe default.
+        const status = await instance!.compileOrc(code);
+        if (status < 0) throw new Error(`csound compileOrc error (status ${status})`);
       }
     } catch (err) {
       log({ runtime: 'csound', level: 'error', msg: String(err) });

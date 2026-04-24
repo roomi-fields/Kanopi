@@ -156,9 +156,12 @@ instr 1
   outs aOsc, aOsc
 endin
 
-; Step 3: change 'vco2' above to 'pluck p4, p4, 0.1, 0.5' and
-; Ctrl+Enter inside the instr 1 ... endin block. The instrument is
-; redefined live — the next note uses the new sound.
+; Step 3: replace the 'vco2' line above with
+;   aOsc pluck 0.3 * kEnv, p4, p4, 0, 1
+; then Ctrl+Enter anywhere inside the instr 1 ... endin block. The
+; instrument is redefined live (Karplus-Strong pluck) — the next
+; note uses the new sound. Hints: pluck's 5 required params are
+;   kamp, kcps, icps, ifn, imeth   (ifn=0 = white noise init).
 
 </CsInstruments>
 <CsScore>

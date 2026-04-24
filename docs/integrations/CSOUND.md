@@ -304,14 +304,28 @@ token :
 | Premier token dans le bloc extrait   | Appel upstream                    |
 | ------------------------------------ | --------------------------------- |
 | `<CsoundSynthesizer>` (fichier entier) | `compileCSD(code, 1)` + `start()` si pas encore booté |
-| `instr N` / `opcode name`            | `evalCode(block)` — redéfinit à chaud |
+| `instr N` / `opcode name`            | `compileOrc(block)` — redéfinit à chaud dans la perf. running |
 | `i N …`, `f N …`, `e`, `s`, etc.     | `readScore(line)` — événement de score |
-| autre                                | `evalCode(block)` fallback        |
+| autre                                | `compileOrc(block)` fallback      |
 
 Ce switch n'est **pas** un parser — c'est une redirection sur un
 premier identifiant dont le rôle a déjà été garanti par l'extraction
 AST. La grammaire Csound reste upstream, Kanopi ne la réimplémente à
 aucun niveau.
+
+### Note : `compileOrc` vs `evalCode`
+
+Csound expose deux appels pour « compiler un fragment d'orchestra » :
+
+- `compileOrc(str)` — parse + compile + **ajoute** à la performance
+  en cours. C'est l'appel live-coding idiomatique (workflow
+  `kunstmusik/csound-live-code`).
+- `evalCode(str)` — parse + compile mais n'ajoute **pas** à la
+  performance. Utile pour valider du code sans l'exécuter.
+
+Kanopi utilise `compileOrc` pour l'étape B. `evalCode` avait été
+utilisée en premier jet mais ne redéfinissait pas l'instrument en
+pratique (le code passait la validation mais n'était pas appliqué).
 
 ---
 
