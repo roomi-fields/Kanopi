@@ -27,7 +27,13 @@ type CsoundInstance = {
 };
 
 let instance: CsoundInstance | undefined;
-let started = false;
+/** True once a full `<CsoundSynthesizer>` has been compileCSD'd. Survives
+ *  `stop()` (hush) — the engine retains instrument definitions, so later
+ *  compileOrc / readScore calls work without recompiling the full CSD. */
+let booted = false;
+/** True while audio is actually streaming. Flipped off by `stop()`, flipped
+ *  on again by `start()` on the next eval. */
+let playing = false;
 
 const adapterEvents: EventBus = createEventBus();
 
@@ -93,28 +99,21 @@ export const csoundAdapter: RuntimeAdapter = {
     const isScoreEvent = /^[a-z]\s+[-\d.]/i.test(trimmed); // i, f, e, s, t, m, n, q, r, v, w, x, y
 
     try {
-      if (!started && !isFullCsd) {
-        // Engine not booted yet and user evaluated a block or score line
-        // rather than the full CSD. Csound needs the header (<CsOptions>,
-        // sr/ksmps/nchnls) before any instr or score can run — there's no
-        // way to synthesise that from a fragment. Tell the user what to do.
-        throw new Error('engine not booted — put the cursor on <CsoundSynthesizer> (line 1) and Ctrl+Enter first');
-      }
       if (isFullCsd) {
-        // Full CSD: compile and (on the first run) start the engine.
-        // Csound allows in-place redefinition, so subsequent full-CSD
-        // evals overwrite the running instrument set.
+        // Full CSD: compile/redefine everything. Csound allows in-place
+        // instrument redefinition, so this works both on first boot and
+        // on subsequent whole-file re-evals.
         const status = await instance!.compileCSD(code);
         if (status < 0) throw new Error(`csound compile error (status ${status})`);
-        if (!started) {
-          await instance!.start();
-          started = true;
-        }
+        booted = true;
+      } else if (!booted) {
+        // No CSD ever compiled — we have no <CsOptions>/sr/ksmps header.
+        // Nothing we can do with a bare fragment. Direct the user.
+        throw new Error('engine not booted — put the cursor on <CsoundSynthesizer> (line 1) and Ctrl+Enter first');
       } else if (isInstrBlock) {
-        // Redefine an instrument or UDO at runtime, no engine restart.
-        // `compileOrc` adds the block to the running performance; `evalCode`
-        // only parses/validates without applying. For live redefinition we
-        // need the former (confirmed by kunstmusik/csound-live-code workflow).
+        // Redefine an instrument or UDO at runtime. `compileOrc` adds the
+        // block to the running performance; `evalCode` only parses/validates
+        // without applying. Confirmed by kunstmusik/csound-live-code.
         const status = await instance!.compileOrc(code);
         if (status < 0) throw new Error(`csound compileOrc error (status ${status})`);
       } else if (isScoreEvent) {
@@ -124,6 +123,14 @@ export const csoundAdapter: RuntimeAdapter = {
         // Fragment we couldn't classify — try compileOrc as a safe default.
         const status = await instance!.compileOrc(code);
         if (status < 0) throw new Error(`csound compileOrc error (status ${status})`);
+      }
+
+      // Kick audio streaming on first boot, or resume it after a prior
+      // `stop()` (hush) left the engine booted but paused. Idempotent
+      // while `playing` is true.
+      if (!playing) {
+        await instance!.start();
+        playing = true;
       }
     } catch (err) {
       log({ runtime: 'csound', level: 'error', msg: String(err) });
@@ -135,12 +142,16 @@ export const csoundAdapter: RuntimeAdapter = {
   },
   async stop(src: EvalSource, log: LogPush) {
     try {
-      if (instance && started) {
-        await instance.stop();
-        // stop() ends the current performance but keeps the instance
-        // alive; toggling `started` back to false lets the next evaluate
-        // call start() again without re-initialising the engine.
-        started = false;
+      if (instance && booted) {
+        // `stop()` alone leaves wasm Csound in a "started" state that
+        // rejects subsequent `start()` calls with "already started" and
+        // no audio resumes. `reset()` fully returns the engine to a
+        // clean slate — next eval must be a full <CsoundSynthesizer>
+        // document (matches the user's "Ctrl+Home, Ctrl+Enter to boot"
+        // mental model).
+        await instance.reset();
+        booted = false;
+        playing = false;
       }
       log({ runtime: 'csound', level: 'info', msg: 'stopped' });
       emitLifecycle('stop', src.fileId);
@@ -155,6 +166,7 @@ export const csoundAdapter: RuntimeAdapter = {
       /* ignore — engine may already be torn down */
     }
     instance = undefined;
-    started = false;
+    booted = false;
+    playing = false;
   }
 };

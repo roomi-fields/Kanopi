@@ -158,10 +158,13 @@ endin
 
 ; Step 3: replace the 'vco2' line above with
 ;   aOsc pluck 0.3 * kEnv, p4, p4, 0, 1
-; then Ctrl+Enter anywhere inside the instr 1 ... endin block. The
-; instrument is redefined live (Karplus-Strong pluck) — the next
-; note uses the new sound. Hints: pluck's 5 required params are
-;   kamp, kcps, icps, ifn, imeth   (ifn=0 = white noise init).
+; then Ctrl+Enter anywhere inside the instr 1 ... endin block to
+; redefine the instrument live (Karplus-Strong pluck). The eval
+; light goes green but you hear nothing yet: compileOrc only rewrites
+; instr 1's body. Now go back to Step 2 and Ctrl+Enter a 'i 1 ...'
+; score line — that new note uses the pluck sound.
+; Pluck's 5 required params: kamp, kcps, icps, ifn, imeth
+;   (ifn=0 = white noise init, imeth=1 = averaging method).
 
 </CsInstruments>
 <CsScore>
