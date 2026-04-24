@@ -25,13 +25,16 @@ declare module '@hlolli/codemirror-lang-csound' {
   // field points at the non-existent root-level index.d.ts. This shim
   // mirrors the public surface we actually use — upgrade if the package
   // fixes its `typings` field.
-  import type { LanguageSupport } from '@codemirror/language';
+  import type { LRLanguage, LanguageSupport } from '@codemirror/language';
   interface CsoundModeOptions {
     enableCompletion?: boolean;
     enableSynopsis?: boolean;
     enableDefaultTheme?: boolean;
     fileType?: 'csd' | 'orc' | 'sco';
   }
+  export const csdLanguage: LRLanguage;
+  export const orcLanguage: LRLanguage;
+  export const scoLanguage: LRLanguage;
   export function csoundMode(options?: CsoundModeOptions): LanguageSupport;
 }
 

@@ -121,14 +121,14 @@ new synth square time(1/4) note(-7 0) shape(1 1/8 0.4) gain(0.4)
   {
     id: 'csound-intro',
     name: 'Csound intro',
-    tagline: 'DSP academic synthesis via @csound/browser',
+    tagline: 'DSP synthesis + live incremental eval',
     description:
-      'A single Csound actor running a .csd file. Csound is the MIT-lineage DSP language (Barry Vercoe, 1986) with ~1700 opcodes. Ctrl+Enter to eval, Ctrl+. to silence. Phase 2.7a uses whole-file recompile — block-by-block incremental eval lands in 2.7b.',
+      'Csound is the MIT-lineage DSP language (Barry Vercoe, 1986) with ~1700 opcodes. First Ctrl+Enter boots the engine. Then Ctrl+Enter on a single score line plays just that note — no glitch on what is already running. Ctrl+Enter on an `instr N … endin` block redefines the instrument live. Ctrl+. silences.',
     sessionFile: 'csound-intro.kanopi',
     files: [
       {
         path: 'csound-intro.kanopi',
-        contents: `# Csound intro — toggle the actor, then Ctrl+Enter on beep.csd.
+        contents: `# Csound intro — toggle the actor, then follow the steps in beep.csd.
 
 @actor synth beep.csd csound
 
@@ -147,18 +147,34 @@ ksmps = 32
 nchnls = 2
 0dbfs = 1
 
+; Step 1: put the cursor anywhere in this file, Ctrl+Enter.
+; The engine boots and the 2 notes in <CsScore> play automatically.
+
 instr 1
   kEnv madsr 0.01, 0.1, 0.7, 0.1
   aOsc vco2 0.3 * kEnv, p4
   outs aOsc, aOsc
 endin
 
+; Step 3: change 'vco2' above to 'pluck p4, p4, 0.1, 0.5' and
+; Ctrl+Enter inside the instr 1 ... endin block. The instrument is
+; redefined live — the next note uses the new sound.
+
 </CsInstruments>
 <CsScore>
-i 1 0 0.5 220
-i 1 0.5 0.5 277
-i 1 1 0.5 330
-i 1 1.5 0.5 440
+; f 0 3600 keeps the engine alive for 1 hour — required for live
+; coding. Without it, Csound ends realtime rendering as soon as the
+; score is exhausted.
+f 0 3600
+
+; Initial notes to hear on boot:
+i 1 0 1 220
+i 1 0.5 1 440
+
+; Step 2: put the cursor on the line below and Ctrl+Enter to fire
+; just this note without disrupting anything already playing.
+; Add more 'i 1 ...' lines and Ctrl+Enter each.
+i 1 0 1 330
 </CsScore>
 </CsoundSynthesizer>
 `

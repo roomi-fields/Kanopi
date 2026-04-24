@@ -1,4 +1,5 @@
 import type { Runtime } from '../core-mock';
+import { csdLanguage } from '@hlolli/codemirror-lang-csound';
 
 /**
  * A named, runnable chunk of code extracted from a file.
@@ -37,7 +38,7 @@ export function extractBlocks(code: string, runtime: Runtime): CodeBlock[] {
     case 'mercury':
       return extractWholeFile(code, 'mercury');
     case 'csound':
-      return extractWholeFile(code, 'csound');
+      return extractCsound(code);
     case 'sc':
       return extractSuperCollider(code);
     case 'js':
@@ -199,3 +200,88 @@ const RESERVED = new Set([
   'void', 'throw', 'try', 'catch', 'finally', 'import', 'export', 'from',
   'in', 'of', 'this', 'super', 'yield', 'async', 'await'
 ]);
+
+/* ----------------------------------------------------------------- Csound */
+
+/**
+ * Csound is case (a) of ADAPTER_SPEC §5.3 — multi-line structural
+ * blocks (`instr … endin`, `opcode … endop`) + a single CM6 upstream
+ * (`@hlolli/codemirror-lang-csound`) that exposes a Lezer grammar.
+ * We parse with the upstream parser and iterate the tree — no regex
+ * on the grammar itself. The only regex used is a trivial identifier
+ * grab for display (extracting `N` from `instr N`) which is not
+ * grammar matching.
+ *
+ * Node names come from `src/csd.grammar` in the upstream package.
+ */
+function extractCsound(code: string): CodeBlock[] {
+  if (code.trim() === '') return [];
+  const tree = csdLanguage.parser.parse(code);
+  const blocks: CodeBlock[] = [];
+  let scoreRegion: { from: number; to: number } | null = null;
+
+  tree.iterate({
+    enter(node) {
+      // Instruments and user-defined opcodes are named multi-line blocks.
+      if (node.name === 'InstrumentDeclaration') {
+        const text = code.slice(node.from, Math.min(node.from + 80, node.to));
+        const m = /instr\s+(\S+)/.exec(text);
+        blocks.push({
+          name: `instr ${m?.[1] ?? '?'}`,
+          kind: 'slot',
+          from: node.from,
+          to: node.to
+        });
+        return false; // don't descend into the body
+      }
+      if (node.name === 'UdoDeclaration') {
+        const text = code.slice(node.from, Math.min(node.from + 80, node.to));
+        const m = /opcode\s+(\w+)/.exec(text);
+        blocks.push({
+          name: `opcode ${m?.[1] ?? '?'}`,
+          kind: 'slot',
+          from: node.from,
+          to: node.to
+        });
+        return false;
+      }
+      // Score events are inline in <CsScore>…</CsScore>. The grammar
+      // doesn't reify them as named nodes, so we record the score
+      // region and split it by line after the traversal.
+      if (node.name === 'XmlCsScoreOpen') {
+        scoreRegion = { from: node.to, to: code.length };
+      }
+      if (node.name === 'XmlCsScoreClose' && scoreRegion) {
+        scoreRegion = { from: scoreRegion.from, to: node.from };
+      }
+    }
+  });
+
+  // Split the score region into one block per non-blank, non-comment line.
+  // The region boundary is AST-determined — we only split lines inside it,
+  // so this is not a grammar-matching regex, it's line iteration inside a
+  // structurally bounded area.
+  if (scoreRegion) {
+    const region: { from: number; to: number } = scoreRegion;
+    const inside = code.slice(region.from, region.to);
+    let offset = region.from;
+    for (const line of inside.split('\n')) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith(';') && !trimmed.startsWith('/*')) {
+        const lineFrom = offset;
+        const lineTo = offset + line.length;
+        // Short label: first two tokens ("i 1", "f 0", …) or whole line.
+        const short = trimmed.length > 20 ? `${trimmed.slice(0, 18)}…` : trimmed;
+        blocks.push({
+          name: short,
+          kind: 'slot',
+          from: lineFrom,
+          to: lineTo
+        });
+      }
+      offset += line.length + 1; // +1 for \n
+    }
+  }
+
+  return blocks;
+}

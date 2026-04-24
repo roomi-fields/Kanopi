@@ -266,6 +266,55 @@ Par ordre :
 
 ---
 
+## Block extraction (ADAPTER_SPEC §5.3)
+
+- **Méthode** : **AST upstream** (premier cas Kanopi).
+- **Parser utilisé** : `csdLanguage.parser` de
+  `@hlolli/codemirror-lang-csound`, le même qui donne syntax highlight
+  + autocomplete dans l'éditeur. Zéro duplication.
+- **Nœuds Lezer traversés** :
+  - `InstrumentDeclaration` → bloc `instr N … endin`, nommé
+    `instr N` dans le panneau Actors (extraction triviale du numéro
+    via `/instr\s+(\S+)/` — identifiant, pas grammaire).
+  - `UdoDeclaration` → bloc `opcode name … endop`, nommé `opcode name`.
+  - `XmlCsScoreOpen` / `XmlCsScoreClose` → délimitent la zone
+    `<CsScore>`. Chaque ligne non-vide non-commentée à l'intérieur est
+    un bloc isolé (un score event). Le split par ligne à l'intérieur
+    de la zone AST-délimitée n'est pas du grammar-matching.
+- **Limites connues** :
+  - La grammaire Lezer upstream est en alpha (`1.0.0-alpha10`). Un
+    fichier CSD syntaxiquement cassé peut produire un arbre avec des
+    nœuds d'erreur qu'on ignore — l'user voit alors zéro bloc et
+    Ctrl+Enter tombe sur le fallback paragraphe.
+  - Le préambule (`sr = …`, `ksmps = …`) n'est pas un bloc isolable.
+    Ctrl+Enter dessus retombe sur l'extraction paragraphe (comme pour
+    tout autre langage non-structurel dans cette zone).
+- **Critère de migration** : si la grammaire upstream casse ou
+  régresse, on peut temporairement basculer en regex fragile comme SC,
+  mais ce serait la dernière option.
+
+---
+
+## Dispatch d'eval (étape B)
+
+Le texte extrait par l'AST est passé à `csound.ts`, qui décide quel
+appel upstream utiliser selon un **switch simple** sur le premier
+token :
+
+| Premier token dans le bloc extrait   | Appel upstream                    |
+| ------------------------------------ | --------------------------------- |
+| `<CsoundSynthesizer>` (fichier entier) | `compileCSD(code, 1)` + `start()` si pas encore booté |
+| `instr N` / `opcode name`            | `evalCode(block)` — redéfinit à chaud |
+| `i N …`, `f N …`, `e`, `s`, etc.     | `readScore(line)` — événement de score |
+| autre                                | `evalCode(block)` fallback        |
+
+Ce switch n'est **pas** un parser — c'est une redirection sur un
+premier identifiant dont le rôle a déjà été garanti par l'extraction
+AST. La grammaire Csound reste upstream, Kanopi ne la réimplémente à
+aucun niveau.
+
+---
+
 ## Historique de révision
 
 - **2026-04-24** : audit initial. Csound est le 2ème langage audit
@@ -273,3 +322,8 @@ Par ordre :
   (a) d'ADAPTER_SPEC §B — CM6 upstream intégrable. Décision de scope
   v1 = re-compile tout à chaque eval (vs incrémental en v2) pour
   simplicité maximale.
+- **2026-04-24 (étape B)** : basculement en eval incrémental. Premier
+  langage Kanopi utilisant l'AST Lezer upstream pour l'extraction des
+  blocs — valide la policy `ADAPTER_SPEC §5.3`. Dispatch adapter
+  (compileCSD / evalCode / readScore) par switch sur premier token
+  après extraction AST, pas de grammar-matching secondaire.

@@ -126,7 +126,7 @@
               runEval(code, v, block.from, block.to, block.qualifiedName);
               return true;
             }
-            const code = extractBlock(docText, sel.from, sel.to);
+            const code = extractBlock(docText, sel.from, sel.to, runtime);
             if (!code) return true;
             const blockStart = docText.indexOf(code);
             const range = blockStart >= 0 ? [blockStart, blockStart + code.length] : [sel.from, sel.to];

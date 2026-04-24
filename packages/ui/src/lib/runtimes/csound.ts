@@ -71,21 +71,49 @@ export const csoundAdapter: RuntimeAdapter = {
   events: adapterEvents,
   async evaluate(code: string, src: EvalSource, log: LogPush) {
     if (!(await ensure(log))) throw new Error('csound not ready');
-    // Phase 2.7 étape A : re-compile complet à chaque Ctrl+Enter.
-    // compileCSD(text, 1) = "compile from in-memory string, mode 1".
-    // Csound redéfinit les instruments in-place, donc ré-exécuter est
-    // idempotent (un clic audio possible mais pas de corruption d'état).
-    // Étape B livrera evalCode / readScore incrémental — cf CSOUND.md §A.
-    const status = await instance!.compileCSD(code, 1);
-    if (status < 0) {
-      const err = new Error(`csound compile error (status ${status})`);
-      log({ runtime: 'csound', level: 'error', msg: err.message });
+
+    // Phase 2.7 étape B — live eval incrémental. The `extractBlock`
+    // upstream already ran through the Lezer AST, so `code` is either:
+    //   - a full CSD (contains <CsoundSynthesizer>)          → compileCSD
+    //   - an `instr N … endin` or `opcode … endop` block     → evalCode
+    //   - a single score event (line starting with i/f/e/s…) → readScore
+    //   - a fragment that doesn't match any of the above     → evalCode fallback
+    // The detection is a simple first-token switch. It's not a grammar
+    // match — the AST boundary is what Kanopi already used to cut the
+    // block in `extract-block.ts`.
+    const trimmed = code.trim();
+    const isFullCsd = /<CsoundSynthesizer>/.test(trimmed);
+    const isInstrBlock = /^(?:instr|opcode)\b/.test(trimmed);
+    const isScoreEvent = /^[a-z]\s+[-\d.]/i.test(trimmed); // i, f, e, s, t, m, n, q, r, v, w, x, y
+
+    try {
+      if (!started || isFullCsd) {
+        // First eval, or explicit whole-file re-eval: compile the full CSD.
+        // This boots the engine on the first run and redefines everything
+        // on subsequent runs (Csound allows in-place instrument redef).
+        const status = await instance!.compileCSD(code, 1);
+        if (status < 0) throw new Error(`csound compile error (status ${status})`);
+        if (!started) {
+          await instance!.start();
+          started = true;
+        }
+      } else if (isInstrBlock) {
+        // Redefine an instrument or UDO at runtime, no engine restart.
+        const status = await instance!.evalCode(code);
+        if (status < 0) throw new Error(`csound evalCode error (status ${status})`);
+      } else if (isScoreEvent) {
+        // Append a score event to the running timeline.
+        await instance!.readScore(code);
+      } else {
+        // Fragment we couldn't classify — let evalCode handle it.
+        const status = await instance!.evalCode(code);
+        if (status < 0) throw new Error(`csound evalCode error (status ${status})`);
+      }
+    } catch (err) {
+      log({ runtime: 'csound', level: 'error', msg: String(err) });
       throw err;
     }
-    if (!started) {
-      await instance!.start();
-      started = true;
-    }
+
     log({ runtime: 'csound', level: 'info', msg: `eval ok (${code.length}b)` });
     emitLifecycle('eval', src.fileId);
   },
