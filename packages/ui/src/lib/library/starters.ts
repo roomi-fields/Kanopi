@@ -119,6 +119,53 @@ new synth square time(1/4) note(-7 0) shape(1 1/8 0.4) gain(0.4)
     ]
   },
   {
+    id: 'csound-intro',
+    name: 'Csound intro',
+    tagline: 'DSP academic synthesis via @csound/browser',
+    description:
+      'A single Csound actor running a .csd file. Csound is the MIT-lineage DSP language (Barry Vercoe, 1986) with ~1700 opcodes. Ctrl+Enter to eval, Ctrl+. to silence. Phase 2.7a uses whole-file recompile — block-by-block incremental eval lands in 2.7b.',
+    sessionFile: 'csound-intro.kanopi',
+    files: [
+      {
+        path: 'csound-intro.kanopi',
+        contents: `# Csound intro — toggle the actor, then Ctrl+Enter on beep.csd.
+
+@actor synth beep.csd csound
+
+@scene on synth
+`
+      },
+      {
+        path: 'beep.csd',
+        contents: `<CsoundSynthesizer>
+<CsOptions>
+-odac
+</CsOptions>
+<CsInstruments>
+sr = 44100
+ksmps = 32
+nchnls = 2
+0dbfs = 1
+
+instr 1
+  kEnv madsr 0.01, 0.1, 0.7, 0.1
+  aOsc vco2 0.3 * kEnv, p4
+  outs aOsc, aOsc
+endin
+
+</CsInstruments>
+<CsScore>
+i 1 0 0.5 220
+i 1 0.5 0.5 277
+i 1 1 0.5 330
+i 1 1.5 0.5 440
+</CsScore>
+</CsoundSynthesizer>
+`
+      }
+    ]
+  },
+  {
     id: 'js-webaudio',
     name: 'JS / WebAudio',
     tagline: 'raw AudioContext oscillator',

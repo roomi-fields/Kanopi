@@ -15,6 +15,7 @@ const RUNTIMES = new Set<Runtime>([
   'hydra',
   'p5',
   'mercury',
+  'csound',
   'tidal',
   'sc',
   'python',

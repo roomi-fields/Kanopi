@@ -36,6 +36,8 @@ export function extractBlocks(code: string, runtime: Runtime): CodeBlock[] {
       return extractWholeFile(code, 'p5');
     case 'mercury':
       return extractWholeFile(code, 'mercury');
+    case 'csound':
+      return extractWholeFile(code, 'csound');
     case 'sc':
       return extractSuperCollider(code);
     case 'js':

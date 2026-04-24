@@ -8,6 +8,7 @@ export type Runtime =
   | 'hydra'
   | 'p5'
   | 'mercury'
+  | 'csound'
   | 'tidal'
   | 'sc'
   | 'python'

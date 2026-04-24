@@ -56,6 +56,22 @@
       "content": "set tempo 100\nset scale dorian d\n\nlist prog chordsFromNumerals([I7 IIIm7 IV7 V7])\nnew polySynth saw name(chrd)\n  set chrd note(prog 1) time(2/1) shape(1 2/1) super(3 0.13) gain(0.5)\n\nset all fx(reverb 0.4 5)\n",
       "runtimes": ["mercury"],
       "tags": ["polysynth", "chords", "reverb"]
+    },
+    {
+      "id": "csound-fm",
+      "name": "csound FM bell",
+      "description": "A classic 2-operator FM bell using Csound's foscili opcode. Sparse, resonant, with long tail. Minimal CSD illustrating the structure.",
+      "content": "<CsoundSynthesizer>\n<CsOptions>\n-odac\n</CsOptions>\n<CsInstruments>\nsr = 44100\nksmps = 32\nnchnls = 2\n0dbfs = 1\n\ngiSine ftgen 1, 0, 16384, 10, 1\n\ninstr 1\n  kEnv expseg 1, p3, 0.001\n  aBell foscili 0.2 * kEnv, p4, 1, 3.5, kEnv * 4, giSine\n  outs aBell, aBell\nendin\n\n</CsInstruments>\n<CsScore>\ni 1 0    3 440\ni 1 1.5  3 660\ni 1 3    4 330\n</CsScore>\n</CsoundSynthesizer>\n",
+      "runtimes": ["csound"],
+      "tags": ["fm", "bell", "beginner"]
+    },
+    {
+      "id": "csound-granular",
+      "name": "csound granular",
+      "description": "Granular texture via the `grain` opcode. Dense cloud of short sinewave grains — pure Csound territory, no equivalent in Strudel or Mercury.",
+      "content": "<CsoundSynthesizer>\n<CsOptions>\n-odac\n</CsOptions>\n<CsInstruments>\nsr = 44100\nksmps = 32\nnchnls = 2\n0dbfs = 1\n\ngiSine ftgen 1, 0, 16384, 10, 1\ngiWin  ftgen 2, 0, 512,   20, 2\n\ninstr 1\n  kAmp    linseg 0, 0.5, 0.25, p3 - 1, 0.25, 0.5, 0\n  kPitch  line   p4, p3, p4 * 1.5\n  kDens   line   30, p3, 80\n  aGrain  grain  kAmp, kPitch, kDens, 20, 0.02, 0.1, giSine, giWin, 1\n  outs aGrain, aGrain\nendin\n\n</CsInstruments>\n<CsScore>\ni 1 0 6 220\n</CsScore>\n</CsoundSynthesizer>\n",
+      "runtimes": ["csound"],
+      "tags": ["granular", "texture", "dsp"]
     }
   ]
 }

@@ -20,6 +20,21 @@ declare module 'hydra-synth' {
   export default Hydra;
 }
 
+declare module '@hlolli/codemirror-lang-csound' {
+  // Upstream ships types at dist/index.d.ts but the package.json `typings`
+  // field points at the non-existent root-level index.d.ts. This shim
+  // mirrors the public surface we actually use — upgrade if the package
+  // fixes its `typings` field.
+  import type { LanguageSupport } from '@codemirror/language';
+  interface CsoundModeOptions {
+    enableCompletion?: boolean;
+    enableSynopsis?: boolean;
+    enableDefaultTheme?: boolean;
+    fileType?: 'csd' | 'orc' | 'sco';
+  }
+  export function csoundMode(options?: CsoundModeOptions): LanguageSupport;
+}
+
 declare module 'mercury-engine' {
   // Minimal surface the Kanopi adapter consumes. Upstream `Mercury`
   // exposes far more (addBuffers, addMeter, resume, …) — extend here as
