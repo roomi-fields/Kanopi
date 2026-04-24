@@ -13,8 +13,14 @@ type CsoundInstance = {
   stop: () => Promise<undefined>;
   reset: () => Promise<number>;
   destroy: () => Promise<undefined>;
-  /** `compileCSD(text, 1)` compiles a CSD from an in-memory string (mode=1). */
-  compileCSD: (pathOrText: string, mode?: number) => Promise<number>;
+  /**
+   * `compileCSD(csd, mode=1)` compiles an inline CSD document. Name
+   * comes from `csoundApiRename` stripping the `csound` prefix and
+   * lowercasing the first letter of `csoundCompileCSD`, leaving the
+   * uppercase `SD` intact. See `@csound/browser/src/utils.js:49` +
+   * `modules/performance.js:103`. mode=1 is the default.
+   */
+  compileCSD: (csd: string, mode?: number) => Promise<number>;
   compileOrc: (orc: string) => Promise<number>;
   readScore: (score: string) => Promise<undefined>;
   on: (event: string, listener: (arg: unknown) => void) => unknown;
@@ -41,11 +47,11 @@ async function ensure(log: LogPush): Promise<boolean> {
     const mod = (await import('@csound/browser')) as unknown as {
       Csound: (params?: { useWorker?: boolean; useSAB?: boolean }) => Promise<CsoundInstance | undefined>;
     };
-    // useWorker:false sidesteps SharedArrayBuffer → no COOP/COEP header
-    // requirement. Single-thread AudioWorklet path is well-supported and
-    // fast enough for live coding iteration. Switch to true only if a
-    // performance need materialises (and add the headers then).
-    const cs = await mod.Csound({ useWorker: false });
+    // useSAB:false sidesteps SharedArrayBuffer → no COOP/COEP headers
+    // required; Comlink uses MessageChannel instead. Default worker
+    // path (useWorker:true) exposes the full Csound live-coding API:
+    // compileCSD (inline CSD text), compileOrc, evalCode, readScore.
+    const cs = await mod.Csound({ useSAB: false });
     if (!cs) {
       log({ runtime: 'csound', level: 'error', msg: 'engine failed to initialise' });
       return false;
@@ -75,9 +81,9 @@ export const csoundAdapter: RuntimeAdapter = {
     // Phase 2.7 étape B — live eval incrémental. The `extractBlock`
     // upstream already ran through the Lezer AST, so `code` is either:
     //   - a full CSD (contains <CsoundSynthesizer>)          → compileCSD
-    //   - an `instr N … endin` or `opcode … endop` block     → evalCode
+    //   - an `instr N … endin` or `opcode … endop` block     → compileOrc
     //   - a single score event (line starting with i/f/e/s…) → readScore
-    //   - a fragment that doesn't match any of the above     → evalCode fallback
+    //   - a fragment that doesn't match any of the above     → compileOrc fallback
     // The detection is a simple first-token switch. It's not a grammar
     // match — the AST boundary is what Kanopi already used to cut the
     // block in `extract-block.ts`.
@@ -87,11 +93,18 @@ export const csoundAdapter: RuntimeAdapter = {
     const isScoreEvent = /^[a-z]\s+[-\d.]/i.test(trimmed); // i, f, e, s, t, m, n, q, r, v, w, x, y
 
     try {
-      if (!started || isFullCsd) {
-        // First eval, or explicit whole-file re-eval: compile the full CSD.
-        // This boots the engine on the first run and redefines everything
-        // on subsequent runs (Csound allows in-place instrument redef).
-        const status = await instance!.compileCSD(code, 1);
+      if (!started && !isFullCsd) {
+        // Engine not booted yet and user evaluated a block or score line
+        // rather than the full CSD. Csound needs the header (<CsOptions>,
+        // sr/ksmps/nchnls) before any instr or score can run — there's no
+        // way to synthesise that from a fragment. Tell the user what to do.
+        throw new Error('engine not booted — put the cursor on <CsoundSynthesizer> (line 1) and Ctrl+Enter first');
+      }
+      if (isFullCsd) {
+        // Full CSD: compile and (on the first run) start the engine.
+        // Csound allows in-place redefinition, so subsequent full-CSD
+        // evals overwrite the running instrument set.
+        const status = await instance!.compileCSD(code);
         if (status < 0) throw new Error(`csound compile error (status ${status})`);
         if (!started) {
           await instance!.start();
