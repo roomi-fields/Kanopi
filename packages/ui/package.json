@@ -30,6 +30,7 @@
     "codemirror": "^6.0.1",
     "hydra-synth": "^1.3.29",
     "idb": "^8.0.0",
+    "mercury-engine": "^1.7.0",
     "p5": "^2.2.3"
   },
   "devDependencies": {

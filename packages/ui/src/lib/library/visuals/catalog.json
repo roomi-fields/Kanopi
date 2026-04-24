@@ -40,6 +40,22 @@
       "content": "let agents = [];\n\nfunction setup() {\n  createCanvas(windowWidth, windowHeight);\n  background(0);\n  for (let i = 0; i < 200; i++) {\n    agents.push({ x: random(width), y: random(height) });\n  }\n}\n\nfunction draw() {\n  noStroke();\n  fill(0, 8);\n  rect(0, 0, width, height);\n  fill(120, 200, 255, 120);\n  for (const a of agents) {\n    const n = noise(a.x * 0.003, a.y * 0.003, frameCount * 0.005);\n    const ang = n * TWO_PI * 2;\n    a.x += cos(ang) * 1.2;\n    a.y += sin(ang) * 1.2;\n    if (a.x < 0) a.x = width;\n    if (a.x > width) a.x = 0;\n    if (a.y < 0) a.y = height;\n    if (a.y > height) a.y = 0;\n    ellipse(a.x, a.y, 2, 2);\n  }\n}\n",
       "runtimes": ["p5"],
       "tags": ["flowfield", "perlin", "generative"]
+    },
+    {
+      "id": "mercury-arpeggio",
+      "name": "mercury arpeggio",
+      "description": "A minor-scale arpeggio on a saw synth — shortest idiomatic Mercury patch: set scale, new synth, note list.",
+      "content": "set tempo 110\nset scale minor\n\nnew synth saw time(1/8) note(0 0 2 4 5 4 2 0) shape(1 1/16 0.5) gain(0.5)\n",
+      "runtimes": ["mercury"],
+      "tags": ["beginner", "synth", "arpeggio"]
+    },
+    {
+      "id": "mercury-polychord",
+      "name": "mercury poly chord",
+      "description": "Chord progression from Roman numerals on a polySynth, with reverb on the bus. Canonical Mercury example from the upstream readme.",
+      "content": "set tempo 100\nset scale dorian d\n\nlist prog chordsFromNumerals([I7 IIIm7 IV7 V7])\nnew polySynth saw name(chrd)\n  set chrd note(prog 1) time(2/1) shape(1 2/1) super(3 0.13) gain(0.5)\n\nset all fx(reverb 0.4 5)\n",
+      "runtimes": ["mercury"],
+      "tags": ["polysynth", "chords", "reverb"]
     }
   ]
 }

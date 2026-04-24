@@ -3,6 +3,7 @@ import type { RuntimeAdapter } from './adapter';
 import { strudelAdapter, tidalAdapter } from './strudel';
 import { hydraAdapter } from './hydra';
 import { p5Adapter } from './p5';
+import { mercuryAdapter } from './mercury';
 import { jsAdapter } from './webaudio';
 
 const adapters = new Map<Runtime, RuntimeAdapter>([
@@ -10,6 +11,7 @@ const adapters = new Map<Runtime, RuntimeAdapter>([
   ['tidal', tidalAdapter],
   ['hydra', hydraAdapter],
   ['p5', p5Adapter],
+  ['mercury', mercuryAdapter],
   ['js', jsAdapter]
 ]);
 

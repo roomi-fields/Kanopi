@@ -34,6 +34,8 @@ export function extractBlocks(code: string, runtime: Runtime): CodeBlock[] {
       return extractHydra(code);
     case 'p5':
       return extractWholeFile(code, 'p5');
+    case 'mercury':
+      return extractWholeFile(code, 'mercury');
     case 'sc':
       return extractSuperCollider(code);
     case 'js':

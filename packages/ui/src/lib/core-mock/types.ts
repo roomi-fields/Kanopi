@@ -7,6 +7,7 @@ export type Runtime =
   | 'strudel'
   | 'hydra'
   | 'p5'
+  | 'mercury'
   | 'tidal'
   | 'sc'
   | 'python'

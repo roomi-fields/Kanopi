@@ -23,10 +23,21 @@ export function installConsoleBridge(push: Push) {
     warn: console.warn.bind(console),
     error: console.error.bind(console)
   };
+  // Mercury and Tone.js occasionally log AudioNode instances with circular
+  // back-references (_context ↔ _destination), so `JSON.stringify` throws.
+  // The throw would bubble up through the library's own try/catch and get
+  // mis-reported by the adapter as an engine error, so be defensive.
+  const safeStringify = (a: unknown): string => {
+    if (typeof a === 'string') return a;
+    if (a instanceof Error) return a.message;
+    try {
+      return JSON.stringify(a);
+    } catch {
+      return String(a);
+    }
+  };
   const forward = (level: Level, args: unknown[]) => {
-    const msg = args
-      .map((a) => (typeof a === 'string' ? a : a instanceof Error ? a.message : JSON.stringify(a)))
-      .join(' ');
+    const msg = args.map(safeStringify).join(' ');
     const runtime = detect(msg);
     if (runtime) push({ runtime, level, msg });
   };

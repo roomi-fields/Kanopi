@@ -13,6 +13,8 @@ const RUNTIMES = new Set<Runtime>([
   'kanopi',
   'strudel',
   'hydra',
+  'p5',
+  'mercury',
   'tidal',
   'sc',
   'python',

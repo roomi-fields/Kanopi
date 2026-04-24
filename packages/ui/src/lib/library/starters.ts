@@ -91,6 +91,34 @@ export const STARTERS: Starter[] = [
     ]
   },
   {
+    id: 'mercury-intro',
+    name: 'Mercury intro',
+    tagline: 'declarative patterns from Amsterdam',
+    description:
+      'A single Mercury actor playing a synth-and-sample pattern. Mercury is a readable, Tone.js-based live-coding language (Timo Hoogland). Ctrl+Enter to eval, Ctrl+. to silence.',
+    sessionFile: 'mercury-intro.kanopi',
+    files: [
+      {
+        path: 'mercury-intro.kanopi',
+        contents: `# Mercury intro — toggle the actor, then Ctrl+Enter on mercury-intro.mercury.
+
+@actor patch patch.mercury mercury
+
+@scene on patch
+`
+      },
+      {
+        path: 'patch.mercury',
+        contents: `set tempo 110
+set scale minor
+
+new synth saw time(1/8) note(0 0) shape(1 1/16 0.5) gain(0.5)
+new synth square time(1/4) note(-7 0) shape(1 1/8 0.4) gain(0.4)
+`
+      }
+    ]
+  },
+  {
     id: 'js-webaudio',
     name: 'JS / WebAudio',
     tagline: 'raw AudioContext oscillator',
