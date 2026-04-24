@@ -474,3 +474,17 @@ in `.tidal`, fallback `file.#N` positional.
 Kanopi marketing copy should be explicit: *"Kanopi is the browser-native IDE
 for Tidal/Strudel live coders. Runs Strudel today; native Tidal via the
 Phase 2 osc-bridge."*
+
+---
+
+## Block extraction (ADAPTER_SPEC §5.3)
+
+- **Méthode** : **regex** (slot 1-ligne, partagée avec Strudel car même
+  parser cible).
+- **Motif** : `/^\s*(d(?:[1-9]|1[0-6]))\b/` → nommage `d1 … d16`. Le
+  convention Tidal est limitée à ces 16 slots (upstream Haskell l'impose).
+- **Limites** : `d17+` non reconnu (cohérent avec upstream). `const d1 =
+  …` est matché — pas idéal mais cohérent avec Haskell Tidal (`d1 $ …`
+  n'est pas un `const`).
+- **Critère de migration AST** : none. L'énumération explicite
+  `d1..d16` élimine les faux-positifs dans la pratique.

@@ -183,3 +183,26 @@ Pas de livraison code en v1. Juste :
   même pattern que Flok mode `sclang`). Pas de livraison code en phase
   2.4 pour SC ; phase 1/2/3 d'implémentation redémarreront à la
   release Tauri v2.
+
+---
+
+## Block extraction (ADAPTER_SPEC §5.3)
+
+- **Méthode** : **regex** (fragile, documenté).
+- **Motif** :
+  - `/^\s*~([a-zA-Z_][a-zA-Z0-9_]*)\s*=/` pour les variables
+    d'environnement (`~foo = …`)
+  - `SynthDef\s*\(\s*\\([a-zA-Z_][a-zA-Z0-9_]*)/` pour le nom d'un
+    `SynthDef(\name, …)`
+- **Limites connues** :
+  - Le body d'un `SynthDef` est **multi-ligne** et n'est capturé que
+    sur sa déclaration — le découpage par paragraphe (blank-line) le
+    récupère en pratique, mais un SynthDef sans lignes vides internes
+    peut être tronqué.
+  - Faux-positifs possibles sur `SynthDef(\` dans une string ou un
+    commentaire.
+- **Critère de migration AST** : **prioritaire dès qu'un CM6 upstream
+  sclang apparaît**. Aujourd'hui, pas de package (cf §B, case b). Un
+  CM6 custom avec grammaire Lezer est backlog — **ne pas vendoriser**
+  (principe 7). Quand l'AST sera dispo (v2 Tauri probablement), passer
+  le SynthDef en bloc structurel AST-based comme Csound.

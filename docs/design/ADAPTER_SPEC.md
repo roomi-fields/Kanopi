@@ -347,6 +347,54 @@ pattern que Strudel. Sinon, cas (b) d'ADAPTER_SPEC §B → highlight JS /
 
 ---
 
+## 5.3 · Block extraction policy
+
+Chaque adapter doit décider **comment découper le fichier en blocs
+évaluables**. Cette décision affecte directement le workflow Ctrl+Enter
+et le panneau Actors. Deux facteurs pèsent dans le choix :
+
+1. **Non-régression** : regex = pattern custom, source d'erreurs
+   silencieuses dès que la syntaxe devient tordue (commentaires,
+   strings, multi-lignes, macros…). Chaque regex ajoutée est du
+   code que Kanopi maintient hors du langage.
+2. **Live coding** : pas d'usine à gaz. Un reparse AST qui coûte
+   50-100KB bundle + 5ms par Ctrl+Enter n'est justifié que si le
+   regex sous-jacent serait fragile.
+
+### Matrice de décision
+
+| Situation                                                      | Méthode          |
+| -------------------------------------------------------------- | ---------------- |
+| Slot 1-ligne détectable par motif simple (`$:`, `d1`, `.out()`) | **regex**        |
+| Bloc structurel multi-ligne imbriqué + CM6 upstream dispo      | **AST upstream** |
+| Bloc structurel multi-ligne sans CM6 upstream (case b §B)      | regex fragile documenté + backlog CM6 |
+| Sketch cohérent sans blocs naturels (p5, Mercury)              | **whole-file**   |
+
+### Règle opérationnelle
+
+- Si tu ajoutes une détection **1-ligne triviale**, regex est
+  acceptable. Documente le motif dans la doc d'intégration.
+- Si la grammaire de ton langage a des **blocs structurels
+  multi-ligne** (instrument Csound, synthDef SC, `defn` Clojure…) :
+  **AST upstream obligatoire** quand le package CM6 l'expose
+  publiquement (via `LRLanguage.parser`). Jamais de regex qui essaie
+  d'attraper `open … close` : c'est une mini-implémentation du parser.
+- Si le langage n'a pas de CM6 upstream (case b) et a un besoin de
+  blocs structurels, **regex fragile documenté + backlog** un CM6
+  custom. Ne pas vendoriser une grammaire.
+
+### Documentation obligatoire
+
+Chaque `docs/integrations/<LANG>.md` doit déclarer :
+
+1. **Quelle méthode** est utilisée (regex / AST / whole-file).
+2. **Le motif exact** si regex, ou le nom des nœuds Lezer traversés
+   si AST.
+3. **Les limites connues** (faux positifs possibles, cas non couverts).
+4. **Le critère de migration** si le choix actuel est un compromis.
+
+---
+
 ## 5bis · Isolation par scope (contrat)
 
 Chaque langage vit dans **sa propre bulle de noms**. Le user code d'un

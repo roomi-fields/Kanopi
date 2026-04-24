@@ -761,3 +761,17 @@ let theme = {
 **Prepared by**: Claude (Haiku)  
 **Status**: Phase 0 Research Complete — Ready for Phase 2.1 Implementation
 
+---
+
+## Block extraction (ADAPTER_SPEC §5.3)
+
+- **Méthode** : **regex** (slot 1-ligne).
+- **Motif** : `/^\s*\$\s*:/` pour les slots `$:` (nommés `$0, $1, …`) ;
+  fallback assign `/^\s*(?:const|let|var)?\s*([a-zA-Z_$][…]*)\s*=/`.
+- **Limites** : faux-positif théorique sur `$:` en début de ligne de
+  commentaire. Non observé en pratique.
+- **Critère de migration AST** : aucun pour l'instant. Le pattern slot
+  est 1-ligne trivial ; la policy §5.3 reste à « regex OK ». Un jour
+  où on voudra détecter les slots à l'intérieur d'une `const x = () =>
+  { $: … }` (imbriqué), on passera au Lezer de `@strudel/transpiler`.
+

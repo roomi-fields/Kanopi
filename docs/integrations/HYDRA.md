@@ -205,3 +205,20 @@ Par ordre :
   `PROGRESS.md §5.4`. Reste cohérent avec principe 7 car on ne réécrit
   rien ; simplement, la phase 2.4 priorise la cible « 4 langages
   tournent » avant le bonus éditeur langue-spécifique.
+
+---
+
+## Block extraction (ADAPTER_SPEC §5.3)
+
+- **Méthode** : **regex** (slot 1-ligne).
+- **Motif** : `/\.out\s*\(\s*(o[0-3])?\s*\)/` — détecte la fin de chaîne
+  `.out(o0) … .out(o3)` (ou `.out()` qui devient `o0`) ; fallback assign
+  `/^\s*(?:const|let|var)?\s*([a-zA-Z_$][…]*)\s*=/`.
+- **Limites** : faux-positif si `.out(o0)` apparaît dans une string JS.
+  Le matcher ne distingue pas non plus deux `.out(o0)` dans la même
+  séquence — le dernier gagne pour le nommage. Non observé en pratique
+  live coding.
+- **Critère de migration AST** : aucun. Bien qu'on ait accès au parser
+  JS (`@codemirror/lang-javascript`), le bénéfice sur ce pattern court
+  ne justifie pas le coût reparse. On migre si on constate des
+  régressions sur des patches Hydra complexes multi-sortie.

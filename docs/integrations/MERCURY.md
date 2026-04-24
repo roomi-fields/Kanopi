@@ -261,3 +261,19 @@ Par ordre :
   upstream désactivé). Mercury tombe en cas (b) zone B (pas de CM6
   upstream), hérite du pattern Hydra/p5 pour le backlog §5.4. Scope
   2.6 : ~1j pour items #1-6, items #7-9 parqués.
+
+---
+
+## Block extraction (ADAPTER_SPEC §5.3)
+
+- **Méthode** : **whole-file**.
+- **Motif / nœuds** : aucun — un patch Mercury `set` + `new synth` +
+  `new sample` forme un graphe d'instruments qui tourne comme un tout.
+- **Limites** : impossible d'évaluer incrémental un seul `new synth`
+  sans re-sending le reste. Mercury redéfinit implicitement les nommés,
+  donc la re-eval complète fait le travail.
+- **Critère de migration AST** : Mercury est **case (b)** zone B — pas
+  de CM6 upstream. Si un jour une grammaire Lezer Mercury apparaît
+  (elle existe en Nearley en interne `tmhglnd/mercury-lang`, à
+  vendoriser serait une ré-implémentation → refusé principe 7), on
+  pourrait basculer vers extraction par `new …` bloc.
