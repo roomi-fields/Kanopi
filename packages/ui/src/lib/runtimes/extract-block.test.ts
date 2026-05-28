@@ -24,9 +24,19 @@ describe('extractBlock', () => {
     expect(extractBlock(doc, doc.length, doc.length)).toBe('last');
   });
 
-  it('returns empty when cursor on blank line', () => {
+  it('falls back to the previous block when cursor on blank line', () => {
+    // Phase 2.1 (commit 2fad72d): when the cursor lands on a trailing blank
+    // line, eval the block above instead of returning empty. Matches the
+    // common Strudel/Tidal habit of pressing Enter after a block before
+    // re-evaluating it.
     const doc = 'a\n\nb';
-    expect(extractBlock(doc, 2, 2)).toBe('');
+    expect(extractBlock(doc, 2, 2)).toBe('a');
+  });
+
+  it('returns empty when document has no non-blank lines above cursor', () => {
+    // Cursor on a blank line at the very top — nothing to fall back to.
+    const doc = '\n\nb';
+    expect(extractBlock(doc, 0, 0)).toBe('');
   });
 
   it('handles single-line doc', () => {

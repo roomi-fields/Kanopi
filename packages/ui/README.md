@@ -50,15 +50,16 @@ sur les adapters runtime). Le mock reste disponible pour les tests via
 
 3 adapters branchés (`src/lib/runtimes/`):
 
-| Runtime | Package | Fichiers |
-|---|---|---|
-| Strudel | `@strudel/web` (lazy) | `.strudel`, `.tidal` |
-| Hydra | `hydra-synth` (lazy) | `.hydra` |
-| JS/WebAudio | natif | `.js` |
+| Runtime     | Package               | Fichiers             |
+| ----------- | --------------------- | -------------------- |
+| Strudel     | `@strudel/web` (lazy) | `.strudel`, `.tidal` |
+| Hydra       | `hydra-synth` (lazy)  | `.hydra`             |
+| JS/WebAudio | natif                 | `.js`                |
 
 `bass.scd` (SuperCollider) reste niveau 3 v2 — silencieux.
 
 **Déclencheurs :**
+
 - **Toggle actor** dans le panel Actors → évalue le fichier complet dans le runtime
 - **Ctrl/Cmd+Enter** dans l'éditeur → évalue le bloc courant (paragraphe autour
   du curseur, ou sélection si active)
@@ -80,6 +81,7 @@ fichiers, onglets, onglet actif, BPM, scène active, actors actifs.
 Autosave debounced 500ms.
 
 Pour reset : DevTools → Application → IndexedDB → `kanopi` → delete database, ou en console :
+
 ```js
-indexedDB.deleteDatabase('kanopi')
+indexedDB.deleteDatabase('kanopi');
 ```

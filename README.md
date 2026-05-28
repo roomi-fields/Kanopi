@@ -30,6 +30,16 @@ No existing tool integrates multiple live-coding runtimes with shared temporal s
 - `docs/mockups/kanopi-v1-mockup.html` — v1 UI mockup
 - `docs/reference/HARDWARE_COLLECTION.md` — target hardware surfaces
 
+## Development
+
+Quality gate (typecheck + lint + unit tests) runs from `packages/ui/`:
+
+```sh
+cd packages/ui && npm run verify
+```
+
+The same command is wired as a pre-push git hook via `simple-git-hooks` (installed by `npm install` at the repo root). To skip the hook in an emergency: `SKIP_SIMPLE_GIT_HOOKS=1 git push`.
+
 ## License
 
 [AGPL-3.0-or-later](LICENSE) — copyleft including network use. If you run Kanopi as a service, you must share your modifications.
