@@ -85,12 +85,13 @@ test('strudel evaluates a block and produces audio', async ({ page }) => {
   // once the editor view is created (CMEditor.svelte:208).
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
 
-  // Eval the block at line 5 (the note(...).s(...).gain(...) statement —
-  // line 4 is a blank line that separates the comments from the evaluable
-  // paragraph, so the Strudel paragraph extractor returns the single line).
-  // The first click inside the editor also satisfies the user-gesture
-  // requirement to unlock the AudioContext under autoplay policy.
-  await evalBlockAt(page, 5);
+  // Eval the block at line 4 (the note(...).s(...).gain(...) statement,
+  // directly after the leading comments). The Strudel adapter's `return (...)`
+  // wrapping defeats ASI so leading `//` comments are now safe; the paragraph
+  // extractor returns comments + note together, and the wrapper evaluates the
+  // expression correctly. The first click inside the editor also satisfies
+  // the user-gesture requirement to unlock the AudioContext under autoplay.
+  await evalBlockAt(page, 4);
 
   // Strudel boots its scheduler then schedules patterns ahead of the audio
   // clock. The first audible sound lands one cycle later, which at the

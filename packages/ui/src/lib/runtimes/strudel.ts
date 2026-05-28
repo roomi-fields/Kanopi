@@ -620,13 +620,18 @@ function buildComposite(): string {
   const parts: string[] = [];
   let pos = 0;
   const sep = '\n\n';
-  // Each slot becomes: `$: ((() => { try { return <code>; } catch (e) { ... return silence } })())`
+  // Each slot becomes: `$: ((() => { try { return (\n<code>\n); } catch (e) { ... return silence } })())`
   // - The IIFE isolates the slot's execution: a runtime throw is caught,
   //   reported to the global `__kanopiSlotError` hook, and replaced with
   //   Strudel's `silence` pattern so composite evaluation keeps going.
+  // - The `(` immediately after `return` defeats Automatic Semicolon
+  //   Insertion: without it, a slot whose first line is `// comment` would
+  //   have ASI insert `;` after `return`, the IIFE would return `undefined`,
+  //   and downstream Strudel code would crash on `.p`. The opening paren on
+  //   the same line as `return` keeps the expression open across newlines.
   // - Code offsets for `compositeRanges` point at the user code inside the
   //   `return` statement, so mini-notation location mapping still works.
-  const prefix = '$: ((() => { try { return ';
+  const prefix = '$: ((() => { try { return (\n';
   let first = true;
   for (const [slotId, slot] of slots) {
     if (!first) {
@@ -653,7 +658,7 @@ function buildComposite(): string {
     // literals into mini-notation Patterns, numbers are left untouched.
     const idx = compositeSlotIds.length;
     compositeSlotIds.push(slotId);
-    const tail = `; } catch (e) { ${REPORT_FN}(${idx}, e); return silence; } })())`;
+    const tail = `\n); } catch (e) { ${REPORT_FN}(${idx}, e); return silence; } })())`;
     parts.push(tail);
     pos += tail.length;
     first = false;
