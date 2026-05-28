@@ -17,3 +17,6 @@ src-tauri/target/
 
 # Strategic/internal docs — not for public repo
 docs/plan/
+
+# Local debug screenshots archive (not for public repo)
+_archive/
