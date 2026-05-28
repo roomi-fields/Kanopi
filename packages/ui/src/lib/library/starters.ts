@@ -1,3 +1,16 @@
+// Bundled starter sessions live in packages/library/bundled/ — single source
+// of truth. We pull them in via Vite's `?raw` suffix so the contents are
+// inlined at build time without ever duplicating them as string literals here.
+// The relative path is: src/lib/library -> ../../../../library/bundled/.
+import bundled01Session from '../../../../library/bundled/01-strudel-solo.kanopi?raw';
+import bundled01Drums from '../../../../library/bundled/01-drums.strudel?raw';
+import bundled02Session from '../../../../library/bundled/02-strudel-hydra.kanopi?raw';
+import bundled02Drums from '../../../../library/bundled/02-drums.strudel?raw';
+import bundled02Moire from '../../../../library/bundled/02-moire.hydra?raw';
+import bundled03Session from '../../../../library/bundled/03-scenes-A-B.kanopi?raw';
+import bundled03Drums from '../../../../library/bundled/03-drums.strudel?raw';
+import bundled03Lead from '../../../../library/bundled/03-lead.strudel?raw';
+
 export interface StarterFile {
   path: string;
   contents: string;
@@ -13,6 +26,44 @@ export interface Starter {
 }
 
 export const STARTERS: Starter[] = [
+  {
+    id: 'bundled-01-strudel-solo',
+    name: '01 — Strudel solo',
+    tagline: 'single actor, zero regression vs strudel.cc',
+    description:
+      'One Strudel actor running a 4-note sine pattern. The minimal proof Kanopi runs a strudel.cc patch unchanged. Ctrl+Enter to eval, Ctrl+. to hush.',
+    sessionFile: '01-strudel-solo.kanopi',
+    files: [
+      { path: '01-strudel-solo.kanopi', contents: bundled01Session },
+      { path: '01-drums.strudel', contents: bundled01Drums }
+    ]
+  },
+  {
+    id: 'bundled-02-strudel-hydra',
+    name: '02 — Strudel + Hydra',
+    tagline: 'audio + visuals synced on the shared clock',
+    description:
+      'A Strudel drum loop drives Kanopi’s transport; a Hydra patch reads `beat` and `bar` from the same clock to pulse in time. One Ctrl+. hushes both.',
+    sessionFile: '02-strudel-hydra.kanopi',
+    files: [
+      { path: '02-strudel-hydra.kanopi', contents: bundled02Session },
+      { path: '02-drums.strudel', contents: bundled02Drums },
+      { path: '02-moire.hydra', contents: bundled02Moire }
+    ]
+  },
+  {
+    id: 'bundled-03-scenes-A-B',
+    name: '03 — Scenes A / B',
+    tagline: 'two scenes, one session — the Kanopi differentiator',
+    description:
+      'Two scenes arm different combinations of Strudel actors. Click `calm` for drums only, `full` for drums + lead. Alt+1 / Alt+2 to switch from the keyboard.',
+    sessionFile: '03-scenes-A-B.kanopi',
+    files: [
+      { path: '03-scenes-A-B.kanopi', contents: bundled03Session },
+      { path: '03-drums.strudel', contents: bundled03Drums },
+      { path: '03-lead.strudel', contents: bundled03Lead }
+    ]
+  },
   {
     id: 'tidal-intro',
     name: 'Tidal intro',
