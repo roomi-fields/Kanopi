@@ -1,0 +1,4 @@
+// A 4-note synth pattern using Strudel's built-in sine wave. No sample
+// bank required - this is the smallest patch that produces audible RMS
+// the moment you press Ctrl+Enter.
+note("c3 e3 g3 c4").s("sine").gain(0.7)

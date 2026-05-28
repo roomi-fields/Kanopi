@@ -1,0 +1,19 @@
+# 03 - Two scenes, one session. Switch between them to arm different
+# combinations of actors at once. This is the Kanopi differentiator: a
+# structural sequencer on top of any runtime.
+#
+# How to play it:
+#   1. Both actor bodies open in tabs. Evaluate them once (Ctrl+Enter in
+#      each block) so each actor's code is loaded.
+#   2. In the right panel, open the Scenes view.
+#   3. Click `calm` - only the drums are armed; the lead stops.
+#   4. Click `full` - drums + lead play together.
+#   5. Shortcut: Alt+1 = first scene (calm), Alt+2 = second (full).
+#      The active scene is highlighted in amber.
+#   6. Ctrl+. hushes every runtime at once.
+
+@actor drums 03-drums.strudel strudel
+@actor lead  03-lead.strudel  strudel
+
+@scene calm drums
+@scene full drums lead

@@ -1,0 +1,2 @@
+// Calm pulse to underpin both scenes.
+note("c2*4").s("sine").gain(0.6)

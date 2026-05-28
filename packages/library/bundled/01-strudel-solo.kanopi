@@ -1,0 +1,13 @@
+# 01 - Strudel solo. One actor, one runtime. Proves Kanopi runs a
+# strudel.cc patch with zero regression.
+#
+# How to play it:
+#   1. The actor file `01-drums.strudel` opens automatically. Switch to it
+#      with the Files sidebar or the tabs.
+#   2. Put the cursor inside the `note(...)` paragraph.
+#   3. Press Ctrl+Enter (Cmd+Enter on macOS) to evaluate the block.
+#   4. You hear a 4-note sine pattern looping at the default cps.
+#   5. Press Ctrl+. to hush.
+
+@actor drums 01-drums.strudel strudel
+@scene main drums
