@@ -12,7 +12,8 @@
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "test": "vitest run -c vitest.config.ts",
-    "verify": "npm run check && npm run lint && npm run test"
+    "e2e": "playwright test",
+    "verify": "npm run check && npm run lint && npm run test && npm run e2e"
   },
   "dependencies": {
     "@codemirror/commands": "^6.6.0",
@@ -37,6 +38,7 @@
     "p5": "^2.2.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "@tsconfig/svelte": "^5.0.4",
     "@typescript-eslint/eslint-plugin": "^8.0.0",

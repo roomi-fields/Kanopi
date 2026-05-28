@@ -15,6 +15,10 @@ src-tauri/target/
 # Playwright MCP artefacts
 .playwright-mcp/
 
+# Playwright test artefacts (screenshots, traces) — regenerated on each run
+test-results/
+playwright-report/
+
 # Strategic/internal docs — not for public repo
 docs/plan/
 

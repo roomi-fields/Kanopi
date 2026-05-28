@@ -1,0 +1,3 @@
+# Minimal Csound session for e2e smoke. One actor, audio runtime.
+@actor tone tone.csd csound
+@scene main tone

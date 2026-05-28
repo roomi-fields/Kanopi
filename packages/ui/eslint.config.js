@@ -87,5 +87,5 @@ export default [
       'no-undef': 'off'
     }
   },
-  { ignores: ['node_modules', 'dist', '.vite'] }
+  { ignores: ['node_modules', 'dist', '.vite', 'test-results', 'playwright-report'] }
 ];
