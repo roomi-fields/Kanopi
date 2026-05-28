@@ -20,7 +20,9 @@
 
 <div class="transport-cluster">
   <button class="tbtn" type="button" title="Stop" onclick={() => clock.stop()}>
-    <svg viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="2" width="8" height="8" rx="0.5" /></svg>
+    <svg viewBox="0 0 12 12" fill="currentColor"
+      ><rect x="2" y="2" width="8" height="8" rx="0.5" /></svg
+    >
   </button>
   <button
     class="tbtn"
@@ -45,7 +47,9 @@
         <span class="beat-dot" class:active={i === clock.state.beat && clock.state.playing}></span>
       {/each}
     </div>
-    <span class="beat-counter">{barStr}<span class="sep">·</span>{beatStr}<span class="dim">{phaseStr}</span></span>
+    <span class="beat-counter"
+      >{barStr}<span class="sep">·</span>{beatStr}<span class="dim">{phaseStr}</span></span
+    >
   </div>
 </div>
 
@@ -73,15 +77,23 @@
     position: relative;
   }
 
-  .tbtn:hover { color: var(--text); background: var(--elevated); }
+  .tbtn:hover {
+    color: var(--text);
+    background: var(--elevated);
+  }
 
   .tbtn.playing {
     color: var(--amber);
     background: rgba(232, 156, 62, 0.12);
-    box-shadow: 0 0 0 1px rgba(232, 156, 62, 0.2), inset 0 0 8px rgba(232, 156, 62, 0.08);
+    box-shadow:
+      0 0 0 1px rgba(232, 156, 62, 0.2),
+      inset 0 0 8px rgba(232, 156, 62, 0.08);
   }
 
-  .tbtn svg { width: 11px; height: 11px; }
+  .tbtn svg {
+    width: 11px;
+    height: 11px;
+  }
 
   .bpm-module {
     display: flex;
@@ -102,7 +114,10 @@
     line-height: 1;
   }
 
-  .bpm-value :global(.decimal) { font-size: 15px; opacity: 0.75; }
+  .bpm-value :global(.decimal) {
+    font-size: 15px;
+    opacity: 0.75;
+  }
 
   .bpm-label {
     font-family: var(--font-mono);
@@ -123,7 +138,10 @@
     transition: all 0.15s;
   }
 
-  .tap-btn:hover { color: var(--amber); border-color: var(--amber-dim); }
+  .tap-btn:hover {
+    color: var(--amber);
+    border-color: var(--amber-dim);
+  }
 
   .beat-meter {
     display: flex;
@@ -133,7 +151,10 @@
     border-left: 1px solid var(--border);
   }
 
-  .beat-dots { display: flex; gap: 4px; }
+  .beat-dots {
+    display: flex;
+    gap: 4px;
+  }
 
   .beat-dot {
     width: 6px;
@@ -158,6 +179,11 @@
     letter-spacing: 0.05em;
   }
 
-  .beat-counter :global(.sep) { color: var(--text-faint); margin: 0 3px; }
-  .beat-counter :global(.dim) { color: var(--text-dim); }
+  .beat-counter :global(.sep) {
+    color: var(--text-faint);
+    margin: 0 3px;
+  }
+  .beat-counter :global(.dim) {
+    color: var(--text-dim);
+  }
 </style>

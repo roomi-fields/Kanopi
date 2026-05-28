@@ -4,7 +4,9 @@
   import CMEditor from './CMEditor.svelte';
   import { core } from '../../lib/core';
 
-  const file = $derived(workspace.activeTabId ? workspace.fileById(workspace.activeTabId) : undefined);
+  const file = $derived(
+    workspace.activeTabId ? workspace.fileById(workspace.activeTabId) : undefined
+  );
 </script>
 
 <section class="editor">
@@ -17,7 +19,8 @@
         doc={file.contents}
         runtime={file.runtime}
         onChange={(text) => workspace.updateContents(file.id, text)}
-        onEval={(code, docOffset, actorId) => core.evaluateBlock(file.runtime, code, file.name, docOffset, actorId)}
+        onEval={(code, docOffset, actorId) =>
+          core.evaluateBlock(file.runtime, code, file.name, docOffset, actorId)}
       />
     {:else}
       <p class="hint">Open a file from the sidebar.</p>

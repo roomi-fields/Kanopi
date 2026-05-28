@@ -13,7 +13,9 @@
   // A block is "covered" by a declared @actor if the latter's `file` field
   // matches the block's source file. We hide covered blocks from the detected
   // list to avoid duplicating the same name twice in the panel.
-  const declaredFiles = $derived(new Set(actors.list.map((a) => a.file).filter(Boolean) as string[]));
+  const declaredFiles = $derived(
+    new Set(actors.list.map((a) => a.file).filter(Boolean) as string[])
+  );
   const detected = $derived<OpenBlock[]>(
     openBlocks.list.filter((b) => !declaredFiles.has(b.fileName))
   );
@@ -26,7 +28,12 @@
 <ul class="actors">
   {#each actors.list as a, i (a.name)}
     <li class="actor" class:active={a.active} class:muted={a.muted}>
-      <button class="toggle" type="button" title="toggle {a.name}" onclick={() => actors.toggle(a.name)}>
+      <button
+        class="toggle"
+        type="button"
+        title="toggle {a.name}"
+        onclick={() => actors.toggle(a.name)}
+      >
         <span class="led" class:on={a.active} class:muted={a.muted}></span>
       </button>
       <button class="info" type="button" onclick={() => openFile(a.file)}>
@@ -63,8 +70,19 @@
         class:positional={b.block.kind === 'positional'}
         class:errored={openBlocks.isErrored(b.qualifiedName)}
       >
-        <button class="toggle" type="button" title={openBlocks.isErrored(b.qualifiedName) ? `error: ${b.qualifiedName}` : `arm ${b.qualifiedName}`} onclick={() => toggleBlock(b)}>
-          <span class="led" class:on={openBlocks.isArmed(b.qualifiedName)} class:err={openBlocks.isErrored(b.qualifiedName)}></span>
+        <button
+          class="toggle"
+          type="button"
+          title={openBlocks.isErrored(b.qualifiedName)
+            ? `error: ${b.qualifiedName}`
+            : `arm ${b.qualifiedName}`}
+          onclick={() => toggleBlock(b)}
+        >
+          <span
+            class="led"
+            class:on={openBlocks.isArmed(b.qualifiedName)}
+            class:err={openBlocks.isErrored(b.qualifiedName)}
+          ></span>
         </button>
         <button class="info" type="button" onclick={() => openFile(b.fileName)}>
           <span class="name">{b.qualifiedName}</span>
@@ -80,7 +98,11 @@
 {/if}
 
 <style>
-  .actors { list-style: none; margin: 0; padding: 4px 0; }
+  .actors {
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+  }
   .actor {
     display: flex;
     align-items: center;
@@ -89,14 +111,16 @@
     border-bottom: 1px solid var(--border-dim);
   }
   .toggle {
-    width: 22px; height: 22px;
+    width: 22px;
+    height: 22px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 3px;
   }
   .led {
-    width: 8px; height: 8px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--text-faint);
     transition: all 0.15s;
@@ -110,7 +134,9 @@
     box-shadow: none;
     opacity: 0.5;
   }
-  .actor.muted .name { opacity: 0.5; }
+  .actor.muted .name {
+    opacity: 0.5;
+  }
   .mute {
     width: 20px;
     height: 20px;
@@ -126,8 +152,14 @@
     letter-spacing: 0.04em;
     transition: all 0.12s;
   }
-  .mute:hover { color: var(--text-muted); border-color: var(--border); }
-  .actor.muted .mute { color: var(--amber); border-color: var(--amber-dim); }
+  .mute:hover {
+    color: var(--text-muted);
+    border-color: var(--border);
+  }
+  .actor.muted .mute {
+    color: var(--amber);
+    border-color: var(--amber-dim);
+  }
   .info {
     flex: 1;
     text-align: left;
@@ -135,9 +167,17 @@
     flex-direction: column;
     gap: 3px;
   }
-  .info:hover { color: var(--text); }
-  .name { font-size: 12px; color: var(--text); font-family: var(--font-mono); }
-  .actor:not(.active) .name { color: var(--text-muted); }
+  .info:hover {
+    color: var(--text);
+  }
+  .name {
+    font-size: 12px;
+    color: var(--text);
+    font-family: var(--font-mono);
+  }
+  .actor:not(.active) .name {
+    color: var(--text-muted);
+  }
   .meta {
     display: flex;
     align-items: center;
@@ -152,14 +192,31 @@
     font-weight: 500;
     font-size: 9px;
   }
-  .rt-tidal { color: var(--tidal); }
-  .rt-sc { color: var(--sc); }
-  .rt-hydra { color: var(--hydra); }
-  .rt-strudel { color: var(--tidal); }
-  .rt-python { color: var(--python); }
-  .rt-kanopi { color: var(--kanopi); }
-  .rt-js { color: var(--cyan); }
-  .file { color: var(--text-faint); font-family: var(--font-code); }
+  .rt-tidal {
+    color: var(--tidal);
+  }
+  .rt-sc {
+    color: var(--sc);
+  }
+  .rt-hydra {
+    color: var(--hydra);
+  }
+  .rt-strudel {
+    color: var(--tidal);
+  }
+  .rt-python {
+    color: var(--python);
+  }
+  .rt-kanopi {
+    color: var(--kanopi);
+  }
+  .rt-js {
+    color: var(--cyan);
+  }
+  .file {
+    color: var(--text-faint);
+    font-family: var(--font-code);
+  }
 
   .blocks-header {
     display: flex;
@@ -181,7 +238,10 @@
     text-transform: none;
     font-variant-numeric: tabular-nums;
   }
-  .actor.positional .name { color: var(--text-faint); font-style: italic; }
+  .actor.positional .name {
+    color: var(--text-faint);
+    font-style: italic;
+  }
   .kind {
     font-size: 9px;
     color: var(--text-faint);
@@ -191,7 +251,9 @@
     background: var(--red, #c84040);
     box-shadow: 0 0 6px rgba(200, 64, 64, 0.6);
   }
-  .actor.errored .name { color: var(--red, #c84040); }
+  .actor.errored .name {
+    color: var(--red, #c84040);
+  }
   .err-tag {
     font-size: 9px;
     color: var(--red, #c84040);

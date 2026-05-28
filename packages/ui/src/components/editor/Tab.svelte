@@ -7,7 +7,8 @@
   const file = $derived(workspace.fileById(id));
   const active = $derived(workspace.activeTabId === id);
   const actorActive = $derived(
-    !!file && actorsStore.list.some((a) => a.active && (a.file === file.name || a.file === file.path))
+    !!file &&
+      actorsStore.list.some((a) => a.active && (a.file === file.name || a.file === file.path))
   );
 
   function onDragStart(e: DragEvent) {
@@ -50,8 +51,8 @@
       onclick={(e) => {
         e.stopPropagation();
         workspace.closeTab(id);
-      }}
-    >×</button>
+      }}>×</button
+    >
   </div>
 {/if}
 
@@ -79,41 +80,77 @@
     flex: 1 1 auto;
     min-width: 0;
   }
-  .ext, .live-dot, .close { flex: 0 0 auto; }
-  .tab:hover { color: var(--text); background: rgba(255, 255, 255, 0.02); }
+  .ext,
+  .live-dot,
+  .close {
+    flex: 0 0 auto;
+  }
+  .tab:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.02);
+  }
   .tab.active {
     color: var(--text);
     background: var(--bg);
     box-shadow: inset 0 1px 0 var(--amber);
   }
   .ext {
-    width: 8px; height: 8px; border-radius: 1px;
+    width: 8px;
+    height: 8px;
+    border-radius: 1px;
     background: var(--text-faint);
   }
-  .ext-tidal { background: var(--tidal); }
-  .ext-scd { background: var(--sc); }
-  .ext-hydra { background: var(--hydra); }
-  .ext-strudel { background: var(--tidal); }
-  .ext-py { background: var(--python); }
-  .ext-kanopi, .ext-bps { background: var(--kanopi); }
-  .ext-js { background: var(--cyan); }
+  .ext-tidal {
+    background: var(--tidal);
+  }
+  .ext-scd {
+    background: var(--sc);
+  }
+  .ext-hydra {
+    background: var(--hydra);
+  }
+  .ext-strudel {
+    background: var(--tidal);
+  }
+  .ext-py {
+    background: var(--python);
+  }
+  .ext-kanopi,
+  .ext-bps {
+    background: var(--kanopi);
+  }
+  .ext-js {
+    background: var(--cyan);
+  }
   .live-dot {
-    width: 6px; height: 6px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--green);
     box-shadow: 0 0 5px var(--green-glow);
     animation: live-pulse 0.9s ease-in-out infinite;
   }
   @keyframes live-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.6; transform: scale(0.85); }
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.6;
+      transform: scale(0.85);
+    }
   }
   .close {
-    width: 14px; height: 14px;
+    width: 14px;
+    height: 14px;
     line-height: 1;
     font-size: 12px;
     color: var(--text-faint);
     border-radius: 2px;
   }
-  .close:hover { color: var(--text); background: var(--elevated); }
+  .close:hover {
+    color: var(--text);
+    background: var(--elevated);
+  }
 </style>

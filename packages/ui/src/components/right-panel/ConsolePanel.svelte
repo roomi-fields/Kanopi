@@ -71,7 +71,14 @@
           {#if justCopiedId === id}
             ✓
           {:else}
-            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2">
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 12 12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.2"
+            >
               <rect x="3" y="3" width="7" height="8" rx="1" />
               <path d="M2 8 L2 2 Q2 1 3 1 L8 1" />
             </svg>
@@ -83,7 +90,11 @@
 </div>
 
 <style>
-  .console { display: flex; flex-direction: column; height: 100%; }
+  .console {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
   .hdr {
     display: flex;
     align-items: center;
@@ -95,9 +106,18 @@
     text-transform: uppercase;
     color: var(--text-dim);
   }
-  .actions { display: flex; gap: 10px; }
-  .action { color: var(--text-dim); font-size: 9px; letter-spacing: 0.16em; }
-  .action:hover { color: var(--amber); }
+  .actions {
+    display: flex;
+    gap: 10px;
+  }
+  .action {
+    color: var(--text-dim);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+  }
+  .action:hover {
+    color: var(--amber);
+  }
   .scroll {
     flex: 1;
     overflow-y: auto;
@@ -113,7 +133,9 @@
     padding: 1px 12px;
     align-items: center;
   }
-  .row:hover { background: rgba(255, 255, 255, 0.02); }
+  .row:hover {
+    background: rgba(255, 255, 255, 0.02);
+  }
   .copy {
     width: 18px;
     height: 18px;
@@ -126,19 +148,54 @@
     transition: all 0.15s;
     font-size: 10px;
   }
-  .row:hover .copy { opacity: 1; }
-  .copy:hover { color: var(--amber); background: var(--elevated); }
-  .time { color: var(--text-faint); font-variant-numeric: tabular-nums; }
-  .rt { text-transform: uppercase; letter-spacing: 0.1em; font-size: 9px; align-self: center; }
-  .rt-tidal { color: var(--tidal); }
-  .rt-sc { color: var(--sc); }
-  .rt-hydra { color: var(--hydra); }
-  .rt-strudel { color: var(--tidal); }
-  .rt-python { color: var(--python); }
-  .rt-kanopi { color: var(--kanopi); }
-  .rt-js { color: var(--cyan); }
-  .rt-system { color: var(--text-dim); }
-  .msg { color: var(--text-muted); }
-  .level-warn .msg { color: var(--amber-soft); }
-  .level-error .msg { color: var(--red); }
+  .row:hover .copy {
+    opacity: 1;
+  }
+  .copy:hover {
+    color: var(--amber);
+    background: var(--elevated);
+  }
+  .time {
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .rt {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 9px;
+    align-self: center;
+  }
+  .rt-tidal {
+    color: var(--tidal);
+  }
+  .rt-sc {
+    color: var(--sc);
+  }
+  .rt-hydra {
+    color: var(--hydra);
+  }
+  .rt-strudel {
+    color: var(--tidal);
+  }
+  .rt-python {
+    color: var(--python);
+  }
+  .rt-kanopi {
+    color: var(--kanopi);
+  }
+  .rt-js {
+    color: var(--cyan);
+  }
+  .rt-system {
+    color: var(--text-dim);
+  }
+  .msg {
+    color: var(--text-muted);
+  }
+  .level-warn .msg {
+    color: var(--amber-soft);
+  }
+  .level-error .msg {
+    color: var(--red);
+  }
 </style>

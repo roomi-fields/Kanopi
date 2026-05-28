@@ -8,9 +8,29 @@
   <div class="brand">
     <svg class="sigil" viewBox="0 0 24 24" fill="none">
       <path d="M12 22 L12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-      <path d="M3 5 Q12 2 21 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" />
-      <path d="M5 9 Q12 6 19 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.8" />
-      <path d="M7 13 Q12 10 17 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6" />
+      <path
+        d="M3 5 Q12 2 21 5"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        fill="none"
+      />
+      <path
+        d="M5 9 Q12 6 19 9"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        fill="none"
+        opacity="0.8"
+      />
+      <path
+        d="M7 13 Q12 10 17 13"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        fill="none"
+        opacity="0.6"
+      />
       <circle cx="12" cy="22" r="1" fill="currentColor" />
     </svg>
     <span class="brand-name">KANOPI</span>
@@ -29,7 +49,14 @@
       <span>command</span>
     </button>
     <button class="icon-btn" type="button" title="Settings">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 14 14"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.2"
+      >
         <circle cx="7" cy="7" r="2" />
         <path d="M7 1v2M7 11v2M1 7h2M11 7h2M3 3l1.4 1.4M9.6 9.6L11 11M3 11l1.4-1.4M9.6 4.4L11 3" />
       </svg>

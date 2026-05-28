@@ -66,7 +66,11 @@ export const mercuryAdapter: RuntimeAdapter = {
   extensions: ['.mercury'],
   events: adapterEvents,
   setBpm(bpm: number, _log: LogPush) {
-    try { instance?.setBPM(bpm); } catch { /* best-effort */ }
+    try {
+      instance?.setBPM(bpm);
+    } catch {
+      /* best-effort */
+    }
   },
   async evaluate(code: string, src: EvalSource, log: LogPush) {
     if (!(await ensure(log))) throw new Error('mercury not ready');
@@ -74,7 +78,11 @@ export const mercuryAdapter: RuntimeAdapter = {
     // `resume()` is idempotent: no-op once Tone.Transport is running, and must
     // be called inside a user gesture (Ctrl+Enter is one). Without it Tone's
     // AudioContext stays suspended and `.code()` schedules to silence.
-    try { instance!.resume(); } catch { /* best-effort */ }
+    try {
+      instance!.resume();
+    } catch {
+      /* best-effort */
+    }
     let tree: { errors?: unknown[] };
     try {
       tree = instance!.code(code);
@@ -105,7 +113,11 @@ export const mercuryAdapter: RuntimeAdapter = {
     // mercury-engine has no explicit teardown path — it detaches the tree
     // when `silence()` is called. Drop the reference so `ensure()` can
     // reconstruct if needed.
-    try { instance?.silence(); } catch { /* ignore */ }
+    try {
+      instance?.silence();
+    } catch {
+      /* ignore */
+    }
     instance = undefined;
     visualHintLogged = false;
   }

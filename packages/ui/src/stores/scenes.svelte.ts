@@ -10,7 +10,9 @@ class ScenesStore {
     });
   }
 
-  activate(name: string) { core.scenes.activate(name); }
+  activate(name: string) {
+    core.scenes.activate(name);
+  }
 
   get active(): Scene | undefined {
     return this.list.find((s) => s.active);

@@ -5,9 +5,7 @@
   import { workspace } from '../../stores/workspace.svelte';
 
   function load(s: Starter) {
-    const ok = confirm(
-      `Load "${s.name}"?\n\nThis replaces every file in the current workspace.`
-    );
+    const ok = confirm(`Load "${s.name}"?\n\nThis replaces every file in the current workspace.`);
     if (!ok) return;
     workspace.loadFiles(s.files, s.sessionFile);
   }
@@ -24,9 +22,7 @@
 
 <div class="wrap">
   <h3 class="section-title">Starter workspaces</h3>
-  <p class="intro">
-    Pick one to replace the current files and open its session.
-  </p>
+  <p class="intro">Pick one to replace the current files and open its session.</p>
   <ul class="list">
     {#each STARTERS as s (s.id)}
       <li class="card">
@@ -42,8 +38,7 @@
 
   <h3 class="section-title">Visuals</h3>
   <p class="intro">
-    Hydra snippets loaded as a new <code>.hydra</code> file in the current
-    workspace.
+    Hydra snippets loaded as a new <code>.hydra</code> file in the current workspace.
   </p>
   <ul class="list">
     {#each visualsCatalog.items as v (v.id)}
@@ -164,7 +159,9 @@
     color: var(--text-dim);
     font-weight: 500;
   }
-  .section-title:first-child { margin-top: 0; }
+  .section-title:first-child {
+    margin-top: 0;
+  }
   .source {
     font-family: var(--font-mono);
     font-size: 9.5px;

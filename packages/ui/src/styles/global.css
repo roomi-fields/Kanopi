@@ -1,9 +1,25 @@
-* { scrollbar-width: thin; scrollbar-color: var(--border-dim) transparent; }
-::-webkit-scrollbar { width: 4px; height: 4px; background: transparent; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-dim); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: var(--border); }
-::-webkit-scrollbar-corner { background: transparent; }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-dim) transparent;
+}
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+  background: transparent;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-dim);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
 
 @keyframes beat-pulse {
   0% {

@@ -274,7 +274,12 @@ export class MockConsole implements ConsoleBus {
     return this.log;
   }
   push(e: Omit<LogEntry, 'ts'> & { ts?: number }) {
-    const entry: LogEntry = { ts: e.ts ?? Date.now(), runtime: e.runtime, level: e.level, msg: e.msg };
+    const entry: LogEntry = {
+      ts: e.ts ?? Date.now(),
+      runtime: e.runtime,
+      level: e.level,
+      msg: e.msg
+    };
     this.log = [...this.log, entry].slice(-500);
     this.b.emit(this.log);
   }
@@ -305,7 +310,13 @@ class MockCore implements CoreApi {
     this.console.push({ runtime: 'system', level: 'info', msg: 'loadSession (mock)' });
   }
 
-  async evaluateBlock(runtime: Runtime, code: string, sourceId: string, _docOffset?: number, _actorId?: string): Promise<void> {
+  async evaluateBlock(
+    runtime: Runtime,
+    code: string,
+    sourceId: string,
+    _docOffset?: number,
+    _actorId?: string
+  ): Promise<void> {
     this.console.push({ runtime, level: 'info', msg: `eval mock (${code.length}b @ ${sourceId})` });
   }
 

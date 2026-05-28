@@ -8,7 +8,11 @@
   }
 
   function onKey(e: KeyboardEvent) {
-    if (e.target instanceof HTMLElement && (e.target.isContentEditable || ['INPUT', 'TEXTAREA'].includes(e.target.tagName))) return;
+    if (
+      e.target instanceof HTMLElement &&
+      (e.target.isContentEditable || ['INPUT', 'TEXTAREA'].includes(e.target.tagName))
+    )
+      return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const n = parseInt(e.key, 10);
     if (Number.isFinite(n) && n >= 1 && n <= 9) {
@@ -23,7 +27,12 @@
 <ul class="scenes">
   {#each scenes.list as s, i (s.name)}
     <li>
-      <button class="card" class:active={s.active} type="button" onclick={() => scenes.activate(s.name)}>
+      <button
+        class="card"
+        class:active={s.active}
+        type="button"
+        onclick={() => scenes.activate(s.name)}
+      >
         <header>
           <kbd>{i + 1}</kbd>
           <span class="name">{s.name}</span>
@@ -39,7 +48,14 @@
 </ul>
 
 <style>
-  .scenes { list-style: none; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .scenes {
+    list-style: none;
+    margin: 0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
   .card {
     width: 100%;
     text-align: left;
@@ -52,15 +68,23 @@
     flex-direction: column;
     gap: 8px;
   }
-  .card:hover { border-color: var(--border); background: var(--elevated); }
+  .card:hover {
+    border-color: var(--border);
+    background: var(--elevated);
+  }
   .card.active {
     border-color: var(--amber-dim);
     background: rgba(232, 156, 62, 0.06);
     box-shadow: inset 0 0 0 1px rgba(232, 156, 62, 0.15);
   }
-  header { display: flex; align-items: center; gap: 8px; }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
   kbd {
-    width: 18px; height: 18px;
+    width: 18px;
+    height: 18px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -70,25 +94,49 @@
     font-size: 9px;
     color: var(--text-muted);
   }
-  .card.active kbd { color: var(--amber); border-color: var(--amber-dim); }
+  .card.active kbd {
+    color: var(--amber);
+    border-color: var(--amber-dim);
+  }
   .name {
     font-size: 12px;
     color: var(--text);
     font-family: var(--font-mono);
     letter-spacing: 0.04em;
   }
-  .dots { display: flex; gap: 4px; }
+  .dots {
+    display: flex;
+    gap: 4px;
+  }
   .dot {
-    width: 8px; height: 8px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--border);
     opacity: 0.4;
   }
-  .dot.on { opacity: 1; }
-  .dot.rt-tidal.on { background: var(--tidal); box-shadow: 0 0 4px rgba(178, 146, 201, 0.5); }
-  .dot.rt-sc.on { background: var(--sc); box-shadow: 0 0 4px rgba(106, 164, 212, 0.5); }
-  .dot.rt-hydra.on { background: var(--hydra); box-shadow: 0 0 4px rgba(212, 165, 102, 0.5); }
-  .dot.rt-python.on { background: var(--python); }
-  .dot.rt-kanopi.on { background: var(--kanopi); }
-  .dot.rt-js.on { background: var(--cyan); }
+  .dot.on {
+    opacity: 1;
+  }
+  .dot.rt-tidal.on {
+    background: var(--tidal);
+    box-shadow: 0 0 4px rgba(178, 146, 201, 0.5);
+  }
+  .dot.rt-sc.on {
+    background: var(--sc);
+    box-shadow: 0 0 4px rgba(106, 164, 212, 0.5);
+  }
+  .dot.rt-hydra.on {
+    background: var(--hydra);
+    box-shadow: 0 0 4px rgba(212, 165, 102, 0.5);
+  }
+  .dot.rt-python.on {
+    background: var(--python);
+  }
+  .dot.rt-kanopi.on {
+    background: var(--kanopi);
+  }
+  .dot.rt-js.on {
+    background: var(--cyan);
+  }
 </style>

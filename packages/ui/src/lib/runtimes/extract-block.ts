@@ -15,12 +15,7 @@ import type { Runtime } from '../core-mock';
  * If `from !== to`, the user has an explicit selection — it wins over
  * any block detection.
  */
-export function extractBlock(
-  doc: string,
-  from: number,
-  to: number,
-  runtime?: Runtime
-): string {
+export function extractBlock(doc: string, from: number, to: number, runtime?: Runtime): string {
   if (from !== to) return doc.slice(from, to);
 
   if (runtime === 'csound') {
@@ -77,10 +72,7 @@ function extractCsoundAtCursor(doc: string, cursor: number): string | null {
   tree.iterate({
     enter(node) {
       if (node.from <= cursor && cursor <= node.to) {
-        if (
-          node.name === 'InstrumentDeclaration' ||
-          node.name === 'UdoDeclaration'
-        ) {
+        if (node.name === 'InstrumentDeclaration' || node.name === 'UdoDeclaration') {
           hit = { from: node.from, to: node.to };
           return false;
         }

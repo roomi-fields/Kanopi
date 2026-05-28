@@ -24,7 +24,11 @@
     };
     const up = (uv: PointerEvent) => {
       dragging = false;
-      try { target.releasePointerCapture(uv.pointerId); } catch { /* */ }
+      try {
+        target.releasePointerCapture(uv.pointerId);
+      } catch {
+        /* */
+      }
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
     };

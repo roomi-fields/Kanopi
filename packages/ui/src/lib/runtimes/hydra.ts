@@ -67,9 +67,9 @@ function emitLifecycle(name: 'eval' | 'stop', fileId: string) {
  */
 const FLOOD_SIGNATURES = [
   'shader could not compile',
-  'ERROR',                                // format-arguments.js:82 (uniform cb throw)
-  'function does not return a number',    // format-arguments.js:78 (wrong return)
-  'Error during tick'                     // hydra-synth.js:476
+  'ERROR', // format-arguments.js:82 (uniform cb throw)
+  'function does not return a number', // format-arguments.js:78 (wrong return)
+  'Error during tick' // hydra-synth.js:476
 ];
 function installWarnShadow(log: LogPush) {
   if (warnInstalled) return;
@@ -86,7 +86,11 @@ function installWarnShadow(log: LogPush) {
         seen.set(sig, now);
         const detail = args.length > 1 ? String(args[1]) : '';
         log({ runtime: 'hydra', level: 'error', msg: `${sig}: ${detail}` });
-        try { instance?.hush(); } catch { /* best-effort */ }
+        try {
+          instance?.hush();
+        } catch {
+          /* best-effort */
+        }
       }
       return;
     }

@@ -10,7 +10,9 @@ class ConsoleStore {
     });
   }
 
-  clear() { core.console.clear(); }
+  clear() {
+    core.console.clear();
+  }
 }
 
 export const consoleLog = new ConsoleStore();

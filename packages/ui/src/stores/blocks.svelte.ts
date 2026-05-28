@@ -79,7 +79,10 @@ class OpenBlocksStore {
     const adapter = getAdapter(b.runtime);
     if (!adapter) return;
     try {
-      await adapter.stop({ actorId: q, fileId: b.fileName }, (e: Parameters<typeof core.console.push>[0]) => core.console.push(e));
+      await adapter.stop(
+        { actorId: q, fileId: b.fileName },
+        (e: Parameters<typeof core.console.push>[0]) => core.console.push(e)
+      );
     } catch {
       /* best-effort stop */
     }

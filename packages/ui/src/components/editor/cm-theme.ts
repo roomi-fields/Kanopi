@@ -163,14 +163,16 @@ export const kanopiGlobalStyles = EditorView.baseTheme({
   '.cm-mini-num, .cm-mini-num > *': { color: 'var(--cyan) !important' },
   '.cm-mini-bracket, .cm-mini-bracket > *': { color: 'var(--text-muted) !important' },
   '.cm-lintRange-error': {
-    backgroundImage: 'linear-gradient(135deg, transparent 40%, rgba(200, 50, 50, 0.9) 40%, rgba(200, 50, 50, 0.9) 60%, transparent 60%)',
+    backgroundImage:
+      'linear-gradient(135deg, transparent 40%, rgba(200, 50, 50, 0.9) 40%, rgba(200, 50, 50, 0.9) 60%, transparent 60%)',
     backgroundRepeat: 'repeat-x',
     backgroundSize: '6px 2px',
     backgroundPosition: 'left bottom',
     paddingBottom: '1px'
   },
   '.cm-lintRange-warning': {
-    backgroundImage: 'linear-gradient(135deg, transparent 40%, rgba(232, 156, 62, 0.8) 40%, rgba(232, 156, 62, 0.8) 60%, transparent 60%)',
+    backgroundImage:
+      'linear-gradient(135deg, transparent 40%, rgba(232, 156, 62, 0.8) 40%, rgba(232, 156, 62, 0.8) 60%, transparent 60%)',
     backgroundRepeat: 'repeat-x',
     backgroundSize: '6px 2px',
     backgroundPosition: 'left bottom',

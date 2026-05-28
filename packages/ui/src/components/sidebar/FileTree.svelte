@@ -35,7 +35,11 @@
 </ul>
 
 <style>
-  .tree { list-style: none; margin: 0; padding: 0; }
+  .tree {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
   .row {
     display: flex;
     align-items: center;
@@ -48,10 +52,23 @@
     border-radius: 2px;
     transition: background 0.1s;
   }
-  .row:hover { background: rgba(255, 255, 255, 0.025); color: var(--text); }
-  .row.file.active { background: rgba(232, 156, 62, 0.08); color: var(--amber); }
-  .dir { color: var(--text-dim); cursor: default; }
-  .caret { font-size: 8px; color: var(--text-faint); width: 8px; }
+  .row:hover {
+    background: rgba(255, 255, 255, 0.025);
+    color: var(--text);
+  }
+  .row.file.active {
+    background: rgba(232, 156, 62, 0.08);
+    color: var(--amber);
+  }
+  .dir {
+    color: var(--text-dim);
+    cursor: default;
+  }
+  .caret {
+    font-size: 8px;
+    color: var(--text-faint);
+    width: 8px;
+  }
   .ext {
     width: 8px;
     height: 8px;
@@ -59,12 +76,29 @@
     display: inline-block;
     background: var(--text-faint);
   }
-  .ext-tidal { background: var(--tidal); }
-  .ext-scd { background: var(--sc); }
-  .ext-hydra { background: var(--hydra); }
-  .ext-strudel { background: var(--tidal); }
-  .ext-py { background: var(--python); }
-  .ext-kanopi, .ext-bps { background: var(--kanopi); }
-  .ext-js { background: var(--cyan); }
-  .name { font-family: var(--font-mono); }
+  .ext-tidal {
+    background: var(--tidal);
+  }
+  .ext-scd {
+    background: var(--sc);
+  }
+  .ext-hydra {
+    background: var(--hydra);
+  }
+  .ext-strudel {
+    background: var(--tidal);
+  }
+  .ext-py {
+    background: var(--python);
+  }
+  .ext-kanopi,
+  .ext-bps {
+    background: var(--kanopi);
+  }
+  .ext-js {
+    background: var(--cyan);
+  }
+  .name {
+    font-family: var(--font-mono);
+  }
 </style>

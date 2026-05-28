@@ -30,9 +30,7 @@ describe('mock core', () => {
 
   it('MockActors setActors + toggle', () => {
     const a = new MockActors();
-    a.setActors([
-      { name: 'x', file: 'x.tidal', runtime: 'tidal', active: false }
-    ]);
+    a.setActors([{ name: 'x', file: 'x.tidal', runtime: 'tidal', active: false }]);
     a.toggle('x');
     expect(a.list()[0].active).toBe(true);
   });

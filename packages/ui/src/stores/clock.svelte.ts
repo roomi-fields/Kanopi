@@ -10,12 +10,24 @@ class ClockStore {
     });
   }
 
-  play() { core.clock.play(); }
-  stop() { core.clock.stop(); }
-  toggle() { core.clock.toggle(); }
-  setBpm(n: number) { core.clock.setBpm(n); }
-  setTimeSignature(bpb: number) { core.clock.setTimeSignature(bpb); }
-  tap() { core.clock.tap(); }
+  play() {
+    core.clock.play();
+  }
+  stop() {
+    core.clock.stop();
+  }
+  toggle() {
+    core.clock.toggle();
+  }
+  setBpm(n: number) {
+    core.clock.setBpm(n);
+  }
+  setTimeSignature(bpb: number) {
+    core.clock.setTimeSignature(bpb);
+  }
+  tap() {
+    core.clock.tap();
+  }
 }
 
 export const clock = new ClockStore();

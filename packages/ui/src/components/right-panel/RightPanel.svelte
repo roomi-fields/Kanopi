@@ -61,7 +61,9 @@
     border-bottom: 1px solid transparent;
     transition: all 0.15s;
   }
-  .rp-tab:hover { color: var(--text-muted); }
+  .rp-tab:hover {
+    color: var(--text-muted);
+  }
   .rp-tab.active {
     color: var(--amber);
     border-bottom-color: var(--amber);

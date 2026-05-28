@@ -3,7 +3,15 @@ import { createEventBus } from './bus';
 import type { KanopiEvent } from './types';
 
 function beat(count: number): KanopiEvent {
-  return { schemaVersion: 1, type: 'beat', runtime: 'clock', t: count * 100, count, bpm: 120, phase: 0 };
+  return {
+    schemaVersion: 1,
+    type: 'beat',
+    runtime: 'clock',
+    t: count * 100,
+    count,
+    bpm: 120,
+    phase: 0
+  };
 }
 
 function token(t: number, name = 'bd'): KanopiEvent {

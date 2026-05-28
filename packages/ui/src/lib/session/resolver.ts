@@ -1,11 +1,4 @@
-import type {
-  Actor,
-  Mapping,
-  MapSource,
-  MapTarget,
-  Runtime,
-  Scene
-} from '../core-mock';
+import type { Actor, Mapping, MapSource, MapTarget, Runtime, Scene } from '../core-mock';
 import type { Diagnostic, Range, SessionAST } from './ast';
 import { findBank, bankIds } from '../library/audio-banks';
 
@@ -83,7 +76,11 @@ export function resolve(ast: SessionAST): ResolveResult {
     } else if (node.type === 'actor') {
       const runtime = node.runtime.text;
       if (!RUNTIMES.has(runtime as Runtime)) {
-        diagnostics.push({ severity: 'error', message: `unknown runtime "${runtime}"`, range: node.runtime.range });
+        diagnostics.push({
+          severity: 'error',
+          message: `unknown runtime "${runtime}"`,
+          range: node.runtime.range
+        });
       }
       const dup = actors.findIndex((a) => a.name === node.name.text);
       if (dup !== -1) {

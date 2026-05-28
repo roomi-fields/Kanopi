@@ -38,13 +38,18 @@
     color: var(--text-dim);
   }
   .dot {
-    width: 6px; height: 6px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--text-faint);
     transition: all 0.2s;
   }
-  .label { color: var(--text-muted); }
-  .state { color: var(--text-dim); }
+  .label {
+    color: var(--text-muted);
+  }
+  .state {
+    color: var(--text-dim);
+  }
 
   .pill[data-status='loading'] .dot {
     background: var(--amber);
@@ -55,15 +60,24 @@
     background: var(--green);
     box-shadow: 0 0 5px var(--green-glow);
   }
-  .pill[data-status='ready'] .state { color: var(--green); }
+  .pill[data-status='ready'] .state {
+    color: var(--green);
+  }
   .pill[data-status='error'] .dot {
     background: var(--red);
     box-shadow: 0 0 5px var(--red-glow);
   }
-  .pill[data-status='error'] .state { color: var(--red); }
+  .pill[data-status='error'] .state {
+    color: var(--red);
+  }
 
   @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.3;
+    }
   }
 </style>

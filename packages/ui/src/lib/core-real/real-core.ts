@@ -5,14 +5,7 @@ import {
   MockConsole,
   MockActors
 } from '../core-mock/mock-runtime';
-import type {
-  Actor,
-  ActorFileRef,
-  CoreApi,
-  LogEntry,
-  Runtime,
-  Scene
-} from '../core-mock/types';
+import type { Actor, ActorFileRef, CoreApi, LogEntry, Runtime, Scene } from '../core-mock/types';
 import { getAdapter, listRuntimes } from '../runtimes/registry';
 import { installConsoleBridge } from '../runtimes/console-bridge';
 import { parseSession } from '../session';
@@ -188,13 +181,21 @@ class RealCore implements CoreApi {
     }
     const adapter = getAdapter(ref.runtime);
     if (!adapter) {
-      this.log({ runtime: ref.runtime, level: 'warn', msg: `no adapter for runtime "${ref.runtime}" — actor "${a.name}" toggled visually only` });
+      this.log({
+        runtime: ref.runtime,
+        level: 'warn',
+        msg: `no adapter for runtime "${ref.runtime}" — actor "${a.name}" toggled visually only`
+      });
       return;
     }
     const src = { actorId: a.name, fileId: a.name };
     if (willBeActive) {
       if (!this.clock.state.playing) {
-        this.log({ runtime: ref.runtime, level: 'info', msg: `actor "${a.name}" armed (transport stopped)` });
+        this.log({
+          runtime: ref.runtime,
+          level: 'info',
+          msg: `actor "${a.name}" armed (transport stopped)`
+        });
         return;
       }
       await adapter.evaluate(ref.contents, src, this.log);
@@ -235,8 +236,12 @@ class RealCore implements CoreApi {
       if (!bank) continue;
       bankSources.push(bank.source);
       void loadSampleBank(bank.source)
-        .then(() => this.log({ runtime: 'strudel', level: 'info', msg: `library loaded: ${bank.name}` }))
-        .catch((err) => this.log({ runtime: 'strudel', level: 'error', msg: `library ${id}: ${String(err)}` }));
+        .then(() =>
+          this.log({ runtime: 'strudel', level: 'info', msg: `library loaded: ${bank.name}` })
+        )
+        .catch((err) =>
+          this.log({ runtime: 'strudel', level: 'error', msg: `library ${id}: ${String(err)}` })
+        );
     }
     // Warn about libraries that were declared earlier and are now removed.
     // Strudel's `samples()` has no reverse, so they stay in the sound map
@@ -300,9 +305,9 @@ class RealCore implements CoreApi {
 
     if (!this.clock.state.playing) this.clock.play();
     if (matching && !matching.active) {
-      const next = this.actors.list().map((a) =>
-        a.name === matching.name ? { ...a, active: true } : a
-      );
+      const next = this.actors
+        .list()
+        .map((a) => (a.name === matching.name ? { ...a, active: true } : a));
       this.actors.setActors(next);
     }
   }
@@ -361,7 +366,11 @@ class RealCore implements CoreApi {
         if (e.value > 0) this.actors.toggle(tgt.ref);
       } else if (tgt.kind === 'actor.param') {
         // Param routing not implemented yet (per-actor API needed).
-        this.log({ runtime: 'system', level: 'warn', msg: `actor.param "${tgt.ref}.${tgt.param}" not yet supported` });
+        this.log({
+          runtime: 'system',
+          level: 'warn',
+          msg: `actor.param "${tgt.ref}.${tgt.param}" not yet supported`
+        });
       }
     }
   }

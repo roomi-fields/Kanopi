@@ -4,24 +4,37 @@
   import { scenes } from '../../stores/scenes.svelte';
   import { inspector } from '../../stores/inspector.svelte';
 
-  function fmt2(n: number) { return n.toString().padStart(2, '0'); }
-  function fmt3(n: number) { return n.toString().padStart(3, '0'); }
-  const beatStr = $derived(`${fmt3(clock.state.bar)}·${fmt2(clock.state.beat + 1)}.${fmt2(Math.floor(clock.state.phase * 100))}`);
+  function fmt2(n: number) {
+    return n.toString().padStart(2, '0');
+  }
+  function fmt3(n: number) {
+    return n.toString().padStart(3, '0');
+  }
+  const beatStr = $derived(
+    `${fmt3(clock.state.bar)}·${fmt2(clock.state.beat + 1)}.${fmt2(Math.floor(clock.state.phase * 100))}`
+  );
 
-  function srcLabel(s: typeof inspector.mappings[number]['source']) {
+  function srcLabel(s: (typeof inspector.mappings)[number]['source']) {
     const ch = s.ch ? '/ch' + s.ch : '';
     switch (s.kind) {
-      case 'cv': return `cv:${s.index}${ch}`;
-      case 'gate': return `gate:${s.index}${ch}`;
-      case 'trig': return `trig:${s.index}${ch}`;
+      case 'cv':
+        return `cv:${s.index}${ch}`;
+      case 'gate':
+        return `gate:${s.index}${ch}`;
+      case 'trig':
+        return `trig:${s.index}${ch}`;
     }
   }
-  function tgtLabel(t: typeof inspector.mappings[number]['target']) {
+  function tgtLabel(t: (typeof inspector.mappings)[number]['target']) {
     switch (t.kind) {
-      case 'tempo': return 'tempo';
-      case 'scene': return `scene:${t.ref}`;
-      case 'actor.toggle': return `${t.ref}.toggle`;
-      case 'actor.param': return `${t.ref}.${t.param}`;
+      case 'tempo':
+        return 'tempo';
+      case 'scene':
+        return `scene:${t.ref}`;
+      case 'actor.toggle':
+        return `${t.ref}.toggle`;
+      case 'actor.param':
+        return `${t.ref}.${t.param}`;
     }
   }
 </script>
@@ -30,10 +43,14 @@
   <section>
     <h4>Clock</h4>
     <dl>
-      <dt>state</dt><dd>{clock.state.playing ? 'playing' : 'stopped'}</dd>
-      <dt>bpm</dt><dd>{clock.state.bpm.toFixed(1)}</dd>
-      <dt>position</dt><dd>{beatStr}</dd>
-      <dt>scene</dt><dd class="accent">{scenes.active?.name ?? '—'}</dd>
+      <dt>state</dt>
+      <dd>{clock.state.playing ? 'playing' : 'stopped'}</dd>
+      <dt>bpm</dt>
+      <dd>{clock.state.bpm.toFixed(1)}</dd>
+      <dt>position</dt>
+      <dd>{beatStr}</dd>
+      <dt>scene</dt>
+      <dd class="accent">{scenes.active?.name ?? '—'}</dd>
     </dl>
   </section>
 
@@ -64,7 +81,12 @@
 </div>
 
 <style>
-  .inspector { padding: 8px 12px; display: flex; flex-direction: column; gap: 14px; }
+  .inspector {
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
   h4 {
     font-size: 9px;
     letter-spacing: 0.18em;
@@ -79,24 +101,69 @@
     row-gap: 4px;
     font-size: 11px;
   }
-  dt { color: var(--text-dim); }
-  dd { color: var(--text); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-  dd.accent { color: var(--amber); }
+  dt {
+    color: var(--text-dim);
+  }
+  dd {
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  dd.accent {
+    color: var(--amber);
+  }
 
-  .bullets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
-  .bullets li { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+  .bullets {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .bullets li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
   .dot {
-    width: 6px; height: 6px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--text-faint);
   }
-  .dot.on { background: var(--green); box-shadow: 0 0 4px var(--green-glow); }
+  .dot.on {
+    background: var(--green);
+    box-shadow: 0 0 4px var(--green-glow);
+  }
 
-  .maps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 10px; }
-  .maps li { display: flex; align-items: center; gap: 6px; font-family: var(--font-code); }
-  .src { color: var(--cyan); }
-  .arrow { color: var(--text-faint); }
-  .tgt { color: var(--text-muted); flex: 1; }
+  .maps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 10px;
+  }
+  .maps li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-code);
+  }
+  .src {
+    color: var(--cyan);
+  }
+  .arrow {
+    color: var(--text-faint);
+  }
+  .tgt {
+    color: var(--text-muted);
+    flex: 1;
+  }
   .val {
     color: var(--amber);
     font-variant-numeric: tabular-nums;

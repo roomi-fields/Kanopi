@@ -13,7 +13,11 @@ export type EvalSource = {
   docOffset?: number;
 };
 
-export type LogPush = (e: { runtime: Runtime; level: 'info' | 'warn' | 'error'; msg: string }) => void;
+export type LogPush = (e: {
+  runtime: Runtime;
+  level: 'info' | 'warn' | 'error';
+  msg: string;
+}) => void;
 
 export interface RuntimeAdapter {
   readonly id: Runtime;

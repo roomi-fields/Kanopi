@@ -43,13 +43,17 @@ function bindPorts() {
   }
 }
 
-export async function enableMidi(h: MidiHandler): Promise<{ ok: true; ports: string[] } | { ok: false; reason: string }> {
+export async function enableMidi(
+  h: MidiHandler
+): Promise<{ ok: true; ports: string[] } | { ok: false; reason: string }> {
   handler = h;
   if (!('requestMIDIAccess' in navigator)) {
     return { ok: false, reason: 'WebMIDI not supported in this browser' };
   }
   try {
-    access = await (navigator as Navigator & { requestMIDIAccess(): Promise<MIDIAccess> }).requestMIDIAccess();
+    access = await (
+      navigator as Navigator & { requestMIDIAccess(): Promise<MIDIAccess> }
+    ).requestMIDIAccess();
     bindPorts();
     access.onstatechange = () => bindPorts();
     return { ok: true, ports: [...portNames] };

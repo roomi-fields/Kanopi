@@ -5,7 +5,9 @@
   let ports = $state<string[]>(listPorts());
   let enabled = $state(false);
   let busy = $state(false);
-  $effect(() => { enabled = ports.length > 0 || enabled; });
+  $effect(() => {
+    enabled = ports.length > 0 || enabled;
+  });
 
   async function enable() {
     busy = true;
@@ -38,7 +40,9 @@
 </div>
 
 <style>
-  .hw { padding: 12px; }
+  .hw {
+    padding: 12px;
+  }
   h4 {
     font-size: 9px;
     letter-spacing: 0.18em;
@@ -58,10 +62,24 @@
     letter-spacing: 0.08em;
     transition: all 0.15s;
   }
-  .enable:hover { border-color: var(--amber-dim); background: rgba(232, 156, 62, 0.12); }
-  .enable:disabled { opacity: 0.5; cursor: wait; }
-  .hint { color: var(--text-faint); font-size: 10px; margin-top: 8px; }
-  .ports { list-style: none; margin: 0; padding: 0; }
+  .enable:hover {
+    border-color: var(--amber-dim);
+    background: rgba(232, 156, 62, 0.12);
+  }
+  .enable:disabled {
+    opacity: 0.5;
+    cursor: wait;
+  }
+  .hint {
+    color: var(--text-faint);
+    font-size: 10px;
+    margin-top: 8px;
+  }
+  .ports {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
   .ports li {
     display: flex;
     align-items: center;
@@ -73,7 +91,8 @@
     border-bottom: 1px solid var(--border-dim);
   }
   .dot {
-    width: 6px; height: 6px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: var(--green);
     box-shadow: 0 0 5px var(--green-glow);

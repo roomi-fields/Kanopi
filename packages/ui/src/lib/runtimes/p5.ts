@@ -9,11 +9,23 @@ import type { EventBus } from '../events/types';
  * style where users write `function setup() {…}` without a prefix.
  */
 const P5_CALLBACKS = [
-  'setup', 'draw', 'preload', 'windowResized',
-  'mousePressed', 'mouseReleased', 'mouseMoved', 'mouseDragged',
-  'mouseClicked', 'doubleClicked', 'mouseWheel',
-  'keyPressed', 'keyReleased', 'keyTyped',
-  'touchStarted', 'touchMoved', 'touchEnded'
+  'setup',
+  'draw',
+  'preload',
+  'windowResized',
+  'mousePressed',
+  'mouseReleased',
+  'mouseMoved',
+  'mouseDragged',
+  'mouseClicked',
+  'doubleClicked',
+  'mouseWheel',
+  'keyPressed',
+  'keyReleased',
+  'keyTyped',
+  'touchStarted',
+  'touchMoved',
+  'touchEnded'
 ];
 
 // p5's instance type is heavy; we only care about the bits we touch.
@@ -60,7 +72,11 @@ function cleanupOrphans() {
   for (const cv of canvases) {
     const p = (cv as unknown as { _pInst?: P5Instance })._pInst;
     if (p && typeof p.remove === 'function') {
-      try { p.remove(); } catch { /* best-effort */ }
+      try {
+        p.remove();
+      } catch {
+        /* best-effort */
+      }
     } else {
       cv.remove();
     }
@@ -71,7 +87,11 @@ function cleanupOrphans() {
 // module boots with a clean container instead of a ghost sketch.
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
-    try { instance?.remove(); } catch { /* best-effort */ }
+    try {
+      instance?.remove();
+    } catch {
+      /* best-effort */
+    }
     cleanupOrphans();
     instance = undefined;
   });
@@ -122,9 +142,9 @@ export function attachP5Container(el: HTMLElement) {
  * Scope injection is ADAPTER_SPEC §5bis Plan A.
  */
 function buildSketchBody(userCode: string): string {
-  const capture = P5_CALLBACKS
-    .map((n) => `if (typeof ${n} === 'function') __scope__.${n} = ${n};`)
-    .join('\n    ');
+  const capture = P5_CALLBACKS.map(
+    (n) => `if (typeof ${n} === 'function') __scope__.${n} = ${n};`
+  ).join('\n    ');
   return `
   with (__scope__) {
     ${userCode}
@@ -168,7 +188,11 @@ export const p5Adapter: RuntimeAdapter = {
       // sketches that keep redrawing with stale state. cleanupOrphans()
       // also handles HMR ghosts that our `instance` reference has lost.
       if (instance) {
-        try { instance.remove(); } catch { /* best-effort */ }
+        try {
+          instance.remove();
+        } catch {
+          /* best-effort */
+        }
         instance = undefined;
       }
       cleanupOrphans();
@@ -195,7 +219,11 @@ export const p5Adapter: RuntimeAdapter = {
   async stop(src: EvalSource, log: LogPush) {
     try {
       if (instance) {
-        try { instance.remove(); } catch { /* best-effort */ }
+        try {
+          instance.remove();
+        } catch {
+          /* best-effort */
+        }
         instance = undefined;
       }
       // Belt-and-braces: kill any ghost canvas the `instance` reference
@@ -209,7 +237,11 @@ export const p5Adapter: RuntimeAdapter = {
   },
   async dispose() {
     if (instance) {
-      try { instance.remove(); } catch { /* best-effort */ }
+      try {
+        instance.remove();
+      } catch {
+        /* best-effort */
+      }
       instance = undefined;
     }
   }

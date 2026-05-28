@@ -122,7 +122,8 @@
     text-transform: uppercase;
     margin-right: auto;
   }
-  select, button {
+  select,
+  button {
     background: var(--bg);
     color: var(--text);
     border: 1px solid var(--border-dim);
@@ -155,15 +156,42 @@
     white-space: nowrap;
     overflow: hidden;
   }
-  .t { color: var(--text-faint); text-align: right; }
-  .rt { color: var(--text-muted); }
-  .rt-clock { color: var(--cyan); }
-  .rt-strudel { color: var(--amber); }
-  .rt-hydra { color: var(--hydra, #e865b7); }
-  .type { color: var(--text); font-weight: 500; }
-  .type-beat, .type-bar { color: var(--cyan); }
-  .type-transport { color: var(--amber-soft, #f0c27b); }
-  .type-token { color: var(--green); }
-  .type-trigger { color: var(--amber); }
-  .sum { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; }
+  .t {
+    color: var(--text-faint);
+    text-align: right;
+  }
+  .rt {
+    color: var(--text-muted);
+  }
+  .rt-clock {
+    color: var(--cyan);
+  }
+  .rt-strudel {
+    color: var(--amber);
+  }
+  .rt-hydra {
+    color: var(--hydra, #e865b7);
+  }
+  .type {
+    color: var(--text);
+    font-weight: 500;
+  }
+  .type-beat,
+  .type-bar {
+    color: var(--cyan);
+  }
+  .type-transport {
+    color: var(--amber-soft, #f0c27b);
+  }
+  .type-token {
+    color: var(--green);
+  }
+  .type-trigger {
+    color: var(--amber);
+  }
+  .sum {
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 </style>

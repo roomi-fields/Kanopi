@@ -9,8 +9,12 @@ class UiStore {
   sidebarWidth = $state(260);
   rightPanelWidth = $state(300);
 
-  setSidebarWidth(n: number) { this.sidebarWidth = Math.max(160, Math.min(600, n)); }
-  setRightPanelWidth(n: number) { this.rightPanelWidth = Math.max(180, Math.min(600, n)); }
+  setSidebarWidth(n: number) {
+    this.sidebarWidth = Math.max(160, Math.min(600, n));
+  }
+  setRightPanelWidth(n: number) {
+    this.rightPanelWidth = Math.max(180, Math.min(600, n));
+  }
 
   setActivity(v: ActivityView) {
     if (this.activeActivityView === v && !this.sidebarCollapsed) {

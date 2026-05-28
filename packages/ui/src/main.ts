@@ -23,7 +23,15 @@ const app = mount(App, { target });
 // Not used in prod code — purely a testing hatch. Kept guarded by `import.meta.env.DEV`
 // so tree-shaking drops it from the production bundle.
 if (import.meta.env.DEV) {
-  (window as unknown as { __kanopi: unknown }).__kanopi = { core, workspace, clock, actors, scenes, openBlocks, ui };
+  (window as unknown as { __kanopi: unknown }).__kanopi = {
+    core,
+    workspace,
+    clock,
+    actors,
+    scenes,
+    openBlocks,
+    ui
+  };
 }
 
 export default app;

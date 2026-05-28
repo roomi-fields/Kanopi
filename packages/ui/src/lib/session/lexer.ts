@@ -27,7 +27,11 @@ export function lex(source: string): LineToks[] {
     if (commentIdx >= 0) {
       const cText = raw.slice(commentIdx);
       const start: Pos = { line, col: commentIdx + 1, offset: startOffset + commentIdx };
-      const end: Pos = { line, col: commentIdx + 1 + cText.length, offset: startOffset + commentIdx + cText.length };
+      const end: Pos = {
+        line,
+        col: commentIdx + 1 + cText.length,
+        offset: startOffset + commentIdx + cText.length
+      };
       comment = { text: cText, range: { start, end } };
       body = raw.slice(0, commentIdx);
     }

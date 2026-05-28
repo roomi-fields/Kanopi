@@ -64,12 +64,9 @@
 
 <div class="files-view">
   <div class="toolbar">
-    <button
-      type="button"
-      class="new-btn"
-      onclick={openDialog}
-      title="New file (name.ext)"
-    >+ New file</button>
+    <button type="button" class="new-btn" onclick={openDialog} title="New file (name.ext)"
+      >+ New file</button
+    >
   </div>
 
   {#if creating}
@@ -96,7 +93,9 @@
 </div>
 
 <style>
-  .files-view { padding: 6px 4px; }
+  .files-view {
+    padding: 6px 4px;
+  }
   .toolbar {
     display: flex;
     padding: 0 6px 6px;
@@ -138,7 +137,9 @@
     outline: none;
     box-sizing: border-box;
   }
-  .create input:focus { border-color: var(--amber); }
+  .create input:focus {
+    border-color: var(--amber);
+  }
   .create-actions {
     display: flex;
     gap: 4px;
@@ -157,8 +158,14 @@
     cursor: pointer;
     font-family: var(--font-mono);
   }
-  .ok:hover { color: var(--amber); border-color: var(--amber); }
-  .cancel:hover { color: var(--text); border-color: var(--border); }
+  .ok:hover {
+    color: var(--amber);
+    border-color: var(--amber);
+  }
+  .cancel:hover {
+    color: var(--text);
+    border-color: var(--border);
+  }
   .err {
     margin: 5px 0 0;
     font-size: 10px;

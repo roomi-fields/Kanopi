@@ -51,7 +51,8 @@ class WorkspaceStore {
       this.openTabIds = [...without, id];
     } else {
       const i = without.indexOf(beforeId);
-      this.openTabIds = i === -1 ? [...without, id] : [...without.slice(0, i), id, ...without.slice(i)];
+      this.openTabIds =
+        i === -1 ? [...without, id] : [...without.slice(0, i), id, ...without.slice(i)];
     }
   }
 

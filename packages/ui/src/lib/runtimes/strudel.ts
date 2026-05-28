@@ -87,18 +87,24 @@ function rawOffsetsFromLocation(loc: unknown): [number, number] | undefined {
   }
   if (loc && typeof loc === 'object') {
     const o = loc as { start?: unknown; end?: unknown };
-    const fromOffset = typeof o.start === 'object' && o.start && 'offset' in (o.start as object)
-      ? Number((o.start as { offset: unknown }).offset)
-      : typeof o.start === 'number'
-      ? o.start
-      : undefined;
-    const toOffset = typeof o.end === 'object' && o.end && 'offset' in (o.end as object)
-      ? Number((o.end as { offset: unknown }).offset)
-      : typeof o.end === 'number'
-      ? o.end
-      : undefined;
-    if (typeof fromOffset === 'number' && typeof toOffset === 'number'
-        && !Number.isNaN(fromOffset) && !Number.isNaN(toOffset)) {
+    const fromOffset =
+      typeof o.start === 'object' && o.start && 'offset' in (o.start as object)
+        ? Number((o.start as { offset: unknown }).offset)
+        : typeof o.start === 'number'
+          ? o.start
+          : undefined;
+    const toOffset =
+      typeof o.end === 'object' && o.end && 'offset' in (o.end as object)
+        ? Number((o.end as { offset: unknown }).offset)
+        : typeof o.end === 'number'
+          ? o.end
+          : undefined;
+    if (
+      typeof fromOffset === 'number' &&
+      typeof toOffset === 'number' &&
+      !Number.isNaN(fromOffset) &&
+      !Number.isNaN(toOffset)
+    ) {
       return [fromOffset, toOffset];
     }
   }
@@ -124,7 +130,9 @@ function setStatus(s: StrudelStatus) {
   status = s;
   for (const cb of statusListeners) cb(s);
 }
-export function strudelStatus(): StrudelStatus { return status; }
+export function strudelStatus(): StrudelStatus {
+  return status;
+}
 export function onStrudelStatus(cb: (s: StrudelStatus) => void): () => void {
   statusListeners.add(cb);
   cb(status);
@@ -183,11 +191,11 @@ function emitTokenFromHap(
   }
   const rawLocs = hap.context?.locations;
   const locations: TokenLocation[] | undefined = rawLocs
-    ? (rawLocs
+    ? rawLocs
         .map((l) => rawOffsetsFromLocation(l))
         .map((pair) => (pair ? mapCompositeToSource(pair[0], pair[1]) : undefined))
         .filter((m): m is { from: number; to: number; fileId: string } => m !== undefined)
-        .map((m) => [m.from, m.to, m.fileId] as TokenLocation))
+        .map((m) => [m.from, m.to, m.fileId] as TokenLocation)
     : undefined;
   // Fall back to the file bound by the latest evaluate() if the mapping
   // didn't resolve (e.g. locations carry an odd shape we don't know).
@@ -209,7 +217,14 @@ function emitTokenFromHap(
 // Inline widget names cm registers on Pattern.prototype via registerWidget()
 // in @strudel/codemirror/widget.mjs:107–142. Source of truth — don't duplicate
 // this list if cm adds/removes entries; grep widget.mjs for `registerWidget(`.
-const INLINE_WIDGET_METHODS = ['_pianoroll', '_scope', '_spectrum', '_punchcard', '_spiral', '_pitchwheel'] as const;
+const INLINE_WIDGET_METHODS = [
+  '_pianoroll',
+  '_scope',
+  '_spectrum',
+  '_punchcard',
+  '_spiral',
+  '_pitchwheel'
+] as const;
 
 /**
  * Bridge cm's inline-widget prototype patches onto @strudel/web's Pattern.
@@ -241,10 +256,13 @@ async function bridgeInlineWidgets(m: StrudelMod): Promise<void> {
   await import('./strudel-cm');
   // @ts-expect-error — @strudel/core has no .d.ts (same as @strudel/web elsewhere in this file).
   const coreMod = await import('@strudel/core');
-  const corePattern = (coreMod as { Pattern?: { prototype?: Record<string, (...a: unknown[]) => unknown> } }).Pattern;
+  const corePattern = (
+    coreMod as { Pattern?: { prototype?: Record<string, (...a: unknown[]) => unknown> } }
+  ).Pattern;
   if (!corePattern?.prototype) return;
   const cmProto = corePattern.prototype!;
-  const webProto = (m as unknown as { Pattern?: { prototype?: Record<string, unknown> } }).Pattern?.prototype;
+  const webProto = (m as unknown as { Pattern?: { prototype?: Record<string, unknown> } }).Pattern
+    ?.prototype;
   if (!webProto) return;
   for (const name of INLINE_WIDGET_METHODS) {
     if (typeof cmProto[name] === 'function') webProto[name] = cmProto[name];
@@ -274,8 +292,10 @@ async function ensure(): Promise<StrudelMod> {
         // @ts-expect-error — @strudel/draw has no .d.ts
         const drawMod = await import('@strudel/draw');
         const DrawerCtor = (drawMod as { Drawer?: new (...a: unknown[]) => DrawerInstance }).Drawer;
-        const getDrawContext = (drawMod as { getDrawContext?: () => CanvasRenderingContext2D }).getDrawContext;
-        const cleanupDraw = (drawMod as { cleanupDraw?: (clear?: boolean, id?: string) => void }).cleanupDraw;
+        const getDrawContext = (drawMod as { getDrawContext?: () => CanvasRenderingContext2D })
+          .getDrawContext;
+        const cleanupDraw = (drawMod as { cleanupDraw?: (clear?: boolean, id?: string) => void })
+          .cleanupDraw;
         // `drawTime = [lookbehind, lookahead]` seconds. Upstream StrudelMirror
         // uses [-2, 2] when painters are active, [0, 0] otherwise to avoid
         // querying a 4-second window when only highlight is needed.
@@ -287,33 +307,57 @@ async function ensure(): Promise<StrudelMod> {
         let drawer: DrawerInstance | undefined;
         let scheduler: unknown;
         if (typeof DrawerCtor === 'function' && typeof getDrawContext === 'function') {
-          drawer = new DrawerCtor((haps: unknown[], time: number, _: unknown, painters: Array<(ctx: CanvasRenderingContext2D, t: number, h: unknown[], dt: readonly number[]) => void>) => {
-            const ctx = getDrawContext();
-            // Mini-notation highlight — mirrors StrudelMirror's per-frame call
-            // (codemirror.mjs:175-178). Upstream highlightMiniLocations reads
-            // `hap.context.locations` which arrive in composite-space (Kanopi
-            // wraps each slot in an IIFE, shifting every offset). We remap to
-            // source-space so the `start:end` IDs match those from
-            // updateMiniLocations() in afterEval — otherwise the
-            // visibleMiniLocations StateField keys never intersect with
-            // miniLocations and nothing highlights.
-            const view = currentEditorView() as Parameters<typeof cmProxy.highlightMiniLocations>[0] | undefined;
-            if (view && typeof cmProxy.highlightMiniLocations === 'function') {
-              const activeHaps: unknown[] = [];
-              for (const h of haps as StrudelHap[]) {
-                const mapped = hapWithMappedLocations(h, time);
-                if (mapped) activeHaps.push(mapped);
+          drawer = new DrawerCtor(
+            (
+              haps: unknown[],
+              time: number,
+              _: unknown,
+              painters: Array<
+                (
+                  ctx: CanvasRenderingContext2D,
+                  t: number,
+                  h: unknown[],
+                  dt: readonly number[]
+                ) => void
+              >
+            ) => {
+              const ctx = getDrawContext();
+              // Mini-notation highlight — mirrors StrudelMirror's per-frame call
+              // (codemirror.mjs:175-178). Upstream highlightMiniLocations reads
+              // `hap.context.locations` which arrive in composite-space (Kanopi
+              // wraps each slot in an IIFE, shifting every offset). We remap to
+              // source-space so the `start:end` IDs match those from
+              // updateMiniLocations() in afterEval — otherwise the
+              // visibleMiniLocations StateField keys never intersect with
+              // miniLocations and nothing highlights.
+              const view = currentEditorView() as
+                | Parameters<typeof cmProxy.highlightMiniLocations>[0]
+                | undefined;
+              if (view && typeof cmProxy.highlightMiniLocations === 'function') {
+                const activeHaps: unknown[] = [];
+                for (const h of haps as StrudelHap[]) {
+                  const mapped = hapWithMappedLocations(h, time);
+                  if (mapped) activeHaps.push(mapped);
+                }
+                try {
+                  cmProxy.highlightMiniLocations(view, time, activeHaps);
+                } catch {
+                  /* dispatch race shouldn't halt the frame */
+                }
               }
-              try { cmProxy.highlightMiniLocations(view, time, activeHaps); }
-              catch { /* dispatch race shouldn't halt the frame */ }
-            }
-            painters?.forEach((p) => {
-              try { p(ctx, time, haps, [-2, 2]); } catch { /* painter glitch shouldn't halt the frame */ }
-            });
-          }, [-2, 2]);
+              painters?.forEach((p) => {
+                try {
+                  p(ctx, time, haps, [-2, 2]);
+                } catch {
+                  /* painter glitch shouldn't halt the frame */
+                }
+              });
+            },
+            [-2, 2]
+          );
         }
 
-        const repl = await mod!.initStrudel({
+        const repl = (await mod!.initStrudel({
           onEvalError: (err: unknown) => {
             latchedError = err;
             emitError(err);
@@ -355,12 +399,20 @@ async function ensure(): Promise<StrudelMod> {
               else {
                 drawer.stop();
                 cleanupDraw?.(true);
-                const view = currentEditorView() as Parameters<typeof cmProxy.updateMiniLocations>[0] | undefined;
+                const view = currentEditorView() as
+                  | Parameters<typeof cmProxy.updateMiniLocations>[0]
+                  | undefined;
                 if (view && typeof cmProxy.updateMiniLocations === 'function') {
-                  try { cmProxy.updateMiniLocations(view, []); } catch { /* best-effort */ }
+                  try {
+                    cmProxy.updateMiniLocations(view, []);
+                  } catch {
+                    /* best-effort */
+                  }
                 }
               }
-            } catch (err) { console.warn('[kanopi/strudel] drawer toggle', err); }
+            } catch (err) {
+              console.warn('[kanopi/strudel] drawer toggle', err);
+            }
           },
           // afterEval fires after the transpiler has produced widget configs
           // for inline `._X()` calls. Each config carries `to` as an offset
@@ -378,10 +430,15 @@ async function ensure(): Promise<StrudelMod> {
           // `.onPaint`-registered painters on the freshly-evaluated pattern
           // get collected for the next frame. Without this, spiral / pitchwheel
           // / punchcard remain blank after eval.
-          afterEval: (options: { meta?: { widgets?: unknown[]; miniLocations?: number[][] }; pattern?: unknown }) => {
+          afterEval: (options: {
+            meta?: { widgets?: unknown[]; miniLocations?: number[][] };
+            pattern?: unknown;
+          }) => {
             const rawWidgets = options?.meta?.widgets ?? [];
             const rawMini = options?.meta?.miniLocations ?? [];
-            const view = currentEditorView() as { state?: { doc?: { length: number } } } | undefined;
+            const view = currentEditorView() as
+              | { state?: { doc?: { length: number } } }
+              | undefined;
             if (view) {
               const docLen = view.state?.doc?.length ?? 0;
 
@@ -398,8 +455,14 @@ async function ensure(): Promise<StrudelMod> {
                 widgets.push({ ...cfg, to: mapped.to, from: mapped.from });
               }
               if (widgets.length && typeof cmProxy.updateWidgets === 'function') {
-                try { cmProxy.updateWidgets(view as Parameters<typeof cmProxy.updateWidgets>[0], widgets); }
-                catch (err) { console.warn('[kanopi/strudel] widget dispatch failed', err); }
+                try {
+                  cmProxy.updateWidgets(
+                    view as Parameters<typeof cmProxy.updateWidgets>[0],
+                    widgets
+                  );
+                } catch (err) {
+                  console.warn('[kanopi/strudel] widget dispatch failed', err);
+                }
               }
 
               // Mini-notation locations — transpiler emits tuples [from, to,
@@ -411,28 +474,38 @@ async function ensure(): Promise<StrudelMod> {
               // ranges to intersect with active haps and nothing lights up.
               const mini: Array<[number, number]> = [];
               for (const loc of rawMini) {
-                if (!Array.isArray(loc) || typeof loc[0] !== 'number' || typeof loc[1] !== 'number') continue;
+                if (!Array.isArray(loc) || typeof loc[0] !== 'number' || typeof loc[1] !== 'number')
+                  continue;
                 const mapped = mapCompositeToSource(loc[0], loc[1]);
                 if (!mapped) continue;
                 if (mapped.from < 0 || mapped.to > docLen) continue;
                 mini.push([mapped.from, mapped.to]);
               }
               if (typeof cmProxy.updateMiniLocations === 'function') {
-                try { cmProxy.updateMiniLocations(view as Parameters<typeof cmProxy.updateMiniLocations>[0], mini); }
-                catch (err) { console.warn('[kanopi/strudel] miniLocations dispatch failed', err); }
+                try {
+                  cmProxy.updateMiniLocations(
+                    view as Parameters<typeof cmProxy.updateMiniLocations>[0],
+                    mini
+                  );
+                } catch (err) {
+                  console.warn('[kanopi/strudel] miniLocations dispatch failed', err);
+                }
               }
             }
             if (drawer && scheduler && options?.pattern) {
               try {
-                const getPainters = (options.pattern as { getPainters?: () => unknown[] }).getPainters;
-                const hasPainters = typeof getPainters === 'function'
-                  && getPainters.call(options.pattern).length > 0;
+                const getPainters = (options.pattern as { getPainters?: () => unknown[] })
+                  .getPainters;
+                const hasPainters =
+                  typeof getPainters === 'function' && getPainters.call(options.pattern).length > 0;
                 drawer.setDrawTime?.(hasPainters ? [-2, 2] : [0, 0]);
                 drawer.invalidate(scheduler);
-              } catch (err) { console.warn('[kanopi/strudel] drawer invalidate', err); }
+              } catch (err) {
+                console.warn('[kanopi/strudel] drawer invalidate', err);
+              }
             }
           }
-        } as Record<string, unknown>) as { scheduler?: unknown };
+        } as Record<string, unknown>)) as { scheduler?: unknown };
         scheduler = repl?.scheduler;
         document.addEventListener('strudel.log', (e) => {
           const detail = (e as CustomEvent).detail as { message?: string; type?: string };
@@ -497,7 +570,7 @@ const slots = new Map<string, { code: string; fileId: string; docOffset: number 
 interface CompositeRange {
   fileId: string;
   codeStart: number; // offset of the first char of user code inside composite
-  codeEnd: number;   // exclusive
+  codeEnd: number; // exclusive
   leadingOffset: number; // chars trimmed from the start of original code
   docOffset: number; // position of the evaluated block inside the source doc
 }

@@ -3,7 +3,11 @@ import { Decoration, EditorView, type DecorationSet } from '@codemirror/view';
 
 export type FlashKind = 'ok' | 'err';
 
-export const setFlashEffect = StateEffect.define<{ from: number; to: number; kind: FlashKind } | null>();
+export const setFlashEffect = StateEffect.define<{
+  from: number;
+  to: number;
+  kind: FlashKind;
+} | null>();
 
 const okMark = Decoration.mark({ class: 'cm-flash-ok' });
 const errMark = Decoration.mark({ class: 'cm-flash-err' });
@@ -37,7 +41,13 @@ export const flashTheme = EditorView.baseTheme({
   }
 });
 
-export function flash(view: EditorView, from: number, to: number, kind: FlashKind, durationMs = 350) {
+export function flash(
+  view: EditorView,
+  from: number,
+  to: number,
+  kind: FlashKind,
+  durationMs = 350
+) {
   view.dispatch({ effects: setFlashEffect.of({ from, to, kind }) });
   setTimeout(() => {
     if (view.state) view.dispatch({ effects: setFlashEffect.of(null) });

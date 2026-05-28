@@ -21,8 +21,20 @@ function staticCommands(): Command[] {
     { id: 'clock.stop', title: 'Stop', category: 'Clock', run: () => clock.stop() },
     { id: 'clock.toggle', title: 'Toggle play/stop', category: 'Clock', run: () => clock.toggle() },
     { id: 'clock.tap', title: 'Tap tempo', category: 'Clock', run: () => clock.tap() },
-    { id: 'console.clear', title: 'Clear console', category: 'View', run: () => consoleLog.clear() },
-    { id: 'midi.enable', title: 'Enable MIDI input', category: 'Hardware', run: () => { void core.enableMidiInput(); } },
+    {
+      id: 'console.clear',
+      title: 'Clear console',
+      category: 'View',
+      run: () => consoleLog.clear()
+    },
+    {
+      id: 'midi.enable',
+      title: 'Enable MIDI input',
+      category: 'Hardware',
+      run: () => {
+        void core.enableMidiInput();
+      }
+    },
     {
       id: 'debug.dump',
       title: 'Debug: dump workspace state to console',
@@ -30,7 +42,12 @@ function staticCommands(): Command[] {
       run: () => {
         // eslint-disable-next-line no-console
         console.log('[kanopi] workspace', {
-          files: workspace.files.map((f) => ({ id: f.id, path: f.path, name: f.name, runtime: f.runtime })),
+          files: workspace.files.map((f) => ({
+            id: f.id,
+            path: f.path,
+            name: f.name,
+            runtime: f.runtime
+          })),
           openTabIds: workspace.openTabIds,
           activeTabId: workspace.activeTabId,
           actors: actors.list,

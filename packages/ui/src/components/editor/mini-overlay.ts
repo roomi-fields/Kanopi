@@ -1,5 +1,11 @@
 import { RangeSetBuilder } from '@codemirror/state';
-import { Decoration, ViewPlugin, type DecorationSet, type EditorView, type ViewUpdate } from '@codemirror/view';
+import {
+  Decoration,
+  ViewPlugin,
+  type DecorationSet,
+  type EditorView,
+  type ViewUpdate
+} from '@codemirror/view';
 
 const op = Decoration.mark({ class: 'cm-mini-op' });
 const rest = Decoration.mark({ class: 'cm-mini-rest' });

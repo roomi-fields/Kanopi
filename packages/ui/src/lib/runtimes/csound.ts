@@ -51,7 +51,10 @@ function emitLifecycle(name: 'eval' | 'stop', fileId: string) {
 async function ensure(log: LogPush): Promise<boolean> {
   if (!instance) {
     const mod = (await import('@csound/browser')) as unknown as {
-      Csound: (params?: { useWorker?: boolean; useSAB?: boolean }) => Promise<CsoundInstance | undefined>;
+      Csound: (params?: {
+        useWorker?: boolean;
+        useSAB?: boolean;
+      }) => Promise<CsoundInstance | undefined>;
     };
     // useSAB:false sidesteps SharedArrayBuffer → no COOP/COEP headers
     // required; Comlink uses MessageChannel instead. Default worker
@@ -109,7 +112,9 @@ export const csoundAdapter: RuntimeAdapter = {
       } else if (!booted) {
         // No CSD ever compiled — we have no <CsOptions>/sr/ksmps header.
         // Nothing we can do with a bare fragment. Direct the user.
-        throw new Error('engine not booted — put the cursor on <CsoundSynthesizer> (line 1) and Ctrl+Enter first');
+        throw new Error(
+          'engine not booted — put the cursor on <CsoundSynthesizer> (line 1) and Ctrl+Enter first'
+        );
       } else if (isInstrBlock) {
         // Redefine an instrument or UDO at runtime. `compileOrc` adds the
         // block to the running performance; `evalCode` only parses/validates

@@ -76,7 +76,11 @@ function splitBlocks(code: string): { from: number; to: number; text: string }[]
     cursor += line.length + 1; // +1 for \n (last line has no \n but it doesn't matter)
     if (line.trim() === '') {
       if (blockStart !== -1) {
-        blocks.push({ from: blockFromOffset, to: blockFromOffset + blockText.length, text: blockText });
+        blocks.push({
+          from: blockFromOffset,
+          to: blockFromOffset + blockText.length,
+          text: blockText
+        });
         blockStart = -1;
         blockText = '';
       }
@@ -195,10 +199,37 @@ function extractJavascript(code: string): CodeBlock[] {
 
 // JS/Strudel reserved words / built-ins we don't want to treat as names.
 const RESERVED = new Set([
-  'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'break', 'continue',
-  'return', 'function', 'class', 'new', 'typeof', 'instanceof', 'delete',
-  'void', 'throw', 'try', 'catch', 'finally', 'import', 'export', 'from',
-  'in', 'of', 'this', 'super', 'yield', 'async', 'await'
+  'if',
+  'else',
+  'for',
+  'while',
+  'do',
+  'switch',
+  'case',
+  'break',
+  'continue',
+  'return',
+  'function',
+  'class',
+  'new',
+  'typeof',
+  'instanceof',
+  'delete',
+  'void',
+  'throw',
+  'try',
+  'catch',
+  'finally',
+  'import',
+  'export',
+  'from',
+  'in',
+  'of',
+  'this',
+  'super',
+  'yield',
+  'async',
+  'await'
 ]);
 
 /* ----------------------------------------------------------------- Csound */

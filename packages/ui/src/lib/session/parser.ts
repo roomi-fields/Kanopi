@@ -24,39 +24,78 @@ export function parseSession(source: string): SessionAST {
 
     if (head.text === '@library') {
       if (args.length < 1) {
-        nodes.push({ type: 'malformed', text: l.text, reason: '@library expects: @library <bank-id>', range });
-        diagnostics.push({ severity: 'error', message: '@library expects a bank id (e.g. dirt-samples)', range });
+        nodes.push({
+          type: 'malformed',
+          text: l.text,
+          reason: '@library expects: @library <bank-id>',
+          range
+        });
+        diagnostics.push({
+          severity: 'error',
+          message: '@library expects a bank id (e.g. dirt-samples)',
+          range
+        });
         continue;
       }
       nodes.push({ type: 'library', id: args[0], range });
     } else if (head.text === '@time') {
       if (args.length < 1) {
-        nodes.push({ type: 'malformed', text: l.text, reason: '@time expects: @time N or @time N/D', range });
-        diagnostics.push({ severity: 'error', message: '@time expects a value (e.g. 4 or 3/4)', range });
+        nodes.push({
+          type: 'malformed',
+          text: l.text,
+          reason: '@time expects: @time N or @time N/D',
+          range
+        });
+        diagnostics.push({
+          severity: 'error',
+          message: '@time expects a value (e.g. 4 or 3/4)',
+          range
+        });
         continue;
       }
       const raw = args[0];
       const m = /^(\d+)(?:\/(\d+))?$/.exec(raw.text);
       if (!m) {
-        nodes.push({ type: 'malformed', text: l.text, reason: `@time "${raw.text}" invalid (expect N or N/D, e.g. 3/4)`, range });
-        diagnostics.push({ severity: 'error', message: `@time "${raw.text}" invalid — expected N or N/D like 3/4`, range: raw.range });
+        nodes.push({
+          type: 'malformed',
+          text: l.text,
+          reason: `@time "${raw.text}" invalid (expect N or N/D, e.g. 3/4)`,
+          range
+        });
+        diagnostics.push({
+          severity: 'error',
+          message: `@time "${raw.text}" invalid — expected N or N/D like 3/4`,
+          range: raw.range
+        });
         continue;
       }
       const num = parseInt(m[1], 10);
       const den = m[2] ? parseInt(m[2], 10) : undefined;
       if (num < 1 || num > 32) {
-        diagnostics.push({ severity: 'error', message: `@time numerator must be 1..32 (got ${num})`, range: raw.range });
+        diagnostics.push({
+          severity: 'error',
+          message: `@time numerator must be 1..32 (got ${num})`,
+          range: raw.range
+        });
         continue;
       }
       if (den !== undefined && ![1, 2, 4, 8, 16, 32].includes(den)) {
-        diagnostics.push({ severity: 'warning', message: `@time denominator ${den} unusual (expected 1/2/4/8/16/32)`, range: raw.range });
+        diagnostics.push({
+          severity: 'warning',
+          message: `@time denominator ${den} unusual (expected 1/2/4/8/16/32)`,
+          range: raw.range
+        });
       }
       const baseStart = raw.range.start;
       const subToken = (text: string, off: number): Token => ({
         text,
         range: {
           start: { line: baseStart.line, col: baseStart.col + off, offset: baseStart.offset + off },
-          end: { line: baseStart.line, col: baseStart.col + off + text.length, offset: baseStart.offset + off + text.length }
+          end: {
+            line: baseStart.line,
+            col: baseStart.col + off + text.length,
+            offset: baseStart.offset + off + text.length
+          }
         }
       });
       nodes.push({
@@ -67,34 +106,58 @@ export function parseSession(source: string): SessionAST {
       });
     } else if (head.text === '@actor') {
       if (args.length < 3) {
-        nodes.push({ type: 'malformed', text: l.text, reason: '@actor expects: @actor <name> <file> <runtime>', range });
+        nodes.push({
+          type: 'malformed',
+          text: l.text,
+          reason: '@actor expects: @actor <name> <file> <runtime>',
+          range
+        });
         diagnostics.push({ severity: 'error', message: '@actor expects 3 arguments', range });
         continue;
       }
       nodes.push({ type: 'actor', name: args[0], file: args[1], runtime: args[2], range });
     } else if (head.text === '@scene') {
       if (args.length < 1) {
-        nodes.push({ type: 'malformed', text: l.text, reason: '@scene expects: @scene <name> [actors...]', range });
+        nodes.push({
+          type: 'malformed',
+          text: l.text,
+          reason: '@scene expects: @scene <name> [actors...]',
+          range
+        });
         diagnostics.push({ severity: 'error', message: '@scene expects at least a name', range });
         continue;
       }
       nodes.push({ type: 'scene', name: args[0], actors: args.slice(1), range });
     } else if (head.text === '@map') {
       if (args.length < 2) {
-        nodes.push({ type: 'malformed', text: l.text, reason: '@map expects: @map <source> <target>', range });
+        nodes.push({
+          type: 'malformed',
+          text: l.text,
+          reason: '@map expects: @map <source> <target>',
+          range
+        });
         diagnostics.push({ severity: 'error', message: '@map expects 2 arguments', range });
         continue;
       }
       const source = parseSource(args[0], diagnostics);
       const target = parseTarget(args[1], diagnostics);
       if (!source || !target) {
-        nodes.push({ type: 'malformed', text: l.text, reason: 'invalid @map source or target', range });
+        nodes.push({
+          type: 'malformed',
+          text: l.text,
+          reason: 'invalid @map source or target',
+          range
+        });
         continue;
       }
       nodes.push({ type: 'map', source, target, range });
     } else {
       nodes.push({ type: 'unknown', keyword: head, range });
-      diagnostics.push({ severity: 'error', message: `unknown directive "${head.text}"`, range: head.range });
+      diagnostics.push({
+        severity: 'error',
+        message: `unknown directive "${head.text}"`,
+        range: head.range
+      });
     }
   }
 
@@ -113,7 +176,11 @@ function parseSource(tok: Token, diagnostics: Diagnostic[]): MapSourceNode | nul
   }
   const [, kindText, idxText, chText] = m;
   if (!['cv', 'trig', 'gate'].includes(kindText)) {
-    diagnostics.push({ severity: 'error', message: `unknown source kind "${kindText}"`, range: tok.range });
+    diagnostics.push({
+      severity: 'error',
+      message: `unknown source kind "${kindText}"`,
+      range: tok.range
+    });
     return null;
   }
 
@@ -122,7 +189,11 @@ function parseSource(tok: Token, diagnostics: Diagnostic[]): MapSourceNode | nul
   const subToken = (text: string, offsetInTok: number): Token => ({
     text,
     range: {
-      start: { line: baseStart.line, col: baseStart.col + offsetInTok, offset: baseStart.offset + offsetInTok },
+      start: {
+        line: baseStart.line,
+        col: baseStart.col + offsetInTok,
+        offset: baseStart.offset + offsetInTok
+      },
       end: {
         line: baseStart.line,
         col: baseStart.col + offsetInTok + text.length,
@@ -133,9 +204,7 @@ function parseSource(tok: Token, diagnostics: Diagnostic[]): MapSourceNode | nul
 
   const kind = subToken(kindText, 0);
   const index = subToken(idxText, kindText.length + 1);
-  const channel = chText
-    ? subToken(chText, kindText.length + 1 + idxText.length + 3)
-    : undefined;
+  const channel = chText ? subToken(chText, kindText.length + 1 + idxText.length + 3) : undefined;
 
   return { kind, index, channel, range: tok.range };
 }
@@ -147,7 +216,11 @@ function parseTarget(tok: Token, diagnostics: Diagnostic[]): MapTargetNode | nul
     text: s,
     range: {
       start: { line: baseStart.line, col: baseStart.col + off, offset: baseStart.offset + off },
-      end: { line: baseStart.line, col: baseStart.col + off + s.length, offset: baseStart.offset + off + s.length }
+      end: {
+        line: baseStart.line,
+        col: baseStart.col + off + s.length,
+        offset: baseStart.offset + off + s.length
+      }
     }
   });
 

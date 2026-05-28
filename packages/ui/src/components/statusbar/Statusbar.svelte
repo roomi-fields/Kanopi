@@ -18,7 +18,9 @@
   const bpmStr = $derived(clock.state.bpm.toFixed(1));
   const posStr = $derived(fmt3(clock.state.bar) + '.' + fmt2(clock.state.beat + 1));
   const sceneName = $derived(scenes.active?.name ?? '—');
-  const activeRuntimes = $derived(new Set(actors.list.filter((a) => a.active).map((a) => a.runtime)).size);
+  const activeRuntimes = $derived(
+    new Set(actors.list.filter((a) => a.active).map((a) => a.runtime)).size
+  );
   const errors = $derived(consoleLog.entries.filter((e) => e.level === 'error').length);
 </script>
 
@@ -74,8 +76,16 @@
     letter-spacing: 0.06em;
   }
 
-  .sb-group { display: flex; align-items: center; gap: 18px; }
-  .sb-item { display: flex; align-items: center; gap: 6px; }
+  .sb-group {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .sb-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
 
   .sb-dot {
     width: 6px;
@@ -92,12 +102,28 @@
   }
 
   @keyframes sb-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.85); }
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.4;
+      transform: scale(0.85);
+    }
   }
 
-  .sb-item .accent { color: var(--amber); }
-  .sb-item .dim { color: var(--text-dim); }
-  .sb-item .num { color: var(--text); font-variant-numeric: tabular-nums; }
-  .sb-sep { color: var(--text-faint); }
+  .sb-item .accent {
+    color: var(--amber);
+  }
+  .sb-item .dim {
+    color: var(--text-dim);
+  }
+  .sb-item .num {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .sb-sep {
+    color: var(--text-faint);
+  }
 </style>

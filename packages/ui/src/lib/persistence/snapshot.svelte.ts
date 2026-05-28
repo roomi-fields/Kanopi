@@ -3,12 +3,7 @@ import { clock } from '../../stores/clock.svelte';
 import { scenes } from '../../stores/scenes.svelte';
 import { actors } from '../../stores/actors.svelte';
 import { ui } from '../../stores/ui.svelte';
-import {
-  debounce,
-  loadWorkspace,
-  saveWorkspace,
-  type PersistedWorkspace
-} from './workspace-db';
+import { debounce, loadWorkspace, saveWorkspace, type PersistedWorkspace } from './workspace-db';
 
 function snapshot(): PersistedWorkspace {
   return {
