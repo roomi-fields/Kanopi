@@ -1,0 +1,10 @@
+node_modules
+packages/*/node_modules
+packages/*/dist
+.git
+.github
+*.log
+_archive
+docs/plan
+test-results
+playwright-report
