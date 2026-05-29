@@ -2,11 +2,19 @@ import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// Subpath deployment support: GitHub Actions exports VITE_BASE_PATH=/kanopi/
+// before `npm run build` so assets and the service-worker scope resolve under
+// https://roomi-fields.com/kanopi/. Dev and tests keep the default `/`.
+const BASE_PATH = process.env.VITE_BASE_PATH ?? '/';
+
 export default defineConfig({
+  base: BASE_PATH,
   plugins: [
     svelte(),
     VitePWA({
       registerType: 'autoUpdate',
+      base: BASE_PATH,
+      scope: BASE_PATH,
       includeAssets: ['favicon.png', 'apple-touch-icon.png', 'icon.svg'],
       manifest: {
         name: 'Kanopi',
@@ -15,8 +23,8 @@ export default defineConfig({
         theme_color: '#13161a',
         background_color: '#13161a',
         display: 'standalone',
-        start_url: '/',
-        scope: '/',
+        start_url: BASE_PATH,
+        scope: BASE_PATH,
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
