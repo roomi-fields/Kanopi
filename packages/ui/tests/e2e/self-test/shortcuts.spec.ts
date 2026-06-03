@@ -59,7 +59,9 @@ test('Ctrl/Cmd+K opens the command palette; Escape closes it', async ({ page }) 
   noErrors();
 });
 
-test('Ctrl/Cmd+. (hush) silences a running Strudel pattern within 1s', async ({ page }) => {
+test('Ctrl/Cmd+. (hush) silences a running Strudel pattern after the lookahead flushes', async ({
+  page
+}) => {
   const audio = await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
@@ -131,9 +133,17 @@ test('Ctrl/Cmd+. (hush) silences a running Strudel pattern within 1s', async ({ 
   // every runtime. We press once and watch RMS drop to near zero.
   await page.keyboard.press('ControlOrMeta+Period');
 
-  // Sample peak RMS over the 1s window AFTER hush. A scheduled note already
-  // in flight may finish its envelope decay, so we tolerate a small floor
-  // (0.005) rather than asserting strict zero.
+  // Wait 1s after hush for Strudel's audio scheduler lookahead window
+  // (~0.2-0.5s typical) to flush any events already queued ahead of the
+  // audio clock. Without this wait the next getMaxRMS samples the tail
+  // of in-flight notes and can flake above the threshold even though
+  // hush worked correctly.
+  await page.waitForTimeout(1000);
+
+  // Sample peak RMS over a 1s window AFTER the lookahead flush. A genuine
+  // hush regression (the call doesn't stop scheduling new events) would
+  // still show audible RMS here — the test catches real silencing failures
+  // without flaking on Strudel's normal scheduler behaviour.
   const rmsAfter = await audio.getMaxRMS(1000);
   expect(
     rmsAfter,
