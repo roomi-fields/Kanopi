@@ -20,7 +20,7 @@ test('session 01 - strudel solo evaluates and produces audio', async ({ page }) 
   const sessionContents = readFileSync(join(BUNDLED, '01-strudel-solo.kanopi'), 'utf8');
   const actorContents = readFileSync(join(BUNDLED, '01-drums.strudel'), 'utf8');
 
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   // Inject via the dev-only `window.__kanopi` hatch (main.ts:25-35).

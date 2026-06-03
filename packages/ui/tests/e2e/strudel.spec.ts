@@ -22,7 +22,7 @@ test('strudel evaluates a block and produces audio', async ({ page }) => {
   const sessionContents = readFileSync(join(fixturesDir, 'strudel.kanopi'), 'utf8');
   const actorContents = readFileSync(join(fixturesDir, 'beat.strudel'), 'utf8');
 
-  await page.goto('/');
+  await page.goto('');
   // Shell is ready when the KANOPI brand is visible — same gate smoke.spec uses.
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 

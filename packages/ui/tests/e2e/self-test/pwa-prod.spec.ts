@@ -41,7 +41,7 @@ test.describe('PWA prod sanity', () => {
   });
 
   test('service worker is registered with a /kanopi/ scope', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('');
     // vite-plugin-pwa registers the SW from main.ts via registerSW() after the
     // shell mounts. Give it a moment — the registration is async and the
     // service worker file itself is fetched in the background.
@@ -60,7 +60,7 @@ test.describe('PWA prod sanity', () => {
   });
 
   test('all script src and stylesheet href elements resolve to HTTP 200', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('');
     // Wait for the shell so we know the index has fully parsed and any
     // dynamically inserted asset links (preload, modulepreload) are present.
     await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 15_000 });
@@ -96,7 +96,7 @@ test.describe('PWA prod sanity', () => {
 
   test('no browser console errors in the first 5 seconds after load', async ({ page }) => {
     const assertNoErrors = expectNoConsoleErrors(page);
-    await page.goto('/');
+    await page.goto('');
     await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 15_000 });
     // Five-second observation window per spec — long enough for deferred
     // adapter imports and the service worker fetch to surface any errors.

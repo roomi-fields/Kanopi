@@ -26,7 +26,7 @@ test('mercury evaluates a block and produces audio', async ({ page }) => {
   const sessionContents = readFileSync(join(fixturesDir, 'mercury.kanopi'), 'utf8');
   const actorContents = readFileSync(join(fixturesDir, 'melody.mercury'), 'utf8');
 
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   await page.evaluate(

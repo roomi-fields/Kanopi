@@ -18,7 +18,7 @@ test('multi-actor kanopi session parses, populates actors panel, and starts tran
   const fixturesDir = fileURLToPath(new URL('../fixtures', import.meta.url));
   const sessionContents = readFileSync(join(fixturesDir, 'multi-actor.kanopi'), 'utf8');
 
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   // Inject the session via the dev-only `window.__kanopi` hatch. Only the

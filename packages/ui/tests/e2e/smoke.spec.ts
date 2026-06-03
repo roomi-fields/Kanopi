@@ -3,7 +3,7 @@ import { expectNoConsoleErrors } from '../helpers';
 
 test('app boots without console errors', async ({ page }) => {
   const assertNoErrors = expectNoConsoleErrors(page);
-  await page.goto('/');
+  await page.goto('');
   // The IDE shell mounts immediately regardless of whether any file is open:
   // top bar with the KANOPI brand, sidebar list, footer status. No file is
   // opened by default — the editor itself shows "no file open" until you click

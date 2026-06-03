@@ -16,7 +16,7 @@ test('hydra evaluates a patch and produces non-black GL pixels', async ({ page }
   const sessionContents = readFileSync(join(fixturesDir, 'hydra.kanopi'), 'utf8');
   const actorContents = readFileSync(join(fixturesDir, 'viz.hydra'), 'utf8');
 
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   // Inject the fixture via the dev-only `window.__kanopi` hatch installed by

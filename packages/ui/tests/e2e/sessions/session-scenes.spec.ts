@@ -21,7 +21,7 @@ test('session 03 - scenes A/B switch atomically arms different actor sets', asyn
   const drumsContents = readFileSync(join(BUNDLED, '03-drums.strudel'), 'utf8');
   const leadContents = readFileSync(join(BUNDLED, '03-lead.strudel'), 'utf8');
 
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   await page.evaluate(

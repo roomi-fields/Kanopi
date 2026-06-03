@@ -14,7 +14,7 @@ test('p5 evaluates a sketch and paints non-background pixels', async ({ page }) 
   const sessionContents = readFileSync(join(fixturesDir, 'p5.kanopi'), 'utf8');
   const actorContents = readFileSync(join(fixturesDir, 'sketch.p5'), 'utf8');
 
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   // Same dev-hatch injection pattern as the strudel/hydra specs.

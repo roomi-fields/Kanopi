@@ -25,7 +25,7 @@ test('session 02 - strudel + hydra produce audio and visuals on a shared clock',
   const drumsContents = readFileSync(join(BUNDLED, '02-drums.strudel'), 'utf8');
   const vizContents = readFileSync(join(BUNDLED, '02-moire.hydra'), 'utf8');
 
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   await page.evaluate(

@@ -36,7 +36,7 @@ const BUNDLED = fileURLToPath(new URL('../../../../library/bundled', import.meta
 
 test('Ctrl/Cmd+K opens the command palette; Escape closes it', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   const palette = page.locator('.palette[role="dialog"]');
@@ -67,7 +67,7 @@ test('Ctrl/Cmd+. (hush) silences a running Strudel pattern within 1s', async ({ 
   const sessionContents = readFileSync(join(BUNDLED, '01-strudel-solo.kanopi'), 'utf8');
   const drumsContents = readFileSync(join(BUNDLED, '01-drums.strudel'), 'utf8');
 
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   await page.evaluate(
@@ -151,7 +151,7 @@ test('Alt+1 / Alt+2 activate scenes 1 and 2 in a multi-scene session', async ({ 
   const drumsContents = readFileSync(join(BUNDLED, '03-drums.strudel'), 'utf8');
   const leadContents = readFileSync(join(BUNDLED, '03-lead.strudel'), 'utf8');
 
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   await page.evaluate(
@@ -227,7 +227,7 @@ test('Shift+Enter evaluates the current line only — a comment line does not th
   const sessionContents = readFileSync(join(BUNDLED, '01-strudel-solo.kanopi'), 'utf8');
   const drumsContents = readFileSync(join(BUNDLED, '01-drums.strudel'), 'utf8');
 
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   await page.evaluate(
@@ -351,7 +351,7 @@ test('Tab accepts the highlighted suggestion when the autocomplete popup is open
   const sessionContents = readFileSync(join(BUNDLED, '01-strudel-solo.kanopi'), 'utf8');
   const drumsContents = readFileSync(join(BUNDLED, '01-drums.strudel'), 'utf8');
 
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   await page.evaluate(

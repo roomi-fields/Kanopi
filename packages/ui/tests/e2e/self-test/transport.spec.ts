@@ -22,7 +22,7 @@ const POS_LOCATOR = '.sb-item[title^="bar.beat"] .num';
 
 test('Play button click activates transport', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   // Sanity: Play button starts WITHOUT the `.playing` class.
@@ -49,7 +49,7 @@ test('bar.beat counter advances within 3 seconds after Play at default BPM (128)
   page
 }) => {
   const noErrors = expectNoConsoleErrors(page);
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   const posBefore = (await page.locator(POS_LOCATOR).innerText()).trim();
@@ -86,7 +86,7 @@ test('bar.beat counter advances within 3 seconds after Play at default BPM (128)
 test.fixme('BPM widget shows 128 by default; clicking it and typing a new value updates the displayed tempo', async ({
   page
 }) => {
-  await page.goto('/');
+  await page.goto('');
   // No editable BPM widget exists yet — see comment above. When one lands,
   // this test should: assert ".bpm-value" reads "128", click into it,
   // type "100", press Enter, and assert ".bpm-value" reads "100".
@@ -94,7 +94,7 @@ test.fixme('BPM widget shows 128 by default; clicking it and typing a new value 
 
 test('TAP tempo: 4 clicks at ~500ms intervals land BPM in 100-140 range', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   // 500ms between taps → 120 BPM. MockClock.tap() (mock-runtime.ts:161-172)
@@ -136,7 +136,7 @@ test('TAP tempo: 4 clicks at ~500ms intervals land BPM in 100-140 range', async 
 
 test('Stop button halts the transport — bar.beat freezes', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   // Start.

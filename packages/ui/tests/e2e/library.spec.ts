@@ -16,7 +16,7 @@ test('library: bundled starter loads via the Library panel and evaluates', async
     void dialog.accept();
   });
 
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   // Activity bar button: every entry renders an <ActivityItem> whose

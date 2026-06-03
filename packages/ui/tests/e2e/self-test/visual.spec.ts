@@ -114,7 +114,7 @@ async function loadStarter(
 
 test('boot screenshot of the empty shell with no session open', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
-  await page.goto('/');
+  await page.goto('');
   await waitForShell(page);
   await freezeAnimations(page);
 
@@ -129,7 +129,7 @@ test('boot screenshot of the empty shell with no session open', async ({ page })
 
 test('Library panel screenshot shows the 3 bundled starters listed', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
-  await page.goto('/');
+  await page.goto('');
   await waitForShell(page);
 
   // Open Library via the activity bar button (same selector used by
@@ -164,7 +164,7 @@ test('starter 01 (Strudel solo) loaded and evaluated', async ({ page }) => {
   const session = readFileSync(join(BUNDLED, '01-strudel-solo.kanopi'), 'utf8');
   const actor = readFileSync(join(BUNDLED, '01-drums.strudel'), 'utf8');
 
-  await page.goto('/');
+  await page.goto('');
   await waitForShell(page);
 
   await loadStarter(
@@ -203,7 +203,7 @@ test('starter 02 (Strudel + Hydra) loaded and evaluated', async ({ page }) => {
   const drums = readFileSync(join(BUNDLED, '02-drums.strudel'), 'utf8');
   const viz = readFileSync(join(BUNDLED, '02-moire.hydra'), 'utf8');
 
-  await page.goto('/');
+  await page.goto('');
   await waitForShell(page);
 
   await loadStarter(
@@ -275,7 +275,7 @@ test('starter 03 (Scenes A / B) loaded and evaluated', async ({ page }) => {
   const drums = readFileSync(join(BUNDLED, '03-drums.strudel'), 'utf8');
   const lead = readFileSync(join(BUNDLED, '03-lead.strudel'), 'utf8');
 
-  await page.goto('/');
+  await page.goto('');
   await waitForShell(page);
 
   await loadStarter(

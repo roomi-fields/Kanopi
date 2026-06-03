@@ -14,7 +14,7 @@ import { setupAudioCapture } from '../../helpers';
 // same `level: 'error'` entry that ConsolePanel renders with `.level-error`.
 
 test('Malformed @actor directive surfaces a lint diagnostic in CodeMirror', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   // A `.kanopi` file with a single malformed directive — `@actor` with no
@@ -51,7 +51,7 @@ test('Broken Strudel JS triggers a red flash on eval', async ({ page }) => {
   // sound, but if a regression suddenly let it through we'd want to notice.
   await setupAudioCapture(page);
 
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   // Minimal session + intentionally broken actor body — `note("c` is an
@@ -152,7 +152,7 @@ test('Broken Strudel JS triggers a red flash on eval', async ({ page }) => {
 test('Failed Strudel eval surfaces an error entry in the Console panel', async ({ page }) => {
   await setupAudioCapture(page);
 
-  await page.goto('/');
+  await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   const session = '@actor broken broken.strudel strudel\n@scene main broken\n';
