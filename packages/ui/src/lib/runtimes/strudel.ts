@@ -614,6 +614,20 @@ if (typeof window !== 'undefined') {
   };
 }
 
+// True when `code` contains no executable JS after stripping block / line
+// comments and whitespace. Used by buildComposite to short-circuit a slot
+// whose body is comment-only — wrapping `// foo` in `return (\n...\n);`
+// produces `return ( );` after the JS parser strips comments, which is a
+// SyntaxError ("Unexpected token ')'") that bypasses the try/catch around
+// the IIFE (parsing fails before the try statement is reached).
+function isCommentOnlyOrEmpty(code: string): boolean {
+  const stripped = code
+    .replace(/\/\*[\s\S]*?\*\//g, '') // block comments
+    .replace(/\/\/[^\n]*/g, '') // line comments
+    .trim();
+  return stripped.length === 0;
+}
+
 function buildComposite(): string {
   compositeRanges = [];
   compositeSlotIds = [];
@@ -631,12 +645,23 @@ function buildComposite(): string {
   //   the same line as `return` keeps the expression open across newlines.
   // - Code offsets for `compositeRanges` point at the user code inside the
   //   `return` statement, so mini-notation location mapping still works.
+  // - A comment-only / empty body skips the wrapper entirely and emits
+  //   `return silence;` directly — see isCommentOnlyOrEmpty.
   const prefix = '$: ((() => { try { return (\n';
   let first = true;
   for (const [slotId, slot] of slots) {
     if (!first) {
       parts.push(sep);
       pos += sep.length;
+    }
+    const idx = compositeSlotIds.length;
+    compositeSlotIds.push(slotId);
+    if (isCommentOnlyOrEmpty(slot.code)) {
+      const stub = `$: ((() => { try { return silence; } catch (e) { ${REPORT_FN}(${idx}, e); return silence; } })())`;
+      parts.push(stub);
+      pos += stub.length;
+      first = false;
+      continue;
     }
     parts.push(prefix);
     pos += prefix.length;
@@ -656,8 +681,6 @@ function buildComposite(): string {
     pos = codeEnd;
     // Numeric index into compositeSlotIds — Strudel transpile turns string
     // literals into mini-notation Patterns, numbers are left untouched.
-    const idx = compositeSlotIds.length;
-    compositeSlotIds.push(slotId);
     const tail = `\n); } catch (e) { ${REPORT_FN}(${idx}, e); return silence; } })())`;
     parts.push(tail);
     pos += tail.length;

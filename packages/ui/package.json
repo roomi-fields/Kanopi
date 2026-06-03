@@ -14,6 +14,11 @@
     "format": "prettier --write .",
     "test": "vitest run -c vitest.config.ts",
     "e2e": "playwright test",
+    "e2e:dev": "playwright test",
+    "e2e:prod": "KANOPI_BASE_URL=https://roomi-fields.com/kanopi/ playwright test",
+    "e2e:cross": "KANOPI_CROSS_BROWSER=1 playwright test",
+    "e2e:prod:cross": "KANOPI_BASE_URL=https://roomi-fields.com/kanopi/ KANOPI_CROSS_BROWSER=1 playwright test",
+    "e2e:visual:update": "playwright test tests/e2e/self-test/visual.spec.ts --update-snapshots",
     "verify": "npm run check && npm run lint && npm run test && npm run e2e"
   },
   "dependencies": {
