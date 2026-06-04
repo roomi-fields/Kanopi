@@ -42,7 +42,6 @@ export const jsAdapter: RuntimeAdapter = {
       const helpers = {
         register: (stop: () => void) => stoppers.push(stop)
       };
-      // eslint-disable-next-line no-new-func
       const fn = new Function('audio', 'helpers', code);
       fn(audio, helpers);
       sources.set(srcKey(src), () => stoppers.forEach((s) => s()));

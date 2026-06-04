@@ -780,7 +780,6 @@ export const strudelAdapter: RuntimeAdapter = {
     // We eval a tiny Strudel expression that calls setcps (provided by @strudel/core via makeGlobal).
     if (!mod) return;
     try {
-      // eslint-disable-next-line no-new-func
       new Function('bpm', 'setcps(bpm/60/4)')(bpm);
     } catch {
       /* setcps may not be installed yet */
@@ -793,7 +792,6 @@ export const strudelAdapter: RuntimeAdapter = {
     // hash-comment lines (Kanopi's auto-generated file headers use `#`).
     const stripped = code.replace(/^\s*#[^\n]*$/gm, '');
     try {
-      // eslint-disable-next-line no-new, no-new-func
       new Function(stripped);
     } catch (err) {
       log({ runtime: 'strudel', level: 'error', msg: `parse: ${String(err)}` });

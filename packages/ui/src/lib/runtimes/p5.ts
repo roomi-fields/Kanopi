@@ -153,7 +153,6 @@ function buildSketchBody(userCode: string): string {
 }
 
 function runSketch(p: P5Instance, userCode: string) {
-  // eslint-disable-next-line no-new-func
   const fn = new Function('__scope__', buildSketchBody(userCode));
   fn(p);
 }

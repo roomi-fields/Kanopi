@@ -8,6 +8,11 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helper
 // the same UI flow a real user would — proving the bundled/*.kanopi files
 // reach the Library panel via the ?raw imports added in starters.ts.
 test('library: bundled starter loads via the Library panel and evaluates', async ({ page }) => {
+  // Prod adds ~10-15s of network latency over dev (Strudel core lazy-loaded,
+  // SW warm-up, HTTPS handshake). Bump per-test timeout to 60s so the full
+  // load-evaluate-audio-RMS chain fits with margin against the live URL.
+  test.setTimeout(60_000);
+
   const audio = await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
@@ -33,32 +38,24 @@ test('library: bundled starter loads via the Library panel and evaluates', async
   await card.getByRole('button', { name: 'load' }).click();
 
   // After load, the .kanopi tab is opened by workspace.loadFiles and the
-  // actor file is opened asynchronously by App.svelte's queueMicrotask.
-  // Wait for both files to be present in the workspace, then switch the
-  // editor to the actor body before evaluating.
-  await page.waitForFunction(() => {
-    const w = window as unknown as {
-      __kanopi?: { workspace: { files: { path: string }[] } };
-    };
-    const paths = w.__kanopi?.workspace.files.map((f) => f.path) ?? [];
-    return paths.includes('01-strudel-solo.kanopi') && paths.includes('01-drums.strudel');
+  // actor file is opened asynchronously by App.svelte's queueMicrotask
+  // (see App.svelte:73). We verify via the visible DOM only — the dev-only
+  // `window.__kanopi` hatch is not exposed in production builds.
+  //
+  // The session tab `01-strudel-solo.kanopi` opens first and is set active;
+  // the actor tab `01-drums.strudel` appears once the queueMicrotask resolves.
+  await expect(page.locator('.tab .name', { hasText: '01-strudel-solo.kanopi' })).toBeVisible({
+    timeout: 10_000
   });
-  await page.evaluate(() => {
-    const w = window as unknown as {
-      __kanopi: {
-        workspace: {
-          files: { id: string; path: string }[];
-          openFile: (id: string) => void;
-          setActive: (id: string) => void;
-        };
-      };
-    };
-    const target = w.__kanopi.workspace.files.find((f) => f.path === '01-drums.strudel');
-    if (target) {
-      w.__kanopi.workspace.openFile(target.id);
-      w.__kanopi.workspace.setActive(target.id);
-    }
+  const actorTab = page.locator('.tab', {
+    has: page.locator('.name', { hasText: '01-drums.strudel' })
   });
+  await expect(actorTab).toBeVisible({ timeout: 10_000 });
+
+  // Activate the actor tab so the editor binds to its document. Without this
+  // the session (.kanopi) doc is mounted and evaluating line 4 hits a comment.
+  await actorTab.click();
+  await expect(actorTab).toHaveClass(/active/, { timeout: 5_000 });
 
   // CMEditor mounts on the actor file once .cm-content is visible.
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });

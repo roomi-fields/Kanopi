@@ -13,7 +13,6 @@ declare module 'hydra-synth' {
     enableStreamCapture?: boolean;
     autoLoop?: boolean;
   }
-  // eslint-disable-next-line @typescript-eslint/no-extraneous-class
   class Hydra {
     constructor(opts: HydraOptions);
   }
@@ -54,6 +53,5 @@ declare module 'mercury-engine' {
     silence: () => void;
     setBPM: (bpm: number, ramp?: number) => void;
   }
-  // eslint-disable-next-line @typescript-eslint/no-extraneous-class
   export const Mercury: new (opts?: MercuryOptions) => MercuryInstance;
 }

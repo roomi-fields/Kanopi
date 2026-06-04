@@ -40,7 +40,6 @@ function staticCommands(): Command[] {
       title: 'Debug: dump workspace state to console',
       category: 'Debug',
       run: () => {
-        // eslint-disable-next-line no-console
         console.log('[kanopi] workspace', {
           files: workspace.files.map((f) => ({
             id: f.id,

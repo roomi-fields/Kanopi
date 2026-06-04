@@ -136,7 +136,6 @@ export function attachHydraCanvas(el: HTMLCanvasElement) {
  */
 function evalInHydraScope(code: string): void {
   if (!instance) throw new Error('hydra not ready');
-  // eslint-disable-next-line no-new-func
   const fn = new Function('__scope__', `with (__scope__) { ${code}\n}`);
   fn(instance.synth);
 }
