@@ -18,6 +18,15 @@ const BUNDLED = fileURLToPath(new URL('../../../../library/bundled', import.meta
 test('session 02 - strudel + hydra produce audio and visuals on a shared clock', async ({
   page
 }) => {
+  // This is the only starter that boots BOTH a Strudel scheduler AND a Hydra
+  // GL canvas in the same page. On the user's WSL2 dev box the cumulative
+  // cost (goto + two evalBlockAt with their flash-appear/detach waits + 700ms
+  // hydra-rAF settle + 2.5s peak-RMS sample) routinely consumes 28-32s of
+  // wall clock — exceeding Playwright's 30s default and flaking the test.
+  // The full-suite library spec uses the same 60-90s budget for the same
+  // reason; we mirror it here with margin.
+  test.setTimeout(90_000);
+
   const audio = await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 

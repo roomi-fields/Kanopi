@@ -196,6 +196,17 @@ test('starter 01 (Strudel solo) loaded and evaluated', async ({ page }) => {
 });
 
 test('starter 02 (Strudel + Hydra) loaded and evaluated', async ({ page }) => {
+  // This test combines the two slowest cold-boot paths in the project (Strudel
+  // core import + Hydra/regl WebGL context). On the user's WSL2 machine the
+  // default 30s test timeout is regularly exceeded — observed failure modes:
+  //   1. Stuck at boot, transport still at 001.01.00 (Strudel import never
+  //      finished within 30s).
+  //   2. Hydra eval completed (bar.beat at 004.03, runtimes=2, "Playing"),
+  //      but readCanvasLitPixels + screenshot stability check pushed past 30s.
+  // Bump per-test budget to 90s so both cold paths can settle without the
+  // screenshot/lit-pixels gates racing against the global timeout.
+  test.setTimeout(90_000);
+
   await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
@@ -244,8 +255,15 @@ test('starter 02 (Strudel + Hydra) loaded and evaluated', async ({ page }) => {
   // Hydra needs a few rAF frames before the back-buffer holds non-zero pixels.
   // Use readCanvasLitPixels as a gate so the screenshot lands on a frame with
   // actual content drawn (otherwise we'd snapshot the initial black canvas).
+  // Poll up to ~6s instead of a fixed 900ms — on cold WSL2 the regl context
+  // and first shader compile can take longer than a single 900ms window.
   await page.waitForTimeout(900);
-  const lit = await readCanvasLitPixels(page, 'canvas.hydra');
+  let lit = 0;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    lit = await readCanvasLitPixels(page, 'canvas.hydra');
+    if (lit > 100) break;
+    await page.waitForTimeout(500);
+  }
   expect(lit).toBeGreaterThan(100);
 
   // Hydra's render loop runs via regl's internal scheduler — stubbing
@@ -256,9 +274,16 @@ test('starter 02 (Strudel + Hydra) loaded and evaluated', async ({ page }) => {
   await page.waitForTimeout(500);
   await freezeAnimations(page);
 
+  // Override the per-call expect timeout (default 5s in playwright.config.ts).
+  // toHaveScreenshot runs an internal stability loop — takes two consecutive
+  // shots and only resolves once they match. With fullPage:true on a slow
+  // WSL2 host, the first capture alone can take 2-3s, so the default 5s
+  // ceiling left no margin for the second capture + comparison. 30s is
+  // generous enough that the stability check always converges.
   await expect(page).toHaveScreenshot('__screenshots__/starter-02-strudel-hydra.png', {
     fullPage: true,
     mask: maskTargets(page),
+    timeout: 30_000,
     ...SNAPSHOT_OPTS
   });
 
