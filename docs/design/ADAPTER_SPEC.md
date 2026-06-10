@@ -10,6 +10,29 @@ bus d'événements, bridge).
 > probablement que vous réimplémentez ce qui existe déjà upstream. Voir
 > `KANOPI_PRINCIPLES.md §7`.
 
+## 0 · Périmètre : adapter de langage ≠ transport de sortie
+
+Deux familles d'extension coexistent dans Kanopi, et elles ne suivent **pas**
+le même contrat :
+
+| Famille | Contrat | Où ça vit | Exemples |
+| --- | --- | --- | --- |
+| **Adapter de langage** | `RuntimeAdapter` (cette spec) | `packages/ui/src/lib/runtimes/` (in-repo) | Strudel, Hydra, Mercury, p5, Csound |
+| **Transport de sortie** | transport du dispatcher | `packages/core/src/dispatcher/transports/` | WebAudio, MIDI, OSC, DMX |
+
+Un adapter de langage est de la **glue vers un moteur amont** : il n'est
+vérifiable qu'en lançant Kanopi entier (éditeur + transport + e2e), n'a
+qu'un seul consommateur (cette app) et pas d'oracle externe. Il vit donc
+dans ce dépôt, et s'ajoute via la procédure du §5.
+
+Un transport de sortie consomme les événements résolus du dispatcher
+(contrôles déjà interprétés — vel, chan, transpose, etc.) et les émet vers
+une cible matérielle ou logicielle. Il a sa propre méthode de validation et
+peut être maintenu comme un chantier séparé. **Il n'implémente pas
+`RuntimeAdapter`** ; sa frontière est la signature des transports du
+dispatcher. Règle commune aux deux familles : le dispatcher est le seul
+interpréteur des contrôles — un transport ne relit jamais la charge brute.
+
 ---
 
 ## 1 · Interface TypeScript
@@ -80,14 +103,17 @@ Responsabilités de l'adapter :
 
 Exemples :
 
-| Langage      | Moteur upstream                         | Import                          |
-| ------------ | --------------------------------------- | ------------------------------- |
-| Strudel      | `@strudel/web` (inlined full stack)     | `await import('@strudel/web')`  |
-| Tidal (nav)  | Strudel avec préfixe TidalCycles (mini) | reuse `strudelAdapter`          |
-| Tidal (GHCi) | `osc-bridge` → SuperDirt                | WebSocket (plus tard, Tauri v2) |
-| Hydra        | `hydra-synth`                           | `await import('hydra-synth')`   |
-| SC           | `scsynth` WASM ou osc-bridge            | à déterminer                    |
-| JS           | `AudioContext` natif                    | `new AudioContext()`            |
+| Langage      | Moteur upstream                         | Import                            |
+| ------------ | --------------------------------------- | --------------------------------- |
+| Strudel      | `@strudel/web` (inlined full stack)     | `await import('@strudel/web')`    |
+| Tidal (nav)  | Strudel avec préfixe TidalCycles (mini) | reuse `strudelAdapter`            |
+| Tidal (GHCi) | `osc-bridge` → SuperDirt                | WebSocket (plus tard, Tauri v2)   |
+| Hydra        | `hydra-synth`                           | `await import('hydra-synth')`     |
+| Mercury      | `mercury-engine` (Tone.js inside)       | `await import('mercury-engine')`  |
+| p5           | `p5` (instance mode)                    | `await import('p5')`              |
+| Csound       | `@csound/browser` (Csound 7 WASM)       | `await import('@csound/browser')` |
+| SC           | `scsynth` WASM ou osc-bridge            | à déterminer                      |
+| JS           | `AudioContext` natif                    | `new AudioContext()`              |
 
 ### B. Native editor UX
 
@@ -251,7 +277,23 @@ Lazy-load `hydra-synth`, monte un canvas, expose les globals
 `new Function()`. `stop` rappelle `solid(0,0,0,0).out()` pour éteindre
 le visuel. Voir `packages/ui/src/lib/runtimes/hydra.ts`.
 
-### Complexe (Strudel, 778 lignes)
+### Moyens-bis (Mercury 124 lignes, Csound 177, p5 247)
+
+Trois variations du même squelette : lazy-load du moteur amont, instance
+unique, eval whole-file, événements `trigger`. Spécificités :
+
+- **Mercury** : l'amont expose `code()/silence()/setBPM()` — l'adapter ne
+  fait que router. Les hooks visuels cross-runtime de l'amont (`visual()`)
+  sont volontairement non câblés (no-op + log one-shot), cf
+  `KANOPI_PRINCIPLES §3`.
+- **Csound** : boot `{ useSAB: false }`, `compileCSD` pour un document
+  complet, `compileOrc` pour la redéfinition live d'instruments, reset
+  complet de l'engine au hush (un stop Csound ne survit pas proprement).
+- **p5** : instance mode strict (pas de `makeGlobal`), les callbacks
+  (`setup`, `draw`, …) sont capturés depuis la closure d'eval puis montés
+  sur l'instance — le user garde le style p5 Web Editor.
+
+### Complexe (Strudel, 879 lignes)
 
 Le cas le plus chargé à ce jour, car Strudel cumule :
 
@@ -264,7 +306,7 @@ Le cas le plus chargé à ce jour, car Strudel cumule :
 - Event bus interne relayant `logHap` en `token`
 - Tidal adapter = Strudel adapter avec `id: 'tidal'`
 
-Voir `packages/ui/src/lib/runtimes/strudel.ts`. Malgré les 778 lignes,
+Voir `packages/ui/src/lib/runtimes/strudel.ts`. Malgré les 879 lignes,
 aucune logique métier du parser Strudel n'est dupliquée — tout est glue.
 
 ---
@@ -287,6 +329,29 @@ aucune logique métier du parser Strudel n'est dupliquée — tout est glue.
 
 Cette procédure est explicitée dans
 `~/.claude/projects/-home-romi-dev-music-kanopi/memory/feedback_language_integration_procedure.md`.
+
+### 5.1bis · Obligations de test (un langage sans ça n'est pas « intégré »)
+
+Retour d'expérience phase 2-5 (mai-juin 2026) : un adapter sans suite de
+tests régresse silencieusement au premier refactor voisin. Tout nouveau
+langage livre, dans le même jalon que l'adapter :
+
+1. **Un spec e2e** `packages/ui/tests/e2e/<lang>.spec.ts` qui, sur une
+   fixture minimale : évalue un bloc, asserte l'effet détectable (énergie
+   audio RMS > seuil via `setupAudioCapture`/`getMaxRMS`, ou pixels allumés
+   via `readCanvasLitPixels`), et vérifie zéro `console.error`
+   (`expectNoConsoleErrors`). Helpers existants :
+   `packages/ui/tests/helpers.ts` — ne pas en réécrire.
+2. **Une fixture** `packages/ui/tests/fixtures/` avec un bloc connu qui
+   produit un événement détectable.
+3. **Une procédure de validation manuelle** numérotée, clic-par-clic,
+   exécutable dans un vrai Chrome par un humain (le spec Playwright vert ne
+   suffit pas — il ne juge ni la qualité sonore ni le ressenti).
+4. **(Si le langage est mis en vitrine)** une session starter dans
+   `packages/library/bundled/` + son spec dans `tests/e2e/sessions/`.
+
+Le tout passe dans `npm run verify` (types + lint + unit + e2e), qui est
+bloquant au pre-push.
 
 ### 5.2 · Points de touchement code pour un langage niveau 2
 
@@ -508,21 +573,31 @@ API reference générée (typedoc) est prévue post-2.4, cf `PROGRESS.md §2.7`.
 
 | Primitive                       | Kind      | Source                                    | Rôle                                         |
 | ------------------------------- | --------- | ----------------------------------------- | -------------------------------------------- |
-| `RuntimeAdapter`                | interface | `lib/runtimes/adapter.ts:18`             | Contrat implémenté par chaque adapter        |
+| `RuntimeAdapter`                | interface | `lib/runtimes/adapter.ts:22`             | Contrat implémenté par chaque adapter        |
 | `EvalSource`                    | type      | `lib/runtimes/adapter.ts:4`              | `{ actorId?, fileId, docOffset? }`           |
 | `LogPush`                       | type      | `lib/runtimes/adapter.ts:16`             | Callback vers Console panel                  |
 | `EventBus`                      | interface | `lib/events/types.ts:72`                 | Bus d'événements optionnel par adapter       |
-| `getAdapter(runtime)`           | fn        | `lib/runtimes/registry.ts:14`            | Résolution `Runtime → RuntimeAdapter`        |
-| `listRuntimes()`                | fn        | `lib/runtimes/registry.ts:18`            | Liste des runtimes enregistrés               |
-| `strudelAdapter` / `tidalAdapter` | const   | `lib/runtimes/strudel.ts:673,774`         | Adapter Strudel + Tidal (port JS)             |
-| `hydraAdapter`                  | const     | `lib/runtimes/hydra.ts:45`               | Adapter Hydra (hydra-synth)                  |
+| `getAdapter(runtime)`           | fn        | `lib/runtimes/registry.ts:37`            | Résolution `Runtime → RuntimeAdapter`        |
+| `listRuntimes()`                | fn        | `lib/runtimes/registry.ts:41`            | Liste des runtimes enregistrés               |
+| `knownExtensions()`             | fn        | `lib/runtimes/registry.ts:51`            | Extensions reconnues (adapters + placeholders) |
+| `runtimeFromExtension(ext)`     | fn        | `lib/runtimes/registry.ts:68`            | Lookup `extension → Runtime`                 |
+| `strudelAdapter` / `tidalAdapter` | const   | `lib/runtimes/strudel.ts:774,874`        | Adapter Strudel + Tidal (port JS)            |
+| `hydraAdapter`                  | const     | `lib/runtimes/hydra.ts:143`              | Adapter Hydra (hydra-synth)                  |
+| `mercuryAdapter`                | const     | `lib/runtimes/mercury.ts:64`             | Adapter Mercury (mercury-engine)             |
+| `p5Adapter`                     | const     | `lib/runtimes/p5.ts:160`                 | Adapter p5 (instance mode)                   |
+| `csoundAdapter`                 | const     | `lib/runtimes/csound.ts:83`              | Adapter Csound (@csound/browser)             |
 | `jsAdapter`                     | const     | `lib/runtimes/webaudio.ts:30`            | Adapter JS/WebAudio brut                     |
-| `attachHydraCanvas(el)`         | fn        | `lib/runtimes/hydra.ts:40`               | Monte le canvas au boot                      |
-| `registerStrudelEditorView(fileId, view)` | fn | `lib/runtimes/strudel.ts:633`         | Déclare l'EditorView pour highlight + viz    |
+| `attachHydraCanvas(el)`         | fn        | `lib/runtimes/hydra.ts:126`              | Monte le canvas Hydra au boot                |
+| `attachP5Container(el)`         | fn        | `lib/runtimes/p5.ts:125`                 | Monte le conteneur p5 au boot                |
+| `registerStrudelEditorView(fileId, view)` | fn | `lib/runtimes/strudel.ts:734`        | Déclare l'EditorView pour highlight + viz    |
 
-Seuls `strudel*`, `hydra*`, `js*` sont des adapters listés. Les helpers
-(`attachHydraCanvas`, `registerStrudelEditorView`, …) sont des APIs
-spécifiques à un adapter, consommées par les composants UI dédiés.
+Sept adapters sont enregistrés dans le registry : `strudel`, `tidal`,
+`hydra`, `p5`, `mercury`, `csound`, `js`. Les extensions `.scd` / `.py` /
+`.kanopi` / `.bps` sont routées par la table `PLACEHOLDER_EXTENSIONS` du
+registry (runtimes reconnus sans adapter navigateur : niveau 3 osc-bridge,
+ou orchestration session). Les helpers (`attach*`,
+`registerStrudelEditorView`, …) sont des APIs spécifiques à un adapter,
+consommées par les composants UI dédiés.
 
 ---
 
@@ -545,3 +620,13 @@ spécifiques à un adapter, consommées par les composants UI dédiés.
   extensions (`['.hydra']`, `['.p5']`…) et `registry.ts` dérive le
   mapping global. Remplace la table `EXTENSION_TO_RUNTIME` standalone,
   ajouter un langage devient vraiment self-contained.
+- **2026-06-10** : mise à niveau post-phases 2-5. (1) Nouveau §0 «
+  Périmètre » : la frontière adapter de langage (in-repo, cette spec) vs
+  transport de sortie (dispatcher, contrat séparé) est désormais explicite
+  — les langages de live coding restent dans ce dépôt, les sorties
+  matérielles (MIDI, OSC, DMX) se greffent au dispatcher. (2) §2.A et §4 :
+  Mercury / p5 / Csound documentés (intégrés en avril, absents de la v1 de
+  cette spec). (3) Nouveau §5.1bis : obligations de test par langage (spec
+  e2e + fixture + procédure manuelle + session vitrine), bloquantes au
+  pre-push via `npm run verify`. (4) §7 : table des primitives resynchronisée
+  avec le code (7 adapters, lignes à jour, placeholders documentés).
