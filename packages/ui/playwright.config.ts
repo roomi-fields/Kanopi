@@ -56,6 +56,9 @@ export default defineConfig({
         command: 'VITE_FORCE_POLLING=1 CHOKIDAR_USEPOLLING=1 npm run dev',
         url: 'http://localhost:5173',
         reuseExistingServer: !process.env.CI,
-        timeout: 120_000
+        // Cold Vite boot has been observed to exceed 120s when the machine is
+        // under heavy load (load average ~90 on the WSL2 dev box) — and load
+        // is a normal condition here, not an anomaly.
+        timeout: 240_000
       }
 });

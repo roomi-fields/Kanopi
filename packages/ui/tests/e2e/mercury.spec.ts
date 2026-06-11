@@ -19,6 +19,13 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helper
 // 33-35, 51-62). The fixture doesn't use visual(), so the one-shot hint
 // won't fire.
 test('mercury evaluates a block and produces audio', async ({ page }) => {
+  // Cold Mercury boot = Vite-transforming + parsing the ~1.5 MB mercury-engine
+  // bundle (Tone.js included) on first eval. On the user's loaded WSL2 box this
+  // regularly blows the 30s default (observed: RMS sampled while the engine was
+  // still importing → 0, then teardown also timing out). Same 90s budget as
+  // visual-02 / session-strudel-hydra (commit 0326ed3) for the same reason.
+  test.setTimeout(90_000);
+
   const audio = await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
@@ -77,12 +84,57 @@ test('mercury evaluates a block and produces audio', async ({ page }) => {
   // file regardless, but cursor position is required for evalBlockAt.
   await evalBlockAt(page, 3);
 
+  // evalBlockAt's flash waits give up (silently) after 4s, but on a cold boot
+  // the eval promise only resolves once mercury-engine has been imported and
+  // instance.code() ran — potentially tens of seconds under load (the bundle
+  // is not in vite optimizeDeps, so the first request pays a full transform).
+  // Wait for the adapter's own 'eval ok' Console entry (mercury.ts:100, logged
+  // strictly after instance.code() succeeded) instead of a fixed delay. We
+  // deliberately do NOT wait for 'engine loaded' — that one fires when the
+  // sample buffers finish downloading from GitHub, and the fixture's
+  // `new synth saw` voice needs no samples.
+  await page.waitForFunction(
+    () => {
+      const w = window as unknown as {
+        __kanopi?: {
+          core?: { console?: { entries?: () => { runtime: string; msg: string }[] } };
+        };
+      };
+      const entries = w.__kanopi?.core?.console?.entries?.() ?? [];
+      return entries.some((e) => e.runtime === 'mercury' && e.msg.startsWith('eval ok'));
+    },
+    undefined,
+    { timeout: 60_000 }
+  );
+
+  // Trace analysis of the under-load failure: when the cold import takes more
+  // than ~5s, Chromium's transient user activation from the Ctrl+Enter gesture
+  // has expired by the time the adapter finally calls Tone.start() — the
+  // AudioContext stays 'suspended' and everything renders to silence. Re-eval
+  // now that the engine is warm: this second Ctrl+Enter is a fresh gesture and
+  // resume() executes within its activation window. Mercury's code() replaces
+  // the sound tree wholesale (live-coding semantics), so re-evaluating the
+  // same file is idempotent.
+  await evalBlockAt(page, 3);
+
+  // Real readiness signal for audio: the captured AudioContext must actually
+  // be running. If it is not, RMS can only read 0 — better to fail here with
+  // an explicit signal than on the RMS assertion.
+  await page.waitForFunction(
+    () => {
+      const w = window as unknown as { __kanopiAnalysers?: AnalyserNode[] };
+      return (w.__kanopiAnalysers ?? []).some((a) => a.context.state === 'running');
+    },
+    undefined,
+    { timeout: 20_000 }
+  );
+
   // Mercury via Tone.Transport schedules ahead by ~0.1-0.2s, then plays. At
   // tempo 120 with eighth-note time, a note fires every 250ms. Sample peak
-  // RMS over 1.5s — each Tone envelope dips back to silence between hits, so
+  // RMS over 3s — each Tone envelope dips back to silence between hits, so
   // we need a window read rather than a snapshot to catch a peak above the
-  // 0.001 threshold.
-  const rms = await audio.getMaxRMS(1500);
+  // 0.001 threshold; the wide window absorbs scheduler hiccups under load.
+  const rms = await audio.getMaxRMS(3000);
   expect(rms).toBeGreaterThan(0.001);
 
   await page.keyboard.press('ControlOrMeta+Period');

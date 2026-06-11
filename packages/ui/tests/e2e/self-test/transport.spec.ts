@@ -92,22 +92,50 @@ test.fixme('BPM widget shows 128 by default; clicking it and typing a new value 
   // type "100", press Enter, and assert ".bpm-value" reads "100".
 });
 
-test('TAP tempo: 4 clicks at ~500ms intervals land BPM in 100-140 range', async ({ page }) => {
+test('TAP tempo: derived BPM matches the real click cadence', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
-  // 500ms between taps → 120 BPM. MockClock.tap() (mock-runtime.ts:161-172)
-  // keeps the last 2.5s of taps and averages the inter-tap deltas, so 4 taps
-  // at 500ms produce 3 deltas of 500ms, average 500ms, BPM = 60000/500 = 120.
-  // Allow a generous ±20 BPM tolerance (100-140) to absorb scheduler jitter
-  // and the inevitable WSL2 setTimeout drift.
+  // We ASK for ~500ms between taps, but under machine load Playwright has
+  // delivered clicks 900-1130ms apart — and MockClock.tap() correctly derived
+  // 52-67 BPM from that REAL cadence. Asserting an absolute band (the old
+  // [80, 150]) tests Playwright's scheduling, not the widget. Instead we
+  // record the actual click timestamps in-page (same performance.now() time
+  // base and same click event MockClock.tap() consumes) and assert the app's
+  // BPM matches the cadence it actually received.
   const tap = page.locator('.tap-btn');
   await expect(tap).toBeVisible();
+  await page.evaluate(() => {
+    const w = window as unknown as { __kanopiTapTimes?: number[] };
+    w.__kanopiTapTimes = [];
+    document.querySelector('.tap-btn')?.addEventListener('click', () => {
+      w.__kanopiTapTimes?.push(performance.now());
+    });
+  });
   for (let i = 0; i < 4; i++) {
     await tap.click();
+    // Pacing only — the assertion below uses the cadence actually delivered,
+    // so drift here is harmless.
     if (i < 3) await page.waitForTimeout(500);
   }
+
+  const tapTimes = await page.evaluate(() => {
+    const w = window as unknown as { __kanopiTapTimes?: number[] };
+    return w.__kanopiTapTimes ?? [];
+  });
+  expect(tapTimes, 'all 4 clicks must reach the TAP button').toHaveLength(4);
+
+  // Oracle mirrors the widget's documented semantics (mock-runtime.ts:161-172):
+  // only taps within the trailing 2.5s window count; BPM = 60000 / mean delta.
+  const last = tapTimes[tapTimes.length - 1];
+  const windowed = tapTimes.filter((t) => last - t < 2500);
+  expect(
+    windowed.length,
+    `need ≥2 taps within the widget's 2.5s window to derive a BPM — clicks landed too far apart (${tapTimes.map((t) => Math.round(t)).join(', ')})`
+  ).toBeGreaterThan(1);
+  const deltas = windowed.slice(1).map((t, i) => t - windowed[i]);
+  const expectedBpm = 60000 / (deltas.reduce((a, b) => a + b, 0) / deltas.length);
 
   // Read the live BPM straight from the dev hatch (`__kanopi.clock`, set up
   // in main.ts:25-35 under import.meta.env.DEV). That avoids parsing rounded
@@ -118,14 +146,19 @@ test('TAP tempo: 4 clicks at ~500ms intervals land BPM in 100-140 range', async 
     };
     return w.__kanopi?.clock?.state?.bpm ?? -1;
   });
-  // Range widened from [100, 140] to [80, 150] to absorb Playwright timing
-  // jitter on WSL2 — page.waitForTimeout(500) actually delivers anywhere
-  // from 480-620ms depending on event-loop pressure, which projects to a
-  // BPM of ~96-125 instead of the theoretical 120. The widened range still
-  // catches genuine TAP-tempo regressions (a broken tap would yield BPM
-  // way outside this band).
-  expect(bpm, `tap-derived BPM should land in [80, 150], got ${bpm}`).toBeGreaterThan(80);
-  expect(bpm).toBeLessThan(150);
+  // Wide sanity band first: a genuinely broken widget (NaN, 0, runaway value)
+  // fails regardless of cadence.
+  expect(bpm, `tap-derived BPM out of sane range, got ${bpm}`).toBeGreaterThan(20);
+  expect(bpm).toBeLessThan(300);
+  // Main assertion: the app's BPM tracks the cadence it really received.
+  // ±15% absorbs the tiny offset between our listener's timestamps and
+  // tap()'s own performance.now() reads while still catching real regressions
+  // (a stuck or mis-averaging tap() lands far outside this).
+  const ratio = Math.abs(bpm - expectedBpm) / expectedBpm;
+  expect(
+    ratio,
+    `app BPM ${bpm.toFixed(1)} should be within 15% of cadence-derived ${expectedBpm.toFixed(1)}`
+  ).toBeLessThan(0.15);
 
   // No transport was started; nothing to hush. Still ping Ctrl+. defensively
   // per project memory (hush-after-test) before yielding.

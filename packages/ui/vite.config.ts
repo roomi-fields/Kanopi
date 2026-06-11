@@ -91,7 +91,12 @@ export default defineConfig({
       '@strudel/transpiler',
       '@strudel/tonal',
       '@strudel/draw',
-      '@strudel/webaudio'
+      '@strudel/webaudio',
+      // Pre-bundle the ~1.5 MB browserify bundle (Tone.js included): without
+      // this, the first `import('mercury-engine')` pays a 20-25s on-demand
+      // transform on a cold dev server under load — long enough for the
+      // Ctrl+Enter user activation to expire before Tone.start() runs.
+      'mercury-engine'
     ]
   },
   server: {
