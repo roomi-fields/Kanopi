@@ -29,6 +29,13 @@ export function extractBlock(doc: string, from: number, to: number, runtime?: Ru
     return doc;
   }
 
+  if (runtime === 'bp3') {
+    // A Bol Processor grammar is parsed as one unit (header + all rules) —
+    // paragraph splitting would tear a multi-line grammar apart, so any
+    // Ctrl+Enter evaluates the whole file.
+    return doc;
+  }
+
   return extractByParagraph(doc, from);
 }
 

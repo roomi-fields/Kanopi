@@ -12,7 +12,11 @@
     "resolveJsonModule": true,
     "allowImportingTsExtensions": false,
     "verbatimModuleSyntax": true,
-    "types": ["vite/client", "svelte"]
+    "types": ["vite/client", "svelte"],
+    "paths": {
+      "bpx": ["./src/lib/runtimes/bp3-deps.d.ts"],
+      "bp3-frontend": ["./src/lib/runtimes/bp3-deps.d.ts"]
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.svelte", "src/**/*.svelte.ts", "vite.config.ts"],
   "exclude": ["node_modules", "dist"]

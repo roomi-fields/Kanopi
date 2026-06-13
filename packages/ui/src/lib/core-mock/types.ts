@@ -9,6 +9,7 @@ export type Runtime =
   | 'p5'
   | 'mercury'
   | 'csound'
+  | 'bp3'
   | 'tidal'
   | 'sc'
   | 'python'

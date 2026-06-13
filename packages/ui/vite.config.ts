@@ -102,6 +102,14 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: false,
+    // `bpx` and `bp3-frontend` are sibling repos linked via `file:` (npm
+    // symlinks them into node_modules → their real paths live under
+    // /home/romi/dev/bp, outside this project root). Vite's dev server
+    // refuses to serve files outside the workspace by default; allow the
+    // sibling tree so the Bol Processor adapter can import them.
+    fs: {
+      allow: ['..', '../../../bp']
+    },
     // WSL2: native inotify events don't propagate reliably across the
     // Windows/Linux boundary. Polling is the only way HMR catches edits
     // made from Windows-side editors or from Claude Code sessions running

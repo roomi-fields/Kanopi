@@ -37,6 +37,10 @@ export function extractBlocks(code: string, runtime: Runtime): CodeBlock[] {
       return extractWholeFile(code, 'p5');
     case 'mercury':
       return extractWholeFile(code, 'mercury');
+    case 'bp3':
+      // A Bol Processor grammar is one unit (header + rules); the frontend
+      // parses the whole text, so the file is a single runnable block.
+      return extractWholeFile(code, 'bp3');
     case 'csound':
       return extractCsound(code);
     case 'sc':
