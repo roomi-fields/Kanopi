@@ -98,11 +98,13 @@ pour les 6 zones d'intégration détaillées.
 
 ## Progressive enhancement : 3 niveaux
 
-| Niveau               | Install                    | Runtimes                                                      | Moteur |
-| -------------------- | -------------------------- | ------------------------------------------------------------- | ------ |
-| **1. Web pur**       | Rien                       | BPscript, JS, WebAudio, WebMIDI                               | WASM   |
-| **2. Web enrichi**   | Rien                       | + Strudel, SC-lite, Csound, Faust, Hydra, p5.js, ORCA, Gibber | WASM   |
-| **3. Package local** | Tauri desktop + osc-bridge | + SC natif, Tidal, Python, Sonic Pi, Chuck, Pd, Max           | Natif  |
+| Niveau               | Install                    | Runtimes                                                      | Moteurs des langages tiers |
+| -------------------- | -------------------------- | ------------------------------------------------------------- | -------------------------- |
+| **1. Web pur**       | Rien                       | BPscript, JS, WebAudio, WebMIDI                               | aucun                      |
+| **2. Web enrichi**   | Rien                       | + Strudel, SC-lite, Csound, Faust, Hydra, p5.js, ORCA, Gibber | WASM (navigateur)          |
+| **3. Package local** | Tauri desktop + osc-bridge | + SC natif, Tidal, Python, Sonic Pi, Chuck, Pd, Max           | natifs installés           |
+
+> Le Bol Processor (BPscript / BP3) tourne sur **BPx** aux trois niveaux ; le portage WASM de BP3 est **gelé** (validation de parité seulement — décision 2026-06-11). La colonne ci-dessus décrit les moteurs des **autres** langages de live coding, pas celui du Bol Processor.
 
 L'UI détecte automatiquement le bridge local (WebSocket localhost:7777). Présent → niveau 3 actif. Absent → niveaux 1-2.
 
