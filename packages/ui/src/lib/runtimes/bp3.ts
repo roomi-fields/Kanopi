@@ -64,9 +64,15 @@ interface BP3Voice {
 }
 
 let audioCtx: AudioContext | undefined;
-function getCtx(): AudioContext {
+// The dispatcher's lookahead clock schedules notes against `audioCtx.currentTime`.
+// On the first eval after page load the context can still be `suspended` (its
+// clock frozen near 0), so we must AWAIT the resume before starting playback —
+// otherwise only the notes inside the first 100 ms lookahead window get
+// scheduled and any grammar whose events are spread out (anacrusis / sparse
+// rhythms) falls silent.
+async function getCtx(): Promise<AudioContext> {
   if (!audioCtx) audioCtx = new AudioContext();
-  if (audioCtx.state === 'suspended') void audioCtx.resume();
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
   return audioCtx;
 }
 
@@ -115,7 +121,7 @@ export const bp3Adapter: RuntimeAdapter = {
     const key = srcKey(src);
     voices.get(key)?.dispatcher.stop();
 
-    const ctx = getCtx();
+    const ctx = await getCtx();
     const resolver = makeWesternResolver();
     const dispatcher = new Dispatcher(ctx);
     dispatcher.addTransport('default', new WebAudioTransport(ctx, { resolver }));

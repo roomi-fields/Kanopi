@@ -127,7 +127,9 @@ test('boot screenshot of the empty shell with no session open', async ({ page })
   noErrors();
 });
 
-test('Library panel screenshot shows the 3 bundled starters listed', async ({ page }) => {
+test('Library panel screenshot shows the bundled starters and Bol Processor showcase', async ({
+  page
+}) => {
   const noErrors = expectNoConsoleErrors(page);
   await page.goto('');
   await waitForShell(page);
@@ -136,11 +138,18 @@ test('Library panel screenshot shows the 3 bundled starters listed', async ({ pa
   // library.spec.ts — the `title=Library` attribute on the <button>).
   await page.locator('button[title="Library"]').click();
 
-  // Wait for the three bundled starter cards to render. Their names come from
-  // STARTERS in starters.ts ("01 — Strudel solo", "02 — Strudel + Hydra",
-  // "03 — Scenes A / B"). Asserting visibility forces the panel layout to
-  // settle before the screenshot.
-  const starterNames = ['01 — Strudel solo', '02 — Strudel + Hydra', '03 — Scenes A / B'];
+  // Wait for the bundled starter cards plus the Bol Processor showcase cards to
+  // render. Names come from STARTERS in starters.ts. Asserting visibility forces
+  // the panel layout to settle before the screenshot.
+  const starterNames = [
+    '01 — Strudel solo',
+    '02 — Strudel + Hydra',
+    '03 — Scenes A / B',
+    'BP — Rotate scales',
+    'BP — NotReich',
+    'BP — Ames',
+    'BP — Visser5'
+  ];
   for (const name of starterNames) {
     await expect(
       page.locator('.card', { has: page.getByText(name, { exact: true }) }).first()

@@ -10,6 +10,12 @@ import bundled02Moire from '../../../../library/bundled/02-moire.hydra?raw';
 import bundled03Session from '../../../../library/bundled/03-scenes-A-B.kanopi?raw';
 import bundled03Drums from '../../../../library/bundled/03-drums.strudel?raw';
 import bundled03Lead from '../../../../library/bundled/03-lead.strudel?raw';
+// Bol Processor showcase: authentic .gr grammars from Bernard Bel's BP3 corpus,
+// derived by the next-gen BPx engine and played through Kanopi's WebAudio path.
+import bpRotateScales from '../../../../library/bundled/bp-rotate-scales.gr?raw';
+import bpNotReich from '../../../../library/bundled/bp-not-reich.gr?raw';
+import bpAmes from '../../../../library/bundled/bp-ames.gr?raw';
+import bpVisser5 from '../../../../library/bundled/bp-visser5.gr?raw';
 
 export interface StarterFile {
   path: string;
@@ -268,5 +274,72 @@ osc.stop(audio.currentTime + 1.5);
 `
       }
     ]
-  }
+  },
+  ...bpShowcase()
 ];
+
+// Bol Processor showcase. Each entry pairs a one-actor `.kanopi` session with an
+// authentic `.gr` grammar from Bernard Bel's BP3 corpus. The session routes the
+// `.gr` to the `bp3` runtime, which derives it with the next-gen BPx engine and
+// plays the resulting pitched tokens through Kanopi's WebAudio transport.
+function bpStarter(
+  id: string,
+  name: string,
+  tagline: string,
+  description: string,
+  grFile: string,
+  grContents: string
+): Starter {
+  const sessionFile = `${id}.kanopi`;
+  return {
+    id: `bp3-${id}`,
+    name,
+    tagline,
+    description,
+    sessionFile,
+    files: [
+      {
+        path: sessionFile,
+        contents: `# ${name} — toggle the actor, then Ctrl+Enter anywhere in ${grFile}.\n# The grammar is parsed, derived by the BPx engine, and played as pitched notes.\n\n@actor grammar ${grFile} bp3\n\n@scene play grammar\n`
+      },
+      { path: grFile, contents: grContents }
+    ]
+  };
+}
+
+function bpShowcase(): Starter[] {
+  return [
+    bpStarter(
+      'rotate-scales',
+      'BP — Rotate scales',
+      'Harm Visser · the _rotate() tool',
+      'An authentic Bol Processor grammar by Harm Visser (1998) demonstrating the `_rotate()` operator over two C-major scales. Parsed and derived live by the next-gen BPx engine, played as pitched notes in Kanopi. The clearest melodic entry point. Ctrl+Enter to derive, Ctrl+. to hush.',
+      'bp-rotate-scales.gr',
+      bpRotateScales
+    ),
+    bpStarter(
+      'not-reich',
+      'BP — NotReich',
+      'Thierry Montaudon · minimalist polyphony',
+      'A Bol Processor grammar by Thierry Montaudon (1997), a phasing minimalist study in the spirit of Steve Reich. ~580 notes across overlapping voices, derived by BPx and rendered through Kanopi’s WebAudio path. Ctrl+Enter to play, Ctrl+. to silence.',
+      'bp-not-reich.gr',
+      bpNotReich
+    ),
+    bpStarter(
+      'ames',
+      'BP — Ames',
+      'time structure with an undetermined rest',
+      'A compact Bol Processor grammar from Bernard Bel’s corpus illustrating a complex polymetric time structure with an undetermined rest and stacked chords. Derived by BPx, voiced through Kanopi’s WebAudio transport. Ctrl+Enter to derive, Ctrl+. to hush.',
+      'bp-ames.gr',
+      bpAmes
+    ),
+    bpStarter(
+      'visser5',
+      'BP — Visser5',
+      'Harm Visser · large generative piece',
+      'A Bol Processor grammar by Harm Visser (1998): a dense, fully generative polyphonic piece (~1000+ notes) layering transposed and rotated melodic cells. Bernard Bel’s formalism, derived by the next-gen BPx engine, playing in Kanopi. Ctrl+Enter to play, Ctrl+. to silence.',
+      'bp-visser5.gr',
+      bpVisser5
+    )
+  ];
+}
