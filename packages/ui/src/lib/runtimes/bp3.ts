@@ -63,6 +63,11 @@ interface BP3Voice {
   dispatcher: InstanceType<typeof Dispatcher>;
 }
 
+// Current global tempo, kept in sync with the central clock via `setBpm`.
+// A bp3 grammar derives at this tempo and live voices retune to it. Defaults
+// to the clock's own default so a fresh page already matches the transport.
+let currentBpm = 128;
+
 let audioCtx: AudioContext | undefined;
 // The dispatcher's lookahead clock schedules notes against `audioCtx.currentTime`.
 // On the first eval after page load the context can still be `suspended` (its
@@ -104,7 +109,7 @@ export const bp3Adapter: RuntimeAdapter = {
 
     let tokens;
     try {
-      const bpx = createBPx({ tempo: 120 });
+      const bpx = createBPx({ tempo: currentBpm });
       bpx.loadGrammar(ast);
       tokens = bpx.derive().tokens;
     } catch (err) {
@@ -130,14 +135,41 @@ export const bp3Adapter: RuntimeAdapter = {
     (dispatcher as unknown as { _resolver: Resolver })._resolver = resolver;
 
     dispatcher.load(tokens);
-    dispatcher.start(undefined, { loop: false });
+    // Loop so an armed actor sustains like a Strudel pattern: the grammar's
+    // derivation repeats at each cycle boundary until the actor is toggled off,
+    // the transport stops, or the page hushes. A Ctrl+Enter on a standalone
+    // `.gr` (keystone path) goes through this same code, so it now loops too —
+    // intended: "play the grammar" means keep playing it, and Ctrl+. silences.
+    dispatcher.start(undefined, { loop: true });
 
     voices.set(key, { dispatcher });
     log({ runtime: 'bp3', level: 'info', msg: `eval ok [${key}] (${tokens.length} tokens)` });
     emitLifecycle('eval', src.fileId);
   },
+  setBpm(bpm: number, _log: LogPush) {
+    currentBpm = bpm;
+    // Retune live voices so a tempo change from the central clock (or a
+    // `@map tempo` MIDI knob) takes effect without re-deriving. The dispatcher
+    // reads `_tempo` for its beats→seconds conversion and pushes it onto the
+    // clock; setting both keeps already-scheduled and future cycles in step.
+    for (const voice of voices.values()) {
+      const d = voice.dispatcher as unknown as { _tempo?: number; clock?: { tempo?: number } };
+      d._tempo = bpm;
+      if (d.clock) d.clock.tempo = bpm;
+    }
+  },
   async stop(src: EvalSource, log: LogPush) {
     const key = srcKey(src);
+    // `__hush__` is the core's "stop everything" sentinel (transport stop,
+    // Ctrl+. panic): no single voice matches it, so we tear down every live
+    // dispatcher. Without this, stopping the transport left bp3 looping.
+    if (key === '__hush__') {
+      for (const voice of voices.values()) voice.dispatcher.stop();
+      voices.clear();
+      log({ runtime: 'bp3', level: 'info', msg: 'hush (all voices)' });
+      emitLifecycle('stop', src.fileId);
+      return;
+    }
     const voice = voices.get(key);
     if (voice) {
       voice.dispatcher.stop();
