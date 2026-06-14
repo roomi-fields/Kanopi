@@ -143,6 +143,16 @@ export class Dispatcher {
    * @returns {Transport|null}
    */
   _transportForToken(token) {
+    // Per-symbol sound routing (decision routage-texte-son-par-symbole): a token
+    // that does NOT sound is rendered on the text transport instead of audio.
+    // The predicate is BP3-specific (note-name OR sound assignment) and supplied
+    // by the adapter; the dispatcher just honours it. A grammar can mix sounding
+    // and non-sounding symbols, so this is decided per token, not per grammar.
+    if (this._soundsFn && !this._soundsFn(token)) {
+      const text = this.transports[this._textTransportName];
+      if (text) return text;
+    }
+
     const actorName = this._terminalActorMap[token];
     if (actorName && this._actors[actorName]?.transportName) {
       const t = this.transports[this._actors[actorName].transportName];
@@ -154,6 +164,18 @@ export class Dispatcher {
       || this.transports['default']
       || Object.values(this.transports)[0]
       || null;
+  }
+
+  /**
+   * Route non-sounding tokens to a text transport. `soundsFn(token)` returns
+   * true when the token should sound (audio/MIDI), false to render it as a
+   * timestamped symbol on the named text transport.
+   * @param {(token: string) => boolean} soundsFn
+   * @param {string} textTransportName
+   */
+  setSoundRouting(soundsFn, textTransportName) {
+    this._soundsFn = soundsFn;
+    this._textTransportName = textTransportName;
   }
 
   /**

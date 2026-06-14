@@ -25,3 +25,10 @@ export const BUNDLED_SE: Record<string, string> = {
   transposition3: seTransposition3,
   Visser5: seVisser5
 };
+
+// Sound-object aux files (-so/-mi/-cs) → which alphabet symbols carry a sound,
+// for per-symbol routing (decision routage-texte-son-par-symbole). Keyed by the
+// reference name in the grammar's `-so.<name>` line, raw text for parseSoundObjects.
+// Empty for now: every bundled grammar is all-notes (notes sound by default) or
+// all-text (bols with no prototype). Add an entry when a mixed grammar ships.
+export const BUNDLED_SOUND: Record<string, string> = {};

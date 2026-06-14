@@ -91,6 +91,8 @@ export function parseBP3(source: string, options?: ParseBP3Options): ParseBP3Res
 export function parseSeFile(text: string): { engine: SeEngineSettings; [k: string]: unknown };
 /** Extract the sounding-symbol names from a `-so`/`-mi`/`-cs` aux file. */
 export function parseSoundObjects(text: string): string[];
+/** True when a symbol is a pitch name (English / solfège / sargam) — sounds by default. */
+export function isNoteName(name: string): boolean;
 
 // --- bpscript --------------------------------------------------------------
 // BPScript transpiler facade. Ships raw ESM JS with no `.d.ts`; we only use the

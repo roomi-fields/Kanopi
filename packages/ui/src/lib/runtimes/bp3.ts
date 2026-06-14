@@ -2,11 +2,11 @@ import type { RuntimeAdapter, EvalSource, LogPush } from './adapter';
 import type { Runtime } from '../core-mock';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
-import { parseBP3, parseSeFile } from 'bp3-frontend';
-import type { FileRef, SeEngineSettings } from 'bp3-frontend';
+import { parseBP3, parseSeFile, parseSoundObjects, isNoteName } from 'bp3-frontend';
+import type { FileRef, SeEngineSettings, SceneActor } from 'bp3-frontend';
 import { compileBPS } from 'bpscript/src/transpiler/index.js';
 import { createBPx } from 'bpx';
-import { BUNDLED_SE } from './bp3-aux';
+import { BUNDLED_SE, BUNDLED_SOUND } from './bp3-aux';
 // MIDI output sink for the beta-ensemble. runtime-midi OWNS the ISO-BP3 MIDI
 // path (hub/contrats/kanopi-runtime-midi.md); Kanopi feeds it the SAME raw BPx
 // timed tokens it sends to the WebAudio dispatcher, on the SAME AudioContext
@@ -109,7 +109,36 @@ type Frontend = (code: string) => {
   // BP3 `-se.*` engine timing resolved from the grammar's file reference, when
   // available — drives native tempo (e.g. acceleration 750 ms vs 1000 ms).
   settings?: SeEngineSettings;
+  // Alphabet symbols that carry a sound (front-end's per-symbol routing). A
+  // derived token sounds if it's a note OR its symbol is in this set; everything
+  // else renders as text. Empty for all-note grammars (they sound by default).
+  soundingSymbols?: string[];
 };
+
+// Sounding alphabet symbols, loaded from the `-so`/`-mi`/`-cs` aux files the
+// grammar references (parseBP3 surfaces them in fileRefs). Bundled text only for
+// now; absent → no sounding non-note symbols (graceful, never throws).
+function resolveSoundSymbols(fileRefs: FileRef[]): string[] {
+  const out: string[] = [];
+  for (const ref of fileRefs) {
+    if (ref.prefix !== 'so' && ref.prefix !== 'mi' && ref.prefix !== 'cs') continue;
+    const text = BUNDLED_SOUND[ref.name];
+    if (!text) continue;
+    try {
+      out.push(...parseSoundObjects(text));
+    } catch {
+      /* aux file unreadable — leave those symbols mute (text) */
+    }
+  }
+  return out;
+}
+
+// The sounding non-note symbols the front-end assigned (actors[0].assignments),
+// each `{ subject }` being an alphabet symbol that carries a sound.
+function soundingFromAst(ast: unknown): string[] {
+  const actors = (ast as { actors?: SceneActor[] } | null)?.actors;
+  return (actors?.[0]?.assignments ?? []).map((a) => a.subject);
+}
 
 // Resolve the `-se` engine settings a grammar references. parseBP3 surfaces the
 // reference in `fileRefs`; we load the bundled `-se` text and let the upstream
@@ -127,26 +156,25 @@ function resolveSeSettings(fileRefs: FileRef[]): SeEngineSettings | undefined {
   }
 }
 
-// The BP3 front-end injects a synthetic actor carrying the grammar-wide output
-// mode (decision routage-texte-midi): notes → 'midi', bols/words/numbers →
-// 'text'. We route the whole grammar by it; absent/unknown falls back to audio.
-function readTransportKind(ast: unknown): 'midi' | 'text' | undefined {
-  const actors = (ast as { actors?: { properties?: { transport?: { key?: string } } }[] } | null)
-    ?.actors;
-  const key = actors?.[0]?.properties?.transport?.key;
-  return key === 'text' || key === 'midi' ? key : undefined;
+// Parse a BP3 grammar with per-symbol sound routing. parseBP3 surfaces the
+// `-so`/`-mi`/`-cs` references in fileRefs; we load those, learn which symbols
+// sound, and re-parse so the front-end can assign them (actors[0].assignments).
+// All-note / no-prototype grammars need no second pass.
+function parseWithSound(code: string, alphabetNames: string[]) {
+  const first = parseBP3(code, { alphabetNames });
+  const soundSymbols = resolveSoundSymbols(first.fileRefs);
+  const r = soundSymbols.length ? parseBP3(code, { alphabetNames, soundSymbols }) : first;
+  return {
+    ast: r.ast,
+    errors: r.errors.map((e) => ({ line: e.line, message: e.message })),
+    settings: resolveSeSettings(r.fileRefs),
+    soundingSymbols: soundingFromAst(r.ast)
+  };
 }
 
 // `.gr` — native BP3 grammar text straight into the BP3 front-end.
 const WESTERN_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-const grFrontend: Frontend = (code) => {
-  const { ast, errors, fileRefs } = parseBP3(code, { alphabetNames: WESTERN_NOTES });
-  return {
-    ast,
-    errors: errors.map((e) => ({ line: e.line, message: e.message })),
-    settings: resolveSeSettings(fileRefs)
-  };
-};
+const grFrontend: Frontend = (code) => parseWithSound(code, WESTERN_NOTES);
 
 // `.bps` — BPScript transpiles to a BP3 grammar (`compileBPS().grammar`), which
 // we feed into the SAME BP3 front-end as `.gr`. The compiled alphabet drives
@@ -157,8 +185,7 @@ const bpsFrontend: Frontend = (code) => {
     return { ast: null, errors: c.errors.map((e) => ({ line: e.line, message: e.message })) };
   }
   const alphabetNames = c.alphabet?.length ? c.alphabet : WESTERN_NOTES;
-  const { ast, errors } = parseBP3(c.grammar, { alphabetNames });
-  return { ast, errors: errors.map((e) => ({ line: e.line, message: e.message })) };
+  return parseWithSound(c.grammar, alphabetNames);
 };
 
 interface BP3Voice {
@@ -247,7 +274,7 @@ function makeBpxAdapter(
     extensions,
     events: adapterEvents,
     async evaluate(code: string, src: EvalSource, log: LogPush) {
-      const { ast, errors, settings } = frontend(code);
+      const { ast, errors, settings, soundingSymbols } = frontend(code);
       if (errors.length > 0) {
         const msg = errors.map((e) => `line ${e.line ?? '?'}: ${e.message}`).join('; ');
         log({ runtime: id, level: 'error', msg: `parse: ${msg}` });
@@ -285,31 +312,33 @@ function makeBpxAdapter(
       const ctx = await getCtx();
       const dispatcher = new Dispatcher(ctx);
 
-      // Text grammars route the whole derivation to the symbolic console: no
-      // resolver (terminals are symbols, not pitches), no audio, no MIDI. The
-      // dispatcher schedules them on the same clock, so symbols stream in time.
-      if (readTransportKind(ast) === 'text') {
-        textStream.setSource(id);
-        dispatcher.addTransport(
-          'default',
-          new TextTransport({
-            onSymbol: (s) =>
-              textStream.push({ token: s.token, startSec: s.startSec, durSec: s.durSec })
-          })
-        );
-        dispatcher.load(tokens);
-        dispatcher.start(undefined, { loop: true });
-        voices.set(key, { dispatcher });
-        log({ runtime: id, level: 'info', msg: `text out [${key}] (${tokens.length} symbols)` });
-        emitLifecycle('eval', src.fileId);
-        return;
-      }
+      // Per-symbol sound routing (decision routage-texte-son-par-symbole): a
+      // token sounds if it's a note OR its symbol carries a sound assignment
+      // from the front-end — those go to audio/MIDI; everything else streams to
+      // the symbolic console. Both transports share one dispatcher, so a mixed
+      // grammar voices its sounding symbols AND prints the rest, in time.
+      const sounding = new Set(soundingSymbols ?? []);
+      const soundsFn = (token: string) => isNoteName(token) || sounding.has(token);
 
       const resolver = pickResolver(tokens);
       dispatcher.addTransport('default', new WebAudioTransport(ctx, { resolver }));
       // The dispatcher routes via per-token resolver/transport lookup; this
       // global resolver is the fallback the WebAudio path uses for pitches.
       (dispatcher as unknown as { _resolver: Resolver })._resolver = resolver;
+      dispatcher.addTransport(
+        'text',
+        new TextTransport({
+          onSymbol: (s) =>
+            textStream.push({ token: s.token, startSec: s.startSec, durSec: s.durSec })
+        })
+      );
+      (
+        dispatcher as unknown as {
+          setSoundRouting(fn: (t: string) => boolean, name: string): void;
+        }
+      ).setSoundRouting(soundsFn, 'text');
+      // Label the console panel when this grammar will emit any non-sounding symbol.
+      if (tokens.some((t: { token: string }) => !soundsFn(t.token))) textStream.setSource(id);
 
       dispatcher.load(tokens);
       // Loop so an armed actor sustains like a Strudel pattern: the grammar's

@@ -66,3 +66,57 @@ describe('TextTransport — symbolic streaming', () => {
     expect(captured.map((s) => s.token)).toEqual(['dha', 'ta']);
   });
 });
+
+// Per-symbol routing (decision routage-texte-son-par-symbole): one dispatcher,
+// two transports. A token sounds → audio; otherwise → text console. Proven on a
+// MIXED token list — the whole point: a grammar splits per symbol, not wholesale.
+describe('dispatcher — per-symbol sound routing', () => {
+  function split(tokens: TimedTokenLike[], soundsFn: (t: string) => boolean) {
+    const audio: string[] = [];
+    const text: string[] = [];
+    const fakeCtx = { currentTime: 0, state: 'running', resume() {} };
+    const d = new Dispatcher(
+      fakeCtx as unknown as AudioContext
+    ) as unknown as DispatcherInternals & {
+      setSoundRouting(fn: (t: string) => boolean, name: string): void;
+    };
+    d.addTransport('default', { send: (e: { token: string }) => audio.push(e.token), close() {} });
+    d.addTransport('text', new TextTransport({ onSymbol: (s) => text.push(s.token) }));
+    d.setSoundRouting(soundsFn, 'text');
+    d.load(tokens);
+    d._running = true;
+    d._cursor = 0;
+    d._loopOffset = 0;
+    d._schedule(Infinity);
+    return { audio, text };
+  }
+
+  it('routes notes + sounding symbols to audio, the rest to the text console', () => {
+    // `do4` is a note (sounds by default); `dha` carries a sound assignment;
+    // `tigida` is a mute bol → text.
+    const sounding = new Set(['dha']);
+    const soundsFn = (t: string) => /^(do|re|mi|fa|sol|la|si)\d/.test(t) || sounding.has(t);
+    const { audio, text } = split(
+      [
+        { token: 'do4', start: 0, end: 500, type: 'terminal' },
+        { token: 'dha', start: 500, end: 1000, type: 'terminal' },
+        { token: 'tigida', start: 1000, end: 1500, type: 'terminal' }
+      ],
+      soundsFn
+    );
+    expect(audio).toEqual(['do4', 'dha']);
+    expect(text).toEqual(['tigida']);
+  });
+
+  it('sends everything to text when nothing sounds (all-bols grammar)', () => {
+    const { audio, text } = split(
+      [
+        { token: 'dha', start: 0, end: 500, type: 'terminal' },
+        { token: 'ta', start: 500, end: 1000, type: 'terminal' }
+      ],
+      () => false
+    );
+    expect(audio).toEqual([]);
+    expect(text).toEqual(['dha', 'ta']);
+  });
+});
