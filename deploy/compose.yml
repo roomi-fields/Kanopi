@@ -1,0 +1,40 @@
+# Conteneur nginx servant la SPA/PWA Kanopi (statique) sous roomi-fields.com/kanopi/.
+#
+# Pattern : calque de viasophia (docker/compose.yml) — nginx:alpine sert un volume
+# read-only, le build n'est PAS fait ici (il est produit en local sur PC2 par
+# scripts/publish/build-and-deploy.sh puis rsync). Remplace l'ancien conteneur
+# auto-buildé (Dockerfile multi-étapes) qui était cassé depuis le split en
+# dépôts frères (deps file:../../../../bp/* absentes dans l'image).
+#
+# Layout côté hôte (monté ici en /usr/share/nginx/html) :
+#   /var/www/kanopi/
+#   ├── releases/<timestamp>/kanopi/   <- contenu de packages/ui/dist/
+#   └── current -> releases/<timestamp> <- symlink basculé atomiquement (rollback)
+#
+# Déploiement initial sur le VPS :
+#   cd /docker/kanopi && docker compose up -d
+# Mises à jour : build-and-deploy.sh (rsync + reload, pas de recreate).
+
+services:
+  kanopi-web:
+    image: nginx:alpine
+    container_name: kanopi-web
+    restart: unless-stopped
+    volumes:
+      - /var/www/kanopi:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-network"
+      - "traefik.http.routers.kanopi.rule=Host(`roomi-fields.com`) && PathPrefix(`/kanopi`)"
+      - "traefik.http.routers.kanopi.entrypoints=websecure"
+      - "traefik.http.routers.kanopi.tls=true"
+      - "traefik.http.routers.kanopi.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.kanopi.priority=100"
+      - "traefik.http.services.kanopi.loadbalancer.server.port=80"
+
+networks:
+  traefik-network:
+    external: true
