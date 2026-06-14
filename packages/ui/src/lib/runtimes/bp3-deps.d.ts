@@ -26,10 +26,20 @@ export interface TimedToken {
   actor: string | null;
   [k: string]: unknown;
 }
+export interface SeEngineSettings {
+  pclock?: number;
+  qclock?: number;
+  quantization?: number;
+  quantize?: boolean;
+  minPeriod?: number;
+  natureOfTime?: 'smooth' | 'striated';
+}
 export interface BPxConfig {
   seed?: number;
   tempo?: number;
   flags?: Record<string, number>;
+  /** BP3 `-se.*` engine timing (pclock/qclock/quantization). Drives native tempo. */
+  settings?: SeEngineSettings;
 }
 export interface BPxInstance {
   loadGrammar(ast: unknown): void;
@@ -47,13 +57,40 @@ export interface ParseError {
 }
 export interface ParseBP3Options {
   alphabetNames?: string[];
+  /** Per-symbol sound routing: alphabet symbols that carry a sound prototype
+   *  (loaded by the caller from the -so/-mi/-cs that fileRefs signals). */
+  soundSymbols?: string[];
+}
+export interface FileRef {
+  prefix: string;
+  name: string;
+  line: number;
+}
+/** One per SOUNDING alphabet symbol (decision routage-texte-son-par-symbole). */
+export interface SoundAssignment {
+  type: 'SoundAssignment';
+  subject: string;
+  target:
+    | { kind: 'named-ref'; name: string }
+    | { kind: 'inline-props'; props: Record<string, unknown> };
+  [k: string]: unknown;
+}
+export interface SceneActor {
+  name: string;
+  assignments?: SoundAssignment[];
+  [k: string]: unknown;
 }
 export interface ParseBP3Result {
-  ast: unknown | null;
+  ast: { actors?: SceneActor[]; [k: string]: unknown } | null;
+  fileRefs: FileRef[];
   errors: ParseError[];
   notes: string[];
 }
 export function parseBP3(source: string, options?: ParseBP3Options): ParseBP3Result;
+/** Parse a `-se.*` settings file (JSON) → engine timing the BPx session consumes. */
+export function parseSeFile(text: string): { engine: SeEngineSettings; [k: string]: unknown };
+/** Extract the sounding-symbol names from a `-so`/`-mi`/`-cs` aux file. */
+export function parseSoundObjects(text: string): string[];
 
 // --- bpscript --------------------------------------------------------------
 // BPScript transpiler facade. Ships raw ESM JS with no `.d.ts`; we only use the

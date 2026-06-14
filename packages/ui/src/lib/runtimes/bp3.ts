@@ -2,9 +2,11 @@ import type { RuntimeAdapter, EvalSource, LogPush } from './adapter';
 import type { Runtime } from '../core-mock';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
-import { parseBP3 } from 'bp3-frontend';
+import { parseBP3, parseSeFile } from 'bp3-frontend';
+import type { FileRef, SeEngineSettings } from 'bp3-frontend';
 import { compileBPS } from 'bpscript/src/transpiler/index.js';
 import { createBPx } from 'bpx';
+import { BUNDLED_SE } from './bp3-aux';
 // MIDI output sink for the beta-ensemble. runtime-midi OWNS the ISO-BP3 MIDI
 // path (hub/contrats/kanopi-runtime-midi.md); Kanopi feeds it the SAME raw BPx
 // timed tokens it sends to the WebAudio dispatcher, on the SAME AudioContext
@@ -101,7 +103,29 @@ function pickResolver(tokens: { token: string }[]): Resolver {
 // to a BP3 grammar that the BP3 front-end then parses), so the rest of the
 // chain is shared verbatim.
 type ParseError = { line?: number; message: string };
-type Frontend = (code: string) => { ast: unknown | null; errors: ParseError[] };
+type Frontend = (code: string) => {
+  ast: unknown | null;
+  errors: ParseError[];
+  // BP3 `-se.*` engine timing resolved from the grammar's file reference, when
+  // available — drives native tempo (e.g. acceleration 750 ms vs 1000 ms).
+  settings?: SeEngineSettings;
+};
+
+// Resolve the `-se` engine settings a grammar references. parseBP3 surfaces the
+// reference in `fileRefs`; we load the bundled `-se` text and let the upstream
+// parser interpret it. Absent reference / unbundled name → undefined (the
+// engine then uses its 1000 ms default; graceful, never throws).
+function resolveSeSettings(fileRefs: FileRef[]): SeEngineSettings | undefined {
+  const ref = fileRefs.find((r) => r.prefix === 'se');
+  if (!ref) return undefined;
+  const text = BUNDLED_SE[ref.name];
+  if (!text) return undefined;
+  try {
+    return parseSeFile(text).engine;
+  } catch {
+    return undefined;
+  }
+}
 
 // The BP3 front-end injects a synthetic actor carrying the grammar-wide output
 // mode (decision routage-texte-midi): notes → 'midi', bols/words/numbers →
@@ -116,8 +140,12 @@ function readTransportKind(ast: unknown): 'midi' | 'text' | undefined {
 // `.gr` — native BP3 grammar text straight into the BP3 front-end.
 const WESTERN_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const grFrontend: Frontend = (code) => {
-  const { ast, errors } = parseBP3(code, { alphabetNames: WESTERN_NOTES });
-  return { ast, errors: errors.map((e) => ({ line: e.line, message: e.message })) };
+  const { ast, errors, fileRefs } = parseBP3(code, { alphabetNames: WESTERN_NOTES });
+  return {
+    ast,
+    errors: errors.map((e) => ({ line: e.line, message: e.message })),
+    settings: resolveSeSettings(fileRefs)
+  };
 };
 
 // `.bps` — BPScript transpiles to a BP3 grammar (`compileBPS().grammar`), which
@@ -219,7 +247,7 @@ function makeBpxAdapter(
     extensions,
     events: adapterEvents,
     async evaluate(code: string, src: EvalSource, log: LogPush) {
-      const { ast, errors } = frontend(code);
+      const { ast, errors, settings } = frontend(code);
       if (errors.length > 0) {
         const msg = errors.map((e) => `line ${e.line ?? '?'}: ${e.message}`).join('; ');
         log({ runtime: id, level: 'error', msg: `parse: ${msg}` });
@@ -233,7 +261,7 @@ function makeBpxAdapter(
 
       let tokens;
       try {
-        const bpx = createBPx({ tempo: currentBpm });
+        const bpx = createBPx({ tempo: currentBpm, settings });
         bpx.loadGrammar(ast);
         tokens = bpx.derive().tokens;
       } catch (err) {
