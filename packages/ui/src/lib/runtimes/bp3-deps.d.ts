@@ -93,6 +93,10 @@ export function parseSeFile(text: string): { engine: SeEngineSettings; [k: strin
 export function parseSoundObjects(text: string): string[];
 /** True when a symbol is a pitch name (English / solfège / sargam) — sounds by default. */
 export function isNoteName(name: string): boolean;
+/** Alphabet symbol names declared in a `-al.*` file. */
+export function parseAlFile(text: string): string[];
+/** The sound file a `-al.*` alphabet points to (`-gr → -al → -so/-mi/-cs` chain). */
+export function alphabetSoundRef(text: string): { prefix: string; name: string } | null;
 
 // --- bpscript --------------------------------------------------------------
 // BPScript transpiler facade. Ships raw ESM JS with no `.d.ts`; we only use the

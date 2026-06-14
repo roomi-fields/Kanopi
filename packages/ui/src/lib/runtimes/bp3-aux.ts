@@ -32,3 +32,9 @@ export const BUNDLED_SE: Record<string, string> = {
 // Empty for now: every bundled grammar is all-notes (notes sound by default) or
 // all-text (bols with no prototype). Add an entry when a mixed grammar ships.
 export const BUNDLED_SOUND: Record<string, string> = {};
+
+// Alphabet aux files (-al). A sound-bearing grammar reaches its prototype through
+// the alphabet (-gr → -al → -so/-mi/-cs), so the adapter loads the -al to follow
+// the chain. Keyed by the `-al.<name>` reference, raw text for parseAlFile /
+// alphabetSoundRef. Empty until a sound-object grammar is bundled.
+export const BUNDLED_AL: Record<string, string> = {};

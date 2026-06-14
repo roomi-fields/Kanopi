@@ -2,11 +2,18 @@ import type { RuntimeAdapter, EvalSource, LogPush } from './adapter';
 import type { Runtime } from '../core-mock';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
-import { parseBP3, parseSeFile, parseSoundObjects, isNoteName } from 'bp3-frontend';
+import {
+  parseBP3,
+  parseSeFile,
+  parseSoundObjects,
+  parseAlFile,
+  alphabetSoundRef,
+  isNoteName
+} from 'bp3-frontend';
 import type { FileRef, SeEngineSettings, SceneActor } from 'bp3-frontend';
 import { compileBPS } from 'bpscript/src/transpiler/index.js';
 import { createBPx } from 'bpx';
-import { BUNDLED_SE, BUNDLED_SOUND } from './bp3-aux';
+import { BUNDLED_SE, BUNDLED_SOUND, BUNDLED_AL } from './bp3-aux';
 // MIDI output sink for the beta-ensemble. runtime-midi OWNS the ISO-BP3 MIDI
 // path (hub/contrats/kanopi-runtime-midi.md); Kanopi feeds it the SAME raw BPx
 // timed tokens it sends to the WebAudio dispatcher, on the SAME AudioContext
@@ -116,21 +123,55 @@ type Frontend = (code: string) => {
 };
 
 // Sounding alphabet symbols, loaded from the `-so`/`-mi`/`-cs` aux files the
-// grammar references (parseBP3 surfaces them in fileRefs). Bundled text only for
-// now; absent → no sounding non-note symbols (graceful, never throws).
-function resolveSoundSymbols(fileRefs: FileRef[]): string[] {
-  const out: string[] = [];
-  for (const ref of fileRefs) {
-    if (ref.prefix !== 'so' && ref.prefix !== 'mi' && ref.prefix !== 'cs') continue;
-    const text = BUNDLED_SOUND[ref.name];
-    if (!text) continue;
-    try {
-      out.push(...parseSoundObjects(text));
-    } catch {
-      /* aux file unreadable — leave those symbols mute (text) */
+// grammar references. Loads the raw aux text by reference. Injectable so a test
+// can feed fixtures; the adapter wires it to the bundled aux maps.
+type AuxLoader = (prefix: string, name: string) => string | undefined;
+const bundledAuxLoader: AuxLoader = (prefix, name) =>
+  prefix === 'al' ? BUNDLED_AL[name] : BUNDLED_SOUND[name];
+
+function soundFromRef(prefix: string, name: string, load: AuxLoader): string[] {
+  const text = load(prefix, name);
+  if (!text) return [];
+  try {
+    return parseSoundObjects(text);
+  } catch {
+    return []; // aux unreadable — those symbols stay mute (text)
+  }
+}
+
+// Resolve a grammar's alphabet AND its sounding symbols. The sound prototype is
+// reached through the alphabet (`-gr → -al → -so/-mi/-cs`, decision
+// routage-texte-son-par-symbole / bp3-frontend 6a26fc4): load the `-al`, take its
+// alphabet, follow `alphabetSoundRef` to the prototype file. Fallback for the
+// rare grammar that references a sound file directly. No `-al` / unbundled →
+// the caller's default alphabet and no sounding non-note symbols (graceful).
+export function resolveGrAux(
+  fileRefs: FileRef[],
+  load: AuxLoader,
+  fallbackAlphabet: string[]
+): { alphabetNames: string[]; soundSymbols: string[] } {
+  const alRef = fileRefs.find((r) => r.prefix === 'al');
+  if (alRef) {
+    const alText = load('al', alRef.name);
+    if (alText) {
+      let alphabetNames = fallbackAlphabet;
+      try {
+        const names = parseAlFile(alText);
+        if (names.length) alphabetNames = names;
+      } catch {
+        /* keep fallback */
+      }
+      const sref = alphabetSoundRef(alText);
+      const soundSymbols = sref ? soundFromRef(sref.prefix, sref.name, load) : [];
+      return { alphabetNames, soundSymbols };
     }
   }
-  return out;
+  // No `-al`: the rare case of a sound file referenced straight from the `.gr`.
+  const direct = fileRefs.filter(
+    (r) => r.prefix === 'so' || r.prefix === 'mi' || r.prefix === 'cs'
+  );
+  const soundSymbols = direct.flatMap((r) => soundFromRef(r.prefix, r.name, load));
+  return { alphabetNames: fallbackAlphabet, soundSymbols };
 }
 
 // The sounding non-note symbols the front-end assigned (actors[0].assignments),
@@ -160,10 +201,15 @@ function resolveSeSettings(fileRefs: FileRef[]): SeEngineSettings | undefined {
 // `-so`/`-mi`/`-cs` references in fileRefs; we load those, learn which symbols
 // sound, and re-parse so the front-end can assign them (actors[0].assignments).
 // All-note / no-prototype grammars need no second pass.
-function parseWithSound(code: string, alphabetNames: string[]) {
-  const first = parseBP3(code, { alphabetNames });
-  const soundSymbols = resolveSoundSymbols(first.fileRefs);
-  const r = soundSymbols.length ? parseBP3(code, { alphabetNames, soundSymbols }) : first;
+function parseWithSound(code: string, fallbackAlphabet: string[]) {
+  const first = parseBP3(code, { alphabetNames: fallbackAlphabet });
+  const { alphabetNames, soundSymbols } = resolveGrAux(
+    first.fileRefs,
+    bundledAuxLoader,
+    fallbackAlphabet
+  );
+  const reparse = soundSymbols.length > 0 || alphabetNames !== fallbackAlphabet;
+  const r = reparse ? parseBP3(code, { alphabetNames, soundSymbols }) : first;
   return {
     ast: r.ast,
     errors: r.errors.map((e) => ({ line: e.line, message: e.message })),
