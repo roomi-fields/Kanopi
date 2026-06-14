@@ -110,12 +110,11 @@ export default defineConfig({
     fs: {
       allow: ['..', '../../../bp']
     },
-    // WSL2: native inotify events don't propagate reliably across the
-    // Windows/Linux boundary. Polling is the only way HMR catches edits
-    // made from Windows-side editors or from Claude Code sessions running
-    // in WSL on a Windows-mounted path. See .claude/skills/vite-hmr-reset/.
+    // Native Linux (PC2, since 2026-06-14): inotify works, no polling needed.
+    // Polling stays available as an opt-in for the legacy WSL2 path (edits
+    // across a Windows/Linux boundary) via VITE_FORCE_POLLING / CHOKIDAR_USEPOLLING.
     watch: {
-      usePolling: true,
+      usePolling: !!process.env.VITE_FORCE_POLLING || !!process.env.CHOKIDAR_USEPOLLING,
       interval: 200
     }
   }

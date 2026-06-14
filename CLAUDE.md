@@ -36,10 +36,10 @@ Kanopi is the IDE product. BPscript is the optional native sequencer language (s
 
 ## Environment
 
-This project is developed on **WSL2**. Vite's file watcher does NOT reliably catch edits across the Windows/Linux boundary without polling. `packages/ui/vite.config.ts` ships with `server.watch.usePolling: true` — if you remove it or HMR breaks, run the `vite-hmr-reset` skill.
+This project runs on **PC2 (native Ubuntu Linux)** since 2026-06-14 (VSCode SSH; previously WSL2). Native inotify works, so Vite's file watcher needs no polling — `packages/ui/vite.config.ts` ships with polling **OFF by default**.
 
-Dev server: `cd packages/ui && npm run dev` (polling is the default in config).
-Belt-and-braces: `VITE_FORCE_POLLING=1 CHOKIDAR_USEPOLLING=1 npm run dev`.
+Dev server: `cd packages/ui && npm run dev`.
+Legacy WSL2 fallback (only if editing across a Windows/Linux boundary): `VITE_FORCE_POLLING=1 CHOKIDAR_USEPOLLING=1 npm run dev` re-enables polling; if HMR still misbehaves there, the `vite-hmr-reset` skill applies.
 
 ## Visual verification is mandatory, not optional
 
@@ -61,7 +61,7 @@ Located in `.claude/skills/`:
 
 - **`live-coding-verify`** — triggers on any UI/Svelte/CSS/CM6 edit. Forces Playwright-based verification before "done".
 - **`svelte-5-patterns`** — Svelte 5 runes rules ($state / $derived / $effect / $props / $bindable), compiler traps (await rewriting), CodeMirror-inside-Svelte pattern.
-- **`vite-hmr-reset`** — deterministic WSL2 HMR recovery procedure. Use the moment HMR misbehaves.
+- **`vite-hmr-reset`** — deterministic HMR recovery procedure (legacy WSL2 fallback; rarely needed on native PC2). Use if HMR misbehaves under forced polling.
 
 ## Memory
 
