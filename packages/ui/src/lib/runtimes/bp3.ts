@@ -3,6 +3,12 @@ import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
 import { parseBP3 } from 'bp3-frontend';
 import { createBPx } from 'bpx';
+// MIDI output sink for the beta-ensemble. runtime-midi OWNS the ISO-BP3 MIDI
+// path (hub/contrats/kanopi-runtime-midi.md); Kanopi feeds it the SAME raw BPx
+// timed tokens it sends to the WebAudio dispatcher, on the SAME AudioContext
+// clock, and runtime-midi emits the MIDI bytes. Consumed AS-IS — no
+// reimplementation of the MIDI transport here.
+import { MidiSink } from 'runtime-midi';
 // Core runtime, reused AS-IS (no port): the dispatcher schedules timed tokens
 // on the WebAudio transport; the resolver turns pitch names into frequencies.
 import { Dispatcher } from '../../../../core/src/dispatcher/dispatcher.js';
@@ -61,6 +67,31 @@ function emitLifecycle(name: 'eval' | 'stop', fileId: string) {
 
 interface BP3Voice {
   dispatcher: InstanceType<typeof Dispatcher>;
+  midiSink?: MidiSink;
+}
+
+// One-shot info when no MIDI output port is present (the normal headless / no
+// hardware case): WebAudio still plays, so this is informational, not an error,
+// and we log it once to avoid spamming on every eval.
+let midiUnavailableLogged = false;
+
+// Probe Web MIDI permission ONCE (cached). Without MIDI access, requestMIDIAccess
+// rejects (NotAllowedError); we record that and never construct a MidiSink —
+// runtime-midi's transport logs a console.error on denial (transports/midi.js:49),
+// pure noise on a machine without MIDI. Probing ourselves keeps that denial silent.
+let midiProbe: Promise<boolean> | undefined;
+function webMidiAvailable(): Promise<boolean> {
+  if (!midiProbe) {
+    const req = (navigator as Navigator & { requestMIDIAccess?: () => Promise<unknown> })
+      .requestMIDIAccess;
+    midiProbe = req
+      ? req
+          .call(navigator)
+          .then(() => true)
+          .catch(() => false)
+      : Promise.resolve(false);
+  }
+  return midiProbe;
 }
 
 // Current global tempo, kept in sync with the central clock via `setBpm`.
@@ -124,7 +155,11 @@ export const bp3Adapter: RuntimeAdapter = {
     }
 
     const key = srcKey(src);
-    voices.get(key)?.dispatcher.stop();
+    const prev = voices.get(key);
+    if (prev) {
+      prev.dispatcher.stop();
+      prev.midiSink?.stop();
+    }
 
     const ctx = await getCtx();
     const resolver = makeWesternResolver();
@@ -142,7 +177,31 @@ export const bp3Adapter: RuntimeAdapter = {
     // intended: "play the grammar" means keep playing it, and Ctrl+. silences.
     dispatcher.start(undefined, { loop: true });
 
-    voices.set(key, { dispatcher });
+    // MIDI sink: route the SAME raw BPx tokens to runtime-midi, on the SAME
+    // AudioContext clock — but only when Web MIDI access is actually granted
+    // (probed once, silently). Otherwise skip it entirely: WebAudio playback
+    // stays intact and the console stays clean on machines without MIDI.
+    let midiSink: MidiSink | undefined;
+    if (await webMidiAvailable()) {
+      try {
+        const sink = new MidiSink(ctx);
+        const hasPort = await sink.init();
+        if (hasPort) {
+          sink.load(tokens);
+          sink.start();
+          midiSink = sink;
+          log({ runtime: 'bp3', level: 'info', msg: `midi out [${key}]` });
+        }
+      } catch (err) {
+        // A MIDI failure must never take down the (already-playing) WebAudio path.
+        log({ runtime: 'bp3', level: 'info', msg: `midi sink skipped: ${String(err)}` });
+      }
+    } else if (!midiUnavailableLogged) {
+      midiUnavailableLogged = true;
+      log({ runtime: 'bp3', level: 'info', msg: 'no Web MIDI — WebAudio only' });
+    }
+
+    voices.set(key, { dispatcher, midiSink });
     log({ runtime: 'bp3', level: 'info', msg: `eval ok [${key}] (${tokens.length} tokens)` });
     emitLifecycle('eval', src.fileId);
   },
@@ -157,6 +216,11 @@ export const bp3Adapter: RuntimeAdapter = {
       d._tempo = bpm;
       if (d.clock) d.clock.tempo = bpm;
     }
+    // The MIDI sink owns its own internal dispatcher (runtime-midi private); we
+    // don't reach into it to retune live. Its timing comes from the tokens it
+    // was loaded with at the previous tempo, so a tempo change takes effect on
+    // the next eval (re-derivation at the new `currentBpm`). Consistent with the
+    // integration rule: no poking upstream internals.
   },
   async stop(src: EvalSource, log: LogPush) {
     const key = srcKey(src);
@@ -164,7 +228,10 @@ export const bp3Adapter: RuntimeAdapter = {
     // Ctrl+. panic): no single voice matches it, so we tear down every live
     // dispatcher. Without this, stopping the transport left bp3 looping.
     if (key === '__hush__') {
-      for (const voice of voices.values()) voice.dispatcher.stop();
+      for (const voice of voices.values()) {
+        voice.dispatcher.stop();
+        voice.midiSink?.stop();
+      }
       voices.clear();
       log({ runtime: 'bp3', level: 'info', msg: 'hush (all voices)' });
       emitLifecycle('stop', src.fileId);
@@ -173,6 +240,7 @@ export const bp3Adapter: RuntimeAdapter = {
     const voice = voices.get(key);
     if (voice) {
       voice.dispatcher.stop();
+      voice.midiSink?.stop();
       voices.delete(key);
     }
     log({ runtime: 'bp3', level: 'info', msg: `stop [${key}]` });
@@ -182,6 +250,7 @@ export const bp3Adapter: RuntimeAdapter = {
     for (const voice of voices.values()) {
       try {
         voice.dispatcher.stop();
+        voice.midiSink?.stop();
       } catch {
         /* engine may already be torn down */
       }

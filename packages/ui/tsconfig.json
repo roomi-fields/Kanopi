@@ -15,7 +15,8 @@
     "types": ["vite/client", "svelte"],
     "paths": {
       "bpx": ["./src/lib/runtimes/bp3-deps.d.ts"],
-      "bp3-frontend": ["./src/lib/runtimes/bp3-deps.d.ts"]
+      "bp3-frontend": ["./src/lib/runtimes/bp3-deps.d.ts"],
+      "runtime-midi": ["./src/lib/runtimes/runtime-midi.d.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.svelte", "src/**/*.svelte.ts", "vite.config.ts"],

@@ -317,6 +317,10 @@ const BENIGN_ERROR_PATTERNS: RegExp[] = [
   // WebMIDI permission denied — mercury-engine asks for MIDI access on init;
   // we don't grant it in tests. Engine works fine without it.
   /WebMIDI not enabled/i,
+  // Web MIDI permission denied — runtime-midi's MidiSink calls
+  // requestMIDIAccess on eval; headless Chromium rejects with NotAllowedError,
+  // which the transport logs before falling back. WebAudio plays regardless.
+  /MIDI access denied/i,
   // Canvas 2D readback perf hint when we drawImage→getImageData a WebGL canvas.
   /willReadFrequently/i
 ];

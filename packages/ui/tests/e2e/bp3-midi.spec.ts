@@ -17,14 +17,7 @@ import { evalBlockAt, expectNoConsoleErrors, setupFakeMidi } from '../helpers';
 // melody.gr derives  C4 D4 E4 G4 C5 G4 E4 C4  → MIDI notes 60 62 64 67 72.
 const EXPECTED_NOTES = [60, 62, 64, 67, 72];
 
-// BLOCKED on upstream runtime-midi: its package entry pulls in
-// `src/data/index.js`, which loads bundled JSON via Node `node:fs`
-// (readFileSync) at module-init time. That module cannot load in a browser, so
-// `import { MidiSink } from 'runtime-midi'` crashes the Kanopi app (blank page).
-// MidiSink's constructor also depends on that loader (resolverConfig). No
-// browser-safe path exists through the public API. Un-fixme once runtime-midi
-// ships browser-loadable data (e.g. JSON `import` / a precomputed export).
-test.fixme('bp3 grammar routes BPx tokens to runtime-midi (NoteOn bytes)', async ({ page }) => {
+test('bp3 grammar routes BPx tokens to runtime-midi (NoteOn bytes)', async ({ page }) => {
   const midi = await setupFakeMidi(page);
   const noErrors = expectNoConsoleErrors(page);
 
