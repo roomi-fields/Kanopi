@@ -6,6 +6,7 @@
   import Sidebar from './components/sidebar/Sidebar.svelte';
   import EditorArea from './components/editor/EditorArea.svelte';
   import RightPanel from './components/right-panel/RightPanel.svelte';
+  import LibrarySpace from './components/library/LibrarySpace.svelte';
   import CommandPalette from './components/palette/CommandPalette.svelte';
   import HydraCanvas from './components/runtime/HydraCanvas.svelte';
   import P5Canvas from './components/runtime/P5Canvas.svelte';
@@ -151,18 +152,26 @@
   <div
     class="body"
     class:sidebar-collapsed={ui.sidebarCollapsed}
-    style:grid-template-columns={ui.sidebarCollapsed
-      ? `44px 1fr 4px ${ui.rightPanelWidth}px`
-      : `44px ${ui.sidebarWidth}px 4px 1fr 4px ${ui.rightPanelWidth}px`}
+    style:grid-template-columns={ui.activeActivityView === 'library'
+      ? '44px 1fr'
+      : ui.sidebarCollapsed
+        ? `44px 1fr 4px ${ui.rightPanelWidth}px`
+        : `44px ${ui.sidebarWidth}px 4px 1fr 4px ${ui.rightPanelWidth}px`}
   >
     <ActivityBar />
-    {#if !ui.sidebarCollapsed}
-      <Sidebar />
-      <Resizer side="right" width={ui.sidebarWidth} onResize={(w) => ui.setSidebarWidth(w)} />
+    {#if ui.activeActivityView === 'library'}
+      <!-- Dedicated full-width library space (replaces editor + panels). The
+           activity bar stays visible so another icon returns to the editor. -->
+      <LibrarySpace />
+    {:else}
+      {#if !ui.sidebarCollapsed}
+        <Sidebar />
+        <Resizer side="right" width={ui.sidebarWidth} onResize={(w) => ui.setSidebarWidth(w)} />
+      {/if}
+      <EditorArea />
+      <Resizer side="left" width={ui.rightPanelWidth} onResize={(w) => ui.setRightPanelWidth(w)} />
+      <RightPanel />
     {/if}
-    <EditorArea />
-    <Resizer side="left" width={ui.rightPanelWidth} onResize={(w) => ui.setRightPanelWidth(w)} />
-    <RightPanel />
   </div>
   <Statusbar />
 </div>
