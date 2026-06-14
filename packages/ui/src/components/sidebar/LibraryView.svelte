@@ -3,11 +3,15 @@
   import { catalog } from '../../lib/library/audio-banks';
   import { visualsCatalog, type VisualItem } from '../../lib/library/visuals';
   import { workspace } from '../../stores/workspace.svelte';
+  import { ui } from '../../stores/ui.svelte';
 
   function load(s: Starter) {
     const ok = confirm(`Load "${s.name}"?\n\nThis replaces every file in the current workspace.`);
     if (!ok) return;
     workspace.loadFiles(s.files, s.sessionFile);
+    // The Library is a launcher, not a workspace: land back in Files so the
+    // loaded session + its files are in front of you (self-test 3.1).
+    ui.activeActivityView = 'files';
   }
 
   function loadVisual(v: VisualItem) {
@@ -17,6 +21,7 @@
     const ext = v.runtimes[0] ?? 'hydra';
     const id = workspace.addFile(`${v.id}.${ext}`, v.content);
     workspace.openFile(id);
+    ui.activeActivityView = 'files';
   }
 </script>
 
