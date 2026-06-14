@@ -1,0 +1,12 @@
+{
+  "component": "Kanopi",
+  "updated": "2026-06-14",
+  "source": "packages/library/bundled + tests/e2e",
+  "grammars": {
+    "ames": "green",
+    "not-reich": "green",
+    "visser5": "green",
+    "acceleration": "yellow",
+    "transposition": "yellow"
+  }
+}
