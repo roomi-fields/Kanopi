@@ -134,6 +134,70 @@ export async function setupAudioCapture(page: Page): Promise<{
 }
 
 /**
+ * Inject a fake Web MIDI access so runtime-midi's `MidiSink.init()` finds an
+ * output port in headless Chromium (which has no real MIDI hardware). The fake
+ * output's `send(bytes, ts)` pushes a copy of the raw MIDI bytes into a global
+ * `__kanopiMidiBytes` array the test can read back.
+ *
+ * MUST be invoked BEFORE `page.goto()` so the override is in place before any
+ * adapter calls `navigator.requestMIDIAccess()` (after the user gesture).
+ */
+export async function setupFakeMidi(page: Page): Promise<{
+  getSent: () => Promise<number[][]>;
+}> {
+  await page.addInitScript(() => {
+    const w = window as unknown as {
+      __kanopiMidiBytes?: number[][];
+      navigator: Navigator & {
+        requestMIDIAccess?: (opts?: unknown) => Promise<unknown>;
+      };
+    };
+    const sent: number[][] = [];
+    w.__kanopiMidiBytes = sent;
+
+    const fakeOutput = {
+      id: 'kanopi-fake-out',
+      name: 'Kanopi Fake MIDI Out',
+      manufacturer: 'kanopi-test',
+      type: 'output',
+      state: 'connected',
+      connection: 'open',
+      // Web MIDI signature: send(data, timestamp?). runtime-midi passes raw
+      // status/data byte arrays; copy them so later mutation can't corrupt the
+      // capture.
+      send: (data: number[] | Uint8Array) => {
+        sent.push(Array.from(data));
+      },
+      clear: () => {},
+      open: () => Promise.resolve(fakeOutput),
+      close: () => Promise.resolve(fakeOutput),
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    };
+
+    const outputsMap = new Map<string, typeof fakeOutput>([[fakeOutput.id, fakeOutput]]);
+    const fakeAccess = {
+      inputs: new Map(),
+      outputs: outputsMap,
+      sysexEnabled: false,
+      onstatechange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    };
+
+    w.navigator.requestMIDIAccess = () => Promise.resolve(fakeAccess);
+  });
+
+  return {
+    getSent: async () =>
+      page.evaluate(() => {
+        const w = window as unknown as { __kanopiMidiBytes?: number[][] };
+        return w.__kanopiMidiBytes ?? [];
+      })
+  };
+}
+
+/**
  * Move the CodeMirror cursor to `line` (1-indexed), trigger `Ctrl/Meta+Enter`
  * to evaluate the surrounding block, and wait for the green/red eval flash to
  * appear and clear. Returns once the flash has been removed (so callers can
