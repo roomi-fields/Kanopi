@@ -62,6 +62,40 @@ function makeWesternResolver(): Resolver {
   });
 }
 
+// Solfège 12-TET resolver — same grid, do/re/mi note names. Many BP3 grammars
+// (Bol Processor heritage) emit French solfège terminals (`do3`, `fa#3`,
+// `sol4`); the western resolver leaves those untouched, so a sealed transpose
+// would never reach their pitch. Same degrees as western (do=la-relative C),
+// la = A440. This is a BP3-naming concern kept in the BP3 adapter, NOT woven
+// into the clean core resolver (guardrail: ISO-BP3 stays isolated).
+const SOLFEGE_NOTES = ['do', 're', 'mi', 'fa', 'sol', 'la', 'si'];
+function makeSolfegeResolver(): Resolver {
+  return new Resolver({
+    alphabet: { notes: SOLFEGE_NOTES, alterations: { '#': 1, b: -1 } },
+    octaves: {
+      position: 'suffix',
+      separator: '',
+      registers: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+      default: 4
+    },
+    tuning: { degrees: [0, 2, 4, 5, 7, 9, 11], baseHz: 440, baseNote: 'la', baseRegister: 4 },
+    temperament: { divisions: 12, period_ratio: 2, ratios: TWELVE_TET }
+  });
+}
+
+// Pick the resolver matching the grammar's note naming. BP3 grammars are either
+// western (`C4`) or solfège (`do4`); a derivation is homogeneous, so the first
+// pitched terminal decides. Solfège names are checked longest-first so `sol`
+// isn't shadowed by `so`/`s`. Falls back to western (the slice default).
+function pickResolver(tokens: { token: string }[]): Resolver {
+  const solfegeHead = /^(do|re|mi|fa|sol|la|si)([#b]|\d|$)/;
+  for (const t of tokens) {
+    if (solfegeHead.test(t.token)) return makeSolfegeResolver();
+    if (/^[A-G]([#b]|\d|$)/.test(t.token)) return makeWesternResolver();
+  }
+  return makeWesternResolver();
+}
+
 // A front-end turns language source into a derivable BP3 SceneAST + parse
 // errors. Both languages produce the SAME `ast` shape (BPScript compiles down
 // to a BP3 grammar that the BP3 front-end then parses), so the rest of the
@@ -243,7 +277,7 @@ function makeBpxAdapter(
         return;
       }
 
-      const resolver = makeWesternResolver();
+      const resolver = pickResolver(tokens);
       dispatcher.addTransport('default', new WebAudioTransport(ctx, { resolver }));
       // The dispatcher routes via per-token resolver/transport lookup; this
       // global resolver is the fallback the WebAudio path uses for pitches.

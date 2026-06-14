@@ -12,9 +12,10 @@ import { Resolver } from '../../../../core/src/dispatcher/resolver.js';
 //   - vel / velocity overrides the running velocity for that token
 //   - a sealed vel:0 mutes the terminal (native silences it → no event)
 //   - chan overrides the running channel
-// alan/beatrix can only prove END-TO-END once BPx stops emitting
-// `runtimeQualifiers: null` (emit/emitFromInstances.ts) — the consumer below is
-// ready and waiting, exercised here on synthetic tokens that carry the payload.
+// BPx now seals this payload per terminal (6ef1a95: alan {vel:0,chan:2} ≠
+// beatrix {vel:0}). These tests pin the consumer deterministically on synthetic
+// tokens; the second describe block proves the alan/beatrix differentiator
+// (sealed transpose on solfège pitches).
 
 const TWELVE_TET = Array.from({ length: 12 }, (_, i) => Math.pow(2, i / 12));
 function westernResolver() {
@@ -65,7 +66,27 @@ interface DispatcherInternals {
  * transport received. No audio context needed: a stub `currentTime` + the
  * default clock start time of 0 make `_schedule(Infinity)` deterministic.
  */
-function dispatch(tokens: TimedTokenLike[]): SentEvent[] {
+// Solfège twin of the western resolver — same 12-TET grid, do/re/mi names, la =
+// A440. Bol Processor grammars (alan/beatrix) emit solfège terminals, so a
+// sealed transpose only reaches their pitch through this resolver.
+function solfegeResolver() {
+  return new Resolver({
+    alphabet: {
+      notes: ['do', 're', 'mi', 'fa', 'sol', 'la', 'si'],
+      alterations: { '#': 1, b: -1 }
+    },
+    octaves: {
+      position: 'suffix',
+      separator: '',
+      registers: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+      default: 4
+    },
+    tuning: { degrees: [0, 2, 4, 5, 7, 9, 11], baseHz: 440, baseNote: 'la', baseRegister: 4 },
+    temperament: { divisions: 12, period_ratio: 2, ratios: TWELVE_TET }
+  });
+}
+
+function dispatch(tokens: TimedTokenLike[], resolver: unknown = westernResolver()): SentEvent[] {
   const sent: SentEvent[] = [];
   const fakeCtx = { currentTime: 0, state: 'running', resume() {} };
   const d = new Dispatcher(fakeCtx as unknown as AudioContext) as unknown as DispatcherInternals;
@@ -75,7 +96,7 @@ function dispatch(tokens: TimedTokenLike[]): SentEvent[] {
     },
     close() {}
   });
-  d._resolver = westernResolver();
+  d._resolver = resolver;
   d.setControlDefaults({ vel: 64, chan: 1 });
   d.load(tokens);
   d._running = true;
@@ -133,5 +154,81 @@ describe('dispatcher — per-token runtimeQualifiers (E-016 consumer)', () => {
     expect(sent).toHaveLength(1);
     expect(sent[0].token).toBe('C4');
     expect(sent[0].velocity).toBeCloseTo(64 / 127, 5);
+  });
+});
+
+// E-016 differentiator: alan-dice carries a sealed transpose:-12 on its
+// terminals, beatrix-dice does not (BPx 6ef1a95). Both are solfège grammars, so
+// the shift only reaches their pitch through the solfège resolver. This is what
+// makes alan ≠ beatrix post-dispatch — matching the native engine.
+describe('dispatcher — sealed transpose on solfège pitches (E-016 alan/beatrix)', () => {
+  const solfege = solfegeResolver();
+
+  it('shifts a solfège terminal an octave down on a sealed transpose:-12 (alan)', () => {
+    const sent = dispatch(
+      [
+        {
+          token: 'do3',
+          start: 0,
+          end: 500,
+          type: 'terminal',
+          runtimeQualifiers: { vel: 80, transpose: -12 }
+        }
+      ],
+      solfege
+    );
+    expect(sent[0].token).toBe('do2');
+    expect(sent[0].velocity).toBeCloseTo(80 / 127, 5);
+  });
+
+  it('leaves a solfège terminal in place with no transpose (beatrix)', () => {
+    const sent = dispatch(
+      [{ token: 'do3', start: 0, end: 500, type: 'terminal', runtimeQualifiers: { vel: 80 } }],
+      solfege
+    );
+    expect(sent[0].token).toBe('do3');
+  });
+
+  it('keeps enharmonic spelling sane across the octave wrap (fa#3 → solb2)', () => {
+    const sent = dispatch(
+      [
+        {
+          token: 'fa#3',
+          start: 0,
+          end: 500,
+          type: 'terminal',
+          runtimeQualifiers: { transpose: -12 }
+        }
+      ],
+      solfege
+    );
+    expect(sent[0].token).toBe('solb2');
+  });
+
+  it('makes alan ≠ beatrix: same notes, one octave apart', () => {
+    const notes = ['do3', 'mi5', 'sol4'];
+    const alan = dispatch(
+      notes.map((token, i) => ({
+        token,
+        start: i * 500,
+        end: i * 500 + 500,
+        type: 'terminal',
+        runtimeQualifiers: { vel: 80, transpose: -12 }
+      })),
+      solfege
+    );
+    const beatrix = dispatch(
+      notes.map((token, i) => ({
+        token,
+        start: i * 500,
+        end: i * 500 + 500,
+        type: 'terminal',
+        runtimeQualifiers: { vel: 80 }
+      })),
+      solfege
+    );
+    expect(alan.map((e) => e.token)).toEqual(['do2', 'mi4', 'sol3']);
+    expect(beatrix.map((e) => e.token)).toEqual(['do3', 'mi5', 'sol4']);
+    expect(alan.map((e) => e.token)).not.toEqual(beatrix.map((e) => e.token));
   });
 });
