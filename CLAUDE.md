@@ -63,19 +63,23 @@ Located in `.claude/skills/`:
 - **`svelte-5-patterns`** — Svelte 5 runes rules ($state / $derived / $effect / $props / $bindable), compiler traps (await rewriting), CodeMirror-inside-Svelte pattern.
 - **`vite-hmr-reset`** — deterministic HMR recovery procedure (legacy WSL2 fallback; rarely needed on native PC2). Use if HMR misbehaves under forced polling.
 
-## Protocole tour (hub `/home/romi/dev/bp/hub`)
+## Protocole tour (hub `/home/romi/dev/bp/hub`, CLI `tour`)
 
-Kanopi est un projet coordonné via la tour. Protocole (`hub/README.md §Le protocole`),
-non optionnel :
+Kanopi est coordonné via la tour. Le protocole est **mécanisé par le CLI `~/dev/bp/hub/tour`** —
+fini les éditions markdown du courrier à la main. Non optionnel.
 
-1. **Début de session** : lire `TABLEAU.md`, ma boîte `courrier/kanopi.md`, mes `contrats/`.
-2. **Fin de session** : MAJ ma fiche `projets/kanopi.md` + ma ligne du `TABLEAU.md` + ma colonne
-   `<kanopi>/baseline-status.json`, et poster dans les boîtes `courrier/<projet>.md` impactées.
-   Ne pas laisser ma ligne se périmer.
-3. **Propriété** : je n'édite QUE ma fiche / ma ligne / ma colonne. Le courrier des autres est en
-   **ajout seul**. Je ne pousse PAS le hub (l'architecte committe/pousse). L'architecte ne corrige
-   pas mes pièces à ma place — il recadre.
-4. **Le code fait foi** : un statut se vérifie sur pièces, jamais affirmé de mémoire.
+1. **Identité (1× par session)** : `export BP_AGENT=kanopi` (ou `--from kanopi` sur chaque appel ;
+   l'env ne persiste pas entre commandes shell d'une session Claude).
+2. **Début de session** : `~/dev/bp/hub/tour inbox` (mes non-lus) + lire `TABLEAU.md` et mes
+   `contrats/`. Quand un message est traité : `tour inbox --ack`.
+3. **Écrire / demander un arbitrage** : `~/dev/bp/hub/tour send <dest> "message"` (`architecte` est
+   un destinataire valide). **Jamais** écrire dans ma propre boîte. Décision :
+   `tour decide <slug> -m "titre" --impacts a,b,c` (notifie auto les impactés).
+4. **Fin de session** : MAJ moi-même ma ligne du `TABLEAU.md` + ma fiche `projets/kanopi.md` + ma
+   colonne `baseline-status.json`. L'architecte ne corrige plus mes pièces — il recadre.
+   « Le code fait foi » : un statut se vérifie sur pièces, jamais de mémoire.
+
+Détail : `hub/README.md` (§Le protocole + §Outil tour).
 
 ## Memory
 
