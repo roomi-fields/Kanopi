@@ -233,6 +233,10 @@ export class Dispatcher {
         isProlongation: t.token === '_',
       };
       if (t.label) evt.label = t.label;
+      // Per-token runtime payload (M5+ contract): the engine seals the resolved
+      // velocity/transpose/channel state onto each terminal as `runtimeQualifiers`.
+      // Carried through so the send path can apply it (see _applyRuntimeQualifiers).
+      if (t.runtimeQualifiers) evt.rq = t.runtimeQualifiers;
       return evt;
     }).sort((a, b) => {
       if (a.startSec !== b.startSec) return a.startSec - b.startSec;
@@ -402,6 +406,15 @@ export class Dispatcher {
         const transport = this._transportForToken(evt.token);
 
         if (transport) {
+          // Fold the per-token runtime payload over the running controlState
+          // (transpose stacks, vel/chan override). A sealed vel:0 mutes the
+          // terminal — native silences it, so we emit nothing for this token.
+          const eff = this._effectiveControls(evt.rq);
+          if (eff.muted) {
+            this._cursor++;
+            continue;
+          }
+
           // Symbolic pitch operations: keyxpand → rotate (degree) → transpose (grid)
           let token = evt.token;
           const resolver = this._resolverForToken(evt.token);
@@ -417,8 +430,8 @@ export class Dispatcher {
             if (this.controlState.rotate) {
               token = resolver.rotateToken(token, this.controlState.rotate);
             }
-            if (this.controlState.transpose) {
-              token = resolver.transposeToken(token, this.controlState.transpose);
+            if (eff.transpose) {
+              token = resolver.transposeToken(token, eff.transpose);
             }
           }
           // Actor transport params (e.g. ch:10 from @actor drums ... transport:midi(ch:10))
@@ -430,8 +443,9 @@ export class Dispatcher {
             startSec: this._loopOffset + evt.startSec,
             durSec: evt.durSec,
             ...this.controlState,
+            ...(eff.chan !== undefined ? { chan: eff.chan } : {}),
             ...actorParams,  // actor params override controlState (e.g. chan from ch:10)
-            velocity: (actorParams.vel ?? this.controlState.vel) / 127,
+            velocity: (actorParams.vel ?? eff.vel) / 127,
           }, absTime);
         }
       }
@@ -480,6 +494,7 @@ export class Dispatcher {
             isProlongation: t.token === '_',
           };
           if (t.label) evt.label = t.label;
+          if (t.runtimeQualifiers) evt.rq = t.runtimeQualifiers;
           return evt;
         }).sort((a, b) => {
           if (a.startSec !== b.startSec) return a.startSec - b.startSec;
@@ -533,6 +548,30 @@ export class Dispatcher {
 
     // Direct BP3 control: _vel(80), _chan(2), etc.
     this._setControl(name, value);
+  }
+
+  /**
+   * Resolve the effective controls for a terminal, folding a per-token
+   * `runtimeQualifiers` payload over the running controlState. Mirrors BPx's
+   * own MIDI emitter (`emit/midiEvents.ts`): a sealed payload overrides the
+   * running state for that one token (velocity, channel) and stacks on the
+   * grid transpose. A sealed `vel:0` means "muted" (native silences the note).
+   *
+   * @param {Object|null} rq - token.runtimeQualifiers (plain object or null)
+   * @returns {{ transpose: number, vel: number, chan: number|undefined, muted: boolean }}
+   */
+  _effectiveControls(rq) {
+    const cs = this.controlState;
+    let transpose = cs.transpose || 0;
+    let vel = cs.vel;
+    let chan = cs.chan;
+    if (rq) {
+      if (typeof rq.transpose === 'number') transpose += rq.transpose;
+      const pv = rq.vel ?? rq.velocity;
+      if (typeof pv === 'number') vel = pv;
+      if (typeof rq.chan === 'number') chan = rq.chan;
+    }
+    return { transpose, vel, chan, muted: vel === 0 };
   }
 
   _setControl(name, value) {
