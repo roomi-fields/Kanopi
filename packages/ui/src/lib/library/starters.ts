@@ -14,6 +14,8 @@ import bundled03Lead from '../../../../library/bundled/03-lead.strudel?raw';
 // derived by the next-gen BPx engine and played through Kanopi's WebAudio path.
 import bpRotateScales from '../../../../library/bundled/bp-rotate-scales.gr?raw';
 import bpNotReich from '../../../../library/bundled/bp-not-reich.gr?raw';
+import bpAcceleration from '../../../../library/bundled/bp-acceleration.gr?raw';
+import bpTransposition from '../../../../library/bundled/bp-transposition.gr?raw';
 import bpAmes from '../../../../library/bundled/bp-ames.gr?raw';
 import bpVisser5 from '../../../../library/bundled/bp-visser5.gr?raw';
 
@@ -324,6 +326,22 @@ function bpShowcase(): Starter[] {
       'A Bol Processor grammar by Thierry Montaudon (1997), a phasing minimalist study in the spirit of Steve Reich. ~580 notes across overlapping voices, derived by BPx and rendered through Kanopi’s WebAudio path. Ctrl+Enter to play, Ctrl+. to silence.',
       'bp-not-reich.gr',
       bpNotReich
+    ),
+    bpStarter(
+      'acceleration',
+      'BP — Acceleration',
+      'Harm Visser · recursive sawtooth rhythm',
+      'A Bol Processor grammar by Harm Visser (1997) building an accelerating “sawtooth-rhythm” through recursive rewriting, with rising velocities, in the low register. Bernard Bel’s grammar formalism, derived by the BPx engine inside Kanopi. Ctrl+Enter to derive, Ctrl+. to hush.',
+      'bp-acceleration.gr',
+      bpAcceleration
+    ),
+    bpStarter(
+      'transposition',
+      'BP — Transposition',
+      'Harm Visser · the Computer Music Journal example',
+      'A Bol Processor grammar by Harm Visser (1997) using nested `_transpose()` substitutions — the very example published in the Computer Music Journal paper on BP. A deep low-register study, derived by the next-gen BPx engine and played in Kanopi. Ctrl+Enter to play, Ctrl+. to silence.',
+      'bp-transposition.gr',
+      bpTransposition
     ),
     bpStarter(
       'ames',

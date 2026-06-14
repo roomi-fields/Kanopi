@@ -147,6 +147,8 @@ test('Library panel screenshot shows the bundled starters and Bol Processor show
     '03 — Scenes A / B',
     'BP — Rotate scales',
     'BP — NotReich',
+    'BP — Acceleration',
+    'BP — Transposition',
     'BP — Ames',
     'BP — Visser5'
   ];
