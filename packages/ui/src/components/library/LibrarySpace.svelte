@@ -49,8 +49,20 @@
     {/each}
   </nav>
 
-  <!-- Main: filter bar + results grid. -->
+  <!-- Main: onboarding banner + filter bar + results grid. -->
   <div class="main">
+    <!-- 5-minute on-ramp + feedback channel (brief lot 5/7). -->
+    <div class="welcome">
+      <span class="wave">New to Kanopi?</span>
+      <span class="hint">
+        Load a <button class="inline-star" type="button" onclick={() => library.toggleShowcase()}
+          >★ showcase</button
+        > scene and press Ctrl+Enter to hear it. Ctrl+. silences everything.
+      </span>
+      <a class="feedback" href="mailto:contact@roomi-fields.com?subject=Kanopi beta feedback"
+        >Send feedback</a
+      >
+    </div>
     <header class="bar">
       <input
         class="search"
@@ -178,6 +190,40 @@
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
+  }
+  .welcome {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    background: var(--elevated);
+    border-bottom: 1px solid var(--border-dim);
+    font-size: 11.5px;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+  }
+  .welcome .wave {
+    color: var(--amber);
+    font-weight: 500;
+  }
+  .welcome .hint {
+    flex: 1;
+    min-width: 200px;
+  }
+  .inline-star {
+    color: var(--amber);
+    text-decoration: underline;
+  }
+  .feedback {
+    color: var(--cyan);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+  .feedback:hover {
+    border-color: var(--cyan);
   }
   .bar {
     display: flex;
