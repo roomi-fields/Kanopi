@@ -16,6 +16,31 @@
   // One dot per beat in the current time signature. Driven by `beatsPerBar`
   // so `@time 3/4` shows 3 dots, `@time 7/8` shows 7, etc.
   const dots = $derived(Array.from({ length: clock.state.beatsPerBar || 4 }, (_, i) => i));
+
+  // Manual BPM entry (self-test 4.3 — TAP worked but you couldn't type a tempo).
+  // Click the value → edit in place → Enter applies, Escape cancels.
+  let editing = $state(false);
+  let draft = $state('');
+
+  function startEdit() {
+    draft = clock.state.bpm.toFixed(1);
+    editing = true;
+  }
+  function applyEdit() {
+    // Guard the blur that fires right after Enter/Escape already closed the
+    // field — otherwise Escape's cancel gets overridden by an apply-on-blur.
+    if (!editing) return;
+    editing = false;
+    const n = parseFloat(draft.replace(',', '.'));
+    if (!Number.isNaN(n)) clock.setBpm(Math.min(400, Math.max(20, n)));
+  }
+  function cancelEdit() {
+    editing = false; // the ensuing blur calls applyEdit, but the !editing guard skips it
+  }
+  function focusSelect(node: HTMLInputElement) {
+    node.focus();
+    node.select();
+  }
 </script>
 
 <div class="transport-cluster">
@@ -35,7 +60,30 @@
   </button>
 
   <div class="bpm-module">
-    <span class="bpm-value">{bpmInt}<span class="decimal">.{bpmDec}</span></span>
+    {#if editing}
+      <input
+        class="bpm-input"
+        type="text"
+        inputmode="decimal"
+        aria-label="BPM"
+        bind:value={draft}
+        use:focusSelect
+        onkeydown={(e) => {
+          if (e.key === 'Enter') applyEdit();
+          else if (e.key === 'Escape') cancelEdit();
+        }}
+        onblur={applyEdit}
+      />
+    {:else}
+      <button
+        class="bpm-value-btn"
+        type="button"
+        title="Cliquer pour saisir le BPM"
+        onclick={startEdit}
+      >
+        <span class="bpm-value">{bpmInt}<span class="decimal">.{bpmDec}</span></span>
+      </button>
+    {/if}
     <span class="bpm-label">BPM</span>
   </div>
 
@@ -117,6 +165,33 @@
   .bpm-value :global(.decimal) {
     font-size: 15px;
     opacity: 0.75;
+  }
+
+  .bpm-value-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .bpm-value-btn:hover .bpm-value {
+    text-shadow: 0 0 14px var(--amber-glow);
+  }
+
+  .bpm-input {
+    width: 54px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 22px;
+    color: var(--amber);
+    background: var(--bg);
+    border: 1px solid var(--amber-dim);
+    border-radius: 2px;
+    padding: 0 2px;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
   }
 
   .bpm-label {
