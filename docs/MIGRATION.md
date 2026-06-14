@@ -95,7 +95,8 @@ kanopi/
 - `BPscript/lib/` — alphabets, tunings, temperaments (à **évaluer** : langue ou Kanopi ?)
 
 **Moteur:**
-- `BPscript/bp3-engine/` — submodule (reste)
+- `bp3-engine` — clone canonique autonome `/home/romi/dev/bp/bp3-engine` (dé-submodulé de
+  BPscript le 2026-06-14 ; l'ancien chemin `BPscript/bp3-engine/` n'existe plus)
 - `BPscript/dist/` — build WASM
 
 ### Décisions en suspens
