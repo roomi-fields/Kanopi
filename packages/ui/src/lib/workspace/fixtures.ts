@@ -4,7 +4,7 @@ import { runtimeFromExt } from './types';
 const raw: { path: string; contents: string }[] = [
   {
     path: 'session.kanopi',
-    contents: `# myset — main session
+    contents: `# main session
 # Edit and save: actors/scenes/maps reload on the fly.
 
 @library dirt-samples

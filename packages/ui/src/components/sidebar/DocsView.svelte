@@ -3,6 +3,7 @@
 
   type Section = { id: string; label: string };
   const sections: Section[] = [
+    { id: 'start', label: 'Start here' },
     { id: 'language', label: 'Language' },
     { id: 'mappings', label: '@map syntax' },
     { id: 'runtimes', label: 'Runtimes' },
@@ -10,7 +11,7 @@
     { id: 'palette', label: 'Command palette' }
   ];
 
-  let active = $state<string>('language');
+  let active = $state<string>('start');
 
   function open(id: string) {
     active = id;
@@ -36,6 +37,64 @@
   </nav>
 
   <div class="body">
+    {#if active === 'start'}
+      <section id="docs-start">
+        <h3>What Kanopi is</h3>
+        <p>
+          Kanopi is a live-coding workbench that runs several engines side by side — Strudel for
+          sound, Hydra for visuals, and more — under one shared
+          <strong>transport</strong> (play / stop / tempo). A
+          <code>.kanopi</code> session file is the score that wires them together.
+        </p>
+
+        <h3>The five-minute loop</h3>
+        <ol class="steps">
+          <li>
+            <strong>Open a session.</strong> Library panel → pick a starter → it replaces the workspace
+            and drops you back in Files.
+          </li>
+          <li>
+            <strong>Read the code.</strong> Each tab is one <em>actor</em> (a Strudel, Hydra, …
+            file). The <code>.kanopi</code> tab is the session itself.
+          </li>
+          <li>
+            <strong>Evaluate a block.</strong> Put the cursor in a block and press
+            <kbd>Cmd/Ctrl</kbd>+<kbd>Enter</kbd>. The line flashes; sound or visuals start.
+          </li>
+          <li>
+            <strong>Play the transport.</strong> <kbd>Space</kbd> (or the ▶ button) starts the
+            clock. <kbd>Cmd/Ctrl</kbd>+<kbd>.</kbd> hushes everything.
+          </li>
+          <li>
+            <strong>Arm actors &amp; scenes.</strong> Toggle actors in the Actors panel; switch
+            scenes with <kbd>Alt</kbd>+<kbd>1…9</kbd>.
+          </li>
+        </ol>
+
+        <h3>Three building blocks</h3>
+        <table>
+          <thead><tr><th>Block</th><th>Is</th></tr></thead>
+          <tbody>
+            <tr
+              ><td><code>@actor</code></td><td
+                >One engine + one file (e.g. a Strudel pattern, a Hydra sketch).</td
+              ></tr
+            >
+            <tr
+              ><td><code>@scene</code></td><td
+                >A named set of actors to bring up together — your song sections.</td
+              ></tr
+            >
+            <tr
+              ><td><code>@map</code></td><td
+                >A MIDI control routed to a target (tempo, scene, actor toggle).</td
+              ></tr
+            >
+          </tbody>
+        </table>
+      </section>
+    {/if}
+
     {#if active === 'language'}
       <section id="docs-language">
         <h3>Kanopi session language</h3>
@@ -44,7 +103,7 @@
           for a live-coding session. Edit and save: the parser reloads on every change.
         </p>
         <pre><code
-            >{`# myset
+            >{`# my-session — title is just a comment
 @actor drums   drums.tidal    tidal
 @actor visuals visuals.hydra  hydra
 
@@ -54,6 +113,31 @@
 @map cv:1     tempo
 @map trig:36  scene:drop`}</code
           ></pre>
+        <h3>Line by line</h3>
+        <table>
+          <thead><tr><th>Directive</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr
+              ><td><code>@actor NAME FILE RUNTIME</code></td><td
+                >Declares an actor. Missing files are created empty.</td
+              ></tr
+            >
+            <tr
+              ><td><code>@scene NAME a b …</code></td><td
+                >A scene that brings up the listed actors.</td
+              ></tr
+            >
+            <tr
+              ><td><code>@map SOURCE TARGET</code></td><td
+                >Routes a MIDI source to a target (see <em>@map syntax</em>).</td
+              ></tr
+            >
+            <tr
+              ><td><code># …</code></td><td>Comment. The first one is a handy session title.</td
+              ></tr
+            >
+          </tbody>
+        </table>
         <p class="hint">Full spec in <code>docs/spec/KANOPI_LANGUAGE.md</code>.</p>
       </section>
     {/if}
@@ -94,30 +178,53 @@
     {#if active === 'runtimes'}
       <section id="docs-runtimes">
         <h3>Runtimes</h3>
+        <p>
+          Each actor file is handed to the engine matching its extension. Audio engines are gated by
+          the transport where they can be; Strudel and Hydra start on evaluation.
+        </p>
         <table>
           <thead><tr><th>Runtime</th><th>Files</th><th>Notes</th></tr></thead>
           <tbody>
             <tr
               ><td>Strudel</td><td><code>.strudel .tidal</code></td><td
-                >JS port of TidalCycles, with dirt samples</td
+                >JS port of TidalCycles, with dirt samples.</td
               ></tr
             >
-            <tr><td>Hydra</td><td><code>.hydra</code></td><td>WebGL visuals, overlay canvas</td></tr
+            <tr
+              ><td>Hydra</td><td><code>.hydra</code></td><td>WebGL visuals on an overlay canvas.</td
+              ></tr
+            >
+            <tr
+              ><td>Mercury</td><td><code>.merc .mercury</code></td><td
+                >Minimal live-coding language for sound.</td
+              ></tr
+            >
+            <tr
+              ><td>Csound</td><td><code>.csd .orc</code></td><td
+                >Full Csound 7 engine, compiled in the browser.</td
+              ></tr
+            >
+            <tr
+              ><td>p5</td><td><code>.p5</code></td><td>p5.js sketches on an overlay canvas.</td></tr
+            >
+            <tr
+              ><td>Bol Processor</td><td><code>.gr .bp</code></td><td
+                >Bernard Bel's grammars, derived to sound (showcase).</td
+              ></tr
             >
             <tr
               ><td>JS / WebAudio</td><td><code>.js</code></td><td
                 >Globals: <code>audio</code> (AudioContext),
-                <code>helpers.register(stopFn)</code></td
+                <code>helpers.register(stopFn)</code>.</td
               ></tr
             >
             <tr
-              ><td>SC</td><td><code>.scd</code></td><td
-                >SuperCollider — niveau 3 v2, silent for now</td
+              ><td>SuperCollider</td><td><code>.scd</code></td><td
+                >Planned (level 3) — silent for now.</td
               ></tr
             >
             <tr
-              ><td>Python</td><td><code>.py</code></td><td
-                >Niveau 3 v2 via bridge, silent for now</td
+              ><td>Python</td><td><code>.py</code></td><td>Planned via bridge — silent for now.</td
               ></tr
             >
           </tbody>
@@ -130,12 +237,18 @@
       <section id="docs-keys">
         <h3>Keybindings</h3>
         <ul>
-          <li><kbd>Ctrl/Cmd</kbd>+<kbd>K</kbd> — open command palette</li>
-          <li><kbd>Ctrl/Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> — open command palette (alt)</li>
-          <li><kbd>Ctrl/Cmd</kbd>+<kbd>Enter</kbd> — evaluate current block in editor</li>
-          <li><kbd>Space</kbd> — toggle play/stop (outside editable area)</li>
-          <li><kbd>1</kbd>–<kbd>9</kbd> — activate scene N (outside editable area)</li>
-          <li><kbd>Esc</kbd> — close palette</li>
+          <li><kbd>Cmd/Ctrl</kbd>+<kbd>Enter</kbd> — evaluate the current block</li>
+          <li><kbd>Cmd/Ctrl</kbd>+<kbd>.</kbd> — hush everything (panic)</li>
+          <li><kbd>Space</kbd> — play / stop the transport (outside the editor)</li>
+          <li><kbd>Alt</kbd>+<kbd>1</kbd>–<kbd>9</kbd> — activate scene N</li>
+          <li><kbd>Cmd/Ctrl</kbd>+<kbd>1</kbd>–<kbd>9</kbd> — mute / unmute the Nth actor</li>
+          <li><kbd>Cmd/Ctrl</kbd>+<kbd>0</kbd> — unmute every actor</li>
+          <li>
+            <kbd>Cmd/Ctrl</kbd>+<kbd>K</kbd> — command palette (<kbd>Cmd/Ctrl</kbd>+<kbd>Shift</kbd
+            >+<kbd>P</kbd> also)
+          </li>
+          <li><kbd>Cmd/Ctrl</kbd>+<kbd>S</kbd> — force-save the workspace</li>
+          <li><kbd>Esc</kbd> — close the palette</li>
         </ul>
       </section>
     {/if}
@@ -199,13 +312,26 @@
   .body {
     flex: 1;
     overflow-y: auto;
-    padding: 12px 14px;
-    font-size: 11px;
-    line-height: 1.5;
+    padding: 14px 16px;
+    font-size: 12px;
+    line-height: 1.65;
     color: var(--text-muted);
   }
   section {
     margin-bottom: 24px;
+  }
+  .steps {
+    list-style: decimal;
+    margin: 6px 0 14px;
+    padding-left: 18px;
+  }
+  .steps li {
+    padding: 4px 0;
+    padding-left: 4px;
+  }
+  strong {
+    color: var(--text);
+    font-weight: 600;
   }
   section:last-child {
     margin-bottom: 0;
@@ -250,13 +376,13 @@
   table {
     width: 100%;
     border-collapse: collapse;
-    margin: 6px 0 10px;
-    font-size: 10.5px;
+    margin: 6px 0 12px;
+    font-size: 11px;
   }
   th,
   td {
     text-align: left;
-    padding: 4px 6px;
+    padding: 5px 7px;
     border-bottom: 1px solid var(--border-dim);
     vertical-align: top;
   }

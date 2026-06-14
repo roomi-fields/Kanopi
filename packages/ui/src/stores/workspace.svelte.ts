@@ -14,6 +14,14 @@ class WorkspaceStore {
     return this.files.find((f) => f.id === id);
   }
 
+  /** Name of the open session = the open .kanopi file, extension stripped.
+   * null when no session is loaded (drives the workspace label in the topbar,
+   * which used to show a hardcoded "myset" placeholder). */
+  get sessionName(): string | null {
+    const kanopi = this.files.find((f) => this.openTabIds.includes(f.id) && f.runtime === 'kanopi');
+    return kanopi ? kanopi.name.replace(/\.kanopi$/i, '') : null;
+  }
+
   openFile(id: string) {
     const file = this.fileById(id);
     if (!file) return;

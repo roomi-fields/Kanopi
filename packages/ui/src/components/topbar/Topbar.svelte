@@ -2,6 +2,7 @@
   import TransportCluster from './TransportCluster.svelte';
   import StrudelStatusPill from './StrudelStatusPill.svelte';
   import { ui } from '../../stores/ui.svelte';
+  import { workspace } from '../../stores/workspace.svelte';
 </script>
 
 <header class="topbar">
@@ -35,7 +36,11 @@
     </svg>
     <span class="brand-name">KANOPI</span>
     <span class="brand-sep">·</span>
-    <span class="workspace-name">myset</span>
+    {#if workspace.sessionName}
+      <span class="workspace-name">{workspace.sessionName}</span>
+    {:else}
+      <span class="workspace-name empty">no session</span>
+    {/if}
   </div>
 
   <div class="topbar-center">
@@ -118,6 +123,11 @@
     font-size: 12px;
     color: var(--text-muted);
     letter-spacing: 0.06em;
+  }
+
+  .workspace-name.empty {
+    color: var(--text-faint);
+    font-style: italic;
   }
 
   .topbar-center {

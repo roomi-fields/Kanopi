@@ -89,13 +89,13 @@
 
 <style>
   .wrap {
-    padding: 10px 12px 16px;
+    padding: 14px 14px 22px;
   }
   .intro {
     color: var(--text-dim);
-    font-size: 11px;
-    line-height: 1.55;
-    margin: 0 0 12px;
+    font-size: 11.5px;
+    line-height: 1.65;
+    margin: 0 0 16px;
   }
   .list {
     list-style: none;
@@ -103,16 +103,16 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 11px;
   }
   .card {
     border: 1px solid var(--border);
-    border-radius: 3px;
-    padding: 10px 12px;
+    border-radius: 4px;
+    padding: 14px 16px;
     background: var(--bg);
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 9px;
   }
   header {
     display: flex;
@@ -122,7 +122,7 @@
   }
   .name {
     color: var(--text);
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
     letter-spacing: 0.04em;
   }
@@ -135,13 +135,13 @@
   }
   .desc {
     color: var(--text-muted);
-    font-size: 10.5px;
-    line-height: 1.5;
+    font-size: 11.5px;
+    line-height: 1.6;
     margin: 0;
   }
   .load {
     align-self: flex-start;
-    padding: 4px 10px;
+    padding: 5px 12px;
     border: 1px solid var(--border);
     border-radius: 2px;
     background: var(--elevated);
@@ -157,8 +157,8 @@
     border-color: var(--amber);
   }
   .section-title {
-    margin: 12px 0 4px;
-    font-size: 9px;
+    margin: 22px 0 8px;
+    font-size: 9.5px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--text-dim);
