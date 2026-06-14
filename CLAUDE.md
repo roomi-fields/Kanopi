@@ -63,6 +63,20 @@ Located in `.claude/skills/`:
 - **`svelte-5-patterns`** — Svelte 5 runes rules ($state / $derived / $effect / $props / $bindable), compiler traps (await rewriting), CodeMirror-inside-Svelte pattern.
 - **`vite-hmr-reset`** — deterministic HMR recovery procedure (legacy WSL2 fallback; rarely needed on native PC2). Use if HMR misbehaves under forced polling.
 
+## Protocole tour (hub `/home/romi/dev/bp/hub`)
+
+Kanopi est un projet coordonné via la tour. Protocole (`hub/README.md §Le protocole`),
+non optionnel :
+
+1. **Début de session** : lire `TABLEAU.md`, ma boîte `courrier/kanopi.md`, mes `contrats/`.
+2. **Fin de session** : MAJ ma fiche `projets/kanopi.md` + ma ligne du `TABLEAU.md` + ma colonne
+   `<kanopi>/baseline-status.json`, et poster dans les boîtes `courrier/<projet>.md` impactées.
+   Ne pas laisser ma ligne se périmer.
+3. **Propriété** : je n'édite QUE ma fiche / ma ligne / ma colonne. Le courrier des autres est en
+   **ajout seul**. Je ne pousse PAS le hub (l'architecte committe/pousse). L'architecte ne corrige
+   pas mes pièces à ma place — il recadre.
+4. **Le code fait foi** : un statut se vérifie sur pièces, jamais affirmé de mémoire.
+
 ## Memory
 
 Kanopi session-specific memory at `~/.claude/projects/-mnt-d-Claude-kanopi/memory/` (separate from BPscript memory).
