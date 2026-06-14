@@ -1,0 +1,142 @@
+// BPScript demo scenes bundled from the shared catalogue
+// (hub/projets/librairies-inventaire.md, owner: bpscript). Each is a single
+// `.bps` that plays through the BPScript adapter (compileBPS → BPx → audio).
+// Loaded as raw text via a glob over the bundled demos directory; the per-demo
+// axes (category/level/⭐) come from the catalogue.
+//
+// Tuning note: microtonal demos (gamelan slendro, Bohlen-Pierce, arabic
+// quarter-tones) currently render in 12-TET — Kanopi has no custom-temperament
+// resolver yet (a post-beta axis, like the solfège resolver was). They sound,
+// just not at their intended tuning.
+
+import type { LibraryItem, LibraryCategory, OutputKind, Level } from './catalog';
+
+const raw = import.meta.glob('../../../../library/bundled/demos/*.bps', {
+  query: '?raw',
+  import: 'default',
+  eager: true
+}) as Record<string, string>;
+
+interface DemoMeta {
+  name: string;
+  tagline: string;
+  description: string;
+  category: LibraryCategory;
+  outputs: OutputKind[];
+  level: Level;
+  tags: string[];
+  showcase?: boolean;
+}
+
+// Keyed by the `.bps` file basename.
+const DEMO_META: Record<string, DemoMeta> = {
+  'polymetric-rhythm': {
+    name: 'Polymetric rhythm',
+    tagline: '3 against 4 against 5',
+    description: 'A didactic study in polymeter — three voices in 3, 4 and 5 over a shared pulse.',
+    category: 'bpscript',
+    outputs: ['audio'],
+    level: 'didactic',
+    tags: ['polymeter', 'rhythm'],
+    showcase: true
+  },
+  arabic: {
+    name: 'Arabic — maqam Rast',
+    tagline: 'quarter-tone melody',
+    description: 'A maqam Rast line with Arabic quarter-tones. (Renders in 12-TET for now.)',
+    category: 'bpscript',
+    outputs: ['audio'],
+    level: 'intermediate',
+    tags: ['microtonal', 'melody'],
+    showcase: true
+  },
+  gamelan: {
+    name: 'Gamelan — slendro',
+    tagline: 'Javanese pentatonic',
+    description: 'A slendro (Javanese pentatonic) texture. (Renders in 12-TET for now.)',
+    category: 'bpscript',
+    outputs: ['audio'],
+    level: 'intermediate',
+    tags: ['microtonal', 'gamelan'],
+    showcase: true
+  },
+  'bohlen-pierce': {
+    name: 'Bohlen-Pierce',
+    tagline: 'the 3:1 tritave',
+    description:
+      'A melody on the Bohlen-Pierce scale, built on a 3:1 tritave instead of the octave.',
+    category: 'bpscript',
+    outputs: ['audio'],
+    level: 'advanced',
+    tags: ['microtonal', 'xenharmonic'],
+    showcase: true
+  },
+  'cv-adsr': {
+    name: 'Acid Bass — ADSR',
+    tagline: 'envelope on a resonant filter',
+    description: 'An acid bassline driving an ADSR envelope into a resonant filter cutoff.',
+    category: 'bpscript',
+    outputs: ['audio'],
+    level: 'intermediate',
+    tags: ['cv', 'bass'],
+    showcase: true
+  },
+  'cv-lfo': {
+    name: 'Spatial Arp — LFO',
+    tagline: 'panning modulation',
+    description: 'An arpeggio swept across the stereo field by a panning LFO.',
+    category: 'bpscript',
+    outputs: ['audio'],
+    level: 'intermediate',
+    tags: ['cv', 'arp']
+  },
+  'midi-dual-output': {
+    name: 'MIDI + WebAudio',
+    tagline: 'two outputs at once',
+    description: 'A line sent to a MIDI synth and the in-browser synth simultaneously.',
+    category: 'bpscript',
+    outputs: ['midi', 'audio'],
+    level: 'intermediate',
+    tags: ['midi'],
+    showcase: true
+  },
+  'cv-backtick': {
+    name: 'Wobble Bass — backtick',
+    tagline: 'a custom JS curve in a backtick',
+    description:
+      'A wobble bass whose filter is modulated by a custom JavaScript curve embedded in a backtick — BPScript hosting code inline.',
+    category: 'bpscript-backticks',
+    outputs: ['audio'],
+    level: 'advanced',
+    tags: ['cv', 'backtick', 'code'],
+    showcase: true
+  }
+};
+
+export const DEMO_ITEMS: LibraryItem[] = Object.entries(raw)
+  .map(([path, contents]) => ({
+    base: path
+      .split('/')
+      .pop()!
+      .replace(/\.bps$/, ''),
+    contents
+  }))
+  .filter(({ base }) => base in DEMO_META)
+  .map(({ base, contents }): LibraryItem => {
+    const m = DEMO_META[base];
+    const file = `${base}.bps`;
+    return {
+      id: `bps-${base}`,
+      name: m.name,
+      tagline: m.tagline,
+      description: m.description,
+      category: m.category,
+      language: 'bpscript',
+      outputs: m.outputs,
+      level: m.level,
+      tags: m.tags,
+      showcase: m.showcase,
+      sessionFile: file,
+      files: [{ path: file, contents }]
+    };
+  });

@@ -1,0 +1,22 @@
+// CV: Spatial Arp — LFO panning on arpeggiated chords
+// Slow sine LFO sweeps the sound left-right
+// Pedal note stays center, arpeggios move in stereo
+
+@filter
+@core
+@controls
+@alphabet.western:browser
+@mm:100
+
+sweep(Arp, browser) = filter.lfo(0.4, 0.9, shape:sine)
+
+S -> {G2 _ _ _ G2 _ _ _ (vel:60, wave:triangle), Arp Arp, sweep}
+
+-----
+
+@mode:random
+
+Arp -> G4 B4 D5 G5 (wave:sine, vel:75, attack:5, release:200) [weight:40]
+Arp -> D4 G4 B4 D5 (wave:sine, vel:75, attack:5, release:200)
+Arp -> B3 D4 G4 B4 (wave:sine, vel:75, attack:5, release:200) [weight:30]
+Arp -> G4 D5 B4 G5 (wave:sine, vel:75, attack:5, release:200)

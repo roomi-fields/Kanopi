@@ -5,6 +5,7 @@
 // catalogue (hub/projets/librairies-inventaire.md) by bundling more scenes.
 
 import { STARTERS } from './starters';
+import { DEMO_ITEMS } from './demos';
 import type { LibraryItem, LibraryCategory, OutputKind, Level } from './catalog';
 
 interface Axes {
@@ -135,7 +136,7 @@ const DEFAULT_AXES: Axes = {
   tags: []
 };
 
-export const LIBRARY_ITEMS: LibraryItem[] = STARTERS.map((s) => {
+const STARTER_ITEMS: LibraryItem[] = STARTERS.map((s) => {
   const a = STARTER_AXES[s.id] ?? DEFAULT_AXES;
   return {
     id: s.id,
@@ -152,3 +153,7 @@ export const LIBRARY_ITEMS: LibraryItem[] = STARTERS.map((s) => {
     showcase: a.showcase
   };
 });
+
+// Bundled starters (sessions + bp3 showcase) + the BPScript demo scenes from the
+// shared catalogue. Lot 3 grows the latter; both share the one item shape.
+export const LIBRARY_ITEMS: LibraryItem[] = [...STARTER_ITEMS, ...DEMO_ITEMS];

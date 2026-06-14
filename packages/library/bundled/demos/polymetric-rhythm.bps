@@ -1,0 +1,13 @@
+// Polymetric Rhythm — 3 contre 4 contre 5
+// Démo : polymétrie avec speed, vélocités par voix
+
+@core
+@controls
+@alphabet.western:browser
+@mm:90
+
+S -> {
+  C4 C4 C4 (vel:100),
+  E4 E4 E4 E4 (vel:70),
+  G4 G4 G4 G4 G4 (vel:50)
+}

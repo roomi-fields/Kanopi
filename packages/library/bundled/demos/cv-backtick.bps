@@ -1,0 +1,19 @@
+// CV: Wobble Bass — custom JS curve for dubstep-style filter modulation
+// The curve oscillates faster and faster (exponential chirp)
+
+@core
+@controls
+@alphabet.western:browser
+@mm:70
+
+wobble(Bass, browser) = `(t, dur) => { const rate = 2 + 20 * (t/dur) * (t/dur); return Math.sin(t * rate * Math.PI * 2) * 0.5 + 0.5; }`
+
+S -> {Bass Bass, wobble wobble}
+
+-----
+
+@mode:random
+
+Bass -> C2 _ _ C2 _ _ C2 _ (wave:sawtooth, vel:110, filterQ:6) [weight:50]
+Bass -> C2 _ Eb2 _ C2 _ _ - (wave:sawtooth, vel:110, filterQ:6)
+Bass -> C2 _ _ _ _ _ _ - (wave:sawtooth, vel:110, filterQ:6) [weight:30]

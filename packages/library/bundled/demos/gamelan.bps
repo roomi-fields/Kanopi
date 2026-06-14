@@ -1,0 +1,14 @@
+// Gamelan Slendro — Javanese pentatonic
+// 5 notes: nem barang gulu dada lima
+// Stretched octave (period_ratio ≈ 2.02)
+
+@core
+@controls
+@alphabet.gamelan_slendro:browser
+@mm:60
+
+S -> Patet Balungan End
+
+Patet -> nem barang gulu dada lima (wave:triangle, vel:80)
+Balungan -> lima _ dada gulu _ barang nem _
+End -> nem _ _ _ _ (vel:60)

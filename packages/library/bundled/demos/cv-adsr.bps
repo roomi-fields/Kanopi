@@ -1,0 +1,21 @@
+// CV: Acid Bass — ADSR filter envelope on resonant sawtooth
+// TB-303 style: short attack, sharp decay, low sustain
+// The filter opens on each phrase then closes
+
+@filter
+@core
+@controls
+@alphabet.western:browser
+@mm:138
+
+env1(Bass, browser) = filter.adsr(5, 150, 0.2, 400)
+
+S -> {Bass Bass Bass Bass, env1 env1 env1 env1}
+
+-----
+
+@mode:random
+
+Bass -> C2 C2 C3 C2 - C2 Eb2 C2 (wave:sawtooth, vel:100, filterQ:8) [weight:50]
+Bass -> C2 - Eb2 F2 F#2 F2 Eb2 - (wave:sawtooth, vel:100, filterQ:8) [weight:30]
+Bass -> C2 C2 C2 - G2 - Eb2 C2 (wave:sawtooth, vel:100, filterQ:8)

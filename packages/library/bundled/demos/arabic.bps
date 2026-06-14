@@ -1,0 +1,15 @@
+// Maqam Rast — Arabic quarter-tone scale
+// Arabic music uses French solfège names (do re mi fa sol la si)
+// but with quarter-tone intervals from the maqam system
+
+@core
+@controls
+@alphabet.arabic:browser
+@tuning:maqam_rast
+@mm:70
+
+S -> Sayr Rujoo Qarar
+
+Sayr -> do re mi fa sol la si (wave:sine, vel:85)
+Rujoo -> si la sol fa mi re do (vel:70)
+Qarar -> do _ _ _ _ (vel:60)
