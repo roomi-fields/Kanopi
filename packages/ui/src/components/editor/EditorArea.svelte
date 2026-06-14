@@ -13,14 +13,19 @@
   <TabBar />
   <div class="editor-body">
     {#if file}
+      <!-- Props use `file?.` (not `file.`): when the active .kanopi tab is
+           closed, `file` becomes undefined and Svelte tears down CMEditor; one
+           of its teardown effects re-reads these prop getters, so a bare
+           `file.runtime` throws "Cannot read properties of undefined". The {#if}
+           guards the render, not the getter evaluated during teardown. -->
       <CMEditor
-        docId={file.id}
-        fileName={file.name}
-        doc={file.contents}
-        runtime={file.runtime}
-        onChange={(text) => workspace.updateContents(file.id, text)}
+        docId={file?.id}
+        fileName={file?.name}
+        doc={file?.contents}
+        runtime={file?.runtime}
+        onChange={(text) => file && workspace.updateContents(file.id, text)}
         onEval={(code, docOffset, actorId) =>
-          core.evaluateBlock(file.runtime, code, file.name, docOffset, actorId)}
+          file && core.evaluateBlock(file.runtime, code, file.name, docOffset, actorId)}
       />
     {:else}
       <p class="hint">Open a file from the sidebar.</p>
