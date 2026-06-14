@@ -22,6 +22,37 @@
   const showEventsOverlay =
     typeof location !== 'undefined' && new URLSearchParams(location.search).has('events');
 
+  // Import files dropped from the desktop (self-test 3.2 — a dropped .strudel
+  // opened in a new Chrome tab instead of loading into Kanopi). Scoped to
+  // external file drags (`Files` in dataTransfer) so it never interferes with
+  // the in-app tab-reorder drag (which carries `text/x-tab-id`, no files).
+  let dropActive = $state(false);
+
+  function onFileDragOver(e: DragEvent) {
+    if (!e.dataTransfer?.types.includes('Files')) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    dropActive = true;
+  }
+  function onFileDragLeave(e: DragEvent) {
+    if (!e.relatedTarget) dropActive = false; // only when leaving the window
+  }
+  async function onFileDrop(e: DragEvent) {
+    const files = e.dataTransfer?.files;
+    if (!files || files.length === 0) return; // tab reorder, not an external file
+    e.preventDefault();
+    dropActive = false;
+    let firstId: string | undefined;
+    for (const f of Array.from(files)) {
+      const id = workspace.addFile(f.name, await f.text());
+      firstId ??= id;
+    }
+    if (firstId) {
+      workspace.openFile(firstId);
+      workspace.setActive(firstId);
+    }
+  }
+
   onMount(() => {
     core.bindActorFiles((name) => {
       const actor = actorsStore.list.find((a) => a.name === name);
@@ -113,7 +144,9 @@
   });
 </script>
 
-<div class="app">
+<svelte:window ondragover={onFileDragOver} ondragleave={onFileDragLeave} ondrop={onFileDrop} />
+
+<div class="app" class:drop-active={dropActive}>
   <Topbar />
   <div
     class="body"
@@ -154,5 +187,20 @@
     background: var(--bg);
     overflow: hidden;
     min-height: 0;
+  }
+  .app.drop-active::after {
+    content: 'Déposer pour importer dans Kanopi';
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: rgba(0, 0, 0, 0.55);
+    border: 2px dashed var(--amber-dim);
+    color: var(--amber);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    pointer-events: none;
+    z-index: 1000;
   }
 </style>
