@@ -5,7 +5,7 @@ import { hydraAdapter } from './hydra';
 import { p5Adapter } from './p5';
 import { mercuryAdapter } from './mercury';
 import { csoundAdapter } from './csound';
-import { bp3Adapter } from './bp3';
+import { bp3Adapter, bpscriptAdapter } from './bp3';
 import { jsAdapter } from './webaudio';
 
 const adapters = new Map<Runtime, RuntimeAdapter>([
@@ -16,14 +16,18 @@ const adapters = new Map<Runtime, RuntimeAdapter>([
   ['mercury', mercuryAdapter],
   ['csound', csoundAdapter],
   ['bp3', bp3Adapter],
+  ['bpscript', bpscriptAdapter],
   ['js', jsAdapter]
 ]);
 
 /**
  * Runtimes Kanopi recognizes that don't (yet) have a live browser adapter:
  *  - `.scd` / `.py` → level 3 (osc-bridge → local sclang / python), Tauri v2.
- *  - `.kanopi` / `.bps` → session orchestration, handled by the session
- *    parser rather than a runtime adapter.
+ *  - `.kanopi` → session orchestration, handled by the session parser rather
+ *    than a runtime adapter.
+ *
+ * (`.bps` USED to live here as a session placeholder; it now has a real adapter
+ * — BPScript transpiles to a BP3 grammar that BPx derives to sound.)
  *
  * Kept as a tiny fallback table so `runtimeFromExt` still routes files to
  * the right tab header / icon / placeholder, while the adapter list stays
@@ -32,8 +36,7 @@ const adapters = new Map<Runtime, RuntimeAdapter>([
 const PLACEHOLDER_EXTENSIONS: Record<string, Runtime> = {
   '.scd': 'sc',
   '.py': 'python',
-  '.kanopi': 'kanopi',
-  '.bps': 'kanopi'
+  '.kanopi': 'kanopi'
 };
 
 export function getAdapter(runtime: Runtime): RuntimeAdapter | undefined {

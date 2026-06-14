@@ -54,3 +54,21 @@ export interface ParseBP3Result {
   notes: string[];
 }
 export function parseBP3(source: string, options?: ParseBP3Options): ParseBP3Result;
+
+// --- bpscript --------------------------------------------------------------
+// BPScript transpiler facade. Ships raw ESM JS with no `.d.ts`; we only use the
+// fields the `.bps` front-end needs (the BP3 grammar text + alphabet + errors).
+export interface CompileBPSError {
+  message: string;
+  line?: number;
+  col?: number;
+}
+export interface CompileBPSResult {
+  grammar: string;
+  alphabet: string[];
+  ast: unknown | null;
+  errors: CompileBPSError[];
+  warnings: unknown[];
+  [k: string]: unknown;
+}
+export function compileBPS(source: string): CompileBPSResult;

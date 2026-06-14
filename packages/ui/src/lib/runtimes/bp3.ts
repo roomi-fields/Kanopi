@@ -1,7 +1,9 @@
 import type { RuntimeAdapter, EvalSource, LogPush } from './adapter';
+import type { Runtime } from '../core-mock';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
 import { parseBP3 } from 'bp3-frontend';
+import { compileBPS } from 'bpscript/src/transpiler/index.js';
 import { createBPx } from 'bpx';
 // MIDI output sink for the beta-ensemble. runtime-midi OWNS the ISO-BP3 MIDI
 // path (hub/contrats/kanopi-runtime-midi.md); Kanopi feeds it the SAME raw BPx
@@ -16,21 +18,25 @@ import { WebAudioTransport } from '../../../../core/src/dispatcher/transports/we
 import { Resolver } from '../../../../core/src/dispatcher/resolver.js';
 
 /**
- * Bol Processor adapter (PRIMARY vertical slice).
+ * BPx language adapters (PRIMARY vertical slice).
  *
- * Wires a `.gr` grammar to audible WebAudio output through the upstream BPx
- * engine and Kanopi's own dispatcher:
+ * Two languages reach audible WebAudio output through the SAME upstream BPx
+ * engine and Kanopi's own dispatcher — only the front-end differs:
  *
- *   source(.gr) → parseBP3 → SceneAST → createBPx().loadGrammar → derive()
- *   → TimedToken[] → Dispatcher.load() → Dispatcher.start() → WebAudioTransport
+ *   .gr  : source → parseBP3 ───────────────────────────┐
+ *   .bps : source → compileBPS → BP3 grammar text → parseBP3 ┤
+ *                                                        ▼
+ *     → SceneAST → createBPx().loadGrammar → derive() → TimedToken[]
+ *     → Dispatcher.load() → Dispatcher.start() → WebAudioTransport (+ MIDI sink)
  *
- * Glue only. The frontend (bp3-frontend), the engine (bpx) and the dispatcher /
- * transport / resolver (core) are all consumed as-is. The TimedToken shape BPx
- * emits (`{ token, start, end }` in ms) is exactly what `Dispatcher.load()`
- * reads, so no token-shape shim is needed.
+ * Glue only. The frontends (bp3-frontend, bpscript), the engine (bpx) and the
+ * dispatcher / transport / resolver (core) are all consumed as-is. BPScript
+ * transpiles TO a BP3 grammar (`compileBPS().grammar`), so the `.bps` path just
+ * feeds that text into the SAME BP3 front-end the keystone `.gr` uses — no
+ * second engine, no token-shape shim. The TimedToken shape BPx emits
+ * (`{ token, start, end }` in ms) is exactly what `Dispatcher.load()` reads.
  *
- * The slice intentionally scopes to ONE engine instance + ONE transport per
- * file, no MIDI, no loop, no actor panel — those are SECONDARY iterations.
+ * The slice scopes to ONE engine instance + ONE transport per file.
  */
 
 // Western 12-TET resolver config. BP3 grammars in the slice use pitch names
@@ -52,18 +58,32 @@ function makeWesternResolver(): Resolver {
   });
 }
 
-const adapterEvents: EventBus = createEventBus();
+// A front-end turns language source into a derivable BP3 SceneAST + parse
+// errors. Both languages produce the SAME `ast` shape (BPScript compiles down
+// to a BP3 grammar that the BP3 front-end then parses), so the rest of the
+// chain is shared verbatim.
+type ParseError = { line?: number; message: string };
+type Frontend = (code: string) => { ast: unknown | null; errors: ParseError[] };
 
-function emitLifecycle(name: 'eval' | 'stop', fileId: string) {
-  adapterEvents.emit({
-    schemaVersion: 1,
-    type: 'trigger',
-    runtime: 'bp3',
-    source: fileId,
-    t: performance.now(),
-    name
-  });
-}
+// `.gr` — native BP3 grammar text straight into the BP3 front-end.
+const WESTERN_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const grFrontend: Frontend = (code) => {
+  const { ast, errors } = parseBP3(code, { alphabetNames: WESTERN_NOTES });
+  return { ast, errors: errors.map((e) => ({ line: e.line, message: e.message })) };
+};
+
+// `.bps` — BPScript transpiles to a BP3 grammar (`compileBPS().grammar`), which
+// we feed into the SAME BP3 front-end as `.gr`. The compiled alphabet drives
+// parseBP3's terminal recognition. Two upstream tools, glue only.
+const bpsFrontend: Frontend = (code) => {
+  const c = compileBPS(code);
+  if (c.errors.length > 0) {
+    return { ast: null, errors: c.errors.map((e) => ({ line: e.line, message: e.message })) };
+  }
+  const alphabetNames = c.alphabet?.length ? c.alphabet : WESTERN_NOTES;
+  const { ast, errors } = parseBP3(c.grammar, { alphabetNames });
+  return { ast, errors: errors.map((e) => ({ line: e.line, message: e.message })) };
+};
 
 interface BP3Voice {
   dispatcher: InstanceType<typeof Dispatcher>;
@@ -72,7 +92,8 @@ interface BP3Voice {
 
 // One-shot info when no MIDI output port is present (the normal headless / no
 // hardware case): WebAudio still plays, so this is informational, not an error,
-// and we log it once to avoid spamming on every eval.
+// and we log it once to avoid spamming on every eval. Shared across both
+// adapters — the MIDI availability of the machine is a global fact.
 let midiUnavailableLogged = false;
 
 // Probe Web MIDI permission ONCE (cached). Without MIDI access, requestMIDIAccess
@@ -95,8 +116,9 @@ function webMidiAvailable(): Promise<boolean> {
 }
 
 // Current global tempo, kept in sync with the central clock via `setBpm`.
-// A bp3 grammar derives at this tempo and live voices retune to it. Defaults
-// to the clock's own default so a fresh page already matches the transport.
+// A grammar derives at this tempo and live voices retune to it. Shared: both
+// languages play under the one central transport tempo. Defaults to the clock's
+// own default so a fresh page already matches the transport.
 let currentBpm = 128;
 
 let audioCtx: AudioContext | undefined;
@@ -112,149 +134,178 @@ async function getCtx(): Promise<AudioContext> {
   return audioCtx;
 }
 
-// One dispatcher per source (file or actor block). Re-evaluating a source
-// stops its previous dispatcher before scheduling the new derivation.
-const voices = new Map<string, BP3Voice>();
 function srcKey(s: EvalSource): string {
   return s.actorId ?? s.fileId;
 }
 
-export const bp3Adapter: RuntimeAdapter = {
-  id: 'bp3',
-  extensions: ['.gr'],
-  events: adapterEvents,
-  async evaluate(code: string, src: EvalSource, log: LogPush) {
-    const { ast, errors } = parseBP3(code, {
-      alphabetNames: ['C', 'D', 'E', 'F', 'G', 'A', 'B']
+/**
+ * Build a BPx-language adapter. `frontend` is the only thing that varies between
+ * `.gr` (parseBP3) and `.bps` (compileBPS → parseBP3); everything downstream —
+ * derive, dispatch, MIDI, stop, tempo, dispose — is shared verbatim. Each
+ * adapter owns its own event bus and live-voice map; the AudioContext, MIDI
+ * probe and global tempo are shared module singletons.
+ */
+function makeBpxAdapter(
+  id: Runtime,
+  extensions: readonly string[],
+  frontend: Frontend
+): RuntimeAdapter {
+  const adapterEvents: EventBus = createEventBus();
+  // One dispatcher per source (file or actor block). Re-evaluating a source
+  // stops its previous dispatcher before scheduling the new derivation.
+  const voices = new Map<string, BP3Voice>();
+
+  function emitLifecycle(name: 'eval' | 'stop', fileId: string) {
+    adapterEvents.emit({
+      schemaVersion: 1,
+      type: 'trigger',
+      runtime: id,
+      source: fileId,
+      t: performance.now(),
+      name
     });
-    if (errors.length > 0) {
-      const msg = errors.map((e) => `line ${e.line}: ${e.message}`).join('; ');
-      log({ runtime: 'bp3', level: 'error', msg: `parse: ${msg}` });
-      throw new Error(`bp3 parse error: ${msg}`);
-    }
-    if (!ast) {
-      const msg = 'no grammar found (empty AST)';
-      log({ runtime: 'bp3', level: 'error', msg });
-      throw new Error(`bp3: ${msg}`);
-    }
+  }
 
-    let tokens;
-    try {
-      const bpx = createBPx({ tempo: currentBpm });
-      bpx.loadGrammar(ast);
-      tokens = bpx.derive().tokens;
-    } catch (err) {
-      log({ runtime: 'bp3', level: 'error', msg: `derive: ${String(err)}` });
-      throw err;
-    }
-
-    if (!tokens || tokens.length === 0) {
-      const msg = 'derivation produced no tokens';
-      log({ runtime: 'bp3', level: 'error', msg });
-      throw new Error(`bp3: ${msg}`);
-    }
-
-    const key = srcKey(src);
-    const prev = voices.get(key);
-    if (prev) {
-      prev.dispatcher.stop();
-      prev.midiSink?.stop();
-    }
-
-    const ctx = await getCtx();
-    const resolver = makeWesternResolver();
-    const dispatcher = new Dispatcher(ctx);
-    dispatcher.addTransport('default', new WebAudioTransport(ctx, { resolver }));
-    // The dispatcher routes via per-token resolver/transport lookup; this
-    // global resolver is the fallback the WebAudio path uses for pitches.
-    (dispatcher as unknown as { _resolver: Resolver })._resolver = resolver;
-
-    dispatcher.load(tokens);
-    // Loop so an armed actor sustains like a Strudel pattern: the grammar's
-    // derivation repeats at each cycle boundary until the actor is toggled off,
-    // the transport stops, or the page hushes. A Ctrl+Enter on a standalone
-    // `.gr` (keystone path) goes through this same code, so it now loops too —
-    // intended: "play the grammar" means keep playing it, and Ctrl+. silences.
-    dispatcher.start(undefined, { loop: true });
-
-    // MIDI sink: route the SAME raw BPx tokens to runtime-midi, on the SAME
-    // AudioContext clock — but only when Web MIDI access is actually granted
-    // (probed once, silently). Otherwise skip it entirely: WebAudio playback
-    // stays intact and the console stays clean on machines without MIDI.
-    let midiSink: MidiSink | undefined;
-    if (await webMidiAvailable()) {
-      try {
-        const sink = new MidiSink(ctx);
-        const hasPort = await sink.init();
-        if (hasPort) {
-          sink.load(tokens);
-          sink.start();
-          midiSink = sink;
-          log({ runtime: 'bp3', level: 'info', msg: `midi out [${key}]` });
-        }
-      } catch (err) {
-        // A MIDI failure must never take down the (already-playing) WebAudio path.
-        log({ runtime: 'bp3', level: 'info', msg: `midi sink skipped: ${String(err)}` });
+  return {
+    id,
+    extensions,
+    events: adapterEvents,
+    async evaluate(code: string, src: EvalSource, log: LogPush) {
+      const { ast, errors } = frontend(code);
+      if (errors.length > 0) {
+        const msg = errors.map((e) => `line ${e.line ?? '?'}: ${e.message}`).join('; ');
+        log({ runtime: id, level: 'error', msg: `parse: ${msg}` });
+        throw new Error(`${id} parse error: ${msg}`);
       }
-    } else if (!midiUnavailableLogged) {
-      midiUnavailableLogged = true;
-      log({ runtime: 'bp3', level: 'info', msg: 'no Web MIDI — WebAudio only' });
-    }
+      if (!ast) {
+        const msg = 'no grammar found (empty AST)';
+        log({ runtime: id, level: 'error', msg });
+        throw new Error(`${id}: ${msg}`);
+      }
 
-    voices.set(key, { dispatcher, midiSink });
-    log({ runtime: 'bp3', level: 'info', msg: `eval ok [${key}] (${tokens.length} tokens)` });
-    emitLifecycle('eval', src.fileId);
-  },
-  setBpm(bpm: number, _log: LogPush) {
-    currentBpm = bpm;
-    // Retune live voices so a tempo change from the central clock (or a
-    // `@map tempo` MIDI knob) takes effect without re-deriving. The dispatcher
-    // reads `_tempo` for its beats→seconds conversion and pushes it onto the
-    // clock; setting both keeps already-scheduled and future cycles in step.
-    for (const voice of voices.values()) {
-      const d = voice.dispatcher as unknown as { _tempo?: number; clock?: { tempo?: number } };
-      d._tempo = bpm;
-      if (d.clock) d.clock.tempo = bpm;
-    }
-    // The MIDI sink owns its own internal dispatcher (runtime-midi private); we
-    // don't reach into it to retune live. Its timing comes from the tokens it
-    // was loaded with at the previous tempo, so a tempo change takes effect on
-    // the next eval (re-derivation at the new `currentBpm`). Consistent with the
-    // integration rule: no poking upstream internals.
-  },
-  async stop(src: EvalSource, log: LogPush) {
-    const key = srcKey(src);
-    // `__hush__` is the core's "stop everything" sentinel (transport stop,
-    // Ctrl+. panic): no single voice matches it, so we tear down every live
-    // dispatcher. Without this, stopping the transport left bp3 looping.
-    if (key === '__hush__') {
+      let tokens;
+      try {
+        const bpx = createBPx({ tempo: currentBpm });
+        bpx.loadGrammar(ast);
+        tokens = bpx.derive().tokens;
+      } catch (err) {
+        log({ runtime: id, level: 'error', msg: `derive: ${String(err)}` });
+        throw err;
+      }
+
+      if (!tokens || tokens.length === 0) {
+        const msg = 'derivation produced no tokens';
+        log({ runtime: id, level: 'error', msg });
+        throw new Error(`${id}: ${msg}`);
+      }
+
+      const key = srcKey(src);
+      const prev = voices.get(key);
+      if (prev) {
+        prev.dispatcher.stop();
+        prev.midiSink?.stop();
+      }
+
+      const ctx = await getCtx();
+      const resolver = makeWesternResolver();
+      const dispatcher = new Dispatcher(ctx);
+      dispatcher.addTransport('default', new WebAudioTransport(ctx, { resolver }));
+      // The dispatcher routes via per-token resolver/transport lookup; this
+      // global resolver is the fallback the WebAudio path uses for pitches.
+      (dispatcher as unknown as { _resolver: Resolver })._resolver = resolver;
+
+      dispatcher.load(tokens);
+      // Loop so an armed actor sustains like a Strudel pattern: the grammar's
+      // derivation repeats at each cycle boundary until the actor is toggled off,
+      // the transport stops, or the page hushes. A Ctrl+Enter on a standalone
+      // grammar goes through this same code, so it loops too — intended: "play
+      // the grammar" means keep playing it, and Ctrl+. silences.
+      dispatcher.start(undefined, { loop: true });
+
+      // MIDI sink: route the SAME raw BPx tokens to runtime-midi, on the SAME
+      // AudioContext clock — but only when Web MIDI access is actually granted
+      // (probed once, silently). Otherwise skip it entirely: WebAudio playback
+      // stays intact and the console stays clean on machines without MIDI.
+      let midiSink: MidiSink | undefined;
+      if (await webMidiAvailable()) {
+        try {
+          const sink = new MidiSink(ctx);
+          const hasPort = await sink.init();
+          if (hasPort) {
+            sink.load(tokens);
+            sink.start();
+            midiSink = sink;
+            log({ runtime: id, level: 'info', msg: `midi out [${key}]` });
+          }
+        } catch (err) {
+          // A MIDI failure must never take down the (already-playing) WebAudio path.
+          log({ runtime: id, level: 'info', msg: `midi sink skipped: ${String(err)}` });
+        }
+      } else if (!midiUnavailableLogged) {
+        midiUnavailableLogged = true;
+        log({ runtime: id, level: 'info', msg: 'no Web MIDI — WebAudio only' });
+      }
+
+      voices.set(key, { dispatcher, midiSink });
+      log({ runtime: id, level: 'info', msg: `eval ok [${key}] (${tokens.length} tokens)` });
+      emitLifecycle('eval', src.fileId);
+    },
+    setBpm(bpm: number, _log: LogPush) {
+      currentBpm = bpm;
+      // Retune live voices so a tempo change from the central clock (or a
+      // `@map tempo` MIDI knob) takes effect without re-deriving. The dispatcher
+      // reads `_tempo` for its beats→seconds conversion and pushes it onto the
+      // clock; setting both keeps already-scheduled and future cycles in step.
       for (const voice of voices.values()) {
+        const d = voice.dispatcher as unknown as { _tempo?: number; clock?: { tempo?: number } };
+        d._tempo = bpm;
+        if (d.clock) d.clock.tempo = bpm;
+      }
+      // The MIDI sink owns its own internal dispatcher (runtime-midi private); we
+      // don't reach into it to retune live. Its timing comes from the tokens it
+      // was loaded with at the previous tempo, so a tempo change takes effect on
+      // the next eval (re-derivation at the new `currentBpm`). Consistent with the
+      // integration rule: no poking upstream internals.
+    },
+    async stop(src: EvalSource, log: LogPush) {
+      const key = srcKey(src);
+      // `__hush__` is the core's "stop everything" sentinel (transport stop,
+      // Ctrl+. panic): no single voice matches it, so we tear down every live
+      // dispatcher. Without this, stopping the transport left playback looping.
+      if (key === '__hush__') {
+        for (const voice of voices.values()) {
+          voice.dispatcher.stop();
+          voice.midiSink?.stop();
+        }
+        voices.clear();
+        log({ runtime: id, level: 'info', msg: 'hush (all voices)' });
+        emitLifecycle('stop', src.fileId);
+        return;
+      }
+      const voice = voices.get(key);
+      if (voice) {
         voice.dispatcher.stop();
         voice.midiSink?.stop();
+        voices.delete(key);
+      }
+      log({ runtime: id, level: 'info', msg: `stop [${key}]` });
+      emitLifecycle('stop', src.fileId);
+    },
+    async dispose() {
+      for (const voice of voices.values()) {
+        try {
+          voice.dispatcher.stop();
+          voice.midiSink?.stop();
+        } catch {
+          /* engine may already be torn down */
+        }
       }
       voices.clear();
-      log({ runtime: 'bp3', level: 'info', msg: 'hush (all voices)' });
-      emitLifecycle('stop', src.fileId);
-      return;
     }
-    const voice = voices.get(key);
-    if (voice) {
-      voice.dispatcher.stop();
-      voice.midiSink?.stop();
-      voices.delete(key);
-    }
-    log({ runtime: 'bp3', level: 'info', msg: `stop [${key}]` });
-    emitLifecycle('stop', src.fileId);
-  },
-  async dispose() {
-    for (const voice of voices.values()) {
-      try {
-        voice.dispatcher.stop();
-        voice.midiSink?.stop();
-      } catch {
-        /* engine may already be torn down */
-      }
-    }
-    voices.clear();
-  }
-};
+  };
+}
+
+// `.gr` keystone (Bol Processor native grammar) and `.bps` (BPScript) — same
+// engine, different front-end.
+export const bp3Adapter: RuntimeAdapter = makeBpxAdapter('bp3', ['.gr'], grFrontend);
+export const bpscriptAdapter: RuntimeAdapter = makeBpxAdapter('bpscript', ['.bps'], bpsFrontend);

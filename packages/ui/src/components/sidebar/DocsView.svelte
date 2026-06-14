@@ -208,8 +208,13 @@
               ><td>p5</td><td><code>.p5</code></td><td>p5.js sketches on an overlay canvas.</td></tr
             >
             <tr
-              ><td>Bol Processor</td><td><code>.gr .bp</code></td><td
-                >Bernard Bel's grammars, derived to sound (showcase).</td
+              ><td>Bol Processor</td><td><code>.gr</code></td><td
+                >Bernard Bel's BP3 grammars, derived to sound.</td
+              ></tr
+            >
+            <tr
+              ><td>BPScript</td><td><code>.bps</code></td><td
+                >The native language; compiles to a BP3 grammar, derived to sound.</td
               ></tr
             >
             <tr

@@ -10,6 +10,7 @@ export type Runtime =
   | 'mercury'
   | 'csound'
   | 'bp3'
+  | 'bpscript'
   | 'tidal'
   | 'sc'
   | 'python'

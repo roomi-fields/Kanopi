@@ -9,7 +9,10 @@ describe('runtimeFromExt', () => {
     expect(runtimeFromExt('a.py')).toBe('python');
     expect(runtimeFromExt('a.js')).toBe('js');
     expect(runtimeFromExt('a.kanopi')).toBe('kanopi');
-    expect(runtimeFromExt('a.bps')).toBe('kanopi');
+    expect(runtimeFromExt('a.gr')).toBe('bp3');
+    // .bps is now a real executable runtime (BPScript → BP3 → BPx), not a
+    // session placeholder that used to resolve to 'kanopi'.
+    expect(runtimeFromExt('a.bps')).toBe('bpscript');
   });
   it('falls back to kanopi for unknown', () => {
     expect(runtimeFromExt('README.md')).toBe('kanopi');
