@@ -15,7 +15,11 @@ import { MidiSink } from 'runtime-midi';
 // on the WebAudio transport; the resolver turns pitch names into frequencies.
 import { Dispatcher } from '../../../../core/src/dispatcher/dispatcher.js';
 import { WebAudioTransport } from '../../../../core/src/dispatcher/transports/webaudio.js';
+// Text grammars (bols, words, numbers — half the corpus) route here instead of
+// audio: a timestamped-symbol console, fed AS-IS through the same dispatcher.
+import { TextTransport } from '../../../../core/src/dispatcher/transports/text.js';
 import { Resolver } from '../../../../core/src/dispatcher/resolver.js';
+import { textStream } from '../../stores/textstream.svelte';
 
 /**
  * BPx language adapters (PRIMARY vertical slice).
@@ -64,6 +68,16 @@ function makeWesternResolver(): Resolver {
 // chain is shared verbatim.
 type ParseError = { line?: number; message: string };
 type Frontend = (code: string) => { ast: unknown | null; errors: ParseError[] };
+
+// The BP3 front-end injects a synthetic actor carrying the grammar-wide output
+// mode (decision routage-texte-midi): notes → 'midi', bols/words/numbers →
+// 'text'. We route the whole grammar by it; absent/unknown falls back to audio.
+function readTransportKind(ast: unknown): 'midi' | 'text' | undefined {
+  const actors = (ast as { actors?: { properties?: { transport?: { key?: string } } }[] } | null)
+    ?.actors;
+  const key = actors?.[0]?.properties?.transport?.key;
+  return key === 'text' || key === 'midi' ? key : undefined;
+}
 
 // `.gr` — native BP3 grammar text straight into the BP3 front-end.
 const WESTERN_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
@@ -207,8 +221,29 @@ function makeBpxAdapter(
       }
 
       const ctx = await getCtx();
-      const resolver = makeWesternResolver();
       const dispatcher = new Dispatcher(ctx);
+
+      // Text grammars route the whole derivation to the symbolic console: no
+      // resolver (terminals are symbols, not pitches), no audio, no MIDI. The
+      // dispatcher schedules them on the same clock, so symbols stream in time.
+      if (readTransportKind(ast) === 'text') {
+        textStream.setSource(id);
+        dispatcher.addTransport(
+          'default',
+          new TextTransport({
+            onSymbol: (s) =>
+              textStream.push({ token: s.token, startSec: s.startSec, durSec: s.durSec })
+          })
+        );
+        dispatcher.load(tokens);
+        dispatcher.start(undefined, { loop: true });
+        voices.set(key, { dispatcher });
+        log({ runtime: id, level: 'info', msg: `text out [${key}] (${tokens.length} symbols)` });
+        emitLifecycle('eval', src.fileId);
+        return;
+      }
+
+      const resolver = makeWesternResolver();
       dispatcher.addTransport('default', new WebAudioTransport(ctx, { resolver }));
       // The dispatcher routes via per-token resolver/transport lookup; this
       // global resolver is the fallback the WebAudio path uses for pitches.

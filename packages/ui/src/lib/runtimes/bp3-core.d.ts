@@ -21,6 +21,20 @@ declare module '*/core/src/dispatcher/transports/webaudio.js' {
   }
 }
 
+declare module '*/core/src/dispatcher/transports/text.js' {
+  export interface TextSymbolOut {
+    token: string;
+    startSec: number;
+    durSec: number;
+    velocity: number | undefined;
+    absTime: number;
+  }
+  export class TextTransport {
+    constructor(options?: { onSymbol?: (symbol: TextSymbolOut) => void });
+    symbols: TextSymbolOut[];
+  }
+}
+
 declare module '*/core/src/dispatcher/resolver.js' {
   export class Resolver {
     constructor(config?: unknown);
