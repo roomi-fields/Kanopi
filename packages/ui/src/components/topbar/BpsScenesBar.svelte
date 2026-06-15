@@ -12,7 +12,6 @@
   );
   const model = $derived(modelFromFile(activeFile?.name, activeFile?.contents));
   const scenes = $derived(model.scenes);
-  const canStep = $derived(model.sections.length > 1);
   // The scene shown lit: the user's explicit pick, or — until they pick one —
   // the default scene the adapter derives (lowest int). Keeps the bar honest
   // about what is actually playing on the initial eval.
@@ -37,7 +36,7 @@
   onDestroy(() => window.removeEventListener('keydown', onKey));
 </script>
 
-{#if scenes.length > 0 || canStep}
+{#if scenes.length > 0}
   <div class="bps-scenes" data-testid="bps-scenes-bar">
     {#each scenes as s, i (s.name)}
       <button
@@ -51,16 +50,6 @@
         <span class="name">{s.name}</span>
       </button>
     {/each}
-    {#if canStep}
-      <button
-        class="step-btn"
-        type="button"
-        title="STEP — section suivante"
-        onclick={() => bpsScenes.step(model)}
-      >
-        STEP
-      </button>
-    {/if}
   </div>
 {/if}
 
@@ -116,19 +105,5 @@
     font-family: var(--font-mono);
     font-size: 11px;
     letter-spacing: 0.04em;
-  }
-  .step-btn {
-    padding: 5px 10px;
-    font-size: 9px;
-    letter-spacing: 0.22em;
-    font-weight: 500;
-    color: var(--text-muted);
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    transition: all 0.15s;
-  }
-  .step-btn:hover {
-    color: var(--amber);
-    border-color: var(--amber-dim);
   }
 </style>

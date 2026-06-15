@@ -77,4 +77,24 @@ describe('mock core', () => {
     core.clock.play();
     expect(spy).toHaveBeenCalledTimes(1);
   });
+
+  it('clock.pause halts without resetting position; stop resets', () => {
+    const core = createMockCore();
+    // Forge a mid-bar position, then pause: position must be preserved.
+    (core.clock as unknown as { state: { bar: number; beat: number; playing: boolean } }).state = {
+      ...core.clock.state,
+      bar: 5,
+      beat: 2,
+      playing: true
+    };
+    core.clock.pause();
+    expect(core.clock.state.playing).toBe(false);
+    expect(core.clock.state.bar).toBe(5);
+    expect(core.clock.state.beat).toBe(2);
+    // Stop, by contrast, rewinds to the top.
+    core.clock.play();
+    core.clock.stop();
+    expect(core.clock.state.bar).toBe(1);
+    expect(core.clock.state.beat).toBe(0);
+  });
 });

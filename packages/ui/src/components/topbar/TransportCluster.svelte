@@ -1,5 +1,17 @@
 <script lang="ts">
   import { clock } from '../../stores/clock.svelte';
+  import { bpsScenes, modelFromFile } from '../../stores/bpsScenes.svelte';
+  import { workspace } from '../../stores/workspace.svelte';
+
+  // STEP lives in the transport cluster (beta issue 4 — transport buttons
+  // grouped). The view model is compiled from the active `.bps` here (a real
+  // component reactive context); STEP only enables when the head rule has more
+  // than one section to advance through.
+  const activeFile = $derived(
+    workspace.activeTabId ? workspace.fileById(workspace.activeTabId) : undefined
+  );
+  const stepModel = $derived(modelFromFile(activeFile?.name, activeFile?.contents));
+  const canStep = $derived(stepModel.sections.length > 1);
 
   function fmt2(n: number) {
     return n.toString().padStart(2, '0');
@@ -44,20 +56,43 @@
 </script>
 
 <div class="transport-cluster">
-  <button class="tbtn" type="button" title="Stop" onclick={() => clock.stop()}>
-    <svg viewBox="0 0 12 12" fill="currentColor"
-      ><rect x="2" y="2" width="8" height="8" rx="0.5" /></svg
+  <div class="transport-buttons">
+    <button class="tbtn" type="button" title="Stop" onclick={() => clock.stop()}>
+      <svg viewBox="0 0 12 12" fill="currentColor"
+        ><rect x="2" y="2" width="8" height="8" rx="0.5" /></svg
+      >
+    </button>
+    <button
+      class="tbtn"
+      class:playing={clock.state.playing}
+      type="button"
+      title={clock.state.playing ? 'Playing' : 'Play'}
+      onclick={() => clock.play()}
     >
-  </button>
-  <button
-    class="tbtn"
-    class:playing={clock.state.playing}
-    type="button"
-    title={clock.state.playing ? 'Playing' : 'Play'}
-    onclick={() => clock.play()}
-  >
-    <svg viewBox="0 0 12 12" fill="currentColor"><path d="M2.5 1.5 L10 6 L2.5 10.5 Z" /></svg>
-  </button>
+      <svg viewBox="0 0 12 12" fill="currentColor"><path d="M2.5 1.5 L10 6 L2.5 10.5 Z" /></svg>
+    </button>
+    <button class="tbtn" type="button" title="Pause" onclick={() => clock.pause()}>
+      <svg viewBox="0 0 12 12" fill="currentColor"
+        ><rect x="2.5" y="2" width="2.5" height="8" rx="0.5" /><rect
+          x="7"
+          y="2"
+          width="2.5"
+          height="8"
+          rx="0.5"
+        /></svg
+      >
+    </button>
+    {#if canStep}
+      <button
+        class="step-btn"
+        type="button"
+        title="STEP — section suivante"
+        onclick={() => bpsScenes.step(stepModel)}
+      >
+        STEP
+      </button>
+    {/if}
+  </div>
 
   <div class="bpm-module">
     {#if editing}
@@ -113,6 +148,12 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
   }
 
+  .transport-buttons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
   .tbtn {
     display: inline-flex;
     align-items: center;
@@ -123,6 +164,21 @@
     color: var(--text-muted);
     transition: all 0.15s;
     position: relative;
+  }
+
+  .step-btn {
+    padding: 6px 10px;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    font-weight: 500;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    transition: all 0.15s;
+  }
+  .step-btn:hover {
+    color: var(--amber);
+    border-color: var(--amber-dim);
   }
 
   .tbtn:hover {

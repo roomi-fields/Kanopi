@@ -30,6 +30,7 @@ export interface Clock {
   readonly state: ClockState;
   play(): void;
   stop(): void;
+  pause(): void;
   toggle(): void;
   setBpm(n: number): void;
   setTimeSignature(beatsPerBar: number): void;

@@ -141,6 +141,27 @@ export class MockClock implements Clock {
       });
     }
   }
+  /**
+   * Pause: halt the transport WITHOUT resetting position. The bar/beat/phase
+   * and the absolute counters are left intact, so the next play() resumes from
+   * where it stopped (stop() zeroes them; pause() doesn't). Audio is suspended
+   * the same way stop does — onTransport(false) hushes every runtime — but the
+   * clock keeps its place so resuming re-evaluates the armed voices in time.
+   */
+  pause() {
+    if (!this.state.playing) return;
+    this.state = { ...this.state, playing: false };
+    this.b.emit(this.state);
+    this.onTransport?.(false);
+    this.eventsBus?.emit({
+      schemaVersion: 1,
+      type: 'transport',
+      runtime: 'clock',
+      t: performance.now(),
+      playing: false,
+      bpm: this.state.bpm
+    });
+  }
   toggle() {
     if (this.state.playing) this.stop();
     else this.play();
