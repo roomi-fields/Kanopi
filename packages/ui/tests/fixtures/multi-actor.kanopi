@@ -1,6 +1,0 @@
-# Multi-actor session — exercise the .kanopi parser for cross-runtime
-# orchestration. Strudel audio + Hydra visuals, both armed in one scene.
-@library dirt-samples
-@actor beat  beat.strudel  strudel
-@actor viz   viz.hydra     hydra
-@scene main beat viz

@@ -1,3 +1,0 @@
-# Minimal Hydra session for e2e smoke. One actor, visual runtime.
-@actor viz viz.hydra hydra
-@scene main viz

@@ -1,5 +1,0 @@
-# Minimal Strudel session for e2e smoke. One actor, default library so
-# `s("...")` style code works without further declaration.
-@library dirt-samples
-@actor beat beat.strudel strudel
-@scene main beat

@@ -1,3 +1,0 @@
-# Minimal Mercury session for e2e smoke. One actor, audio runtime via Tone.js.
-@actor melody melody.mercury mercury
-@scene main melody

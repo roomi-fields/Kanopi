@@ -1,3 +1,0 @@
-# Minimal p5 session for e2e smoke. One actor, visual runtime.
-@actor sketch sketch.p5 p5
-@scene main sketch
