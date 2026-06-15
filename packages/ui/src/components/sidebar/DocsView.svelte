@@ -7,6 +7,8 @@
     { id: 'language', label: 'Language' },
     { id: 'mappings', label: '@map syntax' },
     { id: 'runtimes', label: 'Runtimes' },
+    { id: 'bps', label: '.bps actors' },
+    { id: 'scenes', label: 'Scenes & STEP' },
     { id: 'keys', label: 'Keybindings' },
     { id: 'palette', label: 'Command palette' }
   ];
@@ -235,6 +237,66 @@
           </tbody>
         </table>
         <button class="action" type="button" onclick={newScratch}>New JS scratch buffer</button>
+      </section>
+    {/if}
+
+    {#if active === 'bps'}
+      <section id="docs-bps">
+        <h3>.bps — cross-runtime actors</h3>
+        <p>
+          A <code>.bps</code> file is the native session format. An
+          <code>@actor</code> declares two things: a
+          <strong>transport</strong> (<code>transport.&lt;device&gt;</code> — a typed device, e.g.
+          <code>audio</code>, <code>midi</code>) and an
+          <strong>interpreter</strong> for its code (<code>eval.&lt;interp&gt;</code>, e.g.
+          <code>strudel</code>, <code>hydra</code>).
+        </p>
+        <p>
+          A <em>code voice</em> is written as a backtick snippet (a Strudel pattern, a Hydra sketch,
+          …). Kanopi <strong>captures</strong> that output and places it in time on the actor's transport
+          — the engine is not rendered opaquely; its output is transported.
+        </p>
+        <pre><code
+            >{`@actor drums  transport.audio  eval.strudel
+
+S -> drums
+
+drums -> \`note("c3 e3 g3 c4").s("sine").gain(0.7)\``}</code
+          ></pre>
+        <p>
+          Routing a voice to an <strong>incompatible</strong> device is refused at evaluation with a
+          clear error — e.g. a visual voice cannot be sent to an audio device. Compatibility is
+          checked on the device <em>type</em>, not its name.
+        </p>
+      </section>
+    {/if}
+
+    {#if active === 'scenes'}
+      <section id="docs-scenes">
+        <h3>Scenes &amp; STEP</h3>
+        <p>
+          A <code>.bps</code> session can declare named <strong>scenes</strong> with a flag, then guard
+          its head rules on that flag. Selecting a scene arms a different set of actors.
+        </p>
+        <pre><code
+            >{`@flag scene: calm:1, full:2
+
+@actor drums  transport.audio  eval.strudel
+@actor lead   transport.audio  eval.strudel
+
+[scene==calm] S -> drums
+[scene==full] S -> { drums, lead }`}</code
+          ></pre>
+        <p>
+          The named <strong>scene buttons</strong> (here <code>calm</code> /
+          <code>full</code>) appear in the top bar; clicking one switches what sounds.
+          <kbd>Alt</kbd>+<kbd>1</kbd> selects the first scene, <kbd>Alt</kbd>+<kbd>2</kbd>
+          the second, and so on.
+        </p>
+        <p>
+          When a session has more than one section, a <strong>STEP</strong> button advances through them
+          one section at a time.
+        </p>
       </section>
     {/if}
 
