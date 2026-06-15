@@ -1,25 +1,33 @@
 import { test, expect } from '@playwright/test';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { expectNoConsoleErrors } from '../../helpers';
 
-// Starter session 03 - two scenes, one session. Demonstrates Kanopi's
-// structural differentiator: a scene switch atomically arms a different set
-// of actors. The test exercises the click path (Scenes panel card) and
-// asserts the active scene + armed actor state after each switch.
+// Scenes panel — Kanopi's structural differentiator: a scene switch atomically
+// arms a different set of actors. This feature lives in the `.kanopi` session
+// model and is UNCHANGED by the lot-4 `.bps` starter migration; the bundled
+// starter 03 no longer ships as a multi-scene `.kanopi` (it became a sequenced
+// `.bps`), so this test defines its own small INLINE `.kanopi` scene session
+// rather than reading a bundled file. The assertions (calm/full cards, atomic
+// arming, scene-active state) are exactly the Scenes-panel coverage we keep.
 //
-// Audio is left to play briefly between switches but RMS is not asserted -
-// session 01 already covers "audio comes through". Here we care about the
-// structural state.
-const BUNDLED = fileURLToPath(new URL('../../../../library/bundled', import.meta.url));
+// Audio is not asserted here - session 01 already covers "audio comes through".
+// Here we care about the structural state.
+
+// Inline two-scene `.kanopi` fixture. Two Strudel actors, two scenes: `calm`
+// arms drums only, `full` arms drums + lead. The actor bodies are inline so the
+// fixture is self-contained and independent of any bundled file.
+const SCENE_SESSION = `# Inline scenes fixture - calm arms drums, full arms drums + lead.
+
+@actor drums drums.strudel strudel
+@actor lead  lead.strudel  strudel
+
+@scene calm drums
+@scene full drums lead
+`;
+const DRUMS = `note("c2*4").s("sine").gain(0.6)\n`;
+const LEAD = `note("e4 g4 b4 d5").s("triangle").gain(0.5)\n`;
 
 test('session 03 - scenes A/B switch atomically arms different actor sets', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
-
-  const sessionContents = readFileSync(join(BUNDLED, '03-scenes-A-B.kanopi'), 'utf8');
-  const drumsContents = readFileSync(join(BUNDLED, '03-drums.strudel'), 'utf8');
-  const leadContents = readFileSync(join(BUNDLED, '03-lead.strudel'), 'utf8');
 
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
@@ -35,14 +43,14 @@ test('session 03 - scenes A/B switch atomically arms different actor sets', asyn
       };
       w.__kanopi!.workspace.loadFiles(
         [
-          { path: '03-scenes-A-B.kanopi', contents: session },
-          { path: '03-drums.strudel', contents: drums },
-          { path: '03-lead.strudel', contents: lead }
+          { path: 'scenes.kanopi', contents: session },
+          { path: 'drums.strudel', contents: drums },
+          { path: 'lead.strudel', contents: lead }
         ],
-        '03-scenes-A-B.kanopi'
+        'scenes.kanopi'
       );
     },
-    { session: sessionContents, drums: drumsContents, lead: leadContents }
+    { session: SCENE_SESSION, drums: DRUMS, lead: LEAD }
   );
 
   // Both actors render in the ActorsPanel (li.actor / .name).

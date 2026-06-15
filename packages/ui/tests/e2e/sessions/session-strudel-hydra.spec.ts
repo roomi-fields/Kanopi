@@ -9,10 +9,14 @@ import {
   readCanvasLitPixels
 } from '../../helpers';
 
-// Starter session 02 - Strudel + Hydra synced on the shared Kanopi transport.
-// Asserts both that audio comes through (RMS > threshold) AND that the Hydra
-// canvas has non-black pixels after the visuals are evaluated. This is the
-// "first ooh moment" demo - one transport, two runtimes.
+// Starter session 02 - Strudel + Hydra synced on the shared Kanopi transport,
+// now a self-contained `.bps`: both code voices (Strudel → audio, Hydra →
+// video) are inlined as backticks and routed by the lot-4 cross-runtime path
+// (compileBPS → BPx → backtick sink → strudel/hydra adapters). Asserts both
+// that audio comes through (RMS > threshold) AND that the Hydra canvas has
+// non-black pixels after one evaluation of the whole session. This is the
+// "first ooh moment" demo - one transport, two runtimes - and doubles as the
+// lot-4 backtick-routing acceptance test for 02.
 const BUNDLED = fileURLToPath(new URL('../../../../library/bundled', import.meta.url));
 
 test('session 02 - strudel + hydra produce audio and visuals on a shared clock', async ({
@@ -20,7 +24,7 @@ test('session 02 - strudel + hydra produce audio and visuals on a shared clock',
 }) => {
   // This is the only starter that boots BOTH a Strudel scheduler AND a Hydra
   // GL canvas in the same page. On the user's WSL2 dev box the cumulative
-  // cost (goto + two evalBlockAt with their flash-appear/detach waits + 700ms
+  // cost (goto + evalBlockAt with its flash-appear/detach waits + 700ms
   // hydra-rAF settle + 2.5s peak-RMS sample) routinely consumes 28-32s of
   // wall clock — exceeding Playwright's 30s default and flaking the test.
   // The full-suite library spec uses the same 60-90s budget for the same
@@ -30,85 +34,38 @@ test('session 02 - strudel + hydra produce audio and visuals on a shared clock',
   const audio = await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
-  const sessionContents = readFileSync(join(BUNDLED, '02-strudel-hydra.kanopi'), 'utf8');
-  const drumsContents = readFileSync(join(BUNDLED, '02-drums.strudel'), 'utf8');
-  const vizContents = readFileSync(join(BUNDLED, '02-moire.hydra'), 'utf8');
+  const sessionContents = readFileSync(join(BUNDLED, '02-strudel-hydra.bps'), 'utf8');
 
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
-  await page.evaluate(
-    ({ session, drums, viz }) => {
-      const w = window as unknown as {
-        __kanopi?: {
-          workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
-          };
+  await page.evaluate((session) => {
+    const w = window as unknown as {
+      __kanopi?: {
+        workspace: {
+          loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
         };
       };
-      w.__kanopi!.workspace.loadFiles(
-        [
-          { path: '02-strudel-hydra.kanopi', contents: session },
-          { path: '02-drums.strudel', contents: drums },
-          { path: '02-moire.hydra', contents: viz }
-        ],
-        '02-strudel-hydra.kanopi'
-      );
-    },
-    { session: sessionContents, drums: drumsContents, viz: vizContents }
-  );
+    };
+    w.__kanopi!.workspace.loadFiles(
+      [{ path: '02-strudel-hydra.bps', contents: session }],
+      '02-strudel-hydra.bps'
+    );
+  }, sessionContents);
 
   await page.waitForFunction(() => {
     const w = window as unknown as {
       __kanopi?: { workspace: { files: { path: string }[] } };
     };
-    return (
-      !!w.__kanopi?.workspace.files.find((f) => f.path === '02-drums.strudel') &&
-      !!w.__kanopi?.workspace.files.find((f) => f.path === '02-moire.hydra')
-    );
+    return !!w.__kanopi?.workspace.files.find((f) => f.path === '02-strudel-hydra.bps');
   });
 
-  // Switch to the drums tab and eval the stack(...) block.
-  await page.evaluate(() => {
-    const w = window as unknown as {
-      __kanopi: {
-        workspace: {
-          files: { id: string; path: string }[];
-          openFile: (id: string) => void;
-          setActive: (id: string) => void;
-        };
-      };
-    };
-    const target = w.__kanopi.workspace.files.find((f) => f.path === '02-drums.strudel');
-    if (target) {
-      w.__kanopi.workspace.openFile(target.id);
-      w.__kanopi.workspace.setActive(target.id);
-    }
-  });
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
-  // 02-drums.strudel: lines 1-2 are comments, line 3 starts `stack(...)`.
-  await evalBlockAt(page, 3);
 
-  // Switch to the moire tab and eval the osc(...) block.
-  await page.evaluate(() => {
-    const w = window as unknown as {
-      __kanopi: {
-        workspace: {
-          files: { id: string; path: string }[];
-          openFile: (id: string) => void;
-          setActive: (id: string) => void;
-        };
-      };
-    };
-    const target = w.__kanopi.workspace.files.find((f) => f.path === '02-moire.hydra');
-    if (target) {
-      w.__kanopi.workspace.openFile(target.id);
-      w.__kanopi.workspace.setActive(target.id);
-    }
-  });
-  await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
-  // 02-moire.hydra: lines 1-5 are comments, line 6 starts `osc(60, ...)`.
-  await evalBlockAt(page, 6);
+  // One `.bps` block: evaluating the whole session places BOTH backtick voices
+  // in time — the Strudel voice fires the strudel adapter, the Hydra voice the
+  // hydra adapter, on the same transport.
+  await evalBlockAt(page, 5);
 
   // Hydra needs a few frames inside rAF before the back-buffer is paintful.
   await page.waitForTimeout(700);

@@ -1,6 +1,0 @@
-// Kick on every beat, hats subdividing - a steady pulse for the visuals to
-// lock onto. `stack` runs both patterns in parallel inside one Strudel slot.
-stack(
-  note("c2*4").s("sawtooth").gain(0.5),
-  note("c5*8").s("square").gain(0.2)
-)

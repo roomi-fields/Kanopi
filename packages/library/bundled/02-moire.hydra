@@ -1,9 +1,0 @@
-// `beat` and `bar` are injected by the Kanopi Hydra adapter on every tick
-// of the shared transport (cf docs/design/ADAPTER_SPEC §5bis). They are bare
-// identifiers thanks to `with (synth)` scope in the adapter - no globals.
-//
-// Amplitude pulses on each beat (Math.sin of beat * PI flips per quarter note),
-// rotation drifts with bar count so the pattern slowly turns.
-osc(60, 0.1, () => 0.5 + 0.5 * Math.sin(beat * Math.PI))
-  .rotate(() => bar * 0.05)
-  .out()

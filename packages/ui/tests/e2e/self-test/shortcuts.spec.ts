@@ -1,7 +1,4 @@
 import { test, expect } from '@playwright/test';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../../helpers';
 
 // Keyboard shortcuts self-test layer. Covers the five user-facing bindings
@@ -26,13 +23,21 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../../hel
 //   - `.cm-tooltip-autocomplete` — CM6's autocomplete popup
 //     (node_modules/@codemirror/autocomplete/dist/index.cjs:525).
 //
-// Bundled session 03-scenes-A-B.kanopi is shipped via packages/library/bundled;
-// for parity with sessions/session-scenes.spec.ts we read the files off disk
-// and inject through the dev-only `window.__kanopi.workspace.loadFiles`
-// hatch (main.ts:25-35) — avoids walking through the Library panel UI a
-// second time when our concern here is keystrokes, not load-flow.
+// These tests inject small INLINE fixtures through the dev-only
+// `window.__kanopi.workspace.loadFiles` hatch (main.ts:25-35). They need a
+// `.strudel` actor file open (hush / Shift+Enter / Tab) or a multi-scene
+// `.kanopi` (Alt+1/2) — both defined inline here so the suite is independent of
+// the bundled starters (01/02/03 migrated to self-contained `.bps`, lot 4).
 
-const BUNDLED = fileURLToPath(new URL('../../../../library/bundled', import.meta.url));
+// Single Strudel actor, lines 1-3 comments + line 4 the note(...) block — the
+// layout the cursor-position assertions below rely on.
+const SOLO_SESSION = `# 01 - Strudel solo (inline fixture).\n\n@actor drums drums.strudel strudel\n@scene main drums\n`;
+const SOLO_DRUMS = `// Drums - the kick of the whole composition.\n// Put the cursor here, Ctrl+Enter.\n//\nnote("c3 e3 g3 c4").s("sine").gain(0.7)\n`;
+
+// Two Strudel actors, two scenes: calm = drums, full = drums + lead.
+const SCENES_SESSION = `# Inline scenes fixture - calm arms drums, full arms drums + lead.\n\n@actor drums drums.strudel strudel\n@actor lead  lead.strudel  strudel\n\n@scene calm drums\n@scene full drums lead\n`;
+const SCENES_DRUMS = `note("c2*4").s("sine").gain(0.6)\n`;
+const SCENES_LEAD = `note("e4 g4 b4 d5").s("triangle").gain(0.5)\n`;
 
 test('Ctrl/Cmd+K opens the command palette; Escape closes it', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
@@ -65,10 +70,7 @@ test('Ctrl/Cmd+. (hush) silences a running Strudel pattern after the lookahead f
   const audio = await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
-  // Inject session 01 (single Strudel actor) — minimal, predictable RMS.
-  const sessionContents = readFileSync(join(BUNDLED, '01-strudel-solo.kanopi'), 'utf8');
-  const drumsContents = readFileSync(join(BUNDLED, '01-drums.strudel'), 'utf8');
-
+  // Inject the inline single-Strudel-actor fixture — minimal, predictable RMS.
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
@@ -83,13 +85,13 @@ test('Ctrl/Cmd+. (hush) silences a running Strudel pattern after the lookahead f
       };
       w.__kanopi!.workspace.loadFiles(
         [
-          { path: '01-strudel-solo.kanopi', contents: session },
-          { path: '01-drums.strudel', contents: drums }
+          { path: 'drums-solo.kanopi', contents: session },
+          { path: 'drums.strudel', contents: drums }
         ],
-        '01-strudel-solo.kanopi'
+        'drums-solo.kanopi'
       );
     },
-    { session: sessionContents, drums: drumsContents }
+    { session: SOLO_SESSION, drums: SOLO_DRUMS }
   );
 
   // Switch to the actor body so the editor is on a strudel file (CMEditor
@@ -98,7 +100,7 @@ test('Ctrl/Cmd+. (hush) silences a running Strudel pattern after the lookahead f
     const w = window as unknown as {
       __kanopi?: { workspace: { files: { path: string }[] } };
     };
-    return !!w.__kanopi?.workspace.files.find((f) => f.path === '01-drums.strudel');
+    return !!w.__kanopi?.workspace.files.find((f) => f.path === 'drums.strudel');
   });
   await page.evaluate(() => {
     const w = window as unknown as {
@@ -110,7 +112,7 @@ test('Ctrl/Cmd+. (hush) silences a running Strudel pattern after the lookahead f
         };
       };
     };
-    const target = w.__kanopi.workspace.files.find((f) => f.path === '01-drums.strudel');
+    const target = w.__kanopi.workspace.files.find((f) => f.path === 'drums.strudel');
     if (target) {
       w.__kanopi.workspace.openFile(target.id);
       w.__kanopi.workspace.setActive(target.id);
@@ -118,8 +120,7 @@ test('Ctrl/Cmd+. (hush) silences a running Strudel pattern after the lookahead f
   });
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
 
-  // Line 4 of 01-drums.strudel is the note(...) block (lines 1-3 are
-  // comments) — same pattern as library.spec.ts.
+  // Line 4 of the fixture is the note(...) block (lines 1-3 are comments).
   await evalBlockAt(page, 4);
 
   // Wait for the pattern to actually produce sound. Strudel schedules its
@@ -157,10 +158,6 @@ test('Ctrl/Cmd+. (hush) silences a running Strudel pattern after the lookahead f
 test('Alt+1 / Alt+2 activate scenes 1 and 2 in a multi-scene session', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
 
-  const sessionContents = readFileSync(join(BUNDLED, '03-scenes-A-B.kanopi'), 'utf8');
-  const drumsContents = readFileSync(join(BUNDLED, '03-drums.strudel'), 'utf8');
-  const leadContents = readFileSync(join(BUNDLED, '03-lead.strudel'), 'utf8');
-
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
@@ -175,14 +172,14 @@ test('Alt+1 / Alt+2 activate scenes 1 and 2 in a multi-scene session', async ({ 
       };
       w.__kanopi!.workspace.loadFiles(
         [
-          { path: '03-scenes-A-B.kanopi', contents: session },
-          { path: '03-drums.strudel', contents: drums },
-          { path: '03-lead.strudel', contents: lead }
+          { path: 'scenes.kanopi', contents: session },
+          { path: 'drums.strudel', contents: drums },
+          { path: 'lead.strudel', contents: lead }
         ],
-        '03-scenes-A-B.kanopi'
+        'scenes.kanopi'
       );
     },
-    { session: sessionContents, drums: drumsContents, lead: leadContents }
+    { session: SCENES_SESSION, drums: SCENES_DRUMS, lead: SCENES_LEAD }
   );
 
   // Switch the right panel to the Scenes tab so the cards mount
@@ -234,9 +231,6 @@ test('Shift+Enter evaluates the current line only — a comment line does not th
   const audio = await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
-  const sessionContents = readFileSync(join(BUNDLED, '01-strudel-solo.kanopi'), 'utf8');
-  const drumsContents = readFileSync(join(BUNDLED, '01-drums.strudel'), 'utf8');
-
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
@@ -251,20 +245,20 @@ test('Shift+Enter evaluates the current line only — a comment line does not th
       };
       w.__kanopi!.workspace.loadFiles(
         [
-          { path: '01-strudel-solo.kanopi', contents: session },
-          { path: '01-drums.strudel', contents: drums }
+          { path: 'drums-solo.kanopi', contents: session },
+          { path: 'drums.strudel', contents: drums }
         ],
-        '01-strudel-solo.kanopi'
+        'drums-solo.kanopi'
       );
     },
-    { session: sessionContents, drums: drumsContents }
+    { session: SOLO_SESSION, drums: SOLO_DRUMS }
   );
 
   await page.waitForFunction(() => {
     const w = window as unknown as {
       __kanopi?: { workspace: { files: { path: string }[] } };
     };
-    return !!w.__kanopi?.workspace.files.find((f) => f.path === '01-drums.strudel');
+    return !!w.__kanopi?.workspace.files.find((f) => f.path === 'drums.strudel');
   });
   await page.evaluate(() => {
     const w = window as unknown as {
@@ -276,7 +270,7 @@ test('Shift+Enter evaluates the current line only — a comment line does not th
         };
       };
     };
-    const target = w.__kanopi.workspace.files.find((f) => f.path === '01-drums.strudel');
+    const target = w.__kanopi.workspace.files.find((f) => f.path === 'drums.strudel');
     if (target) {
       w.__kanopi.workspace.openFile(target.id);
       w.__kanopi.workspace.setActive(target.id);
@@ -284,7 +278,7 @@ test('Shift+Enter evaluates the current line only — a comment line does not th
   });
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
 
-  // 01-drums.strudel:1-3 are `//` comments. Place the cursor at the start of
+  // Fixture lines 1-3 are `//` comments. Place the cursor at the start of
   // line 1 via CM's view API (helpers.ts:155-171 use the same trick). If
   // Shift+Enter were grabbing the whole paragraph, it would pull in the
   // note(...) block on line 4 too and audio would start. We assert audio
@@ -358,9 +352,6 @@ test('Tab accepts the highlighted suggestion when the autocomplete popup is open
   // to `acceptCompletion` ONLY when `completionStatus(state) === 'active'`,
   // falling through to indentation otherwise. We need a strudel file open
   // so the override completion source is loaded.
-  const sessionContents = readFileSync(join(BUNDLED, '01-strudel-solo.kanopi'), 'utf8');
-  const drumsContents = readFileSync(join(BUNDLED, '01-drums.strudel'), 'utf8');
-
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
@@ -375,20 +366,20 @@ test('Tab accepts the highlighted suggestion when the autocomplete popup is open
       };
       w.__kanopi!.workspace.loadFiles(
         [
-          { path: '01-strudel-solo.kanopi', contents: session },
-          { path: '01-drums.strudel', contents: drums }
+          { path: 'drums-solo.kanopi', contents: session },
+          { path: 'drums.strudel', contents: drums }
         ],
-        '01-strudel-solo.kanopi'
+        'drums-solo.kanopi'
       );
     },
-    { session: sessionContents, drums: drumsContents }
+    { session: SOLO_SESSION, drums: SOLO_DRUMS }
   );
 
   await page.waitForFunction(() => {
     const w = window as unknown as {
       __kanopi?: { workspace: { files: { path: string }[] } };
     };
-    return !!w.__kanopi?.workspace.files.find((f) => f.path === '01-drums.strudel');
+    return !!w.__kanopi?.workspace.files.find((f) => f.path === 'drums.strudel');
   });
   await page.evaluate(() => {
     const w = window as unknown as {
@@ -400,7 +391,7 @@ test('Tab accepts the highlighted suggestion when the autocomplete popup is open
         };
       };
     };
-    const target = w.__kanopi.workspace.files.find((f) => f.path === '01-drums.strudel');
+    const target = w.__kanopi.workspace.files.find((f) => f.path === 'drums.strudel');
     if (target) {
       w.__kanopi.workspace.openFile(target.id);
       w.__kanopi.workspace.setActive(target.id);

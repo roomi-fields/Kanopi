@@ -144,7 +144,7 @@ test('Library panel screenshot shows the bundled starters and Bol Processor show
   const starterNames = [
     '01 — Strudel solo',
     '02 — Strudel + Hydra',
-    '03 — Scenes A / B',
+    '03 — Sections enchaînées',
     'BP — Rotate scales',
     'BP — NotReich',
     'BP — Acceleration',
@@ -172,24 +172,21 @@ test('starter 01 (Strudel solo) loaded and evaluated', async ({ page }) => {
   await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
-  const session = readFileSync(join(BUNDLED, '01-strudel-solo.kanopi'), 'utf8');
-  const actor = readFileSync(join(BUNDLED, '01-drums.strudel'), 'utf8');
+  const session = readFileSync(join(BUNDLED, '01-strudel-solo.bps'), 'utf8');
 
   await page.goto('');
   await waitForShell(page);
 
   await loadStarter(
     page,
-    [
-      { path: '01-strudel-solo.kanopi', contents: session },
-      { path: '01-drums.strudel', contents: actor }
-    ],
-    '01-strudel-solo.kanopi',
-    '01-drums.strudel'
+    [{ path: '01-strudel-solo.bps', contents: session }],
+    '01-strudel-solo.bps',
+    '01-strudel-solo.bps'
   );
 
-  // 01-drums.strudel line 4 is the `note(...).s("sine").gain(0.7)` block.
-  await evalBlockAt(page, 4);
+  // A `.bps` is one runnable block; Ctrl+Enter evaluates the whole session and
+  // places the inlined Strudel backtick voice in time.
+  await evalBlockAt(page, 5);
   // Let Strudel's scheduler render at least one cycle so any post-eval UI
   // (active actor LED, runtimes count) reaches its steady state.
   await page.waitForTimeout(1200);
@@ -221,47 +218,21 @@ test('starter 02 (Strudel + Hydra) loaded and evaluated', async ({ page }) => {
   await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
-  const session = readFileSync(join(BUNDLED, '02-strudel-hydra.kanopi'), 'utf8');
-  const drums = readFileSync(join(BUNDLED, '02-drums.strudel'), 'utf8');
-  const viz = readFileSync(join(BUNDLED, '02-moire.hydra'), 'utf8');
+  const session = readFileSync(join(BUNDLED, '02-strudel-hydra.bps'), 'utf8');
 
   await page.goto('');
   await waitForShell(page);
 
   await loadStarter(
     page,
-    [
-      { path: '02-strudel-hydra.kanopi', contents: session },
-      { path: '02-drums.strudel', contents: drums },
-      { path: '02-moire.hydra', contents: viz }
-    ],
-    '02-strudel-hydra.kanopi',
-    '02-drums.strudel'
+    [{ path: '02-strudel-hydra.bps', contents: session }],
+    '02-strudel-hydra.bps',
+    '02-strudel-hydra.bps'
   );
 
-  // 02-drums.strudel: lines 1-2 are comments, line 3 starts the `stack(...)`.
-  await evalBlockAt(page, 3);
-
-  // Switch to the moire hydra tab and eval its `osc(...)` block.
-  await page.evaluate(() => {
-    const w = window as unknown as {
-      __kanopi: {
-        workspace: {
-          files: { id: string; path: string }[];
-          openFile: (id: string) => void;
-          setActive: (id: string) => void;
-        };
-      };
-    };
-    const target = w.__kanopi.workspace.files.find((f) => f.path === '02-moire.hydra');
-    if (target) {
-      w.__kanopi.workspace.openFile(target.id);
-      w.__kanopi.workspace.setActive(target.id);
-    }
-  });
-  await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
-  // 02-moire.hydra: lines 1-6 are comments, line 7 starts the `osc(...)` block.
-  await evalBlockAt(page, 7);
+  // One `.bps` block: evaluating the whole session places BOTH backtick voices
+  // in time — the Strudel voice → audio, the Hydra voice → video.
+  await evalBlockAt(page, 5);
 
   // Hydra needs a few rAF frames before the back-buffer holds non-zero pixels.
   // Use readCanvasLitPixels as a gate so the screenshot lands on a frame with
@@ -303,53 +274,26 @@ test('starter 02 (Strudel + Hydra) loaded and evaluated', async ({ page }) => {
   noErrors();
 });
 
-test('starter 03 (Scenes A / B) loaded and evaluated', async ({ page }) => {
+test('starter 03 (sequenced sections) loaded and evaluated', async ({ page }) => {
   await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
-  const session = readFileSync(join(BUNDLED, '03-scenes-A-B.kanopi'), 'utf8');
-  const drums = readFileSync(join(BUNDLED, '03-drums.strudel'), 'utf8');
-  const lead = readFileSync(join(BUNDLED, '03-lead.strudel'), 'utf8');
+  const session = readFileSync(join(BUNDLED, '03-scenes-A-B.bps'), 'utf8');
 
   await page.goto('');
   await waitForShell(page);
 
   await loadStarter(
     page,
-    [
-      { path: '03-scenes-A-B.kanopi', contents: session },
-      { path: '03-drums.strudel', contents: drums },
-      { path: '03-lead.strudel', contents: lead }
-    ],
-    '03-scenes-A-B.kanopi',
-    '03-drums.strudel'
+    [{ path: '03-scenes-A-B.bps', contents: session }],
+    '03-scenes-A-B.bps',
+    '03-scenes-A-B.bps'
   );
 
-  // 03-drums.strudel: line 1 is a comment, line 2 is the `note(...)` block.
-  await evalBlockAt(page, 2);
-
-  // Also eval the lead so the "full" scene has both bodies ready, matching
-  // the in-app HOWTO step where the user evaluates each actor once before
-  // arming a scene.
-  await page.evaluate(() => {
-    const w = window as unknown as {
-      __kanopi: {
-        workspace: {
-          files: { id: string; path: string }[];
-          openFile: (id: string) => void;
-          setActive: (id: string) => void;
-        };
-      };
-    };
-    const target = w.__kanopi.workspace.files.find((f) => f.path === '03-lead.strudel');
-    if (target) {
-      w.__kanopi.workspace.openFile(target.id);
-      w.__kanopi.workspace.setActive(target.id);
-    }
-  });
-  await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
-  // 03-lead.strudel: line 1 is a comment, line 2 is the `note(...)` block.
-  await evalBlockAt(page, 2);
+  // A `.bps` is one runnable block; Ctrl+Enter evaluates the whole sequence —
+  // both sections (calm = drums, then full = drums + lead) are derived and
+  // placed in time via their inlined Strudel backtick voices.
+  await evalBlockAt(page, 8);
   await page.waitForTimeout(1200);
   await freezeAnimations(page);
 
