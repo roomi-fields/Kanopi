@@ -1,0 +1,13 @@
+// Mercury intro (migré de mercury-intro.kanopi).
+// Une voix de code Mercury → audio. Mercury est un langage déclaratif et
+// lisible (Timo Hoogland), bâti sur Tone.js. Évaluer la voix `patch` ; Ctrl+.
+
+@actor patch  transport.audio  eval.mercury
+
+S -> patch
+
+patch -> `set tempo 110
+set scale minor
+
+new synth saw time(1/8) note(0 0) shape(1 1/16 0.5) gain(0.5)
+new synth square time(1/4) note(-7 0) shape(1 1/8 0.4) gain(0.4)`

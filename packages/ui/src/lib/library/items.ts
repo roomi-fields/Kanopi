@@ -52,18 +52,18 @@ const STARTER_AXES: Record<string, Axes> = {
     showcase: true
   },
   'tidal-intro': {
-    category: 'other-langs',
+    category: 'orchestrator',
     language: 'tidal',
     outputs: ['audio'],
     level: 'didactic',
-    tags: ['tidal']
+    tags: ['tidal', 'scenes', 'multi-actor']
   },
   'hydra-audio': {
-    category: 'other-langs',
+    category: 'orchestrator',
     language: 'hydra',
-    outputs: ['visual'],
+    outputs: ['audio', 'visual'],
     level: 'didactic',
-    tags: ['visuals', 'hydra']
+    tags: ['visuals', 'hydra', 'scenes']
   },
   'mercury-intro': {
     category: 'other-langs',
