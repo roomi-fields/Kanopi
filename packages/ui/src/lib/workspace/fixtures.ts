@@ -3,65 +3,40 @@ import { runtimeFromExt } from './types';
 
 const raw: { path: string; contents: string }[] = [
   {
-    path: 'session.kanopi',
-    contents: `# main session
-# Edit and save: actors/scenes/maps reload on the fly.
+    path: 'main.bps',
+    contents: `// main session — 3 voix-code, sélectionnables par scène (intro/drop/break).
+@library.strudel "dirt-samples"
 
-@library dirt-samples
+@actor drums   transport.audio  eval.tidal
+@actor visuals transport.video  eval.hydra
+@actor bass    transport.audio  eval.strudel
 
-@actor drums   drums.tidal    tidal
-@actor visuals visuals.hydra  hydra
-@actor bass    bass.scd       sc
+@flag scene: intro:1, drop:2, break:3
 
-@scene intro   visuals
-@scene drop    drums visuals bass
-@scene break   visuals bass
+[scene==intro] S -> visuals
+[scene==drop]  S -> { drums, visuals, bass }
+[scene==break] S -> { visuals, bass }
 
-@map cv:1    tempo
-@map trig:36 scene:drop
-@map cv:21   drums.toggle
+@map cc:1  -> tempo
+@map cc:36 -> [scene]
+@map cc:21 -> drums
+
+drums -> \`stack(s("bd*4").gain(0.9), s("~ cp").room(0.4), s("hh*8").gain(0.5).pan(sine.range(0.2, 0.8).slow(4)))\`
+visuals -> \`osc(60, 0.1, 1.5).modulate(noise(3)).rotate(() => time/10).out()\`
+bass -> \`note("c2 c2 eb2 g2").s("sawtooth").gain(0.4)\`
 `
   },
   {
-    path: 'second.kanopi',
-    contents: `# second session — minimal demo
+    path: 'second.bps',
+    contents: `// second session — démo minimale, 2 scènes nommées (a / b silence).
+@actor melody transport.audio eval.strudel
 
-@actor melody melody.strudel strudel
+@flag scene: a:1, b:2
 
-@scene a melody
-@scene b
-`
-  },
-  {
-    path: 'melody.strudel',
-    contents: `note("c4 e4 g4 b4").s("sawtooth").gain(0.4).slow(2)
-`
-  },
-  {
-    path: 'drums.tidal',
-    contents: `stack(
-  s("bd*4").gain(0.9),
-  s("~ cp").room(0.4),
-  s("hh*8").gain(0.5).pan(sine.range(0.2, 0.8).slow(4))
-)
-`
-  },
-  {
-    path: 'visuals.hydra',
-    contents: `osc(60, 0.1, 1.5)
-  .modulate(noise(3))
-  .rotate(() => time/10)
-  .out()
-`
-  },
-  {
-    path: 'bass.scd',
-    contents: `(
-SynthDef(\\bass, { |freq=55, amp=0.3|
-  var sig = SinOsc.ar(freq) * EnvGen.kr(Env.perc, doneAction:2);
-  Out.ar(0, sig.dup * amp);
-}).add;
-)
+[scene==a] S -> melody
+[scene==b] S -> -
+
+melody -> \`note("c4 e4 g4 b4").s("sawtooth").gain(0.4).slow(2)\`
 `
   }
 ];
