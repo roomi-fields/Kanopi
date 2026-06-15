@@ -135,10 +135,17 @@ type Frontend = (code: string) => {
   // token placed in the derivation maps to `{ interp, code }`. The adapter routes
   // the token → interpreter at the dispatcher-scheduled time.
   backticks?: BacktickTable;
+  // A5 named scenes: the flag→{alias→int} table compileBPS emits for `@flag scene:
+  // calm:1, full:2`. Present only when the `.bps` declares named flag states; the
+  // UI surfaces `flagStates.scene` as selectable scene buttons. `.gr` has none.
+  flagStates?: FlagStates;
 };
 
 // `BT<interp><id>` → foreign code + its interpreter tag (from compileBPS).
 type BacktickTable = Record<string, { interp: string; code: string }>;
+
+// `@flag <name>: <alias>:<int>, …` → { name → { alias → int } } (from compileBPS).
+export type FlagStates = Record<string, Record<string, number>>;
 
 interface OrchestratedActor {
   name: string;
@@ -269,7 +276,12 @@ const bpsFrontend: Frontend = (code) => {
   // in the timeline (direct lookup, no parsing). Carry it through so the adapter
   // routes each BT terminal to its interpreter.
   const backticks = (c.backticks ?? {}) as BacktickTable;
-  const base = Object.keys(backticks).length > 0 ? { ...parsed, backticks } : parsed;
+  // A5 named scenes: carry the flag→{alias→int} table so the UI can offer one
+  // selection button per named scene. Re-evaluating with `flags: { scene: <int> }`
+  // makes the matching guarded rule derive (see `evaluate`).
+  const flagStates = (c.flagStates ?? {}) as FlagStates;
+  const withFlags = Object.keys(flagStates).length > 0 ? { ...parsed, flagStates } : parsed;
+  const base = Object.keys(backticks).length > 0 ? { ...withFlags, backticks } : withFlags;
 
   // Orchestrator `.bps`: `@actor` declarations compile to an actor table (each
   // actor owns an alphabet + a transport). When present, carry it so the adapter
@@ -527,7 +539,10 @@ function makeBpxAdapter(
 
       let tokens;
       try {
-        const bpx = createBPx({ tempo: currentBpm, settings });
+        // A5 named scenes: `src.flags` (e.g. `{ scene: 2 }`) is applied as the
+        // BPx engine's initial flag state, so a flag-guarded rule (`/scene=2/`)
+        // derives instead of the default. Absent → no flags, default derivation.
+        const bpx = createBPx({ tempo: currentBpm, settings, flags: src.flags });
         bpx.loadGrammar(ast);
         tokens = bpx.derive().tokens;
       } catch (err) {

@@ -1,5 +1,6 @@
 <script lang="ts">
   import TransportCluster from './TransportCluster.svelte';
+  import BpsScenesBar from './BpsScenesBar.svelte';
   import StrudelStatusPill from './StrudelStatusPill.svelte';
   import { ui } from '../../stores/ui.svelte';
   import { workspace } from '../../stores/workspace.svelte';
@@ -45,6 +46,7 @@
 
   <div class="topbar-center">
     <TransportCluster />
+    <BpsScenesBar />
   </div>
 
   <div class="topbar-right">

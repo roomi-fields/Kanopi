@@ -315,7 +315,9 @@ class MockCore implements CoreApi {
     code: string,
     sourceId: string,
     _docOffset?: number,
-    _actorId?: string
+    _actorId?: string,
+    _flags?: Record<string, number>,
+    _section?: { index: number; count: number }
   ): Promise<void> {
     this.console.push({ runtime, level: 'info', msg: `eval mock (${code.length}b @ ${sourceId})` });
   }

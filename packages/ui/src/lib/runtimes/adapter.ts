@@ -11,6 +11,22 @@ export type EvalSource = {
    * would point to the start of the doc instead of the eval'd block.
    */
   docOffset?: number;
+  /**
+   * Initial flag values applied to the BPx engine before `derive()` (A5 named
+   * scenes). For a `.bps` whose rules are guarded by a named flag (`@flag scene:
+   * calm:1, full:2` → `[scene==calm] …`), selecting a scene = re-evaluating with
+   * `flags: { scene: <int> }`, which makes a different guarded rule derive.
+   * Ignored by adapters that don't carry flags (everything but bp3/bpscript).
+   */
+  flags?: Record<string, number>;
+  /**
+   * STEP playback (A5): play only one section of the derivation once, instead
+   * of looping the whole thing. `index` is the head-rule RHS sequence element to
+   * play, `count` the total number of sections; the adapter slices the derived
+   * timeline into `count` equal windows and plays window `index` non-looping.
+   * Ignored by adapters that have no timeline (everything but bp3/bpscript).
+   */
+  section?: { index: number; count: number };
 };
 
 export type LogPush = (e: {

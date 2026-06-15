@@ -129,7 +129,9 @@ export interface CoreApi {
     code: string,
     sourceId: string,
     docOffset?: number,
-    actorId?: string
+    actorId?: string,
+    flags?: Record<string, number>,
+    section?: { index: number; count: number }
   ): Promise<void>;
   /** Inject a lookup so the core can resolve which file an actor refers to. */
   bindActorFiles(get: (actorName: string) => ActorFileRef | undefined): void;

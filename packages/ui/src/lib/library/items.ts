@@ -43,6 +43,14 @@ const STARTER_AXES: Record<string, Axes> = {
     tags: ['sequence', 'sections', 'multi-actor'],
     showcase: true
   },
+  'bundled-04-scenes-select': {
+    category: 'orchestrator',
+    language: 'strudel',
+    outputs: ['audio'],
+    level: 'intermediate',
+    tags: ['scenes', 'select'],
+    showcase: true
+  },
   'tidal-intro': {
     category: 'other-langs',
     language: 'tidal',

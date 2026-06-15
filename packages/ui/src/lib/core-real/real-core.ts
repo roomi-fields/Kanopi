@@ -272,7 +272,9 @@ class RealCore implements CoreApi {
     code: string,
     sourceId: string,
     docOffset: number = 0,
-    actorId?: string
+    actorId?: string,
+    flags?: Record<string, number>,
+    section?: { index: number; count: number }
   ): Promise<void> {
     const adapter = getAdapter(runtime);
     if (!adapter) {
@@ -301,7 +303,11 @@ class RealCore implements CoreApi {
 
     // Eval first — if it throws, we leave transport+LED alone so a broken
     // block doesn't falsely mark the scene as playing.
-    await adapter.evaluate(code, { actorId: slotId, fileId: sourceId, docOffset }, this.log);
+    await adapter.evaluate(
+      code,
+      { actorId: slotId, fileId: sourceId, docOffset, flags, section },
+      this.log
+    );
 
     if (!this.clock.state.playing) this.clock.play();
     if (matching && !matching.active) {

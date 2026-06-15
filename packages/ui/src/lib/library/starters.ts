@@ -7,6 +7,7 @@
 import bundled01Session from '../../../../library/bundled/01-strudel-solo.bps?raw';
 import bundled02Session from '../../../../library/bundled/02-strudel-hydra.bps?raw';
 import bundled03Session from '../../../../library/bundled/03-scenes-A-B.bps?raw';
+import bundled04Session from '../../../../library/bundled/04-scenes-select.bps?raw';
 // Bol Processor showcase: authentic .gr grammars from Bernard Bel's BP3 corpus,
 // derived by the next-gen BPx engine and played through Kanopi's WebAudio path.
 import bpRotateScales from '../../../../library/bundled/bp-rotate-scales.gr?raw';
@@ -57,6 +58,15 @@ export const STARTERS: Starter[] = [
       'One self-contained `.bps` that SEQUENCES two sections in time: `calm` (drums only), then `full` (drums + lead). Two Strudel code voices inlined as backticks. Ctrl+Enter to evaluate the whole sequence; Ctrl+. to hush.',
     sessionFile: '03-scenes-A-B.bps',
     files: [{ path: '03-scenes-A-B.bps', contents: bundled03Session }]
+  },
+  {
+    id: 'bundled-04-scenes-select',
+    name: '04 — Sélecteur de scènes',
+    tagline: 'named selectable scenes — pick calm or full live',
+    description:
+      'One self-contained `.bps` with named scenes guarded by a flag: `calm` (drums only) and `full` (drums + lead). Open it, then use the scene buttons in the transport bar (or Alt+1 / Alt+2) to switch which scene is armed — each click re-derives the grammar with that scene selected. Ctrl+. to hush.',
+    sessionFile: '04-scenes-select.bps',
+    files: [{ path: '04-scenes-select.bps', contents: bundled04Session }]
   },
   {
     id: 'tidal-intro',
