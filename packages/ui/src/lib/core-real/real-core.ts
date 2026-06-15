@@ -260,12 +260,12 @@ class RealCore implements CoreApi {
     }
     const src = { actorId: a.name, fileId: a.name };
     if (willBeActive) {
+      // Arming an actor PLAYS it (beta issue 5 — "play/actor est incohérent").
+      // If the transport was stopped, start it: handleTransport(true) then
+      // re-evaluates every armed actor (including this one), so we don't double-
+      // eval here. Mirrors handleSceneActivate's "arm + start + eval".
       if (!this.clock.state.playing) {
-        this.log({
-          runtime: ref.runtime,
-          level: 'info',
-          msg: `actor "${a.name}" armed (transport stopped)`
-        });
+        this.clock.play();
         return;
       }
       await adapter.evaluate(ref.contents, src, this.log);
@@ -277,11 +277,14 @@ class RealCore implements CoreApi {
   async loadSession(text: string) {
     const r = parseSession(text);
 
-    // Preserve current active state for actors that survive.
+    // Preserve current active state for actors that survive; arm NEW actors by
+    // default (beta issue 3 — "par défaut les acteurs doivent être armés au
+    // chargement"). A reload keeps whatever the user had toggled; a fresh load
+    // arms every actor so the session sounds on Play without a manual rearm.
     const before = new Map(this.actors.list().map((a) => [a.name, a.active]));
     const nextActors = r.actors.map((a) => ({
       ...a,
-      active: before.get(a.name) ?? false
+      active: before.get(a.name) ?? true
     }));
     this.actors.setActors(nextActors);
 

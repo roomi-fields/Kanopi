@@ -77,8 +77,10 @@ class WorkspaceStore {
     return id;
   }
 
-  /** Replace every file + tab with a fresh set and focus the given path (if any). */
-  loadFiles(files: { path: string; contents: string }[], focusPath?: string) {
+  /** Replace every file + tab with a fresh set and focus the given path (if any).
+   * Returns the focused file's id (or null) so the caller can arm+play the
+   * loaded program — a demo sounds on load, not after a manual disarm/rearm. */
+  loadFiles(files: { path: string; contents: string }[], focusPath?: string): string | null {
     const next: VirtualFile[] = files.map((f, i) => ({
       id: `f${Date.now()}-${i}`,
       path: f.path,
@@ -91,8 +93,12 @@ class WorkspaceStore {
     this.activeTabId = null;
     if (focusPath) {
       const target = next.find((f) => f.path === focusPath);
-      if (target) this.openFile(target.id);
+      if (target) {
+        this.openFile(target.id);
+        return target.id;
+      }
     }
+    return null;
   }
 }
 

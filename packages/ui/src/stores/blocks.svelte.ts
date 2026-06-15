@@ -1,5 +1,5 @@
 import { workspace } from './workspace.svelte';
-import { extractBlocks } from '../lib/blocks/extract-blocks';
+import { extractBlocks, qualifyBlock } from '../lib/blocks/extract-blocks';
 import type { CodeBlock } from '../lib/blocks/extract-blocks';
 import type { Runtime } from '../lib/core';
 import { core } from '../lib/core';
@@ -57,7 +57,10 @@ class OpenBlocksStore {
     this.errored = next;
   }
 
-  /** Arm + eval. If transport stopped, only arms (eval will fire on play). */
+  /** Arm + play this block. If the transport was stopped, start it: the block
+   * replay listener (installBlockReplay) then re-evals every armed block on the
+   * play edge, so arming a block makes it sound (beta issue 5 — arm = play, no
+   * disarm/rearm dance). */
   async arm(q: string) {
     const b = this.list.find((x) => x.qualifiedName === q);
     if (!b) return;
@@ -65,7 +68,10 @@ class OpenBlocksStore {
     const next = new Set(this.armed);
     next.add(q);
     this.armed = next;
-    if (!clock.state.playing) return;
+    if (!clock.state.playing) {
+      clock.play();
+      return;
+    }
     await this.evalOne(b);
   }
 
@@ -102,6 +108,52 @@ class OpenBlocksStore {
     await core.evaluateBlock(b.runtime, code, b.fileName, b.block.from, b.qualifiedName);
   }
 
+  /**
+   * Arm every block of a freshly-loaded program AND make it sound, mirroring
+   * `handleSceneActivate`'s "arm + start transport + eval" — a loaded demo plays
+   * on load without the disarm/rearm dance (beta issues 3+5). Starting the clock
+   * first lets the per-block eval fire (the clock-transport replay also covers
+   * blocks armed before play). Only arms blocks belonging to `fileId`, so loading
+   * a single program doesn't sound the other open tabs' blocks.
+   */
+  async armAndPlayFile(fileId: string) {
+    const fileBlocks = this.list.filter((b) => b.fileId === fileId);
+    if (fileBlocks.length === 0) return;
+    const next = new Set(this.armed);
+    for (const b of fileBlocks) next.add(b.qualifiedName);
+    this.armed = next;
+    if (!clock.state.playing) {
+      // play() → handleTransport(true) re-evals declared @actors; the block
+      // replay listener (installBlockReplay) re-evals armed blocks. Both fire.
+      clock.play();
+      return;
+    }
+    for (const b of fileBlocks) {
+      try {
+        await this.evalOne(b);
+      } catch {
+        /* per-block failures logged by adapter */
+      }
+    }
+  }
+
+  /**
+   * Play whatever was just loaded — the coherent "load = it sounds" gesture
+   * (beta issues 3+5). A program file (`.bps`, `.gr`, a single sketch) arms its
+   * own blocks and starts the transport; a `.kanopi` session (no blocks of its
+   * own — its actors come from `loadSession`, already armed) just starts the
+   * transport so `handleTransport` re-evals the armed actors. Run after a
+   * microtask by the caller so the reactively-derived block list has settled.
+   */
+  async playLoadedProgram(fileId: string) {
+    const hasBlocks = this.list.some((b) => b.fileId === fileId);
+    if (hasBlocks) {
+      await this.armAndPlayFile(fileId);
+    } else if (!clock.state.playing) {
+      clock.play();
+    }
+  }
+
   /** Called by the clock transport listener — re-eval every armed block on play. */
   async replayArmed() {
     const armedList = this.list.filter((b) => this.armed.has(b.qualifiedName));
@@ -133,7 +185,6 @@ function computeOpenBlocks(): OpenBlock[] {
     // Skip session files — they're composed of directives, not runnable blocks.
     if (file.runtime === 'kanopi') continue;
     const blocks = extractBlocks(file.contents, file.runtime);
-    const base = basename(file.name);
     for (const b of blocks) {
       const key = `${file.id}:${b.name}`;
       if (seenKeys.has(key)) continue;
@@ -143,16 +194,11 @@ function computeOpenBlocks(): OpenBlock[] {
         fileName: file.name,
         runtime: file.runtime,
         block: b,
-        qualifiedName: `${base}.${b.name}`
+        qualifiedName: qualifyBlock(file.name, b)
       });
     }
   }
   return out;
-}
-
-function basename(name: string): string {
-  const dot = name.lastIndexOf('.');
-  return dot > 0 ? name.slice(0, dot) : name;
 }
 
 export const openBlocks = new OpenBlocksStore();

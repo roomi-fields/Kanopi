@@ -2,19 +2,19 @@
   import { library } from '../../stores/library.svelte';
   import { workspace } from '../../stores/workspace.svelte';
   import { ui } from '../../stores/ui.svelte';
+  import { openBlocks } from '../../stores/blocks.svelte';
   import { CATEGORIES, type LibraryItem, type LibraryCategory } from '../../lib/library/catalog';
 
   const OUTPUTS = ['audio', 'midi', 'text', 'visual'] as const;
   const LEVELS = ['didactic', 'intermediate', 'advanced'] as const;
 
   function load(item: LibraryItem) {
-    const ok = confirm(
-      `Load "${item.name}"?\n\nThis replaces every file in the current workspace.`
-    );
-    if (!ok) return;
-    workspace.loadFiles(item.files, item.sessionFile);
+    const focusId = workspace.loadFiles(item.files, item.sessionFile);
     // The library is a launcher: land back in the editor with the session open.
     ui.activeActivityView = 'files';
+    // Load = it sounds: arm + start transport once the reactive block list has
+    // settled (beta — a freshly-loaded demo plays without a disarm/rearm dance).
+    if (focusId) queueMicrotask(() => void openBlocks.playLoadedProgram(focusId));
   }
 
   function pickCategory(c: LibraryCategory | 'all') {
