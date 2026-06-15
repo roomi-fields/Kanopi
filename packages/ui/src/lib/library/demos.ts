@@ -111,6 +111,17 @@ const DEMO_META: Record<string, DemoMeta> = {
     tags: ['cv', 'backtick', 'code'],
     showcase: true
   },
+  'strudel-backtick': {
+    name: 'Strudel backtick — code voice',
+    tagline: 'a strudel pattern as a terminal in the flow',
+    description:
+      'A standalone backtick voice: a `strudel:` pattern sits in the rule flow as a terminal of its own right. The dispatcher places it in time and fires the Strudel interpreter at that moment — the code is captured then transported, not rendered opaquely.',
+    category: 'bpscript-backticks',
+    outputs: ['audio'],
+    level: 'advanced',
+    tags: ['backtick', 'code', 'cross-runtime', 'strudel'],
+    showcase: true
+  },
   'midi-actors': {
     name: 'Dual actors — MIDI + audio',
     tagline: 'two voices, two transports',

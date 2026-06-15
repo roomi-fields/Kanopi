@@ -125,7 +125,14 @@ type Frontend = (code: string) => {
   // Multi-voice orchestration (BPScript `@actor`): each actor owns an alphabet
   // and a transport (midi / webaudio). Present only for orchestrator `.bps`.
   orchestration?: Orchestration;
+  // Standalone backtick voices (lot 4, ADAPTER_SPEC §1bis): each `BT<interp><id>`
+  // token placed in the derivation maps to `{ interp, code }`. The adapter routes
+  // the token → interpreter at the dispatcher-scheduled time.
+  backticks?: BacktickTable;
 };
+
+// `BT<interp><id>` → foreign code + its interpreter tag (from compileBPS).
+type BacktickTable = Record<string, { interp: string; code: string }>;
 
 interface OrchestratedActor {
   name: string;
@@ -247,7 +254,12 @@ const bpsFrontend: Frontend = (code) => {
     return { ast: null, errors: c.errors.map((e) => ({ line: e.line, message: e.message })) };
   }
   const alphabetNames = c.alphabet?.length ? c.alphabet : WESTERN_NOTES;
-  const base = parseWithSound(c.grammar, alphabetNames);
+  const parsed = parseWithSound(c.grammar, alphabetNames);
+  // Backtick voices: compileBPS keys foreign code by the EXACT BT token emitted
+  // in the timeline (direct lookup, no parsing). Carry it through so the adapter
+  // routes each BT terminal to its interpreter.
+  const backticks = (c.backticks ?? {}) as BacktickTable;
+  const base = Object.keys(backticks).length > 0 ? { ...parsed, backticks } : parsed;
 
   // Orchestrator `.bps`: `@actor` declarations compile to an actor table (each
   // actor owns an alphabet + a transport). When present, carry it so the adapter
@@ -323,6 +335,91 @@ function srcKey(s: EvalSource): string {
   return s.actorId ?? s.fileId;
 }
 
+// Map a backtick interpreter tag (`strudel`, `hydra`, `tidal`, `js`, …) to a
+// Kanopi Runtime. The tag is the eval tag from the .bps backtick (`strudel: …`);
+// most map 1:1 to a registered adapter. `auto` has no interpreter — it's an
+// error (the user must tag the code). `sc`/`py` are level-3 (osc-bridge), no
+// browser adapter yet → unknown-interp error, surfaced clearly (never silent).
+function runtimeForInterp(interp: string): Runtime | undefined {
+  const known: Record<string, Runtime> = {
+    strudel: 'strudel',
+    tidal: 'tidal',
+    hydra: 'hydra',
+    p5: 'p5',
+    mercury: 'mercury',
+    csound: 'csound',
+    js: 'js'
+  };
+  return known[interp];
+}
+
+/**
+ * Register a backtick sink on a dispatcher (lot 4, ADAPTER_SPEC §1bis). A
+ * `BT<interp><id>` token in the derivation is a REFERENCE to foreign code; the
+ * dispatcher places it in time and fires this sink at the scheduled moment.
+ * The sink looks up `backticks[token]` (direct, no parsing), resolves the
+ * interpreter adapter, and evaluates the code — the engine then plays, PLACED in
+ * time by the dispatcher. Layering: the dispatcher (packages/core) never imports
+ * an adapter; bp3.ts injects this closure.
+ *
+ * - unknown interp → clear log error (never silent).
+ * - async evaluate → fire-and-forget, errors logged.
+ * - §1bis (b) device-type compatibility check: NOT wired yet — TODO once the
+ *   device library (DEVICES_SPEC §3) is plumbed through the dispatcher; do not
+ *   half-implement here.
+ */
+function registerBacktickSink(
+  dispatcher: InstanceType<typeof Dispatcher>,
+  backticks: BacktickTable,
+  id: Runtime,
+  src: EvalSource,
+  log: LogPush
+): void {
+  const isBacktick = (token: string) => Object.prototype.hasOwnProperty.call(backticks, token);
+  const sink = (token: string) => {
+    const entry = backticks[token];
+    if (!entry) return;
+    const runtime = runtimeForInterp(entry.interp);
+    if (!runtime) {
+      log({
+        runtime: id,
+        level: 'error',
+        msg: `backtick: unknown interpreter "${entry.interp}" (token ${token}) — tag the code with a known runtime`
+      });
+      return;
+    }
+    // The registry is reached lazily (dynamic import) to break the bp3 ↔ registry
+    // module cycle: registry.ts imports bp3Adapter/bpscriptAdapter at load, so
+    // bp3.ts must NOT pull registry at module-eval. Fire-and-forget: the engine
+    // renders itself in time (capture-for-retransport is backlog B4); errors are
+    // logged, never thrown into the audio clock.
+    import('./registry')
+      .then(({ getAdapter }) => {
+        const adapter = getAdapter(runtime);
+        if (!adapter) {
+          log({
+            runtime: id,
+            level: 'error',
+            msg: `backtick: no adapter for "${entry.interp}" (token ${token})`
+          });
+          return;
+        }
+        return adapter.evaluate(entry.code, { actorId: src.actorId, fileId: src.fileId }, log);
+      })
+      .catch((err) =>
+        log({ runtime: id, level: 'error', msg: `backtick ${entry.interp}: ${String(err)}` })
+      );
+  };
+  (
+    dispatcher as unknown as {
+      setBacktickSink(
+        isBacktick: (t: string) => boolean,
+        sink: (t: string, ts: { startSec: number; durSec: number; absTime: number }) => void
+      ): void;
+    }
+  ).setBacktickSink(isBacktick, sink);
+}
+
 /**
  * Build a BPx-language adapter. `frontend` is the only thing that varies between
  * `.gr` (parseBP3) and `.bps` (compileBPS → parseBP3); everything downstream —
@@ -360,7 +457,7 @@ function makeBpxAdapter(
     outputType: 'notes',
     events: adapterEvents,
     async evaluate(code: string, src: EvalSource, log: LogPush) {
-      const { ast, errors, settings, soundingSymbols, orchestration } = frontend(code);
+      const { ast, errors, settings, soundingSymbols, orchestration, backticks } = frontend(code);
       if (errors.length > 0) {
         const msg = errors.map((e) => `line ${e.line ?? '?'}: ${e.message}`).join('; ');
         log({ runtime: id, level: 'error', msg: `parse: ${msg}` });
@@ -397,6 +494,13 @@ function makeBpxAdapter(
 
       const ctx = await getCtx();
       const dispatcher = new Dispatcher(ctx);
+
+      // Backtick voices (lot 4): route each `BT<interp><id>` terminal to its
+      // interpreter, fired in time by the dispatcher. Registered before load so
+      // both the orchestrated and the simple path place backticks correctly.
+      if (backticks && Object.keys(backticks).length > 0) {
+        registerBacktickSink(dispatcher, backticks, id, src, log);
+      }
 
       // Orchestrator `.bps`: each `@actor` owns an alphabet and a transport
       // (midi / webaudio). Route every voice to its own transport — the

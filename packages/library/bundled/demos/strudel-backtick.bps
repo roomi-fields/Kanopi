@@ -1,0 +1,10 @@
+// Standalone backtick voice (lot 4 cross-runtime).
+// A `strudel:` backtick terminal sits in the rule flow as a terminal of its own
+// right (like a note). The dispatcher places it in time and fires the Strudel
+// interpreter at that moment — the code is captured then transported, not
+// rendered opaquely. Here it triggers a kick pattern between two notes.
+
+@core
+@alphabet.western:browser
+
+S -> C4 `strudel: s("bd*4")` E4

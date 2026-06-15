@@ -179,6 +179,25 @@ export class Dispatcher {
   }
 
   /**
+   * Backtick voice routing (lot 4 cross-runtime, ADAPTER_SPEC §1bis):
+   * a standalone backtick terminal compiles to a `BT<interp><id>` token placed
+   * in the derived timeline. Such a token is NOT an audio/text terminal — it is
+   * a reference to foreign code whose interpreter (Strudel/Hydra/…) must FIRE at
+   * the scheduled time. The adapter (bp3.ts) injects the sink; the dispatcher
+   * only places it in time, staying free of any UI/adapter import (layering).
+   *
+   * `isBacktick(token)` decides membership (table-driven by the caller, not a
+   * brittle `startsWith('BT')`), and `sink(token, { startSec, durSec, absTime })`
+   * is fired instead of routing the token to an audio/text transport.
+   * @param {(token: string) => boolean} isBacktick
+   * @param {(token: string, t: { startSec: number, durSec: number, absTime: number }) => void} sink
+   */
+  setBacktickSink(isBacktick, sink) {
+    this._isBacktick = isBacktick;
+    this._backtickSink = sink;
+  }
+
+  /**
    * Set control defaults from controls.json runtime section.
    * Called once at init. The dispatcher uses these to reset controlState.
    * @param {Object} defaults - { vel: 64, chan: 1, wave: "triangle", ... }
@@ -386,6 +405,22 @@ export class Dispatcher {
           }
         }
       } else if (!evt.isSilence && !evt.isProlongation && evt.durSec > 0) {
+        // Backtick voice (lot 4): a `BT<interp><id>` terminal references foreign
+        // code. Fire its interpreter sink at the scheduled time and DO NOT route
+        // it to an audio/text transport (it isn't a note or a symbol). The sink
+        // (injected by bp3.ts) looks up the code and evals it on the matching
+        // adapter. NOTE: in loop mode a BT token re-fires every cycle, so the
+        // engine is re-eval'd each loop — acceptable for the base increment.
+        if (this._backtickSink && this._isBacktick && this._isBacktick(evt.token)) {
+          this._backtickSink(evt.token, {
+            startSec: this._loopOffset + evt.startSec,
+            durSec: evt.durSec,
+            absTime,
+          });
+          this._cursor++;
+          continue;
+        }
+
         // Scene terminal — launch child scene instead of routing to transport
         // Rule: parent always controls the envelope. Child @duration is ignored when nested.
         if (this._sceneManager && this._sceneManager.isSceneTerminal(evt.token)) {
