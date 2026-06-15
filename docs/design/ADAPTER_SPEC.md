@@ -43,6 +43,7 @@ Source : `packages/ui/src/lib/runtimes/adapter.ts`
 export interface RuntimeAdapter {
   readonly id: Runtime;
   readonly extensions: readonly string[];     // ['.hydra'], ['.p5'], …
+  readonly outputType: VoiceOutputType;        // OBLIGATOIRE — voir §1bis (b)
   evaluate(code: string, src: EvalSource, log: LogPush): Promise<void>;
   stop(src: EvalSource, log: LogPush): Promise<void>;
   setBpm?(bpm: number, log: LogPush): void;
@@ -51,6 +52,15 @@ export interface RuntimeAdapter {
   readonly events?: EventBus;
   dispose(): Promise<void>;
 }
+
+// Ce que la voix PRODUIT (≠ DeviceType, ce que l'appareil ACCEPTE — DEVICES_SPEC).
+export type VoiceOutputType =
+  | 'notes'   // événements de hauteur (→ midi / audio)
+  | 'signal'  // signal audio brut, sans hauteur discrète (→ audio)
+  | 'visual'  // pixels / canvas / vidéo (→ video)
+  | 'control' // CC / messages de contrôle (→ osc)
+  | 'light'   // intensités / couleurs (→ dmx)
+  | 'text';   // symboles à lire (→ text / console)
 
 export type EvalSource = {
   actorId?: string;
@@ -75,6 +85,53 @@ un nouveau langage signifie : (1) déclarer `extensions: ['.<ext>']` sur
 l'adapter, (2) l'inscrire dans le registry. Rien d'autre à toucher — la
 boîte de dialogue « + New file », `runtimeFromExt`, le tab icon, etc.
 consomment la liste dérivée.
+
+---
+
+## 1bis · Contrat de sortie (OBLIGATOIRE)
+
+> Cadrage 2 (architecte/Romain, 2026-06-15). Prérequis du lot 4 cross-runtime
+> (migration `.kanopi → .bps`). Tout langage encapsulé DOIT honorer ces deux
+> clauses. Référence amont : `BPscript/docs/design/ACTOR.md §2-3`.
+
+Un langage encapsulé (Strudel, Hydra, Tidal, …) n'est PAS rendu « en place » de
+façon opaque par son moteur natif : sa sortie est **captée à l'interprétation**,
+puis **placée dans le temps par le dispatcher** vers le `transport` (appareil) de
+la voix. « Le code est toujours transporté. » Deux clauses en découlent.
+
+### (a) Comment j'expose ma sortie pour transport (capture)
+
+L'adapter DOIT exposer un point de capture de sa sortie — il ne se contente pas de
+faire jouer son moteur. Selon la nature du moteur :
+
+- **Sortie événementielle** (notes/contrôles datés) : l'adapter fournit les
+  événements résolus au dispatcher (comme bp3 : tokens horodatés), qui les place
+  vers le transport. C'est la voie « native Kanopi ».
+- **Sortie continue / moteur autonome** (Strudel cyclist, Hydra rAF, canvas) :
+  l'adapter expose un **hook de capture** (callback / flux) que le dispatcher lit
+  — pas un rendu direct au matériel. Le moteur ne s'adresse JAMAIS directement à
+  l'appareil : il passe par la capture → dispatcher → transport.
+
+Cette clause est la contrepartie adapter du mécanisme **capture-pour-retransport**
+(backlog B4). Tant qu'un moteur ne sait que se rendre lui-même de façon opaque,
+il n'est **pas** routable vers un `transport` arbitraire (limite à documenter dans
+sa fiche d'adapter, pas à masquer).
+
+### (b) Le type de ma sortie (compatibilité voix ↔ appareil)
+
+L'adapter DÉCLARE son `outputType: VoiceOutputType` (§1). C'est ce que la **voix
+produit** — distinct du `DeviceType` que l'**appareil accepte** (`DEVICES_SPEC.md`).
+Le dispatcher **vérifie la compatibilité avant de router** : une voix dont
+l'`outputType` n'est pas accepté par l'appareil ciblé est **refusée** à l'éval
+(erreur claire), jamais silencieusement ignorée.
+
+Exemple : une voix Tidal (`outputType: 'notes'`) routée vers `transport.lumieres`
+(appareil `type: 'dmx'`, accepte `light`) → **refus** (`notes` ∉ `{light}`). La
+table de compatibilité fait foi côté `DEVICES_SPEC.md §3`.
+
+> Pour la bêta, les adapters existants déclarent : Strudel/Tidal/Mercury/Csound →
+> `notes` ou `signal` ; Hydra/p5 → `visual` ; bp3/bpscript → `notes` (et `text`
+> pour les grammaires non-sonnantes, cf. routage par-symbole).
 
 ---
 
@@ -603,6 +660,12 @@ consommées par les composants UI dédiés.
 
 ## Historique de révision
 
+- **2026-06-15** : ajout §1bis « Contrat de sortie (obligatoire) » + champ
+  `outputType` sur `RuntimeAdapter` (cadrage 2, migration `.kanopi → .bps`).
+  Deux clauses obligatoires pour tout langage encapsulé : (a) exposer un point de
+  capture de sa sortie (le moteur ne s'adresse jamais directement à l'appareil ;
+  capture → dispatcher → transport) ; (b) déclarer le type de sa sortie pour la
+  vérification de compatibilité voix↔appareil (cf. `DEVICES_SPEC.md`).
 - **2026-04-23** : rédaction initiale (phase 2.3 task 2). Structure en
   6 zones d'intégration extraite du retour d'expérience phase 2.1 — le
   brouillon PROGRESS.md §2.3 ne prévoyait que 3 zones (moteur, events,
