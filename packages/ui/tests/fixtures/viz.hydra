@@ -1,3 +1,0 @@
-// Minimal Hydra patch: a moving oscillator pattern lit up enough to
-// guarantee non-zero pixels in the e2e canvas-sampling assertion.
-osc(60, 0.1, 1.5).out()

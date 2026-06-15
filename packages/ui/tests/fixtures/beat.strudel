@@ -1,4 +1,0 @@
-// A bd-only loop that uses a synth voice, not a sample. Strudel's "bd"
-// maps to the sine-based default kit, so this works without loading dirt-samples
-// (the session declares the bank too, but synths give a stronger RMS faster).
-note("c2*4").s("sawtooth").gain(0.5)
