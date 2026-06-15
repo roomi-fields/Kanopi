@@ -37,6 +37,11 @@ import { textStream } from '../../stores/textstream.svelte';
 // name opaque.
 import { resolveDevice, isCompatible, type Device } from '../devices/registry';
 import type { VoiceOutputType } from './adapter';
+// `@library.<engine>` bank loading: resolve a declared bank id to its source and
+// load it through the SAME Strudel `samples()` path a `.kanopi` `@library`
+// session used. Consumed AS-IS — the adapter only maps ids → loader.
+import { findBank } from '../library/audio-banks';
+import { loadSampleBank } from './strudel';
 
 /**
  * BPx language adapters (PRIMARY vertical slice).
@@ -139,7 +144,15 @@ type Frontend = (code: string) => {
   // calm:1, full:2`. Present only when the `.bps` declares named flag states; the
   // UI surfaces `flagStates.scene` as selectable scene buttons. `.gr` has none.
   flagStates?: FlagStates;
+  // Per-engine sample/sound banks a `.bps` declares (`@library.strudel "dirt-samples"`
+  // → `{ strudel: ["dirt-samples"] }`). The adapter loads each engine's declared
+  // banks before/at the backtick eval so the code voices find their samples. `.gr`
+  // has none.
+  libraries?: Libraries;
 };
+
+// `@library.<engine> "<id>"` → { engine → [bank ids] } (from compileBPS).
+export type Libraries = Record<string, string[]>;
 
 // `BT<interp><id>` → foreign code + its interpreter tag (from compileBPS).
 type BacktickTable = Record<string, { interp: string; code: string }>;
@@ -309,7 +322,11 @@ const bpsFrontend: Frontend = (code) => {
   // makes the matching guarded rule derive (see `evaluate`).
   const flagStates = (c.flagStates ?? {}) as FlagStates;
   const withFlags = Object.keys(flagStates).length > 0 ? { ...parsed, flagStates } : parsed;
-  const base = Object.keys(backticks).length > 0 ? { ...withFlags, backticks } : withFlags;
+  // Declared per-engine banks (`@library.strudel "dirt-samples"`): carry them so
+  // the adapter loads each engine's samples before the backtick voices eval.
+  const libraries = (c.libraries ?? {}) as Libraries;
+  const withLibs = Object.keys(libraries).length > 0 ? { ...withFlags, libraries } : withFlags;
+  const base = Object.keys(backticks).length > 0 ? { ...withLibs, backticks } : withLibs;
 
   // Orchestrator `.bps`: `@actor` declarations compile to an actor table (each
   // actor owns an alphabet + a transport). When present, carry it so the adapter
@@ -543,6 +560,48 @@ function registerBacktickSink(
 }
 
 /**
+ * Load the sample/sound banks a `.bps` declares per engine (`@library.strudel
+ * "dirt-samples"`). Only the `strudel` engine has a bank loader today (the same
+ * `samples()` path the `.kanopi` `@library` directive used); other engines'
+ * declarations are recorded but have no loader yet — logged, never silent. A
+ * declared id with no catalog entry is an explicit error, not a quiet skip.
+ *
+ * Fire-and-forget per bank (de-duped inside `loadSampleBank`): the backtick
+ * voice that uses the samples is itself fired in time by the dispatcher, and the
+ * Strudel sound map is global, so a bank that lands a beat late simply means the
+ * first cycle is silent — acceptable, and the common case (dirt-samples) is
+ * cached after the first eval.
+ */
+function loadDeclaredLibraries(libraries: Libraries, id: Runtime, log: LogPush): void {
+  for (const [engine, ids] of Object.entries(libraries)) {
+    if (engine !== 'strudel') {
+      log({
+        runtime: id,
+        level: 'info',
+        msg: `@library.${engine} déclarée (${ids.join(', ')}) : pas de chargeur de banque pour ce moteur (ignoré)`
+      });
+      continue;
+    }
+    for (const bankId of ids) {
+      const bank = findBank(bankId);
+      if (!bank) {
+        log({
+          runtime: id,
+          level: 'error',
+          msg: `@library.strudel "${bankId}" : banque inconnue (absente du catalogue)`
+        });
+        continue;
+      }
+      void loadSampleBank(bank.source)
+        .then(() => log({ runtime: id, level: 'info', msg: `library loaded: ${bank.name}` }))
+        .catch((err) =>
+          log({ runtime: id, level: 'error', msg: `library ${bankId}: ${String(err)}` })
+        );
+    }
+  }
+}
+
+/**
  * Build a BPx-language adapter. `frontend` is the only thing that varies between
  * `.gr` (parseBP3) and `.bps` (compileBPS → parseBP3); everything downstream —
  * derive, dispatch, MIDI, stop, tempo, dispose — is shared verbatim. Each
@@ -579,8 +638,16 @@ function makeBpxAdapter(
     outputType: 'notes',
     events: adapterEvents,
     async evaluate(code: string, src: EvalSource, log: LogPush) {
-      const { ast, errors, settings, soundingSymbols, orchestration, backticks, flagStates } =
-        frontend(code);
+      const {
+        ast,
+        errors,
+        settings,
+        soundingSymbols,
+        orchestration,
+        backticks,
+        flagStates,
+        libraries
+      } = frontend(code);
       if (errors.length > 0) {
         const msg = errors.map((e) => `line ${e.line ?? '?'}: ${e.message}`).join('; ');
         log({ runtime: id, level: 'error', msg: `parse: ${msg}` });
@@ -590,6 +657,13 @@ function makeBpxAdapter(
         const msg = 'no grammar found (empty AST)';
         log({ runtime: id, level: 'error', msg });
         throw new Error(`${id}: ${msg}`);
+      }
+
+      // `@library.<engine>` banks: start loading the declared sample banks now
+      // (before derive/dispatch) so a backtick voice that references them finds
+      // its samples. De-duped + fire-and-forget inside the helper.
+      if (libraries && Object.keys(libraries).length > 0) {
+        loadDeclaredLibraries(libraries, id, log);
       }
 
       // A5 named scenes: a `.bps` whose rules are ALL guarded by a named scene
