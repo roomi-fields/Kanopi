@@ -1,0 +1,17 @@
+// 02 — Strudel + Hydra synchronisés sur le transport Kanopi (migré de 02-strudel-hydra.kanopi).
+// Deux voix de code : Strudel → audio, Hydra → vidéo. `beat`/`bar` sont injectés par
+// l'adaptateur Hydra de Kanopi (horloge partagée, cf. ADAPTER_SPEC §5bis).
+
+@actor groove  transport.audio  eval.strudel
+@actor viz     transport.video  eval.hydra
+
+S -> { groove, viz }
+
+groove -> `stack(
+  note("c2*4").s("sawtooth").gain(0.5),
+  note("c5*8").s("square").gain(0.2)
+)`
+
+viz -> `osc(60, 0.1, () => 0.5 + 0.5 * Math.sin(beat * Math.PI))
+  .rotate(() => bar * 0.05)
+  .out()`

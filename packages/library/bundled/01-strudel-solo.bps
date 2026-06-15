@@ -1,0 +1,9 @@
+// 01 — Strudel solo (migré de 01-strudel-solo.kanopi).
+// Une voix de code : Strudel (eval) → sortie audio (transport).
+// Évaluer la voix `drums`, puis couper.
+
+@actor drums  transport.audio  eval.strudel
+
+S -> drums
+
+drums -> `note("c3 e3 g3 c4").s("sine").gain(0.7)`

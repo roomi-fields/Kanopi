@@ -2,14 +2,11 @@
 // of truth. We pull them in via Vite's `?raw` suffix so the contents are
 // inlined at build time without ever duplicating them as string literals here.
 // The relative path is: src/lib/library -> ../../../../library/bundled/.
-import bundled01Session from '../../../../library/bundled/01-strudel-solo.kanopi?raw';
-import bundled01Drums from '../../../../library/bundled/01-drums.strudel?raw';
-import bundled02Session from '../../../../library/bundled/02-strudel-hydra.kanopi?raw';
-import bundled02Drums from '../../../../library/bundled/02-drums.strudel?raw';
-import bundled02Moire from '../../../../library/bundled/02-moire.hydra?raw';
-import bundled03Session from '../../../../library/bundled/03-scenes-A-B.kanopi?raw';
-import bundled03Drums from '../../../../library/bundled/03-drums.strudel?raw';
-import bundled03Lead from '../../../../library/bundled/03-lead.strudel?raw';
+// 01/02/03 are self-contained `.bps`: the code voices are inlined as backticks
+// and routed by the new `@actor … transport.X eval.Y` syntax. No companion files.
+import bundled01Session from '../../../../library/bundled/01-strudel-solo.bps?raw';
+import bundled02Session from '../../../../library/bundled/02-strudel-hydra.bps?raw';
+import bundled03Session from '../../../../library/bundled/03-scenes-A-B.bps?raw';
 // Bol Processor showcase: authentic .gr grammars from Bernard Bel's BP3 corpus,
 // derived by the next-gen BPx engine and played through Kanopi's WebAudio path.
 import bpRotateScales from '../../../../library/bundled/bp-rotate-scales.gr?raw';
@@ -39,38 +36,27 @@ export const STARTERS: Starter[] = [
     name: '01 — Strudel solo',
     tagline: 'single actor, zero regression vs strudel.cc',
     description:
-      'One Strudel actor running a 4-note sine pattern. The minimal proof Kanopi runs a strudel.cc patch unchanged. Ctrl+Enter to eval, Ctrl+. to hush.',
-    sessionFile: '01-strudel-solo.kanopi',
-    files: [
-      { path: '01-strudel-solo.kanopi', contents: bundled01Session },
-      { path: '01-drums.strudel', contents: bundled01Drums }
-    ]
+      'One self-contained `.bps`: an actor whose Strudel code voice is inlined as a backtick and transported to audio. Put the cursor in the session and Ctrl+Enter to evaluate; Ctrl+. to hush.',
+    sessionFile: '01-strudel-solo.bps',
+    files: [{ path: '01-strudel-solo.bps', contents: bundled01Session }]
   },
   {
     id: 'bundled-02-strudel-hydra',
     name: '02 — Strudel + Hydra',
     tagline: 'audio + visuals synced on the shared clock',
     description:
-      'A Strudel drum loop drives Kanopi’s transport; a Hydra patch reads `beat` and `bar` from the same clock to pulse in time. One Ctrl+. hushes both.',
-    sessionFile: '02-strudel-hydra.kanopi',
-    files: [
-      { path: '02-strudel-hydra.kanopi', contents: bundled02Session },
-      { path: '02-drums.strudel', contents: bundled02Drums },
-      { path: '02-moire.hydra', contents: bundled02Moire }
-    ]
+      'One self-contained `.bps`: a Strudel actor (→ audio) and a Hydra actor (→ video), both inlined as backticks on the same transport. The Hydra patch reads `beat` and `bar` from the shared clock to pulse in time. Ctrl+Enter to evaluate; one Ctrl+. hushes both.',
+    sessionFile: '02-strudel-hydra.bps',
+    files: [{ path: '02-strudel-hydra.bps', contents: bundled02Session }]
   },
   {
     id: 'bundled-03-scenes-A-B',
-    name: '03 — Scenes A / B',
-    tagline: 'two scenes, one session — the Kanopi differentiator',
+    name: '03 — Sections enchaînées',
+    tagline: 'two sections sequenced in time — calm, then full',
     description:
-      'Two scenes arm different combinations of Strudel actors. Click `calm` for drums only, `full` for drums + lead. Alt+1 / Alt+2 to switch from the keyboard.',
-    sessionFile: '03-scenes-A-B.kanopi',
-    files: [
-      { path: '03-scenes-A-B.kanopi', contents: bundled03Session },
-      { path: '03-drums.strudel', contents: bundled03Drums },
-      { path: '03-lead.strudel', contents: bundled03Lead }
-    ]
+      'One self-contained `.bps` that SEQUENCES two sections in time: `calm` (drums only), then `full` (drums + lead). Two Strudel code voices inlined as backticks. Ctrl+Enter to evaluate the whole sequence; Ctrl+. to hush.',
+    sessionFile: '03-scenes-A-B.bps',
+    files: [{ path: '03-scenes-A-B.bps', contents: bundled03Session }]
   },
   {
     id: 'tidal-intro',

@@ -1,0 +1,16 @@
+// 03 — Deux sections enchaînées dans le temps (migré de 03-scenes-A-B.kanopi).
+// En .kanopi, calm/full étaient des scènes à sélectionner ; ici la grammaire les
+// SÉQUENCE : calm (batterie seule) puis full (batterie + lead). La sélection de
+// scènes nommées à la volée est un chantier langage séparé (backlog : sélecteur
+// de scènes nommées). Deux voix Strudel : la tête de règle (drums/lead) attache
+// chaque bloc de code à sa voix.
+
+@actor drums  transport.audio  eval.strudel
+@actor lead   transport.audio  eval.strudel
+
+S -> calm full
+calm -> drums
+full -> { drums, lead }
+
+drums -> `note("c2*4").s("sine").gain(0.6)`
+lead  -> `note("e4 g4 b4 d5").s("triangle").gain(0.5)`

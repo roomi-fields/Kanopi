@@ -40,7 +40,7 @@ const STARTER_AXES: Record<string, Axes> = {
     language: 'strudel',
     outputs: ['audio'],
     level: 'intermediate',
-    tags: ['scenes', 'multi-actor'],
+    tags: ['sequence', 'sections', 'multi-actor'],
     showcase: true
   },
   'tidal-intro': {
