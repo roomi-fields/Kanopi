@@ -150,16 +150,32 @@ class RealCore implements CoreApi {
    * Feed the Scenes panel from a `.bps`'s `@scene <name> "<file>"` table. Each
    * named scene becomes a file-scene card; activating it loads + plays the
    * referenced child `.bps`. `resolve` reads a child file's source by name (fed
-   * by the workspace). Replaces any previously loaded scene set. Passing an
-   * empty table clears the panel (the active file declares no file-scenes).
+   * by the workspace).
+   *
+   * COEXISTS with `.kanopi` session scenes (`loadSession`): a `.kanopi` session's
+   * actor-set scenes carry no `file` field, file-scenes do. This method only owns
+   * the FILE-scene cards — it never wipes session scenes. So a non-empty table
+   * installs file-scenes; an empty table (the active file declares none) clears
+   * the panel ONLY when the current scenes are themselves file-scenes, leaving an
+   * active `.kanopi` session's scenes intact.
    */
   loadBpsFileScenes(
     sceneTable: Record<string, { file: string }>,
     resolve: (fileName: string) => string | undefined
   ) {
     this.getBpsSceneFile = resolve;
+    const entries = Object.entries(sceneTable);
+    const currentAreFileScenes = this.scenes.list().some((s) => s.file !== undefined);
+
+    if (entries.length === 0) {
+      // No file-scenes in the active file. Don't touch `.kanopi` session scenes;
+      // only clear if what's shown is a previously-loaded file-scene set.
+      if (currentAreFileScenes) this.scenes.setScenes([]);
+      return;
+    }
+
     const activeName = this.scenes.list().find((s) => s.active)?.name;
-    const next: Scene[] = Object.entries(sceneTable).map(([name, def]) => ({
+    const next: Scene[] = entries.map(([name, def]) => ({
       name,
       actors: {},
       file: def.file,

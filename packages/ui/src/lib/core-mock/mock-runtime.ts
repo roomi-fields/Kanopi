@@ -330,13 +330,14 @@ class MockCore implements CoreApi {
     sceneTable: Record<string, { file: string }>,
     _resolve: (fileName: string) => string | undefined
   ) {
+    const entries = Object.entries(sceneTable);
+    const currentAreFileScenes = this.scenes.list().some((s) => s.file !== undefined);
+    if (entries.length === 0) {
+      if (currentAreFileScenes) this.scenes.setScenes([]);
+      return;
+    }
     this.scenes.setScenes(
-      Object.entries(sceneTable).map(([name, def]) => ({
-        name,
-        actors: {},
-        file: def.file,
-        active: false
-      }))
+      entries.map(([name, def]) => ({ name, actors: {}, file: def.file, active: false }))
     );
   }
 

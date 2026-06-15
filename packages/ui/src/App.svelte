@@ -140,7 +140,9 @@
       // `.bps` file-scenes (`@scene calm "calm.bps"`): when the active file is a
       // `.bps` declaring a scene table, feed the right-panel Scenes cards from it.
       // Activating a card loads + plays the referenced child `.bps` (resolved
-      // against the workspace). A `.bps` without file-scenes clears the panel.
+      // against the workspace). COEXISTS with `.kanopi` session scenes — an empty
+      // table never wipes session scenes (core.loadBpsFileScenes only owns
+      // file-scene cards); it clears only a previously-loaded file-scene set.
       let lastSceneTableKey = '';
       $effect(() => {
         const active = workspace.activeTabId
