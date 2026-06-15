@@ -143,6 +143,15 @@ function evalInHydraScope(code: string): void {
 export const hydraAdapter: RuntimeAdapter = {
   id: 'hydra',
   extensions: ['.hydra'],
+  // ADAPTER_SPEC §1bis (b): Hydra produces pixels → `visual`.
+  outputType: 'visual',
+  // ADAPTER_SPEC §1bis (a) — capture surface: this adapter's `evaluate(code,…)`
+  // IS the capture point the dispatcher fires (a backtick voice routes a derived
+  // BT token → this evaluate at the scheduled time, see bp3.ts setBacktickSink).
+  // DOCUMENTED LIMITATION: hydra-synth renders into its own rAF-driven canvas —
+  // its output is NOT yet routable to an arbitrary `transport`/device
+  // (capture-for-retransport, backlog B4). The honest base places WHEN the patch
+  // re-renders (dispatcher fires at absTime), not yet WHERE the pixels land.
   events: adapterEvents,
   setBpm(bpm: number, _log: LogPush) {
     // Write directly to synth (not globalThis) so Hydra patches reading

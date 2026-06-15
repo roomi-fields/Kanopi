@@ -30,6 +30,8 @@ function emitLifecycle(name: 'eval' | 'stop', fileId: string) {
 export const jsAdapter: RuntimeAdapter = {
   id: 'js',
   extensions: ['.js'],
+  // ADAPTER_SPEC §1bis (b): raw JS/WebAudio produces a sound signal → `signal`.
+  outputType: 'signal',
   events: adapterEvents,
   async evaluate(code: string, src: EvalSource, log: LogPush) {
     try {

@@ -83,6 +83,8 @@ async function ensure(log: LogPush): Promise<boolean> {
 export const csoundAdapter: RuntimeAdapter = {
   id: 'csound',
   extensions: ['.csd'],
+  // ADAPTER_SPEC §1bis (b): Csound produces pitched events → `notes`.
+  outputType: 'notes',
   events: adapterEvents,
   async evaluate(code: string, src: EvalSource, log: LogPush) {
     if (!(await ensure(log))) throw new Error('csound not ready');

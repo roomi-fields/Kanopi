@@ -21,4 +21,24 @@ describe('runtime registry', () => {
     expect(getAdapter('python')).toBeUndefined();
     expect(getAdapter('kanopi')).toBeUndefined();
   });
+
+  // ADAPTER_SPEC §1bis (b): every registered adapter declares an output type
+  // (OBLIGATOIRE) drawn from the VoiceOutputType union, so the dispatcher can
+  // check voice↔device compatibility.
+  it('every adapter declares a valid outputType', () => {
+    const allowed = new Set(['notes', 'signal', 'visual', 'control', 'light', 'text']);
+    for (const id of listRuntimes()) {
+      const a = getAdapter(id);
+      expect(a, `adapter ${id} missing`).toBeDefined();
+      expect(allowed.has(a!.outputType), `${id}.outputType=${a!.outputType}`).toBe(true);
+    }
+  });
+
+  it('declares beta output types per §1bis guidance', () => {
+    expect(getAdapter('strudel')?.outputType).toBe('notes');
+    expect(getAdapter('tidal')?.outputType).toBe('notes');
+    expect(getAdapter('hydra')?.outputType).toBe('visual');
+    expect(getAdapter('p5')?.outputType).toBe('visual');
+    expect(getAdapter('bpscript')?.outputType).toBe('notes');
+  });
 });

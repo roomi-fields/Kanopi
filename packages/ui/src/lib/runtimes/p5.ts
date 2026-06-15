@@ -160,6 +160,8 @@ function runSketch(p: P5Instance, userCode: string) {
 export const p5Adapter: RuntimeAdapter = {
   id: 'p5',
   extensions: ['.p5'],
+  // ADAPTER_SPEC §1bis (b): p5 produces pixels → `visual`.
+  outputType: 'visual',
   events: adapterEvents,
   setBpm(bpm: number, _log: LogPush) {
     // Expose on the p5 instance (not globalThis). Patches read it from

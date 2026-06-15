@@ -64,6 +64,8 @@ function warnOnVisualHook(code: string, log: LogPush) {
 export const mercuryAdapter: RuntimeAdapter = {
   id: 'mercury',
   extensions: ['.mercury'],
+  // ADAPTER_SPEC §1bis (b): Mercury produces pitched events → `notes`.
+  outputType: 'notes',
   events: adapterEvents,
   setBpm(bpm: number, _log: LogPush) {
     try {

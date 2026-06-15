@@ -774,6 +774,15 @@ export function setDeclaredBanks(sources: string[]): { lingering: string[] } {
 export const strudelAdapter: RuntimeAdapter = {
   id: 'strudel',
   extensions: ['.strudel'],
+  // ADAPTER_SPEC §1bis (b): Strudel produces pitched events → `notes`.
+  outputType: 'notes',
+  // ADAPTER_SPEC §1bis (a) — capture surface: this adapter's `evaluate(code,…)`
+  // IS the capture point the dispatcher fires (a backtick voice routes a derived
+  // BT token → this evaluate at the scheduled time, see bp3.ts setBacktickSink).
+  // DOCUMENTED LIMITATION: the Strudel cyclist renders itself opaquely to its own
+  // AudioContext — its output is NOT yet routable to an arbitrary `transport`
+  // (capture-for-retransport, backlog B4). The honest base places WHEN the engine
+  // re-renders (dispatcher fires at absTime), not yet WHERE its audio lands.
   events: adapterEvents,
   setBpm(bpm: number, _log: LogPush) {
     // Tidal convention: 1 cycle = 4 beats. CPS = bpm/60/4.

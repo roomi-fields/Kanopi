@@ -19,8 +19,27 @@ export type LogPush = (e: {
   msg: string;
 }) => void;
 
+/**
+ * What a voice PRODUCES (≠ DeviceType, what a device ACCEPTS — see
+ * DEVICES_SPEC.md). The dispatcher checks voice.outputType against the target
+ * device's accepted set before routing; an incompatible voice is refused at
+ * eval, never silently dropped (ADAPTER_SPEC §1bis (b)).
+ */
+export type VoiceOutputType =
+  | 'notes' // pitched events (→ midi / audio)
+  | 'signal' // raw audio signal, no discrete pitch (→ audio)
+  | 'visual' // pixels / canvas / video (→ video)
+  | 'control' // CC / control messages (→ osc)
+  | 'light' // intensities / colours (→ dmx)
+  | 'text'; // symbols to read (→ text / console)
+
 export interface RuntimeAdapter {
   readonly id: Runtime;
+  /**
+   * Type of output this voice produces — drives voice↔device compatibility
+   * checking (ADAPTER_SPEC §1bis (b)). OBLIGATOIRE.
+   */
+  readonly outputType: VoiceOutputType;
   /**
    * File extensions owned by this adapter, with the leading dot (`.hydra`,
    * `.p5`). The FilesView `+ New file` dialog, `runtimeFromExt`, and any

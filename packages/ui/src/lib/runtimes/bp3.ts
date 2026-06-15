@@ -354,6 +354,10 @@ function makeBpxAdapter(
   return {
     id,
     extensions,
+    // ADAPTER_SPEC §1bis (b): bp3/bpscript derive pitched terminals → `notes`
+    // (non-sounding symbols still route to the text console per-symbol, but the
+    // voice's declared product is notes).
+    outputType: 'notes',
     events: adapterEvents,
     async evaluate(code: string, src: EvalSource, log: LogPush) {
       const { ast, errors, settings, soundingSymbols, orchestration } = frontend(code);
