@@ -27,6 +27,8 @@ import { WebAudioTransport } from '../../../../core/src/dispatcher/transports/we
 // Text grammars (bols, words, numbers — half the corpus) route here instead of
 // audio: a timestamped-symbol console, fed AS-IS through the same dispatcher.
 import { TextTransport } from '../../../../core/src/dispatcher/transports/text.js';
+// Per-actor MIDI transport for orchestrator .bps (a voice routed `transport:midi`).
+import { MidiTransport } from '../../../../core/src/dispatcher/transports/midi.js';
 import { Resolver } from '../../../../core/src/dispatcher/resolver.js';
 import { textStream } from '../../stores/textstream.svelte';
 
@@ -120,7 +122,21 @@ type Frontend = (code: string) => {
   // derived token sounds if it's a note OR its symbol is in this set; everything
   // else renders as text. Empty for all-note grammars (they sound by default).
   soundingSymbols?: string[];
+  // Multi-voice orchestration (BPScript `@actor`): each actor owns an alphabet
+  // and a transport (midi / webaudio). Present only for orchestrator `.bps`.
+  orchestration?: Orchestration;
 };
+
+interface OrchestratedActor {
+  name: string;
+  transportKey: string; // 'midi' | 'webaudio'
+  alphabet: string; // 'western' | 'solfège' | …
+}
+interface Orchestration {
+  actorTable: Record<string, unknown>;
+  terminalActorMap: Record<string, string>;
+  actors: OrchestratedActor[];
+}
 
 // Sounding alphabet symbols, loaded from the `-so`/`-mi`/`-cs` aux files the
 // grammar references. Loads the raw aux text by reference. Injectable so a test
@@ -231,7 +247,27 @@ const bpsFrontend: Frontend = (code) => {
     return { ast: null, errors: c.errors.map((e) => ({ line: e.line, message: e.message })) };
   }
   const alphabetNames = c.alphabet?.length ? c.alphabet : WESTERN_NOTES;
-  return parseWithSound(c.grammar, alphabetNames);
+  const base = parseWithSound(c.grammar, alphabetNames);
+
+  // Orchestrator `.bps`: `@actor` declarations compile to an actor table (each
+  // actor owns an alphabet + a transport). When present, carry it so the adapter
+  // routes each voice to its own transport (midi / webaudio).
+  const actorTable = (c.actorTable ?? {}) as Record<
+    string,
+    { transport?: { key?: string }; alphabet?: string }
+  >;
+  const names = Object.keys(actorTable);
+  if (names.length === 0) return base;
+  const orchestration: Orchestration = {
+    actorTable,
+    terminalActorMap: (c.terminalActorMap ?? {}) as Record<string, string>,
+    actors: names.map((name) => ({
+      name,
+      transportKey: actorTable[name]?.transport?.key ?? 'webaudio',
+      alphabet: actorTable[name]?.alphabet ?? 'western'
+    }))
+  };
+  return { ...base, orchestration };
 };
 
 interface BP3Voice {
@@ -320,7 +356,7 @@ function makeBpxAdapter(
     extensions,
     events: adapterEvents,
     async evaluate(code: string, src: EvalSource, log: LogPush) {
-      const { ast, errors, settings, soundingSymbols } = frontend(code);
+      const { ast, errors, settings, soundingSymbols, orchestration } = frontend(code);
       if (errors.length > 0) {
         const msg = errors.map((e) => `line ${e.line ?? '?'}: ${e.message}`).join('; ');
         log({ runtime: id, level: 'error', msg: `parse: ${msg}` });
@@ -357,6 +393,47 @@ function makeBpxAdapter(
 
       const ctx = await getCtx();
       const dispatcher = new Dispatcher(ctx);
+
+      // Orchestrator `.bps`: each `@actor` owns an alphabet and a transport
+      // (midi / webaudio). Route every voice to its own transport — the
+      // dispatcher already does per-token actor lookup (terminalActorMap →
+      // actor → transport). MIDI is silent-but-safe without hardware.
+      if (orchestration && orchestration.actors.length > 0) {
+        const da = dispatcher as unknown as {
+          setActors(t: unknown, m: Record<string, string>): void;
+          setActorTransport(actor: string, transport: string): void;
+          setActorResolver(actor: string, resolver: Resolver): void;
+        };
+        da.setActors(orchestration.actorTable, orchestration.terminalActorMap);
+        const webaudio = new WebAudioTransport(ctx, { resolver: makeWesternResolver() });
+        let midi: InstanceType<typeof MidiTransport> | undefined;
+        for (const actor of orchestration.actors) {
+          const resolver =
+            actor.alphabet === 'solfège' ? makeSolfegeResolver() : makeWesternResolver();
+          if (actor.transportKey === 'midi') {
+            if (!midi) {
+              midi = new MidiTransport({ resolver });
+              await midi.init().catch(() => {}); // no hardware → silent, never throws
+              dispatcher.addTransport('midi', midi);
+            }
+            da.setActorTransport(actor.name, 'midi');
+          } else {
+            dispatcher.addTransport('webaudio', webaudio);
+            da.setActorTransport(actor.name, 'webaudio');
+          }
+          da.setActorResolver(actor.name, resolver);
+        }
+        dispatcher.load(tokens);
+        dispatcher.start(undefined, { loop: true });
+        voices.set(key, { dispatcher });
+        log({
+          runtime: id,
+          level: 'info',
+          msg: `orchestrated [${key}] (${orchestration.actors.length} actors)`
+        });
+        emitLifecycle('eval', src.fileId);
+        return;
+      }
 
       // Per-symbol sound routing (decision routage-texte-son-par-symbole): a
       // token sounds if it's a note OR its symbol carries a sound assignment

@@ -110,6 +110,17 @@ const DEMO_META: Record<string, DemoMeta> = {
     level: 'advanced',
     tags: ['cv', 'backtick', 'code'],
     showcase: true
+  },
+  'midi-actors': {
+    name: 'Dual actors — MIDI + audio',
+    tagline: 'two voices, two transports',
+    description:
+      'A BPScript orchestrator: a melody actor routed to a MIDI synth and a bass actor routed to the in-browser synth, voiced together from one scene. The bass sounds even without MIDI hardware.',
+    category: 'orchestrator',
+    outputs: ['midi', 'audio'],
+    level: 'intermediate',
+    tags: ['orchestration', 'multi-actor', 'midi'],
+    showcase: true
   }
 };
 
