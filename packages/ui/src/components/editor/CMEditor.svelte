@@ -29,7 +29,7 @@
     registerStrudelEditorView,
     unregisterStrudelEditorView
   } from '../../lib/runtimes/strudel';
-  import { extractBlocks } from '../../lib/blocks/extract-blocks';
+  import { extractBlocks, qualifyBlock } from '../../lib/blocks/extract-blocks';
   import { openBlocks } from '../../stores/blocks.svelte';
 
   type Props = {
@@ -72,10 +72,9 @@
     pos: number
   ): { from: number; to: number; qualifiedName: string } | undefined {
     const blocks = extractBlocks(docText, runtime);
-    const base = fileName.includes('.') ? fileName.slice(0, fileName.lastIndexOf('.')) : fileName;
     for (const b of blocks) {
       if (pos >= b.from && pos <= b.to) {
-        return { from: b.from, to: b.to, qualifiedName: `${base}.${b.name}` };
+        return { from: b.from, to: b.to, qualifiedName: qualifyBlock(fileName, b) };
       }
     }
     return undefined;

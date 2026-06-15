@@ -24,6 +24,26 @@ export interface CodeBlock {
   /** Absolute offsets into the source file. `from..to` is what Ctrl+Enter would eval. */
   from: number;
   to: number;
+  /**
+   * The file IS the block: a single whole-file program (a BPScript/BP3 grammar,
+   * a p5 sketch, a Mercury patch). Such a block has no meaningful short name of
+   * its own — the file name is its identity. `qualifyBlock` drops the `.name`
+   * suffix for these so the panel shows `arabic`, not `arabic.bpscript`.
+   */
+  wholeFile?: boolean;
+}
+
+/**
+ * The panel/slot identity for a block. For a multi-block file it's
+ * `file.block` (`melody.drums`, `beat.$0`); for a whole-file program the file
+ * name alone is the identity (`arabic`, not `arabic.bpscript`). Single source
+ * of truth — both the panel and the editor's Ctrl+Enter slot resolution call
+ * this so a block always lands in the same slot.
+ */
+export function qualifyBlock(fileName: string, block: CodeBlock): string {
+  const dot = fileName.lastIndexOf('.');
+  const base = dot > 0 ? fileName.slice(0, dot) : fileName;
+  return block.wholeFile ? base : `${base}.${block.name}`;
 }
 
 export function extractBlocks(code: string, runtime: Runtime): CodeBlock[] {
@@ -64,7 +84,7 @@ export function extractBlocks(code: string, runtime: Runtime): CodeBlock[] {
  */
 function extractWholeFile(code: string, label: string): CodeBlock[] {
   if (code.trim() === '') return [];
-  return [{ name: label, kind: 'positional', from: 0, to: code.length }];
+  return [{ name: label, kind: 'positional', from: 0, to: code.length, wholeFile: true }];
 }
 
 /* ---------------------------------------------------------------- positional */

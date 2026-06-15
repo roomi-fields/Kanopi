@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractBlocks } from './extract-blocks';
+import { extractBlocks, qualifyBlock } from './extract-blocks';
 
 describe('extractBlocks — Strudel', () => {
   it('names $: slots $0 $1 $2', () => {
@@ -109,5 +109,24 @@ describe('extractBlocks — unknown runtime', () => {
     const b = extractBlocks(code, 'python');
     expect(b).toHaveLength(3);
     expect(b.map((x) => x.name)).toEqual(['#1', '#2', '#3']);
+  });
+});
+
+describe('whole-file programs — qualifyBlock', () => {
+  it('marks a BPScript program as a whole-file block', () => {
+    const b = extractBlocks('@core\nS -> a b c', 'bpscript');
+    expect(b).toHaveLength(1);
+    expect(b[0].wholeFile).toBe(true);
+  });
+
+  it('qualifies a whole-file program by file name alone (no `.bpscript` suffix)', () => {
+    const b = extractBlocks('@core\nS -> a b c', 'bpscript');
+    // The bug: `arabic.bps` showed a synthetic actor "arabic.bpscript".
+    expect(qualifyBlock('arabic.bps', b[0])).toBe('arabic');
+  });
+
+  it('qualifies a multi-block file as `file.block`', () => {
+    const b = extractBlocks('$: s("bd*4")', 'strudel');
+    expect(qualifyBlock('beat.strudel', b[0])).toBe('beat.$0');
   });
 });
