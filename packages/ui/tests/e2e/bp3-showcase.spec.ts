@@ -47,7 +47,8 @@ for (const { cardName, grFile, audibleHeadless } of SHOWCASE) {
     await expect(card).toBeVisible({ timeout: 5_000 });
     await card.getByRole('button', { name: 'load' }).click();
 
-    // The actor tab for the grammar opens via App.svelte's queueMicrotask.
+    // The `.gr` opens DIRECTLY as the focused tab (loadFiles focusPath) — no
+    // `.kanopi` session wrapper; the grammar IS the session.
     const actorTab = page.locator('.tab', { has: page.locator('.name', { hasText: grFile }) });
     await expect(actorTab).toBeVisible({ timeout: 10_000 });
     await actorTab.click();

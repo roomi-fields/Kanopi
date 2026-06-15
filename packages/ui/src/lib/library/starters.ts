@@ -123,10 +123,11 @@ export const STARTERS: Starter[] = [
   ...bpShowcase()
 ];
 
-// Bol Processor showcase. Each entry pairs a one-actor `.kanopi` session with an
-// authentic `.gr` grammar from Bernard Bel's BP3 corpus. The session routes the
-// `.gr` to the `bp3` runtime, which derives it with the next-gen BPx engine and
-// plays the resulting pitched tokens through Kanopi's WebAudio transport.
+// Bol Processor showcase. Each entry opens an authentic `.gr` grammar from
+// Bernard Bel's BP3 corpus DIRECTLY — no session wrapper. The `.gr` extension
+// routes the file to the `bp3` runtime, which derives it with the next-gen BPx
+// engine and plays the resulting pitched tokens through Kanopi's WebAudio
+// transport. Ctrl+Enter anywhere in the grammar derives + plays it.
 function bpStarter(
   id: string,
   name: string,
@@ -135,20 +136,13 @@ function bpStarter(
   grFile: string,
   grContents: string
 ): Starter {
-  const sessionFile = `${id}.kanopi`;
   return {
     id: `bp3-${id}`,
     name,
     tagline,
     description,
-    sessionFile,
-    files: [
-      {
-        path: sessionFile,
-        contents: `# ${name} — toggle the actor, then Ctrl+Enter anywhere in ${grFile}.\n# The grammar is parsed, derived by the BPx engine, and played as pitched notes.\n\n@actor grammar ${grFile} bp3\n\n@scene play grammar\n`
-      },
-      { path: grFile, contents: grContents }
-    ]
+    sessionFile: grFile,
+    files: [{ path: grFile, contents: grContents }]
   };
 }
 
