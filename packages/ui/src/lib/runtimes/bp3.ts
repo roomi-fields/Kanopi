@@ -31,6 +31,12 @@ import { TextTransport } from '../../../../core/src/dispatcher/transports/text.j
 import { MidiTransport } from '../../../../core/src/dispatcher/transports/midi.js';
 import { Resolver } from '../../../../core/src/dispatcher/resolver.js';
 import { textStream } from '../../stores/textstream.svelte';
+// Device library (@devices): resolve a voice's `transport.<name>` to a typed
+// device and gate voice↔device compatibility BEFORE routing (DEVICES_SPEC §3,
+// §4 / ADAPTER_SPEC §1bis b). Kanopi owns resolution; bpscript carries the
+// name opaque.
+import { resolveDevice, isCompatible, type Device } from '../devices/registry';
+import type { VoiceOutputType } from './adapter';
 
 /**
  * BPx language adapters (PRIMARY vertical slice).
@@ -136,8 +142,12 @@ type BacktickTable = Record<string, { interp: string; code: string }>;
 
 interface OrchestratedActor {
   name: string;
-  transportKey: string; // 'midi' | 'webaudio'
+  transportKey: string; // device name referenced by `transport.<key>` (free identifier)
   alphabet: string; // 'western' | 'solfège' | …
+  // Interpreter tag of a code voice (`eval.strudel`, `eval.hydra`, …), or
+  // undefined for a native notes voice. Drives the voice's output type for the
+  // device-compatibility gate (DEVICES_SPEC §3 / ADAPTER_SPEC §1bis b).
+  evalInterp?: string;
 }
 interface Orchestration {
   actorTable: Record<string, unknown>;
@@ -266,7 +276,7 @@ const bpsFrontend: Frontend = (code) => {
   // routes each voice to its own transport (midi / webaudio).
   const actorTable = (c.actorTable ?? {}) as Record<
     string,
-    { transport?: { key?: string }; alphabet?: string }
+    { transport?: { key?: string }; alphabet?: string; eval?: string }
   >;
   const names = Object.keys(actorTable);
   if (names.length === 0) return base;
@@ -275,8 +285,9 @@ const bpsFrontend: Frontend = (code) => {
     terminalActorMap: (c.terminalActorMap ?? {}) as Record<string, string>,
     actors: names.map((name) => ({
       name,
-      transportKey: actorTable[name]?.transport?.key ?? 'webaudio',
-      alphabet: actorTable[name]?.alphabet ?? 'western'
+      transportKey: actorTable[name]?.transport?.key ?? 'audio',
+      alphabet: actorTable[name]?.alphabet ?? 'western',
+      evalInterp: actorTable[name]?.eval
     }))
   };
   return { ...base, orchestration };
@@ -353,6 +364,51 @@ function runtimeForInterp(interp: string): Runtime | undefined {
   return known[interp];
 }
 
+// What a voice PRODUCES (ADAPTER_SPEC §1bis b). A code voice's output type is
+// its interpreter adapter's declared `outputType`; a native notes voice (no
+// `eval`) produces `notes`. The registry is reached lazily (dynamic import) to
+// break the bp3 ↔ registry module cycle.
+async function voiceOutputType(evalInterp: string | undefined): Promise<VoiceOutputType> {
+  if (!evalInterp) return 'notes';
+  const runtime = runtimeForInterp(evalInterp);
+  if (!runtime) {
+    // Unknown interpreter (sc/py = level-3, no browser adapter): the backtick
+    // sink already surfaces this clearly at fire time; for the compat gate treat
+    // it as `notes` (its bps voice still derives notes terminals) so the gate
+    // doesn't reject a voice the engine will itself report on.
+    return 'notes';
+  }
+  const { getAdapter } = await import('./registry');
+  return getAdapter(runtime)?.outputType ?? 'notes';
+}
+
+// DEVICES_SPEC §3/§4 + ADAPTER_SPEC §1bis (b): resolve a voice's transport to a
+// typed device and verify compatibility BEFORE routing. Two clear, thrown errors
+// (never a silent skip): unknown device, or output type the device rejects.
+// Returns the resolved device so the caller drives transport selection off
+// `device.type` (so `audio`/`webaudio` both map to WebAudio, `midi` to MIDI).
+async function gateVoiceDevice(
+  actorName: string,
+  transportKey: string,
+  evalInterp: string | undefined,
+  id: Runtime,
+  log: LogPush
+): Promise<Device> {
+  const device = resolveDevice(transportKey);
+  if (!device) {
+    const msg = `appareil inconnu : ${transportKey}`;
+    log({ runtime: id, level: 'error', msg });
+    throw new Error(`${id}: ${msg}`);
+  }
+  const outputType = await voiceOutputType(evalInterp);
+  if (!isCompatible(outputType, device.type)) {
+    const msg = `voix ${actorName} (${outputType}) incompatible avec l'appareil ${transportKey} (${device.type})`;
+    log({ runtime: id, level: 'error', msg });
+    throw new Error(`${id}: ${msg}`);
+  }
+  return device;
+}
+
 /**
  * Register a backtick sink on a dispatcher (lot 4, ADAPTER_SPEC §1bis). A
  * `BT<interp><id>` token in the derivation is a REFERENCE to foreign code; the
@@ -364,9 +420,9 @@ function runtimeForInterp(interp: string): Runtime | undefined {
  *
  * - unknown interp → clear log error (never silent).
  * - async evaluate → fire-and-forget, errors logged.
- * - §1bis (b) device-type compatibility check: NOT wired yet — TODO once the
- *   device library (DEVICES_SPEC §3) is plumbed through the dispatcher; do not
- *   half-implement here.
+ * - §1bis (b) device-type compatibility is gated UP-FRONT in `evaluate` (see
+ *   `gateVoiceDevice`), per actor, before the dispatcher starts — not here at
+ *   fire time. This sink only PLACES the already-validated voice in time.
  */
 function registerBacktickSink(
   dispatcher: InstanceType<typeof Dispatcher>,
@@ -503,10 +559,24 @@ function makeBpxAdapter(
       }
 
       // Orchestrator `.bps`: each `@actor` owns an alphabet and a transport
-      // (midi / webaudio). Route every voice to its own transport — the
-      // dispatcher already does per-token actor lookup (terminalActorMap →
-      // actor → transport). MIDI is silent-but-safe without hardware.
+      // (an @devices appliance). The dispatcher does per-token actor lookup
+      // (terminalActorMap → actor → transport). MIDI is silent-but-safe without
+      // hardware.
       if (orchestration && orchestration.actors.length > 0) {
+        // Device GATE (DEVICES_SPEC §3/§4, ADAPTER_SPEC §1bis b): resolve every
+        // voice's appliance and verify type compatibility BEFORE routing/start.
+        // An unknown appliance or an incompatible voice throws a clear eval error
+        // (logged AND thrown so the promise rejects) — never a silent skip. Done
+        // up-front for all actors so a later voice's rejection doesn't leave the
+        // earlier ones already playing.
+        const devices = new Map<string, Device>();
+        for (const actor of orchestration.actors) {
+          devices.set(
+            actor.name,
+            await gateVoiceDevice(actor.name, actor.transportKey, actor.evalInterp, id, log)
+          );
+        }
+
         const da = dispatcher as unknown as {
           setActors(t: unknown, m: Record<string, string>): void;
           setActorTransport(actor: string, transport: string): void;
@@ -514,20 +584,39 @@ function makeBpxAdapter(
         };
         da.setActors(orchestration.actorTable, orchestration.terminalActorMap);
         const webaudio = new WebAudioTransport(ctx, { resolver: makeWesternResolver() });
+        let webaudioAdded = false;
         let midi: InstanceType<typeof MidiTransport> | undefined;
         for (const actor of orchestration.actors) {
           const resolver =
             actor.alphabet === 'solfège' ? makeSolfegeResolver() : makeWesternResolver();
-          if (actor.transportKey === 'midi') {
+          // Drive transport selection off the RESOLVED device TYPE, not the raw
+          // key string: `transport.audio` and `transport.webaudio` (alias) both
+          // map to WebAudio, `transport.midi` to MIDI.
+          const device = devices.get(actor.name)!;
+          if (device.type === 'midi') {
             if (!midi) {
               midi = new MidiTransport({ resolver });
               await midi.init().catch(() => {}); // no hardware → silent, never throws
               dispatcher.addTransport('midi', midi);
             }
             da.setActorTransport(actor.name, 'midi');
-          } else {
-            dispatcher.addTransport('webaudio', webaudio);
+          } else if (device.type === 'audio') {
+            if (!webaudioAdded) {
+              dispatcher.addTransport('webaudio', webaudio);
+              webaudioAdded = true;
+            }
             da.setActorTransport(actor.name, 'webaudio');
+          } else {
+            // video/dmx/osc: compat passed but the dispatcher transport isn't
+            // wired yet (DEVICES_SPEC §6 — declarable-but-unwired). A code voice
+            // renders ITSELF via its backtick adapter (capture-for-retransport is
+            // backlog B4), so there is nothing to route here. Documented, not
+            // hidden: log the limitation rather than crashing.
+            log({
+              runtime: id,
+              level: 'info',
+              msg: `voix ${actor.name} → appareil ${actor.transportKey} (${device.type}) : transport non câblé (le moteur se rend lui-même)`
+            });
           }
           da.setActorResolver(actor.name, resolver);
         }
