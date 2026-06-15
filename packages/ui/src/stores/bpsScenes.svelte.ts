@@ -30,6 +30,10 @@ export interface BpsSceneModel {
   code: string;
   scenes: BpsScene[];
   sections: string[];
+  // The scene that plays when none is explicitly selected (lowest int). A `.bps`
+  // whose rules are all scene-guarded derives this one by default (see bp3.ts
+  // `defaultSceneName`), so the bar shows it lit until the user picks another.
+  defaultScene: string | null;
 }
 
 const EMPTY: BpsSceneModel = {
@@ -37,8 +41,15 @@ const EMPTY: BpsSceneModel = {
   runtime: 'bpscript',
   code: '',
   scenes: [],
-  sections: []
+  sections: [],
+  defaultScene: null
 };
+
+// The first named scene (lowest int) — the one the adapter derives by default.
+function defaultSceneOf(scenes: BpsScene[]): string | null {
+  if (scenes.length === 0) return null;
+  return scenes.reduce((lo, s) => (s.value < lo.value ? s : lo)).name;
+}
 
 // Parse the head rule's RHS into its top-level sequence elements. The compiled
 // grammar's first `S --> …` line lists them as `|name|` terminals (or `{a,b}`
@@ -87,7 +98,8 @@ export function modelFromFile(
       runtime: 'bpscript',
       code: contents,
       scenes,
-      sections: headSections(c.grammar)
+      sections: headSections(c.grammar),
+      defaultScene: defaultSceneOf(scenes)
     };
   } catch {
     return EMPTY;

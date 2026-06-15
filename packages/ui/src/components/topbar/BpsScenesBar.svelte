@@ -13,6 +13,10 @@
   const model = $derived(modelFromFile(activeFile?.name, activeFile?.contents));
   const scenes = $derived(model.scenes);
   const canStep = $derived(model.sections.length > 1);
+  // The scene shown lit: the user's explicit pick, or — until they pick one —
+  // the default scene the adapter derives (lowest int). Keeps the bar honest
+  // about what is actually playing on the initial eval.
+  const litScene = $derived(bpsScenes.activeScene ?? model.defaultScene);
 
   // Alt+1 / Alt+2 … select the first/second/… named scene. Alt-prefixed so it
   // can't collide with the `.kanopi` Scenes panel (bare 1-9) or text typing.
@@ -38,7 +42,7 @@
     {#each scenes as s, i (s.name)}
       <button
         class="scene-btn"
-        class:active={bpsScenes.activeScene === s.name}
+        class:active={litScene === s.name}
         type="button"
         title={`Scène ${s.name} (Alt+${i + 1})`}
         onclick={() => bpsScenes.select(model, s)}

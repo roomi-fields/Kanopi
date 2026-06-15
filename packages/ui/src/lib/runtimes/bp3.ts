@@ -147,6 +147,34 @@ type BacktickTable = Record<string, { interp: string; code: string }>;
 // `@flag <name>: <alias>:<int>, …` → { name → { alias → int } } (from compileBPS).
 export type FlagStates = Record<string, Record<string, number>>;
 
+// The first named scene (lowest int) of a `.bps`'s `scene` flag table, or null
+// when the file declares no named scenes. A `.bps` whose rules are all guarded
+// by the scene flag derives nothing until a scene is set, so this is the scene
+// that plays by default (A5: "a scene is active by default"). Shared so the
+// scene bar can surface the SAME default the adapter derives.
+export function defaultSceneName(flagStates: FlagStates | undefined): string | null {
+  const table = flagStates?.scene;
+  if (!table) return null;
+  const entries = Object.entries(table);
+  if (entries.length === 0) return null;
+  return entries.reduce((lo, e) => (e[1] < lo[1] ? e : lo))[0];
+}
+
+// Apply the default-scene fallback to a caller's flags. When the file declares
+// named scenes and the caller passed no `scene`, inject the lowest-int one so a
+// guarded rule derives instead of leaking the unexpanded start symbol. Anything
+// the caller did set is preserved untouched.
+function withDefaultScene(
+  flags: Record<string, number> | undefined,
+  flagStates: FlagStates | undefined
+): Record<string, number> | undefined {
+  const table = flagStates?.scene;
+  if (!table || (flags && 'scene' in flags)) return flags;
+  const name = defaultSceneName(flagStates);
+  if (name === null) return flags;
+  return { ...(flags ?? {}), scene: table[name] };
+}
+
 interface OrchestratedActor {
   name: string;
   transportKey: string; // device name referenced by `transport.<key>` (free identifier)
@@ -551,7 +579,8 @@ function makeBpxAdapter(
     outputType: 'notes',
     events: adapterEvents,
     async evaluate(code: string, src: EvalSource, log: LogPush) {
-      const { ast, errors, settings, soundingSymbols, orchestration, backticks } = frontend(code);
+      const { ast, errors, settings, soundingSymbols, orchestration, backticks, flagStates } =
+        frontend(code);
       if (errors.length > 0) {
         const msg = errors.map((e) => `line ${e.line ?? '?'}: ${e.message}`).join('; ');
         log({ runtime: id, level: 'error', msg: `parse: ${msg}` });
@@ -563,12 +592,21 @@ function makeBpxAdapter(
         throw new Error(`${id}: ${msg}`);
       }
 
+      // A5 named scenes: a `.bps` whose rules are ALL guarded by a named scene
+      // flag (`[scene==calm] S -> …`) has no rule that derives without a scene
+      // set — `S` would stay an unexpanded non-terminal and leak as a bogus
+      // token to the audio transport. Match the A5 UX ("a scene is active by
+      // default"): when the file declares named scenes and the caller gave no
+      // scene, default to the first named one (lowest int). Reflected as the
+      // active scene in the scene bar (see `defaultScene` consumers).
+      const effectiveFlags = withDefaultScene(src.flags, flagStates);
+
       let tokens;
       try {
-        // A5 named scenes: `src.flags` (e.g. `{ scene: 2 }`) is applied as the
-        // BPx engine's initial flag state, so a flag-guarded rule (`/scene=2/`)
-        // derives instead of the default. Absent → no flags, default derivation.
-        const bpx = createBPx({ tempo: currentBpm, settings, flags: src.flags });
+        // `effectiveFlags` (e.g. `{ scene: 2 }`) is applied as the BPx engine's
+        // initial flag state, so a flag-guarded rule (`/scene=2/`) derives
+        // instead of leaving `S` unexpanded. Absent named scenes → unchanged.
+        const bpx = createBPx({ tempo: currentBpm, settings, flags: effectiveFlags });
         bpx.loadGrammar(ast);
         tokens = bpx.derive().tokens;
       } catch (err) {
@@ -677,7 +715,20 @@ function makeBpxAdapter(
           }
           da.setActorResolver(actor.name, resolver);
         }
-        dispatcher.load(tokens);
+        // Defense-in-depth (twin of the default-scene fix above): never hand a
+        // structural non-terminal to a transport. In an orchestrated `.bps`,
+        // sound routing isn't wired, so any token with no actor mapping that is
+        // neither a backtick nor a note would fall through to the WebAudio
+        // fallback and log `unresolved terminal`. An unexpanded start symbol
+        // (e.g. `S` when no guarded rule matched) is exactly that — drop it.
+        const terminalActorMap = orchestration.terminalActorMap;
+        const isBacktick = backticks ?? {};
+        const playable = tokens.filter((t: Tok) => {
+          if (Object.prototype.hasOwnProperty.call(terminalActorMap, t.token)) return true;
+          if (Object.prototype.hasOwnProperty.call(isBacktick, t.token)) return true;
+          return isNoteName(t.token);
+        });
+        dispatcher.load(playable);
         dispatcher.start(undefined, { loop: looping });
         voices.set(key, { dispatcher });
         log({
