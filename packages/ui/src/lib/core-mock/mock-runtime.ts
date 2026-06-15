@@ -326,6 +326,20 @@ class MockCore implements CoreApi {
     /* mock no-op */
   }
 
+  loadBpsFileScenes(
+    sceneTable: Record<string, { file: string }>,
+    _resolve: (fileName: string) => string | undefined
+  ) {
+    this.scenes.setScenes(
+      Object.entries(sceneTable).map(([name, def]) => ({
+        name,
+        actors: {},
+        file: def.file,
+        active: false
+      }))
+    );
+  }
+
   async enableMidiInput() {
     /* mock no-op */
   }

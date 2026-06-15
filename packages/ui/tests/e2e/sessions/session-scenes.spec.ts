@@ -1,110 +1,102 @@
 import { test, expect } from '@playwright/test';
-import { expectNoConsoleErrors } from '../../helpers';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { setupAudioCapture, expectNoConsoleErrors } from '../../helpers';
 
 // Scenes panel — Kanopi's structural differentiator: a scene switch atomically
-// arms a different set of actors. This feature lives in the `.kanopi` session
-// model and is UNCHANGED by the lot-4 `.bps` starter migration; the bundled
-// starter 03 no longer ships as a multi-scene `.kanopi` (it became a sequenced
-// `.bps`), so this test defines its own small INLINE `.kanopi` scene session
-// rather than reading a bundled file. The assertions (calm/full cards, atomic
-// arming, scene-active state) are exactly the Scenes-panel coverage we keep.
+// swaps what plays. Migrated to the `.bps` multi-file form: the parent
+// `scenes.bps` declares `@scene calm "calm.bps"` / `@scene full "full.bps"`
+// (compileBPS → sceneTable). Kanopi feeds the right-panel Scenes cards from that
+// table; activating a card loads + plays the referenced CHILD `.bps`.
 //
-// Audio is not asserted here - session 01 already covers "audio comes through".
-// Here we care about the structural state.
-
-// Inline two-scene `.kanopi` fixture. Two Strudel actors, two scenes: `calm`
-// arms drums only, `full` arms drums + lead. The actor bodies are inline so the
-// fixture is self-contained and independent of any bundled file.
-const SCENE_SESSION = `# Inline scenes fixture - calm arms drums, full arms drums + lead.
-
-@actor drums drums.strudel strudel
-@actor lead  lead.strudel  strudel
-
-@scene calm drums
-@scene full drums lead
-`;
-const DRUMS = `note("c2*4").s("sine").gain(0.6)\n`;
-const LEAD = `note("e4 g4 b4 d5").s("triangle").gain(0.5)\n`;
-
-test('session 03 - scenes A/B switch atomically arms different actor sets', async ({ page }) => {
+// calm.bps = drums only, full.bps = drums + lead. We assert the cards render,
+// activation flips the active card atomically, and the child program actually
+// plays (audio RMS) — the scene IS the child here, so audio proves activation
+// armed the right program.
+test('session 03 - .bps file-scenes switch atomically and play their child program', async ({
+  page
+}) => {
+  const audio = await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
+
+  const fixturesDir = fileURLToPath(new URL('../../fixtures', import.meta.url));
+  const scenes = readFileSync(join(fixturesDir, 'scenes.bps'), 'utf8');
+  const calm = readFileSync(join(fixturesDir, 'calm.bps'), 'utf8');
+  const full = readFileSync(join(fixturesDir, 'full.bps'), 'utf8');
 
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
+  // Load the parent .bps + its two child .bps into the workspace and focus the
+  // parent — the file-scenes effect in App.svelte feeds the Scenes panel from
+  // the active parent's sceneTable, resolving children against the workspace.
   await page.evaluate(
-    ({ session, drums, lead }) => {
+    ({ parent, child1, child2 }) => {
       const w = window as unknown as {
-        __kanopi?: {
+        __kanopi: {
           workspace: {
             loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            files: { id: string; path: string }[];
+            openFile: (id: string) => void;
+            setActive: (id: string) => void;
           };
         };
       };
-      w.__kanopi!.workspace.loadFiles(
+      const ws = w.__kanopi.workspace;
+      ws.loadFiles(
         [
-          { path: 'scenes.kanopi', contents: session },
-          { path: 'drums.strudel', contents: drums },
-          { path: 'lead.strudel', contents: lead }
+          { path: 'scenes.bps', contents: parent },
+          { path: 'calm.bps', contents: child1 },
+          { path: 'full.bps', contents: child2 }
         ],
-        'scenes.kanopi'
+        'scenes.bps'
       );
+      const target = ws.files.find((f) => f.path === 'scenes.bps');
+      if (target) {
+        ws.openFile(target.id);
+        ws.setActive(target.id);
+      }
     },
-    { session: SCENE_SESSION, drums: DRUMS, lead: LEAD }
+    { parent: scenes, child1: calm, child2: full }
   );
 
-  // Both actors render in the ActorsPanel (li.actor / .name).
-  await expect(page.locator('li.actor .name', { hasText: 'drums' })).toBeVisible({
-    timeout: 5_000
-  });
-  await expect(page.locator('li.actor .name', { hasText: 'lead' })).toBeVisible();
-  // RightPanel defaults to the Actors tab (ui.svelte:`rightPanelTab='actors'`);
-  // ScenesPanel only mounts when the Scenes tab is selected (RightPanel.svelte:34).
-  // Switch tabs before asserting on `.scenes .card`.
+  await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
+
+  // RightPanel defaults to the Actors tab; ScenesPanel only mounts on the Scenes
+  // tab. Switch before asserting on `.scenes .card`.
   await page.locator('.rp-tab', { hasText: 'Scenes' }).click();
   await expect(page.locator('.scenes')).toBeVisible({ timeout: 2_000 });
   await expect(page.locator('.scenes .card .name', { hasText: 'calm' })).toBeVisible();
   await expect(page.locator('.scenes .card .name', { hasText: 'full' })).toBeVisible();
 
-  // Activate `calm` by clicking the scene card. The click is also the user
-  // gesture that unlocks the AudioContext (handleSceneActivate calls
-  // clock.play() first, then toggles actors - real-core.ts:107).
+  // Activate `calm` — the click is also the user gesture that unlocks the
+  // AudioContext (handleSceneActivate starts the clock, then evals the child).
   const calmCard = page.locator('.scenes .card', {
     has: page.locator('.name', { hasText: 'calm' })
   });
-  await calmCard.click();
-
-  // Scene gets `.active` class (ScenesPanel.svelte:32). Switch back to the
-  // Actors tab to assert on actor.active — ActorsPanel only mounts when
-  // ui.rightPanelTab === 'actors' (RightPanel.svelte:33).
-  await expect(calmCard).toHaveClass(/active/, { timeout: 3_000 });
-  await page.locator('.rp-tab', { hasText: 'Actors' }).click();
-  await expect(
-    page.locator('li.actor', { has: page.locator('.name', { hasText: 'drums' }) })
-  ).toHaveClass(/active/);
-  await expect(
-    page.locator('li.actor', { has: page.locator('.name', { hasText: 'lead' }) })
-  ).not.toHaveClass(/active/);
-
-  // Switch to `full` - drums stay armed, lead joins. Back to Scenes tab to
-  // click the card, then to Actors to assert.
-  await page.locator('.rp-tab', { hasText: 'Scenes' }).click();
   const fullCard = page.locator('.scenes .card', {
     has: page.locator('.name', { hasText: 'full' })
   });
-  await fullCard.click();
+  await calmCard.click();
 
+  // Card picks up `.active` (atomic — only one scene active at a time).
+  await expect(calmCard).toHaveClass(/active/, { timeout: 3_000 });
+  await expect(fullCard).not.toHaveClass(/active/);
+
+  // The calm child program (drums) actually plays.
+  let rms = await audio.getMaxRMS(2500);
+  expect(rms).toBeGreaterThan(0.001);
+
+  // Switch to `full` — active flips atomically, the full child program plays.
+  await fullCard.click();
   await expect(fullCard).toHaveClass(/active/, { timeout: 3_000 });
   await expect(calmCard).not.toHaveClass(/active/);
-  await page.locator('.rp-tab', { hasText: 'Actors' }).click();
-  await expect(
-    page.locator('li.actor', { has: page.locator('.name', { hasText: 'drums' }) })
-  ).toHaveClass(/active/);
-  await expect(
-    page.locator('li.actor', { has: page.locator('.name', { hasText: 'lead' }) })
-  ).toHaveClass(/active/);
 
-  // Hush before yielding - Strudel may still be scheduling.
+  rms = await audio.getMaxRMS(2500);
+  expect(rms).toBeGreaterThan(0.001);
+
+  // Hush before yielding — Strudel may still be scheduling.
   await page.keyboard.press('ControlOrMeta+Period');
   await page.waitForTimeout(500);
   noErrors();

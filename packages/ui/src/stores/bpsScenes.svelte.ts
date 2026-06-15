@@ -51,6 +51,28 @@ function defaultSceneOf(scenes: BpsScene[]): string | null {
   return scenes.reduce((lo, s) => (s.value < lo.value ? s : lo)).name;
 }
 
+// The `@scene <name> "<file>"` multi-file table of a `.bps` (compileBPS emits
+// `sceneTable = { calm: { file: 'calm.bps' }, … }`). Drives the right-panel
+// Scenes cards; activating a card loads + plays the referenced child `.bps`.
+// Empty for a `.bps` that declares no file-scenes (or a non-`.bps` file).
+export function sceneTableFromFile(
+  fileName: string | undefined,
+  contents: string | undefined
+): Record<string, { file: string }> {
+  if (!fileName || contents === undefined) return {};
+  if (runtimeFromExt(fileName) !== 'bpscript') return {};
+  try {
+    const c = compileBPS(contents) as {
+      errors: unknown[];
+      sceneTable?: Record<string, { file: string }>;
+    };
+    if (c.errors.length > 0) return {};
+    return c.sceneTable ?? {};
+  } catch {
+    return {};
+  }
+}
+
 // Parse the head rule's RHS into its top-level sequence elements. The compiled
 // grammar's first `S --> …` line lists them as `|name|` terminals (or `{a,b}`
 // for a simultaneous group, which counts as one section). Used by STEP.

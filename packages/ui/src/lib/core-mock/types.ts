@@ -58,6 +58,13 @@ export interface Scene {
   name: string;
   actors: Record<string, boolean>;
   active: boolean;
+  /**
+   * A `.bps` file-scene (`@scene calm "calm.bps"`) references a CHILD `.bps`
+   * file instead of arming in-session actors. When set, activating the scene
+   * loads + evaluates that child program (see real-core `handleSceneActivate`).
+   * Absent for `.kanopi` actor-set scenes (the `actors` map drives those).
+   */
+  file?: string;
 }
 
 export interface SceneManager {
@@ -135,6 +142,15 @@ export interface CoreApi {
   ): Promise<void>;
   /** Inject a lookup so the core can resolve which file an actor refers to. */
   bindActorFiles(get: (actorName: string) => ActorFileRef | undefined): void;
+  /**
+   * Feed the Scenes panel from a `.bps`'s `@scene <name> "<file>"` table.
+   * Activating a resulting scene loads + plays the referenced child `.bps`
+   * (resolved via `resolve`). An empty table clears the panel.
+   */
+  loadBpsFileScenes(
+    sceneTable: Record<string, { file: string }>,
+    resolve: (fileName: string) => string | undefined
+  ): void;
   /** Request WebMIDI access and start dispatching mappings. */
   enableMidiInput(): Promise<void>;
   /** Hard-stop every runtime (panic): clears Strudel patterns, blanks Hydra, kills WebAudio sources. */

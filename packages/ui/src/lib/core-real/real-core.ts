@@ -54,6 +54,10 @@ class RealCore implements CoreApi {
   events: EventBus = createEventBus();
 
   private getActorFile?: (name: string) => ActorFileRef | undefined;
+  // Resolve a `.bps` file-scene child by file name → its source text. Fed by the
+  // workspace (bindBpsSceneFiles) so activating a `@scene calm "calm.bps"` can
+  // load + evaluate the referenced child program.
+  private getBpsSceneFile?: (fileName: string) => string | undefined;
 
   constructor() {
     this.clock.setEventBus(this.events);
@@ -105,6 +109,34 @@ class RealCore implements CoreApi {
     // Start the clock first so the actor toggles that follow can eval through
     // handleActorToggle (which only evaluates when the clock is running).
     if (!this.clock.state.playing) this.clock.play();
+
+    // `.bps` file-scene (`@scene calm "calm.bps"`): the scene references a child
+    // `.bps` program instead of arming in-session actors. Load its source and
+    // evaluate it through the bpscript adapter — its own actors/voices then play.
+    // The child eval is keyed by the child file name so re-activating a scene
+    // replaces the previous child's voices (the adapter stops the prior source).
+    if (scene.file) {
+      const contents = this.getBpsSceneFile?.(scene.file);
+      if (contents === undefined) {
+        this.log({
+          runtime: 'kanopi',
+          level: 'error',
+          msg: `scene "${scene.name}": child file "${scene.file}" not found`
+        });
+        return;
+      }
+      const adapter = getAdapter('bpscript');
+      if (adapter) {
+        try {
+          await adapter.evaluate(contents, { actorId: scene.file, fileId: scene.file }, this.log);
+        } catch {
+          /* error already logged by the adapter */
+        }
+      }
+      this.log({ runtime: 'system', level: 'info', msg: `scene: ${scene.name} (${scene.file})` });
+      return;
+    }
+
     const current = new Map(this.actors.list().map((a) => [a.name, a.active]));
     for (const [actorName, wantOn] of Object.entries(scene.actors)) {
       const isOn = current.get(actorName);
@@ -112,6 +144,28 @@ class RealCore implements CoreApi {
       if (isOn !== wantOn) this.actors.toggle(actorName);
     }
     this.log({ runtime: 'system', level: 'info', msg: `scene: ${scene.name}` });
+  }
+
+  /**
+   * Feed the Scenes panel from a `.bps`'s `@scene <name> "<file>"` table. Each
+   * named scene becomes a file-scene card; activating it loads + plays the
+   * referenced child `.bps`. `resolve` reads a child file's source by name (fed
+   * by the workspace). Replaces any previously loaded scene set. Passing an
+   * empty table clears the panel (the active file declares no file-scenes).
+   */
+  loadBpsFileScenes(
+    sceneTable: Record<string, { file: string }>,
+    resolve: (fileName: string) => string | undefined
+  ) {
+    this.getBpsSceneFile = resolve;
+    const activeName = this.scenes.list().find((s) => s.active)?.name;
+    const next: Scene[] = Object.entries(sceneTable).map(([name, def]) => ({
+      name,
+      actors: {},
+      file: def.file,
+      active: name === activeName
+    }));
+    this.scenes.setScenes(next);
   }
 
   private async handleTransport(playing: boolean) {

@@ -19,6 +19,7 @@
   import { workspace } from './stores/workspace.svelte';
   import { actors as actorsStore } from './stores/actors.svelte';
   import { markLastEvalError } from './components/editor/eval-tracker';
+  import { sceneTableFromFile } from './stores/bpsScenes.svelte';
 
   const showEventsOverlay =
     typeof location !== 'undefined' && new URLSearchParams(location.search).has('events');
@@ -134,6 +135,25 @@
             workspace.addFile(a.file, `${prefix} ${a.name} (${a.runtime}) — empty\n`);
           }
         }
+      });
+
+      // `.bps` file-scenes (`@scene calm "calm.bps"`): when the active file is a
+      // `.bps` declaring a scene table, feed the right-panel Scenes cards from it.
+      // Activating a card loads + plays the referenced child `.bps` (resolved
+      // against the workspace). A `.bps` without file-scenes clears the panel.
+      let lastSceneTableKey = '';
+      $effect(() => {
+        const active = workspace.activeTabId
+          ? workspace.fileById(workspace.activeTabId)
+          : undefined;
+        const table = sceneTableFromFile(active?.name, active?.contents);
+        const key = `${active?.name ?? ''}:${JSON.stringify(table)}`;
+        if (key === lastSceneTableKey) return;
+        lastSceneTableKey = key;
+        core.loadBpsFileScenes(table, (fileName) => {
+          const f = workspace.files.find((x) => x.name === fileName || x.path === fileName);
+          return f?.contents;
+        });
       });
     });
 
