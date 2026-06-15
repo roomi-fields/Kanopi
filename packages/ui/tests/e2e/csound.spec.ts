@@ -4,92 +4,63 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helpers';
 
-// Csound is the slowest of the audio runtimes to come up: the wasm module
-// loads ~3 MB, the worker handshake takes a beat, and start() doesn't return
-// until the engine is actually streaming (csound.ts:136-139). Allocate a
-// longer pre-RMS wait than for Strudel / Mercury.
+// Csound reached through a `.bps` code voice: the program declares a `tone`
+// actor whose body is a FULL CSD backtick (orchestra + score). Evaluating the
+// whole `.bps` derives the `tone` terminal, the dispatcher fires its backtick
+// sink, and the Csound adapter runs compileCSD — which both registers the
+// instrument AND runs the <CsScore> i-events, producing audio.
 //
-// extractBlock for csound walks the Lezer AST (extract-block.ts:67-112): the
-// cursor placed inside instr 1…endin returns *that* block to compileOrc,
-// which after the first compileCSD has booted the engine works as a live
-// instrument redefinition. To boot the engine cleanly on the first eval, we
-// position the cursor on the <CsoundSynthesizer> opening (line 1) — that
-// falls outside any AST block and the adapter receives the whole file
-// (extract-block.ts:24-30), triggering compileCSD which loads instruments
-// AND the score f0/i-events (so the two i-event lines in the fixture play).
-test('csound evaluates a block and produces audio', async ({ page }) => {
+// Csound is the slowest audio runtime to come up: the wasm module loads ~3 MB
+// and start() doesn't return until the engine is streaming. Allocate a longer
+// pre-RMS wait than Strudel.
+test('a .bps csound code voice boots the engine and produces audio', async ({ page }) => {
+  test.setTimeout(90_000);
+
   const audio = await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
   const fixturesDir = fileURLToPath(new URL('../fixtures', import.meta.url));
-  const sessionContents = readFileSync(join(fixturesDir, 'csound.kanopi'), 'utf8');
-  const actorContents = readFileSync(join(fixturesDir, 'tone.csd'), 'utf8');
+  const program = readFileSync(join(fixturesDir, 'csound.bps'), 'utf8');
 
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   await page.evaluate(
-    ({ session, actor }) => {
+    ({ contents }) => {
       const w = window as unknown as {
         __kanopi: {
           workspace: {
             loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            files: { id: string; path: string }[];
+            openFile: (id: string) => void;
+            setActive: (id: string) => void;
           };
         };
       };
-      w.__kanopi.workspace.loadFiles(
-        [
-          { path: 'csound.kanopi', contents: session },
-          { path: 'tone.csd', contents: actor }
-        ],
-        'csound.kanopi'
-      );
+      const ws = w.__kanopi.workspace;
+      ws.loadFiles([{ path: 'csound.bps', contents }], 'csound.bps');
+      const target = ws.files.find((f) => f.path === 'csound.bps');
+      if (target) {
+        ws.openFile(target.id);
+        ws.setActive(target.id);
+      }
     },
-    { session: sessionContents, actor: actorContents }
+    { contents: program }
   );
-  await page.waitForFunction(() => {
-    const w = window as unknown as {
-      __kanopi?: { workspace: { files: { path: string; id: string }[] } };
-    };
-    return !!w.__kanopi?.workspace.files.find((f) => f.path === 'tone.csd');
-  });
-  await page.evaluate(() => {
-    const w = window as unknown as {
-      __kanopi: {
-        workspace: {
-          files: { id: string; path: string }[];
-          openFile: (id: string) => void;
-          setActive: (id: string) => void;
-        };
-      };
-    };
-    const target = w.__kanopi.workspace.files.find((f) => f.path === 'tone.csd');
-    if (target) {
-      w.__kanopi.workspace.openFile(target.id);
-      w.__kanopi.workspace.setActive(target.id);
-    }
-  });
 
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
 
-  // Line 1 is `<CsoundSynthesizer>` — outside any AST instrument block, so
-  // the extractor returns the whole CSD and the adapter dispatches it
-  // through compileCSD (csound.ts:106-111). That path both registers
-  // instruments AND runs the score events declared in <CsScore>, which is
-  // what makes audible output.
+  // Whole-`.bps` eval — the `tone` CSD backtick fires through the dispatcher sink.
   await evalBlockAt(page, 1);
 
-  // Csound boot path: import wasm → spawn worker → compileCSD → start() →
-  // first audio frame. Sample peak RMS over 2s — the score events render
-  // their 2-second notes once start() resolves, and we want to catch any
-  // peak that lands during that window.
-  const rms = await audio.getMaxRMS(2000);
+  // Csound boot: import wasm → spawn worker → compileCSD → start() → first audio
+  // frame. The score's i-events render 2-second notes once the engine streams;
+  // sample peak RMS over a wide window to catch a peak during that span (the
+  // backtick fires after the dispatcher's first scheduled tick, so allow slack).
+  const rms = await audio.getMaxRMS(6000);
   expect(rms).toBeGreaterThan(0.001);
 
   await page.keyboard.press('ControlOrMeta+Period');
-
-  // Csound's reset() returns a Promise — let it settle before asserting no
-  // console errors. The adapter logs an "info: stopped" line on hush.
   await page.waitForTimeout(300);
   noErrors();
 });

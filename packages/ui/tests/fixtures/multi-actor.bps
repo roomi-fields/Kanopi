@@ -1,0 +1,11 @@
+// multi-actor fixture (migré de multi-actor.kanopi) — Strudel (audio, banque
+// dirt-samples liée au moteur) + Hydra (vidéo), les deux armées dans une scène.
+@library.strudel "dirt-samples"
+
+@actor beat  transport.audio  eval.strudel
+@actor viz   transport.video  eval.hydra
+
+S -> { beat, viz }
+
+beat -> `note("c2*4").s("sawtooth").gain(0.5)`
+viz  -> `osc(60, 0.1, 1.5).out()`

@@ -1,0 +1,9 @@
+// strudel fixture (migré de strudel.kanopi) — voix-code Strudel → audio.
+// Banque d'échantillons liée au moteur strudel (partagée par ses voix).
+@library.strudel "dirt-samples"
+
+@actor beat  transport.audio  eval.strudel
+
+S -> beat
+
+beat -> `note("c2*4").s("sawtooth").gain(0.5)`

@@ -1,0 +1,14 @@
+// p5 fixture (migré de p5.kanopi) — voix-code p5 → vidéo.
+@actor sketch  transport.video  eval.p5
+
+S -> sketch
+
+sketch -> `function setup() {
+  createCanvas(400, 400);
+  noStroke();
+}
+function draw() {
+  background(40, 90, 180);
+  fill(255, 200, 50);
+  ellipse(200, 200, 200, 200);
+}`
