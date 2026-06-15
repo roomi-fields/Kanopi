@@ -310,6 +310,32 @@ interface BP3Voice {
   midiSink?: MidiSink;
 }
 
+// Minimal timed-token shape this adapter reads (BPx emits more fields).
+type Tok = { token: string; start: number; end: number };
+
+/**
+ * STEP windowing (A5): keep only the tokens of one section of the derivation,
+ * re-zeroed in time. The head rule's RHS is a flat sequence of `count` sections
+ * (`S -> calm full` → 2); BP3 gives each equal proportions by default, so we
+ * slice the derivation's total span into `count` equal windows and keep window
+ * `index`, shifting it back to t=0 so it plays immediately. This is an
+ * equal-proportion approximation — a section with a `*N` speed or an explicit
+ * weight would occupy an unequal span the dispatcher knows but this slice does
+ * not (documented limitation; faithful per-section spans need a section→span
+ * map from the engine, not yet exposed).
+ */
+function sliceSection<T extends Tok>(tokens: T[], index: number, count: number): T[] {
+  if (count <= 1) return tokens;
+  const span = Math.max(...tokens.map((t) => t.end), 0);
+  const winLen = span / count;
+  const from = index * winLen;
+  const to = (index + 1) * winLen;
+  // A token belongs to the window whose start falls inside [from, to).
+  return tokens
+    .filter((t) => t.start >= from - 1e-6 && t.start < to - 1e-6)
+    .map((t) => ({ ...t, start: t.start - from, end: t.end - from }));
+}
+
 // One-shot info when no MIDI output port is present (the normal headless / no
 // hardware case): WebAudio still plays, so this is informational, not an error,
 // and we log it once to avoid spamming on every eval. Shared across both
@@ -556,6 +582,22 @@ function makeBpxAdapter(
         throw new Error(`${id}: ${msg}`);
       }
 
+      // STEP (A5): when a section is requested, keep only that section's tokens
+      // (re-zeroed) and play them once. Otherwise loop the whole derivation as
+      // usual. The window is an equal-proportion slice of the timeline.
+      const section = src.section;
+      const looping = !section;
+      if (section && section.count > 1) {
+        tokens = sliceSection(tokens, section.index, section.count);
+        if (tokens.length === 0) {
+          log({
+            runtime: id,
+            level: 'info',
+            msg: `step: section ${section.index + 1}/${section.count} is empty`
+          });
+        }
+      }
+
       const key = srcKey(src);
       const prev = voices.get(key);
       if (prev) {
@@ -636,7 +678,7 @@ function makeBpxAdapter(
           da.setActorResolver(actor.name, resolver);
         }
         dispatcher.load(tokens);
-        dispatcher.start(undefined, { loop: true });
+        dispatcher.start(undefined, { loop: looping });
         voices.set(key, { dispatcher });
         log({
           runtime: id,
@@ -680,8 +722,9 @@ function makeBpxAdapter(
       // derivation repeats at each cycle boundary until the actor is toggled off,
       // the transport stops, or the page hushes. A Ctrl+Enter on a standalone
       // grammar goes through this same code, so it loops too — intended: "play
-      // the grammar" means keep playing it, and Ctrl+. silences.
-      dispatcher.start(undefined, { loop: true });
+      // the grammar" means keep playing it, and Ctrl+. silences. A STEP (section
+      // window) plays once instead — `looping` is false then.
+      dispatcher.start(undefined, { loop: looping });
 
       // MIDI sink: route the SAME raw BPx tokens to runtime-midi, on the SAME
       // AudioContext clock — but only when Web MIDI access is actually granted
