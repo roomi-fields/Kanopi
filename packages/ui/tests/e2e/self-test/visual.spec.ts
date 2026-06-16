@@ -256,6 +256,22 @@ test('starter 02 (Strudel + Hydra) loaded and evaluated', async ({ page }) => {
   await page.waitForTimeout(500);
   await freezeAnimations(page);
 
+  // Hide the live Hydra GL canvas before the screenshot. `canvas.hydra` is a
+  // FULLSCREEN overlay (`position:fixed; inset:0; 100vw×100vh; z-index:9999;
+  // opacity:0.85`), so every page pixel is tinted by the moving GL pattern —
+  // ~66% of the frame differs run-to-run depending on which rAF tick the freeze
+  // landed on. Masking its bounding box would blank the whole page (it covers
+  // everything), defeating the snapshot. Instead we drop the overlay so the UI
+  // chrome underneath (panels, layout, Structure tab) is captured deterministically
+  // — which is the snapshot's actual job. Hydra is already PROVEN to have rendered
+  // by the `readCanvasLitPixels(...) > 100` gate above; we don't need its pixels in
+  // the image. `maxDiffPixels` stays at 600 so the chrome comparison stays strict.
+  await page.evaluate(() => {
+    document.querySelectorAll('canvas.hydra').forEach((c) => {
+      (c as HTMLElement).style.display = 'none';
+    });
+  });
+
   // Override the per-call expect timeout (default 5s in playwright.config.ts).
   // toHaveScreenshot runs an internal stability loop — takes two consecutive
   // shots and only resolves once they match. With fullPage:true on a slow
