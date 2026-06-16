@@ -54,10 +54,12 @@ test('text grammar streams symbols into the Text panel', async ({ page }) => {
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
   await evalBlockAt(page, 1);
 
-  // Open the Text tab. The four bols stream in over the cycle (~2s at tempo
-  // 128, each ~500ms) as the lookahead scheduler reaches them — poll until all
-  // four have arrived rather than reading a half-filled panel.
-  await page.locator('.rp-tab', { hasText: 'Text' }).click();
+  // Open the Text tab. It lives in the bottom panel (BottomPanel.svelte,
+  // `.bp-tab` buttons) alongside Structure + Console. The four bols stream in
+  // over the cycle (~2s at tempo 128, each ~500ms) as the lookahead scheduler
+  // reaches them — poll until all four have arrived rather than reading a
+  // half-filled panel.
+  await page.locator('.bp-tab', { hasText: 'Text' }).click();
   const symbols = page.locator('.textstream .sym');
   await expect(symbols.first()).toBeVisible({ timeout: 5_000 });
   await expect

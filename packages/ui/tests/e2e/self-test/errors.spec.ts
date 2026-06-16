@@ -231,11 +231,11 @@ test('Failed Strudel eval surfaces an error entry in the Console panel', async (
   });
   await page.keyboard.press('ControlOrMeta+Enter');
 
-  // Open the Console tab. RightPanel.svelte renders four tabs ("Actors",
-  // "Scenes", "Inspector", "Console") as `.rp-tab` buttons; clicking the
-  // last one swaps the panel body to <ConsolePanel> which renders rows
-  // with `.row.level-<level>` (ConsolePanel.svelte:61).
-  await page.locator('.rp-tab', { hasText: 'Console' }).click();
+  // Open the Console tab. It lives in the bottom panel (BottomPanel.svelte),
+  // which renders three tabs ("Structure", "Text", "Console") as `.bp-tab`
+  // buttons; clicking Console swaps the panel body to <ConsolePanel> which
+  // renders rows with `.row.level-<level>` (ConsolePanel.svelte:61).
+  await page.locator('.bp-tab', { hasText: 'Console' }).click();
 
   // ConsolePanel.svelte:48 wraps everything in `.console`, and each error
   // row carries the `.level-error` class derived from the LogEntry's
