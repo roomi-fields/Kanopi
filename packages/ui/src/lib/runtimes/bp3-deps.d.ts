@@ -41,9 +41,14 @@ export interface BPxConfig {
   /** BP3 `-se.*` engine timing (pclock/qclock/quantization). Drives native tempo. */
   settings?: SeEngineSettings;
 }
+/** `derive()` restitution mode. `'complete'` restores control markers EN ORDRE
+ *  as tree nodes / zero-duration tokens; `'sounding'` (default) omits them. */
+export interface DeriveOptions {
+  output?: 'sounding' | 'complete';
+}
 export interface BPxInstance {
   loadGrammar(ast: unknown): void;
-  derive(): { tree: unknown; tokens: TimedToken[] };
+  derive(options?: DeriveOptions): { tree: unknown; tokens: TimedToken[] };
   getTokens(): TimedToken[];
   destroy(): void;
 }

@@ -30,6 +30,10 @@ import { TextTransport } from '../../../../core/src/dispatcher/transports/text.j
 // Per-actor MIDI transport for orchestrator .bps (a voice routed `transport:midi`).
 import { MidiTransport } from '../../../../core/src/dispatcher/transports/midi.js';
 import { Resolver } from '../../../../core/src/dispatcher/resolver.js';
+// Tree-derived dispatch events (M5+ multi-actor refacto): flatten BPx's
+// `derive({ output: 'complete' }).tree` to ordered events that each carry their
+// OWN actor/params payload, so a terminal shared by two actors routes distinctly.
+import { treeToDispatchEvents } from './tree-dispatch';
 import { textStream } from '../../stores/textstream.svelte';
 // The FULL derived production, set ONCE per eval (the complete TimedToken[] BPx
 // produced at derive time, BEFORE playback). Distinct from the over-time
@@ -858,6 +862,9 @@ function makeBpxAdapter(
 
       let tokens;
       let tree: ProductionTree | undefined;
+      // The raw BPx `DerivationTree` (control nodes included) for the multi-actor
+      // dispatcher path; `tree` above is the visualizer-shaped cast.
+      let rawTree: unknown;
       // DETERMINISTIC leaf-name table (`symbolId → name`) read off the grammar's
       // own symbol table — the authoritative resolver the tree-view adapters use,
       // replacing the fragile temporal correlation. Empty when the engine doesn't
@@ -872,8 +879,19 @@ function makeBpxAdapter(
         // Keep BOTH halves of the derivation: `.tokens` is the flat timed
         // sequence (audio/MIDI/text), `.tree` carries the polymetric structure
         // (groups + voices + nesting) the piano-roll's struct band needs.
-        const derived = bpx.derive();
-        tokens = derived.tokens;
+        // `output: 'complete'` restores the control markers EN ORDRE as tree
+        // nodes / zero-duration tokens, and the per-node payload (actor/params on
+        // notes, marker payload on controls) the multi-actor dispatcher routes on
+        // — the flat `.tokens` carry `actor: null` and fuse simultaneous leaves.
+        const derived = bpx.derive({ output: 'complete' });
+        // The TREE (with control nodes) drives the multi-actor dispatcher. The
+        // FLAT tokens keep their prior `'sounding'` shape for every legacy
+        // consumer (production readout, STEP slicing, MIDI sink, mono/text
+        // dispatcher.load): `'complete'` ALSO injects zero-duration `type:
+        // 'control'` tokens into the flat stream, which those paths never saw —
+        // drop them here so nothing downstream regresses.
+        rawTree = derived.tree;
+        tokens = derived.tokens.filter((t) => t.type !== 'control');
         tree = derived.tree as unknown as ProductionTree;
         // Resolve every leaf's name now, while `bpx` (and its grammar symbol
         // table) is in scope. Guarded inside the helper — never throws here.
@@ -1014,20 +1032,32 @@ function makeBpxAdapter(
           }
           da.setActorResolver(actor.name, resolver);
         }
+        // Multi-actor routing (M5+ refacto): build dispatch events FROM THE TREE
+        // so each note carries its OWN `payload.actor` — a terminal shared by two
+        // actors ('sitar.Sa' vs 'tabla.Sa') routes to DISTINCT transports, which
+        // the flat `terminalActorMap` collapsed. Control nodes carry their marker
+        // payload + `nature` for per-actor flux.
+        //
         // Defense-in-depth (twin of the default-scene fix above): never hand a
-        // structural non-terminal to a transport. In an orchestrated `.bps`,
-        // sound routing isn't wired, so any token with no actor mapping that is
-        // neither a backtick nor a note would fall through to the WebAudio
-        // fallback and log `unresolved terminal`. An unexpanded start symbol
-        // (e.g. `S` when no guarded rule matched) is exactly that — drop it.
+        // structural non-terminal to a transport. Keep an event when it is a
+        // control, a note bound to an actor (or, legacy, in `terminalActorMap`),
+        // a backtick reference, or a plain note name; drop an unexpanded start
+        // symbol (e.g. `S` when no guarded rule matched).
         const terminalActorMap = orchestration.terminalActorMap;
         const isBacktick = backticks ?? {};
-        const playable = tokens.filter((t: Tok) => {
-          if (Object.prototype.hasOwnProperty.call(terminalActorMap, t.token)) return true;
-          if (Object.prototype.hasOwnProperty.call(isBacktick, t.token)) return true;
-          return isNoteName(t.token);
+        const treeEvents = treeToDispatchEvents(
+          rawTree as Parameters<typeof treeToDispatchEvents>[0],
+          symbolNames
+        ).filter((e) => {
+          if (e.type === 'control') return true;
+          if (e.type === 'rest') return false;
+          const actor = (e.payload as { actor?: string | null } | null)?.actor;
+          if (actor) return true;
+          if (Object.prototype.hasOwnProperty.call(terminalActorMap, e.token)) return true;
+          if (Object.prototype.hasOwnProperty.call(isBacktick, e.token)) return true;
+          return isNoteName(e.token);
         });
-        dispatcher.load(playable);
+        (dispatcher as unknown as { loadEvents(ev: unknown[]): void }).loadEvents(treeEvents);
         dispatcher.start(undefined, { loop: looping });
         voices.set(key, { dispatcher });
         log({

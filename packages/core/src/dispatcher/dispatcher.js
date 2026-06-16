@@ -47,6 +47,12 @@ export class Dispatcher {
     this._actors = {};              // actorName → { resolver, transportName, transport }
     this._terminalActorMap = {};    // terminal → actorName
 
+    // Per-actor flux state (M5+ multi-actor refacto): a `flux`/transport-control
+    // marker updates only its OWN actor's running state, applied to that actor's
+    // SUBSEQUENT notes in order — never globally (the old global controlState bled
+    // velocity from one actor to another). Keyed by actor name.
+    this._fluxByActor = {};         // actorName → { vel?, transpose?, chan?, ... }
+
     // I/O mapping via MapEngine
     this._mapEngine = new MapEngine({
       getFlagState: () => this.flagState,
@@ -164,6 +170,24 @@ export class Dispatcher {
       || this.transports['default']
       || Object.values(this.transports)[0]
       || null;
+  }
+
+  /**
+   * Get the transport for a given ACTOR (M5+ payload routing). Resolves
+   * `_actors[actorName].transportName` → transport; falls back to the 'default'
+   * transport then the first registered one. Used when a dispatch event carries
+   * its own `payload.actor` (the tree-derived path), so two actors sharing a
+   * terminal name ('sitar.Sa' vs 'tabla.Sa') route to DISTINCT transports — the
+   * flat `_terminalActorMap` collapsed them.
+   * @param {string|undefined|null} actorName
+   * @returns {Transport|null}
+   */
+  _transportForActor(actorName) {
+    if (actorName && this._actors[actorName]?.transportName) {
+      const t = this.transports[this._actors[actorName].transportName];
+      if (t) return t;
+    }
+    return this.transports['default'] || Object.values(this.transports)[0] || null;
   }
 
   /**
@@ -308,6 +332,55 @@ export class Dispatcher {
 
     this._cursor = 0;
     this._loopOffset = 0;
+    this._payloadRouting = false;
+  }
+
+  /**
+   * Load tree-derived dispatch events (M5+ multi-actor refacto). Unlike `load()`
+   * (flat BP3 tokens, ms, symbol→actor via the flat map), each event here CARRIES
+   * its own payload off the BPx tree: a note's `payload.actor`/`payload.params`,
+   * a control's marker payload + `nature`. Times are already in SECONDS.
+   *
+   * Routing then keys on `payload.actor` per event (so a terminal shared by two
+   * actors routes to two transports) and flux state is per-actor. Falls back to
+   * the legacy token-based routing when an event has no `payload.actor`, so a
+   * mono-actor / legacy `.gr` stream still plays exactly as before.
+   *
+   * @param {Array<{token:string,startSec:number,durSec:number,type:'note'|'control'|'rest',payload?:object,nature?:string}>} events
+   */
+  loadEvents(events) {
+    if (!events || events.length === 0) {
+      this.events = [];
+      this._payloadRouting = false;
+      return;
+    }
+
+    this.controlState = { ...this._controlDefaults };
+    this._fluxByActor = {};
+    this._payloadRouting = true;
+
+    this.events = events.map(e => {
+      const isControl = e.type === 'control';
+      const isRest = e.type === 'rest' || e.token === '-' || e.token === '_';
+      return {
+        token: e.token,
+        startSec: e.startSec,
+        durSec: Math.max(0, e.durSec || 0),
+        isControl,
+        isCV: !!this._cvNames[e.token],
+        isSilence: isRest && e.token === '-',
+        isProlongation: isRest && e.token === '_',
+        payload: e.payload ?? null,
+        nature: e.nature,
+      };
+    }).sort((a, b) => {
+      if (a.startSec !== b.startSec) return a.startSec - b.startSec;
+      const pri = (e) => e.isControl ? 0 : e.isCV ? 1 : 2;
+      return pri(a) - pri(b);
+    });
+
+    this._cursor = 0;
+    this._loopOffset = 0;
   }
 
   /**
@@ -335,6 +408,7 @@ export class Dispatcher {
     this.loop = loop;
     this._reDerive = reDerive;
     this.controlState = { ...this._controlDefaults };
+    this._fluxByActor = {};
 
     // Wire beat/bar events → MapEngine
     this.clock.setOnBeat((beat, bar) => {
@@ -387,7 +461,11 @@ export class Dispatcher {
       if (absTime > scheduleUntil) break;
 
       if (evt.isControl) {
-        this._applyControl(evt.token);
+        if (this._payloadRouting) {
+          this._applyControlNode(evt, absTime);
+        } else {
+          this._applyControl(evt.token);
+        }
       } else if (evt.isCV) {
         // CV token — create the audio bus before notes at this time
         const cvId = this._cvNames[evt.token];
@@ -455,6 +533,16 @@ export class Dispatcher {
               }, cAbsTime);
             }
           }
+          this._cursor++;
+          continue;
+        }
+
+        // M5+ payload routing: a tree-derived note carries its OWN actor. Route
+        // by actor (distinct transports for a shared terminal) and fold the
+        // per-actor flux + occurrence override. Notes WITHOUT an actor (mono /
+        // legacy) fall through to the token-based path below, unchanged.
+        if (this._payloadRouting && evt.payload?.actor) {
+          this._sendActorNote(evt, absTime);
           this._cursor++;
           continue;
         }
@@ -534,6 +622,7 @@ export class Dispatcher {
   _nextCycle() {
     this._loopOffset += this.duration;
     this.controlState = { ...this._controlDefaults };
+    this._fluxByActor = {};
 
     // Re-derive: call bp3_produce again for a new sequence
     if (this._reDerive) {
@@ -629,6 +718,111 @@ export class Dispatcher {
       if (typeof rq.chan === 'number') chan = rq.chan;
     }
     return { transpose, vel, chan, muted: vel === 0 };
+  }
+
+  /**
+   * Apply a tree-derived control node (M5+ payload routing). The marker payload
+   * is `{ role:'control-marker', payload:{ kind, nature, pairs:[{key,value}], flux? } }`
+   * with a typed `evt.nature` ('transport-control' | 'instant' | 'engine-control').
+   *
+   * Routing rule (per the BPx contract):
+   *  - 'engine-control': already applied by BPx on the notes → IGNORE (no double-apply).
+   *  - 'instant': zero-duration, apply ONCE to the actor's flux (a one-shot tweak).
+   *  - 'transport-control' / `flux === true`: update the actor's running flux,
+   *    applied to that actor's SUBSEQUENT notes; also emit it to the actor's
+   *    transport if it accepts control messages.
+   * The flux state is PER ACTOR (`_fluxByActor[actor]`) — never global, so actor
+   * A's vel change never bleeds onto actor B.
+   *
+   * @param {Object} evt - dispatch event (carries `.payload`, `.nature`, `.payload.actor`)
+   * @param {number} absTime - absolute audio time
+   */
+  _applyControlNode(evt, absTime) {
+    const nature = evt.nature ?? evt.payload?.payload?.nature;
+    // BPx already applied engine controls onto the notes; re-applying would
+    // double them. Drop silently.
+    if (nature === 'engine-control') return;
+
+    const actor = evt.payload?.actor;
+    const inner = evt.payload?.payload;
+    const pairs = Array.isArray(inner?.pairs) ? inner.pairs : null;
+    if (!pairs || pairs.length === 0) return;
+
+    // Per-actor flux: a control with no actor falls back to a shared bucket keyed
+    // by the empty string (mono/legacy), so it still applies to actor-less notes.
+    const key = actor ?? '';
+    const flux = this._fluxByActor[key] || (this._fluxByActor[key] = {});
+    for (const { key: k, value } of pairs) {
+      const v = typeof value === 'string' ? parseFloat(value) : value;
+      flux[k] = (typeof v === 'number' && !isNaN(v)) ? v : value;
+    }
+
+    // Emit the transport-control to the actor's transport when it can take a
+    // control message (e.g. a MIDI CC channel pressure). 'instant' tweaks the
+    // actor's flux only — there is nothing standing to emit.
+    if (nature === 'transport-control') {
+      const transport = this._transportForActor(actor);
+      if (transport && typeof transport.sendControl === 'function') {
+        transport.sendControl({ actor, pairs, ...flux }, absTime);
+      }
+    }
+  }
+
+  /**
+   * Send a tree-derived note for a specific actor (M5+ payload routing). The
+   * resolved params are: actor declaration defaults ⊕ the actor's running flux
+   * ⊕ the occurrence override (`payload.params`) ⊕ the sealed per-token E-016
+   * `runtimeQualifiers` (`evt.rq`, unchanged — left intact for note rendering).
+   *
+   * @param {Object} evt - dispatch event with `.payload.actor`
+   * @param {number} absTime
+   */
+  _sendActorNote(evt, absTime) {
+    const actor = evt.payload.actor;
+    const transport = this._transportForActor(actor);
+    if (!transport) return;
+
+    const actorDef = this._actors[actor]?.def || {};
+    const declDefaults = actorDef.params || {};
+    const transportParams = actorDef.transportParams || {};
+    const flux = this._fluxByActor[actor] || {};
+    const override = evt.payload.params || {};
+
+    // actor declaration ⊕ flux ⊕ occurrence override (last wins)
+    const params = { ...declDefaults, ...flux, ...override };
+
+    // E-016 (unchanged): the sealed per-token runtimeQualifiers still fold over
+    // controlState for vel/transpose/chan. We keep that exact path for notes.
+    const eff = this._effectiveControls(evt.rq);
+    if (eff.muted) return;
+
+    // Symbolic pitch ops via the actor's resolver: keyxpand → rotate → transpose.
+    let token = evt.token;
+    const resolver = this._actors[actor]?.resolver || this._resolver || null;
+    if (resolver) {
+      if (this.controlState.keyxpand && this.controlState.keyxpand !== '0,1') {
+        const kp = String(this.controlState.keyxpand).split(',');
+        const pivot = kp[0]?.trim();
+        const factor = parseFloat(kp[1]);
+        if (pivot && !isNaN(factor)) token = resolver.keyxpandToken(token, pivot, factor);
+      }
+      if (this.controlState.rotate) token = resolver.rotateToken(token, this.controlState.rotate);
+      if (eff.transpose) token = resolver.transposeToken(token, eff.transpose);
+    }
+
+    // velocity: occurrence/flux vel wins, else the E-016 sealed vel.
+    const velRaw = (typeof params.vel === 'number') ? params.vel : eff.vel;
+
+    transport.send({
+      token,
+      startSec: this._loopOffset + evt.startSec,
+      durSec: evt.durSec,
+      ...this.controlState,
+      ...params,
+      ...(eff.chan !== undefined ? { chan: eff.chan } : {}),
+      ...transportParams,  // actor transport params (e.g. ch:10) override
+      velocity: (transportParams.vel ?? velRaw) / 127,
+    }, absTime);
   }
 
   _setControl(name, value) {
