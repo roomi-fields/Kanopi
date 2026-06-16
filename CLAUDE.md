@@ -68,6 +68,15 @@ Located in `.claude/skills/`:
 Kanopi est coordonné via la tour. Le protocole est **mécanisé par le CLI `~/dev/bp/hub/tour`** —
 fini les éditions markdown du courrier à la main. Non optionnel.
 
+### Règle de boucle (hub/README.md §1-2, validée Romain — NON OPTIONNELLE)
+
+- **Réveil = courrier d'abord.** À CHAQUE réveil (début de session ou ping), la **première
+  action** est `~/dev/bp/hub/tour inbox`. Rien d'autre avant d'avoir lu mon courrier.
+- **Rapport avant idle.** Ne JAMAIS m'arrêter en silence. La **dernière action** avant de rendre
+  la main est un `~/dev/bp/hub/tour send architecte` qui dit soit `FINI: <quoi> + commit`, soit
+  `BLOQUÉ: <sur quoi>`. Pas de stop-hook : l'architecte pilote les réveils, l'utilisateur monitore
+  en central via la tour.
+
 1. **Identité (1× par session)** : `export BP_AGENT=kanopi` (ou `--from kanopi` sur chaque appel ;
    l'env ne persiste pas entre commandes shell d'une session Claude).
 2. **Début de session** : `~/dev/bp/hub/tour inbox` (mes non-lus) + lire `TABLEAU.md` et mes
