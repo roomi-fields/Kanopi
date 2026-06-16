@@ -6,9 +6,10 @@ import { evalBlockAt, expectNoConsoleErrors } from '../helpers';
 
 // Text-mode routing (decision routage-texte-midi): a grammar of bols/words is
 // classified `text` by the front-end and routed — whole-grammar — to the
-// symbolic console instead of audio. Evaluating it streams its terminals into
-// the right-panel "Text" tab, timestamped, with NO audio.
-test('text grammar streams symbols into the Text panel', async ({ page }) => {
+// symbolic console instead of audio. Evaluating it now publishes the FULL derived
+// production at once (like BP3): the right-panel "Text" tab shows the ENTIRE
+// timestamped sequence immediately on eval, not streamed token-by-token over time.
+test('text grammar shows its full production in the Text panel', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
 
   const fixturesDir = fileURLToPath(new URL('../fixtures', import.meta.url));
@@ -55,15 +56,14 @@ test('text grammar streams symbols into the Text panel', async ({ page }) => {
   await evalBlockAt(page, 1);
 
   // Open the Text tab. It lives in the bottom panel (BottomPanel.svelte,
-  // `.bp-tab` buttons) alongside Structure + Console. The four bols stream in
-  // over the cycle (~2s at tempo 128, each ~500ms) as the lookahead scheduler
-  // reaches them — poll until all four have arrived rather than reading a
-  // half-filled panel.
+  // `.bp-tab` buttons) alongside Structure + Console. The full derivation is
+  // published at eval, so every distinct bol is present immediately — no waiting
+  // for the lookahead scheduler to reach each one over the cycle.
   await page.locator('.bp-tab', { hasText: 'Text' }).click();
   const symbols = page.locator('.textstream .sym');
   await expect(symbols.first()).toBeVisible({ timeout: 5_000 });
   await expect
-    .poll(async () => [...new Set(await symbols.allTextContents())].sort(), { timeout: 8_000 })
+    .poll(async () => [...new Set(await symbols.allTextContents())].sort(), { timeout: 5_000 })
     .toEqual(['dha', 'dhin', 'na', 'tigida']);
 
   noErrors();

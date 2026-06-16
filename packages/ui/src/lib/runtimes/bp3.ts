@@ -31,6 +31,12 @@ import { TextTransport } from '../../../../core/src/dispatcher/transports/text.j
 import { MidiTransport } from '../../../../core/src/dispatcher/transports/midi.js';
 import { Resolver } from '../../../../core/src/dispatcher/resolver.js';
 import { textStream } from '../../stores/textstream.svelte';
+// The FULL derived production, set ONCE per eval (the complete TimedToken[] BPx
+// produced at derive time, BEFORE playback). Distinct from the over-time
+// textStream: this is the whole sequence, the source of truth the Text panel and
+// the Structure visualizer read.
+import { production } from '../../stores/production.svelte';
+import type { ProductionToken, ProductionSection } from '../../stores/production.svelte';
 // Device library (@devices): resolve a voice's `transport.<name>` to a typed
 // device and gate voice↔device compatibility BEFORE routing (DEVICES_SPEC §3,
 // §4 / ADAPTER_SPEC §1bis b). Kanopi owns resolution; bpscript carries the
@@ -149,6 +155,11 @@ type Frontend = (code: string) => {
   // banks before/at the backtick eval so the code voices find their samples. `.gr`
   // has none.
   libraries?: Libraries;
+  // Head-rule top-level sections (`S --> calm full` → ['calm','full']), used to
+  // annotate the FULL production with section boundaries (production store). Cheap
+  // to compute from the compiled grammar text; empty for a `.gr` (parseBP3 already
+  // expanded the structure, so the head sequence isn't recoverable here).
+  sections?: string[];
 };
 
 // `@library.<engine> "<id>"` → { engine → [bank ids] } (from compileBPS).
@@ -303,6 +314,31 @@ function parseWithSound(code: string, fallbackAlphabet: string[]) {
 const WESTERN_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const grFrontend: Frontend = (code) => parseWithSound(code, WESTERN_NOTES);
 
+// Head-rule top-level sections of a compiled grammar. The first `S --> …` line
+// lists them as `|name|` terminals (or `{a,b}` simultaneous group = one section).
+// Mirrors `bpsScenes.headSections` (kept local to avoid an adapter↔core cycle:
+// bpsScenes imports core, which imports the registry, which imports this adapter).
+function headSectionNames(grammar: string): string[] {
+  const line = grammar.split('\n').find((l) => /\bS\s*-->/.test(l));
+  if (!line) return [];
+  const rhs = line.slice(line.indexOf('-->') + 3).trim();
+  const sections: string[] = [];
+  let depth = 0;
+  let buf = '';
+  for (const ch of rhs) {
+    if (ch === '{') depth++;
+    if (ch === '}') depth--;
+    if (/\s/.test(ch) && depth === 0) {
+      if (buf.trim()) sections.push(buf.trim().replace(/[|{}]/g, ''));
+      buf = '';
+    } else {
+      buf += ch;
+    }
+  }
+  if (buf.trim()) sections.push(buf.trim().replace(/[|{}]/g, ''));
+  return sections;
+}
+
 // `.bps` — BPScript transpiles to a BP3 grammar (`compileBPS().grammar`), which
 // we feed into the SAME BP3 front-end as `.gr`. The compiled alphabet drives
 // parseBP3's terminal recognition. Two upstream tools, glue only.
@@ -326,7 +362,10 @@ const bpsFrontend: Frontend = (code) => {
   // the adapter loads each engine's samples before the backtick voices eval.
   const libraries = (c.libraries ?? {}) as Libraries;
   const withLibs = Object.keys(libraries).length > 0 ? { ...withFlags, libraries } : withFlags;
-  const base = Object.keys(backticks).length > 0 ? { ...withLibs, backticks } : withLibs;
+  const withBt = Object.keys(backticks).length > 0 ? { ...withLibs, backticks } : withLibs;
+  // Head-rule sections, used to annotate the FULL production with time bounds.
+  const sections = headSectionNames(c.grammar);
+  const base = sections.length > 0 ? { ...withBt, sections } : withBt;
 
   // Orchestrator `.bps`: `@actor` declarations compile to an actor table (each
   // actor owns an alphabet + a transport). When present, carry it so the adapter
@@ -379,6 +418,39 @@ function sliceSection<T extends Tok>(tokens: T[], index: number, count: number):
   return tokens
     .filter((t) => t.start >= from - 1e-6 && t.start < to - 1e-6)
     .map((t) => ({ ...t, start: t.start - from, end: t.end - from }));
+}
+
+// Build the FULL-production view from a derivation and publish it to the
+// production store (the source of truth the Text panel + Structure visualizer
+// read). `tokens` are the WHOLE derived sequence (ms start/end); `sounds` is the
+// adapter's per-token sound predicate (note OR sounding symbol). Section names
+// (head-rule RHS) get equal-proportion time bounds along the same timeline the
+// dispatcher uses — matching `sliceSection`'s windowing so STEP and the
+// visualizer agree on where each section sits. Set ONCE per eval (replace).
+function publishProduction(
+  id: Runtime,
+  tokens: Tok[],
+  sounds: (token: string) => boolean,
+  sectionNames: string[]
+): void {
+  const durationMs = Math.max(...tokens.map((t) => t.end), 0);
+  const prodTokens: ProductionToken[] = tokens.map((t) => ({
+    token: t.token,
+    startSec: t.start / 1000,
+    durSec: (t.end - t.start) / 1000,
+    sounding: sounds(t.token)
+  }));
+  const durationSec = durationMs / 1000;
+  const count = sectionNames.length;
+  const sections: ProductionSection[] =
+    count > 1
+      ? sectionNames.map((name, i) => ({
+          name,
+          startSec: (i * durationSec) / count,
+          endSec: ((i + 1) * durationSec) / count
+        }))
+      : [];
+  production.set({ source: id, tokens: prodTokens, durationSec, sections });
 }
 
 // One-shot info when no MIDI output port is present (the normal headless / no
@@ -646,7 +718,8 @@ function makeBpxAdapter(
         orchestration,
         backticks,
         flagStates,
-        libraries
+        libraries,
+        sections: headSections
       } = frontend(code);
       if (errors.length > 0) {
         const msg = errors.map((e) => `line ${e.line ?? '?'}: ${e.message}`).join('; ');
@@ -693,6 +766,22 @@ function makeBpxAdapter(
         log({ runtime: id, level: 'error', msg });
         throw new Error(`${id}: ${msg}`);
       }
+
+      // FULL production readout (Romain's request): publish the WHOLE derived
+      // sequence now, BEFORE any STEP slicing or time-scheduled playback, so the
+      // Text panel + Structure visualizer see the entire production at once. The
+      // sound predicate marks which tokens reach audio/MIDI vs the symbolic
+      // readout: a note, a front-end sounding symbol, an orchestrated actor
+      // terminal, or a backtick reference all "sound"; everything else is text.
+      const soundingSet = new Set(soundingSymbols ?? []);
+      const actorMap = orchestration?.terminalActorMap ?? {};
+      const btTable = backticks ?? {};
+      const productionSounds = (token: string) =>
+        isNoteName(token) ||
+        soundingSet.has(token) ||
+        Object.prototype.hasOwnProperty.call(actorMap, token) ||
+        Object.prototype.hasOwnProperty.call(btTable, token);
+      publishProduction(id, tokens, productionSounds, headSections ?? []);
 
       // STEP (A5): when a section is requested, keep only that section's tokens
       // (re-zeroed) and play them once. Otherwise loop the whole derivation as

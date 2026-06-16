@@ -14,6 +14,7 @@ import { loadSampleBank, setDeclaredBanks } from '../runtimes/strudel';
 import { enableMidi, matchMapping, type MidiEvent } from '../midi/midi-input';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
+import { production } from '../../stores/production.svelte';
 
 class RealActors extends MockActors {
   // We override toggle to delegate to the real-core orchestration via a callback.
@@ -358,6 +359,14 @@ class RealCore implements CoreApi {
       this.log({ runtime, level: 'warn', msg: 'empty block' });
       return;
     }
+
+    // FULL-production readout is meaningful only for the symbolic (bp3/bpscript)
+    // languages that derive note tokens. A backtick-only voice (Strudel, Hydra,
+    // …) produces no derived symbols, so clear the production store before its
+    // eval — the Text panel then degrades to its empty "no symbolic production"
+    // state instead of showing a stale derivation. bp3/bpscript repopulate it
+    // synchronously inside their own `evaluate`.
+    if (runtime !== 'bp3' && runtime !== 'bpscript') production.clear();
 
     // Locate the actor bound to this file (sourceId = file.name) so we can
     // light up its LED and make the transport reflect that audio is live.

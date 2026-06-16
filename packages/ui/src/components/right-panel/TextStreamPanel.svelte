@@ -1,18 +1,14 @@
 <script lang="ts">
-  import { tick } from 'svelte';
-  import { textStream } from '../../stores/textstream.svelte';
+  import { production } from '../../stores/production.svelte';
 
-  let scroller = $state<HTMLDivElement>();
+  // The FULL derived production, shown all-at-once on eval (like BP3): the whole
+  // sequence of symbols with their timing, set ONCE by the bp3/bpscript adapter —
+  // NOT streamed token-by-token over playback time. A backtick-only voice
+  // (Strudel/Hydra) derives no symbols, so the store is empty and the panel shows
+  // its graceful "no symbolic production" state.
+  const set = $derived(production.current);
 
-  // Follow the tail as new symbols stream in.
-  $effect(() => {
-    void textStream.symbols.length;
-    tick().then(() => {
-      if (scroller) scroller.scrollTop = scroller.scrollHeight;
-    });
-  });
-
-  function fmtOnset(sec: number) {
+  function fmt(sec: number) {
     return `${sec.toFixed(2)}s`;
   }
 </script>
@@ -20,23 +16,26 @@
 <div class="textstream">
   <header class="hdr">
     <span class="count">
-      {textStream.symbols.length} symbols{#if textStream.source}
-        · {textStream.source}{/if}
+      {#if set}
+        {set.tokens.length} symbols · {set.source} · {fmt(set.durationSec)}
+      {:else}
+        production
+      {/if}
     </span>
-    <button class="action" type="button" onclick={() => textStream.clear()}>clear</button>
   </header>
 
-  {#if textStream.symbols.length === 0}
+  {#if !set || set.tokens.length === 0}
     <div class="empty">
-      No symbols yet. Evaluate a text grammar (bols, words, numbers) to stream its terminals here.
+      No symbolic production. Evaluate a BP3/BPScript grammar (notes, bols, words, numbers) to see
+      its full derived sequence here.
     </div>
   {:else}
-    <div class="scroll" bind:this={scroller}>
-      {#each textStream.symbols as s (s.seq)}
-        <div class="row">
-          <span class="onset">{fmtOnset(s.startSec)}</span>
+    <div class="scroll">
+      {#each set.tokens as s, i (i)}
+        <div class="row" class:mute={!s.sounding}>
+          <span class="onset">{fmt(s.startSec)}</span>
           <span class="sym">{s.token}</span>
-          <span class="dur">{fmtOnset(s.durSec)}</span>
+          <span class="dur">{fmt(s.durSec)}</span>
         </div>
       {/each}
     </div>
@@ -59,14 +58,6 @@
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--text-dim);
-  }
-  .action {
-    color: var(--text-dim);
-    font-size: 9px;
-    letter-spacing: 0.16em;
-  }
-  .action:hover {
-    color: var(--amber);
   }
   .empty {
     padding: 18px 16px;
@@ -100,6 +91,11 @@
   .sym {
     color: var(--amber);
     font-weight: 500;
+  }
+  /* A non-sounding symbol (text-only terminal) reads dimmer than a sounding one. */
+  .row.mute .sym {
+    color: var(--text-dim);
+    font-weight: 400;
   }
   .dur {
     color: var(--text-faint);
