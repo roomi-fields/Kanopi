@@ -2,6 +2,7 @@
   import type { ActivityView } from '../../stores/ui.svelte';
   import IconFiles from '../../lib/icons/IconFiles.svelte';
   import IconLibrary from '../../lib/icons/IconLibrary.svelte';
+  import IconResources from '../../lib/icons/IconResources.svelte';
   import IconSearch from '../../lib/icons/IconSearch.svelte';
   import IconHardware from '../../lib/icons/IconHardware.svelte';
   import IconGit from '../../lib/icons/IconGit.svelte';
@@ -21,6 +22,7 @@
 <button class="ab-btn" class:active {title} type="button" {onclick}>
   {#if id === 'files'}<IconFiles />
   {:else if id === 'library'}<IconLibrary />
+  {:else if id === 'resources'}<IconResources />
   {:else if id === 'search'}<IconSearch />
   {:else if id === 'hardware'}<IconHardware />
   {:else if id === 'git'}<IconGit />

@@ -1,4 +1,12 @@
-export type ActivityView = 'files' | 'library' | 'search' | 'hardware' | 'git' | 'docs' | 'account';
+export type ActivityView =
+  | 'files'
+  | 'library'
+  | 'resources'
+  | 'search'
+  | 'hardware'
+  | 'git'
+  | 'docs'
+  | 'account';
 export type RightPanelTab = 'actors' | 'scenes' | 'inspector';
 export type BottomPanelTab = 'structure' | 'text' | 'console';
 

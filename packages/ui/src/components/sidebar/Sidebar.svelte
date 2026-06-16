@@ -4,10 +4,12 @@
   import HardwareView from './HardwareView.svelte';
   import DocsView from './DocsView.svelte';
   import LibraryView from './LibraryView.svelte';
+  import ResourcesView from './ResourcesView.svelte';
 
   const labels = {
     files: 'Files',
     library: 'Library',
+    resources: 'Resources',
     search: 'Search',
     hardware: 'Hardware',
     git: 'Git',
@@ -29,6 +31,8 @@
       <DocsView />
     {:else if ui.activeActivityView === 'library'}
       <LibraryView />
+    {:else if ui.activeActivityView === 'resources'}
+      <ResourcesView />
     {:else}
       <p class="placeholder">— {labels[ui.activeActivityView].toLowerCase()} view —</p>
     {/if}

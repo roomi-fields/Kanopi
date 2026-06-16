@@ -105,3 +105,9 @@ export function resolveDevice(name: string): Device | undefined {
 export function isCompatible(outputType: VoiceOutputType, type: DeviceType): boolean {
   return acceptedOutputTypes(type).has(outputType);
 }
+
+/** The full resolved device library (default midi + bundled + overlay). Read-only
+ * browse for the Resources view; order is map insertion order. */
+export function listDevices(): Device[] {
+  return [...deviceMap().values()];
+}
