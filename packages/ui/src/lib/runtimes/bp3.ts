@@ -424,22 +424,18 @@ interface BP3Voice {
 type Tok = { token: string; start: number; end: number };
 
 /**
- * STEP windowing (A5): keep only the tokens of one section of the derivation,
- * re-zeroed in time. The head rule's RHS is a flat sequence of `count` sections
- * (`S -> calm full` → 2); BP3 gives each equal proportions by default, so we
- * slice the derivation's total span into `count` equal windows and keep window
- * `index`, shifting it back to t=0 so it plays immediately. This is an
- * equal-proportion approximation — a section with a `*N` speed or an explicit
- * weight would occupy an unequal span the dispatcher knows but this slice does
- * not (documented limitation; faithful per-section spans need a section→span
- * map from the engine, not yet exposed).
+ * STEP windowing: keep only the tokens of ONE beat of the derivation, re-zeroed
+ * in time. The STEP unit is the clock beat (`60/bpm` seconds, here `beatMs` in
+ * ms), NOT the head-rule section: beat `index` covers `[index*beatMs,
+ * (index+1)*beatMs)` along the dispatcher timeline, and we shift it back to t=0
+ * so it plays immediately. This works for ANY derivation with a timeline (the
+ * old section-slicing only made sense for a head rule with >1 section). Tokens
+ * are kept by their onset falling inside the beat window.
  */
-function sliceSection<T extends Tok>(tokens: T[], index: number, count: number): T[] {
-  if (count <= 1) return tokens;
-  const span = Math.max(...tokens.map((t) => t.end), 0);
-  const winLen = span / count;
-  const from = index * winLen;
-  const to = (index + 1) * winLen;
+export function sliceBeat<T extends Tok>(tokens: T[], index: number, beatMs: number): T[] {
+  if (!(beatMs > 0)) return tokens;
+  const from = index * beatMs;
+  const to = from + beatMs;
   // A token belongs to the window whose start falls inside [from, to).
   return tokens
     .filter((t) => t.start >= from - 1e-6 && t.start < to - 1e-6)
@@ -449,15 +445,17 @@ function sliceSection<T extends Tok>(tokens: T[], index: number, count: number):
 // Build the FULL-production view from a derivation and publish it to the
 // production store (the source of truth the Text panel + Structure visualizer
 // read). `tokens` are the WHOLE derived sequence (ms start/end); `sounds` is the
-// adapter's per-token sound predicate (note OR sounding symbol). Section names
-// (head-rule RHS) get equal-proportion time bounds along the same timeline the
-// dispatcher uses — matching `sliceSection`'s windowing so STEP and the
-// visualizer agree on where each section sits. Set ONCE per eval (replace).
+// adapter's per-token sound predicate (note OR sounding symbol). `beatDurSec`
+// (`60/bpm`) is the STEP unit — the visualizer draws the beat cursor and STEP
+// advances one beat at a time off it. Section names (head-rule RHS) get
+// equal-proportion time bounds along the same timeline as PASSIVE visual
+// landmarks only (no longer the STEP unit). Set ONCE per eval (replace).
 function publishProduction(
   id: Runtime,
   tokens: Tok[],
   sounds: (token: string) => boolean,
-  sectionNames: string[]
+  sectionNames: string[],
+  beatDurSec: number
 ): void {
   const durationMs = Math.max(...tokens.map((t) => t.end), 0);
   const prodTokens: ProductionToken[] = tokens.map((t) => ({
@@ -476,7 +474,7 @@ function publishProduction(
           endSec: ((i + 1) * durationSec) / count
         }))
       : [];
-  production.set({ source: id, tokens: prodTokens, durationSec, sections });
+  production.set({ source: id, tokens: prodTokens, durationSec, beatDurSec, sections });
 }
 
 // One-shot info when no MIDI output port is present (the normal headless / no
@@ -807,20 +805,26 @@ function makeBpxAdapter(
         soundingSet.has(token) ||
         Object.prototype.hasOwnProperty.call(actorMap, token) ||
         Object.prototype.hasOwnProperty.call(btTable, token);
-      publishProduction(id, tokens, productionSounds, headSections ?? []);
+      // `beatDurSec` (`60/bpm`) is the STEP unit. The grammar derived at
+      // `currentBpm`, so every beat boundary on the produced timeline is one
+      // beat of the clock — STEP advances one of those at a time.
+      const beatDurSec = currentBpm > 0 ? 60 / currentBpm : 0;
+      publishProduction(id, tokens, productionSounds, headSections ?? [], beatDurSec);
 
-      // STEP (A5): when a section is requested, keep only that section's tokens
-      // (re-zeroed) and play them once. Otherwise loop the whole derivation as
-      // usual. The window is an equal-proportion slice of the timeline.
+      // STEP: when a beat is requested, keep only that beat's tokens (re-zeroed)
+      // and play them once. Otherwise loop the whole derivation as usual. The
+      // window is ONE beat (`60000/bpm` ms) of the timeline; `section.index` is
+      // the beat index (the `section` field is reused as a generic step window).
       const section = src.section;
       const looping = !section;
       if (section && section.count > 1) {
-        tokens = sliceSection(tokens, section.index, section.count);
+        const beatMs = currentBpm > 0 ? 60000 / currentBpm : 0;
+        tokens = sliceBeat(tokens, section.index, beatMs);
         if (tokens.length === 0) {
           log({
             runtime: id,
             level: 'info',
-            msg: `step: section ${section.index + 1}/${section.count} is empty`
+            msg: `step: beat ${section.index + 1}/${section.count} is empty`
           });
         }
       }

@@ -5,14 +5,20 @@
   import { workspace } from '../../stores/workspace.svelte';
 
   // STEP lives in the transport cluster (beta issue 4 — transport buttons
-  // grouped). It's now driven off the PRODUCED structure, not the `.bps` head
-  // rule, so it enables for ANY runtime whose last eval produced more than one
-  // section — BP3 `.gr`, backtick `.bps`, plain `.bps` alike (beta: STEP was
-  // `.bps`-only). STEP re-evaluates the ACTIVE file window by window.
+  // grouped). It's driven off the PRODUCED timeline, not the `.bps` head rule, so
+  // it enables for ANY runtime whose last eval produced a timeline — BP3 `.gr`,
+  // backtick `.bps`, plain `.bps` alike. The STEP unit is one clock beat
+  // (`beatDurSec = 60/bpm`); the button shows when the production spans more than
+  // one beat. STEP re-evaluates the ACTIVE file beat by beat.
   const activeFile = $derived(
     workspace.activeTabId ? workspace.fileById(workspace.activeTabId) : undefined
   );
-  const canStep = $derived((production.current?.sections.length ?? 0) > 1);
+  const beatCount = $derived.by(() => {
+    const cur = production.current;
+    if (!cur || !(cur.beatDurSec > 0)) return 0;
+    return Math.ceil(cur.durationSec / cur.beatDurSec);
+  });
+  const canStep = $derived(beatCount > 1);
 
   function fmt2(n: number) {
     return n.toString().padStart(2, '0');
@@ -87,7 +93,7 @@
       <button
         class="step-btn"
         type="button"
-        title="STEP — section suivante"
+        title="STEP — beat suivant"
         onclick={() =>
           bpsScenes.stepActive({
             runtime: activeFile.runtime,

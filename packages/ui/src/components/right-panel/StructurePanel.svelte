@@ -126,11 +126,29 @@
     return STAFF_TOP + (maxMidi - midi) * rowH;
   }
 
-  // --- sections --------------------------------------------------------------
-  // Section bands. The STEP cursor (production.stepIndex) highlights the section
-  // currently being played; -1 = whole structure, no highlight.
+  // --- sections (passive landmarks) ------------------------------------------
+  // Head-rule sections draw as labelled vertical bands — PASSIVE reference marks
+  // only (no highlight; the STEP unit is the beat, not the section).
   const sections = $derived(set?.sections ?? []);
-  const activeStep = $derived(production.stepIndex);
+
+  // --- beat cursor -----------------------------------------------------------
+  // STEP advances one clock beat (`beatDurSec`) at a time. `production.stepIndex`
+  // is the beat index (-1 = none); draw a highlighted rect over the window
+  // `[stepIndex*beatDurSec, (stepIndex+1)*beatDurSec]` when a beat is selected.
+  const stepIndex = $derived(production.stepIndex);
+  const beatDurSec = $derived(set?.beatDurSec ?? 0);
+  const beatCursor = $derived.by(() => {
+    if (stepIndex < 0 || !(beatDurSec > 0)) return null;
+    return { from: stepIndex * beatDurSec, to: (stepIndex + 1) * beatDurSec };
+  });
+  // Fine grid lines at each beat boundary (light landmark; capped so a long
+  // production at a fast tempo doesn't draw thousands of lines).
+  const beatLines = $derived.by(() => {
+    if (!(beatDurSec > 0)) return [];
+    const n = Math.ceil(dur / beatDurSec);
+    if (n > 256) return [];
+    return Array.from({ length: n + 1 }, (_, i) => i * beatDurSec);
+  });
 </script>
 
 <div class="structure">
@@ -147,12 +165,11 @@
     </header>
     <div class="roll">
       <svg viewBox="0 0 {W} {H}" preserveAspectRatio="none" class="svg">
-        <!-- section bands -->
+        <!-- section bands (passive landmarks) -->
         {#each sections as sec, i (i)}
           <g>
             <rect
               class="band"
-              class:active={i === activeStep}
               x={x(sec.startSec)}
               y={STAFF_TOP}
               width={Math.max(x(sec.endSec) - x(sec.startSec), 0)}
@@ -165,11 +182,27 @@
               x2={x(sec.startSec)}
               y2={STAFF_TOP + STAFF_H}
             />
-            <text class="band-label" class:active={i === activeStep} x={x(sec.startSec) + 4} y={14}>
+            <text class="band-label" x={x(sec.startSec) + 4} y={14}>
               {sec.name}
             </text>
           </g>
         {/each}
+
+        <!-- beat grid lines (fine landmarks at each beat boundary) -->
+        {#each beatLines as t, i (i)}
+          <line class="beat-line" x1={x(t)} y1={STAFF_TOP} x2={x(t)} y2={STAFF_TOP + STAFF_H} />
+        {/each}
+
+        <!-- STEP beat cursor: highlights the beat window currently played -->
+        {#if beatCursor}
+          <rect
+            class="beat-cursor"
+            x={x(beatCursor.from)}
+            y={STAFF_TOP}
+            width={Math.max(x(beatCursor.to) - x(beatCursor.from), 1.5)}
+            height={STAFF_H}
+          />
+        {/if}
 
         <!-- pitched note rectangles -->
         {#each pitched as n, i (i)}
@@ -253,12 +286,9 @@
     display: block;
   }
 
-  /* sections */
+  /* sections (passive landmarks) */
   .band {
     fill: rgba(255, 255, 255, 0.015);
-  }
-  .band.active {
-    fill: rgba(232, 156, 62, 0.1);
   }
   .band-edge {
     stroke: var(--border);
@@ -271,8 +301,17 @@
     font-size: 10px;
     letter-spacing: 0.04em;
   }
-  .band-label.active {
-    fill: var(--amber);
+
+  /* beat grid + STEP cursor */
+  .beat-line {
+    stroke: var(--border);
+    stroke-width: 0.5;
+    opacity: 0.35;
+  }
+  .beat-cursor {
+    fill: rgba(232, 156, 62, 0.1);
+    stroke: var(--amber-dim);
+    stroke-width: 1;
   }
 
   /* notes */

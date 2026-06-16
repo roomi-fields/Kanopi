@@ -11,9 +11,10 @@ import { production } from './production.svelte';
 //   - SCENES: `@flag scene: calm:1, full:2` → selectable buttons. Selecting a
 //     scene re-evaluates the file with `flags: { scene: <int> }`, which makes a
 //     different flag-guarded rule derive (different armed actors).
-//   - SECTIONS: the head rule's RHS sequence (`S -> calm full`) → STEP advances
-//     section by section. The adapter slices the derived timeline into equal
-//     windows (see bp3.ts) and plays the chosen one once.
+//   - SECTIONS: the head rule's RHS sequence (`S -> calm full`) → passive visual
+//     landmarks in the Structure panel. STEP itself advances BEAT by beat over
+//     the produced timeline (see `stepActive` + bp3.ts `sliceBeat`), not section
+//     by section.
 //
 // The compile itself is run reactively in BpsScenesBar.svelte (a real component
 // reactive context); this store holds the resulting view model + the selection
@@ -144,19 +145,21 @@ class BpsScenesStore {
     });
   }
 
-  // STEP to the next section of the PRODUCED structure (wraps at the end). Driven
-  // off the `production` store, NOT the `.bps` head rule, so it works for ANY
-  // runtime whose last eval produced a multi-section structure — BP3 `.gr`,
-  // backtick `.bps`, plain `.bps` alike (beta issue: STEP was `.bps`-only). The
-  // section count comes from `production.current.sections`; the adapter slices the
-  // derived timeline into `count` equal windows and plays window `index` once.
-  // Re-evaluates the ACTIVE file (the one the production was derived from).
+  // STEP to the next BEAT of the PRODUCED timeline (wraps at the end). Driven off
+  // the `production` store, NOT the `.bps` head rule, so it works for ANY runtime
+  // whose last eval produced a timeline — BP3 `.gr`, backtick `.bps`, plain `.bps`
+  // alike. The STEP unit is one clock beat (`beatDurSec = 60/bpm`); the number of
+  // beats is `ceil(durationSec / beatDurSec)`, and the adapter slices the derived
+  // timeline into one-beat windows, playing beat `index` once. Re-evaluates the
+  // ACTIVE file (the one the production was derived from).
   async stepActive(file: { runtime: Runtime; name: string; contents: string }) {
-    const count = production.current?.sections.length ?? 0;
+    const cur = production.current;
+    const beatDurSec = cur?.beatDurSec ?? 0;
+    const count = cur && beatDurSec > 0 ? Math.max(0, Math.ceil(cur.durationSec / beatDurSec)) : 0;
     if (count < 2) return;
     // The re-eval republishes the FULL production and resets `stepIndex` to -1,
-    // so compute the next window from the CURRENT cursor first, then set it after
-    // the await (the highlight then lands on the section that's actually playing).
+    // so compute the next beat from the CURRENT cursor first, then set it after
+    // the await (the cursor then lands on the beat that's actually playing).
     const next = (production.stepIndex + 1) % count;
     await core.evaluateBlock(file.runtime, file.contents, file.name, 0, undefined, undefined, {
       index: next,

@@ -24,3 +24,4 @@ docs/plan/
 
 # Local debug screenshots archive (not for public repo)
 _archive/
+packages/ui/.playwright-artifacts/
