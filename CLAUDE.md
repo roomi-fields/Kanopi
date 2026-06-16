@@ -83,7 +83,7 @@ Détail : `hub/README.md` (§Le protocole + §Outil tour).
 
 ## Memory
 
-Kanopi session-specific memory at `~/.claude/projects/-mnt-d-Claude-kanopi/memory/` (separate from BPscript memory).
+Kanopi session-specific memory at `~/.claude/projects/-home-romi-dev-bp-kanopi/memory/` (separate from BPscript memory).
 
 ## RTFM — Indexed Knowledge Base
 

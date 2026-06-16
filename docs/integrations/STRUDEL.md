@@ -71,7 +71,7 @@ The `_` prefix indicates:
 | **Opacity animation** | Currently static. Code at `highlight.mjs:98–111` is commented out (would fade outline based on hap progress). | `highlight.mjs:98–111` |
 | **State management** | Two StateFields: `miniLocations` (persistent marks set at eval time), `visibleMiniLocations` (runtime hap map updated every frame). Computed decorator layer merges them. | `highlight.mjs:13–76`, `79–127` |
 
-**Kanopi deviation**: `/home/romi/dev/music/kanopi/packages/ui/src/components/viz/pattern-highlight.ts` is a Kanopi-only reimplementation. to be deleted and replaced by the upstream `highlightExtension` (see §7 rollout).
+**Kanopi deviation**: `/home/romi/dev/bp/kanopi/packages/ui/src/components/viz/pattern-highlight.ts` is a Kanopi-only reimplementation. to be deleted and replaced by the upstream `highlightExtension` (see §7 rollout).
 
 ### 2.2 Eval Flash (`flashField` / `flash()`)
 
@@ -641,7 +641,7 @@ Canvas updates every frame, overlaying the code editor
 
 ### 9.2 Spectrum Method Reassignment Bug
 
-**Finding**: In `/home/romi/dev/music/kanopi/node_modules/@strudel/webaudio/spectrum.mjs:35`:
+**Finding**: In `/home/romi/dev/bp/kanopi/node_modules/@strudel/webaudio/spectrum.mjs:35`:
 ```javascript
 Pattern.prototype.scope = Pattern.prototype.tscope;
 ```
@@ -715,26 +715,26 @@ let theme = {
 
 ### 10.2 Kanopi Code Locations
 
-- **Runtime adapter**: `/home/romi/dev/music/kanopi/packages/ui/src/lib/runtimes/strudel.ts`
-- **CodeMirror proxy**: `/home/romi/dev/music/kanopi/packages/ui/src/lib/runtimes/strudel-cm.ts`
-- **Editor component**: `/home/romi/dev/music/kanopi/packages/ui/src/components/editor/CMEditor.svelte`
-- **Viz components (to delete)**: `/home/romi/dev/music/kanopi/packages/ui/src/components/viz/`
-- **Vite config**: `/home/romi/dev/music/kanopi/vite.config.ts` (dedupe: `['@strudel/codemirror']`)
+- **Runtime adapter**: `/home/romi/dev/bp/kanopi/packages/ui/src/lib/runtimes/strudel.ts`
+- **CodeMirror proxy**: `/home/romi/dev/bp/kanopi/packages/ui/src/lib/runtimes/strudel-cm.ts`
+- **Editor component**: `/home/romi/dev/bp/kanopi/packages/ui/src/components/editor/CMEditor.svelte`
+- **Viz components (to delete)**: `/home/romi/dev/bp/kanopi/packages/ui/src/components/viz/`
+- **Vite config**: `/home/romi/dev/bp/kanopi/vite.config.ts` (dedupe: `['@strudel/codemirror']`)
 
 ### 10.3 Strudel Packages in node_modules (Audited)
 
-- `/home/romi/dev/music/kanopi/node_modules/@strudel/draw/pianoroll.mjs` (317 lines)
-- `/home/romi/dev/music/kanopi/node_modules/@strudel/draw/spiral.mjs` (158 lines)
-- `/home/romi/dev/music/kanopi/node_modules/@strudel/draw/pitchwheel.mjs` (145 lines)
-- `/home/romi/dev/music/kanopi/node_modules/@strudel/draw/draw.mjs` (229 lines)
-- `/home/romi/dev/music/kanopi/node_modules/@strudel/codemirror/widget.mjs` (143 lines)
-- `/home/romi/dev/music/kanopi/node_modules/@strudel/codemirror/highlight.mjs` (139 lines)
-- `/home/romi/dev/music/kanopi/node_modules/@strudel/codemirror/flash.mjs` (40 lines)
-- `/home/romi/dev/music/kanopi/node_modules/@strudel/codemirror/slider.mjs` (147 lines)
-- `/home/romi/dev/music/kanopi/node_modules/@strudel/codemirror/themes.mjs` (219 lines)
-- `/home/romi/dev/music/kanopi/node_modules/@strudel/codemirror/keybindings.mjs` (144 lines)
-- `/home/romi/dev/music/kanopi/node_modules/@strudel/webaudio/scope.mjs` (150 lines)
-- `/home/romi/dev/music/kanopi/node_modules/@strudel/webaudio/spectrum.mjs` (70 lines)
+- `/home/romi/dev/bp/kanopi/node_modules/@strudel/draw/pianoroll.mjs` (317 lines)
+- `/home/romi/dev/bp/kanopi/node_modules/@strudel/draw/spiral.mjs` (158 lines)
+- `/home/romi/dev/bp/kanopi/node_modules/@strudel/draw/pitchwheel.mjs` (145 lines)
+- `/home/romi/dev/bp/kanopi/node_modules/@strudel/draw/draw.mjs` (229 lines)
+- `/home/romi/dev/bp/kanopi/node_modules/@strudel/codemirror/widget.mjs` (143 lines)
+- `/home/romi/dev/bp/kanopi/node_modules/@strudel/codemirror/highlight.mjs` (139 lines)
+- `/home/romi/dev/bp/kanopi/node_modules/@strudel/codemirror/flash.mjs` (40 lines)
+- `/home/romi/dev/bp/kanopi/node_modules/@strudel/codemirror/slider.mjs` (147 lines)
+- `/home/romi/dev/bp/kanopi/node_modules/@strudel/codemirror/themes.mjs` (219 lines)
+- `/home/romi/dev/bp/kanopi/node_modules/@strudel/codemirror/keybindings.mjs` (144 lines)
+- `/home/romi/dev/bp/kanopi/node_modules/@strudel/webaudio/scope.mjs` (150 lines)
+- `/home/romi/dev/bp/kanopi/node_modules/@strudel/webaudio/spectrum.mjs` (70 lines)
 
 ---
 

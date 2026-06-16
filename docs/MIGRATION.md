@@ -9,7 +9,7 @@ Séparer `BPscript/` (le langage) de `kanopi/` (le produit IDE) pour éviter la 
 
 ## Phase 1 — Copie non-destructive (FAIT)
 
-Nouveau repo `/home/romi/dev/music/kanopi/` créé avec :
+Nouveau repo `/home/romi/dev/bp/kanopi/` créé avec :
 
 ```
 kanopi/
@@ -142,7 +142,7 @@ rm -rf docs/mockups
 rm docs/reference/HARDWARE_COLLECTION.md
 
 # 5. Éventuel : déplacer EDITOR.md vers kanopi
-# mv docs/plan/EDITOR.md /home/romi/dev/music/kanopi/docs/design/
+# mv docs/plan/EDITOR.md /home/romi/dev/bp/kanopi/docs/design/
 # ou juste laisser pour l'instant
 
 # 6. Mettre à jour BPscript/CLAUDE.md et README.md pour refléter le nouveau scope
@@ -164,11 +164,11 @@ git commit -m "scope: extract Kanopi (IDE) to separate repo, keep language core 
 
 Chaque repo aura sa propre session Claude avec contexte isolé :
 
-- `cd /home/romi/dev/music/kanopi && claude -n kanopi-ui` — focus UI/UX/runtime
+- `cd /home/romi/dev/bp/kanopi && claude -n kanopi-ui` — focus UI/UX/runtime
 - `cd /home/romi/dev/bp/BPscript && claude -n bpscript-lang` — focus langage/moteur
 - `cd /home/romi/dev/music/osc-bridge && claude -n osc-bridge` — focus Rust/Lua
 
-Mémoires séparées : `~/.claude/projects/-mnt-d-Claude-kanopi/memory/` vs `-mnt-d-Claude-BPscript/`.
+Mémoires séparées : `~/.claude/projects/-home-romi-dev-bp-kanopi/memory/` vs `-mnt-d-Claude-BPscript/`.
 
 ## Checklist finale
 
