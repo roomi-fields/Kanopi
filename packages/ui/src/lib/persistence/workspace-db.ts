@@ -11,6 +11,9 @@ export interface PersistedWorkspace {
   activeActors: string[];
   sidebarWidth?: number;
   rightPanelWidth?: number;
+  bottomPanelHeight?: number;
+  bottomPanelCollapsed?: boolean;
+  bottomPanelTab?: 'structure' | 'text' | 'console';
 }
 
 export function loadWorkspace(): PersistedWorkspace | undefined {

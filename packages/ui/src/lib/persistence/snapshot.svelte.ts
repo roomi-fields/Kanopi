@@ -14,7 +14,10 @@ function snapshot(): PersistedWorkspace {
     activeScene: scenes.active?.name ?? null,
     activeActors: actors.list.filter((a) => a.active).map((a) => a.name),
     sidebarWidth: ui.sidebarWidth,
-    rightPanelWidth: ui.rightPanelWidth
+    rightPanelWidth: ui.rightPanelWidth,
+    bottomPanelHeight: ui.bottomPanelHeight,
+    bottomPanelCollapsed: ui.bottomPanelCollapsed,
+    bottomPanelTab: ui.bottomPanelTab
   };
 }
 
@@ -36,6 +39,9 @@ export function restoreWorkspace(): boolean {
   if (typeof w.bpm === 'number') clock.setBpm(w.bpm);
   if (typeof w.sidebarWidth === 'number') ui.setSidebarWidth(w.sidebarWidth);
   if (typeof w.rightPanelWidth === 'number') ui.setRightPanelWidth(w.rightPanelWidth);
+  if (typeof w.bottomPanelHeight === 'number') ui.setBottomPanelHeight(w.bottomPanelHeight);
+  if (typeof w.bottomPanelCollapsed === 'boolean') ui.bottomPanelCollapsed = w.bottomPanelCollapsed;
+  if (w.bottomPanelTab) ui.bottomPanelTab = w.bottomPanelTab;
 
   if (w.activeScene) scenes.activate(w.activeScene);
 
@@ -83,6 +89,9 @@ export function installAutosave() {
       void actors.list.map((a) => `${a.name}:${a.active}`).join(',');
       void ui.sidebarWidth;
       void ui.rightPanelWidth;
+      void ui.bottomPanelHeight;
+      void ui.bottomPanelCollapsed;
+      void ui.bottomPanelTab;
       persist();
     });
   });

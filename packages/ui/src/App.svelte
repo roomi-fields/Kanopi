@@ -6,6 +6,7 @@
   import Sidebar from './components/sidebar/Sidebar.svelte';
   import EditorArea from './components/editor/EditorArea.svelte';
   import RightPanel from './components/right-panel/RightPanel.svelte';
+  import BottomPanel from './components/bottom-panel/BottomPanel.svelte';
   import LibrarySpace from './components/library/LibrarySpace.svelte';
   import CommandPalette from './components/palette/CommandPalette.svelte';
   import HydraCanvas from './components/runtime/HydraCanvas.svelte';
@@ -190,7 +191,24 @@
         <Sidebar />
         <Resizer side="right" width={ui.sidebarWidth} onResize={(w) => ui.setSidebarWidth(w)} />
       {/if}
-      <EditorArea />
+      <!-- Center column: editor stacked above the bottom output panel. The
+           bottom panel is contained here so the right column stays full-height. -->
+      <div class="center-stack">
+        <EditorArea />
+        {#if !ui.bottomPanelCollapsed}
+          <Resizer
+            side="top"
+            width={ui.bottomPanelHeight}
+            onResize={(h) => ui.setBottomPanelHeight(h)}
+          />
+        {/if}
+        <div
+          class="bottom-slot"
+          style:height={ui.bottomPanelCollapsed ? 'auto' : `${ui.bottomPanelHeight}px`}
+        >
+          <BottomPanel />
+        </div>
+      </div>
       <Resizer side="left" width={ui.rightPanelWidth} onResize={(w) => ui.setRightPanelWidth(w)} />
       <RightPanel />
     {/if}
@@ -218,6 +236,23 @@
     background: var(--bg);
     overflow: hidden;
     min-height: 0;
+  }
+  .center-stack {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  /* EditorArea (its root is `.editor`) takes the space above the bottom panel. */
+  .center-stack > :global(.editor) {
+    flex: 1;
+    min-height: 0;
+  }
+  .bottom-slot {
+    flex-shrink: 0;
+    min-height: 0;
+    overflow: hidden;
   }
   .app.drop-active::after {
     content: 'Déposer pour importer dans Kanopi';

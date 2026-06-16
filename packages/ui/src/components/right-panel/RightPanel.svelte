@@ -3,18 +3,16 @@
   import ActorsPanel from './ActorsPanel.svelte';
   import ScenesPanel from './ScenesPanel.svelte';
   import InspectorPanel from './InspectorPanel.svelte';
-  import ConsolePanel from './ConsolePanel.svelte';
-  import TextStreamPanel from './TextStreamPanel.svelte';
 
   // No dedicated Viz tab — upstream fullscreen canvas (#test-canvas,
   // task 1.2), inline widgets (task 1.3bis), and mini-notation highlight
   // (task 1.4) render directly in the editor.
+  // Console + Text outputs live in the bottom panel (BottomPanel.svelte);
+  // this column is reserved for control surfaces.
   const tabs: { id: RightPanelTab; label: string }[] = [
     { id: 'actors', label: 'Actors' },
     { id: 'scenes', label: 'Scenes' },
-    { id: 'inspector', label: 'Inspector' },
-    { id: 'console', label: 'Console' },
-    { id: 'text', label: 'Text' }
+    { id: 'inspector', label: 'Inspector' }
   ];
 </script>
 
@@ -35,8 +33,6 @@
     {#if ui.rightPanelTab === 'actors'}<ActorsPanel />
     {:else if ui.rightPanelTab === 'scenes'}<ScenesPanel />
     {:else if ui.rightPanelTab === 'inspector'}<InspectorPanel />
-    {:else if ui.rightPanelTab === 'console'}<ConsolePanel />
-    {:else if ui.rightPanelTab === 'text'}<TextStreamPanel />
     {/if}
   </div>
 </aside>
