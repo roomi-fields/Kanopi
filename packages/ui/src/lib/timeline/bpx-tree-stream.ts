@@ -12,10 +12,13 @@
 // stack depth (timeline.js:223-230). So to make the struct band appear we just
 // REPLAY the tree as that marker stream — no change to timeline.js logic.
 //
-// The tree's leaves carry only `symbolId`, not the note name. We resolve names by
-// TEMPORAL CORRELATION with the flat `derive().tokens` (same events, integer ms):
-// match each `leaf` to the next unconsumed flat token whose rounded start/end
-// equals the leaf's rounded span. `rest` leaves emit `-` (no name).
+// The tree's leaves carry only `symbolId`, not the note name. We resolve names
+// PRIMARILY from `symbolNames` (`symbolId → name`, read off the grammar's own
+// symbol table at derive time — deterministic, no collision). When that table is
+// absent (older paths) we FALL BACK to TEMPORAL CORRELATION with the flat
+// `derive().tokens`: match each `leaf` to the next unconsumed flat token whose
+// rounded start/end equals the leaf's rounded span; `#<symbolId>` is the last
+// resort. `rest` leaves emit `-` (no name).
 
 import type { ProductionTreeNode, ProductionTree } from '../../stores/production.svelte';
 
@@ -42,21 +45,23 @@ type TreeRoot = ProductionTree | { root: ProductionTreeNode } | ProductionTreeNo
  * - `occupying` `role:'rest'` → `-`; otherwise the name resolved from `flatTokens`
  * - sequence-level `occupying` leaves are emitted as-is (no surrounding markers)
  *
- * @param tree       `derive().tree` (or its `.root`); tolerant of either shape.
- * @param flatTokens `derive().tokens` (ms), used only to resolve leaf names by time.
+ * @param tree        `derive().tree` (or its `.root`); tolerant of either shape.
+ * @param flatTokens  `derive().tokens` (ms), the temporal-correlation FALLBACK.
+ * @param symbolNames `symbolId → name` from the grammar's symbol table (PRIMARY).
  */
 export function bpxTreeToTimelineStream(
   tree: TreeRoot | null | undefined,
-  flatTokens: FlatToken[] = []
+  flatTokens: FlatToken[] = [],
+  symbolNames?: Record<number, string>
 ): StreamToken[] {
   const root = resolveRoot(tree);
   if (!root) return [];
 
   const out: StreamToken[] = [];
 
-  // Name resolver: index flat tokens by rounded (start,end), consuming in order so
-  // simultaneous leaves (same span) map to distinct tokens deterministically.
-  const resolve = makeNameResolver(flatTokens);
+  // Name resolver: prefer the deterministic `symbolNames` table; else correlate
+  // by time (flat tokens indexed by rounded (start,end), consumed in order).
+  const resolve = makeNameResolver(flatTokens, symbolNames);
 
   const emitNode = (node: ProductionTreeNode): void => {
     switch (node.type) {
@@ -108,14 +113,16 @@ function resolveRoot(tree: TreeRoot | null | undefined): ProductionTreeNode | nu
 }
 
 /**
- * Build a closure that maps a leaf (symbolId + ms span) to its terminal NAME by
- * correlating with the flat token list. The tree leaf has no name; the flat token
- * does. Matching is by rounded (start,end) — BPx spans are floats (e.g. 666.666),
- * flat tokens are integer ms for the SAME events. Each flat token is consumed once
- * so ties (simultaneous notes in different voices) resolve in stream order.
+ * Build a closure mapping a leaf (symbolId + ms span) to its terminal NAME.
+ * PRIMARY: the deterministic `symbolNames` table (`symbolId → name`) read off the
+ * grammar's own symbol table — no collision on simultaneous polymetric voices.
+ * FALLBACK (no table / id missing): TEMPORAL CORRELATION with the flat token list
+ * (matched by rounded (start,end), each consumed once so ties resolve in stream
+ * order). LAST RESORT: `#<symbolId>`.
  */
 function makeNameResolver(
-  flatTokens: FlatToken[]
+  flatTokens: FlatToken[],
+  symbolNames?: Record<number, string>
 ): (symbolId: number, startMs: number, endMs: number) => string {
   // Bucket flat tokens by rounded (start,end); keep insertion order within a bucket.
   const buckets = new Map<string, FlatToken[]>();
@@ -128,6 +135,9 @@ function makeNameResolver(
   const cursors = new Map<string, number>();
 
   return (symbolId, startMs, endMs) => {
+    // PRIMARY: deterministic name from the grammar symbol table.
+    const named = symbolNames?.[symbolId];
+    if (named !== undefined) return named;
     const key = `${Math.round(startMs)}:${Math.round(endMs)}`;
     const arr = buckets.get(key);
     if (arr) {

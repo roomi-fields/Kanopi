@@ -1,49 +1,50 @@
 <script lang="ts">
   import { production } from '../../stores/production.svelte';
+  import { orderedTokensFromTree } from '../../lib/text-order/bpx-tree-canonical';
 
-  // The FULL derived production, shown all-at-once on eval (like BP3): the whole
-  // sequence of symbols with their timing, set ONCE by the bp3/bpscript adapter —
-  // NOT streamed token-by-token over playback time. A backtick-only voice
-  // (Strudel/Hydra) derives no symbols, so the store is empty and the panel shows
-  // its graceful "no symbolic production" state.
+  // TEXT-BY-ORDER view: the full derived production shown by ORDER (not by time).
+  // The sequence of produced symbols, structure preserved, no metric expansion.
+  // The ordered list comes from bpscript's SHARED `tokenizeOrder` applied to the
+  // canonical serialization of the BPx derivation tree — symbols/rests/structure
+  // only (inline controls + `=`/`:` markers are not in the tree, out of scope).
+  //
+  // A backtick-only voice (Strudel/Hydra) derives no tree, so this degrades to a
+  // graceful "no symbolic production" state rather than erroring.
   const set = $derived(production.current);
-
-  function fmt(sec: number) {
-    return `${sec.toFixed(2)}s`;
-  }
+  const tokens = $derived(
+    set?.tree ? orderedTokensFromTree(set.tree, set.rawTokens ?? [], set.symbolNames) : []
+  );
 </script>
 
-<div class="textstream">
+<div class="textorder">
   <header class="hdr">
     <span class="count">
-      {#if set}
-        {set.tokens.length} symbols · {set.source} · {fmt(set.durationSec)}
+      {#if set && tokens.length > 0}
+        {tokens.length} tokens · {set.source} · by order
       {:else}
         production
       {/if}
     </span>
   </header>
 
-  {#if !set || set.tokens.length === 0}
+  {#if !set || tokens.length === 0}
     <div class="empty">
-      No symbolic production. Evaluate a BP3/BPScript grammar (notes, bols, words, numbers) to see
-      its full derived sequence here.
+      No symbolic production by order. Evaluate a BP3/BPScript grammar (notes, bols, words, numbers)
+      to see its full derived sequence here, read left-to-right.
     </div>
   {:else}
     <div class="scroll">
-      {#each set.tokens as s, i (i)}
-        <div class="row" class:mute={!s.sounding}>
-          <span class="onset">{fmt(s.startSec)}</span>
-          <span class="sym">{s.token}</span>
-          <span class="dur">{fmt(s.durSec)}</span>
-        </div>
-      {/each}
+      <div class="tokens">
+        {#each tokens as tok, i (i)}
+          <span class="tok" class:rest={tok === '-'} class:prolong={tok === '_'}>{tok}</span>
+        {/each}
+      </div>
     </div>
   {/if}
 </div>
 
 <style>
-  .textstream {
+  .textorder {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -68,39 +69,29 @@
   .scroll {
     flex: 1;
     overflow-y: auto;
-    padding: 4px 0;
+    padding: 12px;
     font-family: var(--font-code);
-    font-size: 12px;
-    line-height: 1.6;
+    font-size: 13px;
   }
-  .row {
-    display: grid;
-    grid-template-columns: 56px 1fr 56px;
-    gap: 8px;
-    padding: 1px 12px;
-    align-items: baseline;
+  .tokens {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    line-height: 1.8;
   }
-  .row:hover {
-    background: rgba(255, 255, 255, 0.02);
-  }
-  .onset {
-    color: var(--text-faint);
-    font-variant-numeric: tabular-nums;
-    font-size: 10px;
-  }
-  .sym {
+  .tok {
     color: var(--amber);
     font-weight: 500;
+    padding: 0 2px;
   }
-  /* A non-sounding symbol (text-only terminal) reads dimmer than a sounding one. */
-  .row.mute .sym {
+  /* A silence reads dimmer than a sounding token. */
+  .tok.rest {
     color: var(--text-dim);
     font-weight: 400;
   }
-  .dur {
+  /* A prolongation marker is structural, dimmer still. */
+  .tok.prolong {
     color: var(--text-faint);
-    font-variant-numeric: tabular-nums;
-    font-size: 10px;
-    text-align: right;
+    font-weight: 400;
   }
 </style>

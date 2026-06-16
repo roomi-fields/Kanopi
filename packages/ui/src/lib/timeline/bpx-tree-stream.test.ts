@@ -137,6 +137,96 @@ describe('bpxTreeToTimelineStream', () => {
     expect(stream.map((s) => s.token)).toEqual(['{', 'C4', ',', 'E4', '}']);
   });
 
+  it('(e) symbolNames is PRIMARY: names come from the table, not temporal correlation', () => {
+    // Same { } as (d) but the flat tokens are deliberately WRONG (X/Y). With a
+    // symbolNames table provided, the resolver must ignore the flat tokens.
+    const tree: ProductionTreeNode = {
+      type: 'sequence',
+      span: span(0, 500),
+      children: [
+        {
+          type: 'polymetric',
+          span: span(0, 500),
+          voices: [voice([leaf(1, 0, 500)], 0, 500), voice([leaf(2, 0, 500)], 0, 500)]
+        }
+      ]
+    };
+    const flat: FlatToken[] = [
+      { token: 'X', start: 0, end: 500 },
+      { token: 'Y', start: 0, end: 500 }
+    ];
+    const symbolNames = { 1: 'C4', 2: 'E4' };
+    const stream = bpxTreeToTimelineStream(tree, flat, symbolNames);
+    expect(stream.map((s) => s.token)).toEqual(['{', 'C4', ',', 'E4', '}']);
+  });
+
+  it('(f) polymetric collision: overlapping voices resolve via symbolNames (the bug)', () => {
+    // `{5, a c b, f f f - f}`-like: two voices over the SAME total span whose
+    // leaves land in COLLIDING time buckets. Temporal correlation would hand the
+    // wrong flat token (or run out → `#<id>`). symbolNames resolves each leaf by
+    // its own symbolId, immune to the overlap.
+    // ids 14,15,16,17 → a,c,b,f (the prompt's verified mapping).
+    const symbolNames = { 14: 'a', 15: 'c', 16: 'b', 17: 'f' };
+    // Voice A: a c b over [0,600). Voice B: f f f - f over [0,600).
+    const tree: ProductionTreeNode = {
+      type: 'sequence',
+      span: span(0, 600),
+      children: [
+        {
+          type: 'polymetric',
+          span: span(0, 600),
+          voices: [
+            voice([leaf(14, 0, 200), leaf(15, 200, 400), leaf(16, 400, 600)], 0, 600),
+            voice(
+              [
+                leaf(17, 0, 150),
+                leaf(17, 150, 300),
+                leaf(17, 300, 450),
+                rest(99, 450, 525),
+                leaf(17, 525, 600)
+              ],
+              0,
+              600
+            )
+          ]
+        }
+      ]
+    };
+    // Flat tokens intentionally NOT provided (the collision case): resolution
+    // must work from symbolNames alone.
+    const stream = bpxTreeToTimelineStream(tree, [], symbolNames);
+    expect(stream.map((s) => s.token)).toEqual([
+      '{',
+      'a',
+      'c',
+      'b',
+      ',',
+      'f',
+      'f',
+      'f',
+      '-',
+      'f',
+      '}'
+    ]);
+    // No placeholders leaked.
+    expect(stream.some((s) => s.token.startsWith('#'))).toBe(false);
+  });
+
+  it('(g) symbolNames falls through to temporal correlation when an id is missing', () => {
+    const tree: ProductionTreeNode = {
+      type: 'sequence',
+      span: span(0, 200),
+      children: [leaf(1, 0, 100), leaf(2, 100, 200)]
+    };
+    const flat: FlatToken[] = [
+      { token: 'a', start: 0, end: 100 },
+      { token: 'b', start: 100, end: 200 }
+    ];
+    // Table names id 1 only; id 2 must fall back to the flat token `b`.
+    const stream = bpxTreeToTimelineStream(tree, flat, { 1: 'a' });
+    expect(stream.map((s) => s.token)).toEqual(['a', 'b']);
+  });
+
   it('handles a missing/empty tree gracefully', () => {
     expect(bpxTreeToTimelineStream(null, [])).toEqual([]);
     expect(bpxTreeToTimelineStream(undefined, [])).toEqual([]);

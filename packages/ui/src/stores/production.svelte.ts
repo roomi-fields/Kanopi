@@ -110,6 +110,16 @@ export interface ProductionSet {
    * unit anymore (the beat is).
    */
   sections: ProductionSection[];
+  /**
+   * DETERMINISTIC leaf-name table: `symbolId → terminal name` straight from the
+   * BPx grammar's own symbol table (`bpx.grammar.symbols.getName`). This is the
+   * authoritative resolver the tree-view adapters use to name a leaf, replacing
+   * the fragile temporal correlation with the flat tokens (which collides on
+   * polymetric voices). Optional so producers that can't build it (engine API
+   * unavailable, Strudel/Hydra, older paths) still type-check; the adapters then
+   * fall back to temporal correlation.
+   */
+  symbolNames?: Record<number, string>;
 }
 
 class ProductionStore {

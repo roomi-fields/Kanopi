@@ -6,9 +6,9 @@ import { evalBlockAt, expectNoConsoleErrors } from '../helpers';
 
 // Text-mode routing (decision routage-texte-midi): a grammar of bols/words is
 // classified `text` by the front-end and routed — whole-grammar — to the
-// symbolic console instead of audio. Evaluating it now publishes the FULL derived
-// production at once (like BP3): the right-panel "Text" tab shows the ENTIRE
-// timestamped sequence immediately on eval, not streamed token-by-token over time.
+// symbolic console instead of audio. Evaluating it publishes the FULL derived
+// production at once; the "Text" tab shows it BY ORDER (derivation order, names
+// resolved from the grammar symbol table), not streamed over time.
 test('text grammar shows its full production in the Text panel', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
 
@@ -60,10 +60,17 @@ test('text grammar shows its full production in the Text panel', async ({ page }
   // published at eval, so every distinct bol is present immediately — no waiting
   // for the lookahead scheduler to reach each one over the cycle.
   await page.locator('.bp-tab', { hasText: 'Text' }).click();
-  const symbols = page.locator('.textstream .sym');
-  await expect(symbols.first()).toBeVisible({ timeout: 5_000 });
+  const toks = page.locator('.textorder .tok');
+  await expect(toks.first()).toBeVisible({ timeout: 5_000 });
+  // The by-order view lists tokens with repeats/rests; the DISTINCT bols
+  // (rests `-`/`_` excluded) are exactly the grammar's four, names resolved
+  // (no `#<id>` placeholders).
   await expect
-    .poll(async () => [...new Set(await symbols.allTextContents())].sort(), { timeout: 5_000 })
+    .poll(
+      async () =>
+        [...new Set(await toks.allTextContents())].filter((t) => t !== '-' && t !== '_').sort(),
+      { timeout: 5_000 }
+    )
     .toEqual(['dha', 'dhin', 'na', 'tigida']);
 
   noErrors();

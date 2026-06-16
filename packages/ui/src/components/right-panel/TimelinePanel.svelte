@@ -53,8 +53,9 @@
   $effect(() => {
     const tree = set?.tree;
     const raw = set?.rawTokens ?? [];
+    const names = set?.symbolNames;
     if (!timeline) return;
-    const stream = tree ? bpxTreeToTimelineStream(tree, raw) : raw;
+    const stream = tree ? bpxTreeToTimelineStream(tree, raw, names) : raw;
     // load() ends with resize()+render() itself — do NOT call resize() again here
     // (a bare resize() would clear the freshly painted canvas to black).
     timeline.load(stream, {});

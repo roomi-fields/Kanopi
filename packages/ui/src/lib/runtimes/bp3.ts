@@ -425,6 +425,57 @@ interface BP3Voice {
   midiSink?: MidiSink;
 }
 
+// Minimal shape of the grammar's own symbol table: the engine resolves a leaf's
+// `symbolId` to its terminal name deterministically here. This is the
+// authoritative resolver — used to name tree leaves WITHOUT the fragile temporal
+// correlation that collides on simultaneous polymetric voices.
+interface SymbolTable {
+  getName(id: number): string;
+}
+
+// Walk the derivation tree (DFS) and resolve EVERY leaf's `symbolId` to its
+// terminal name via the grammar's own symbol table — the deterministic source of
+// truth, replacing the tree adapters' temporal correlation (which collides on
+// polymetric voices). Guard rails: only run when the engine actually exposes
+// `grammar.symbols.getName`; on any failure leave the table empty so the
+// adapters fall back to temporal correlation. Returns `{}` when unavailable.
+function buildSymbolNames(bpx: unknown, tree: unknown): Record<number, string> {
+  const names: Record<number, string> = {};
+  const symbols = (bpx as { grammar?: { symbols?: Partial<SymbolTable> } } | null)?.grammar
+    ?.symbols;
+  if (!symbols || typeof symbols.getName !== 'function') return names;
+  const getName = symbols.getName.bind(symbols);
+  const root = (tree as { root?: unknown } | null)?.root ?? tree;
+  try {
+    const visit = (node: unknown): void => {
+      if (!node || typeof node !== 'object') return;
+      const n = node as {
+        type?: string;
+        symbolId?: number;
+        children?: unknown[];
+        voices?: unknown[];
+      };
+      if (
+        (n.type === 'occupying' || n.type === 'event') &&
+        typeof n.symbolId === 'number' &&
+        // Rests carry symbolId -1 (no terminal) — getName(-1) THROWS and would
+        // wipe the whole table via the catch below. Skip negative ids.
+        n.symbolId >= 0 &&
+        names[n.symbolId] === undefined
+      ) {
+        names[n.symbolId] = getName(n.symbolId);
+      }
+      if (Array.isArray(n.children)) for (const c of n.children) visit(c);
+      if (Array.isArray(n.voices)) for (const v of n.voices) visit(v);
+    };
+    visit(root);
+  } catch {
+    // Engine API moved / threw — drop the partial table; adapters fall back.
+    return {};
+  }
+  return names;
+}
+
 // Minimal timed-token shape this adapter reads (BPx emits more fields). `type`
 // and `actor` are present on the real BPx tokens (cf. `TimedToken` in
 // bp3-deps.d.ts) and forwarded raw to the piano-roll visualizer.
@@ -469,7 +520,8 @@ function publishProduction(
   sounds: (token: string) => boolean,
   sectionNames: string[],
   beatDurSec: number,
-  tree?: ProductionTree
+  tree?: ProductionTree,
+  symbolNames?: Record<number, string>
 ): void {
   const durationMs = Math.max(...tokens.map((t) => t.end), 0);
   const prodTokens: ProductionToken[] = tokens.map((t) => ({
@@ -504,7 +556,8 @@ function publishProduction(
     beatDurSec,
     sections,
     rawTokens,
-    tree
+    tree,
+    symbolNames
   });
 }
 
@@ -805,6 +858,11 @@ function makeBpxAdapter(
 
       let tokens;
       let tree: ProductionTree | undefined;
+      // DETERMINISTIC leaf-name table (`symbolId → name`) read off the grammar's
+      // own symbol table — the authoritative resolver the tree-view adapters use,
+      // replacing the fragile temporal correlation. Empty when the engine doesn't
+      // expose it (adapters then fall back).
+      let symbolNames: Record<number, string> = {};
       try {
         // `effectiveFlags` (e.g. `{ scene: 2 }`) is applied as the BPx engine's
         // initial flag state, so a flag-guarded rule (`/scene=2/`) derives
@@ -817,6 +875,9 @@ function makeBpxAdapter(
         const derived = bpx.derive();
         tokens = derived.tokens;
         tree = derived.tree as unknown as ProductionTree;
+        // Resolve every leaf's name now, while `bpx` (and its grammar symbol
+        // table) is in scope. Guarded inside the helper — never throws here.
+        symbolNames = buildSymbolNames(bpx, derived.tree);
       } catch (err) {
         log({ runtime: id, level: 'error', msg: `derive: ${String(err)}` });
         throw err;
@@ -846,7 +907,15 @@ function makeBpxAdapter(
       // `currentBpm`, so every beat boundary on the produced timeline is one
       // beat of the clock — STEP advances one of those at a time.
       const beatDurSec = currentBpm > 0 ? 60 / currentBpm : 0;
-      publishProduction(id, tokens, productionSounds, headSections ?? [], beatDurSec, tree);
+      publishProduction(
+        id,
+        tokens,
+        productionSounds,
+        headSections ?? [],
+        beatDurSec,
+        tree,
+        symbolNames
+      );
 
       // STEP: when a beat is requested, keep only that beat's tokens (re-zeroed)
       // and play them once. Otherwise loop the whole derivation as usual. The
