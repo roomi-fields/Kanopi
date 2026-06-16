@@ -36,7 +36,11 @@ import { textStream } from '../../stores/textstream.svelte';
 // textStream: this is the whole sequence, the source of truth the Text panel and
 // the Structure visualizer read.
 import { production } from '../../stores/production.svelte';
-import type { ProductionToken, ProductionSection } from '../../stores/production.svelte';
+import type {
+  ProductionToken,
+  ProductionSection,
+  RawTimedToken
+} from '../../stores/production.svelte';
 // Device library (@devices): resolve a voice's `transport.<name>` to a typed
 // device and gate voice↔device compatibility BEFORE routing (DEVICES_SPEC §3,
 // §4 / ADAPTER_SPEC §1bis b). Kanopi owns resolution; bpscript carries the
@@ -420,8 +424,16 @@ interface BP3Voice {
   midiSink?: MidiSink;
 }
 
-// Minimal timed-token shape this adapter reads (BPx emits more fields).
-type Tok = { token: string; start: number; end: number };
+// Minimal timed-token shape this adapter reads (BPx emits more fields). `type`
+// and `actor` are present on the real BPx tokens (cf. `TimedToken` in
+// bp3-deps.d.ts) and forwarded raw to the piano-roll visualizer.
+type Tok = {
+  token: string;
+  start: number;
+  end: number;
+  type?: string;
+  actor?: string | null;
+};
 
 /**
  * STEP windowing: keep only the tokens of ONE beat of the derivation, re-zeroed
@@ -474,7 +486,16 @@ function publishProduction(
           endSec: ((i + 1) * durationSec) / count
         }))
       : [];
-  production.set({ source: id, tokens: prodTokens, durationSec, beatDurSec, sections });
+  // Raw flat tokens (times in MS, untransformed) for the polymetric piano-roll
+  // visualizer, which assigns voices by temporal overlap from these alone.
+  const rawTokens: RawTimedToken[] = tokens.map((t) => ({
+    token: t.token,
+    start: t.start,
+    end: t.end,
+    type: t.type,
+    actor: t.actor
+  }));
+  production.set({ source: id, tokens: prodTokens, durationSec, beatDurSec, sections, rawTokens });
 }
 
 // One-shot info when no MIDI output port is present (the normal headless / no

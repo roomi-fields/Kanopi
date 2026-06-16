@@ -34,11 +34,35 @@ export interface ProductionSection {
   endSec: number;
 }
 
+// A raw timed token straight from BPx `derive().tokens`, kept UNTRANSFORMED for
+// the polymetric piano-roll (the vendored `timeline.js` visualizer). Unlike
+// `ProductionToken`, times stay in MILLISECONDS (`start`/`end`), which is what
+// `Timeline.load()` expects. The visualizer assigns voices by temporal overlap
+// from these flat tokens alone; it needs no `{ , }` structure delimiters.
+export interface RawTimedToken {
+  /** the terminal as written in the grammar */
+  token: string;
+  /** onset in MILLISECONDS along the derivation timeline */
+  start: number;
+  /** end in MILLISECONDS along the derivation timeline */
+  end: number;
+  /** BPx token kind (`terminal` | `rest` | `control` | `out_time`) when present */
+  type?: string;
+  /** orchestrated actor name, or null/undefined when unassigned */
+  actor?: string | null;
+}
+
 export interface ProductionSet {
   /** the runtime/file label that produced this set (e.g. `bp3`, `bpscript`) */
   source: string;
   /** the complete derived sequence, in onset order */
   tokens: ProductionToken[];
+  /**
+   * The same derivation as flat BPx tokens, times in MILLISECONDS, kept raw for
+   * the polymetric piano-roll visualizer (`timeline.js`). Optional so older
+   * producers that don't supply it still type-check.
+   */
+  rawTokens?: RawTimedToken[];
   /** total duration of the derivation, in seconds */
   durationSec: number;
   /**

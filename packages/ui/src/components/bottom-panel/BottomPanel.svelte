@@ -2,7 +2,7 @@
   import { ui, type BottomPanelTab } from '../../stores/ui.svelte';
   import ConsolePanel from '../right-panel/ConsolePanel.svelte';
   import TextStreamPanel from '../right-panel/TextStreamPanel.svelte';
-  import StructurePanel from '../right-panel/StructurePanel.svelte';
+  import TimelinePanel from '../right-panel/TimelinePanel.svelte';
 
   // Outputs of a running session live here, below the editor: the produced
   // musical structure (Structure — a piano-roll of the derived production), the
@@ -40,7 +40,7 @@
   {#if !ui.bottomPanelCollapsed}
     <div class="bp-body">
       {#if ui.bottomPanelTab === 'structure'}
-        <StructurePanel />
+        <TimelinePanel />
       {:else if ui.bottomPanelTab === 'text'}
         <TextStreamPanel />
       {:else if ui.bottomPanelTab === 'console'}

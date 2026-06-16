@@ -87,5 +87,16 @@ export default [
       'no-undef': 'off'
     }
   },
-  { ignores: ['node_modules', 'dist', '.vite', 'test-results', 'playwright-report'] }
+  {
+    ignores: [
+      'node_modules',
+      'dist',
+      '.vite',
+      'test-results',
+      'playwright-report',
+      // Vendored upstream from BPscript/public/timeline.js — kept verbatim
+      // (integration rule: no edits to the logic), so it is not linted here.
+      'src/lib/timeline/timeline.js'
+    ]
+  }
 ];

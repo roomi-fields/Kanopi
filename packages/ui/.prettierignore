@@ -3,3 +3,5 @@ dist
 .vite
 test-results
 playwright-report
+# Vendored upstream — kept verbatim (no reformatting)
+src/lib/timeline/timeline.js
