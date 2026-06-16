@@ -39,6 +39,7 @@ import { production } from '../../stores/production.svelte';
 import type {
   ProductionToken,
   ProductionSection,
+  ProductionTree,
   RawTimedToken
 } from '../../stores/production.svelte';
 // Device library (@devices): resolve a voice's `transport.<name>` to a typed
@@ -467,7 +468,8 @@ function publishProduction(
   tokens: Tok[],
   sounds: (token: string) => boolean,
   sectionNames: string[],
-  beatDurSec: number
+  beatDurSec: number,
+  tree?: ProductionTree
 ): void {
   const durationMs = Math.max(...tokens.map((t) => t.end), 0);
   const prodTokens: ProductionToken[] = tokens.map((t) => ({
@@ -495,7 +497,15 @@ function publishProduction(
     type: t.type,
     actor: t.actor
   }));
-  production.set({ source: id, tokens: prodTokens, durationSec, beatDurSec, sections, rawTokens });
+  production.set({
+    source: id,
+    tokens: prodTokens,
+    durationSec,
+    beatDurSec,
+    sections,
+    rawTokens,
+    tree
+  });
 }
 
 // One-shot info when no MIDI output port is present (the normal headless / no
@@ -794,13 +804,19 @@ function makeBpxAdapter(
       const effectiveFlags = withDefaultScene(src.flags, flagStates);
 
       let tokens;
+      let tree: ProductionTree | undefined;
       try {
         // `effectiveFlags` (e.g. `{ scene: 2 }`) is applied as the BPx engine's
         // initial flag state, so a flag-guarded rule (`/scene=2/`) derives
         // instead of leaving `S` unexpanded. Absent named scenes → unchanged.
         const bpx = createBPx({ tempo: currentBpm, settings, flags: effectiveFlags });
         bpx.loadGrammar(ast);
-        tokens = bpx.derive().tokens;
+        // Keep BOTH halves of the derivation: `.tokens` is the flat timed
+        // sequence (audio/MIDI/text), `.tree` carries the polymetric structure
+        // (groups + voices + nesting) the piano-roll's struct band needs.
+        const derived = bpx.derive();
+        tokens = derived.tokens;
+        tree = derived.tree as unknown as ProductionTree;
       } catch (err) {
         log({ runtime: id, level: 'error', msg: `derive: ${String(err)}` });
         throw err;
@@ -830,7 +846,7 @@ function makeBpxAdapter(
       // `currentBpm`, so every beat boundary on the produced timeline is one
       // beat of the clock — STEP advances one of those at a time.
       const beatDurSec = currentBpm > 0 ? 60 / currentBpm : 0;
-      publishProduction(id, tokens, productionSounds, headSections ?? [], beatDurSec);
+      publishProduction(id, tokens, productionSounds, headSections ?? [], beatDurSec, tree);
 
       // STEP: when a beat is requested, keep only that beat's tokens (re-zeroed)
       // and play them once. Otherwise loop the whole derivation as usual. The

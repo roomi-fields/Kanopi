@@ -9,8 +9,11 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helper
 // (BPscript/public/timeline.js, vendored). It renders the BPx timed tokens as
 // colored note blocks on voice tracks; STEP drives its playback cursor.
 
-// Count pixels on the timeline canvas that differ clearly from the dark
-// background (#08090d) — a proxy for "the piano-roll actually drew content".
+// Count BRIGHT/coloured pixels on the timeline canvas — the note blocks. The
+// threshold (channel sum > 120) excludes BOTH the dark background (#08090d,
+// sum 30) AND a cleared/black canvas (sum 0), so a black panel reads as 0 lit
+// (an earlier resize-without-render bug left the canvas pure black — this guards
+// against its return).
 async function timelineLitPixels(page: Page): Promise<number> {
   return page.evaluate(() => {
     const c = document.querySelector('.timeline-panel canvas') as HTMLCanvasElement | null;
@@ -20,12 +23,7 @@ async function timelineLitPixels(page: Page): Promise<number> {
     const { data } = ctx.getImageData(0, 0, c.width, c.height);
     let lit = 0;
     for (let i = 0; i < data.length; i += 4) {
-      if (
-        Math.abs(data[i] - 8) > 12 ||
-        Math.abs(data[i + 1] - 9) > 12 ||
-        Math.abs(data[i + 2] - 13) > 12
-      )
-        lit++;
+      if (data[i] + data[i + 1] + data[i + 2] > 120) lit++;
     }
     return lit;
   });

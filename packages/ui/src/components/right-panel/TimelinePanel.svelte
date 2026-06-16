@@ -2,13 +2,17 @@
   import { onMount, onDestroy } from 'svelte';
   import { production } from '../../stores/production.svelte';
   import { Timeline } from '../../lib/timeline/timeline.js';
+  import { bpxTreeToTimelineStream } from '../../lib/timeline/bpx-tree-stream';
 
   // Polymetric piano-roll of the FULL derived production, rendered by the
-  // vendored Canvas 2D `timeline.js` (integrated upstream as-is). Voices are
-  // assigned by temporal overlap from the raw BPx tokens (ms), so overlapping
-  // notes stack into separate voice tracks. VIEWER-only: no duration editing
-  // (onResize/onResizeGroup left unwired). The `{ , }` struct band stays empty —
-  // BPx flat tokens carry no group delimiters (expected, out of scope here).
+  // vendored Canvas 2D `timeline.js` (integrated upstream as-is). VIEWER-only:
+  // no duration editing (onResize/onResizeGroup left unwired).
+  //
+  // When the production carries the BPx derivation `tree`, we replay it as the
+  // marker stream timeline.js parses (`bpxTreeToTimelineStream`), so the `{ , }`
+  // struct band shows groups + voices + nesting. Without a tree (Strudel/Hydra,
+  // older paths) we fall back to the flat `rawTokens`, which still renders voice
+  // tracks by temporal overlap but no struct band.
   // Reads `production.current` reactively; empty when no production yet.
 
   let host: HTMLDivElement;
@@ -27,7 +31,13 @@
       onSeek: () => {}
     });
     timeline.resize();
-    resizeObs = new ResizeObserver(() => timeline?.resize());
+    timeline.render();
+    // `resize()` reassigns canvas.width/height — that CLEARS the canvas but does
+    // NOT repaint. Always follow a resize with render(), or the panel goes black.
+    resizeObs = new ResizeObserver(() => {
+      timeline?.resize();
+      timeline?.render();
+    });
     resizeObs.observe(host);
   });
 
@@ -37,13 +47,17 @@
     timeline = undefined;
   });
 
-  // Re-load the visualizer whenever the production's raw tokens change. `source`
-  // is omitted: it only feeds the struct band, which is out of scope here.
+  // Re-load the visualizer whenever the production changes. Prefer the BPx tree
+  // (replayed as a marker stream so the struct band populates); fall back to the
+  // flat raw tokens when no tree is present.
   $effect(() => {
+    const tree = set?.tree;
     const raw = set?.rawTokens ?? [];
     if (!timeline) return;
-    timeline.load(raw, {});
-    timeline.resize();
+    const stream = tree ? bpxTreeToTimelineStream(tree, raw) : raw;
+    // load() ends with resize()+render() itself — do NOT call resize() again here
+    // (a bare resize() would clear the freshly painted canvas to black).
+    timeline.load(stream, {});
   });
 
   // Playback cursor wired to STEP: stepIndex >= 0 → draw a cursor at the start

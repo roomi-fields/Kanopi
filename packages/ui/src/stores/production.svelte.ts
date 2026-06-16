@@ -52,6 +52,30 @@ export interface RawTimedToken {
   actor?: string | null;
 }
 
+// A node of the BPx derivation tree, kept STRUCTURALLY MINIMAL: just the fields
+// the polymetric piano-roll needs to rebuild voices + groups (`bpxTreeToTimelineStream`).
+// Mirrors BPx's `DerivationTree`/`TreeNode` shape (BPx `src/types/node.ts`) but only
+// the parts we read — times stay in MILLISECONDS via `span.startMs`/`span.endMs`.
+export interface ProductionTreeSpan {
+  startMs: number;
+  endMs: number;
+}
+export type ProductionTreeNode =
+  | { type: 'sequence'; children: ProductionTreeNode[]; span?: ProductionTreeSpan }
+  | { type: 'polymetric'; voices: ProductionTreeNode[]; span?: ProductionTreeSpan }
+  | { type: 'voice'; children: ProductionTreeNode[]; span?: ProductionTreeSpan }
+  | {
+      type: 'occupying';
+      symbolId: number;
+      role: 'leaf' | 'rest' | 'prolongation';
+      span: ProductionTreeSpan;
+    }
+  | { type: 'event'; symbolId: number; span: ProductionTreeSpan };
+
+export interface ProductionTree {
+  root: ProductionTreeNode;
+}
+
 export interface ProductionSet {
   /** the runtime/file label that produced this set (e.g. `bp3`, `bpscript`) */
   source: string;
@@ -63,6 +87,14 @@ export interface ProductionSet {
    * producers that don't supply it still type-check.
    */
   rawTokens?: RawTimedToken[];
+  /**
+   * The BPx derivation tree (`derive().tree`), kept so the polymetric piano-roll
+   * can rebuild the `{ , }` structure band (groups + voices + nesting) that the
+   * flat `rawTokens` cannot carry. Optional so producers that don't supply it
+   * (Strudel/Hydra, older bp3 paths) still type-check; the visualizer falls back
+   * to flat tokens when absent.
+   */
+  tree?: ProductionTree;
   /** total duration of the derivation, in seconds */
   durationSec: number;
   /**

@@ -28,6 +28,7 @@ export class Timeline {
   constructor(canvas: HTMLCanvasElement, options?: TimelineOptions);
   load(tokens: TimelineToken[], options?: TimelineLoadOptions): void;
   resize(): void;
+  render(): void;
   setCursor(ms: number): void;
   clearCursor(): void;
   destroy(): void;
