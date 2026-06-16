@@ -2,7 +2,16 @@
   import { tick } from 'svelte';
   import { workspace } from '../../stores/workspace.svelte';
   import { KNOWN_EXTENSIONS } from '../../lib/workspace/types';
+  import { referencedLibraries } from '../../lib/library/referenced';
+  import { ui } from '../../stores/ui.svelte';
   import FileTree from './FileTree.svelte';
+
+  // Resource libraries the ACTIVE program references via its `@` directives.
+  // Recomputed reactively as the active file (or its contents) changes.
+  const activeFile = $derived(
+    workspace.activeTabId ? workspace.fileById(workspace.activeTabId) : undefined
+  );
+  const referenced = $derived(referencedLibraries(activeFile?.name, activeFile?.contents));
 
   // Allowed extensions pulled from the single `EXTENSION_TO_RUNTIME`
   // table in lib/workspace/types. Leaving the extension off defaults to
@@ -90,6 +99,31 @@
   {/if}
 
   <FileTree nodes={workspace.tree} />
+
+  {#if activeFile}
+    <section class="libs">
+      <h3 class="libs-title">Libraries used</h3>
+      {#if referenced.length === 0}
+        <p class="libs-empty">This program references no resource libraries.</p>
+      {:else}
+        <ul class="libs-list">
+          {#each referenced as lib (lib.type + ':' + lib.name)}
+            <li>
+              <button
+                type="button"
+                class="lib-row"
+                title="Browse in Resources"
+                onclick={() => (ui.activeActivityView = 'resources')}
+              >
+                <span class="lib-type">{lib.typeLabel}</span>
+                <span class="lib-name">{lib.name}</span>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+    </section>
+  {/if}
 </div>
 
 <style>
@@ -171,5 +205,63 @@
     font-size: 10px;
     color: var(--red, #c84040);
     font-family: var(--font-mono);
+  }
+  .libs {
+    margin: 14px 4px 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-dim);
+  }
+  .libs-title {
+    margin: 0 0 6px 6px;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+  .libs-empty {
+    margin: 0 0 0 6px;
+    font-size: 10.5px;
+    color: var(--text-faint);
+    font-style: italic;
+  }
+  .libs-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .lib-row {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    width: 100%;
+    padding: 3px 6px;
+    background: transparent;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .lib-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .lib-type {
+    flex-shrink: 0;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    color: var(--amber);
+    font-family: var(--font-mono);
+    text-transform: lowercase;
+  }
+  .lib-name {
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 </style>
