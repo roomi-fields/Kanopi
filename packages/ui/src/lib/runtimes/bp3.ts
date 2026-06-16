@@ -310,32 +310,58 @@ function parseWithSound(code: string, fallbackAlphabet: string[]) {
   };
 }
 
-// `.gr` — native BP3 grammar text straight into the BP3 front-end.
+// `.gr` — native BP3 grammar text straight into the BP3 front-end. The head
+// rule's top-level non-terminals (`S --> … A' B' C'`) are the macro structure;
+// parseBP3 expands them away in the derivation, so we read the section names off
+// the SOURCE head line (same parser as the compiled `.bps` path). This is what
+// lets STEP advance a `.gr` section by section (Part B).
 const WESTERN_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-const grFrontend: Frontend = (code) => parseWithSound(code, WESTERN_NOTES);
+const grFrontend: Frontend = (code) => {
+  const parsed = parseWithSound(code, WESTERN_NOTES);
+  const sections = headSectionNames(code);
+  return sections.length > 0 ? { ...parsed, sections } : parsed;
+};
 
-// Head-rule top-level sections of a compiled grammar. The first `S --> …` line
-// lists them as `|name|` terminals (or `{a,b}` simultaneous group = one section).
-// Mirrors `bpsScenes.headSections` (kept local to avoid an adapter↔core cycle:
-// bpsScenes imports core, which imports the registry, which imports this adapter).
+// Head-rule top-level sections of a grammar — the macro structure STEP advances
+// through. The first `S --> …` line lists them as a flat sequence of symbols (or
+// `{a,b}` simultaneous group = one section); `|name|` BPScript terminals carry
+// pipes. We keep the STRUCTURAL elements: a head sequence typically opens with
+// inline control terminals (`_chan(1) _vel(50) _volume(80)`) and may inline a
+// raw note before the section non-terminals (`A' B' C'`) — those are performance
+// directives, not sections, so they're filtered out. The `gram#N[i]` rule tag,
+// when present (`.gr` source), is stripped first. Mirrors `bpsScenes.headSections`
+// (kept local to avoid an adapter↔core cycle: bpsScenes → core → registry → this).
+function isControlTerminal(sym: string): boolean {
+  // BP3 control/command terminals are underscore-prefixed (`_vel(50)`, `_striated`).
+  if (sym.startsWith('_')) return true;
+  // A bare note inlined in the head is a played event, not a section.
+  if (isNoteName(sym)) return true;
+  // A rest / silence placeholder.
+  if (sym === '-' || sym === '_') return true;
+  return false;
+}
+
 function headSectionNames(grammar: string): string[] {
   const line = grammar.split('\n').find((l) => /\bS\s*-->/.test(l));
   if (!line) return [];
   const rhs = line.slice(line.indexOf('-->') + 3).trim();
+  // `.gr` head lines are tagged `gram#1[1] S --> …`; the tag precedes `S` so the
+  // slice already dropped it. (Compiled `.bps` grammar has no tag.)
   const sections: string[] = [];
   let depth = 0;
   let buf = '';
+  const flush = () => {
+    const sym = buf.trim().replace(/[|{}]/g, '');
+    if (sym && !isControlTerminal(sym)) sections.push(sym);
+    buf = '';
+  };
   for (const ch of rhs) {
     if (ch === '{') depth++;
     if (ch === '}') depth--;
-    if (/\s/.test(ch) && depth === 0) {
-      if (buf.trim()) sections.push(buf.trim().replace(/[|{}]/g, ''));
-      buf = '';
-    } else {
-      buf += ch;
-    }
+    if (/\s/.test(ch) && depth === 0) flush();
+    else buf += ch;
   }
-  if (buf.trim()) sections.push(buf.trim().replace(/[|{}]/g, ''));
+  flush();
   return sections;
 }
 

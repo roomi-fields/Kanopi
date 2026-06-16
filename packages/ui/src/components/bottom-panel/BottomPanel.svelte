@@ -2,11 +2,12 @@
   import { ui, type BottomPanelTab } from '../../stores/ui.svelte';
   import ConsolePanel from '../right-panel/ConsolePanel.svelte';
   import TextStreamPanel from '../right-panel/TextStreamPanel.svelte';
+  import StructurePanel from '../right-panel/StructurePanel.svelte';
 
-  // Outputs of a running session live here, below the editor: the symbol
-  // stream (Text), the runtime log (Console), and a placeholder for the
-  // structure visualizer (Structure — filled by a separate task). The right
-  // column stays reserved for control surfaces (Actors/Scenes/Inspector).
+  // Outputs of a running session live here, below the editor: the produced
+  // musical structure (Structure — a piano-roll of the derived production), the
+  // symbol stream (Text), and the runtime log (Console). The right column stays
+  // reserved for control surfaces (Actors/Scenes/Inspector).
   const tabs: { id: BottomPanelTab; label: string }[] = [
     { id: 'structure', label: 'Structure' },
     { id: 'text', label: 'Text' },
@@ -39,7 +40,7 @@
   {#if !ui.bottomPanelCollapsed}
     <div class="bp-body">
       {#if ui.bottomPanelTab === 'structure'}
-        <div class="structure-stub">structure visualizer coming</div>
+        <StructurePanel />
       {:else if ui.bottomPanelTab === 'text'}
         <TextStreamPanel />
       {:else if ui.bottomPanelTab === 'console'}
@@ -98,12 +99,5 @@
     flex: 1;
     overflow-y: auto;
     min-height: 0;
-  }
-  .structure-stub {
-    padding: 16px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-dim);
-    letter-spacing: 0.04em;
   }
 </style>
