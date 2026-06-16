@@ -1,17 +1,18 @@
 <script lang="ts">
   import { clock } from '../../stores/clock.svelte';
-  import { bpsScenes, modelFromFile } from '../../stores/bpsScenes.svelte';
+  import { bpsScenes } from '../../stores/bpsScenes.svelte';
+  import { production } from '../../stores/production.svelte';
   import { workspace } from '../../stores/workspace.svelte';
 
   // STEP lives in the transport cluster (beta issue 4 — transport buttons
-  // grouped). The view model is compiled from the active `.bps` here (a real
-  // component reactive context); STEP only enables when the head rule has more
-  // than one section to advance through.
+  // grouped). It's now driven off the PRODUCED structure, not the `.bps` head
+  // rule, so it enables for ANY runtime whose last eval produced more than one
+  // section — BP3 `.gr`, backtick `.bps`, plain `.bps` alike (beta: STEP was
+  // `.bps`-only). STEP re-evaluates the ACTIVE file window by window.
   const activeFile = $derived(
     workspace.activeTabId ? workspace.fileById(workspace.activeTabId) : undefined
   );
-  const stepModel = $derived(modelFromFile(activeFile?.name, activeFile?.contents));
-  const canStep = $derived(stepModel.sections.length > 1);
+  const canStep = $derived((production.current?.sections.length ?? 0) > 1);
 
   function fmt2(n: number) {
     return n.toString().padStart(2, '0');
@@ -82,12 +83,17 @@
         /></svg
       >
     </button>
-    {#if canStep}
+    {#if canStep && activeFile}
       <button
         class="step-btn"
         type="button"
         title="STEP — section suivante"
-        onclick={() => bpsScenes.step(stepModel)}
+        onclick={() =>
+          bpsScenes.stepActive({
+            runtime: activeFile.runtime,
+            name: activeFile.name,
+            contents: activeFile.contents
+          })}
       >
         STEP
       </button>

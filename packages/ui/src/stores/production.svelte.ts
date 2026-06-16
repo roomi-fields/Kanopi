@@ -49,14 +49,22 @@ class ProductionStore {
   // The whole derived production of the most recent eval (null before any).
   current = $state<ProductionSet | null>(null);
 
+  // Which section STEP last played (-1 = none / whole structure). Owned here
+  // because it's a property OF the current production: every fresh eval replaces
+  // the production and therefore resets the STEP cursor. The Structure visualizer
+  // highlights `sections[stepIndex]`; STEP sets it after re-evaluating a window.
+  stepIndex = $state<number>(-1);
+
   /** Replace (never append) the production with the full derived set of one eval. */
   set(p: ProductionSet) {
     this.current = p;
+    this.stepIndex = -1;
   }
 
   /** A backtick-only / non-notes eval produced no symbolic tokens — clear the readout. */
   clear() {
     this.current = null;
+    this.stepIndex = -1;
   }
 }
 

@@ -2,6 +2,7 @@ import { compileBPS } from 'bpscript/src/transpiler/index.js';
 import { core } from '../lib/core';
 import { runtimeFromExt } from '../lib/workspace/types';
 import type { Runtime } from '../lib/core';
+import { production } from './production.svelte';
 
 // A5 — named selectable scenes + STEP, driven off the active `.bps` file.
 //
@@ -129,31 +130,39 @@ export function modelFromFile(
 }
 
 class BpsScenesStore {
-  // Which named scene is currently armed, and which section STEP last played.
+  // Which named scene is currently armed. (The STEP cursor lives on the
+  // production store — it's a property of the current production, reset on every
+  // fresh eval.)
   activeScene = $state<string | null>(null);
-  stepIndex = $state<number>(-1);
 
   // Select a named scene: re-evaluate the active `.bps` with its flag set.
   async select(model: BpsSceneModel, scene: BpsScene) {
     if (!model.fileName) return;
     this.activeScene = scene.name;
-    this.stepIndex = -1;
     await core.evaluateBlock(model.runtime, model.code, model.fileName, 0, undefined, {
       scene: scene.value
     });
   }
 
-  // STEP to the next head-rule section (wraps to the first at the end). Plays
-  // that section once via the adapter's section window.
-  async step(model: BpsSceneModel) {
-    const count = model.sections.length;
-    if (!model.fileName || count === 0) return;
-    const next = (this.stepIndex + 1) % count;
-    this.stepIndex = next;
-    await core.evaluateBlock(model.runtime, model.code, model.fileName, 0, undefined, undefined, {
+  // STEP to the next section of the PRODUCED structure (wraps at the end). Driven
+  // off the `production` store, NOT the `.bps` head rule, so it works for ANY
+  // runtime whose last eval produced a multi-section structure — BP3 `.gr`,
+  // backtick `.bps`, plain `.bps` alike (beta issue: STEP was `.bps`-only). The
+  // section count comes from `production.current.sections`; the adapter slices the
+  // derived timeline into `count` equal windows and plays window `index` once.
+  // Re-evaluates the ACTIVE file (the one the production was derived from).
+  async stepActive(file: { runtime: Runtime; name: string; contents: string }) {
+    const count = production.current?.sections.length ?? 0;
+    if (count < 2) return;
+    // The re-eval republishes the FULL production and resets `stepIndex` to -1,
+    // so compute the next window from the CURRENT cursor first, then set it after
+    // the await (the highlight then lands on the section that's actually playing).
+    const next = (production.stepIndex + 1) % count;
+    await core.evaluateBlock(file.runtime, file.contents, file.name, 0, undefined, undefined, {
       index: next,
       count
     });
+    production.stepIndex = next;
   }
 }
 

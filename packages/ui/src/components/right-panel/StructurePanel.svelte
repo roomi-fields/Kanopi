@@ -1,6 +1,5 @@
 <script lang="ts">
   import { production } from '../../stores/production.svelte';
-  import { bpsScenes } from '../../stores/bpsScenes.svelte';
   import { isNoteName } from 'bp3-frontend';
 
   // GRAPHICAL structure of the FULL derived production (Romain: "comme l'ancien
@@ -128,9 +127,10 @@
   }
 
   // --- sections --------------------------------------------------------------
-  // Section bands. STEP's current index (bpsScenes.stepIndex) highlights one.
+  // Section bands. The STEP cursor (production.stepIndex) highlights the section
+  // currently being played; -1 = whole structure, no highlight.
   const sections = $derived(set?.sections ?? []);
-  const activeStep = $derived(bpsScenes.stepIndex);
+  const activeStep = $derived(production.stepIndex);
 </script>
 
 <div class="structure">
