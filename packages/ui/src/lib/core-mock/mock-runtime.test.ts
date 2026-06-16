@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createMockCore } from './mock-runtime';
-import { MockActors, MockScenes, MockMaps } from './mock-runtime';
+import { MockActors, MockScenes, MockMaps, MockClock } from './mock-runtime';
 import type { KanopiEvent } from '../events/types';
 
 describe('mock core', () => {
@@ -76,6 +76,32 @@ describe('mock core', () => {
     core.clock.play();
     core.clock.play();
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('clock.startSilently starts the transport WITHOUT firing the re-eval hook', () => {
+    const c = new MockClock();
+    const onTransport = vi.fn();
+    c.setOnTransport(onTransport);
+    c.startSilently();
+    expect(c.state.playing).toBe(true);
+    // The surgical start must NOT re-evaluate the armed set (no onTransport).
+    expect(onTransport).not.toHaveBeenCalled();
+    // A real Play, by contrast, does fire the re-eval hook.
+    c.stop();
+    c.play();
+    expect(onTransport).toHaveBeenCalledWith(true);
+  });
+
+  it('clock.startSilently raises silentStart only during subscriber notification', () => {
+    const c = new MockClock();
+    let seenDuring: boolean | undefined;
+    c.subscribe((s) => {
+      if (s.playing) seenDuring = c.silentStart;
+    });
+    expect(c.silentStart).toBe(false);
+    c.startSilently();
+    expect(seenDuring).toBe(true); // the block-replay listener can detect it
+    expect(c.silentStart).toBe(false); // cleared after the synchronous emit
   });
 
   it('clock.pause halts without resetting position; stop resets', () => {

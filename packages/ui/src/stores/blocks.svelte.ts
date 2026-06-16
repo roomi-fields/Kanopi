@@ -211,7 +211,10 @@ export const openBlocks = new OpenBlocksStore();
 export function installBlockReplay() {
   let wasPlaying = clock.state.playing;
   core.clock.subscribe((s) => {
-    if (s.playing && !wasPlaying) {
+    // Skip the replay on a surgical manual eval (clock.startSilently): the
+    // evaluated block is already sounding, the rest of the armed set must not
+    // be re-triggered. A real Play (clock.play) still replays everything armed.
+    if (s.playing && !wasPlaying && !core.clock.silentStart) {
       void openBlocks.replayArmed();
     }
     wasPlaying = s.playing;

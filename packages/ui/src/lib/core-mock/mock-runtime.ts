@@ -41,6 +41,9 @@ export class MockClock implements Clock {
   private absBar = 0;
   private absPhase = 0;
   private eventsBus?: EventBus;
+  /** True only during the synchronous subscriber notification of a
+   * `startSilently()` — lets the block-replay listener skip a surgical eval. */
+  silentStart = false;
 
   setOnTransport(fn: (playing: boolean) => void) {
     this.onTransport = fn;
@@ -121,6 +124,32 @@ export class MockClock implements Clock {
         bpm: this.state.bpm
       });
     }
+  }
+  startSilently() {
+    // Same as play() but WITHOUT onTransport(true): no re-eval of the armed set.
+    // The transport event still fires so adapters/visuals that key off the
+    // clock's playing edge stay in sync — only the "re-evaluate every armed
+    // voice" hook is skipped.
+    //
+    // `silentStart` is raised for the duration of the synchronous subscriber
+    // notification so the block-replay listener (installBlockReplay) can tell a
+    // surgical manual eval from a real Play and skip re-evaluating armed blocks.
+    if (this.state.playing) return;
+    this.state = { ...this.state, playing: true };
+    this.silentStart = true;
+    try {
+      this.b.emit(this.state);
+    } finally {
+      this.silentStart = false;
+    }
+    this.eventsBus?.emit({
+      schemaVersion: 1,
+      type: 'transport',
+      runtime: 'clock',
+      t: performance.now(),
+      playing: true,
+      bpm: this.state.bpm
+    });
   }
   stop() {
     const was = this.state.playing;

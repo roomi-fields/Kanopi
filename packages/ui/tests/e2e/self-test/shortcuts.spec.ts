@@ -278,16 +278,6 @@ test('Shift+Enter evaluates the current line only — a comment line does not th
   });
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
 
-  // Actors now arm by default on load (beta: armed-by-default). The audio
-  // assertion below isolates "did Shift+Enter grab ONLY the comment line",
-  // so disarm the drums actor first — otherwise the auto-play that any eval
-  // triggers would re-evaluate the armed actor's whole file and the note(...)
-  // block would sound for an unrelated reason.
-  await page.evaluate(() => {
-    const w = window as unknown as { __kanopi: { actors: { toggle: (n: string) => void } } };
-    w.__kanopi.actors.toggle('drums');
-  });
-
   // Fixture lines 1-3 are `//` comments. Place the cursor at the start of
   // line 1 via CM's view API (helpers.ts:155-171 use the same trick). If
   // Shift+Enter were grabbing the whole paragraph, it would pull in the

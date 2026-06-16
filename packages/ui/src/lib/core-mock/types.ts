@@ -28,7 +28,18 @@ export interface ClockState {
 
 export interface Clock {
   readonly state: ClockState;
+  /** True only while a `startSilently()` is notifying subscribers — consumers
+   * that re-evaluate on the play edge skip the surgical manual eval. */
+  readonly silentStart: boolean;
   play(): void;
+  /**
+   * Start the transport WITHOUT firing the re-eval hook (onTransport). Used by a
+   * surgical manual Ctrl+Enter: the evaluated block is already sounding, so we
+   * only want the clock ticking + the UI to read "playing" — the rest of the
+   * armed set must NOT be re-triggered. `play()` re-evaluates every armed voice;
+   * this does not.
+   */
+  startSilently(): void;
   stop(): void;
   pause(): void;
   toggle(): void;

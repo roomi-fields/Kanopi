@@ -382,7 +382,13 @@ class RealCore implements CoreApi {
       this.log
     );
 
-    if (!this.clock.state.playing) this.clock.play();
+    // Surgical: a manual Ctrl+Enter (re)sounds ONLY this block. If the transport
+    // was stopped we start it so the UI reads "playing" and time-based voices
+    // advance — but via startSilently, which does NOT re-evaluate the rest of
+    // the armed set (that's `play()`, reserved for load / scene / arm). The
+    // block just evaluated above is already live; the others keep playing
+    // untouched.
+    if (!this.clock.state.playing) this.clock.startSilently();
     if (matching && !matching.active) {
       const next = this.actors
         .list()
