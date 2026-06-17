@@ -7,6 +7,9 @@ export interface VirtualFile {
   name: string;
   contents: string;
   runtime: Runtime;
+  /** When true the editor opens this file in read-only mode (reference data,
+   * e.g. a resource-library catalog entry — not meant to be edited). */
+  readOnly?: boolean;
 }
 
 export interface TreeNode {

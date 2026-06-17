@@ -23,6 +23,7 @@
         fileName={file?.name}
         doc={file?.contents}
         runtime={file?.runtime}
+        readOnly={file?.readOnly ?? false}
         onChange={(text) => file && workspace.updateContents(file.id, text)}
         onEval={(code, docOffset, actorId) =>
           file && core.evaluateBlock(file.runtime, code, file.name, docOffset, actorId)}

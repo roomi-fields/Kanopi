@@ -68,11 +68,22 @@ class WorkspaceStore {
     this.files = this.files.map((f) => (f.id === id ? { ...f, contents } : f));
   }
 
-  addFile(path: string, contents = '') {
+  addFile(path: string, contents = '', readOnly = false) {
+    // Reuse an existing file at the same path rather than piling up duplicates
+    // (e.g. re-opening the same resource entry from the Resources view).
+    const existing = this.files.find((f) => f.path === path);
+    if (existing) return existing.id;
     const id = `f${Date.now()}`;
     this.files = [
       ...this.files,
-      { id, path, name: path.split('/').pop() ?? path, contents, runtime: runtimeFromExt(path) }
+      {
+        id,
+        path,
+        name: path.split('/').pop() ?? path,
+        contents,
+        runtime: runtimeFromExt(path),
+        readOnly
+      }
     ];
     return id;
   }

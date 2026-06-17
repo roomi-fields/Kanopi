@@ -37,10 +37,11 @@
     fileName: string;
     doc: string;
     runtime: Runtime;
+    readOnly?: boolean;
     onChange: (text: string) => void;
     onEval?: (code: string, docOffset: number, actorId?: string) => void | Promise<boolean | void>;
   };
-  const { docId, fileName, doc, runtime, onChange, onEval }: Props = $props();
+  const { docId, fileName, doc, runtime, readOnly = false, onChange, onEval }: Props = $props();
 
   let host: HTMLDivElement;
   let canvas: HTMLCanvasElement | undefined = $state();
@@ -198,7 +199,10 @@
       kanopiGlobalStyles,
       EditorView.updateListener.of((u) => {
         if (u.docChanged) onChange(u.state.doc.toString());
-      })
+      }),
+      // Reference data (resource-library entries) opens read-only: block edits
+      // at the state level and drop the editable affordance (no caret/typing).
+      ...(readOnly ? [EditorState.readOnly.of(true), EditorView.editable.of(false)] : [])
     ];
     return EditorState.create({ doc: initial, extensions });
   }

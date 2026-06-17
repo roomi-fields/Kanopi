@@ -1,5 +1,19 @@
 <script lang="ts">
-  import { RESOURCE_GROUPS } from '../../lib/library/resources';
+  import { RESOURCE_GROUPS, type ResourceEntry } from '../../lib/library/resources';
+  import { workspace } from '../../stores/workspace.svelte';
+  import { ui } from '../../stores/ui.svelte';
+
+  // Open a resource entry as a read-only JSON file in the editor, the same way
+  // a game file is opened (workspace.openFile + switch to the Files view).
+  // The VirtualFile is created in memory and reused on subsequent clicks
+  // (addFile dedupes by path), so re-opening doesn't pile up tabs.
+  function openResource(type: string, entry: ResourceEntry) {
+    const path = `resources/${type}/${entry.id}.json`;
+    const contents = JSON.stringify(entry.data, null, 2);
+    const id = workspace.addFile(path, contents, true);
+    workspace.openFile(id);
+    ui.activeActivityView = 'files';
+  }
 </script>
 
 <div class="wrap">
@@ -18,9 +32,11 @@
       {:else}
         <ul class="list">
           {#each group.entries as entry (entry.id)}
-            <li class="row">
-              <span class="id">{entry.id}</span>
-              {#if entry.label}<span class="label" title={entry.label}>{entry.label}</span>{/if}
+            <li>
+              <button type="button" class="row" onclick={() => openResource(group.type, entry)}>
+                <span class="id">{entry.id}</span>
+                {#if entry.label}<span class="label" title={entry.label}>{entry.label}</span>{/if}
+              </button>
             </li>
           {/each}
         </ul>
@@ -71,8 +87,15 @@
     display: flex;
     align-items: baseline;
     gap: 8px;
+    width: 100%;
     padding: 3px 6px;
+    border: none;
     border-radius: 2px;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
   }
   .row:hover {
     background: rgba(255, 255, 255, 0.03);

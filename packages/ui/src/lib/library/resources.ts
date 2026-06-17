@@ -23,6 +23,8 @@ export interface ResourceEntry {
   id: string;
   /** short human label / description / source, when the catalog carries one. */
   label?: string;
+  /** raw catalog value for this entry — opened read-only as formatted JSON. */
+  data: unknown;
 }
 
 export interface ResourceGroup {
@@ -50,7 +52,7 @@ function entriesFromNamedCatalog(catalog: NamedCatalog): ResourceEntry[] {
       const culture = v && typeof v === 'object' ? v.culture : undefined;
       const label =
         typeof desc === 'string' ? desc : typeof culture === 'string' ? culture : undefined;
-      return { id, label };
+      return { id, label, data: catalog[id] };
     });
 }
 
@@ -61,7 +63,7 @@ function soundEntries(): ResourceEntry[] {
   const files: { id: string; json: { description?: string } }[] = [
     { id: 'tabla_perc', json: tablaPercJson as { description?: string } }
   ];
-  return files.map((f) => ({ id: f.id, label: f.json.description }));
+  return files.map((f) => ({ id: f.id, label: f.json.description, data: f.json }));
 }
 
 /** All resource libraries, grouped by type. Computed once at module load. */
@@ -99,19 +101,20 @@ export const RESOURCE_GROUPS: ResourceGroup[] = [
   {
     type: 'audio-bank',
     title: 'Audio banks',
-    entries: audioBanks.items.map((b) => ({ id: b.id, label: b.source ?? b.name }))
+    entries: audioBanks.items.map((b) => ({ id: b.id, label: b.source ?? b.name, data: b }))
   },
   {
     type: 'visual',
     title: 'Visuals',
-    entries: visualsCatalog.items.map((v) => ({ id: v.id, label: v.name }))
+    entries: visualsCatalog.items.map((v) => ({ id: v.id, label: v.name, data: v }))
   },
   {
     type: 'device',
     title: 'Devices',
     entries: listDevices().map((d) => ({
       id: d.name,
-      label: d.label ? `${d.type} · ${d.label}` : d.type
+      label: d.label ? `${d.type} · ${d.label}` : d.type,
+      data: d
     }))
   }
 ];
