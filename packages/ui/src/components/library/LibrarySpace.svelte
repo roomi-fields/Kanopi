@@ -3,18 +3,38 @@
   import { workspace } from '../../stores/workspace.svelte';
   import { ui } from '../../stores/ui.svelte';
   import { openBlocks } from '../../stores/blocks.svelte';
+  import { core } from '../../lib/core';
+  import { tick } from 'svelte';
   import { CATEGORIES, type LibraryItem, type LibraryCategory } from '../../lib/library/catalog';
 
   const OUTPUTS = ['audio', 'midi', 'text', 'visual'] as const;
   const LEVELS = ['didactic', 'intermediate', 'advanced'] as const;
 
-  function load(item: LibraryItem) {
+  async function load(item: LibraryItem) {
+    // Swap scenes WITHOUT stopping the transport clock. Stopping it (`hushAll`)
+    // raced the incoming play: `core.clock.stop()` flips the real clock state
+    // synchronously but the `clock` store flag mirrors it via an async
+    // subscription, so the very next `if (!clock.state.playing)` check still saw
+    // "playing" and skipped the restart — the new scene armed onto a clock that
+    // was actually stopped → silence + a stuck "Playing" indicator. Instead:
+    //   1. silence the outgoing scene's runtimes (audio + backtick) AND disarm
+    //      its blocks, leaving the clock running;
+    //   2. load the new files;
+    //   3. arm + evaluate the new scene on the live clock.
+    // From a rest state nothing is playing, so step 1 is a no-op and
+    // `playLoadedProgram` starts the clock as before (scenario 1 unchanged).
+    await core.silenceRuntimes();
+    openBlocks.disarmAll();
     const focusId = workspace.loadFiles(item.files, item.sessionFile);
     // The library is a launcher: land back in the editor with the session open.
     ui.activeActivityView = 'files';
-    // Load = it sounds: arm + start transport once the reactive block list has
-    // settled (beta — a freshly-loaded demo plays without a disarm/rearm dance).
-    if (focusId) queueMicrotask(() => void openBlocks.playLoadedProgram(focusId));
+    // `await tick()` flushes Svelte's reactive updates from `loadFiles` before we
+    // play; `playLoadedProgram` re-extracts the file's blocks (not the derived
+    // list) so a freshly-loaded scene arms + sounds deterministically.
+    if (focusId) {
+      await tick();
+      await openBlocks.playLoadedProgram(focusId);
+    }
   }
 
   function pickCategory(c: LibraryCategory | 'all') {

@@ -167,4 +167,13 @@ export interface CoreApi {
   enableMidiInput(): Promise<void>;
   /** Hard-stop every runtime (panic): clears Strudel patterns, blanks Hydra, kills WebAudio sources. */
   hushAll(): Promise<void>;
+  /**
+   * Silence every runtime + deactivate actors WITHOUT stopping the transport
+   * clock. Used by the "swap scene" gesture (load a library scene while another
+   * plays): the outgoing scene's audio/backtick runtimes are cut and its actors
+   * disarmed, but the clock keeps running so the incoming scene can be armed +
+   * evaluated immediately on the live clock — no stop/restart race, no spurious
+   * "Playing" with no sound.
+   */
+  silenceRuntimes(): Promise<void>;
 }

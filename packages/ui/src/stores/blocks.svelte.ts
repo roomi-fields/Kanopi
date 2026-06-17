@@ -99,6 +99,18 @@ class OpenBlocksStore {
     else await this.arm(q);
   }
 
+  /**
+   * Disarm EVERY block without stopping the transport. Used by the "swap scene"
+   * gesture: the outgoing scene's blocks leave the armed set (so the play-edge
+   * replay won't re-eval them) while the clock keeps running for the incoming
+   * scene. The actual audio is cut by `core.silenceRuntimes()` at the call site;
+   * this only clears the armed bookkeeping. Errored flags are cleared too.
+   */
+  disarmAll() {
+    this.armed = new Set();
+    this.errored = new Set();
+  }
+
   /** Evaluate this exact block via core.evaluateBlock with its qualifiedName as actorId. */
   async evalOne(b: OpenBlock) {
     const file = workspace.fileById(b.fileId);
@@ -106,6 +118,33 @@ class OpenBlocksStore {
     const code = file.contents.slice(b.block.from, b.block.to);
     if (!code.trim()) return;
     await core.evaluateBlock(b.runtime, code, b.fileName, b.block.from, b.qualifiedName);
+  }
+
+  /**
+   * Blocks of ONE file, extracted straight from the workspace file — NOT read
+   * off the reactively-`$derived` `this.list`. A freshly-loaded program (after
+   * `loadFiles` + a `hushAll` that churned the reactive graph) may not yet be
+   * reflected in `this.list` when `playLoadedProgram` runs, so the play path
+   * must compute the blocks deterministically here instead of trusting the
+   * derived snapshot. Mirrors `computeOpenBlocks`'s per-file logic.
+   */
+  blocksForFile(fileId: string): OpenBlock[] {
+    const file = workspace.fileById(fileId);
+    if (!file || file.runtime === 'kanopi') return [];
+    const out: OpenBlock[] = [];
+    const seenNames = new Set<string>();
+    for (const b of extractBlocks(file.contents, file.runtime)) {
+      if (seenNames.has(b.name)) continue;
+      seenNames.add(b.name);
+      out.push({
+        fileId: file.id,
+        fileName: file.name,
+        runtime: file.runtime,
+        block: b,
+        qualifiedName: qualifyBlock(file.name, b)
+      });
+    }
+    return out;
   }
 
   /**
@@ -117,7 +156,7 @@ class OpenBlocksStore {
    * a single program doesn't sound the other open tabs' blocks.
    */
   async armAndPlayFile(fileId: string) {
-    const fileBlocks = this.list.filter((b) => b.fileId === fileId);
+    const fileBlocks = this.blocksForFile(fileId);
     if (fileBlocks.length === 0) return;
     const next = new Set(this.armed);
     for (const b of fileBlocks) next.add(b.qualifiedName);
@@ -146,7 +185,7 @@ class OpenBlocksStore {
    * microtask by the caller so the reactively-derived block list has settled.
    */
   async playLoadedProgram(fileId: string) {
-    const hasBlocks = this.list.some((b) => b.fileId === fileId);
+    const hasBlocks = this.blocksForFile(fileId).length > 0;
     if (hasBlocks) {
       await this.armAndPlayFile(fileId);
     } else if (!clock.state.playing) {
@@ -154,9 +193,21 @@ class OpenBlocksStore {
     }
   }
 
-  /** Called by the clock transport listener — re-eval every armed block on play. */
+  /** Called by the clock transport listener — re-eval every armed block on play.
+   * Resolves the armed blocks by re-extracting from each open file rather than
+   * filtering the reactively-`$derived` `this.list`: on the play edge fired by a
+   * just-loaded program, the derived snapshot can lag a tick behind the armed set
+   * (the load→play regression), so a freshly-armed block would be missed. */
   async replayArmed() {
-    const armedList = this.list.filter((b) => this.armed.has(b.qualifiedName));
+    const seen = new Set<string>();
+    const armedList: OpenBlock[] = [];
+    for (const tabId of workspace.openTabIds) {
+      if (seen.has(tabId)) continue;
+      seen.add(tabId);
+      for (const b of this.blocksForFile(tabId)) {
+        if (this.armed.has(b.qualifiedName)) armedList.push(b);
+      }
+    }
     for (const b of armedList) {
       try {
         await this.evalOne(b);

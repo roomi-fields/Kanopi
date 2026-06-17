@@ -398,6 +398,10 @@ class MockCore implements CoreApi {
   async hushAll() {
     /* mock no-op */
   }
+
+  async silenceRuntimes() {
+    /* mock no-op */
+  }
 }
 
 export function createMockCore(): CoreApi {

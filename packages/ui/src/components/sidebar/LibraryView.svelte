@@ -5,15 +5,24 @@
   import { workspace } from '../../stores/workspace.svelte';
   import { ui } from '../../stores/ui.svelte';
   import { openBlocks } from '../../stores/blocks.svelte';
+  import { core } from '../../lib/core';
+  import { tick } from 'svelte';
 
-  function load(s: Starter) {
+  async function load(s: Starter) {
+    // Swap scenes without stopping the clock (see LibrarySpace.load for the full
+    // rationale): silence + disarm the outgoing scene, load, then arm + play the
+    // incoming one on the live clock — no stop/restart race, no stuck "Playing".
+    await core.silenceRuntimes();
+    openBlocks.disarmAll();
     const focusId = workspace.loadFiles(s.files, s.sessionFile);
     // The Library is a launcher, not a workspace: land back in Files so the
     // loaded session + its files are in front of you (self-test 3.1).
     ui.activeActivityView = 'files';
-    // Load = it sounds: arm + start transport once the reactive block list has
-    // settled (beta — no more disarm/rearm dance to hear a freshly-loaded set).
-    if (focusId) queueMicrotask(() => void openBlocks.playLoadedProgram(focusId));
+    // Load = it sounds: arm + start transport for the freshly-loaded program.
+    if (focusId) {
+      await tick();
+      await openBlocks.playLoadedProgram(focusId);
+    }
   }
 
   function loadVisual(v: VisualItem) {

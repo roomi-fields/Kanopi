@@ -410,19 +410,31 @@ class RealCore implements CoreApi {
     this.getActorFile = get;
   }
 
-  async hushAll(): Promise<void> {
-    // Panic stop: silence every runtime + reset visual state (LEDs off, transport stopped).
+  async silenceRuntimes(): Promise<void> {
+    // Silence every KNOWN runtime (not just the declared actors': a loaded
+    // program's blocks sound through a runtime that may have no `@actor`), then
+    // deactivate the actors' LEDs — but leave the clock running. Mirrors the
+    // per-runtime hush `handleTransport(false)` does, without `clock.stop()`.
     const seen = new Set<string>();
-    for (const a of this.actors.list()) {
-      const ref = this.getActorFile?.(a.name);
-      const runtime = ref?.runtime ?? a.runtime;
-      const adapter = getAdapter(runtime);
-      if (!adapter || seen.has(runtime)) continue;
-      seen.add(runtime);
-      await adapter.stop({ actorId: '__hush__', fileId: '__hush__' }, this.log);
+    for (const id of listRuntimes()) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const adapter = getAdapter(id);
+      if (!adapter) continue;
+      try {
+        await adapter.stop({ actorId: '__hush__', fileId: '__hush__' }, this.log);
+      } catch {
+        /* swallow — silencing must be best-effort */
+      }
     }
     const quieted = this.actors.list().map((a) => ({ ...a, active: false }));
     this.actors.setActors(quieted);
+  }
+
+  async hushAll(): Promise<void> {
+    // Panic stop: silence every runtime + reset visual state (LEDs off,
+    // transport stopped). Reuses the clock-preserving silencer, then stops.
+    await this.silenceRuntimes();
     if (this.clock.state.playing) this.clock.stop();
     this.log({ runtime: 'system', level: 'warn', msg: 'hush all' });
   }
