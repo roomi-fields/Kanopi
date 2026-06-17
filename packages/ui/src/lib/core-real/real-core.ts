@@ -109,6 +109,18 @@ class RealCore implements CoreApi {
     // orchestrated path (see handleActorToggle). The active state of an actor
     // that survives a re-eval is preserved.
     setActorsSink((published: PublishedActor[]) => {
+      // A NON-orchestrated `.bps`/`.gr` publishes an EMPTY list: it replaces the
+      // previous program's orchestrator voices (groove/viz) with nothing. Only act
+      // on it when the panel is CURRENTLY showing orchestrator actors — a `.kanopi`
+      // session owns its actors via `loadSession` (flag false), so a non-orchestrated
+      // actor-bound `.bps` eval must NOT wipe them.
+      if (published.length === 0) {
+        if (this.actorsAreOrchestrated) {
+          this.actorsAreOrchestrated = false;
+          this.actors.setActors([]);
+        }
+        return;
+      }
       const before = new Map(this.actors.list().map((a) => [a.name, a.active]));
       this.actorsAreOrchestrated = true;
       this.actors.setActors(

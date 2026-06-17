@@ -55,6 +55,8 @@ import type {
   ProductionToken,
   ProductionSection,
   ProductionTree,
+  ProductionTreeNode,
+  ProductionTreeSpan,
   RawTimedToken
 } from '../../stores/production.svelte';
 // Device library (@devices): resolve a voice's `transport.<name>` to a typed
@@ -72,7 +74,7 @@ import { loadSampleBank } from './strudel';
 // source of truth — replacing the deprecated regex-on-grammar-text reader for the
 // `.bps` path. The `.gr` path keeps the local text reader (it never compiles
 // through BPScript, so it has no AST — see `headSectionNames` below).
-import { headSectionNamesFromAst } from './head-sections-ast';
+import { headSectionNamesFromAst, sectionLeafCounts } from './head-sections-ast';
 
 // Typed view of the dispatcher's `start(onEnd, { loop, reDerive })`. The
 // dispatcher is JS (JSDoc-typed): its `reDerive` option (re-derive the grammar
@@ -827,6 +829,21 @@ const bpsFrontend: Frontend = (code) => {
 interface BP3Voice {
   dispatcher: InstanceType<typeof Dispatcher>;
   midiSink?: MidiSink;
+  /** Source file this dispatcher was evaluated from. Lets a new program stop the
+   *  OUTGOING program's dispatcher (whose `loop:true` keeps re-firing its code
+   *  voices — Hydra/Strudel — each cycle) without depending on the per-actor
+   *  handle map. Undefined for legacy entries (treated as "current file"). */
+  file?: string;
+  /** True when this dispatcher is an orchestrator (`@actor` voices). Only these
+   *  loop-and-re-fire foreign code; a plain mono grammar / `.kanopi` per-actor
+   *  voice is left alone so a sibling re-eval doesn't cut it. */
+  orchestrator?: boolean;
+  /** The code interpreters this orchestrator's voices use (`hydra`, `strudel`,
+   *  …) + their slot ids. Stopping the dispatcher kills the re-firing, but a
+   *  fire ALREADY in flight at stop time can still paint one more frame; we hush
+   *  these runtimes right after to guarantee the outgoing canvas/audio is cleared,
+   *  independent of the per-actor handle map (which `__hush__` may have emptied). */
+  codeSlots?: Array<{ runtime: Runtime; actorId: string }>;
 }
 
 // Minimal shape of the grammar's own symbol table: the engine resolves a leaf's
@@ -938,6 +955,44 @@ export function sliceBeatEvents(
 // advances one beat at a time off it. Section names (head-rule RHS) get
 // equal-proportion time bounds along the same timeline as PASSIVE visual
 // landmarks only (no longer the STEP unit). Set ONCE per eval (replace).
+// Real section boundaries from the derivation tree: the root is a flat sequence of
+// timed leaf nodes (the sub-rules are expanded inline), so we walk those leaves IN
+// ORDER and slice them into `leafCounts[i]` consecutive leaves per section. Each
+// section's bounds = [first leaf's start, last leaf's end], converted ms→s. Returns
+// null when the counts don't line up with the tree (sum mismatch, missing spans,
+// non-sequence root) so the caller can fall back to the equal split. This replaces
+// the equal `i*dur/count` slicing for grammars whose sections have unequal lengths
+// (maqam Rast: Sayr 7, Rujoo 7, Qarar 4+tail → Qarar is visibly shorter).
+export function sectionBoundsFromTree(
+  tree: ProductionTree | undefined,
+  leafCounts: number[]
+): Array<{ startSec: number; endSec: number }> | null {
+  if (!tree || leafCounts.length === 0) return null;
+  const root: ProductionTreeNode | undefined = tree.root;
+  if (!root || root.type !== 'sequence') return null;
+  const children = root.children;
+  if (!Array.isArray(children)) return null;
+  // Ordered spans of the top-level leaves (every direct child carries a span;
+  // occupying/event leaves and any nested group all expose `span.startMs/endMs`).
+  const spans: ProductionTreeSpan[] = [];
+  for (const c of children) {
+    const span = c.span;
+    if (!span || typeof span.startMs !== 'number' || typeof span.endMs !== 'number') return null;
+    spans.push({ startMs: span.startMs, endMs: span.endMs });
+  }
+  const total = leafCounts.reduce((a, n) => a + n, 0);
+  if (total !== spans.length) return null; // counts don't match the tree — fall back
+  const bounds: Array<{ startSec: number; endSec: number }> = [];
+  let cursor = 0;
+  for (const n of leafCounts) {
+    const first = spans[cursor];
+    const last = spans[cursor + n - 1];
+    bounds.push({ startSec: first.startMs / 1000, endSec: last.endMs / 1000 });
+    cursor += n;
+  }
+  return bounds;
+}
+
 function publishProduction(
   id: Runtime,
   tokens: Tok[],
@@ -945,7 +1000,8 @@ function publishProduction(
   sectionNames: string[],
   beatDurSec: number,
   tree?: ProductionTree,
-  symbolNames?: Record<number, string>
+  symbolNames?: Record<number, string>,
+  sectionLeafCounts?: number[]
 ): void {
   const durationMs = Math.max(...tokens.map((t) => t.end), 0);
   const prodTokens: ProductionToken[] = tokens.map((t) => ({
@@ -956,12 +1012,20 @@ function publishProduction(
   }));
   const durationSec = durationMs / 1000;
   const count = sectionNames.length;
+  // Real section bounds from the derivation tree's leaf spans when the per-section
+  // leaf counts line up with it (maqam Rast: Sayr/Rujoo 7 notes, Qarar shorter);
+  // otherwise the equal split, kept as a safe fallback (and for `.gr`, which has no
+  // counts). Only meaningful when there is more than one section to draw.
+  const treeBounds =
+    count > 1 && sectionLeafCounts && sectionLeafCounts.length === count
+      ? sectionBoundsFromTree(tree, sectionLeafCounts)
+      : null;
   const sections: ProductionSection[] =
     count > 1
       ? sectionNames.map((name, i) => ({
           name,
-          startSec: (i * durationSec) / count,
-          endSec: ((i + 1) * durationSec) / count
+          startSec: treeBounds ? treeBounds[i].startSec : (i * durationSec) / count,
+          endSec: treeBounds ? treeBounds[i].endSec : ((i + 1) * durationSec) / count
         }))
       : [];
   // Raw flat tokens (times in MS, untransformed) for the polymetric piano-roll
@@ -1050,13 +1114,39 @@ export function setActorsSink(fn: (actors: PublishedActor[], file: string) => vo
 interface OrchestratedVoiceHandle {
   /** Mute/unmute the actor's NOTES on the running dispatcher (native voices). */
   setNoteMuted: (muted: boolean) => void;
-  /** Stop the actor's CODE voice (Strudel/Hydra). Undefined for note voices. */
-  stopCode?: () => void;
+  /** Stop the actor's CODE voice (Strudel/Hydra). Resolves once its adapter's
+   *  `stop` has run (the Hydra hush that blackens the canvas + clears its rAF
+   *  callbacks). Undefined for note voices. */
+  stopCode?: () => Promise<void>;
   /** Re-evaluate the actor's CODE voice (Strudel/Hydra). Undefined for notes. */
   evalCode?: () => void;
+  /** The orchestrator file this voice belongs to, so loading a DIFFERENT
+   *  program can tear down only the OUTGOING voices (cf. `tearDownOutgoingVoices`). */
+  file: string;
 }
 // actorName → its live voice handle, replaced on each orchestrator eval.
 const orchestratedVoices = new Map<string, OrchestratedVoiceHandle>();
+
+// Stop + forget every orchestrated CODE voice that belongs to a DIFFERENT file
+// than the one now evaluating. A code voice (Strudel audio, Hydra canvas + its rAF
+// loop) lives on its OWN adapter, not on this dispatcher — stopping the previous
+// bp3 dispatcher does NOT kill it. So when a new program loads (a fresh
+// orchestrator, OR a non-orchestrated scene that publishes no actors), the old
+// scene's Hydra canvas keeps rendering on top until we call its adapter's `stop`
+// — the SAME teardown a per-actor disarm uses (it blackens the canvas). We AWAIT
+// each stop so the hush has landed before the new scene paints (no residual frame).
+// `keepFile` is the incoming orchestrator's file (re-evaluating the SAME program
+// must not tear down its own voices mid-swap); pass undefined to drop ALL.
+async function tearDownOutgoingVoices(keepFile: string | undefined): Promise<void> {
+  const pending: Promise<void>[] = [];
+  for (const [name, h] of orchestratedVoices) {
+    if (keepFile !== undefined && h.file === keepFile) continue;
+    const p = h.stopCode?.();
+    if (p) pending.push(p);
+    orchestratedVoices.delete(name);
+  }
+  await Promise.all(pending);
+}
 
 /**
  * Live-arm an orchestrated actor: route/play its voice again. A code voice
@@ -1488,6 +1578,10 @@ function makeBpxAdapter(
       // `currentBpm`, so every beat boundary on the produced timeline is one
       // beat of the clock — STEP advances one of those at a time.
       const beatDurSec = currentBpm > 0 ? 60 / currentBpm : 0;
+      // Per-section leaf counts (from the AST head rule) so the visualizer draws
+      // the REAL section boundaries off the tree's leaf spans, not an equal split.
+      // Empty for `.gr` (no AST) or an unmappable macro shape → equal-split fallback.
+      const leafCounts = sectionLeafCounts(ast);
       publishProduction(
         id,
         tokens,
@@ -1495,7 +1589,8 @@ function makeBpxAdapter(
         headSections ?? [],
         beatDurSec,
         tree,
-        symbolNames
+        symbolNames,
+        leafCounts
       );
 
       // STEP: when a beat is requested, keep only that beat's tokens (re-zeroed)
@@ -1527,6 +1622,38 @@ function makeBpxAdapter(
       if (prev) {
         prev.dispatcher.stop();
         prev.midiSink?.stop();
+      }
+      // Loading a DIFFERENT program: stop the previous ORCHESTRATOR's dispatcher.
+      // Its `loop:true` keeps re-firing its code voices (re-evaluating the Hydra
+      // patch each cycle), so hushing the canvas once is useless — the next cycle
+      // re-lights it. The fix that the per-actor disarm relies on is to STOP THE
+      // RE-FIRING, i.e. stop the dispatcher. We read the source `file` straight off
+      // each `voices` entry (self-contained — no dependency on the per-actor handle
+      // map, which the previous attempt relied on and which can be empty here). Only
+      // orchestrator dispatchers are stopped: a plain mono grammar or a `.kanopi`
+      // per-actor voice from another file is left alone so a sibling re-eval / a
+      // multi-actor session doesn't cut unrelated voices. A re-eval of the SAME
+      // file keeps its own dispatcher (it was already replaced via `prev` above).
+      const outgoingCodeSlots: Array<{ runtime: Runtime; actorId: string }> = [];
+      for (const [vKey, v] of voices) {
+        if (vKey === key) continue;
+        if (v.orchestrator && v.file !== undefined && v.file !== src.fileId) {
+          v.dispatcher.stop();
+          v.midiSink?.stop();
+          if (v.codeSlots) outgoingCodeSlots.push(...v.codeSlots);
+          voices.delete(vKey);
+        }
+      }
+      // Hush the outgoing orchestrator's code runtimes (Hydra canvas/rAF, Strudel
+      // audio) AFTER its dispatcher is stopped — so a fire that was in flight at
+      // stop time can't leave the canvas lit with nothing left to clear it.
+      if (outgoingCodeSlots.length > 0) {
+        const { getAdapter } = await import('./registry');
+        for (const slot of outgoingCodeSlots) {
+          await getAdapter(slot.runtime)
+            ?.stop({ actorId: slot.actorId, fileId: slot.actorId }, log)
+            .catch(() => {});
+        }
       }
 
       const ctx = await getCtx();
@@ -1643,16 +1770,44 @@ function makeBpxAdapter(
           if (Object.prototype.hasOwnProperty.call(isBacktick, e.token)) return true;
           return isNoteName(e.token);
         };
+        // Drop events that belong to a CURRENTLY-disarmed actor, read LIVE from
+        // the shared `mutedActors` set at the moment the filter runs (initial load
+        // AND every re-derived cycle). A note carries its owning actor on
+        // `payload.actor`; a code voice (backtick) carries only its BT token, whose
+        // owner we resolve through `btToActor`. Without this, re-random re-derives
+        // a disarmed voice's events each cycle and re-fires it (the regression):
+        // the sink's own live guard then has to catch the BT case, but a native
+        // note voice would still re-sound — filtering here keeps BOTH silent and
+        // makes the live mute the single source of truth per cycle. Re-arming
+        // clears the set, so the next cycle's filter lets the voice back through.
+        const notMutedActor = (e: DispatchEvent) => {
+          if (mutedActors.size === 0) return true;
+          const noteActor = (e.payload as { actor?: string | null } | null)?.actor;
+          if (noteActor && mutedActors.has(noteActor)) return false;
+          const btActor = btToActor[e.token];
+          if (btActor && mutedActors.has(btActor)) return false;
+          return true;
+        };
+        const orchestratedLive = (e: DispatchEvent) => orchestratedFilter(e) && notMutedActor(e);
         const treeEvents = treeToDispatchEvents(
           rawTree as Parameters<typeof treeToDispatchEvents>[0],
           symbolNames
-        ).filter(orchestratedFilter);
+        ).filter(orchestratedLive);
         (dispatcher as unknown as { loadEvents(ev: unknown[]): void }).loadEvents(treeEvents);
         (dispatcher as unknown as DispatcherStart).start(undefined, {
           loop: looping,
-          reDerive: reRandom ? reDeriveTreeEvents(orchestratedFilter) : null
+          reDerive: reRandom ? reDeriveTreeEvents(orchestratedLive) : null
         });
-        voices.set(key, { dispatcher });
+        // Code-voice slots of THIS orchestrator (hydra/strudel + their per-actor
+        // slot id), recorded on the dispatcher entry so a LATER program can hush
+        // them after stopping this dispatcher (covers a fire in flight at stop).
+        const codeSlots: Array<{ runtime: Runtime; actorId: string }> = [];
+        voices.set(key, {
+          dispatcher,
+          file: src.fileId,
+          orchestrator: true,
+          codeSlots
+        });
 
         // Publish the actor list to the Actors panel (groove + viz, …) and
         // register a live arm/disarm handle per actor. A code voice (Strudel/
@@ -1660,26 +1815,33 @@ function makeBpxAdapter(
         // notes voice is muted on this dispatcher's per-actor note gate. The
         // handle map is keyed by actor name and replaced on each re-eval.
         const da2 = dispatcher as unknown as { setActorMuted(actor: string, muted: boolean): void };
+        // Tear down the OUTGOING program's code voices (a previous orchestrator's
+        // Hydra canvas + its rAF loop, Strudel audio) before registering this one's
+        // — loading a new program must not leave the old scene's voices rendering
+        // on top. Keep this file's own voices (a re-eval of the SAME orchestrator).
+        await tearDownOutgoingVoices(src.fileId);
         const published: PublishedActor[] = [];
         for (const actor of orchestration.actors) {
           const codeRuntime = actor.evalInterp ? runtimeForInterp(actor.evalInterp) : undefined;
+          if (codeRuntime)
+            codeSlots.push({ runtime: codeRuntime, actorId: slotForActor(actor.name) });
           published.push({ name: actor.name, runtime: codeRuntime ?? id, file: src.fileId });
           const btToken = actorToBt[actor.name];
           orchestratedVoices.set(actor.name, {
+            file: src.fileId,
             setNoteMuted: (muted: boolean) => {
               if (muted) mutedActors.add(actor.name);
               else mutedActors.delete(actor.name);
               da2.setActorMuted(actor.name, muted);
             },
             stopCode: codeRuntime
-              ? () => {
-                  void import('./registry').then(({ getAdapter }) => {
+              ? () =>
+                  import('./registry').then(({ getAdapter }) =>
                     getAdapter(codeRuntime)?.stop(
                       { actorId: slotForActor(actor.name), fileId: src.fileId },
                       log
-                    );
-                  });
-                }
+                    )
+                  )
               : undefined,
             // Re-arm a code voice by re-firing it now (the dispatcher's loop also
             // re-fires the BT token on the next cycle, but evaluating immediately
@@ -1711,6 +1873,20 @@ function makeBpxAdapter(
         emitLifecycle('eval', src.fileId);
         return;
       }
+
+      // NON-orchestrated scene (no `@actor`): publish an EMPTY actor list so the
+      // Actors panel drops any orchestrator voices left over from a previous
+      // program (loading `arabic.bps` after `02-strudel-hydra.bps` must clear
+      // groove/viz). The sink guards this: an empty publish only clears when the
+      // panel was showing orchestrator actors — a `.kanopi` session (which owns
+      // its actors through `loadSession`) is left untouched.
+      //
+      // Stop the OUTGOING program's code voices too (Hydra canvas + rAF, Strudel
+      // audio): clearing the actor LIST alone left the previous scene's Hydra
+      // rendering on top of the new one. A plain scene has no code voices of its
+      // own, so tear down ALL currently-registered orchestrated voices.
+      await tearDownOutgoingVoices(undefined);
+      onActorsFromGrammar?.([], src.fileId);
 
       // Per-symbol play-vs-skip (decision routage-texte-son-par-symbole): a
       // token sounds if it's a note OR its symbol carries a sound assignment
@@ -1805,7 +1981,7 @@ function makeBpxAdapter(
         log({ runtime: id, level: 'info', msg: 'no Web MIDI — WebAudio only' });
       }
 
-      voices.set(key, { dispatcher, midiSink });
+      voices.set(key, { dispatcher, midiSink, file: src.fileId, orchestrator: false });
       log({ runtime: id, level: 'info', msg: `eval ok [${key}] (${tokens.length} tokens)` });
       emitLifecycle('eval', src.fileId);
     },
@@ -1837,6 +2013,12 @@ function makeBpxAdapter(
           voice.midiSink?.stop();
         }
         voices.clear();
+        // "Stop everything" also FORGETS the live orchestrated-voice handles: every
+        // dispatcher is down and the core hushes every code runtime alongside this
+        // call, so a lingering handle would only let a stale voice be torn down /
+        // re-armed later. Clearing keeps the global map honest (and stops it
+        // leaking handles across re-evals).
+        orchestratedVoices.clear();
         log({ runtime: id, level: 'info', msg: 'hush (all voices)' });
         emitLifecycle('stop', src.fileId);
         return;

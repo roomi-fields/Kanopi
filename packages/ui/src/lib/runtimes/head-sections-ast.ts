@@ -123,3 +123,59 @@ export function headSectionsFromAst(ast: unknown): string[] {
 export function headSectionNamesFromAst(ast: unknown): string[] {
   return sectionsFromAst(ast as SceneAst, true);
 }
+
+// How many SOUNDING leaves each top-level head-rule section expands into — used to
+// give the Structure visualizer the REAL section boundaries (Sayr 7 notes, Rujoo 7,
+// Qarar 4 notes + a held tail) instead of an equal three-way split. The head rule
+// `S -> Sayr Rujoo Qarar` references sub-rules; the engine flattens them into one
+// flat leaf sequence on derivation, so the sub-rule structure is lost in the tree.
+// We recover each section's leaf span by counting, off the AST, how many terminal
+// leaves its sub-rule produces (recursively, since a sub-rule may itself reference
+// another). One count per top-level section, IN ORDER. Returns [] when the macro
+// shape isn't a plain symbol sequence (polymetric/guarded/recursive cycles) — the
+// caller then falls back to the equal split.
+export function sectionLeafCounts(ast: unknown): number[] {
+  const a = ast as SceneAst;
+  const rule = startRule(a);
+  if (!rule) return [];
+  // name → its (first) defining rule, so a section symbol can be expanded.
+  const ruleByName = new Map<string, AstRule>();
+  for (const sg of a.subgrammars ?? []) {
+    for (const r of sg.rules) {
+      const lhs = r.lhs.find((e) => e.name)?.name;
+      if (lhs && !ruleByName.has(lhs)) ruleByName.set(lhs, r);
+    }
+  }
+  // Count the leaves an RHS element expands into. A prolongation/rest is its OWN
+  // leaf (the engine emits a node for each, e.g. Qarar's held tail). A symbol that
+  // names a sub-rule recurses; a bare terminal/note is one leaf. `seen` breaks a
+  // pathological recursive cycle (returns 0, which trips the sum guard → fallback).
+  const countEl = (el: RhsEl, seen: Set<string>): number => {
+    if (el.type === 'Prolongation' || el.type === 'Rest') return 1;
+    if (el.type === 'Polymetric') return NaN; // not a flat section — bail
+    const tok = elementToken(el);
+    if (!tok) return 0;
+    if (el.type === 'Symbol' || el.type === 'SymbolCall') {
+      const sub = ruleByName.get(tok);
+      if (sub && !isControlTerminal(tok)) {
+        if (seen.has(tok)) return NaN; // cycle
+        const next = new Set(seen);
+        next.add(tok);
+        return sub.rhs.reduce((acc, e) => acc + countEl(e, next), 0);
+      }
+    }
+    // A control terminal occupies no audible leaf; everything else is one leaf.
+    return isControlTerminal(tok) && tok.startsWith('_') ? 0 : 1;
+  };
+  const counts: number[] = [];
+  for (const el of rule.rhs) {
+    if (el.type === 'Control' || el.type === 'InstantControl') continue;
+    const tok = elementToken(el);
+    if (!tok) continue;
+    if (isControlTerminal(tok) && tok.startsWith('_')) continue;
+    const n = countEl(el, new Set());
+    if (!Number.isFinite(n) || n <= 0) return []; // unmappable → fallback
+    counts.push(n);
+  }
+  return counts;
+}
