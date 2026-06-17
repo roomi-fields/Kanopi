@@ -51,6 +51,12 @@ export interface DispatchEvent {
   /** AST nature scellée on a control node (`transport-control` | `instant` |
    *  `engine-control`), exposed so the dispatcher routes on it directly. */
   nature?: string;
+  /** E-016 sealed per-leaf runtime state (`{ vel?, transpose?, chan?, … }`),
+   *  stamped on each SOUNDING leaf by BPx's `buildTree` (tree-builder.ts:487 /
+   *  node.ts:213 `runtimeQualifiers`). Carried onto the event so the unified
+   *  payload-routing path folds it over controlState exactly as the flat
+   *  `dispatcher.load()` path did off `token.runtimeQualifiers`. */
+  rq?: Record<string, number> | null;
 }
 
 // Minimal structural shapes we read off the tree. Mirrors BPx's `TreeNode`
@@ -68,6 +74,7 @@ type TreeNode =
       symbolId: number;
       role: 'leaf' | 'rest' | 'prolongation';
       payload?: unknown;
+      runtimeQualifiers?: Record<string, number>;
       span: Span;
     }
   | { type: 'control'; symbolId: number; payload?: unknown; nature?: string; span: Span }
@@ -114,7 +121,11 @@ export function treeToDispatchEvents(
             startSec,
             durSec,
             type: 'note',
-            payload: (node.payload as NotePayload) ?? null
+            payload: (node.payload as NotePayload) ?? null,
+            // E-016: carry the leaf's sealed runtime state so the dispatcher's
+            // unified routing folds vel/transpose/chan exactly as the old flat
+            // `token.runtimeQualifiers` path did.
+            rq: node.runtimeQualifiers ?? null
           });
         }
         return;

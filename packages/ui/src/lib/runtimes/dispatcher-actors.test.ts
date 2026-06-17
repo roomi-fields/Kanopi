@@ -42,9 +42,11 @@ function drain(d: InstanceType<typeof Dispatcher>) {
 }
 
 type DispAny = InstanceType<typeof Dispatcher> & {
-  setActors(table: unknown, map: Record<string, string>): void;
+  setActors(table: unknown): void;
   setActorTransport(actor: string, transport: string): void;
+  setSoundPredicate(fn: (t: string) => boolean): void;
   loadEvents(ev: unknown[]): void;
+  _resolver: unknown;
 };
 
 describe('dispatcher multi-actor payload routing', () => {
@@ -58,7 +60,7 @@ describe('dispatcher multi-actor payload routing', () => {
     tablaT = new MockTransport();
     d.addTransport('sitarOut', sitarT);
     d.addTransport('tablaOut', tablaT);
-    d.setActors({ sitar: {}, tabla: {} }, {});
+    d.setActors({ sitar: {}, tabla: {} });
     d.setActorTransport('sitar', 'sitarOut');
     d.setActorTransport('tabla', 'tablaOut');
   });
@@ -149,5 +151,26 @@ describe('dispatcher multi-actor payload routing', () => {
     drain(d);
     expect(sitarT.controls).toHaveLength(1);
     expect(tablaT.controls).toHaveLength(0);
+  });
+});
+
+// Mono / no-actor grammar (`.gr`, simple `.bps`): no `payload.actor`, so notes
+// route to the 'default' transport. The play-vs-skip predicate decides per token
+// whether it sounds: a sounding token routes to 'default', a MUTE one is SKIPPED
+// (no send anywhere — text is no longer a routed output, just a tree view).
+describe('dispatcher mono no-actor play-vs-skip routing', () => {
+  it('(a) routes sounding tokens to default, SKIPS mute tokens (no send)', () => {
+    const d = new Dispatcher(makeCtx()) as DispAny;
+    const out = new MockTransport();
+    d.addTransport('default', out);
+    // `do4` is a note (sounds); `tigida` is a mute bol → skipped.
+    d.setSoundPredicate((t: string) => /^(do|re|mi|fa|sol|la|si)\d/.test(t));
+    d.loadEvents([
+      { token: 'do4', startSec: 0, durSec: 0.5, type: 'note' },
+      { token: 'tigida', startSec: 0.5, durSec: 0.5, type: 'note' }
+    ]);
+    drain(d);
+    // Only the sounding token reached the transport; the mute one was skipped.
+    expect(out.sent.map((s) => s.token)).toEqual(['do4']);
   });
 });

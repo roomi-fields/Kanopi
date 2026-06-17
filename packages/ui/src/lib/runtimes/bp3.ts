@@ -24,21 +24,17 @@ import { MidiSink } from 'runtime-midi';
 // on the WebAudio transport; the resolver turns pitch names into frequencies.
 import { Dispatcher } from '../../../../core/src/dispatcher/dispatcher.js';
 import { WebAudioTransport } from '../../../../core/src/dispatcher/transports/webaudio.js';
-// Text grammars (bols, words, numbers — half the corpus) route here instead of
-// audio: a timestamped-symbol console, fed AS-IS through the same dispatcher.
-import { TextTransport } from '../../../../core/src/dispatcher/transports/text.js';
 // Per-actor MIDI transport for orchestrator .bps (a voice routed `transport:midi`).
 import { MidiTransport } from '../../../../core/src/dispatcher/transports/midi.js';
 import { Resolver } from '../../../../core/src/dispatcher/resolver.js';
 // Tree-derived dispatch events (M5+ multi-actor refacto): flatten BPx's
 // `derive({ output: 'complete' }).tree` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
-import { treeToDispatchEvents } from './tree-dispatch';
-import { textStream } from '../../stores/textstream.svelte';
+import { treeToDispatchEvents, type DispatchEvent } from './tree-dispatch';
 // The FULL derived production, set ONCE per eval (the complete TimedToken[] BPx
-// produced at derive time, BEFORE playback). Distinct from the over-time
-// textStream: this is the whole sequence, the source of truth the Text panel and
-// the Structure visualizer read.
+// produced at derive time, BEFORE playback). This is the whole sequence, the
+// source of truth the Text panel (read by order via the tree) and the Structure
+// visualizer read.
 import { production } from '../../stores/production.svelte';
 import type {
   ProductionToken,
@@ -219,7 +215,6 @@ interface OrchestratedActor {
 }
 interface Orchestration {
   actorTable: Record<string, unknown>;
-  terminalActorMap: Record<string, string>;
   actors: OrchestratedActor[];
 }
 
@@ -429,7 +424,6 @@ const bpsFrontend: Frontend = (code) => {
   if (names.length === 0) return base;
   const orchestration: Orchestration = {
     actorTable,
-    terminalActorMap: (c.terminalActorMap ?? {}) as Record<string, string>,
     actors: names.map((name) => ({
       name,
       transportKey: actorTable[name]?.transport?.key ?? 'audio',
@@ -524,6 +518,26 @@ export function sliceBeat<T extends Tok>(tokens: T[], index: number, beatMs: num
   return tokens
     .filter((t) => t.start >= from - 1e-6 && t.start < to - 1e-6)
     .map((t) => ({ ...t, start: t.start - from, end: t.end - from }));
+}
+
+/**
+ * STEP windowing for tree-derived dispatch events — the `sliceBeat` twin on the
+ * SECONDS timeline the dispatcher loads (`treeToDispatchEvents`). Keeps only the
+ * events whose onset falls inside beat `index` (`[index*beatSec, +beatSec)`) and
+ * re-zeroes them to t=0 so the beat plays immediately. Same onset rule as the
+ * flat `sliceBeat`, applied uniformly now that ALL grammars load via events.
+ */
+export function sliceBeatEvents(
+  events: DispatchEvent[],
+  index: number,
+  beatSec: number
+): DispatchEvent[] {
+  if (!(beatSec > 0)) return events;
+  const from = index * beatSec;
+  const to = from + beatSec;
+  return events
+    .filter((e) => e.startSec >= from - 1e-9 && e.startSec < to - 1e-9)
+    .map((e) => ({ ...e, startSec: e.startSec - from }));
 }
 
 // Build the FULL-production view from a derivation and publish it to the
@@ -930,12 +944,25 @@ function makeBpxAdapter(
       // readout: a note, a front-end sounding symbol, an orchestrated actor
       // terminal, or a backtick reference all "sound"; everything else is text.
       const soundingSet = new Set(soundingSymbols ?? []);
-      const actorMap = orchestration?.terminalActorMap ?? {};
       const btTable = backticks ?? {};
+      // Orchestrated actor terminals are "sounding" too. With the flat
+      // symbol→actor map gone, membership is read off the tree itself: any
+      // terminal that appears as an actor-bound note (`payload.actor`) sounds.
+      const actorTerminals = new Set<string>();
+      if (orchestration && orchestration.actors.length > 0) {
+        for (const e of treeToDispatchEvents(
+          rawTree as Parameters<typeof treeToDispatchEvents>[0],
+          symbolNames
+        )) {
+          if (e.type === 'note' && (e.payload as { actor?: string | null } | null)?.actor) {
+            actorTerminals.add(e.token);
+          }
+        }
+      }
       const productionSounds = (token: string) =>
         isNoteName(token) ||
         soundingSet.has(token) ||
-        Object.prototype.hasOwnProperty.call(actorMap, token) ||
+        actorTerminals.has(token) ||
         Object.prototype.hasOwnProperty.call(btTable, token);
       // `beatDurSec` (`60/bpm`) is the STEP unit. The grammar derived at
       // `currentBpm`, so every beat boundary on the produced timeline is one
@@ -987,9 +1014,9 @@ function makeBpxAdapter(
       }
 
       // Orchestrator `.bps`: each `@actor` owns an alphabet and a transport
-      // (an @devices appliance). The dispatcher does per-token actor lookup
-      // (terminalActorMap → actor → transport). MIDI is silent-but-safe without
-      // hardware.
+      // (an @devices appliance). The dispatcher routes each note by its OWN
+      // `payload.actor` (off the tree) → actor → transport; there is no flat
+      // symbol→actor map. MIDI is silent-but-safe without hardware.
       if (orchestration && orchestration.actors.length > 0) {
         // Device GATE (DEVICES_SPEC §3/§4, ADAPTER_SPEC §1bis b): resolve every
         // voice's appliance and verify type compatibility BEFORE routing/start.
@@ -1006,11 +1033,11 @@ function makeBpxAdapter(
         }
 
         const da = dispatcher as unknown as {
-          setActors(t: unknown, m: Record<string, string>): void;
+          setActors(t: unknown): void;
           setActorTransport(actor: string, transport: string): void;
           setActorResolver(actor: string, resolver: Resolver): void;
         };
-        da.setActors(orchestration.actorTable, orchestration.terminalActorMap);
+        da.setActors(orchestration.actorTable);
         const webaudio = new WebAudioTransport(ctx, { resolver: makeWesternResolver() });
         let webaudioAdded = false;
         let midi: InstanceType<typeof MidiTransport> | undefined;
@@ -1050,16 +1077,16 @@ function makeBpxAdapter(
         }
         // Multi-actor routing (M5+ refacto): build dispatch events FROM THE TREE
         // so each note carries its OWN `payload.actor` — a terminal shared by two
-        // actors ('sitar.Sa' vs 'tabla.Sa') routes to DISTINCT transports, which
-        // the flat `terminalActorMap` collapsed. Control nodes carry their marker
-        // payload + `nature` for per-actor flux.
+        // actors ('sitar.Sa' vs 'tabla.Sa') routes to DISTINCT transports (the
+        // dispatcher keys on `payload.actor`; there is NO flat symbol→actor map).
+        // Control nodes carry their marker payload + `nature` for per-actor flux.
         //
         // Defense-in-depth (twin of the default-scene fix above): never hand a
         // structural non-terminal to a transport. Keep an event when it is a
-        // control, a note bound to an actor (or, legacy, in `terminalActorMap`),
-        // a backtick reference, or a plain note name; drop an unexpanded start
-        // symbol (e.g. `S` when no guarded rule matched).
-        const terminalActorMap = orchestration.terminalActorMap;
+        // control, an actor-bound note, a backtick reference, or a plain note
+        // name; drop an unexpanded start symbol (e.g. `S` when no guarded rule
+        // matched). Every orchestrated terminal carries its `payload.actor`, so
+        // membership is read off the event itself — not the upstream map.
         const isBacktick = backticks ?? {};
         const treeEvents = treeToDispatchEvents(
           rawTree as Parameters<typeof treeToDispatchEvents>[0],
@@ -1069,7 +1096,6 @@ function makeBpxAdapter(
           if (e.type === 'rest') return false;
           const actor = (e.payload as { actor?: string | null } | null)?.actor;
           if (actor) return true;
-          if (Object.prototype.hasOwnProperty.call(terminalActorMap, e.token)) return true;
           if (Object.prototype.hasOwnProperty.call(isBacktick, e.token)) return true;
           return isNoteName(e.token);
         });
@@ -1085,11 +1111,13 @@ function makeBpxAdapter(
         return;
       }
 
-      // Per-symbol sound routing (decision routage-texte-son-par-symbole): a
+      // Per-symbol play-vs-skip (decision routage-texte-son-par-symbole): a
       // token sounds if it's a note OR its symbol carries a sound assignment
-      // from the front-end — those go to audio/MIDI; everything else streams to
-      // the symbolic console. Both transports share one dispatcher, so a mixed
-      // grammar voices its sounding symbols AND prints the rest, in time.
+      // from the front-end — those reach audio/MIDI. A mute token is simply NOT
+      // PLAYED (skipped by the dispatcher); the symbolic readout is a VIEW of
+      // the production tree (Text panel via `orderedTokensFromTree`), not a
+      // routed output. Decided per token, so a mixed grammar voices its sounding
+      // symbols and skips the rest.
       const sounding = new Set(soundingSymbols ?? []);
       const soundsFn = (token: string) => isNoteName(token) || sounding.has(token);
 
@@ -1098,22 +1126,39 @@ function makeBpxAdapter(
       // The dispatcher routes via per-token resolver/transport lookup; this
       // global resolver is the fallback the WebAudio path uses for pitches.
       (dispatcher as unknown as { _resolver: Resolver })._resolver = resolver;
-      dispatcher.addTransport(
-        'text',
-        new TextTransport({
-          onSymbol: (s) =>
-            textStream.push({ token: s.token, startSec: s.startSec, durSec: s.durSec })
-        })
-      );
+      // The predicate decides play-vs-skip — there is no text transport. A mute
+      // token is not routed anywhere.
       (
         dispatcher as unknown as {
-          setSoundRouting(fn: (t: string) => boolean, name: string): void;
+          setSoundPredicate(fn: (t: string) => boolean): void;
         }
-      ).setSoundRouting(soundsFn, 'text');
-      // Label the console panel when this grammar will emit any non-sounding symbol.
-      if (tokens.some((t: { token: string }) => !soundsFn(t.token))) textStream.setSource(id);
+      ).setSoundPredicate(soundsFn);
 
-      dispatcher.load(tokens);
+      // Unified routing (M5+ refacto): a NON-orchestrated grammar loads through
+      // the SAME payload path as an orchestrated one. Flatten the tree to events
+      // (no `payload.actor`). The dispatcher routes each terminal uniformly: a
+      // SOUNDING token (`soundsFn` true) → 'default' audio, a MUTE token is
+      // SKIPPED (not played) — the per-symbol split is honoured for every token,
+      // so a mixed grammar voices its notes and skips its mute symbols (which
+      // still appear in the Text panel's tree view). Each leaf carries its
+      // sealed E-016 `rq`, so velocity/transpose/channel still fold over
+      // controlState exactly as the old flat `dispatcher.load` did. We keep ALL
+      // terminals (sounding AND mute) — only rests drop here (the dispatcher
+      // itself skips silences/prolongations). BPx already expanded the grammar,
+      // so the flat terminal stream carries no unexpanded start symbol to guard
+      // against (that leak was scene-guarded `.bps` only, handled by the
+      // orchestrated/default-scene paths above).
+      let treeEvents = treeToDispatchEvents(
+        rawTree as Parameters<typeof treeToDispatchEvents>[0],
+        symbolNames
+      ).filter((e) => e.type !== 'rest');
+      // STEP: when a beat is requested, keep only that beat's events (re-zeroed)
+      // — the events twin of the flat `sliceBeat` already applied to `tokens`.
+      if (section && section.count > 1) {
+        const beatSec = currentBpm > 0 ? 60 / currentBpm : 0;
+        treeEvents = sliceBeatEvents(treeEvents, section.index, beatSec);
+      }
+      (dispatcher as unknown as { loadEvents(ev: unknown[]): void }).loadEvents(treeEvents);
       // Loop so an armed actor sustains like a Strudel pattern: the grammar's
       // derivation repeats at each cycle boundary until the actor is toggled off,
       // the transport stops, or the page hushes. A Ctrl+Enter on a standalone

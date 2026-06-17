@@ -40,12 +40,11 @@ export class Dispatcher {
     this.flagState = {};       // { flagName: value } — synced from BP3 after produce
     this._flagNames = [];      // ordered flag names from BP3
 
-    // Transport routing: symbol name → transport name (e.g. 'Sa' → 'midi')
-    this._transportMap = {};  // set via setTransportMap()
-
-    // Actor system: per-actor resolver and transport
+    // Actor system: per-actor resolver and transport. Routing keys on each
+    // event's OWN `payload.actor` (carried off the BPx tree) — there is no flat
+    // symbol→actor map: a terminal shared by two actors routes by occurrence,
+    // never collapsed. A note WITHOUT an actor routes to the 'default' transport.
     this._actors = {};              // actorName → { resolver, transportName, transport }
-    this._terminalActorMap = {};    // terminal → actorName
 
     // Per-actor flux state (M5+ multi-actor refacto): a `flux`/transport-control
     // marker updates only its OWN actor's running state, applied to that actor's
@@ -79,22 +78,12 @@ export class Dispatcher {
   }
 
   /**
-   * Set transport routing map: symbol → transport name.
-   * Symbols not in the map use the 'default' transport.
-   * @param {Object} map - { 'Sa': 'midi', 'Re': 'midi', ... }
-   */
-  setTransportMap(map) {
-    this._transportMap = map || {};
-  }
-
-  /**
-   * Set actor system: terminal → actor mapping + actor definitions.
-   * Each actor can have its own resolver and transport.
+   * Set actor system: per-actor definitions (resolver + transport). Routing is
+   * by each event's own `payload.actor` (off the tree), so NO flat symbol→actor
+   * map is needed — a terminal shared by two actors routes by occurrence.
    * @param {Object} actorTable - { actorName → { alphabet, transport, ... } }
-   * @param {Object} terminalActorMap - { terminal → actorName }
    */
-  setActors(actorTable, terminalActorMap) {
-    this._terminalActorMap = terminalActorMap || {};
+  setActors(actorTable) {
     this._actors = {};
     if (actorTable) {
       for (const [name, def] of Object.entries(actorTable)) {
@@ -131,54 +120,28 @@ export class Dispatcher {
   }
 
   /**
-   * Get the resolver for a given token (actor-specific or global fallback).
+   * Resolve the destination transport for a terminal, UNIFORMLY for every
+   * grammar. The play-vs-skip split is BP3-specific (note-name OR sound
+   * assignment), supplied by the adapter as `_soundsFn`; the dispatcher just
+   * honours it. A token that does NOT sound is MUTE: it is NOT routed anywhere
+   * (return null → the caller skips it). Text is no longer a routed output —
+   * the symbolic readout is a VIEW of the production tree, not a transport. A
+   * sounding token → its actor transport (`_transportForActor`); no actor (mono
+   * / `.gr` / legacy) → 'default'.
    * @param {string} token
-   * @returns {Resolver|null}
-   */
-  _resolverForToken(token) {
-    const actorName = this._terminalActorMap[token];
-    if (actorName && this._actors[actorName]?.resolver) {
-      return this._actors[actorName].resolver;
-    }
-    return this._resolver || null;
-  }
-
-  /**
-   * Get the transport for a given token (actor-specific or global fallback).
-   * @param {string} token
+   * @param {string|undefined|null} actorName
    * @returns {Transport|null}
    */
-  _transportForToken(token) {
-    // Per-symbol sound routing (decision routage-texte-son-par-symbole): a token
-    // that does NOT sound is rendered on the text transport instead of audio.
-    // The predicate is BP3-specific (note-name OR sound assignment) and supplied
-    // by the adapter; the dispatcher just honours it. A grammar can mix sounding
-    // and non-sounding symbols, so this is decided per token, not per grammar.
-    if (this._soundsFn && !this._soundsFn(token)) {
-      const text = this.transports[this._textTransportName];
-      if (text) return text;
-    }
-
-    const actorName = this._terminalActorMap[token];
-    if (actorName && this._actors[actorName]?.transportName) {
-      const t = this.transports[this._actors[actorName].transportName];
-      if (t) return t;
-    }
-    // Global fallback: transportMap → 'default' → first available
-    const mappedName = this._transportMap[token];
-    return (mappedName && this.transports[mappedName])
-      || this.transports['default']
-      || Object.values(this.transports)[0]
-      || null;
+  _transportForTerminal(token, actorName) {
+    if (this._soundsFn && !this._soundsFn(token)) return null;
+    return this._transportForActor(actorName);
   }
 
   /**
-   * Get the transport for a given ACTOR (M5+ payload routing). Resolves
-   * `_actors[actorName].transportName` → transport; falls back to the 'default'
-   * transport then the first registered one. Used when a dispatch event carries
-   * its own `payload.actor` (the tree-derived path), so two actors sharing a
-   * terminal name ('sitar.Sa' vs 'tabla.Sa') route to DISTINCT transports — the
-   * flat `_terminalActorMap` collapsed them.
+   * Resolve the destination transport for a SOUNDING note, by its actor: an
+   * actor's declared transport, else 'default', else the first registered one. A
+   * note WITHOUT an actor (mono / `.gr` / legacy) routes to 'default' — there is
+   * no flat symbol→actor map to consult.
    * @param {string|undefined|null} actorName
    * @returns {Transport|null}
    */
@@ -191,15 +154,15 @@ export class Dispatcher {
   }
 
   /**
-   * Route non-sounding tokens to a text transport. `soundsFn(token)` returns
-   * true when the token should sound (audio/MIDI), false to render it as a
-   * timestamped symbol on the named text transport.
+   * Set the play-vs-skip predicate. `soundsFn(token)` returns true when the
+   * token should sound (route to its actor transport), false when it is MUTE.
+   * A mute token is simply NOT PLAYED — the dispatcher routes only sounding
+   * tokens to runtime outputs; it no longer carries a text output. The symbolic
+   * readout is a view of the production tree (Text panel), not a routed sink.
    * @param {(token: string) => boolean} soundsFn
-   * @param {string} textTransportName
    */
-  setSoundRouting(soundsFn, textTransportName) {
+  setSoundPredicate(soundsFn) {
     this._soundsFn = soundsFn;
-    this._textTransportName = textTransportName;
   }
 
   /**
@@ -332,32 +295,30 @@ export class Dispatcher {
 
     this._cursor = 0;
     this._loopOffset = 0;
-    this._payloadRouting = false;
   }
 
   /**
-   * Load tree-derived dispatch events (M5+ multi-actor refacto). Unlike `load()`
-   * (flat BP3 tokens, ms, symbol→actor via the flat map), each event here CARRIES
-   * its own payload off the BPx tree: a note's `payload.actor`/`payload.params`,
-   * a control's marker payload + `nature`. Times are already in SECONDS.
+   * Load tree-derived dispatch events — the SINGLE load path for ALL grammars
+   * (orchestrated AND mono / `.gr` / text). Each event CARRIES its own payload
+   * off the BPx tree: a note's `payload.actor`/`payload.params` and the sealed
+   * E-016 `rq` (`runtimeQualifiers`), a control's marker payload + `nature`.
+   * Times are already in SECONDS.
    *
-   * Routing then keys on `payload.actor` per event (so a terminal shared by two
-   * actors routes to two transports) and flux state is per-actor. Falls back to
-   * the legacy token-based routing when an event has no `payload.actor`, so a
-   * mono-actor / legacy `.gr` stream still plays exactly as before.
+   * Routing keys on `payload.actor` per event: a terminal shared by two actors
+   * routes to two transports. A note WITHOUT an actor routes to the 'default'
+   * transport. A MUTE token (`soundsFn` false in `_schedule`) is skipped, not
+   * routed — uniformly for every grammar. There is NO flat symbol→actor map.
    *
-   * @param {Array<{token:string,startSec:number,durSec:number,type:'note'|'control'|'rest',payload?:object,nature?:string}>} events
+   * @param {Array<{token:string,startSec:number,durSec:number,type:'note'|'control'|'rest',payload?:object,nature?:string,rq?:object}>} events
    */
   loadEvents(events) {
     if (!events || events.length === 0) {
       this.events = [];
-      this._payloadRouting = false;
       return;
     }
 
     this.controlState = { ...this._controlDefaults };
     this._fluxByActor = {};
-    this._payloadRouting = true;
 
     this.events = events.map(e => {
       const isControl = e.type === 'control';
@@ -372,6 +333,8 @@ export class Dispatcher {
         isProlongation: isRest && e.token === '_',
         payload: e.payload ?? null,
         nature: e.nature,
+        // E-016 sealed per-leaf runtime state, folded over controlState at send.
+        rq: e.rq ?? null,
       };
     }).sort((a, b) => {
       if (a.startSec !== b.startSec) return a.startSec - b.startSec;
@@ -461,7 +424,10 @@ export class Dispatcher {
       if (absTime > scheduleUntil) break;
 
       if (evt.isControl) {
-        if (this._payloadRouting) {
+        // A tree-derived control carries its own marker payload / nature → route
+        // it per-actor (`_applyControlNode`). A flat `load()` control token (no
+        // payload) is the legacy `_xxx(value)` string form → `_applyControl`.
+        if (evt.payload || evt.nature) {
           this._applyControlNode(evt, absTime);
         } else {
           this._applyControl(evt.token);
@@ -507,48 +473,30 @@ export class Dispatcher {
           continue;
         }
 
-        // Pre-compiled child scene — schedule ALL its tokens at once
-        // Rule: parent always controls the envelope. Child @duration is ignored.
-        if (this._childScenes && this._childScenes[evt.token]) {
-          const child = this._childScenes[evt.token];
-          const childNaturalMs = child.duration || 1;
-          const childTargetSec = evt.durSec; // parent decides
-
-          for (const ct of child.tokens) {
-            if (ct.token.startsWith('_') || ct.token === '-' || ct.token === '_') continue;
-            if (ct.end <= ct.start) continue;
-            // Proportional rescale
-            const cStartRel = ct.start / childNaturalMs;
-            const cDurRel = (ct.end - ct.start) / childNaturalMs;
-            const cAbsTime = absTime + cStartRel * childTargetSec;
-            const cDur = cDurRel * childTargetSec;
-            const transport = this._transportForToken(ct.token);
-            if (transport) {
-              transport.send({
-                token: ct.token,
-                startSec: this._loopOffset + evt.startSec + cStartRel * childTargetSec,
-                durSec: cDur,
-                ...this.controlState,
-                velocity: this.controlState.vel / 127,
-              }, cAbsTime);
-            }
-          }
-          this._cursor++;
-          continue;
-        }
-
-        // M5+ payload routing: a tree-derived note carries its OWN actor. Route
-        // by actor (distinct transports for a shared terminal) and fold the
-        // per-actor flux + occurrence override. Notes WITHOUT an actor (mono /
-        // legacy) fall through to the token-based path below, unchanged.
-        if (this._payloadRouting && evt.payload?.actor) {
+        // Unified payload routing: a note carrying its OWN `payload.actor` (off
+        // the tree) routes by actor — distinct transports for a shared terminal,
+        // per-actor flux + occurrence override (`_sendActorNote`). Checked FIRST
+        // and routed UNCONDITIONALLY: the play-vs-skip predicate (`_soundsFn`) is
+        // a MONO-actor BP3 concern (note-name OR sound assignment) and must NOT
+        // gate a declared actor's notes — they sound through their actor's output.
+        const actor = evt.payload?.actor ?? null;
+        if (actor) {
           this._sendActorNote(evt, absTime);
           this._cursor++;
           continue;
         }
 
-        // Route to transport: actor-specific → transportMap → 'default'
-        const transport = this._transportForToken(evt.token);
+        // No-actor terminal (mono BP3): play-vs-skip. A token the predicate marks
+        // MUTE is simply NOT PLAYED (no audio, no text transport — the symbolic
+        // readout is a view of the production tree, not a routed output). Decided
+        // per token, so a mixed grammar voices its sounding symbols and skips the rest.
+        if (this._soundsFn && !this._soundsFn(evt.token)) {
+          this._cursor++;
+          continue;
+        }
+
+        // No-actor terminal: resolve the transport (null when muted → skipped).
+        const transport = this._transportForTerminal(evt.token, null);
 
         if (transport) {
           // Fold the per-token runtime payload over the running controlState
@@ -560,9 +508,10 @@ export class Dispatcher {
             continue;
           }
 
-          // Symbolic pitch operations: keyxpand → rotate (degree) → transpose (grid)
+          // Symbolic pitch operations: keyxpand → rotate (degree) → transpose
+          // (grid). A no-actor note uses the global resolver.
           let token = evt.token;
-          const resolver = this._resolverForToken(evt.token);
+          const resolver = this._resolver || null;
           if (resolver) {
             if (this.controlState.keyxpand && this.controlState.keyxpand !== '0,1') {
               const parts = String(this.controlState.keyxpand).split(',');
@@ -579,9 +528,6 @@ export class Dispatcher {
               token = resolver.transposeToken(token, eff.transpose);
             }
           }
-          // Actor transport params (e.g. ch:10 from @actor drums ... transport:midi(ch:10))
-          const actorName = this._terminalActorMap[token] || this._terminalActorMap[evt.token];
-          const actorParams = actorName && this._actors[actorName]?.def?.transportParams || {};
 
           transport.send({
             token,
@@ -589,8 +535,7 @@ export class Dispatcher {
             durSec: evt.durSec,
             ...this.controlState,
             ...(eff.chan !== undefined ? { chan: eff.chan } : {}),
-            ...actorParams,  // actor params override controlState (e.g. chan from ch:10)
-            velocity: (actorParams.vel ?? eff.vel) / 127,
+            velocity: eff.vel / 127,
           }, absTime);
         }
       }
@@ -914,9 +859,12 @@ export class Dispatcher {
 
       if (evt.isSilence || evt.isProlongation) continue;
 
-      // Symbolic pitch operations: keyxpand → rotate → transpose
+      // Symbolic pitch operations: keyxpand → rotate → transpose. Per-actor
+      // resolver when the event carries an actor (off the tree), else global.
       let token = evt.token;
-      const resolver = this._resolverForToken(evt.token);
+      const actorName = evt.payload?.actor ?? null;
+      const resolver =
+        (actorName && this._actors[actorName]?.resolver) || this._resolver || null;
       if (resolver) {
         if (this.controlState.keyxpand && this.controlState.keyxpand !== '0,1') {
           const parts = String(this.controlState.keyxpand).split(',');
