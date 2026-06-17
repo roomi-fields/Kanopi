@@ -382,8 +382,24 @@ const bpsFrontend: Frontend = (code) => {
   if (c.errors.length > 0) {
     return { ast: null, errors: c.errors.map((e) => ({ line: e.line, message: e.message })) };
   }
-  const alphabetNames = c.alphabet?.length ? c.alphabet : WESTERN_NOTES;
-  const parsed = parseWithSound(c.grammar, alphabetNames);
+  // Voie (a) (décision Romain 2026-06-17, archi frontend→AST→BPx) : on feed le
+  // SceneAST de BPScript DIRECTEMENT à BPx, au lieu de l'aller-retour par le TEXTE
+  // de grammaire BP3 (`parseBP3(compileBPS().grammar)` — l'échafaudage de parité,
+  // déprécié) qui EFFAÇAIT l'acteur par occurrence (`melody.`/`bass.` disparaissent
+  // du texte → la charge ne portait plus l'acteur, d'où l'ancienne table à plat).
+  // `compileBPS().ast` porte l'acteur par occurrence + les voix de code (backtick)
+  // que BPx ingère désormais directement (gap fondateur levé, BPx bba7c2f : le
+  // terminal backtick émis porte la clé `compileBPS().backticks`). Aucun `.bps` du
+  // corpus n'utilise la chaîne son BP3 `-al/-so` ; le son vient des notes
+  // (`isNoteName`) ou des `soundAssignments` de l'AST.
+  const soundAssignments =
+    (c.ast as { soundAssignments?: { subject: string }[] } | null)?.soundAssignments ?? [];
+  const parsed = {
+    ast: c.ast,
+    errors: [] as ParseError[],
+    settings: c.settings as SeEngineSettings | undefined,
+    soundingSymbols: soundAssignments.map((a) => a.subject)
+  };
   // Backtick voices: compileBPS keys foreign code by the EXACT BT token emitted
   // in the timeline (direct lookup, no parsing). Carry it through so the adapter
   // routes each BT terminal to its interpreter.
