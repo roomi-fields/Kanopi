@@ -42,6 +42,19 @@ class OpenBlocksStore {
    */
   errored = $state<Set<string>>(new Set());
 
+  /**
+   * Re-entrance guard for `replayArmed`. A `.bps` block carrying `@mm` re-applies
+   * its tempo to the central clock synchronously inside `evalOne` (setTempoSink →
+   * clock.setBpm), which re-emits the clock state. Any clock-state subscriber that
+   * triggers a replay (installBlockReplay, OpenBlocksStore replay listeners) would
+   * then re-enter `replayArmed` mid-flight and recurse → stack overflow. The
+   * play-edge flag in installBlockReplay covers the clean Play edge, but NOT a real
+   * BPM change during playback (TAP / fast BPM edit while a block is armed). This
+   * flag breaks the cycle for EVERY trigger: a replay already running short-circuits
+   * a nested replay request. Cleared in a finally, so a later legitimate replay runs.
+   */
+  _replaying = false;
+
   isArmed(q: string): boolean {
     return this.armed.has(q);
   }
@@ -199,21 +212,29 @@ class OpenBlocksStore {
    * just-loaded program, the derived snapshot can lag a tick behind the armed set
    * (the load→play regression), so a freshly-armed block would be missed. */
   async replayArmed() {
-    const seen = new Set<string>();
-    const armedList: OpenBlock[] = [];
-    for (const tabId of workspace.openTabIds) {
-      if (seen.has(tabId)) continue;
-      seen.add(tabId);
-      for (const b of this.blocksForFile(tabId)) {
-        if (this.armed.has(b.qualifiedName)) armedList.push(b);
+    // Re-entrance guard: a tempo re-emit (e.g. `@mm` → clock.setBpm) fired by an
+    // `evalOne` below must not re-trigger a replay while this one is still running.
+    if (this._replaying) return;
+    this._replaying = true;
+    try {
+      const seen = new Set<string>();
+      const armedList: OpenBlock[] = [];
+      for (const tabId of workspace.openTabIds) {
+        if (seen.has(tabId)) continue;
+        seen.add(tabId);
+        for (const b of this.blocksForFile(tabId)) {
+          if (this.armed.has(b.qualifiedName)) armedList.push(b);
+        }
       }
-    }
-    for (const b of armedList) {
-      try {
-        await this.evalOne(b);
-      } catch {
-        /* per-block failures logged by adapter */
+      for (const b of armedList) {
+        try {
+          await this.evalOne(b);
+        } catch {
+          /* per-block failures logged by adapter */
+        }
       }
+    } finally {
+      this._replaying = false;
     }
   }
 }

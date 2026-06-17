@@ -38,6 +38,69 @@ describe('openBlocks.blocksForFile — deterministic, not derived-list dependent
   });
 });
 
+// Re-entrance guard regression: a `.bps` block with `@mm` re-applies its tempo
+// to the central clock INSIDE its eval (clock.setBpm → re-emit), which a
+// clock-state subscriber turns back into a replay request. Before the guard,
+// that re-entered `replayArmed` mid-flight and recursed → stack overflow. The
+// guard short-circuits a nested replay while one is already running, then clears
+// the flag so a later legitimate replay still runs.
+describe('openBlocks.replayArmed — re-entrance guard', () => {
+  it('a replay triggered DURING replayArmed (e.g. tempo re-emit) does not recurse', async () => {
+    const id = workspace.loadFiles(
+      [{ path: 'reenter.strudel', contents: 'sound("bd hh")' }],
+      'reenter.strudel'
+    );
+    const [b] = openBlocks.blocksForFile(id!);
+    openBlocks.armed = new Set([b.qualifiedName]);
+
+    let evalCalls = 0;
+    const realEvalOne = openBlocks.evalOne.bind(openBlocks);
+    // Simulate the `@mm` re-emit: each eval synchronously re-enters replayArmed,
+    // exactly as a tempo change during playback would. The guard must absorb it.
+    openBlocks.evalOne = async () => {
+      evalCalls++;
+      await openBlocks.replayArmed(); // re-entrant call — must be a no-op here
+    };
+    try {
+      await openBlocks.replayArmed();
+    } finally {
+      openBlocks.evalOne = realEvalOne;
+      openBlocks.armed = new Set();
+    }
+
+    // The armed block evaluated exactly once; the nested replay was short-circuited
+    // (no stack overflow, no repeated eval).
+    expect(evalCalls).toBe(1);
+    // Flag is cleared so a subsequent legitimate replay can run again.
+    expect((openBlocks as unknown as { _replaying: boolean })._replaying).toBe(false);
+  });
+
+  it('a legitimate replay AFTER a prior one completes still runs', async () => {
+    const id = workspace.loadFiles(
+      [{ path: 'again.strudel', contents: 'sound("bd")' }],
+      'again.strudel'
+    );
+    const [b] = openBlocks.blocksForFile(id!);
+    openBlocks.armed = new Set([b.qualifiedName]);
+
+    let evalCalls = 0;
+    const realEvalOne = openBlocks.evalOne.bind(openBlocks);
+    openBlocks.evalOne = async () => {
+      evalCalls++;
+    };
+    try {
+      await openBlocks.replayArmed();
+      await openBlocks.replayArmed();
+    } finally {
+      openBlocks.evalOne = realEvalOne;
+      openBlocks.armed = new Set();
+    }
+
+    // Two separate, sequential replays each evaluated the armed block.
+    expect(evalCalls).toBe(2);
+  });
+});
+
 describe('openBlocks.disarmAll — clears armed/errored without touching the clock', () => {
   it('empties the armed and errored sets', () => {
     const id = workspace.loadFiles(
