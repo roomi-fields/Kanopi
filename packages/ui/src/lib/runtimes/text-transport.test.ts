@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { Dispatcher } from '../../../../core/src/dispatcher/dispatcher.js';
-import { TextTransport } from '../../../../core/src/dispatcher/transports/text.js';
 
-// Proof that a text grammar's terminals stream through the dispatcher to the
-// TextTransport as timestamped symbols (no resolver, no audio). This is the
-// engine half of the in-app symbol console (decision routage-texte-midi).
+// Per-symbol play-vs-skip (decision routage-texte-son-par-symbole). One dispatcher,
+// ONE audio transport: a token sounds → audio; a mute token is NOT PLAYED (skipped
+// — there is NO text transport, the symbolic readout is a VIEW of the production
+// tree, not a routed output). Proven on a MIXED token list: a grammar splits per
+// symbol, not wholesale.
 
 interface TimedTokenLike {
   token: string;
@@ -22,57 +23,7 @@ interface DispatcherInternals {
   _schedule(until: number): void;
 }
 
-function run(tokens: TimedTokenLike[]) {
-  const captured: { token: string; startSec: number; durSec: number }[] = [];
-  const fakeCtx = { currentTime: 0, state: 'running', resume() {} };
-  const d = new Dispatcher(fakeCtx as unknown as AudioContext) as unknown as DispatcherInternals;
-  const transport = new TextTransport({
-    onSymbol: (s) => captured.push({ token: s.token, startSec: s.startSec, durSec: s.durSec })
-  });
-  d.addTransport('default', transport);
-  d.load(tokens);
-  d._running = true;
-  d._cursor = 0;
-  d._loopOffset = 0;
-  d._schedule(Infinity);
-  return { captured, transport };
-}
-
-describe('TextTransport — symbolic streaming', () => {
-  it('streams a bols grammar terminals in order, with onsets', () => {
-    const { captured } = run([
-      { token: 'dha', start: 0, end: 500, type: 'terminal' },
-      { token: 'tigida', start: 500, end: 1000, type: 'terminal' },
-      { token: 'na', start: 1000, end: 1500, type: 'terminal' },
-      { token: 'dhin', start: 1500, end: 2000, type: 'terminal' }
-    ]);
-    expect(captured.map((s) => s.token)).toEqual(['dha', 'tigida', 'na', 'dhin']);
-    expect(captured.map((s) => s.startSec)).toEqual([0, 0.5, 1, 1.5]);
-    expect(captured[1].durSec).toBeCloseTo(0.5, 5);
-  });
-
-  it('keeps the full history on the transport for headless inspection', () => {
-    const { transport } = run([{ token: 'ka', start: 0, end: 250, type: 'terminal' }]);
-    expect(transport.symbols).toHaveLength(1);
-    expect(transport.symbols[0].token).toBe('ka');
-  });
-
-  it('skips silences (no symbol emitted for "-")', () => {
-    const { captured } = run([
-      { token: 'dha', start: 0, end: 500, type: 'terminal' },
-      { token: '-', start: 500, end: 1000, type: 'terminal' },
-      { token: 'ta', start: 1000, end: 1500, type: 'terminal' }
-    ]);
-    expect(captured.map((s) => s.token)).toEqual(['dha', 'ta']);
-  });
-});
-
-// Per-symbol play-vs-skip (decision routage-texte-son-par-symbole): one
-// dispatcher, ONE audio transport. A token sounds → audio; a mute token is NOT
-// PLAYED (skipped — no text transport, the symbolic readout is a view of the
-// production tree). Proven on a MIXED token list: a grammar splits per symbol,
-// not wholesale.
-describe('dispatcher — per-symbol play-vs-skip', () => {
+describe('dispatcher — per-symbol play-vs-skip (text is a view, not a transport)', () => {
   function split(tokens: TimedTokenLike[], soundsFn: (t: string) => boolean) {
     const audio: string[] = [];
     const fakeCtx = { currentTime: 0, state: 'running', resume() {} };

@@ -1,11 +1,11 @@
 // The FULL derived production of a BP3/BPScript voice, set ONCE per eval — the
 // complete `TimedToken[]` BPx produces at derive time, BEFORE any time-scheduled
-// playback. This is the single source of truth for "what was produced": unlike
-// `textstream.svelte` (which the dispatcher feeds symbol-by-symbol over playback
-// time), this holds the entire sequence immediately on eval.
+// playback. This is the single source of truth for "what was produced": it holds
+// the entire sequence immediately on eval.
 //
-// Consumers: the Text panel renders it all-at-once; the Structure visualizer +
-// STEP read the same shape (section boundaries included so they don't re-derive).
+// Consumers: the Text panel renders the production BY ORDER all-at-once (the
+// symbolic readout is a VIEW of this tree — there is no routed text transport);
+// the Structure visualizer + STEP read the same shape (sections + beat grid).
 //
 // Backtick-only voices (Strudel/Hydra) derive no note tokens — the store is just
 // `clear()`ed for them, so the Text panel degrades to an empty/"no production"
