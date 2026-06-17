@@ -3,6 +3,16 @@ import type { TreeNode, VirtualFile } from '../lib/workspace/types';
 import { runtimeFromExt } from '../lib/workspace/types';
 import { buildTree } from '../lib/workspace/build-tree';
 
+// Monotonic counter so every minted file id is unique for the lifetime of the
+// page — `Date.now()` alone collides when two `loadFiles`/`addFile` calls land in
+// the SAME millisecond (rapid demo swaps), and a colliding id let a STALE tab in
+// `openTabIds` resolve to a DIFFERENT freshly-loaded file, resurfacing the
+// previous program's blocks (the phantom "02" open block after a scene swap).
+let fileIdCounter = 0;
+function mintFileId(): string {
+  return `f${Date.now()}-${fileIdCounter++}`;
+}
+
 class WorkspaceStore {
   files = $state<VirtualFile[]>(starterFiles());
   openTabIds = $state<string[]>([]);
@@ -73,7 +83,7 @@ class WorkspaceStore {
     // (e.g. re-opening the same resource entry from the Resources view).
     const existing = this.files.find((f) => f.path === path);
     if (existing) return existing.id;
-    const id = `f${Date.now()}`;
+    const id = mintFileId();
     this.files = [
       ...this.files,
       {
@@ -92,8 +102,8 @@ class WorkspaceStore {
    * Returns the focused file's id (or null) so the caller can arm+play the
    * loaded program — a demo sounds on load, not after a manual disarm/rearm. */
   loadFiles(files: { path: string; contents: string }[], focusPath?: string): string | null {
-    const next: VirtualFile[] = files.map((f, i) => ({
-      id: `f${Date.now()}-${i}`,
+    const next: VirtualFile[] = files.map((f) => ({
+      id: mintFileId(),
       path: f.path,
       name: f.path.split('/').pop() ?? f.path,
       contents: f.contents,
