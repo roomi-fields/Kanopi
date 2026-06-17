@@ -56,9 +56,19 @@ function nameOfDirective(d: BpsDirective): string | null {
   return null;
 }
 
+// A `LibraryDirective` AST node (`@library.<engine> "<bank>"`).
+interface LibraryDirectiveNode {
+  type: 'LibraryDirective';
+  engine: string;
+  name: string;
+}
+
 function fromBps(contents: string): ReferencedLib[] {
   const out: ReferencedLib[] = [];
-  let c: { errors?: unknown[]; directives?: BpsDirective[]; libraries?: Record<string, string[]> };
+  // The AST's `directives` (single source of truth) carry BOTH the resource
+  // directives (alphabet, tuning, …) and the `LibraryDirective` audio-bank nodes.
+  // `compileBPS().directives` is `ast.directives`, so we read the AST here too.
+  let c: { errors?: unknown[]; ast?: { directives?: (BpsDirective & { type?: string })[] } | null };
   try {
     c = compileBPS(contents) as typeof c;
   } catch {
@@ -66,7 +76,8 @@ function fromBps(contents: string): ReferencedLib[] {
   }
   if (c.errors && c.errors.length > 0) return out;
 
-  for (const d of c.directives ?? []) {
+  const directives = c.ast?.directives ?? [];
+  for (const d of directives) {
     const meta = DIRECTIVE_TYPES[d.name];
     if (!meta) continue;
     const name = nameOfDirective(d);
@@ -74,12 +85,13 @@ function fromBps(contents: string): ReferencedLib[] {
     out.push({ type: meta.type, typeLabel: meta.typeLabel, name });
   }
 
-  // Audio banks: `@library.<engine> "<bank>"` → { engine: [bank, …] }. The
-  // engine isn't a resource type the user browses; the bank id is what matters.
-  for (const banks of Object.values(c.libraries ?? {})) {
-    for (const bank of banks) {
-      out.push({ type: 'audio-bank', typeLabel: 'audio bank', name: bank });
-    }
+  // Audio banks: each `LibraryDirective` node (`@library.strudel "dirt-samples"`).
+  // The engine isn't a resource type the user browses; the bank name is what
+  // matters. Read off the AST nodes instead of compileBPS's `libraries` sidecar.
+  for (const d of directives) {
+    if (d.type !== 'LibraryDirective') continue;
+    const node = d as unknown as LibraryDirectiveNode;
+    out.push({ type: 'audio-bank', typeLabel: 'audio bank', name: node.name });
   }
 
   return dedupe(out);

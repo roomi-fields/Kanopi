@@ -3,6 +3,10 @@ import { core } from '../lib/core';
 import { runtimeFromExt } from '../lib/workspace/types';
 import type { Runtime } from '../lib/core';
 import { production } from './production.svelte';
+// Sections read from the BPScript AST (`compileBPS().ast`), the single source of
+// truth — replaces the former regex-on-grammar-text `headSections` for the `.bps`
+// scenes bar. Standalone module (no adapter/core import) → no cycle.
+import { headSectionsFromAst } from '../lib/runtimes/head-sections-ast';
 
 // A5 — named selectable scenes + STEP, driven off the active `.bps` file.
 //
@@ -66,37 +70,18 @@ export function sceneTableFromFile(
   try {
     const c = compileBPS(contents) as {
       errors: unknown[];
-      sceneTable?: Record<string, { file: string }>;
+      ast: { scenes?: { name: string; file: string }[] } | null;
     };
     if (c.errors.length > 0) return {};
-    return c.sceneTable ?? {};
+    // Read the `@scene <name> "<file>"` table from the AST's `SceneDirective`
+    // nodes (single source of truth), instead of compileBPS's `sceneTable`
+    // sidecar. `{ [name]: { file } }` — the same shape the sidecar produced.
+    const out: Record<string, { file: string }> = {};
+    for (const s of c.ast?.scenes ?? []) out[s.name] = { file: s.file };
+    return out;
   } catch {
     return {};
   }
-}
-
-// Parse the head rule's RHS into its top-level sequence elements. The compiled
-// grammar's first `S --> …` line lists them as `|name|` terminals (or `{a,b}`
-// for a simultaneous group, which counts as one section). Used by STEP.
-export function headSections(grammar: string): string[] {
-  const line = grammar.split('\n').find((l) => /\bS\s*-->/.test(l));
-  if (!line) return [];
-  const rhs = line.slice(line.indexOf('-->') + 3).trim();
-  const sections: string[] = [];
-  let depth = 0;
-  let buf = '';
-  for (const ch of rhs) {
-    if (ch === '{') depth++;
-    if (ch === '}') depth--;
-    if (/\s/.test(ch) && depth === 0) {
-      if (buf.trim()) sections.push(buf.trim().replace(/[|{}]/g, ''));
-      buf = '';
-    } else {
-      buf += ch;
-    }
-  }
-  if (buf.trim()) sections.push(buf.trim().replace(/[|{}]/g, ''));
-  return sections;
 }
 
 // Compile the active file content into the scenes/sections view model. Pure —
@@ -111,18 +96,26 @@ export function modelFromFile(
   try {
     const c = compileBPS(contents) as {
       errors: unknown[];
-      grammar: string;
-      flagStates?: Record<string, Record<string, number>>;
+      ast: {
+        directives?: { type?: string; flag?: string; states?: { name: string; value: number }[] }[];
+      } | null;
     };
     if (c.errors.length > 0) return EMPTY;
-    const table = c.flagStates?.scene ?? {};
-    const scenes = Object.entries(table).map(([name, value]) => ({ name, value }));
+    // Named scenes from the AST's `FlagStatesDirective` nodes (`@flag scene:
+    // calm:1, full:2`) — single source of truth, replacing compileBPS's
+    // `flagStates` sidecar. We read the `scene` flag's states.
+    const sceneStates =
+      c.ast?.directives?.find((d) => d.type === 'FlagStatesDirective' && d.flag === 'scene')
+        ?.states ?? [];
+    const scenes = sceneStates.map((s) => ({ name: s.name, value: s.value }));
     return {
       fileName,
       runtime: 'bpscript',
       code: contents,
       scenes,
-      sections: headSections(c.grammar),
+      // Head-rule sections from the AST (the Scenes-bar variant keeps every
+      // top-level element, mirroring the former no-filter text reader).
+      sections: headSectionsFromAst(c.ast),
       defaultScene: defaultSceneOf(scenes)
     };
   } catch {

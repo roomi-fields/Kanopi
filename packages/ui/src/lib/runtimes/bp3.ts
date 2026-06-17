@@ -53,6 +53,11 @@ import type { VoiceOutputType } from './adapter';
 // session used. Consumed AS-IS — the adapter only maps ids → loader.
 import { findBank } from '../library/audio-banks';
 import { loadSampleBank } from './strudel';
+// Head-rule sections read from the BPScript AST (`compileBPS().ast`), the single
+// source of truth — replacing the deprecated regex-on-grammar-text reader for the
+// `.bps` path. The `.gr` path keeps the local text reader (it never compiles
+// through BPScript, so it has no AST — see `headSectionNames` below).
+import { headSectionNamesFromAst } from './head-sections-ast';
 
 /**
  * BPx language adapters (PRIMARY vertical slice).
@@ -317,8 +322,10 @@ function parseWithSound(code: string, fallbackAlphabet: string[]) {
 // `.gr` — native BP3 grammar text straight into the BP3 front-end. The head
 // rule's top-level non-terminals (`S --> … A' B' C'`) are the macro structure;
 // parseBP3 expands them away in the derivation, so we read the section names off
-// the SOURCE head line (same parser as the compiled `.bps` path). This is what
-// lets STEP advance a `.gr` section by section (Part B).
+// the SOURCE head line. This is what lets STEP advance a `.gr` section by section
+// (Part B). A `.gr` IS raw text — it never compiles through BPScript, so it has
+// no AST to read sections from; the text reader (`headSectionNames`) stays for it.
+// The `.bps` path reads its sections from the AST instead (`headSectionNamesFromAst`).
 const WESTERN_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const grFrontend: Frontend = (code) => {
   const parsed = parseWithSound(code, WESTERN_NOTES);
@@ -326,15 +333,15 @@ const grFrontend: Frontend = (code) => {
   return sections.length > 0 ? { ...parsed, sections } : parsed;
 };
 
-// Head-rule top-level sections of a grammar — the macro structure STEP advances
-// through. The first `S --> …` line lists them as a flat sequence of symbols (or
-// `{a,b}` simultaneous group = one section); `|name|` BPScript terminals carry
-// pipes. We keep the STRUCTURAL elements: a head sequence typically opens with
-// inline control terminals (`_chan(1) _vel(50) _volume(80)`) and may inline a
-// raw note before the section non-terminals (`A' B' C'`) — those are performance
-// directives, not sections, so they're filtered out. The `gram#N[i]` rule tag,
-// when present (`.gr` source), is stripped first. Mirrors `bpsScenes.headSections`
-// (kept local to avoid an adapter↔core cycle: bpsScenes → core → registry → this).
+// Head-rule top-level sections of a `.gr` grammar TEXT — the macro structure STEP
+// advances through. The first `S --> …` line lists them as a flat sequence of
+// symbols (or `{a,b}` simultaneous group = one section). We keep the STRUCTURAL
+// elements: a head sequence typically opens with inline control terminals
+// (`_chan(1) _vel(50) _volume(80)`) and may inline a raw note before the section
+// non-terminals (`A' B' C'`) — those are performance directives, not sections, so
+// they're filtered out. The `gram#N[i]` rule tag, when present (`.gr` source), is
+// stripped first. `.gr`-ONLY now: the `.bps` path reads sections from the AST
+// (`headSectionNamesFromAst`), which reproduces this exact filtering on the AST.
 function isControlTerminal(sym: string): boolean {
   // BP3 control/command terminals are underscore-prefixed (`_vel(50)`, `_striated`).
   if (sym.startsWith('_')) return true;
@@ -369,9 +376,98 @@ function headSectionNames(grammar: string): string[] {
   return sections;
 }
 
-// `.bps` — BPScript transpiles to a BP3 grammar (`compileBPS().grammar`), which
-// we feed into the SAME BP3 front-end as `.gr`. The compiled alphabet drives
-// parseBP3's terminal recognition. Two upstream tools, glue only.
+// Minimal view of the BPScript AST (`compileBPS().ast`) this adapter reads. Only
+// the nodes we derive the front-end view from are typed; bpscript carries more.
+// Reading these directly off the AST is the single-source-of-truth migration:
+// `flagStates`, `libraries` and `actorTable` no longer come from compileBPS's
+// precomputed sidecar tables.
+interface FlagStatesDirectiveNode {
+  type: 'FlagStatesDirective';
+  flag: string;
+  states: { name: string; value: number }[];
+}
+interface LibraryDirectiveNode {
+  type: 'LibraryDirective';
+  engine: string;
+  name: string;
+}
+interface TransportRefNode {
+  key?: string;
+  params?: Record<string, unknown>;
+}
+interface ActorDirectiveNode {
+  type: 'ActorDirective';
+  name: string;
+  properties?: {
+    alphabet?: string;
+    transport?: TransportRefNode;
+    eval?: string | null;
+  };
+}
+interface SceneAstView {
+  directives?: ({ type?: string } & Record<string, unknown>)[];
+  actors?: ActorDirectiveNode[];
+  soundAssignments?: { subject: string }[] | null;
+}
+
+// A5 named scenes from the AST: each `FlagStatesDirective` (`@flag scene: calm:1,
+// full:2`) → `{ [flag]: { [name]: value } }`. Same shape compileBPS's `flagStates`
+// sidecar had, read straight from the directive nodes.
+function flagStatesFromAst(a: SceneAstView | null): FlagStates {
+  const out: FlagStates = {};
+  for (const d of a?.directives ?? []) {
+    if (d.type !== 'FlagStatesDirective') continue;
+    const node = d as unknown as FlagStatesDirectiveNode;
+    const table: Record<string, number> = {};
+    for (const s of node.states) table[s.name] = s.value;
+    out[node.flag] = table;
+  }
+  return out;
+}
+
+// Declared audio banks from the AST: each `LibraryDirective` (`@library.strudel
+// "dirt-samples"`) accumulates by engine → `{ [engine]: [name, …] }`. Same shape
+// compileBPS's `libraries` sidecar had.
+function librariesFromAst(a: SceneAstView | null): Libraries {
+  const out: Libraries = {};
+  for (const d of a?.directives ?? []) {
+    if (d.type !== 'LibraryDirective') continue;
+    const node = d as unknown as LibraryDirectiveNode;
+    (out[node.engine] ??= []).push(node.name);
+  }
+  return out;
+}
+
+// Orchestrated actors from the AST: each `ActorDirective` → the `{ transport:
+// {key, params}, alphabet, eval }` entry the adapter routes on. The dispatcher's
+// `setActors` keeps only the actor KEYS + reads `def.params`/`def.transportParams`
+// (absent here, as in the old sidecar → empty), so reconstructing from the AST
+// nodes is behavior-identical to compileBPS's `actorTable`.
+type AdapterActorTable = Record<
+  string,
+  {
+    transport?: { key?: string; params?: Record<string, unknown> };
+    alphabet?: string;
+    eval?: string;
+  }
+>;
+function actorTableFromAst(a: SceneAstView | null): AdapterActorTable {
+  const out: AdapterActorTable = {};
+  for (const actor of a?.actors ?? []) {
+    const props = actor.properties ?? {};
+    out[actor.name] = {
+      transport: { key: props.transport?.key, params: props.transport?.params },
+      alphabet: props.alphabet,
+      eval: props.eval ?? undefined
+    };
+  }
+  return out;
+}
+
+// `.bps` — BPScript compiles to a SceneAST (`compileBPS().ast`) that BPx derives
+// directly. The front-end view (tempo, flagStates, libraries, actorTable,
+// sections) is read from THAT AST — the single source of truth — not the
+// deprecated grammar text nor compileBPS's redundant sidecar tables.
 const bpsFrontend: Frontend = (code) => {
   const c = compileBPS(code);
   if (c.errors.length > 0) {
@@ -387,39 +483,48 @@ const bpsFrontend: Frontend = (code) => {
   // terminal backtick émis porte la clé `compileBPS().backticks`). Aucun `.bps` du
   // corpus n'utilise la chaîne son BP3 `-al/-so` ; le son vient des notes
   // (`isNoteName`) ou des `soundAssignments` de l'AST.
-  const soundAssignments =
-    (c.ast as { soundAssignments?: { subject: string }[] } | null)?.soundAssignments ?? [];
+  // Everything below is read from the AST (`c.ast`), the single source of truth —
+  // no longer from compileBPS's precomputed tables (`c.flagStates`, `c.libraries`,
+  // `c.actorTable`, `c.settings`) nor from the BP3 grammar TEXT (`c.grammar`).
+  const a = c.ast as SceneAstView | null;
+  const soundAssignments = a?.soundAssignments ?? [];
   const parsed = {
     ast: c.ast,
     errors: [] as ParseError[],
-    settings: c.settings as SeEngineSettings | undefined,
-    soundingSymbols: soundAssignments.map((a) => a.subject)
+    // Tempo: BPx's `loadGrammar` reads the `@mm`/`_mm` metronome straight from the
+    // AST (loadGrammar.ts:1544/4346) and the playback tempo is the central clock's
+    // `currentBpm` (passed to `createBPx` as `tempo`). The former `c.settings` was
+    // an empty BP3 settings ARRAY that BPx ignored entirely (it only reads
+    // `settings.pclock/.qclock/.quantization/.natureOfTime`), so the `.bps` path
+    // never needed it — dropped. `settings` stays meaningful for `.gr` only (real
+    // `-se` engine timing, see `resolveSeSettings`).
+    settings: undefined as SeEngineSettings | undefined,
+    soundingSymbols: soundAssignments.map((s) => s.subject)
   };
   // Backtick voices: compileBPS keys foreign code by the EXACT BT token emitted
   // in the timeline (direct lookup, no parsing). Carry it through so the adapter
   // routes each BT terminal to its interpreter.
   const backticks = (c.backticks ?? {}) as BacktickTable;
-  // A5 named scenes: carry the flag→{alias→int} table so the UI can offer one
-  // selection button per named scene. Re-evaluating with `flags: { scene: <int> }`
+  // A5 named scenes: read the flag→{alias→int} table from the AST's
+  // `FlagStatesDirective` nodes (`@flag scene: calm:1, full:2`) so the UI can offer
+  // one selection button per named scene. Re-evaluating with `flags: { scene: <int> }`
   // makes the matching guarded rule derive (see `evaluate`).
-  const flagStates = (c.flagStates ?? {}) as FlagStates;
+  const flagStates = flagStatesFromAst(a);
   const withFlags = Object.keys(flagStates).length > 0 ? { ...parsed, flagStates } : parsed;
-  // Declared per-engine banks (`@library.strudel "dirt-samples"`): carry them so
-  // the adapter loads each engine's samples before the backtick voices eval.
-  const libraries = (c.libraries ?? {}) as Libraries;
+  // Declared per-engine banks: read from the AST's `LibraryDirective` nodes
+  // (`@library.strudel "dirt-samples"` → `{ strudel: ['dirt-samples'] }`) so the
+  // adapter loads each engine's samples before the backtick voices eval.
+  const libraries = librariesFromAst(a);
   const withLibs = Object.keys(libraries).length > 0 ? { ...withFlags, libraries } : withFlags;
   const withBt = Object.keys(backticks).length > 0 ? { ...withLibs, backticks } : withLibs;
-  // Head-rule sections, used to annotate the FULL production with time bounds.
-  const sections = headSectionNames(c.grammar);
+  // Head-rule sections, read from the AST start rule (no longer the grammar text).
+  const sections = headSectionNamesFromAst(c.ast);
   const base = sections.length > 0 ? { ...withBt, sections } : withBt;
 
-  // Orchestrator `.bps`: `@actor` declarations compile to an actor table (each
-  // actor owns an alphabet + a transport). When present, carry it so the adapter
-  // routes each voice to its own transport (midi / webaudio).
-  const actorTable = (c.actorTable ?? {}) as Record<
-    string,
-    { transport?: { key?: string }; alphabet?: string; eval?: string }
-  >;
+  // Orchestrator `.bps`: `@actor` declarations are AST `ActorDirective` nodes (each
+  // actor owns an alphabet + a transport device). When present, carry the table so
+  // the adapter routes each voice to its own transport (midi / webaudio).
+  const actorTable = actorTableFromAst(a);
   const names = Object.keys(actorTable);
   if (names.length === 0) return base;
   const orchestration: Orchestration = {
