@@ -44,6 +44,7 @@ function drain(d: InstanceType<typeof Dispatcher>) {
 type DispAny = InstanceType<typeof Dispatcher> & {
   setActors(table: unknown): void;
   setActorTransport(actor: string, transport: string): void;
+  setActorMuted(actor: string, muted: boolean): void;
   setSoundPredicate(fn: (t: string) => boolean): void;
   loadEvents(ev: unknown[]): void;
   _resolver: unknown;
@@ -151,6 +152,28 @@ describe('dispatcher multi-actor payload routing', () => {
     drain(d);
     expect(sitarT.controls).toHaveLength(1);
     expect(tablaT.controls).toHaveLength(0);
+  });
+
+  it('(e) a disarmed actor is silenced while the others keep playing', () => {
+    d.setActorMuted('sitar', true);
+    d.loadEvents([
+      { token: 'Sa', startSec: 0, durSec: 0.5, type: 'note', payload: { actor: 'sitar' } },
+      { token: 'Sa', startSec: 0.5, durSec: 0.5, type: 'note', payload: { actor: 'tabla' } }
+    ]);
+    drain(d);
+    // sitar disarmed → no send; tabla untouched.
+    expect(sitarT.sent).toHaveLength(0);
+    expect(tablaT.sent.map((s) => s.token)).toEqual(['Sa']);
+  });
+
+  it('(f) re-arming an actor restores its routing', () => {
+    d.setActorMuted('sitar', true);
+    d.setActorMuted('sitar', false);
+    d.loadEvents([
+      { token: 'Sa', startSec: 0, durSec: 0.5, type: 'note', payload: { actor: 'sitar' } }
+    ]);
+    drain(d);
+    expect(sitarT.sent.map((s) => s.token)).toEqual(['Sa']);
   });
 });
 

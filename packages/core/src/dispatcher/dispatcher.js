@@ -52,6 +52,12 @@ export class Dispatcher {
     // velocity from one actor to another). Keyed by actor name.
     this._fluxByActor = {};         // actorName → { vel?, transpose?, chan?, ... }
 
+    // Live arm/disarm: a disarmed actor's sounding notes are NOT routed to its
+    // transport (skipped at fire time) without re-deriving or stopping the other
+    // actors. The UI's Actors panel toggles this per actor while the transport
+    // keeps running. Empty by default → every declared actor sounds.
+    this._mutedActors = new Set(); // actorName(s) whose notes are currently silenced
+
     // I/O mapping via MapEngine
     this._mapEngine = new MapEngine({
       getFlagState: () => this.flagState,
@@ -117,6 +123,20 @@ export class Dispatcher {
     if (this._actors[actorName]) {
       this._actors[actorName].transportName = transportName;
     }
+  }
+
+  /**
+   * Arm/disarm an actor LIVE: a disarmed actor's notes are skipped at fire time
+   * (`_sendActorNote`) while the transport and the other actors keep playing. No
+   * re-derivation, no stop — the running dispatcher simply stops routing this
+   * actor's sounding notes until it is re-armed. Code voices (Strudel/Hydra) are
+   * not note-routed; the adapter handles those separately (stop / re-eval).
+   * @param {string} actorName
+   * @param {boolean} muted
+   */
+  setActorMuted(actorName, muted) {
+    if (muted) this._mutedActors.add(actorName);
+    else this._mutedActors.delete(actorName);
   }
 
   /**
@@ -724,6 +744,9 @@ export class Dispatcher {
    */
   _sendActorNote(evt, absTime) {
     const actor = evt.payload.actor;
+    // Disarmed actor: skip its notes (live arm/disarm) — the transport and the
+    // other actors keep playing untouched.
+    if (this._mutedActors.has(actor)) return;
     const transport = this._transportForActor(actor);
     if (!transport) return;
 

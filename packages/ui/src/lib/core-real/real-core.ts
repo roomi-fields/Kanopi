@@ -7,7 +7,14 @@ import {
 } from '../core-mock/mock-runtime';
 import type { Actor, ActorFileRef, CoreApi, LogEntry, Runtime, Scene } from '../core-mock/types';
 import { getAdapter, listRuntimes } from '../runtimes/registry';
-import { setTempoSink } from '../runtimes/bp3';
+import {
+  setTempoSink,
+  setActorsSink,
+  armOrchestratedActor,
+  disarmOrchestratedActor,
+  isOrchestratedActor,
+  type PublishedActor
+} from '../runtimes/bp3';
 import { installConsoleBridge } from '../runtimes/console-bridge';
 import { parseSession } from '../session';
 import { findBank } from '../library/audio-banks';
@@ -60,6 +67,10 @@ class RealCore implements CoreApi {
   // workspace (bindBpsSceneFiles) so activating a `@scene calm "calm.bps"` can
   // load + evaluate the referenced child program.
   private getBpsSceneFile?: (fileName: string) => string | undefined;
+  // True while the Actors panel shows an orchestrator `.bps`'s `@actor` list
+  // (published by the bpscript adapter), so `loadSession('')` — fired by the
+  // workspace when no `.kanopi` session is open — doesn't wipe them.
+  private actorsAreOrchestrated = false;
 
   constructor() {
     this.clock.setEventBus(this.events);
@@ -91,6 +102,24 @@ class RealCore implements CoreApi {
     // adapter drive the CENTRAL clock so the displayed BPM and the STEP grid
     // adopt the same tempo the derivation used (transport ⇄ derivation coherence).
     setTempoSink((bpm) => this.clock.setBpm(bpm));
+    // An orchestrator `.bps` publishes its `@actor` list here so the Actors panel
+    // shows every voice (groove + viz, …), not just the file-bound `.kanopi`
+    // actors. The actors are armed by default (a freshly-evaluated orchestrator
+    // sounds every voice); the per-actor arm/disarm then routes through the
+    // orchestrated path (see handleActorToggle). The active state of an actor
+    // that survives a re-eval is preserved.
+    setActorsSink((published: PublishedActor[]) => {
+      const before = new Map(this.actors.list().map((a) => [a.name, a.active]));
+      this.actorsAreOrchestrated = true;
+      this.actors.setActors(
+        published.map((p) => ({
+          name: p.name,
+          runtime: p.runtime,
+          file: p.file,
+          active: before.get(p.name) ?? true
+        }))
+      );
+    });
     // Relay beat/bar events from the clock to any adapter that opts in.
     // Symmetric with `setBpm` above; lets adapters whose language exposes a
     // visual clock (Hydra `beat` / `bar` globals) stay in sync without each
@@ -235,6 +264,13 @@ class RealCore implements CoreApi {
   private async handleActorMute(a: Actor, willBeMuted: boolean) {
     // Only affects audio if the actor is currently armed and the transport runs.
     if (!a.active || !this.clock.state.playing) return;
+    // Orchestrator `.bps` actor: mute/unmute its live voice (same mechanism as
+    // arm/disarm — silence the voice while the rest play, restore on unmute).
+    if (isOrchestratedActor(a.name)) {
+      if (willBeMuted) disarmOrchestratedActor(a.name);
+      else armOrchestratedActor(a.name);
+      return;
+    }
     const ref = this.getActorFile?.(a.name);
     if (!ref) return;
     const adapter = getAdapter(ref.runtime);
@@ -250,6 +286,25 @@ class RealCore implements CoreApi {
   }
 
   private async handleActorToggle(a: Actor, willBeActive: boolean) {
+    // Orchestrator `.bps` actor (no `.kanopi` file binding): arm/disarm its voice
+    // LIVE on the running orchestrator. Disarm silences this voice (code stopped,
+    // notes gated) while the others keep playing; arm restores it. If the
+    // transport was stopped, start it so the orchestrator (and this voice) sounds.
+    if (isOrchestratedActor(a.name)) {
+      if (willBeActive) {
+        if (!this.clock.state.playing) {
+          this.clock.play();
+          return;
+        }
+        armOrchestratedActor(a.name);
+        this.log({ runtime: a.runtime, level: 'info', msg: `arm [${a.name}]` });
+      } else {
+        disarmOrchestratedActor(a.name);
+        this.log({ runtime: a.runtime, level: 'info', msg: `disarm [${a.name}]` });
+      }
+      return;
+    }
+
     const ref = this.getActorFile?.(a.name);
     if (!ref) {
       this.log({ runtime: a.runtime, level: 'warn', msg: `actor "${a.name}" has no file bound` });
@@ -281,7 +336,16 @@ class RealCore implements CoreApi {
   }
 
   async loadSession(text: string) {
+    // No `.kanopi` session open (empty text) while the Actors panel shows an
+    // orchestrator `.bps`'s actors: don't wipe them. The workspace fires
+    // `loadSession('')` when no session tab is active, which would otherwise
+    // clear groove/viz the moment a `.bps` orchestrator is the only open program.
+    if (!text.trim() && this.actorsAreOrchestrated) return;
+
     const r = parseSession(text);
+    // A real session owns the Actors panel from here on (until an orchestrator
+    // publishes again).
+    this.actorsAreOrchestrated = false;
 
     // Preserve current active state for actors that survive; arm NEW actors by
     // default (beta issue 3 — "par défaut les acteurs doivent être armés au

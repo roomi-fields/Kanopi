@@ -654,6 +654,53 @@ function backticksFromAst(ast: unknown): BacktickTable {
   return out;
 }
 
+// Map each orchestrated actor to the backtick token its rule emits, when the
+// actor is a CODE voice. A rule `groove -> `…`` has the actor name as its LHS
+// symbol and a `BacktickInline` (carrying `_btName`) in its RHS. We pair the two
+// so the adapter can stop/re-eval a single code voice on arm/disarm (the BT
+// token itself carries no actor on the derivation tree). Native (notes) voices
+// have no entry — they are armed/disarmed through the dispatcher's note gate.
+export function btTokenByActor(ast: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  const seen = new Set<unknown>();
+  const findBt = (n: unknown): string | undefined => {
+    if (!n || typeof n !== 'object') return undefined;
+    const node = n as Record<string, unknown>;
+    if (node.type === 'BacktickInline' && typeof node._btName === 'string') return node._btName;
+    for (const v of Object.values(node)) {
+      if (Array.isArray(v)) {
+        for (const x of v) {
+          const r = findBt(x);
+          if (r) return r;
+        }
+      } else if (v && typeof v === 'object') {
+        const r = findBt(v);
+        if (r) return r;
+      }
+    }
+    return undefined;
+  };
+  const walk = (n: unknown): void => {
+    if (!n || typeof n !== 'object' || seen.has(n)) return;
+    seen.add(n);
+    const node = n as Record<string, unknown>;
+    if (node.type === 'Rule') {
+      const lhs = node.lhs as Array<{ name?: string }> | undefined;
+      const name = lhs?.[0]?.name;
+      if (typeof name === 'string') {
+        const bt = findBt(node.rhs);
+        if (bt) out[name] = bt;
+      }
+    }
+    for (const v of Object.values(node)) {
+      if (Array.isArray(v)) v.forEach(walk);
+      else if (v && typeof v === 'object') walk(v);
+    }
+  };
+  walk(ast);
+  return out;
+}
+
 // Orchestrated actors from the AST: each `ActorDirective` → the `{ transport:
 // {key, params}, alphabet, eval }` entry the adapter routes on. The dispatcher's
 // `setActors` keeps only the actor KEYS + reads `def.params`/`def.transportParams`
@@ -964,6 +1011,68 @@ export function setTempoSink(fn: (bpm: number) => void): void {
   onTempoFromGrammar = fn;
 }
 
+/** One orchestrated actor as published to the Actors panel. */
+export interface PublishedActor {
+  name: string;
+  /** The Kanopi runtime that voices it (a code voice → its interpreter's
+   *  runtime, a native notes voice → 'bpscript'/'bp3'). */
+  runtime: Runtime;
+  /** Source file the orchestrator was evaluated from (so the UI can show it). */
+  file?: string;
+}
+
+// Optional hook the core wires so an orchestrator `.bps`'s `@actor` list reaches
+// the Actors panel (`core.actors.setActors`). Left unset (tests, headless) the
+// adapter still routes/plays every actor; only the panel isn't populated.
+let onActorsFromGrammar: ((actors: PublishedActor[], file: string) => void) | undefined;
+export function setActorsSink(fn: (actors: PublishedActor[], file: string) => void): void {
+  onActorsFromGrammar = fn;
+}
+
+// Live arm/disarm handle for ONE orchestrated actor's voice. Registered per
+// (file, actor) when an orchestrator evaluates; the core reaches it by actor
+// name to silence/restore that single voice while the rest keep playing.
+interface OrchestratedVoiceHandle {
+  /** Mute/unmute the actor's NOTES on the running dispatcher (native voices). */
+  setNoteMuted: (muted: boolean) => void;
+  /** Stop the actor's CODE voice (Strudel/Hydra). Undefined for note voices. */
+  stopCode?: () => void;
+  /** Re-evaluate the actor's CODE voice (Strudel/Hydra). Undefined for notes. */
+  evalCode?: () => void;
+}
+// actorName → its live voice handle, replaced on each orchestrator eval.
+const orchestratedVoices = new Map<string, OrchestratedVoiceHandle>();
+
+/**
+ * Live-arm an orchestrated actor: route/play its voice again. A code voice
+ * (Strudel/Hydra) is re-evaluated; a native notes voice is un-muted on the
+ * dispatcher. No-op when the actor isn't a live orchestrated voice.
+ */
+export function armOrchestratedActor(name: string): void {
+  const h = orchestratedVoices.get(name);
+  if (!h) return;
+  h.setNoteMuted(false);
+  h.evalCode?.();
+}
+
+/**
+ * Live-disarm an orchestrated actor: silence its voice while the others keep
+ * playing. A code voice is stopped; a native notes voice is muted on the
+ * dispatcher. No-op when the actor isn't a live orchestrated voice.
+ */
+export function disarmOrchestratedActor(name: string): void {
+  const h = orchestratedVoices.get(name);
+  if (!h) return;
+  h.setNoteMuted(true);
+  h.stopCode?.();
+}
+
+/** True when the named actor is a live orchestrated voice (lets the core pick
+ *  the per-actor path over the `.kanopi` file-bound path). */
+export function isOrchestratedActor(name: string): boolean {
+  return orchestratedVoices.has(name);
+}
+
 let audioCtx: AudioContext | undefined;
 // The dispatcher's lookahead clock schedules notes against `audioCtx.currentTime`.
 // On the first eval after page load the context can still be `suspended` (its
@@ -1064,12 +1173,30 @@ function registerBacktickSink(
   backticks: BacktickTable,
   id: Runtime,
   src: EvalSource,
-  log: LogPush
+  log: LogPush,
+  // Orchestrator-only: map a BT token → its owning actor, the set of actors
+  // currently disarmed, and the slot id to evaluate each code voice into. When
+  // an actor is disarmed, its BT token does not fire; each code voice owns a
+  // DISTINCT slot so it can be stopped independently. Absent for a plain (non-
+  // orchestrated) backtick file — all voices then share `src.actorId` as before.
+  orchestration?: {
+    btToActor: Record<string, string>;
+    mutedActors: Set<string>;
+    slotForActor: (actor: string) => string;
+  }
 ): void {
   const isBacktick = (token: string) => Object.prototype.hasOwnProperty.call(backticks, token);
   const sink = (token: string) => {
     const entry = backticks[token];
     if (!entry) return;
+    const actor = orchestration?.btToActor[token];
+    // Disarmed code voice: don't (re)fire it. The dispatcher loops, so skipping
+    // here keeps it silent until the actor is re-armed (which re-evaluates it).
+    if (actor && orchestration?.mutedActors.has(actor)) return;
+    // Each orchestrated code voice evaluates into its OWN slot (file + actor) so
+    // arm/disarm can stop just that voice. A plain backtick file keeps the
+    // whole-file slot.
+    const actorId = actor && orchestration ? orchestration.slotForActor(actor) : src.actorId;
     const runtime = runtimeForInterp(entry.interp);
     if (!runtime) {
       log({
@@ -1095,7 +1222,7 @@ function registerBacktickSink(
           });
           return;
         }
-        return adapter.evaluate(entry.code, { actorId: src.actorId, fileId: src.fileId }, log);
+        return adapter.evaluate(entry.code, { actorId, fileId: src.fileId }, log);
       })
       .catch((err) =>
         log({ runtime: id, level: 'error', msg: `backtick ${entry.interp}: ${String(err)}` })
@@ -1359,11 +1486,32 @@ function makeBpxAdapter(
       const ctx = await getCtx();
       const dispatcher = new Dispatcher(ctx);
 
+      // Orchestrator-only: BT token → owning actor (rule LHS), and the live set
+      // of disarmed actors (consulted by the backtick sink + the per-actor note
+      // gate). Per-eval — a re-eval rebuilds them. A code voice evaluates into a
+      // distinct slot `<fileId>::<actor>` so arm/disarm can stop just that voice.
+      const isOrchestrated = !!(orchestration && orchestration.actors.length > 0);
+      // actor → BT token (rule LHS → its backtick). The sink needs the INVERSE
+      // (token → actor) to find which voice a fired BT belongs to; `evalCode`
+      // (re-arm) needs actor → token. Build both from the one extraction.
+      const actorToBt = isOrchestrated ? btTokenByActor(ast) : {};
+      const btToActor: Record<string, string> = {};
+      for (const [actor, token] of Object.entries(actorToBt)) btToActor[token] = actor;
+      const mutedActors = new Set<string>();
+      const slotForActor = (actor: string) => `${src.fileId}::${actor}`;
+
       // Backtick voices (lot 4): route each `BT<interp><id>` terminal to its
       // interpreter, fired in time by the dispatcher. Registered before load so
       // both the orchestrated and the simple path place backticks correctly.
       if (backticks && Object.keys(backticks).length > 0) {
-        registerBacktickSink(dispatcher, backticks, id, src, log);
+        registerBacktickSink(
+          dispatcher,
+          backticks,
+          id,
+          src,
+          log,
+          isOrchestrated ? { btToActor, mutedActors, slotForActor } : undefined
+        );
       }
 
       // Orchestrator `.bps`: each `@actor` owns an alphabet and a transport
@@ -1455,6 +1603,56 @@ function makeBpxAdapter(
         (dispatcher as unknown as { loadEvents(ev: unknown[]): void }).loadEvents(treeEvents);
         dispatcher.start(undefined, { loop: looping });
         voices.set(key, { dispatcher });
+
+        // Publish the actor list to the Actors panel (groove + viz, …) and
+        // register a live arm/disarm handle per actor. A code voice (Strudel/
+        // Hydra) is stopped/re-evaluated through its own adapter + slot; a native
+        // notes voice is muted on this dispatcher's per-actor note gate. The
+        // handle map is keyed by actor name and replaced on each re-eval.
+        const da2 = dispatcher as unknown as { setActorMuted(actor: string, muted: boolean): void };
+        const published: PublishedActor[] = [];
+        for (const actor of orchestration.actors) {
+          const codeRuntime = actor.evalInterp ? runtimeForInterp(actor.evalInterp) : undefined;
+          published.push({ name: actor.name, runtime: codeRuntime ?? id, file: src.fileId });
+          const btToken = actorToBt[actor.name];
+          orchestratedVoices.set(actor.name, {
+            setNoteMuted: (muted: boolean) => {
+              if (muted) mutedActors.add(actor.name);
+              else mutedActors.delete(actor.name);
+              da2.setActorMuted(actor.name, muted);
+            },
+            stopCode: codeRuntime
+              ? () => {
+                  void import('./registry').then(({ getAdapter }) => {
+                    getAdapter(codeRuntime)?.stop(
+                      { actorId: slotForActor(actor.name), fileId: src.fileId },
+                      log
+                    );
+                  });
+                }
+              : undefined,
+            // Re-arm a code voice by re-firing it now (the dispatcher's loop also
+            // re-fires the BT token on the next cycle, but evaluating immediately
+            // restores sound without waiting a full cycle). No BT token → no-op.
+            evalCode:
+              codeRuntime && btToken && backticks?.[btToken]
+                ? () => {
+                    const entry = backticks[btToken];
+                    void import('./registry').then(({ getAdapter }) => {
+                      void getAdapter(codeRuntime)
+                        ?.evaluate(
+                          entry.code,
+                          { actorId: slotForActor(actor.name), fileId: src.fileId },
+                          log
+                        )
+                        .catch(() => {});
+                    });
+                  }
+                : undefined
+          });
+        }
+        onActorsFromGrammar?.(published, src.fileId);
+
         log({
           runtime: id,
           level: 'info',
