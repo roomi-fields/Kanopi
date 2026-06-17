@@ -589,9 +589,24 @@ export class Dispatcher {
     this.controlState = { ...this._controlDefaults };
     this._fluxByActor = {};
 
-    // Re-derive: call bp3_produce again for a new sequence
+    // Re-derive: call the grammar again for a NEW sequence (re-random per cycle).
+    // The re-derive function may return EITHER the tree-derived dispatch events
+    // (the `loadEvents` shape: each carries its own `payload.actor`/`rq`/`nature`,
+    // used by every grammar since the M5+ refacto) OR the legacy flat timed-token
+    // shape (`{ token, start, end }`). We detect by the presence of `startSec`:
+    // tree events are already in seconds and must reload through `loadEvents` so
+    // actor routing survives the re-derivation; flat tokens reload through the
+    // legacy in-place map below. Either way `_loopOffset` is preserved so the new
+    // cycle starts exactly where this one ended.
     if (this._reDerive) {
-      const newTokens = this._reDerive();
+      const next = this._reDerive();
+      if (next && next.length > 0 && next[0] && next[0].startSec !== undefined) {
+        const offset = this._loopOffset;
+        this.loadEvents(next);
+        this._loopOffset = offset; // loadEvents zeroes it — restore the cycle offset
+        return;
+      }
+      const newTokens = next;
       if (newTokens && newTokens.length > 0) {
         // Reload events without resetting loopOffset
         this.events = newTokens.map(t => {

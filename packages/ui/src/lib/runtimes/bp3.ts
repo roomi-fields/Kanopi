@@ -47,6 +47,10 @@ import { treeToDispatchEvents, type DispatchEvent } from './tree-dispatch';
 // source of truth the Text panel (read by order via the tree) and the Structure
 // visualizer read.
 import { production } from '../../stores/production.svelte';
+// Session-global transport toggles (loop on/off, re-random per cycle on/off).
+// Read FRESH at each `dispatcher.start(...)` so the user's transport setting at
+// play time decides looping + whether the grammar re-derives each cycle.
+import { transport } from '../../stores/transport.svelte';
 import type {
   ProductionToken,
   ProductionSection,
@@ -69,6 +73,17 @@ import { loadSampleBank } from './strudel';
 // `.bps` path. The `.gr` path keeps the local text reader (it never compiles
 // through BPScript, so it has no AST — see `headSectionNames` below).
 import { headSectionNamesFromAst } from './head-sections-ast';
+
+// Typed view of the dispatcher's `start(onEnd, { loop, reDerive })`. The
+// dispatcher is JS (JSDoc-typed): its `reDerive` option (re-derive the grammar
+// at each loop boundary) infers as `null` from its default, so we cast the start
+// call to this surface to pass a function. Mirrors the `loadEvents` cast above.
+type DispatcherStart = {
+  start(
+    onEnd: (() => void) | undefined,
+    opts: { loop?: boolean; reDerive?: (() => unknown) | null }
+  ): void;
+};
 
 /**
  * BPx language adapters (PRIMARY vertical slice).
@@ -1417,6 +1432,31 @@ function makeBpxAdapter(
         throw new Error(`${id}: ${msg}`);
       }
 
+      // RE-RANDOM per cycle (old dispatcher's `_reDerive`): re-run the grammar
+      // from scratch so weighted/random rules re-roll, returning a FRESH set of
+      // tree dispatch events for the next loop cycle. Same derive path as above
+      // (`createBPx` → `loadGrammar` → `derive('complete')`), then the SAME
+      // event filter the caller applies to the first cycle (`filterEvents`), so a
+      // re-derived cycle routes identically — only the random choices differ.
+      // Returns null on any error (the dispatcher then replays the existing
+      // events rather than going silent). Built once; passed to `start()` only
+      // when the transport's re-random toggle is on AND looping.
+      const reDeriveTreeEvents = (filterEvents: (e: DispatchEvent) => boolean) => () => {
+        try {
+          const rbpx = createBPx({ tempo: currentBpm, settings, flags: effectiveFlags });
+          rbpx.loadGrammar(ast);
+          const rderived = rbpx.derive({ output: 'complete' });
+          const rnames = buildSymbolNames(rbpx, rderived.tree);
+          return treeToDispatchEvents(
+            rderived.tree as Parameters<typeof treeToDispatchEvents>[0],
+            rnames
+          ).filter(filterEvents);
+        } catch (err) {
+          log({ runtime: id, level: 'warn', msg: `re-random derive failed: ${String(err)}` });
+          return null;
+        }
+      };
+
       // FULL production readout (Romain's request): publish the WHOLE derived
       // sequence now, BEFORE any STEP slicing or time-scheduled playback, so the
       // Text panel + Structure visualizer see the entire production at once. The
@@ -1459,11 +1499,17 @@ function makeBpxAdapter(
       );
 
       // STEP: when a beat is requested, keep only that beat's tokens (re-zeroed)
-      // and play them once. Otherwise loop the whole derivation as usual. The
-      // window is ONE beat (`60000/bpm` ms) of the timeline; `section.index` is
-      // the beat index (the `section` field is reused as a generic step window).
+      // and play them once. Otherwise loop the whole derivation when the
+      // transport's LOOP toggle is on (default). A STEP window always plays once
+      // regardless of the toggle. The window is ONE beat (`60000/bpm` ms) of the
+      // timeline; `section.index` is the beat index (the `section` field is
+      // reused as a generic step window).
       const section = src.section;
-      const looping = !section;
+      const looping = !section && transport.loop;
+      // Re-derive at each cycle only when looping AND re-random is on — re-rolls
+      // the grammar's weighted/random choices tour to tour (vs replaying the same
+      // derivation). Snapshotted here at start time off the session toggle.
+      const reRandom = looping && transport.reRandom;
       if (section && section.count > 1) {
         const beatMs = currentBpm > 0 ? 60000 / currentBpm : 0;
         tokens = sliceBeat(tokens, section.index, beatMs);
@@ -1589,19 +1635,23 @@ function makeBpxAdapter(
         // matched). Every orchestrated terminal carries its `payload.actor`, so
         // membership is read off the event itself — not the upstream map.
         const isBacktick = backticks ?? {};
-        const treeEvents = treeToDispatchEvents(
-          rawTree as Parameters<typeof treeToDispatchEvents>[0],
-          symbolNames
-        ).filter((e) => {
+        const orchestratedFilter = (e: DispatchEvent) => {
           if (e.type === 'control') return true;
           if (e.type === 'rest') return false;
           const actor = (e.payload as { actor?: string | null } | null)?.actor;
           if (actor) return true;
           if (Object.prototype.hasOwnProperty.call(isBacktick, e.token)) return true;
           return isNoteName(e.token);
-        });
+        };
+        const treeEvents = treeToDispatchEvents(
+          rawTree as Parameters<typeof treeToDispatchEvents>[0],
+          symbolNames
+        ).filter(orchestratedFilter);
         (dispatcher as unknown as { loadEvents(ev: unknown[]): void }).loadEvents(treeEvents);
-        dispatcher.start(undefined, { loop: looping });
+        (dispatcher as unknown as DispatcherStart).start(undefined, {
+          loop: looping,
+          reDerive: reRandom ? reDeriveTreeEvents(orchestratedFilter) : null
+        });
         voices.set(key, { dispatcher });
 
         // Publish the actor list to the Actors panel (groove + viz, …) and
@@ -1707,10 +1757,11 @@ function makeBpxAdapter(
       // so the flat terminal stream carries no unexpanded start symbol to guard
       // against (that leak was scene-guarded `.bps` only, handled by the
       // orchestrated/default-scene paths above).
+      const monoFilter = (e: DispatchEvent) => e.type !== 'rest';
       let treeEvents = treeToDispatchEvents(
         rawTree as Parameters<typeof treeToDispatchEvents>[0],
         symbolNames
-      ).filter((e) => e.type !== 'rest');
+      ).filter(monoFilter);
       // STEP: when a beat is requested, keep only that beat's events (re-zeroed)
       // — the events twin of the flat `sliceBeat` already applied to `tokens`.
       if (section && section.count > 1) {
@@ -1719,12 +1770,16 @@ function makeBpxAdapter(
       }
       (dispatcher as unknown as { loadEvents(ev: unknown[]): void }).loadEvents(treeEvents);
       // Loop so an armed actor sustains like a Strudel pattern: the grammar's
-      // derivation repeats at each cycle boundary until the actor is toggled off,
-      // the transport stops, or the page hushes. A Ctrl+Enter on a standalone
-      // grammar goes through this same code, so it loops too — intended: "play
-      // the grammar" means keep playing it, and Ctrl+. silences. A STEP (section
-      // window) plays once instead — `looping` is false then.
-      dispatcher.start(undefined, { loop: looping });
+      // derivation repeats at each cycle boundary until the LOOP toggle is off,
+      // the transport stops, or the page hushes. With RE-RANDOM on, the grammar
+      // is re-derived each cycle (weighted/random rules re-roll); with it off the
+      // same derivation replays. A Ctrl+Enter on a standalone grammar goes
+      // through this same code. A STEP (section window) plays once instead —
+      // `looping` is false then, so `reRandom` is too.
+      (dispatcher as unknown as DispatcherStart).start(undefined, {
+        loop: looping,
+        reDerive: reRandom ? reDeriveTreeEvents(monoFilter) : null
+      });
 
       // MIDI sink: route the SAME raw BPx tokens to runtime-midi, on the SAME
       // AudioContext clock — but only when Web MIDI access is actually granted

@@ -3,6 +3,7 @@
   import { bpsScenes } from '../../stores/bpsScenes.svelte';
   import { production, beatCount } from '../../stores/production.svelte';
   import { workspace } from '../../stores/workspace.svelte';
+  import { transport } from '../../stores/transport.svelte';
 
   // STEP lives in the transport cluster (beta issue 4 — transport buttons
   // grouped). It's driven off the PRODUCED timeline, not the `.bps` head rule, so
@@ -110,6 +111,34 @@
         STEP
       </button>
     {/if}
+    <button
+      class="toggle-btn"
+      class:on={transport.loop}
+      type="button"
+      title={transport.loop
+        ? 'Boucle ON — la scène se répète à chaque tour'
+        : 'Boucle OFF — la scène joue une fois puis s’arrête'}
+      aria-pressed={transport.loop}
+      onclick={() => transport.toggleLoop()}
+    >
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M4 6.5 A4 4 0 1 1 4 9.5" stroke-linecap="round" />
+        <path d="M4 4 L4 7 L7 7" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+    <button
+      class="toggle-btn rnd"
+      class:on={transport.reRandom}
+      type="button"
+      disabled={!transport.loop}
+      title={transport.reRandom
+        ? 'Re-random ON — re-tire les règles aléatoires à chaque tour'
+        : 'Re-random OFF — rejoue la même dérivation à chaque tour'}
+      aria-pressed={transport.reRandom}
+      onclick={() => transport.toggleReRandom()}
+    >
+      🎲
+    </button>
   </div>
 
   <div class="bpm-module">
@@ -197,6 +226,48 @@
   .step-btn:hover {
     color: var(--amber);
     border-color: var(--amber-dim);
+  }
+
+  /* LOOP + RE-RANDOM toggles: same footprint as the transport icon buttons,
+     lit amber when ON (matching the `.playing` glow), dim when OFF. */
+  .toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 3px;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+  .toggle-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  .toggle-btn.rnd {
+    font-size: 13px;
+    line-height: 1;
+    filter: grayscale(1) opacity(0.6);
+  }
+  .toggle-btn:hover:not(:disabled) {
+    color: var(--text);
+    border-color: var(--amber-dim);
+  }
+  .toggle-btn.on {
+    color: var(--amber);
+    border-color: var(--amber-dim);
+    background: rgba(232, 156, 62, 0.12);
+    box-shadow:
+      0 0 0 1px rgba(232, 156, 62, 0.2),
+      inset 0 0 8px rgba(232, 156, 62, 0.08);
+  }
+  .toggle-btn.rnd.on {
+    filter: none;
+  }
+  .toggle-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
   }
 
   .tbtn:hover {
