@@ -1,4 +1,4 @@
-import { compileBPS } from 'bpscript/src/transpiler/index.js';
+import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 import { core } from '../lib/core';
 import { runtimeFromExt } from '../lib/workspace/types';
 import type { Runtime } from '../lib/core';
@@ -68,7 +68,7 @@ export function sceneTableFromFile(
   if (!fileName || contents === undefined) return {};
   if (runtimeFromExt(fileName) !== 'bpscript') return {};
   try {
-    const c = compileBPS(contents) as {
+    const c = compileToBPxAST(contents) as {
       errors: unknown[];
       ast: { scenes?: { name: string; file: string }[] } | null;
     };
@@ -94,7 +94,7 @@ export function modelFromFile(
   if (!fileName || contents === undefined) return EMPTY;
   if (runtimeFromExt(fileName) !== 'bpscript') return EMPTY;
   try {
-    const c = compileBPS(contents) as {
+    const c = compileToBPxAST(contents) as {
       errors: unknown[];
       ast: {
         directives?: { type?: string; flag?: string; states?: { name: string; value: number }[] }[];

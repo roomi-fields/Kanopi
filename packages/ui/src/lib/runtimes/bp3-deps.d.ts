@@ -120,3 +120,14 @@ export interface CompileBPSResult {
   [k: string]: unknown;
 }
 export function compileBPS(source: string): CompileBPSResult;
+
+// Clean BPx-AST entry point (BPscript 94c6f53): SOURCE UNIQUE = the tree. Returns
+// ONLY `{ ast, errors, warnings }` — no parallel sidecar tables. The backtick
+// nodes carry their resolved `interp` (tag, or the actor's eval). Everything Kanopi
+// needs is read off the AST. This is the path the `.bps` adapter consumes.
+export interface CompileToBPxASTResult {
+  ast: unknown | null;
+  errors: CompileBPSError[];
+  warnings: unknown[];
+}
+export function compileToBPxAST(source: string): CompileToBPxASTResult;

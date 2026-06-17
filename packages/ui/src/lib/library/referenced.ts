@@ -3,14 +3,14 @@
 // as the active file changes. NOT the demo catalogue.
 //
 // Two sources, depending on the active file's runtime:
-//   - bpscript / bp3 (`.bps`, `.gr`): compileBPS(contents) emits `.directives`
+//   - bpscript / bp3 (`.bps`, `.gr`): compileToBPxAST(contents) emits `.directives`
 //     (alphabet, tuning, scale, octaves, sound, transport/devices), `.libraries`
 //     (audio banks per engine) and `.alphabet` — read AS-IS.
 //   - `.kanopi` session: parseSession(contents) emits `@library <id>` audio-bank
 //     nodes.
 // Anything else, parse errors, or compile throws → empty list (graceful).
 
-import { compileBPS } from 'bpscript/src/transpiler/index.js';
+import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 import { parseSession } from '../session';
 import { runtimeFromExt } from '../workspace/types';
 
@@ -70,7 +70,7 @@ function fromBps(contents: string): ReferencedLib[] {
   // `compileBPS().directives` is `ast.directives`, so we read the AST here too.
   let c: { errors?: unknown[]; ast?: { directives?: (BpsDirective & { type?: string })[] } | null };
   try {
-    c = compileBPS(contents) as typeof c;
+    c = compileToBPxAST(contents) as typeof c;
   } catch {
     return out;
   }

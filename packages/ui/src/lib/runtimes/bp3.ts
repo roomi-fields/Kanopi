@@ -11,7 +11,7 @@ import {
   isNoteName
 } from 'bp3-frontend';
 import type { FileRef, SeEngineSettings, SceneActor } from 'bp3-frontend';
-import { compileBPS } from 'bpscript/src/transpiler/index.js';
+import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 import { createBPx } from 'bpx';
 import { BUNDLED_SE, BUNDLED_SOUND, BUNDLED_AL } from './bp3-aux';
 // MIDI output sink for the beta-ensemble. runtime-midi OWNS the ISO-BP3 MIDI
@@ -65,18 +65,19 @@ import { headSectionNamesFromAst } from './head-sections-ast';
  * Two languages reach audible WebAudio output through the SAME upstream BPx
  * engine and Kanopi's own dispatcher — only the front-end differs:
  *
- *   .gr  : source → parseBP3 ───────────────────────────┐
- *   .bps : source → compileBPS → BP3 grammar text → parseBP3 ┤
- *                                                        ▼
- *     → SceneAST → createBPx().loadGrammar → derive() → TimedToken[]
- *     → Dispatcher.load() → Dispatcher.start() → WebAudioTransport (+ MIDI sink)
+ *   .gr  : source → parseBP3 ──────────────┐
+ *   .bps : source → compileToBPxAST ────────┤  (SceneAST direct, voie AST propre)
+ *                                           ▼
+ *     → SceneAST → createBPx().loadGrammar → derive({output:'complete'})
+ *     → tree (+ payload par nœud) → treeToDispatchEvents → Dispatcher.loadEvents
+ *     → routage PAR ACTEUR (payload.actor) → WebAudioTransport (+ MIDI sink)
  *
- * Glue only. The frontends (bp3-frontend, bpscript), the engine (bpx) and the
- * dispatcher / transport / resolver (core) are all consumed as-is. BPScript
- * transpiles TO a BP3 grammar (`compileBPS().grammar`), so the `.bps` path just
- * feeds that text into the SAME BP3 front-end the keystone `.gr` uses — no
- * second engine, no token-shape shim. The TimedToken shape BPx emits
- * (`{ token, start, end }` in ms) is exactly what `Dispatcher.load()` reads.
+ * Glue only. Les frontaux (bp3-frontend, bpscript), le moteur (bpx) et le
+ * dispatcher / transport / resolver (core) sont consommés tels quels. SOURCE
+ * UNIQUE = l'arbre : `.bps` passe par `compileToBPxAST` (AST direct, plus
+ * d'aller-retour par le texte BP3 ni de tables parallèles) ; `.gr` par parseBP3
+ * (le `.gr` EST du texte natif). Toute la structure (acteurs, scènes, drapeaux,
+ * bibliothèques, sections, backticks) est lue DEPUIS l'arbre.
  *
  * The slice scopes to ONE engine instance + ONE transport per file.
  */
@@ -438,6 +439,34 @@ function librariesFromAst(a: SceneAstView | null): Libraries {
   return out;
 }
 
+// Backtick (code-voice) table from the AST: DFS for `BacktickInline` nodes →
+// `{ [_btName]: { interp, code } }`. Each node carries `_btName` (the BT token the
+// derivation emits), `code`, and the RESOLVED `interp` (its `tag`, or — untagged —
+// the owning actor's `eval`, resolved by bpscript on the node: the one genuine
+// language-semantic). Replaces compileBPS's `backticks` sidecar — single source
+// of truth = the tree (BPscript 94c6f53, compileToBPxAST).
+function backticksFromAst(ast: unknown): BacktickTable {
+  const out: BacktickTable = {};
+  const seen = new Set<unknown>();
+  const walk = (n: unknown): void => {
+    if (!n || typeof n !== 'object' || seen.has(n)) return;
+    seen.add(n);
+    const node = n as Record<string, unknown>;
+    if (node.type === 'BacktickInline' && typeof node._btName === 'string') {
+      out[node._btName] = {
+        interp: String(node.interp ?? node.tag ?? ''),
+        code: String(node.code ?? '')
+      };
+    }
+    for (const v of Object.values(node)) {
+      if (Array.isArray(v)) v.forEach(walk);
+      else if (v && typeof v === 'object') walk(v);
+    }
+  };
+  walk(ast);
+  return out;
+}
+
 // Orchestrated actors from the AST: each `ActorDirective` → the `{ transport:
 // {key, params}, alphabet, eval }` entry the adapter routes on. The dispatcher's
 // `setActors` keeps only the actor KEYS + reads `def.params`/`def.transportParams`
@@ -469,7 +498,7 @@ function actorTableFromAst(a: SceneAstView | null): AdapterActorTable {
 // sections) is read from THAT AST — the single source of truth — not the
 // deprecated grammar text nor compileBPS's redundant sidecar tables.
 const bpsFrontend: Frontend = (code) => {
-  const c = compileBPS(code);
+  const c = compileToBPxAST(code);
   if (c.errors.length > 0) {
     return { ast: null, errors: c.errors.map((e) => ({ line: e.line, message: e.message })) };
   }
@@ -504,7 +533,7 @@ const bpsFrontend: Frontend = (code) => {
   // Backtick voices: compileBPS keys foreign code by the EXACT BT token emitted
   // in the timeline (direct lookup, no parsing). Carry it through so the adapter
   // routes each BT terminal to its interpreter.
-  const backticks = (c.backticks ?? {}) as BacktickTable;
+  const backticks = backticksFromAst(c.ast);
   // A5 named scenes: read the flag→{alias→int} table from the AST's
   // `FlagStatesDirective` nodes (`@flag scene: calm:1, full:2`) so the UI can offer
   // one selection button per named scene. Re-evaluating with `flags: { scene: <int> }`
