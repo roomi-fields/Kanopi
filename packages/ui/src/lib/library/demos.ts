@@ -4,10 +4,10 @@
 // Loaded as raw text via a glob over the bundled demos directory; the per-demo
 // axes (category/level/⭐) come from the catalogue.
 //
-// Tuning note: microtonal demos (gamelan slendro, Bohlen-Pierce, arabic
-// quarter-tones) currently render in 12-TET — Kanopi has no custom-temperament
-// resolver yet (a post-beta axis, like the solfège resolver was). They sound,
-// just not at their intended tuning.
+// Tuning note: microtonal demos (gamelan slendro, Bohlen-Pierce, arabic maqam)
+// render at their INTENDED tuning — the resolver reads BPScript's pitch catalogs
+// (alphabets/temperaments/scales/tunings) and computes exact just-intonation
+// frequencies (maqams from compose(jins)+junction). No 12-TET approximation.
 
 import type { LibraryItem, LibraryCategory, OutputKind, Level } from './catalog';
 
@@ -43,7 +43,7 @@ const DEMO_META: Record<string, DemoMeta> = {
   arabic: {
     name: 'Arabic — maqam Rast',
     tagline: 'quarter-tone melody',
-    description: 'A maqam Rast line with Arabic quarter-tones. (Renders in 12-TET for now.)',
+    description: 'A maqam Rast line in just intonation — neutral 3rd (sikah) and 7th (awj).',
     category: 'bpscript',
     outputs: ['audio'],
     level: 'intermediate',
@@ -53,7 +53,7 @@ const DEMO_META: Record<string, DemoMeta> = {
   gamelan: {
     name: 'Gamelan — slendro',
     tagline: 'Javanese pentatonic',
-    description: 'A slendro (Javanese pentatonic) texture. (Renders in 12-TET for now.)',
+    description: 'A slendro (Javanese pentatonic) texture, at its intended stretched tuning.',
     category: 'bpscript',
     outputs: ['audio'],
     level: 'intermediate',

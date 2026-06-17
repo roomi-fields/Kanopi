@@ -1,6 +1,7 @@
-// Maqam Rast — Arabic quarter-tone scale
-// Arabic music uses French solfège names (do re mi fa sol la si)
-// but with quarter-tone intervals from the maqam system
+// Maqam Rast — Arabic just-intonation scale (zalzalian)
+// Uses the authentic Arabic degree names of maqam Rast:
+//   rast dukah sikah jaharkah nawa husayni awj
+// sikah (3rd) and awj (7th) are NEUTRAL — the quarter-tone signature of the maqam.
 
 @core
 @controls
@@ -10,6 +11,6 @@
 
 S -> Sayr Rujoo Qarar
 
-Sayr -> do re mi fa sol la si (wave:sine, vel:85)
-Rujoo -> si la sol fa mi re do (vel:70)
-Qarar -> do _ _ _ _ (vel:60)
+Sayr -> rast dukah sikah jaharkah nawa husayni awj (wave:sine, vel:85)
+Rujoo -> awj husayni nawa jaharkah sikah dukah rast (vel:70)
+Qarar -> rast _ _ _ _ (vel:60)

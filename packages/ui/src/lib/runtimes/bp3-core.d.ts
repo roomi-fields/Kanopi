@@ -34,3 +34,12 @@ declare module '*/core/src/dispatcher/resolver.js' {
     resolve(token: string, direction?: string): unknown;
   }
 }
+
+declare module '*/core/src/dispatcher/scale.js' {
+  // Concrete (normalized float) ratios for a `ratios`/`compose`+`junction` scale,
+  // or null for a `degrees`-based mode (use the degrees+temperament path).
+  export function resolveScaleRatios(
+    name: string,
+    scalesCatalog: Record<string, unknown>
+  ): number[] | null;
+}

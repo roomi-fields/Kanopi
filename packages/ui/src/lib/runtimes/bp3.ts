@@ -12,6 +12,14 @@ import {
 } from 'bp3-frontend';
 import type { FileRef, SeEngineSettings, SceneActor } from 'bp3-frontend';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+// bpscript's musical catalogs, imported AS-IS (same path as
+// lib/library/resources.ts). A `.bps` that declares `@alphabet.X` (+ optional
+// `@tuning:Y`) resolves its pitches through these — bohlen-pierce, gamelan, etc.
+import alphabetsJson from 'bpscript/lib/alphabets.json';
+import tuningsJson from 'bpscript/lib/tunings.json';
+import temperamentsJson from 'bpscript/lib/temperaments.json';
+import octavesJson from 'bpscript/lib/octaves.json';
+import scalesJson from 'bpscript/lib/scales.json';
 import { createBPx } from 'bpx';
 import { BUNDLED_SE, BUNDLED_SOUND, BUNDLED_AL } from './bp3-aux';
 // MIDI output sink for the beta-ensemble. runtime-midi OWNS the ISO-BP3 MIDI
@@ -27,6 +35,9 @@ import { WebAudioTransport } from '../../../../core/src/dispatcher/transports/we
 // Per-actor MIDI transport for orchestrator .bps (a voice routed `transport:midi`).
 import { MidiTransport } from '../../../../core/src/dispatcher/transports/midi.js';
 import { Resolver } from '../../../../core/src/dispatcher/resolver.js';
+// Scale engine (core): turns a `ratios`/`compose`+`junction` scale name into a
+// concrete ratio list (the only pitch maths — see PITCH.md 6-layer model).
+import { resolveScaleRatios } from '../../../../core/src/dispatcher/scale.js';
 // Tree-derived dispatch events (M5+ multi-actor refacto): flatten BPx's
 // `derive({ output: 'complete' }).tree` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
@@ -135,6 +146,138 @@ function pickResolver(tokens: { token: string }[]): Resolver {
   return makeWesternResolver();
 }
 
+// Minimal shapes of the bpscript catalogs this adapter reads (they carry more
+// fields; only what the Resolver / scale engine needs is typed). The 6-layer
+// model (PITCH.md): alphabets, octaves, temperaments, scales, tunings (bindings).
+//
+// A tuning binding carries the `temperament` it pairs with, the `alphabet` it
+// belongs to, and either `degrees`/`ascending` (western mode) or a `scale`
+// reference. A scales entry carries `ratios`, `compose`+`junction`, OR
+// `degrees` — never two at once (PITCH.md «une représentation»).
+type TuningEntry = {
+  temperament?: string;
+  alphabet?: string;
+  scale?: string;
+  degrees?: number[];
+  ascending?: number[];
+  baseHz?: number;
+  baseNote?: string;
+  baseRegister?: number;
+};
+type AlphabetEntry = { notes?: string[]; octaves?: string };
+// The catalogs carry doc-only `_comment` keys (arrays), so a direct cast to the
+// typed record doesn't structurally overlap — go through `unknown` (the catalogs
+// are read-only data, validated at use).
+const ALPHABETS = alphabetsJson as unknown as Record<string, AlphabetEntry | undefined>;
+const TUNINGS = tuningsJson as unknown as Record<string, TuningEntry | undefined>;
+const TEMPERAMENTS = temperamentsJson as unknown as Record<string, unknown>;
+const SCALES = scalesJson as unknown as Record<string, unknown>;
+const OCTAVES = octavesJson as unknown as Record<string, unknown>;
+
+// When a scene declares an alphabet but NO `@tuning`, pick the binding whose
+// `alphabet` field matches (each alphabet has one in tunings.json). Used for
+// bohlen-pierce.bps (→ bohlen_pierce_just) and gamelan.bps (→ gamelan_slendro).
+function defaultBindingKey(alphabetKey: string): string | undefined {
+  for (const [key, t] of Object.entries(TUNINGS)) {
+    if (key.startsWith('_') || !t) continue;
+    if (t.alphabet === alphabetKey) return key;
+  }
+  return undefined;
+}
+
+// Build the Resolver from a tuning BINDING (degrees + temperament grid). This is
+// the classic western/indian/gamelan path — the binding indexes a temperament's
+// fixed ratio grid via its `degrees`. Returns null if the temperament is absent.
+function resolverFromBinding(
+  alphabet: AlphabetEntry,
+  octaves: unknown,
+  tuning: TuningEntry
+): Resolver | null {
+  const temperament = tuning.temperament ? TEMPERAMENTS[tuning.temperament] : undefined;
+  if (!temperament) return null;
+  return new Resolver({ alphabet, tuning, temperament, octaves });
+}
+
+// Build the Resolver from a SCALE that carries intrinsic intonation (`ratios`)
+// or is a composed maqam (`compose`+`junction`). The core scale engine computes
+// the concrete ratios; the resolver then runs in table mode over them, with the
+// alphabet's notes laid on consecutive degrees [0..N-1] and the scale's period
+// (last ratio, octave by default) as `period_ratio`. `binding` is the optional
+// tunings.json entry that supplies baseHz/baseNote/baseRegister; sensible
+// defaults (440 / first note / register 4) apply when none is given.
+function resolverFromScale(
+  alphabet: AlphabetEntry,
+  octaves: unknown,
+  scaleName: string,
+  binding: TuningEntry | undefined
+): Resolver | null {
+  const ratios = resolveScaleRatios(scaleName, SCALES);
+  if (!ratios || ratios.length === 0) return null;
+  const notes = alphabet.notes ?? [];
+  const period = ratios[ratios.length - 1] || 2;
+  const degrees = notes.map((_, i) => i);
+  const tuning = {
+    degrees,
+    baseHz: binding?.baseHz ?? 440,
+    baseNote: binding?.baseNote ?? notes[0],
+    baseRegister: binding?.baseRegister ?? 4
+  };
+  const temperament = { divisions: ratios.length, period_ratio: period, ratios };
+  return new Resolver({ alphabet, tuning, temperament, octaves });
+}
+
+// Build a Resolver from the bpscript catalogs for a scene's declared
+// `@alphabet`/`@tuning` (PITCH.md 6-layer model). Resolution of the `@tuning`
+// reference Y:
+//   1. Y is a BINDING (tunings.json) → degrees+temperament path (western, gamelan…),
+//      OR a binding referencing a `scale` → scale-ratio path with that binding's base.
+//   2. Y is a GAMME (scales.json) with `ratios`/`compose` → scale-ratio path with
+//      the scale-ratio defaults (440 / first note of the alphabet / register 4).
+//   3. No `@tuning` declared → the alphabet's default binding (bohlen-pierce, gamelan).
+// The catalogs are consumed AS-IS; the only maths (compose+junction) lives in the
+// core scale engine. Returns the resolver + the alphabet's sounding note set, or
+// null when the alphabet is absent or the scale isn't resolvable (caller then
+// keeps the western/solfège sniffing fallback).
+export function catalogResolver(
+  alphabetKey: string | undefined,
+  declaredTuning: string | undefined
+): { resolver: Resolver; notes: Set<string> } | null {
+  if (!alphabetKey) return null;
+  const alphabet = ALPHABETS[alphabetKey];
+  if (!alphabet?.notes?.length) return null;
+  const octaves = OCTAVES[alphabet.octaves ?? 'western'] ?? OCTAVES.western;
+
+  let resolver: Resolver | null = null;
+  if (declaredTuning) {
+    const binding = TUNINGS[declaredTuning];
+    if (binding) {
+      // A binding either references a scale (scale-ratio path with its base) or
+      // carries degrees directly (degrees+temperament path).
+      resolver = binding.scale
+        ? resolverFromScale(alphabet, octaves, binding.scale, binding)
+        : resolverFromBinding(alphabet, octaves, binding);
+    } else if (SCALES[declaredTuning]) {
+      // Not a binding → a scale referenced directly (`@tuning:maqam_rast`). No
+      // binding supplies the reference pitch, so the scale-ratio defaults apply
+      // (440 / first note of the alphabet / register 4) — exactly the PITCH.md
+      // oracle for maqam_rast on the arabic alphabet (do4 = 440).
+      resolver = resolverFromScale(alphabet, octaves, declaredTuning, undefined);
+    }
+  } else {
+    // No tuning declared → the alphabet's default binding (bohlen-pierce, gamelan).
+    const defKey = defaultBindingKey(alphabetKey);
+    const binding = defKey ? TUNINGS[defKey] : undefined;
+    if (binding) {
+      resolver = binding.scale
+        ? resolverFromScale(alphabet, octaves, binding.scale, binding)
+        : resolverFromBinding(alphabet, octaves, binding);
+    }
+  }
+
+  if (!resolver) return null;
+  return { resolver, notes: new Set(alphabet.notes) };
+}
+
 // A front-end turns language source into a derivable BP3 SceneAST + parse
 // errors. Both languages produce the SAME `ast` shape (BPScript compiles down
 // to a BP3 grammar that the BP3 front-end then parses), so the rest of the
@@ -150,6 +293,13 @@ type Frontend = (code: string) => {
   // derived token sounds if it's a note OR its symbol is in this set; everything
   // else renders as text. Empty for all-note grammars (they sound by default).
   soundingSymbols?: string[];
+  // Declared scale system from the `.bps` directives: `@alphabet.<key>` →
+  // `alphabet`, `@tuning:<key>` → `tuning`. The non-orchestrated WebAudio path
+  // builds its pitch resolver from the bpscript catalogs when these are present
+  // (bohlen-pierce, gamelan), instead of sniffing western/solfège note names.
+  // Absent for `.gr` and for `.bps` that declare no alphabet.
+  alphabet?: string;
+  tuning?: string;
   // Multi-voice orchestration (BPScript `@actor`): each actor owns an alphabet
   // and a transport (midi / webaudio). Present only for orchestrator `.bps`.
   orchestration?: Orchestration;
@@ -426,6 +576,22 @@ function flagStatesFromAst(a: SceneAstView | null): FlagStates {
   return out;
 }
 
+// Declared scale system from the AST directives. `@alphabet.<key>:browser`
+// parses to `{ name:'alphabet', subkey:<key> }` (the alphabet key is the
+// subkey); `@tuning:<key>` to `{ name:'tuning', runtime:<key> }` (the tuning key
+// is in `runtime`). Both optional — a `.bps` may declare an alphabet with no
+// explicit tuning (the catalog default for that alphabet then applies).
+function scaleSystemFromAst(a: SceneAstView | null): { alphabet?: string; tuning?: string } {
+  let alphabet: string | undefined;
+  let tuning: string | undefined;
+  for (const d of a?.directives ?? []) {
+    const node = d as { name?: string; subkey?: string | null; runtime?: string | null };
+    if (node.name === 'alphabet' && node.subkey) alphabet = node.subkey;
+    else if (node.name === 'tuning' && node.runtime) tuning = node.runtime;
+  }
+  return { alphabet, tuning };
+}
+
 // Declared audio banks from the AST: each `LibraryDirective` (`@library.strudel
 // "dirt-samples"`) accumulates by engine → `{ [engine]: [name, …] }`. Same shape
 // compileBPS's `libraries` sidecar had.
@@ -528,7 +694,11 @@ const bpsFrontend: Frontend = (code) => {
     // never needed it — dropped. `settings` stays meaningful for `.gr` only (real
     // `-se` engine timing, see `resolveSeSettings`).
     settings: undefined as SeEngineSettings | undefined,
-    soundingSymbols: soundAssignments.map((s) => s.subject)
+    soundingSymbols: soundAssignments.map((s) => s.subject),
+    // Declared `@alphabet`/`@tuning` so the WebAudio path resolves pitches from
+    // the bpscript catalogs (bohlen-pierce, gamelan) rather than sniffing note
+    // names. Absent keys leave the western/solfège fallback in place.
+    ...scaleSystemFromAst(a)
   };
   // Backtick voices: compileBPS keys foreign code by the EXACT BT token emitted
   // in the timeline (direct lookup, no parsing). Carry it through so the adapter
@@ -995,7 +1165,9 @@ function makeBpxAdapter(
         backticks,
         flagStates,
         libraries,
-        sections: headSections
+        sections: headSections,
+        alphabet: declaredAlphabet,
+        tuning: declaredTuning
       } = frontend(code);
       if (errors.length > 0) {
         const msg = errors.map((e) => `line ${e.line ?? '?'}: ${e.message}`).join('; ');
@@ -1253,9 +1425,17 @@ function makeBpxAdapter(
       // routed output. Decided per token, so a mixed grammar voices its sounding
       // symbols and skips the rest.
       const sounding = new Set(soundingSymbols ?? []);
+      // When the scene declares an `@alphabet` (+ a resolvable `@tuning`, or the
+      // catalog default for that alphabet), build the pitch resolver from the
+      // bpscript catalogs and treat the alphabet's own notes as sounding — so
+      // non-western symbols (`C H J` bohlen, `nem barang…` gamelan) reach audio.
+      // Otherwise keep the western/solfège sniffing fallback unchanged (western
+      // scenes with octaves like cv-adsr resolve identically through either).
+      const catalog = catalogResolver(declaredAlphabet, declaredTuning);
+      if (catalog) for (const n of catalog.notes) sounding.add(n);
       const soundsFn = (token: string) => isNoteName(token) || sounding.has(token);
 
-      const resolver = pickResolver(tokens);
+      const resolver = catalog ? catalog.resolver : pickResolver(tokens);
       dispatcher.addTransport('default', new WebAudioTransport(ctx, { resolver }));
       // The dispatcher routes via per-token resolver/transport lookup; this
       // global resolver is the fallback the WebAudio path uses for pitches.
