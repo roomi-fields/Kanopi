@@ -54,11 +54,22 @@
     const tree = set?.tree;
     const raw = set?.rawTokens ?? [];
     const names = set?.symbolNames;
+    // Head-rule sections (seconds in the store) → the timeline's ms band. Drawn
+    // INDEPENDENTLY of polymetry, so a purely sequential grammar (arabic:
+    // `S -> Sayr Rujoo Qarar`) still shows its named segments even though it has
+    // no `{ , }` struct lane. Empty list → no band (e.g. a single-section file).
+    const sections = (set?.sections ?? []).map((s) => ({
+      name: s.name,
+      startMs: s.startSec * 1000,
+      endMs: s.endSec * 1000
+    }));
     if (!timeline) return;
     const stream = tree ? bpxTreeToTimelineStream(tree, raw, names) : raw;
     // load() ends with resize()+render() itself — do NOT call resize() again here
     // (a bare resize() would clear the freshly painted canvas to black).
     timeline.load(stream, {});
+    // setSections re-runs resize()+render() with the band's row reserved.
+    timeline.setSections(sections);
   });
 
   // Playback cursor wired to STEP: stepIndex >= 0 → draw a cursor at the start

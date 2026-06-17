@@ -1,7 +1,7 @@
 <script lang="ts">
   import { clock } from '../../stores/clock.svelte';
   import { bpsScenes } from '../../stores/bpsScenes.svelte';
-  import { production } from '../../stores/production.svelte';
+  import { production, beatCount } from '../../stores/production.svelte';
   import { workspace } from '../../stores/workspace.svelte';
 
   // STEP lives in the transport cluster (beta issue 4 — transport buttons
@@ -13,12 +13,12 @@
   const activeFile = $derived(
     workspace.activeTabId ? workspace.fileById(workspace.activeTabId) : undefined
   );
-  const beatCount = $derived.by(() => {
+  const beats = $derived.by(() => {
     const cur = production.current;
-    if (!cur || !(cur.beatDurSec > 0)) return 0;
-    return Math.ceil(cur.durationSec / cur.beatDurSec);
+    if (!cur) return 0;
+    return beatCount(cur.durationSec, cur.beatDurSec);
   });
-  const canStep = $derived(beatCount > 1);
+  const canStep = $derived(beats > 1);
 
   function fmt2(n: number) {
     return n.toString().padStart(2, '0');
@@ -78,7 +78,13 @@
     >
       <svg viewBox="0 0 12 12" fill="currentColor"><path d="M2.5 1.5 L10 6 L2.5 10.5 Z" /></svg>
     </button>
-    <button class="tbtn" type="button" title="Pause" onclick={() => clock.pause()}>
+    <button
+      class="tbtn"
+      class:paused={clock.state.paused}
+      type="button"
+      title={clock.state.paused ? 'Paused' : 'Pause'}
+      onclick={() => clock.pause()}
+    >
       <svg viewBox="0 0 12 12" fill="currentColor"
         ><rect x="2.5" y="2" width="2.5" height="8" rx="0.5" /><rect
           x="7"
@@ -204,6 +210,25 @@
     box-shadow:
       0 0 0 1px rgba(232, 156, 62, 0.2),
       inset 0 0 8px rgba(232, 156, 62, 0.08);
+  }
+
+  /* Paused: transport halted at position (≠ stop, which zeroes it). A dimmer,
+     blinking amber so it's visually distinct from the steady "playing" glow. */
+  .tbtn.paused {
+    color: var(--amber);
+    background: rgba(232, 156, 62, 0.08);
+    box-shadow: 0 0 0 1px rgba(232, 156, 62, 0.18);
+    animation: pause-blink 1.1s ease-in-out infinite;
+  }
+
+  @keyframes pause-blink {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
   }
 
   .tbtn svg {

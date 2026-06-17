@@ -98,6 +98,7 @@ const TRACK_H = 28;
 const CTRL_H = 16;
 const CV_H = 20;
 const RULER_H = 22;
+const SECTION_BAND_H = 16; // head-rule section band (labeled segments), 0 when none
 const MINIMAP_H = 18;
 const VOICE_GAP = 6;
 const STRUCT_LANE_H = 14; // height per nesting level in structure indicator lane
@@ -128,6 +129,11 @@ export class Timeline {
     this.voices = [];
     this.silences = [];     // [{start, end}] — explicit silence/rest gaps
     this.polyGroups = [];   // [{start, end, voiceCount}] — polymetric groups from { , }
+    // Head-rule sections ({name, startMs, endMs}) drawn as a labeled band along
+    // the timeline INDEPENDENTLY of polymetry — a purely sequential grammar
+    // (arabic: `S -> Sayr Rujoo Qarar`) has no `{ , }` groups, so the struct lane
+    // stays empty; this band still shows its named segments. Set via setSections().
+    this._sections = [];
     this._controlTable = null; // CT0 → [{key, value}]
     this._maxPolyDepth = 0;
     this.totalMs = 0;
@@ -148,6 +154,7 @@ export class Timeline {
     this._resizeGroupOrigStart = 0;
     this._resizeGroupOrigEnd = 0;
     this._isDragging = false;
+    this._isDraggingMinimap = false; // dragging the minimap viewport to scroll
     this._dragStartX = 0;
     this._dragStartScroll = 0;
     this._isResizing = false;  // edge drag in progress
@@ -445,7 +452,7 @@ export class Timeline {
   }
 
   _calcHeight() {
-    let h = RULER_H + this._structLaneHeight() + MINIMAP_H;
+    let h = this._bodyTop() + this._structLaneHeight() + MINIMAP_H;
     for (const v of this.voices) {
       h += TRACK_H + VOICE_GAP;
       if (v.controls.length > 0) h += CTRL_H;
@@ -475,14 +482,21 @@ export class Timeline {
     // Ruler
     this._drawRuler(ctx, w);
 
+    // Head-rule section band (below the ruler, above the struct lane). Drawn for
+    // a purely sequential grammar that has no polymetric struct lane.
+    const bandH = this._sectionBandHeight();
+    if (bandH > 0) {
+      this._drawSectionBand(ctx, w, RULER_H, bandH);
+    }
+
     // Structure lane (above voices)
     const structH = this._structLaneHeight();
     if (structH > 0) {
-      this._drawStructLane(ctx, w, RULER_H, structH);
+      this._drawStructLane(ctx, w, RULER_H + bandH, structH);
     }
 
     // Voices
-    let y = RULER_H + structH;
+    let y = this._bodyTop() + structH;
     for (let vi = 0; vi < this.voices.length; vi++) {
       y = this._drawVoice(ctx, this.voices[vi], vi, y, w);
       y += VOICE_GAP;
@@ -885,9 +899,20 @@ export class Timeline {
     return (this._maxPolyDepth || 0) * STRUCT_LANE_H;
   }
 
+  // Height reserved for the head-rule section band (0 when no sections are set).
+  _sectionBandHeight() {
+    return this._sections && this._sections.length > 0 ? SECTION_BAND_H : 0;
+  }
+
+  // Top of the BODY (struct lane + voices) — below the ruler and the optional
+  // section band. The band sits between the ruler and the struct lane.
+  _bodyTop() {
+    return RULER_H + this._sectionBandHeight();
+  }
+
   _voiceYPositions() {
     const positions = [];
-    let y = RULER_H + this._structLaneHeight();
+    let y = this._bodyTop() + this._structLaneHeight();
     for (const v of this.voices) {
       const top = y;
       y += TRACK_H;
@@ -935,6 +960,59 @@ export class Timeline {
     }
 
     return items;
+  }
+
+  /**
+   * Draw the head-rule sections as a labeled band along the timeline. Each
+   * section is a colored segment spanning [startMs, endMs] with its name
+   * centered; thin separators mark the boundaries. Independent of polymetry, so
+   * a sequential grammar (no `{ , }`) still shows its named structure.
+   */
+  _drawSectionBand(ctx, w, top, bandH) {
+    const range = this.range;
+    const sectionColors = [
+      'rgba(91, 141, 217, 0.30)',
+      'rgba(61, 201, 138, 0.30)',
+      'rgba(212, 153, 74, 0.30)',
+      'rgba(176, 122, 204, 0.30)',
+      'rgba(224, 85, 114, 0.30)',
+      'rgba(69, 183, 209, 0.30)',
+    ];
+
+    // Band background + header cell.
+    ctx.fillStyle = COLORS.headerBg;
+    ctx.fillRect(0, top, HEADER_W, bandH);
+    ctx.fillStyle = COLORS.textDim;
+    ctx.font = '9px Consolas, monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('sect', 4, top + bandH / 2 + 3);
+
+    for (let i = 0; i < this._sections.length; i++) {
+      const s = this._sections[i];
+      const x1 = HEADER_W + range.msToX(s.startMs);
+      const x2 = HEADER_W + range.msToX(s.endMs);
+      const segW = x2 - x1;
+      if (x2 < HEADER_W || x1 > w) continue;
+      const color = sectionColors[i % sectionColors.length];
+      ctx.fillStyle = color;
+      ctx.fillRect(Math.max(HEADER_W, x1), top + 1, segW, bandH - 2);
+      // Boundary separator.
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x1, top);
+      ctx.lineTo(x1, top + bandH);
+      ctx.stroke();
+      // Centered label (only when the segment is wide enough to read).
+      if (segW > 26 && s.name) {
+        ctx.fillStyle = COLORS.text;
+        ctx.font = '9px Consolas, monospace';
+        ctx.textAlign = 'center';
+        const cx = Math.max(HEADER_W, x1) + Math.min(segW, x2 - Math.max(HEADER_W, x1)) / 2;
+        ctx.fillText(s.name, cx, top + bandH / 2 + 3);
+      }
+    }
+    ctx.textAlign = 'left';
   }
 
   _drawStructLane(ctx, w, laneTop, laneH) {
@@ -1194,6 +1272,30 @@ export class Timeline {
     this._scheduleRender();
   }
 
+  /**
+   * Set the head-rule sections drawn as a labeled band along the timeline,
+   * INDEPENDENTLY of the polymetric struct lane. `sections` is
+   * `[{ name, startMs, endMs }]`; an empty/absent list hides the band. This is
+   * what makes a purely sequential grammar (no `{ , }` groups) show its named
+   * segments. The band reserves its own row, so re-layout + repaint after.
+   */
+  setSections(sections) {
+    this._sections = Array.isArray(sections) ? sections : [];
+    this.resize();
+    this.render();
+  }
+
+  // Center the viewport on the timeline position under minimap x `mx` (canvas
+  // coords). Used by both the minimap click and the minimap drag.
+  _minimapScrollTo(mx, rectWidth) {
+    const mmW = rectWidth - HEADER_W;
+    if (mmW <= 0) return;
+    const frac = Math.max(0, Math.min(1, (mx - HEADER_W) / mmW));
+    const targetMs = frac * this.totalMs;
+    this.range.scrollX = targetMs * this.range.zoom - this.range.viewWidth / 2;
+    this.range.clampScroll();
+  }
+
   // ============ Events ============
 
   _bindEvents() {
@@ -1223,12 +1325,14 @@ export class Timeline {
       const my = e.clientY - rect.top;
       const h = rect.height;
 
-      // Minimap click → jump viewport
+      // Minimap: click centers the viewport on the click, and HOLDING starts a
+      // drag that scrolls the timeline as the mouse moves (the draggable
+      // viewport/scrollbar behavior). Centering on press makes the viewport jump
+      // under the cursor so the subsequent drag feels like grabbing it.
       if (my >= h - MINIMAP_H && mx > HEADER_W) {
-        const mmW = rect.width - HEADER_W;
-        const clickMs = ((mx - HEADER_W) / mmW) * this.totalMs;
-        this.range.scrollX = (clickMs * this.range.zoom) - this.range.viewWidth / 2;
-        this.range.clampScroll();
+        this._isDraggingMinimap = true;
+        this.canvas.style.cursor = 'grabbing';
+        this._minimapScrollTo(mx, rect.width);
         this._autoFollow = false;
         this.render();
         return;
@@ -1317,6 +1421,15 @@ export class Timeline {
     });
 
     this.canvas.addEventListener('mousemove', (e) => {
+      // Minimap drag in progress → scroll the timeline to follow the cursor.
+      if (this._isDraggingMinimap) {
+        const rect = this.canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        this._minimapScrollTo(mx, rect.width);
+        this.render();
+        return;
+      }
+
       // Group resize in progress
       if (this._isResizingGroup) {
         const rect = this.canvas.getBoundingClientRect();
@@ -1414,6 +1527,14 @@ export class Timeline {
     });
 
     window.addEventListener('mouseup', () => {
+      // Minimap drag end
+      if (this._isDraggingMinimap) {
+        this._isDraggingMinimap = false;
+        this.canvas.style.cursor = 'grab';
+        this.render();
+        return;
+      }
+
       // Group resize end
       if (this._isResizingGroup) {
         const gi = this._resizeGroupIdx;
@@ -1480,7 +1601,7 @@ export class Timeline {
   }
 
   _hitTest(mx, my) {
-    let y = RULER_H + this._structLaneHeight();
+    let y = this._bodyTop() + this._structLaneHeight();
     for (let vi = 0; vi < this.voices.length; vi++) {
       const voice = this.voices[vi];
       if (my >= y && my < y + TRACK_H) {
@@ -1502,7 +1623,7 @@ export class Timeline {
   }
 
   _edgeHitTest(mx, my) {
-    let y = RULER_H + this._structLaneHeight();
+    let y = this._bodyTop() + this._structLaneHeight();
     for (let vi = 0; vi < this.voices.length; vi++) {
       const voice = this.voices[vi];
       if (my >= y && my < y + TRACK_H) {
@@ -1532,7 +1653,7 @@ export class Timeline {
   _structHitTest(mx, my) {
     const structH = this._structLaneHeight();
     if (structH === 0) return null;
-    const laneTop = RULER_H;
+    const laneTop = this._bodyTop();
     if (my < laneTop || my > laneTop + structH || mx < HEADER_W) return null;
 
     const items = this._buildStructItems();
@@ -1558,7 +1679,7 @@ export class Timeline {
   _structEdgeHitTest(mx, my) {
     const structH = this._structLaneHeight();
     if (structH === 0) return null;
-    const laneTop = RULER_H;
+    const laneTop = this._bodyTop();
     if (my < laneTop || my > laneTop + structH || mx < HEADER_W) return null;
 
     const hitZone = 10;

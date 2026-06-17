@@ -19,6 +19,26 @@ describe('mock core', () => {
     expect(core.clock.state.bpm).toBe(300);
   });
 
+  it('setBpm is a no-op (no emit, no onTempo) when the tempo is unchanged', () => {
+    const c = new MockClock();
+    c.setBpm(120);
+    let emits = 0;
+    let tempoFanouts = 0;
+    c.subscribe(() => emits++); // subscribe() fires once immediately
+    c.setOnTempo(() => tempoFanouts++);
+    const emitsAfterSubscribe = emits;
+    // Re-setting the SAME tempo must not churn subscribers or re-fan-out onTempo.
+    // A `.bps` with `@mm` re-applies its own tempo on every Play→replay; without
+    // this guard the clock re-emits, re-entering the replay listener → recursion.
+    c.setBpm(120);
+    expect(emits).toBe(emitsAfterSubscribe);
+    expect(tempoFanouts).toBe(0);
+    // A genuine change still emits + fans out.
+    c.setBpm(70);
+    expect(emits).toBe(emitsAfterSubscribe + 1);
+    expect(tempoFanouts).toBe(1);
+  });
+
   it('emits console entries', () => {
     const core = createMockCore();
     const before = core.console.entries().length;
@@ -115,11 +135,16 @@ describe('mock core', () => {
     };
     core.clock.pause();
     expect(core.clock.state.playing).toBe(false);
+    // Paused ≠ stopped: position kept AND the paused flag set so the UI can tell.
+    expect(core.clock.state.paused).toBe(true);
     expect(core.clock.state.bar).toBe(5);
     expect(core.clock.state.beat).toBe(2);
-    // Stop, by contrast, rewinds to the top.
+    // play() clears paused and resumes; stop() rewinds AND clears paused.
     core.clock.play();
+    expect(core.clock.state.paused).toBe(false);
+    expect(core.clock.state.playing).toBe(true);
     core.clock.stop();
+    expect(core.clock.state.paused).toBe(false);
     expect(core.clock.state.bar).toBe(1);
     expect(core.clock.state.beat).toBe(0);
   });

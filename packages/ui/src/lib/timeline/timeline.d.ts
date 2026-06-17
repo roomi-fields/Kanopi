@@ -16,6 +16,14 @@ export interface TimelineLoadOptions {
   source?: string;
 }
 
+// A head-rule section drawn as a labeled band along the timeline (times in ms),
+// independent of polymetric structure.
+export interface TimelineSection {
+  name: string;
+  startMs: number;
+  endMs: number;
+}
+
 export interface TimelineOptions {
   onSelect?: (note: unknown, voiceIndex: number, blockIndex: number) => void;
   onSeek?: (ms: number) => void;
@@ -31,5 +39,6 @@ export class Timeline {
   render(): void;
   setCursor(ms: number): void;
   clearCursor(): void;
+  setSections(sections: TimelineSection[]): void;
   destroy(): void;
 }

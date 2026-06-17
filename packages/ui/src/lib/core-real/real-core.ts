@@ -7,6 +7,7 @@ import {
 } from '../core-mock/mock-runtime';
 import type { Actor, ActorFileRef, CoreApi, LogEntry, Runtime, Scene } from '../core-mock/types';
 import { getAdapter, listRuntimes } from '../runtimes/registry';
+import { setTempoSink } from '../runtimes/bp3';
 import { installConsoleBridge } from '../runtimes/console-bridge';
 import { parseSession } from '../session';
 import { findBank } from '../library/audio-banks';
@@ -86,6 +87,10 @@ class RealCore implements CoreApi {
         adapter?.setBpm?.(bpm, this.log);
       }
     });
+    // A grammar that declares `@mm` derives at that tempo; let the bp3/bpscript
+    // adapter drive the CENTRAL clock so the displayed BPM and the STEP grid
+    // adopt the same tempo the derivation used (transport ⇄ derivation coherence).
+    setTempoSink((bpm) => this.clock.setBpm(bpm));
     // Relay beat/bar events from the clock to any adapter that opts in.
     // Symmetric with `setBpm` above; lets adapters whose language exposes a
     // visual clock (Hydra `beat` / `bar` globals) stay in sync without each

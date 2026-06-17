@@ -24,6 +24,11 @@ export interface ClockState {
   beatsPerBar: number; // numerator of the current @time signature (default 4)
   phase: number; // 0..1 within current beat
   playing: boolean;
+  // True after a `pause()` (transport halted but position kept), false after a
+  // `play()` or a `stop()` (which also zeroes the position). Lets the transport
+  // UI distinguish paused-at-position from stopped-at-zero. Never true while
+  // `playing` is true.
+  paused: boolean;
 }
 
 export interface Clock {

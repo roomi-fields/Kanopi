@@ -321,6 +321,11 @@ type Frontend = (code: string) => {
   // to compute from the compiled grammar text; empty for a `.gr` (parseBP3 already
   // expanded the structure, so the head sequence isn't recoverable here).
   sections?: string[];
+  // Declared metronome (`@mm:70`), the tempo BPx derives durations at. When
+  // present the adapter adopts it as the global tempo so the displayed BPM, the
+  // derivation, and the STEP beat grid all agree. Absent for `.gr` and `.bps`
+  // without `@mm` (the current tempo is kept).
+  mm?: number;
 };
 
 // `@library.<engine> "<id>"` → { engine → [bank ids] } (from compileBPS).
@@ -592,6 +597,22 @@ function scaleSystemFromAst(a: SceneAstView | null): { alphabet?: string; tuning
   return { alphabet, tuning };
 }
 
+// Declared metronome from the AST directives: `@mm:70` parses to a `Directive`
+// with `name:'mm'`, `value:70`. This is the tempo the BPx engine derives note
+// durations at (loadGrammar reads `@mm` straight from the AST), so the central
+// clock + STEP grid (`beatDurSec = 60/bpm`) MUST adopt it or the displayed tempo
+// and the produced timeline diverge (a 70 bpm derivation stepped at 128 bpm
+// yields fractional, phantom beats). Absent → undefined (keep the current tempo).
+function mmFromAst(a: SceneAstView | null): number | undefined {
+  for (const d of a?.directives ?? []) {
+    const node = d as { name?: string; value?: unknown };
+    if (node.name === 'mm' && typeof node.value === 'number' && node.value > 0) {
+      return node.value;
+    }
+  }
+  return undefined;
+}
+
 // Declared audio banks from the AST: each `LibraryDirective` (`@library.strudel
 // "dirt-samples"`) accumulates by engine → `{ [engine]: [name, …] }`. Same shape
 // compileBPS's `libraries` sidecar had.
@@ -695,6 +716,9 @@ const bpsFrontend: Frontend = (code) => {
     // `-se` engine timing, see `resolveSeSettings`).
     settings: undefined as SeEngineSettings | undefined,
     soundingSymbols: soundAssignments.map((s) => s.subject),
+    // Declared `@mm` metronome so the central clock + STEP grid adopt the tempo
+    // the engine actually derives at (absent → current tempo kept).
+    mm: mmFromAst(a),
     // Declared `@alphabet`/`@tuning` so the WebAudio path resolves pitches from
     // the bpscript catalogs (bohlen-pierce, gamelan) rather than sniffing note
     // names. Absent keys leave the western/solfège fallback in place.
@@ -929,6 +953,16 @@ function webMidiAvailable(): Promise<boolean> {
 // languages play under the one central transport tempo. Defaults to the clock's
 // own default so a fresh page already matches the transport.
 let currentBpm = 128;
+
+// Optional hook the core wires so a grammar's declared `@mm` can drive the
+// CENTRAL clock (and thus the transport display) at eval, keeping the shown BPM,
+// the derivation, and the STEP grid in agreement. The core sets this to
+// `clock.setBpm`; left unset (tests, headless) the adapter still derives at the
+// `@mm` tempo locally via `currentBpm`, only the UI clock isn't told.
+let onTempoFromGrammar: ((bpm: number) => void) | undefined;
+export function setTempoSink(fn: (bpm: number) => void): void {
+  onTempoFromGrammar = fn;
+}
 
 let audioCtx: AudioContext | undefined;
 // The dispatcher's lookahead clock schedules notes against `audioCtx.currentTime`.
@@ -1167,7 +1201,8 @@ function makeBpxAdapter(
         libraries,
         sections: headSections,
         alphabet: declaredAlphabet,
-        tuning: declaredTuning
+        tuning: declaredTuning,
+        mm: declaredMm
       } = frontend(code);
       if (errors.length > 0) {
         const msg = errors.map((e) => `line ${e.line ?? '?'}: ${e.message}`).join('; ');
@@ -1185,6 +1220,18 @@ function makeBpxAdapter(
       // its samples. De-duped + fire-and-forget inside the helper.
       if (libraries && Object.keys(libraries).length > 0) {
         loadDeclaredLibraries(libraries, id, log);
+      }
+
+      // `@mm` tempo: a grammar that declares its own metronome derives at THAT
+      // tempo (BPx's loadGrammar reads `@mm`), so adopt it as the global tempo
+      // BEFORE deriving — otherwise the STEP grid (`beatDurSec = 60/currentBpm`)
+      // and the displayed BPM use a stale tempo and disagree with the produced
+      // timeline (a 70 bpm derivation stepped at 128 bpm yields phantom beats).
+      // Push it to the central clock too (display + transport) when the core has
+      // wired the sink. No `@mm` → keep the current tempo untouched.
+      if (declaredMm && declaredMm > 0) {
+        currentBpm = declaredMm;
+        onTempoFromGrammar?.(declaredMm);
       }
 
       // A5 named scenes: a `.bps` whose rules are ALL guarded by a named scene

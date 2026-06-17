@@ -30,7 +30,15 @@ function bus<T>() {
 }
 
 export class MockClock implements Clock {
-  state: ClockState = { bpm: 128, bar: 1, beat: 0, beatsPerBar: 4, phase: 0, playing: false };
+  state: ClockState = {
+    bpm: 128,
+    bar: 1,
+    beat: 0,
+    beatsPerBar: 4,
+    phase: 0,
+    playing: false,
+    paused: false
+  };
   private lastTick = performance.now();
   private tapTimes: number[] = [];
   private b = bus<ClockState>();
@@ -111,7 +119,7 @@ export class MockClock implements Clock {
 
   play() {
     const was = this.state.playing;
-    this.state = { ...this.state, playing: true };
+    this.state = { ...this.state, playing: true, paused: false };
     this.b.emit(this.state);
     if (!was) {
       this.onTransport?.(true);
@@ -135,7 +143,7 @@ export class MockClock implements Clock {
     // notification so the block-replay listener (installBlockReplay) can tell a
     // surgical manual eval from a real Play and skip re-evaluating armed blocks.
     if (this.state.playing) return;
-    this.state = { ...this.state, playing: true };
+    this.state = { ...this.state, playing: true, paused: false };
     this.silentStart = true;
     try {
       this.b.emit(this.state);
@@ -152,8 +160,9 @@ export class MockClock implements Clock {
     });
   }
   stop() {
-    const was = this.state.playing;
-    this.state = { ...this.state, playing: false, bar: 1, beat: 0, phase: 0 }; // preserve beatsPerBar on stop
+    const was = this.state.playing || this.state.paused;
+    // stop() zeroes the position (pause() doesn't) and clears the paused flag.
+    this.state = { ...this.state, playing: false, paused: false, bar: 1, beat: 0, phase: 0 }; // preserve beatsPerBar on stop
     this.b.emit(this.state);
     if (was) {
       this.absBeat = 0;
@@ -179,7 +188,7 @@ export class MockClock implements Clock {
    */
   pause() {
     if (!this.state.playing) return;
-    this.state = { ...this.state, playing: false };
+    this.state = { ...this.state, playing: false, paused: true };
     this.b.emit(this.state);
     this.onTransport?.(false);
     this.eventsBus?.emit({
@@ -198,9 +207,14 @@ export class MockClock implements Clock {
   setBpm(n: number) {
     const bpm = Math.max(20, Math.min(300, Math.round(n * 10) / 10));
     const prev = this.state.bpm;
+    // No-op on an unchanged tempo: don't re-emit or re-fan-out `onTempo`. A
+    // grammar that re-applies its own `@mm` on every replay (Play → replayArmed →
+    // eval → setTempoSink) would otherwise emit a redundant clock update each
+    // time, churning every subscriber for nothing.
+    if (prev === bpm) return;
     this.state = { ...this.state, bpm };
     this.b.emit(this.state);
-    if (prev !== bpm) this.onTempo?.(bpm);
+    this.onTempo?.(bpm);
   }
   setTimeSignature(beatsPerBar: number) {
     const n = Math.max(1, Math.min(32, Math.round(beatsPerBar)));

@@ -262,13 +262,18 @@ export const openBlocks = new OpenBlocksStore();
 export function installBlockReplay() {
   let wasPlaying = clock.state.playing;
   core.clock.subscribe((s) => {
-    // Skip the replay on a surgical manual eval (clock.startSilently): the
-    // evaluated block is already sounding, the rest of the armed set must not
-    // be re-triggered. A real Play (clock.play) still replays everything armed.
-    if (s.playing && !wasPlaying && !core.clock.silentStart) {
+    // Detect the play edge, then update `wasPlaying` BEFORE replaying. The replay
+    // re-evaluates armed blocks, and a `.bps` with `@mm` re-applies its tempo to
+    // the clock synchronously inside that eval (setTempoSink → clock.setBpm),
+    // which re-emits the clock state and re-enters THIS subscriber. Updating the
+    // edge flag first means the re-entrant emit sees `wasPlaying === true` and
+    // does NOT replay again — otherwise the eval recurses into itself (stack
+    // overflow on Play). Skip the surgical-manual-eval edge (startSilently).
+    const playEdge = s.playing && !wasPlaying && !core.clock.silentStart;
+    wasPlaying = s.playing;
+    if (playEdge) {
       void openBlocks.replayArmed();
     }
-    wasPlaying = s.playing;
   });
   // Mirror Strudel slot errors into the panel's reactive errored set.
   onSlotErrorChange(() => openBlocks._refreshErrored());

@@ -2,7 +2,7 @@ import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 import { core } from '../lib/core';
 import { runtimeFromExt } from '../lib/workspace/types';
 import type { Runtime } from '../lib/core';
-import { production } from './production.svelte';
+import { production, beatCount } from './production.svelte';
 // Sections read from the BPScript AST (`compileBPS().ast`), the single source of
 // truth — replaces the former regex-on-grammar-text `headSections` for the `.bps`
 // scenes bar. Standalone module (no adapter/core import) → no cycle.
@@ -148,7 +148,7 @@ class BpsScenesStore {
   async stepActive(file: { runtime: Runtime; name: string; contents: string }) {
     const cur = production.current;
     const beatDurSec = cur?.beatDurSec ?? 0;
-    const count = cur && beatDurSec > 0 ? Math.max(0, Math.ceil(cur.durationSec / beatDurSec)) : 0;
+    const count = cur ? beatCount(cur.durationSec, beatDurSec) : 0;
     if (count < 2) return;
     // The re-eval republishes the FULL production and resets `stepIndex` to -1,
     // so compute the next beat from the CURRENT cursor first, then set it after
