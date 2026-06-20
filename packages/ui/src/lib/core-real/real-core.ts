@@ -13,8 +13,11 @@ import {
   armOrchestratedActor,
   disarmOrchestratedActor,
   isOrchestratedActor,
+  pauseAudioContext,
+  resumeAudioContext,
+  getDispatcherBeat,
   type PublishedActor
-} from '../runtimes/bp3';
+} from '../runtimes/bpx-adapter';
 import { installConsoleBridge } from '../runtimes/console-bridge';
 import { parseSession } from '../session';
 import { findBank } from '../library/audio-banks';
@@ -89,6 +92,17 @@ class RealCore implements CoreApi {
     this.clock.setOnTransport((playing) => {
       void this.handleTransport(playing);
     });
+    // PAUSE/RESUME (≠ stop): suspend/resume the WebAudio context in place so the
+    // dispatchers keep their scheduled timeline — resuming continues mid-phrase
+    // instead of restarting. Stop still goes through onTransport(false) and tears
+    // everything down. Strudel/Hydra own their own contexts (not paused here yet).
+    this.clock.setOnPauseResume((paused) => {
+      // Audio only: suspend in place on pause, resume on play. The PLAYHEAD
+      // position is owned by the transport state machine (playback store), which
+      // records the paused beat itself — the core no longer tracks it here.
+      if (paused) void pauseAudioContext();
+      else void resumeAudioContext();
+    });
     this.scenes.setOnActivate((s) => {
       void this.handleSceneActivate(s);
     });
@@ -102,6 +116,11 @@ class RealCore implements CoreApi {
     // adapter drive the CENTRAL clock so the displayed BPM and the STEP grid
     // adopt the same tempo the derivation used (transport ⇄ derivation coherence).
     setTempoSink((bpm) => this.clock.setBpm(bpm));
+    // Real beat display (requirement B): while a bp3/bpscript dispatcher plays,
+    // the transport beat dots + bar·beat·phase counter phase-lock to its actual
+    // musical position (the heard audio) instead of the free rAF clock. Returns
+    // null when no dispatcher plays → the clock keeps its rAF behaviour.
+    this.clock.setBeatSource(() => getDispatcherBeat());
     // An orchestrator `.bps` publishes its `@actor` list here so the Actors panel
     // shows every voice (groove + viz, …), not just the file-bound `.kanopi`
     // actors. The actors are armed by default (a freshly-evaluated orchestrator
@@ -429,7 +448,8 @@ class RealCore implements CoreApi {
     docOffset: number = 0,
     actorId?: string,
     flags?: Record<string, number>,
-    section?: { index: number; count: number }
+    section?: { index: number; count: number },
+    produceOnly: boolean = false
   ): Promise<void> {
     const adapter = getAdapter(runtime);
     if (!adapter) {
@@ -468,9 +488,21 @@ class RealCore implements CoreApi {
     // block doesn't falsely mark the scene as playing.
     await adapter.evaluate(
       code,
-      { actorId: slotId, fileId: sourceId, docOffset, flags, section },
+      { actorId: slotId, fileId: sourceId, docOffset, flags, section, produceOnly },
       this.log
     );
+
+    // PRODUCE-only (scene opened, not played): the adapter derived + published the
+    // structure, but we must NOT touch the transport or light the actor LED — the
+    // scene is ready, not playing. Play sounds it later.
+    if (produceOnly) return;
+
+    // STEP (a `section` window) is a discrete advance, NOT continuous play: the
+    // dispatcher sounds the single beat on its own clock, and the transport must
+    // stay in STEP mode (not playing) — `bpsScenes.stepActive` already called
+    // `enterStep`. So DON'T startSilently here, or stepping would resume the
+    // transport (and "remove the pause").
+    if (section) return;
 
     // Surgical: a manual Ctrl+Enter (re)sounds ONLY this block. If the transport
     // was stopped we start it so the UI reads "playing" and time-based voices

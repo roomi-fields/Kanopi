@@ -90,6 +90,30 @@ describe('treeToDispatchEvents', () => {
     expect(events[3]).toMatchObject({ token: '-', type: 'rest' });
   });
 
+  it('carries the leaf canonical controls VERBATIM on the event (no payload fold)', () => {
+    const tree = {
+      root: {
+        type: 'sequence',
+        children: [
+          {
+            type: 'occupying',
+            symbolId: 1,
+            role: 'leaf',
+            payload: { nature: 'sounding', actor: 'bass' },
+            // BPx resolveControls output (canonical `controls` channel), verbatim.
+            controls: { wave: 'sawtooth', vel: '80' },
+            span: span(0, 500)
+          }
+        ]
+      }
+    };
+    const e = treeToDispatchEvents(forge(tree), { 1: 'C2' })[0];
+    // Controls ride DIRECTLY on the event, verbatim (the dispatcher coerces types).
+    expect(e.controls).toEqual({ wave: 'sawtooth', vel: '80' });
+    // The opaque input payload is untouched (no fold into params).
+    expect(e.payload).toEqual({ nature: 'sounding', actor: 'bass' });
+  });
+
   it('recurses polymetric voices in order', () => {
     const tree = {
       root: {

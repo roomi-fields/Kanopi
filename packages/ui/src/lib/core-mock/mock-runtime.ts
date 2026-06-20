@@ -45,6 +45,21 @@ export class MockClock implements Clock {
   private rafId = 0;
   private onTransport?: (playing: boolean) => void;
   private onTempo?: (bpm: number) => void;
+  private onPauseResume?: (paused: boolean) => void;
+  /** Optional audio beat source (requirement B). When it returns a position, the
+   * transport beat dots + bar·beat·phase counter phase-lock to the HEARD audio
+   * (a playing dispatcher) instead of the free rAF integrator. Null → rAF clock. */
+  private beatSource?: () => {
+    beatsTotal: number;
+    bar: number;
+    beat: number;
+    phase: number;
+    gen?: number;
+  } | null;
+  /** Last beat-source generation seen — a change means a NEW dispatcher took over
+   *  (fresh Play / Ctrl+Enter restart); used to allow the cursor to jump back to
+   *  the top on a genuine restart while clamping the harmless launch hand-off. */
+  private lastBeatGen = -1;
   private absBeat = 0;
   private absBar = 0;
   private absPhase = 0;
@@ -52,12 +67,27 @@ export class MockClock implements Clock {
   /** True only during the synchronous subscriber notification of a
    * `startSilently()` — lets the block-replay listener skip a surgical eval. */
   silentStart = false;
+  /** True only during the synchronous emit of a pause→play RESUME, so the
+   * block-replay listener skips re-evaluating (the voices are still scheduled). */
+  resuming = false;
 
   setOnTransport(fn: (playing: boolean) => void) {
     this.onTransport = fn;
   }
   setOnTempo(fn: (bpm: number) => void) {
     this.onTempo = fn;
+  }
+  /** Hook the audio pause/resume to the transport: pause suspends audio in place
+   * (no teardown), resume continues it. Wired by the core to the bp3 audio ctx. */
+  setOnPauseResume(fn: (paused: boolean) => void) {
+    this.onPauseResume = fn;
+  }
+  /** Wire the audio beat source (requirement B). Returns the current musical
+   * position of a playing dispatcher, or null when none plays (rAF fallback). */
+  setBeatSource(
+    fn: () => { beatsTotal: number; bar: number; beat: number; phase: number; gen?: number } | null
+  ) {
+    this.beatSource = fn;
   }
   setEventBus(bus: EventBus) {
     this.eventsBus = bus;
@@ -72,6 +102,67 @@ export class MockClock implements Clock {
     const dt = (now - this.lastTick) / 1000;
     this.lastTick = now;
     if (this.state.playing) {
+      const ext = this.beatSource?.();
+      if (ext) {
+        // A dispatcher is playing → it is the source of truth (requirement B).
+        // Phase-lock the transport beat dots + counter to its musical position,
+        // which advances at the live tempo and stays locked to the heard audio
+        // (including after a live retune). The free rAF integrator is bypassed.
+        const bpb = this.state.beatsPerBar || 4;
+        // MONOTONIC: never let the position go backward when the dispatcher takes
+        // over. At play start the rAF integrator advances a frame or two BEFORE
+        // the dispatcher spins up (its eval is async); the dispatcher then reports
+        // ~0, which would yank the cursor backward. Clamping to the integrator's
+        // value holds the position until the dispatcher catches up — forward only.
+        // A NEW dispatcher (gen changed) that reports a position well BEHIND the
+        // current one is a genuine restart (Ctrl+Enter while playing) → re-anchor,
+        // let the cursor jump back to the top. Otherwise stay MONOTONIC so the
+        // harmless rAF/dispatcher hand-off at launch can't make the cursor rewind.
+        const genChanged = ext.gen !== undefined && ext.gen !== this.lastBeatGen;
+        if (ext.gen !== undefined) this.lastBeatGen = ext.gen;
+        const restarted = genChanged && this.absPhase - ext.beatsTotal > 1;
+        const totalBeats = restarted
+          ? Math.max(0, ext.beatsTotal)
+          : Math.max(this.absPhase, ext.beatsTotal, 0);
+        const beatAbs = Math.floor(totalBeats);
+        const barAbs = Math.floor(beatAbs / bpb);
+        this.state = {
+          ...this.state,
+          beat: beatAbs % bpb,
+          phase: totalBeats - beatAbs,
+          bar: 1 + barAbs
+        };
+        this.b.emit(this.state);
+        // Keep the rAF integrator aligned so a later fallback (the dispatcher
+        // stops while the clock keeps playing) continues smoothly, no jump.
+        this.absPhase = totalBeats;
+        // Beat/bar events on each integer crossing, locked to the audio (these
+        // drive @map beat routing + adapter onBeat/onBar).
+        while (this.absBeat < beatAbs && this.eventsBus) {
+          this.absBeat += 1;
+          this.eventsBus.emit({
+            schemaVersion: 1,
+            type: 'beat',
+            runtime: 'clock',
+            t: now,
+            count: this.absBeat,
+            bpm: this.state.bpm,
+            phase: this.state.phase
+          });
+        }
+        while (this.absBar < barAbs && this.eventsBus) {
+          this.absBar += 1;
+          this.eventsBus.emit({
+            schemaVersion: 1,
+            type: 'bar',
+            runtime: 'clock',
+            t: now,
+            count: this.absBar
+          });
+        }
+        this.rafId = requestAnimationFrame(this.loop);
+        return;
+      }
       const beatsPerSec = this.state.bpm / 60;
       const prevAbsPhase = this.absPhase;
       this.absPhase += dt * beatsPerSec;
@@ -119,19 +210,44 @@ export class MockClock implements Clock {
 
   play() {
     const was = this.state.playing;
+    const wasPaused = this.state.paused;
     this.state = { ...this.state, playing: true, paused: false };
-    this.b.emit(this.state);
-    if (!was) {
-      this.onTransport?.(true);
-      this.eventsBus?.emit({
-        schemaVersion: 1,
-        type: 'transport',
-        runtime: 'clock',
-        t: performance.now(),
-        playing: true,
-        bpm: this.state.bpm
-      });
+    if (was) {
+      this.b.emit(this.state);
+      return;
     }
+    if (wasPaused) {
+      // RESUME from pause: the dispatchers were never torn down (pause only
+      // suspended their audio), so DON'T re-evaluate the armed voices — that would
+      // restart them from the top. `resuming` is raised for the synchronous emit
+      // so the block-replay listener skips its play-edge re-eval (the same guard
+      // `silentStart` provides for a surgical manual eval). Then resume the audio.
+      // The beat integrator is NOT reset — playback continues where it paused.
+      this.resuming = true;
+      try {
+        this.b.emit(this.state);
+      } finally {
+        this.resuming = false;
+      }
+      this.onPauseResume?.(false);
+    } else {
+      // FRESH continuous play (from stop or a stepped position): reset the beat
+      // integrator so the monotonic clamp above has a clean baseline and the
+      // dispatcher handoff can't appear to rewind the cursor.
+      this.absBeat = 0;
+      this.absBar = 0;
+      this.absPhase = 0;
+      this.b.emit(this.state);
+      this.onTransport?.(true);
+    }
+    this.eventsBus?.emit({
+      schemaVersion: 1,
+      type: 'transport',
+      runtime: 'clock',
+      t: performance.now(),
+      playing: true,
+      bpm: this.state.bpm
+    });
   }
   startSilently() {
     // Same as play() but WITHOUT onTransport(true): no re-eval of the armed set.
@@ -158,6 +274,19 @@ export class MockClock implements Clock {
       playing: true,
       bpm: this.state.bpm
     });
+  }
+  /**
+   * Enter STEP mode: a discrete manual advance, neither continuous play nor
+   * pause. Clears playing+paused WITHOUT zeroing the position (unlike stop) and
+   * WITHOUT hushing runtimes (unlike pause) — the dispatcher plays the single
+   * stepped beat on its own clock, and the transport simply reads "not playing".
+   * Idempotent + side-effect-free beyond the state emit, so STEP never resumes a
+   * paused transport (it used to go through startSilently → playing=true).
+   */
+  enterStep() {
+    if (!this.state.playing && !this.state.paused) return;
+    this.state = { ...this.state, playing: false, paused: false };
+    this.b.emit(this.state);
   }
   stop() {
     const was = this.state.playing || this.state.paused;
@@ -190,7 +319,13 @@ export class MockClock implements Clock {
     if (!this.state.playing) return;
     this.state = { ...this.state, playing: false, paused: true };
     this.b.emit(this.state);
-    this.onTransport?.(false);
+    // True pause: suspend the audio WITHOUT tearing down the dispatchers (unlike
+    // stop, which hushes every runtime via onTransport(false) and forgets the
+    // voices). The scheduled voices stay loaded so resuming continues in place;
+    // their audio context is suspended by the onPauseResume hook (the dispatcher's
+    // lookahead clock then freezes against the frozen `currentTime`). Position and
+    // the absolute counters are preserved for the resume.
+    this.onPauseResume?.(true);
     this.eventsBus?.emit({
       schemaVersion: 1,
       type: 'transport',
@@ -381,7 +516,8 @@ class MockCore implements CoreApi {
     _docOffset?: number,
     _actorId?: string,
     _flags?: Record<string, number>,
-    _section?: { index: number; count: number }
+    _section?: { index: number; count: number },
+    _produceOnly?: boolean
   ): Promise<void> {
     this.console.push({ runtime, level: 'info', msg: `eval mock (${code.length}b @ ${sourceId})` });
   }

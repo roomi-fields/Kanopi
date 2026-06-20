@@ -16,11 +16,24 @@ class TransportStore {
   loop = $state(true);
   reRandom = $state(false);
 
+  // Sinks the bpx adapter wires so a toggle reaches the PLAYING dispatchers live
+  // (effective next cycle) — no need to re-evaluate to pick up the new setting.
+  private loopSink?: (on: boolean) => void;
+  private reRandomSink?: (on: boolean) => void;
+  setLoopSink(fn: (on: boolean) => void) {
+    this.loopSink = fn;
+  }
+  setReRandomSink(fn: (on: boolean) => void) {
+    this.reRandomSink = fn;
+  }
+
   toggleLoop() {
     this.loop = !this.loop;
+    this.loopSink?.(this.loop);
   }
   toggleReRandom() {
     this.reRandom = !this.reRandom;
+    this.reRandomSink?.(this.reRandom);
   }
 }
 

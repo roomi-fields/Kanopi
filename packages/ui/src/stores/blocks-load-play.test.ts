@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { openBlocks } from './blocks.svelte';
 import { workspace } from './workspace.svelte';
+import { core } from '../lib/core';
 
 // load→play regression guard (beta issues 3+5): a freshly-loaded program must
 // be playable immediately, WITHOUT waiting for the reactively-`$derived`
@@ -98,6 +99,23 @@ describe('openBlocks.replayArmed — re-entrance guard', () => {
 
     // Two separate, sequential replays each evaluated the armed block.
     expect(evalCalls).toBe(2);
+  });
+});
+
+describe('openBlocks.armLoadedProgram — arms WITHOUT starting the transport', () => {
+  it('arms a freshly-loaded program file blocks but leaves the clock alone', () => {
+    openBlocks.armed = new Set();
+    const id = workspace.loadFiles(
+      [{ path: 'noauto.strudel', contents: 'sound("bd hh sd")' }],
+      'noauto.strudel'
+    );
+    const blocks = openBlocks.blocksForFile(id!);
+    openBlocks.armLoadedProgram(id!);
+    // Every block of the loaded file is now armed (a later Play will sound it)…
+    for (const b of blocks) expect(openBlocks.isArmed(b.qualifiedName)).toBe(true);
+    // …but loading did not start the transport (no autoplay).
+    expect(core.clock.state.playing).toBe(false);
+    openBlocks.armed = new Set();
   });
 });
 

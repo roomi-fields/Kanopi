@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { resolveDevice, isCompatible } from '../devices/registry';
 import { strudelAdapter } from './strudel';
 import { hydraAdapter } from './hydra';
-import { bpscriptAdapter } from './bp3';
+import { bpscriptAdapter } from './bpx-adapter';
 
 // Integration of the voice↔device compat GATE (ADAPTER_SPEC §1bis b,
 // DEVICES_SPEC §3): the gate resolves an actor's `transport.<name>` to a device

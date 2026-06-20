@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { isNoteName } from 'bp3-frontend';
-import { resolveGrAux } from './bp3';
+import { resolveGrAux } from './bpx-adapter';
 // The real -al.EkDoTin / -mi.EkDoTin from Bernard's corpus, bundled as raw text.
 import alEkDoTin from '../../../tests/fixtures/al.EkDoTin.txt?raw';
 import miEkDoTin from '../../../tests/fixtures/mi.EkDoTin.txt?raw';

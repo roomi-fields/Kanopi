@@ -28,12 +28,13 @@
     const focusId = workspace.loadFiles(item.files, item.sessionFile);
     // The library is a launcher: land back in the editor with the session open.
     ui.activeActivityView = 'files';
-    // `await tick()` flushes Svelte's reactive updates from `loadFiles` before we
-    // play; `playLoadedProgram` re-extracts the file's blocks (not the derived
-    // list) so a freshly-loaded scene arms + sounds deterministically.
+    // Load = PRODUCE, not play (Romain's produce/play split): derive the scene so
+    // its structure shows + the tempo (`@mm`) is adopted, and arm it so Play
+    // sounds it — but do NOT start the transport on load. `await tick()` flushes
+    // the reactive updates from `loadFiles` first so the blocks are re-extractable.
     if (focusId) {
       await tick();
-      await openBlocks.playLoadedProgram(focusId);
+      await openBlocks.produceLoadedProgram(focusId);
     }
   }
 

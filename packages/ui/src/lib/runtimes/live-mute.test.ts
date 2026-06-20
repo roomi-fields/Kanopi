@@ -4,7 +4,7 @@ import {
   setActorsSink,
   armOrchestratedActor,
   disarmOrchestratedActor
-} from './bp3';
+} from './bpx-adapter';
 import * as registry from './registry';
 import { Dispatcher } from '../../../../core/src/dispatcher/dispatcher.js';
 

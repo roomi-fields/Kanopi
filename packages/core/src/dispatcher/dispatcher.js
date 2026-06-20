@@ -13,6 +13,24 @@
 import { Clock } from './clock.js';
 import { MapEngine } from './map-engine.js';
 
+/**
+ * Coerce a leaf's resolved controls to runtime types. BPx delivers control values
+ * VERBATIM (`vel:'80'` as a string, `wave:'sawtooth'` as a string) — type
+ * interpretation is the consumer's job (R2). Numeric-looking strings become
+ * numbers (so velocity/filterQ/… apply); non-numeric strings pass through (so the
+ * oscillator waveform stays a string). Returns a fresh object; `null`/absent → {}.
+ * @param {Record<string, unknown>|null|undefined} controls
+ * @returns {Record<string, unknown>}
+ */
+function coerceControlValues(controls) {
+  if (!controls) return {};
+  const out = {};
+  for (const [k, v] of Object.entries(controls)) {
+    out[k] = typeof v === 'string' && v.trim() !== '' && !Number.isNaN(Number(v)) ? Number(v) : v;
+  }
+  return out;
+}
+
 export class Dispatcher {
   /**
    * @param {AudioContext} audioCtx
@@ -26,10 +44,12 @@ export class Dispatcher {
     this._onEnd = null;
     this._running = false;
     this._loopOffset = 0;     // accumulated time offset from previous cycles
+    this._derivedTempo = 0;   // tempo BPx derived the loaded events at (live retune)
 
     // Loop mode
     this.loop = false;
     this._reDerive = null;    // function that returns new timed tokens
+    this._reRandom = false;   // live flag: re-roll the grammar each loop cycle
 
     // Control state — updated by control tokens during playback
     this._controlDefaults = {};  // set via setControlDefaults()
@@ -71,9 +91,10 @@ export class Dispatcher {
     // Scene management (set externally by SceneManager)
     this._sceneInstances = {};  // sceneName → { dispatcher, flagState, ... }
 
-    // CV state
-    this._cvTable = {};    // CV0 → { name, target, transport, lib, objectType, args, code }
-    this._cvNames = {};    // CV instance name → CV id
+    // Modulator registry (name → { objectType, params, curve }), forwarded to
+    // transports for per-note CV. Stored so a transport added AFTER setModulators
+    // still gets it (order-independent).
+    this._modulators = {};
   }
 
   /**
@@ -81,6 +102,9 @@ export class Dispatcher {
    */
   addTransport(name, transport) {
     this.transports[name] = transport;
+    if (transport && typeof transport.setModulators === 'function') {
+      transport.setModulators(this._modulators);
+    }
   }
 
   /**
@@ -242,17 +266,15 @@ export class Dispatcher {
   }
 
   /**
-   * Set the CV table (from transpiler output).
-   * Maps CV0, CV1... to their definitions.
+   * Set the modulator registry (name → { objectType, params, curve }) from the
+   * `cv … : mod.x(…)` declarations, and forward it to every transport. Per-note
+   * modulation is applied at `transport.send()` from a note's branchement controls
+   * (e.g. `cutoff: 'env1'` in `leaf.controls`) — no CV tokens in the stream.
    */
-  setCVTable(cvTable) {
-    this._cvTable = {};
-    this._cvNames = {};
-    if (cvTable) {
-      for (const entry of cvTable) {
-        this._cvTable[entry.id] = entry;
-        this._cvNames[entry.name] = entry.id;
-      }
+  setModulators(registry) {
+    this._modulators = registry || {};
+    for (const t of Object.values(this.transports)) {
+      if (t && typeof t.setModulators === 'function') t.setModulators(this._modulators);
     }
   }
 
@@ -276,7 +298,6 @@ export class Dispatcher {
         startSec: t.start / 1000,
         durSec: Math.max(0, (t.end - t.start)) / 1000,
         isControl: t.token.startsWith('_'),
-        isCV: !!this._cvNames[t.token],
         isSilence: t.token === '-',
         isProlongation: t.token === '_',
       };
@@ -288,7 +309,7 @@ export class Dispatcher {
       return evt;
     }).sort((a, b) => {
       if (a.startSec !== b.startSec) return a.startSec - b.startSec;
-      const pri = (e) => e.isControl ? 0 : e.isCV ? 1 : 2;
+      const pri = (e) => (e.isControl ? 0 : 1);
       return pri(a) - pri(b);
     });
 
@@ -348,17 +369,19 @@ export class Dispatcher {
         startSec: e.startSec,
         durSec: Math.max(0, e.durSec || 0),
         isControl,
-        isCV: !!this._cvNames[e.token],
         isSilence: isRest && e.token === '-',
         isProlongation: isRest && e.token === '_',
         payload: e.payload ?? null,
         nature: e.nature,
         // E-016 sealed per-leaf runtime state, folded over controlState at send.
         rq: e.rq ?? null,
+        // Resolved non-temporal controls (canonical `leaf.controls` channel),
+        // spread over controlState at send so the terminal voices wave/vel/etc.
+        controls: e.controls ?? null,
       };
     }).sort((a, b) => {
       if (a.startSec !== b.startSec) return a.startSec - b.startSec;
-      const pri = (e) => e.isControl ? 0 : e.isCV ? 1 : 2;
+      const pri = (e) => (e.isControl ? 0 : 1);
       return pri(a) - pri(b);
     });
 
@@ -382,23 +405,42 @@ export class Dispatcher {
    * @param {boolean} [options.loop=false] - loop the sequence
    * @param {Function} [options.reDerive] - called at end of each cycle, must return timed tokens array
    */
-  start(onEnd, { loop = false, reDerive = null } = {}) {
+  start(onEnd, { loop = false, reDerive = null, startOffsetSec = 0, reRandom = false } = {}) {
     if (this.events.length === 0) return;
     this._onEnd = onEnd;
     this._cursor = 0;
     this._running = true;
     this._loopOffset = 0;
     this.loop = loop;
+    // `_reDerive` is the re-derivation function (built whenever looping); `_reRandom`
+    // is a LIVE flag that decides whether each cycle actually re-rolls. Both are
+    // settable while playing (setLoop/setReRandom) so toggling re-random/loop takes
+    // effect at the next cycle without re-evaluating the scene.
     this._reDerive = reDerive;
+    this._reRandom = reRandom;
     this.controlState = { ...this._controlDefaults };
     this._fluxByActor = {};
+
+    // Resume from a musical offset (STEP → Play continues from the stepped beat,
+    // not from the top): skip the events BEFORE the offset on this first cycle so
+    // they don't all fire at once, and anchor the musical clock there so the first
+    // kept event lands ~now and the beat display starts at that position. The loop
+    // still replays the FULL cycle afterwards (`_nextCycle` resets the cursor).
+    if (startOffsetSec > 0) {
+      while (
+        this._cursor < this.events.length &&
+        this.events[this._cursor].startSec < startOffsetSec
+      ) {
+        this._cursor++;
+      }
+    }
 
     // Wire beat/bar events → MapEngine
     this.clock.setOnBeat((beat, bar) => {
       this._mapEngine.routeFromSysEvent('beat', beat);
       this._mapEngine.routeFromSysEvent('bar', bar);
     });
-    if (this._tempo) this.clock.tempo = this._tempo;
+    if (this._tempo) this.clock.retune(this._tempo);
 
     if (this.audioCtx.state === 'suspended') {
       this.audioCtx.resume();
@@ -406,7 +448,7 @@ export class Dispatcher {
 
     this.clock.start((scheduleUntil) => {
       this._schedule(scheduleUntil);
-    });
+    }, startOffsetSec);
   }
 
   stop() {
@@ -416,6 +458,69 @@ export class Dispatcher {
     for (const transport of Object.values(this.transports)) {
       transport.close();
     }
+  }
+
+  /**
+   * Record the tempo BPx derived the loaded events at (requirement A). The loaded
+   * events carry seconds computed at THIS tempo; the clock's anchored map uses it
+   * as the reference for live rescaling. Call before start().
+   * @param {number} bpm
+   */
+  setDerivedTempo(bpm) {
+    if (bpm > 0) {
+      this._derivedTempo = bpm;
+      this.clock.setDerivedTempo(bpm);
+    }
+  }
+
+  /**
+   * Live tempo change WITHOUT re-derivation (requirement A). Rescales future
+   * scheduled notes (and their durations) in place, anchored so the currently
+   * playing position does not jump. The next derivation still uses the new
+   * tempo (the adapter updates its own derive tempo separately).
+   * @param {number} bpm
+   */
+  setLiveTempo(bpm) {
+    if (!(bpm > 0)) return;
+    this._tempo = bpm;
+    this.clock.retune(bpm);
+  }
+
+  /** LIVE toggle: whether each loop cycle re-rolls the grammar (re-random). Takes
+   *  effect at the next cycle without re-evaluating. The re-derive function stays
+   *  available; this flag just decides whether it runs. */
+  setReRandom(on) {
+    this._reRandom = !!on;
+  }
+
+  /** LIVE toggle: whether playback loops at the end of the cycle. Turning it off
+   *  while playing lets the current cycle finish, then stops. */
+  setLoop(on) {
+    this.loop = !!on;
+  }
+
+  /**
+   * The dispatcher's CURRENT musical position as transport beats (requirement B),
+   * for the display clock. Beats advance at the LIVE tempo and stay phase-locked
+   * to the heard audio (same anchor as scheduling), including after a live
+   * retune. Returns null when not running or no derive tempo is known.
+   * @param {number} [beatsPerBar]
+   * @returns {{ beatsTotal: number, bar: number, beat: number, phase: number }|null}
+   */
+  musicalBeatPosition(beatsPerBar = this.clock.beatsPerBar) {
+    if (!this._running) return null;
+    const derivedTempo = this.clock._derivedTempo || this.clock.tempo;
+    if (!(derivedTempo > 0)) return null;
+    const musicalSec = this.clock.musicalNow(this.audioCtx.currentTime);
+    const beatsTotal = Math.max(0, musicalSec * derivedTempo / 60);
+    const bpb = beatsPerBar || 4;
+    const beatAbs = Math.floor(beatsTotal);
+    return {
+      beatsTotal,
+      bar: 1 + Math.floor(beatAbs / bpb),
+      beat: beatAbs % bpb,
+      phase: beatsTotal - beatAbs,
+    };
   }
 
   /**
@@ -439,7 +544,11 @@ export class Dispatcher {
   _schedule(scheduleUntil) {
     while (this._cursor < this.events.length) {
       const evt = this.events[this._cursor];
-      const absTime = this.clock.absTime(this._loopOffset + evt.startSec);
+      // Anchored tempo map: a musical event time → its audio time at the live
+      // rate (requirement A). Durations sent to transports scale by the same
+      // rate so a note's audible length tracks the tempo.
+      const absTime = this.clock.audioTimeFor(this._loopOffset + evt.startSec);
+      const rate = this.clock.rate;
 
       if (absTime > scheduleUntil) break;
 
@@ -451,22 +560,6 @@ export class Dispatcher {
           this._applyControlNode(evt, absTime);
         } else {
           this._applyControl(evt.token);
-        }
-      } else if (evt.isCV) {
-        // CV token — create the audio bus before notes at this time
-        const cvId = this._cvNames[evt.token];
-        const cvDef = this._cvTable[cvId];
-        if (cvDef) {
-          const transport = this.transports[cvDef.transport]
-            || this.transports['default']
-            || Object.values(this.transports)[0];
-
-          if (transport && transport.sendCV) {
-            transport.sendCV({
-              ...cvDef,
-              durSec: evt.durSec > 0 ? evt.durSec : this.duration,
-            }, absTime);
-          }
         }
       } else if (!evt.isSilence && !evt.isProlongation && evt.durSec > 0) {
         // Backtick voice (lot 4): a `BT<interp><id>` terminal references foreign
@@ -549,13 +642,22 @@ export class Dispatcher {
             }
           }
 
+          // Resolved non-temporal controls (wave/vel/pan/…) ride on the leaf's
+          // CANONICAL `controls` channel (BPx's resolveControls). Spread them over
+          // controlState so a mono terminal voices its own waveform/velocity — the
+          // actor path (`_sendActorNote`) does the same. Verbatim values → coerce
+          // numeric strings; an override `vel` wins over the E-016 sealed vel.
+          const override = coerceControlValues(evt.controls);
+          const velRaw = typeof override.vel === 'number' ? override.vel : eff.vel;
+
           transport.send({
             token,
             startSec: this._loopOffset + evt.startSec,
-            durSec: evt.durSec,
+            durSec: evt.durSec * rate,
             ...this.controlState,
+            ...override,
             ...(eff.chan !== undefined ? { chan: eff.chan } : {}),
-            velocity: eff.vel / 127,
+            velocity: velRaw / 127,
           }, absTime);
         }
       }
@@ -565,7 +667,7 @@ export class Dispatcher {
 
     // End of sequence
     if (this._cursor >= this.events.length && this._running) {
-      const cycleEnd = this.clock.absTime(this._loopOffset + this.duration);
+      const cycleEnd = this.clock.audioTimeFor(this._loopOffset + this.duration);
       const remaining = (cycleEnd - this.audioCtx.currentTime) * 1000; // ms
 
       if (remaining <= this.clock.lookahead * 1000) {
@@ -598,7 +700,7 @@ export class Dispatcher {
     // actor routing survives the re-derivation; flat tokens reload through the
     // legacy in-place map below. Either way `_loopOffset` is preserved so the new
     // cycle starts exactly where this one ended.
-    if (this._reDerive) {
+    if (this._reDerive && this._reRandom) {
       const next = this._reDerive();
       if (next && next.length > 0 && next[0] && next[0].startSec !== undefined) {
         const offset = this._loopOffset;
@@ -615,7 +717,6 @@ export class Dispatcher {
             startSec: t.start / 1000,
             durSec: Math.max(0, (t.end - t.start)) / 1000,
             isControl: t.token.startsWith('_'),
-            isCV: !!this._cvNames[t.token],
             isSilence: t.token === '-',
             isProlongation: t.token === '_',
           };
@@ -624,7 +725,7 @@ export class Dispatcher {
           return evt;
         }).sort((a, b) => {
           if (a.startSec !== b.startSec) return a.startSec - b.startSec;
-          const pri = (e) => e.isControl ? 0 : e.isCV ? 1 : 2;
+          const pri = (e) => (e.isControl ? 0 : 1);
           return pri(a) - pri(b);
         });
       }
@@ -769,9 +870,12 @@ export class Dispatcher {
     const declDefaults = actorDef.params || {};
     const transportParams = actorDef.transportParams || {};
     const flux = this._fluxByActor[actor] || {};
-    const override = evt.payload.params || {};
+    // Resolved non-temporal controls off the leaf's CANONICAL `controls` channel
+    // (BPx resolveControls: containment ⊕ flux ⊕ note-override, precedence applied).
+    // Verbatim values → coerce numeric strings here (R2 interpretation is ours).
+    const override = coerceControlValues(evt.controls);
 
-    // actor declaration ⊕ flux ⊕ occurrence override (last wins)
+    // actor declaration ⊕ flux ⊕ resolved controls (last wins)
     const params = { ...declDefaults, ...flux, ...override };
 
     // E-016 (unchanged): the sealed per-token runtimeQualifiers still fold over
@@ -799,7 +903,8 @@ export class Dispatcher {
     transport.send({
       token,
       startSec: this._loopOffset + evt.startSec,
-      durSec: evt.durSec,
+      // Live tempo map: audible length tracks the current rate (requirement A).
+      durSec: evt.durSec * this.clock.rate,
       ...this.controlState,
       ...params,
       ...(eff.chan !== undefined ? { chan: eff.chan } : {}),
@@ -1083,11 +1188,9 @@ export class Dispatcher {
         this.loop = !this.loop;
         break;
       case 'tempo':
-        // Value is BPM — update clock and store
-        if (value > 0) {
-          this._tempo = value;
-          this.clock.tempo = value;
-        }
+        // Value is BPM — live-retune in place (no re-derivation) and store, so a
+        // `@map tempo` knob rescales playback like the central BPM does.
+        if (value > 0) this.setLiveTempo(value);
         break;
       case 'produce':
         if (this._reDerive) {

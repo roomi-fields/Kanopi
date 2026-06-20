@@ -43,3 +43,20 @@ declare module '*/core/src/dispatcher/scale.js' {
     scalesCatalog: Record<string, unknown>
   ): number[] | null;
 }
+
+declare module '*/core/src/dispatcher/cv-curve.js' {
+  // Generic CV curve evaluator: a library `curve` block → the value-over-time the
+  // transport applies to a CV input. `segments` → breakpoints; other kinds pass
+  // through as a descriptor for the transport (oscillator / buffer / worklet).
+  export function renderCVCurve(
+    curve: unknown,
+    params?: Record<string, unknown>,
+    gateSec?: number
+  ): {
+    kind: string;
+    points?: Array<{ tSec: number; value: number; shape: string }>;
+    spec?: unknown;
+    params?: Record<string, unknown>;
+    gateSec?: number;
+  };
+}

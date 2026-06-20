@@ -18,10 +18,12 @@
     // The Library is a launcher, not a workspace: land back in Files so the
     // loaded session + its files are in front of you (self-test 3.1).
     ui.activeActivityView = 'files';
-    // Load = it sounds: arm + start transport for the freshly-loaded program.
+    // Load = PRODUCE, not play (Romain's produce/play split): derive the scene
+    // (structure shows + tempo adopted) and arm it so Play sounds it — but don't
+    // start the transport on load.
     if (focusId) {
       await tick();
-      await openBlocks.playLoadedProgram(focusId);
+      await openBlocks.produceLoadedProgram(focusId);
     }
   }
 

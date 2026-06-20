@@ -1,8 +1,7 @@
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { compileBps } from '../lib/runtimes/compile-cache';
 import { core } from '../lib/core';
 import { runtimeFromExt } from '../lib/workspace/types';
 import type { Runtime } from '../lib/core';
-import { production, beatCount } from './production.svelte';
 // Sections read from the BPScript AST (`compileBPS().ast`), the single source of
 // truth — replaces the former regex-on-grammar-text `headSections` for the `.bps`
 // scenes bar. Standalone module (no adapter/core import) → no cycle.
@@ -68,7 +67,7 @@ export function sceneTableFromFile(
   if (!fileName || contents === undefined) return {};
   if (runtimeFromExt(fileName) !== 'bpscript') return {};
   try {
-    const c = compileToBPxAST(contents) as {
+    const c = compileBps(contents) as {
       errors: unknown[];
       ast: { scenes?: { name: string; file: string }[] } | null;
     };
@@ -94,7 +93,7 @@ export function modelFromFile(
   if (!fileName || contents === undefined) return EMPTY;
   if (runtimeFromExt(fileName) !== 'bpscript') return EMPTY;
   try {
-    const c = compileToBPxAST(contents) as {
+    const c = compileBps(contents) as {
       errors: unknown[];
       ast: {
         directives?: { type?: string; flag?: string; states?: { name: string; value: number }[] }[];
@@ -138,28 +137,8 @@ class BpsScenesStore {
     });
   }
 
-  // STEP to the next BEAT of the PRODUCED timeline (wraps at the end). Driven off
-  // the `production` store, NOT the `.bps` head rule, so it works for ANY runtime
-  // whose last eval produced a timeline — BP3 `.gr`, backtick `.bps`, plain `.bps`
-  // alike. The STEP unit is one clock beat (`beatDurSec = 60/bpm`); the number of
-  // beats is `ceil(durationSec / beatDurSec)`, and the adapter slices the derived
-  // timeline into one-beat windows, playing beat `index` once. Re-evaluates the
-  // ACTIVE file (the one the production was derived from).
-  async stepActive(file: { runtime: Runtime; name: string; contents: string }) {
-    const cur = production.current;
-    const beatDurSec = cur?.beatDurSec ?? 0;
-    const count = cur ? beatCount(cur.durationSec, beatDurSec) : 0;
-    if (count < 2) return;
-    // The re-eval republishes the FULL production and resets `stepIndex` to -1,
-    // so compute the next beat from the CURRENT cursor first, then set it after
-    // the await (the cursor then lands on the beat that's actually playing).
-    const next = (production.stepIndex + 1) % count;
-    await core.evaluateBlock(file.runtime, file.contents, file.name, 0, undefined, undefined, {
-      index: next,
-      count
-    });
-    production.stepIndex = next;
-  }
+  // STEP now lives in the transport state machine (`playback.step`), the single
+  // owner of the playhead position — see stores/playback.svelte.ts.
 }
 
 export const bpsScenes = new BpsScenesStore();

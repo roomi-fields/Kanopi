@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { catalogResolver } from './bp3';
+import { catalogResolver } from './bpx-adapter';
 
 // The core Resolver is plain JS (ambient `resolve(): unknown`); read the
 // frequency field through a thin typed view for the assertions.

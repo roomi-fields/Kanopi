@@ -35,11 +35,16 @@ class WorkspaceStore {
   openFile(id: string) {
     const file = this.fileById(id);
     if (!file) return;
-    // Single-session rule: at most one .kanopi can be open at a time.
-    if (file.runtime === 'kanopi') {
+    // Single-session rule: at most one EDITABLE .kanopi session open at a time.
+    // Read-only files that happen to resolve to the `kanopi` runtime via the
+    // unknown-extension fallback (resource-library `.json` browse files) are NOT
+    // sessions — they must stack as ordinary tabs, not evict one another. So the
+    // rule applies only to editable kanopi files, and only evicts editable ones.
+    if (file.runtime === 'kanopi' && !file.readOnly) {
       const otherKanopi = this.openTabIds.filter((tid) => {
         if (tid === id) return false;
-        return this.fileById(tid)?.runtime === 'kanopi';
+        const f = this.fileById(tid);
+        return f?.runtime === 'kanopi' && !f.readOnly;
       });
       for (const tid of otherKanopi) this.closeTab(tid);
     }

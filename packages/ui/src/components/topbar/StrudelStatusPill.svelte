@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { onStrudelStatus, type StrudelStatus } from '../../lib/runtimes/strudel';
+  import { workspace } from '../../stores/workspace.svelte';
 
   let status = $state<StrudelStatus>('idle');
   let unsub: (() => void) | undefined;
@@ -16,13 +17,32 @@
     ready: 'ready',
     error: 'error'
   };
+
+  // Only surface the Strudel status when the open scene actually involves Strudel
+  // — otherwise "strudel ready" sits in the corner of a plain BPScript scene that
+  // never touches it (Romain). A scene uses Strudel if an open file IS a Strudel
+  // file, or a `.bps`/`.gr` carries a `strudel:` backtick voice. An error is always
+  // shown (it needs attention regardless of the current scene).
+  const usesStrudel = $derived.by(() => {
+    for (const id of workspace.openTabIds) {
+      const f = workspace.fileById(id);
+      if (!f) continue;
+      if (f.runtime === 'strudel') return true;
+      if ((f.runtime === 'bpscript' || f.runtime === 'bp3') && /\bstrudel\s*:/.test(f.contents))
+        return true;
+    }
+    return false;
+  });
+  const visible = $derived(status === 'error' || (usesStrudel && status !== 'idle'));
 </script>
 
-<div class="pill" data-status={status} title="Strudel runtime status">
-  <span class="dot"></span>
-  <span class="label">strudel</span>
-  <span class="state">{labels[status]}</span>
-</div>
+{#if visible}
+  <div class="pill" data-status={status} title="Strudel runtime status">
+    <span class="dot"></span>
+    <span class="label">strudel</span>
+    <span class="state">{labels[status]}</span>
+  </div>
+{/if}
 
 <style>
   .pill {

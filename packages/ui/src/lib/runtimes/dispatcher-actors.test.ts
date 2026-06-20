@@ -100,14 +100,16 @@ describe('dispatcher multi-actor payload routing', () => {
     expect(tablaT.sent[0].velocity).not.toBeCloseTo(100 / 127, 5);
   });
 
-  it('(c) an occurrence override (payload.params.vel) applies to that note', () => {
+  it('(c) a resolved override (leaf.controls.vel) applies to that note', () => {
+    // BPx resolves the occurrence override into the canonical `controls` channel.
     d.loadEvents([
       {
         token: 'Sa',
         startSec: 0,
         durSec: 0.5,
         type: 'note',
-        payload: { actor: 'sitar', params: { vel: 64 } }
+        payload: { actor: 'sitar' },
+        controls: { vel: 64 }
       }
     ]);
     drain(d);
@@ -129,7 +131,8 @@ describe('dispatcher multi-actor payload routing', () => {
         startSec: 0.1,
         durSec: 0.5,
         type: 'note',
-        payload: { actor: 'sitar', params: { vel: 64 } }
+        payload: { actor: 'sitar' },
+        controls: { vel: 64 }
       }
     ]);
     drain(d);

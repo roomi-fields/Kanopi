@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sliceBeat } from './bp3';
+import { sliceBeat } from './bpx-adapter';
 
 // STEP advances one clock beat (`60000/bpm` ms) at a time, NOT a head-rule
 // section. `sliceBeat` keeps the tokens whose onset falls inside the requested
@@ -45,5 +45,24 @@ describe('sliceBeat (STEP unit = one beat)', () => {
 
   it('returns tokens unchanged when the beat length is not positive', () => {
     expect(sliceBeat(tokens, 1, 0)).toEqual(tokens);
+  });
+
+  // Regression (arabic @mm:70): the engine emits onsets on a grid slightly below
+  // the theoretical beat (note k at k*857.0 ms vs beat at k*857.143 ms). A
+  // half-open window `[k*beat, (k+1)*beat)` floored and swept the NEXT note into
+  // the current beat — beat 0 held TWO notes ("2 steps play at once") and the
+  // offset accumulated. Nearest-beat assignment puts each onset in exactly one beat.
+  it('assigns each onset to its nearest beat under sub-ms grid drift', () => {
+    const beat = 60000 / 70; // 857.142857…
+    const drifted: Tok[] = Array.from({ length: 6 }, (_, k) => ({
+      token: `n${k}`,
+      start: k * 857.0, // engine grid, ~0.14ms/beat below the theoretical beat
+      end: (k + 1) * 857.0
+    }));
+    // Beat 0 holds ONLY the first note (not n0 + n1).
+    expect(sliceBeat(drifted, 0, beat).map((t) => t.token)).toEqual(['n0']);
+    // Each subsequent beat holds exactly its own note.
+    expect(sliceBeat(drifted, 1, beat).map((t) => t.token)).toEqual(['n1']);
+    expect(sliceBeat(drifted, 5, beat).map((t) => t.token)).toEqual(['n5']);
   });
 });

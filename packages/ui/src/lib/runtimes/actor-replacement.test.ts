@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { bpscriptAdapter, setActorsSink, type PublishedActor } from './bp3';
+import { bpscriptAdapter, setActorsSink, type PublishedActor } from './bpx-adapter';
 import { createRealCore } from '../core-real/real-core';
 import * as registry from './registry';
 

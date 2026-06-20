@@ -18,6 +18,7 @@
   import { installAutosave } from './lib/persistence/snapshot.svelte';
   import { core } from './lib/core';
   import { workspace } from './stores/workspace.svelte';
+  import { openBlocks } from './stores/blocks.svelte';
   import { actors as actorsStore } from './stores/actors.svelte';
   import { markLastEvalError } from './components/editor/eval-tracker';
   import { sceneTableFromFile } from './stores/bpsScenes.svelte';
@@ -121,6 +122,24 @@
             });
           }
         }
+      });
+
+      // PRODUCE the preloaded scene on startup (Romain's produce/play split): a
+      // scene that's already open when the app boots must show its structure and
+      // be ready to Play, just like one opened from the library. One-shot — the
+      // first time an active bp3/bpscript PROGRAM is present, derive it
+      // (produceOnly: structure + tempo, no audio, no transport). Library opens
+      // already produce via `produceLoadedProgram`; this covers the boot case.
+      let didInitialProduce = false;
+      $effect(() => {
+        if (didInitialProduce) return;
+        const active = workspace.activeTabId
+          ? workspace.fileById(workspace.activeTabId)
+          : undefined;
+        if (!active) return;
+        if (active.runtime !== 'bpscript' && active.runtime !== 'bp3') return;
+        didInitialProduce = true;
+        void openBlocks.produceLoadedProgram(active.id);
       });
 
       // Auto-create missing files referenced by declared @actor.

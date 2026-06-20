@@ -15,6 +15,22 @@
  *   filterQ  — filter resonance
  */
 
+import { renderCVCurve } from '../cv-curve.js';
+
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+
+// Modulation INPUTS exposed by this synth (the registry BPScript validates), each
+// mapping a normalized CV 0..1 to the input's real range. Cutoff is exponential
+// (frequency perception is logarithmic); the rest are linear. See
+// docs/design/MODULATION_INPUTS.md.
+const MOD_SCALE = {
+  cutoff: (v) => 20 * Math.pow(1000, clamp01(v)), // 20..20000 Hz
+  amplitude: (v) => clamp01(v), // 0..1
+  resonance: (v) => clamp01(v) * 30, // 0..30
+  pitch: (v) => (clamp01(v) * 2 - 1) * 1200, // -1200..1200 cents
+  pan: (v) => clamp01(v) * 2 - 1 // -1..1
+};
+
 export class WebAudioTransport {
   /**
    * @param {AudioContext} audioCtx
@@ -75,15 +91,33 @@ export class WebAudioTransport {
     const pitchbendCents = (pitchbend / 8192) * pitchrange;
     const totalDetune = detune + pitchbendCents;
 
-    // Build audio graph: osc → [filter] → gain → [panner] → destination
+    // Per-note modulation (CV.md): a control whose VALUE is a modulator NAME (in
+    // the registry, e.g. `cutoff: 'env1'`) is a BRANCHEMENT — modulate THIS note's
+    // input with that modulator over the note's duration. A numeric/literal value
+    // is a plain control. `mod(input)` → the modulator def, or null.
+    const reg = this._modulators || {};
+    const mod = (input) => {
+      const v = event[input];
+      return typeof v === 'string' && reg[v] ? reg[v] : null;
+    };
+    const cutoffMod = mod('cutoff');
+    const resoMod = mod('resonance');
+    const pitchMod = mod('pitch');
+    const ampMod = mod('amplitude');
+    const panMod = mod('pan');
+
+    // Build audio graph: osc → [filter] → gain(env) → [ampGain] → [panner] → dest
     const osc = this.audioCtx.createOscillator();
     const gain = this.audioCtx.createGain();
 
     osc.type = wave;
     osc.frequency.value = freq;
-    if (totalDetune !== 0) {
+
+    // Pitch: modulated detune (cents), else literal detune.
+    if (pitchMod) {
+      this._applyMod(pitchMod, osc.detune, MOD_SCALE.pitch, absTime, dur);
+    } else if (totalDetune !== 0) {
       if (event.pitchcont && this._prevDetune !== undefined) {
-        // Continuous mode: ramp from previous detune to current
         osc.detune.setValueAtTime(this._prevDetune, absTime);
         osc.detune.linearRampToValueAtTime(totalDetune, absTime + dur);
       } else {
@@ -102,33 +136,41 @@ export class WebAudioTransport {
     // Connect graph
     let source = osc;
 
-    // Optional filter
-    if (filterFreq > 0) {
+    // Filter: present for a literal cutoff OR when cutoff/resonance is modulated.
+    if (filterFreq > 0 || cutoffMod || resoMod) {
       const biquad = this.audioCtx.createBiquadFilter();
       biquad.type = 'lowpass';
-      biquad.frequency.value = filterFreq;
-      biquad.Q.value = filterQ;
+      if (cutoffMod) this._applyMod(cutoffMod, biquad.frequency, MOD_SCALE.cutoff, absTime, dur);
+      else biquad.frequency.value = filterFreq > 0 ? filterFreq : 20000;
+      if (resoMod) this._applyMod(resoMod, biquad.Q, MOD_SCALE.resonance, absTime, dur);
+      else biquad.Q.value = filterQ;
       source.connect(biquad);
       source = biquad;
       this._nodes.push({ node: biquad });
     }
 
     source.connect(gain);
+    let tail = gain;
 
-    // Determine output destination: CV bus if active, else audioCtx.destination
-    const dest = (this._cvBus && absTime < this._cvBus.endTime)
-      ? this._cvBus.node
-      : this.audioCtx.destination;
+    // Amplitude modulation: a dedicated gain stage after the note envelope.
+    if (ampMod) {
+      const cvGain = this.audioCtx.createGain();
+      this._applyMod(ampMod, cvGain.gain, MOD_SCALE.amplitude, absTime, dur);
+      gain.connect(cvGain);
+      tail = cvGain;
+      this._nodes.push({ node: cvGain });
+    }
 
-    // Optional panner
-    if (panValue !== 0) {
+    // Pan: modulated panner, else literal pan, else direct to destination.
+    if (panMod || panValue !== 0) {
       const panner = this.audioCtx.createStereoPanner();
-      panner.pan.value = Math.max(-1, Math.min(1, panValue));
-      gain.connect(panner);
-      panner.connect(dest);
+      if (panMod) this._applyMod(panMod, panner.pan, MOD_SCALE.pan, absTime, dur);
+      else panner.pan.value = Math.max(-1, Math.min(1, panValue));
+      tail.connect(panner);
+      panner.connect(this.audioCtx.destination);
       this._nodes.push({ node: panner });
     } else {
-      gain.connect(dest);
+      tail.connect(this.audioCtx.destination);
     }
 
     osc.start(absTime);
@@ -137,157 +179,81 @@ export class WebAudioTransport {
     this._nodes.push({ osc, gain });
   }
 
+  /** Set the modulator registry (name → { objectType, params, curve }). `send()`
+   *  reads it per note from a branchement control (`cutoff: 'env1'`). */
+  setModulators(registry) {
+    this._modulators = registry || {};
+  }
+
   /**
-   * Schedule a CV event at the given absolute audio time.
-   * The CV modulates an audio parameter (filter, gain, pan) over its duration.
-   * @param {Object} cvEvent - { name, target, transport, lib, objectType, args, code, durSec }
-   * @param {number} absTime - absolute AudioContext time
+   * Apply a modulator's curve to an AudioParam over [absTime, absTime+dur].
+   * The modulator emits a normalized signal; `scale` maps it to the param's real
+   * range. Segments → breakpoint ramps; periodic → an LFO added to the param;
+   * `expr` (backtick) → a sampled value-curve. Per note (re-triggered each note).
    */
-  sendCV(cvEvent, absTime) {
-    const dur = Math.max(0.05, cvEvent.durSec);
-    const args = cvEvent.args || {};
-
-    switch (cvEvent.objectType) {
-      case 'adsr':
-        this._cvADSR(args, dur, absTime);
-        break;
-      case 'lfo':
-        this._cvLFO(args, dur, absTime);
-        break;
-      case 'ramp':
-        this._cvRamp(args, dur, absTime);
-        break;
-      case 'backtick':
-        this._cvBacktick(cvEvent.code, dur, absTime);
-        break;
-    }
-  }
-
-  /** ADSR envelope on a lowpass filter applied to destination */
-  _cvADSR(args, dur, absTime) {
-    const attackSec = (args.attack || 10) / 1000;
-    const decaySec = (args.decay || 100) / 1000;
-    const sustain = args.sustain != null ? args.sustain : 0.7;
-    const releaseSec = (args.release || 200) / 1000;
-
-    // Create a filter node on the destination bus
-    const filter = this.audioCtx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.Q.value = 4;
-
-    // ADSR on filter frequency: 200 Hz → 4000 Hz → sustain level → 200 Hz
-    const minFreq = 200;
-    const maxFreq = 4000;
-    const sustainFreq = minFreq + (maxFreq - minFreq) * sustain;
-
-    filter.frequency.setValueAtTime(minFreq, absTime);
-    filter.frequency.linearRampToValueAtTime(maxFreq, absTime + attackSec);
-    filter.frequency.linearRampToValueAtTime(sustainFreq, absTime + attackSec + decaySec);
-
-    // Hold sustain until release starts
-    const releaseStart = Math.max(absTime + attackSec + decaySec, absTime + dur - releaseSec);
-    filter.frequency.setValueAtTime(sustainFreq, releaseStart);
-    filter.frequency.linearRampToValueAtTime(minFreq, absTime + dur);
-
-    // Insert filter into the audio graph: reconnect destination
-    // Use a gain node as the CV bus entry point
-    const bus = this.audioCtx.createGain();
-    bus.gain.value = 1;
-    bus.connect(filter);
-    filter.connect(this.audioCtx.destination);
-
-    // Store as the active CV bus — notes scheduled in this window will route through it
-    this._cvBus = { node: bus, endTime: absTime + dur };
-    this._nodes.push({ node: filter }, { node: bus });
-  }
-
-  /** LFO on stereo panning */
-  _cvLFO(args, dur, absTime) {
-    const rate = args.rate || 4;
-    const amplitude = args.amplitude != null ? args.amplitude : 0.5;
-    const shape = args.shape || 'sine';
-
-    const lfo = this.audioCtx.createOscillator();
-    const lfoGain = this.audioCtx.createGain();
-    const panner = this.audioCtx.createStereoPanner();
-
-    lfo.type = shape;
-    lfo.frequency.value = rate;
-    lfoGain.gain.value = amplitude;
-
-    lfo.connect(lfoGain);
-    lfoGain.connect(panner.pan);
-    panner.connect(this.audioCtx.destination);
-
-    lfo.start(absTime);
-    lfo.stop(absTime + dur);
-
-    // Store as CV bus for notes to route through
-    const bus = this.audioCtx.createGain();
-    bus.gain.value = 1;
-    bus.connect(panner);
-    this._cvBus = { node: bus, endTime: absTime + dur };
-    this._nodes.push({ osc: lfo, node: lfoGain }, { node: panner }, { node: bus });
-  }
-
-  /** Linear ramp on filter frequency */
-  _cvRamp(args, dur, absTime) {
-    const fromVal = args.from != null ? args.from : 200;
-    const toVal = args.to != null ? args.to : 4000;
-
-    const filter = this.audioCtx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.Q.value = 2;
-
-    filter.frequency.setValueAtTime(fromVal, absTime);
-    filter.frequency.linearRampToValueAtTime(toVal, absTime + dur);
-
-    const bus = this.audioCtx.createGain();
-    bus.gain.value = 1;
-    bus.connect(filter);
-    filter.connect(this.audioCtx.destination);
-
-    this._cvBus = { node: bus, endTime: absTime + dur };
-    this._nodes.push({ node: filter }, { node: bus });
-  }
-
-  /** Backtick CV: evaluate JS function to get a Float32Array curve */
-  _cvBacktick(code, dur, absTime) {
-    try {
-      // The code should be a function (t, dur) => value or return a Float32Array
-      const fn = new Function('sampleRate', 'dur', `
-        const samples = Math.ceil(sampleRate * dur);
-        const curve = new Float32Array(samples);
-        const userFn = ${code};
-        for (let i = 0; i < samples; i++) {
-          const t = i / sampleRate;
-          curve[i] = typeof userFn === 'function' ? userFn(t, dur) : userFn;
-        }
-        return curve;
-      `);
-      const curve = fn(this.audioCtx.sampleRate, dur);
-
-      const filter = this.audioCtx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.Q.value = 4;
-
-      // Scale curve values (0-1) to frequency range (200-4000 Hz)
-      const scaledCurve = new Float32Array(curve.length);
-      for (let i = 0; i < curve.length; i++) {
-        scaledCurve[i] = 200 + Math.max(0, Math.min(1, curve[i])) * 3800;
+  _applyMod(modulator, param, scale, absTime, dur) {
+    if (!modulator) return;
+    const curve = modulator.curve;
+    if (curve && curve.kind === 'expr') {
+      try {
+        const fn = new Function(
+          'sampleRate',
+          'dur',
+          `
+          const samples = Math.ceil(sampleRate * dur);
+          const c = new Float32Array(samples);
+          const userFn = ${curve.code};
+          for (let i = 0; i < samples; i++) {
+            const t = i / sampleRate;
+            c[i] = typeof userFn === 'function' ? userFn(t, dur) : userFn;
+          }
+          return c;
+        `
+        );
+        const raw = fn(this.audioCtx.sampleRate, dur);
+        const scaled = new Float32Array(raw.length);
+        for (let i = 0; i < raw.length; i++) scaled[i] = scale(raw[i]);
+        param.setValueCurveAtTime(scaled, absTime, dur);
+      } catch (e) {
+        console.warn('CV expr error:', e.message);
       }
-
-      filter.frequency.setValueCurveAtTime(scaledCurve, absTime, dur);
-
-      const bus = this.audioCtx.createGain();
-      bus.gain.value = 1;
-      bus.connect(filter);
-      filter.connect(this.audioCtx.destination);
-
-      this._cvBus = { node: bus, endTime: absTime + dur };
-      this._nodes.push({ node: filter }, { node: bus });
-    } catch (e) {
-      console.warn('CV backtick error:', e.message);
+      return;
+    }
+    const rendered = renderCVCurve(curve, modulator.params || {}, dur);
+    if (rendered.kind === 'breakpoints') {
+      const points = rendered.points;
+      if (!points || points.length === 0) return;
+      let prev = scale(points[0].value);
+      param.setValueAtTime(prev, absTime);
+      for (let i = 1; i < points.length; i++) {
+        const p = points[i];
+        const v = scale(p.value);
+        const t = absTime + p.tSec;
+        if (p.shape === 'exp' && v > 0 && prev > 0) param.exponentialRampToValueAtTime(v, t);
+        else param.linearRampToValueAtTime(v, t);
+        prev = v;
+      }
+    } else if (rendered.kind === 'periodic') {
+      const spec = rendered.spec;
+      const mp = modulator.params || {};
+      const ref = (x) => (typeof x === 'string' && x.charAt(0) === '$' ? mp[x.slice(1)] : x);
+      const rate = Number(ref(spec.rate)) || 4;
+      const amplitude = ref(spec.amplitude) != null ? Number(ref(spec.amplitude)) : 0.5;
+      let shape = ref(spec.shape) || 'sine';
+      if (shape === 'saw') shape = 'sawtooth';
+      const center = scale(0.5);
+      const depth = (scale(1) - scale(0)) * 0.5 * amplitude;
+      param.setValueAtTime(center, absTime);
+      const lfo = this.audioCtx.createOscillator();
+      const lfoGain = this.audioCtx.createGain();
+      lfo.type = ['triangle', 'square', 'sawtooth'].includes(shape) ? shape : 'sine';
+      lfo.frequency.value = rate;
+      lfoGain.gain.value = depth;
+      lfo.connect(lfoGain);
+      lfoGain.connect(param); // a-rate modulation added to the param's base value
+      lfo.start(absTime);
+      lfo.stop(absTime + dur);
+      this._nodes.push({ osc: lfo, node: lfoGain });
     }
   }
 
@@ -332,10 +298,9 @@ export class WebAudioTransport {
     const noiseAmount = params.noise != null ? params.noise : 0.3;
     const pitchDrop = params.pitch_drop != null ? params.pitch_drop : 0.5;
 
-    // Determine output destination: CV bus if active, else audioCtx.destination
-    const dest = (this._cvBus && absTime < this._cvBus.endTime)
-      ? this._cvBus.node
-      : this.audioCtx.destination;
+    // Percussion routes straight to the output (per-note modulation applies to
+    // pitched voices in `send()`, not to the sample-based percussion path).
+    const dest = this.audioCtx.destination;
 
     // 1. Pitched component (sine oscillator with pitch drop)
     const osc = this.audioCtx.createOscillator();

@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { production } from '../../stores/production.svelte';
+  import { clock } from '../../stores/clock.svelte';
+  import { playback } from '../../stores/playback.svelte';
   import { Timeline } from '../../lib/timeline/timeline.js';
   import { bpxTreeToTimelineStream } from '../../lib/timeline/bpx-tree-stream';
 
@@ -20,6 +22,25 @@
   // Imperative, long-lived, NOT reactive — plain `let`, never `$state`.
   let timeline: Timeline | undefined;
   let resizeObs: ResizeObserver | undefined;
+  // Cursor redraw coalescing: the cursor effect re-runs MANY times per animation
+  // frame (its reactive deps fire ≈16×/frame during playback). Each redraw repaints
+  // the canvas → ≈1500 repaints/s made playback janky. We coalesce to ONE repaint
+  // per frame: the effect only records the desired position; a single rAF flushes it.
+  let pendingCursorMs: number | null = null; // ms, or null = clear
+  let cursorRaf = 0;
+  let lastFlushedMs: number | null = null;
+  function scheduleCursor(ms: number | null) {
+    pendingCursorMs = ms;
+    if (cursorRaf) return;
+    cursorRaf = requestAnimationFrame(() => {
+      cursorRaf = 0;
+      if (!timeline) return;
+      if (pendingCursorMs === lastFlushedMs) return; // nothing moved
+      lastFlushedMs = pendingCursorMs;
+      if (pendingCursorMs === null) timeline.clearCursor();
+      else timeline.setCursor(pendingCursorMs);
+    });
+  }
 
   const set = $derived(production.current);
   const hasProduction = $derived((set?.rawTokens?.length ?? 0) > 0);
@@ -43,6 +64,7 @@
 
   onDestroy(() => {
     resizeObs?.disconnect();
+    if (cursorRaf) cancelAnimationFrame(cursorRaf);
     timeline?.destroy();
     timeline = undefined;
   });
@@ -72,17 +94,34 @@
     timeline.setSections(sections);
   });
 
-  // Playback cursor wired to STEP: stepIndex >= 0 → draw a cursor at the start
-  // of that beat window (`stepIndex * beatDurSec`, in ms); otherwise clear it.
+  // Playback cursor, driven by the SINGLE transport state machine:
+  //   • PLAYING → LIVE cursor following the heard audio (the clock's beat/phase is
+  //     phase-locked to the playing dispatcher).
+  //   • PAUSED  → frozen at the start of the paused beat.
+  //   • STEPPED → parked just AFTER the played beat (`(lastBeat+1)·beat`), so the
+  //     bar sits after the step that played, not before it.
+  //   • STOPPED → cleared.
   $effect(() => {
-    const idx = production.stepIndex;
+    const mode = playback.mode;
+    const lastBeat = playback.lastBeat;
     const beatDurSec = set?.beatDurSec ?? 0;
+    const durationSec = set?.durationSec ?? 0;
     if (!timeline) return;
-    if (idx >= 0 && beatDurSec > 0) {
-      timeline.setCursor(idx * beatDurSec * 1000);
-    } else {
-      timeline.clearCursor();
+    // Compute the target cursor position (ms), or null when there's nothing to show.
+    let ms: number | null = null;
+    if (mode === 'playing' && beatDurSec > 0 && durationSec > 0) {
+      const bpb = clock.state.beatsPerBar || 4;
+      const absBeats = (clock.state.bar - 1) * bpb + clock.state.beat + clock.state.phase;
+      ms = ((absBeats * beatDurSec) % durationSec) * 1000;
+    } else if ((mode === 'paused' || mode === 'stepped') && lastBeat >= 0 && beatDurSec > 0) {
+      // Pause and Step both leave the playhead at the END of the beat that just
+      // played/was-heard ((lastBeat+1)·beat) — the discrete grid boundary. Pause
+      // used to snap to the START of the in-progress beat, which read as a 1-beat
+      // jump when stepping afterwards; same formula now → consistent.
+      ms = Math.min((lastBeat + 1) * beatDurSec, durationSec) * 1000;
     }
+    // Record the target; the rAF flush repaints at most once per frame.
+    scheduleCursor(ms);
   });
 </script>
 

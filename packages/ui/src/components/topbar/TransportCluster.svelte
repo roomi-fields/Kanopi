@@ -1,9 +1,11 @@
 <script lang="ts">
   import { clock } from '../../stores/clock.svelte';
-  import { bpsScenes } from '../../stores/bpsScenes.svelte';
   import { production, beatCount } from '../../stores/production.svelte';
   import { workspace } from '../../stores/workspace.svelte';
   import { transport } from '../../stores/transport.svelte';
+  import { playback } from '../../stores/playback.svelte';
+  import { openBlocks } from '../../stores/blocks.svelte';
+  import { writeMmDirective } from '../../lib/runtimes/mm-directive';
 
   // STEP lives in the transport cluster (beta issue 4 — transport buttons
   // grouped). It's driven off the PRODUCED timeline, not the `.bps` head rule, so
@@ -21,6 +23,20 @@
   });
   const canStep = $derived(beats > 1);
 
+  // PRODUCE: (re)derive the active scene and refresh its structure, leaving the
+  // transport at REST (Romain's produce/play split — produce generates, Play
+  // plays). Same gesture as the produce-on-open. Stop first so Produce yields a
+  // clean, freshly-produced scene ready to play (and, with re-random on, a new
+  // variation). Available for any bp3/bpscript program in the active tab.
+  const canProduce = $derived(
+    !!activeFile && (activeFile.runtime === 'bpscript' || activeFile.runtime === 'bp3')
+  );
+  async function produce() {
+    if (!activeFile) return;
+    playback.stop();
+    await openBlocks.produceLoadedProgram(activeFile.id);
+  }
+
   function fmt2(n: number) {
     return n.toString().padStart(2, '0');
   }
@@ -30,12 +46,27 @@
 
   const bpmInt = $derived(Math.floor(clock.state.bpm));
   const bpmDec = $derived(((clock.state.bpm - bpmInt) * 10).toFixed(0));
-  const barStr = $derived(fmt3(clock.state.bar));
-  const beatStr = $derived(fmt2(clock.state.beat + 1));
-  const phaseStr = $derived('.' + fmt2(Math.floor(clock.state.phase * 100)));
-  // One dot per beat in the current time signature. Driven by `beatsPerBar`
-  // so `@time 3/4` shows 3 dots, `@time 7/8` shows 7, etc.
-  const dots = $derived(Array.from({ length: clock.state.beatsPerBar || 4 }, (_, i) => i));
+  const bpb = $derived(clock.state.beatsPerBar || 4);
+
+  // Position shown by the meter + the 4 LEDs, taken from the SINGLE transport
+  // state machine (playback), so the beat counter and the LEDs always agree with
+  // what's actually happening: live audio beat while playing, the committed beat
+  // while paused/stepped, nothing when stopped.
+  const pos = $derived.by(() => {
+    if (playback.mode === 'playing') {
+      return { bar: clock.state.bar, beat: clock.state.beat, phase: clock.state.phase };
+    }
+    const ab = playback.activeBeat();
+    if (ab < 0) return { bar: 1, beat: 0, phase: 0 };
+    return { bar: Math.floor(ab / bpb) + 1, beat: ab % bpb, phase: 0 };
+  });
+  const barStr = $derived(fmt3(pos.bar));
+  const beatStr = $derived(fmt2(pos.beat + 1));
+  const phaseStr = $derived('.' + fmt2(Math.floor(pos.phase * 100)));
+  // One dot per beat in the time signature; the lit one is the machine's active
+  // beat (−1 = none when stopped). Driven by `beatsPerBar` (`@time 7/8` → 7 dots).
+  const dots = $derived(Array.from({ length: bpb }, (_, i) => i));
+  const ledBeat = $derived(playback.mode === 'stopped' ? -1 : pos.beat);
 
   // Manual BPM entry (self-test 4.3 — TAP worked but you couldn't type a tempo).
   // Click the value → edit in place → Enter applies, Escape cancels.
@@ -46,13 +77,28 @@
     draft = clock.state.bpm.toFixed(1);
     editing = true;
   }
+  // Mirror the transport BPM into the active scene's `@mm` directive (Romain:
+  // changing the tempo up top must change @mm in the scene). Only when the active
+  // file is a bp3/bpscript scene that already declares `@mm` — we never inject one
+  // — and only on an actual change, so it doesn't churn the editor. The editor
+  // reflects this external rewrite (CMEditor reconciles the doc → view).
+  function writeTempoToScene() {
+    const f = activeFile;
+    if (!f || (f.runtime !== 'bpscript' && f.runtime !== 'bp3')) return;
+    const next = writeMmDirective(f.contents, clock.state.bpm);
+    if (next !== f.contents) workspace.updateContents(f.id, next);
+  }
+
   function applyEdit() {
     // Guard the blur that fires right after Enter/Escape already closed the
     // field — otherwise Escape's cancel gets overridden by an apply-on-blur.
     if (!editing) return;
     editing = false;
     const n = parseFloat(draft.replace(',', '.'));
-    if (!Number.isNaN(n)) clock.setBpm(Math.min(400, Math.max(20, n)));
+    if (!Number.isNaN(n)) {
+      clock.setBpm(Math.min(400, Math.max(20, n)));
+      writeTempoToScene();
+    }
   }
   function cancelEdit() {
     editing = false; // the ensuing blur calls applyEdit, but the !editing guard skips it
@@ -65,26 +111,37 @@
 
 <div class="transport-cluster">
   <div class="transport-buttons">
-    <button class="tbtn" type="button" title="Stop" onclick={() => clock.stop()}>
+    {#if canProduce}
+      <button
+        class="prod-btn"
+        type="button"
+        title="PRODUCE — (re)génère la scène (nouveau tirage aléatoire), au repos, prête à jouer"
+        onclick={produce}
+      >
+        PROD
+      </button>
+      <span class="btn-sep" aria-hidden="true"></span>
+    {/if}
+    <button class="tbtn" type="button" title="Stop" onclick={() => playback.stop()}>
       <svg viewBox="0 0 12 12" fill="currentColor"
         ><rect x="2" y="2" width="8" height="8" rx="0.5" /></svg
       >
     </button>
     <button
       class="tbtn"
-      class:playing={clock.state.playing}
+      class:playing={playback.mode === 'playing'}
       type="button"
-      title={clock.state.playing ? 'Playing' : 'Play'}
-      onclick={() => clock.play()}
+      title={playback.mode === 'playing' ? 'Playing' : 'Play'}
+      onclick={() => playback.play()}
     >
       <svg viewBox="0 0 12 12" fill="currentColor"><path d="M2.5 1.5 L10 6 L2.5 10.5 Z" /></svg>
     </button>
     <button
       class="tbtn"
-      class:paused={clock.state.paused}
+      class:paused={playback.mode === 'paused'}
       type="button"
-      title={clock.state.paused ? 'Paused' : 'Pause'}
-      onclick={() => clock.pause()}
+      title={playback.mode === 'paused' ? 'Paused' : 'Pause'}
+      onclick={() => playback.pause()}
     >
       <svg viewBox="0 0 12 12" fill="currentColor"
         ><rect x="2.5" y="2" width="2.5" height="8" rx="0.5" /><rect
@@ -102,7 +159,7 @@
         type="button"
         title="STEP — beat suivant"
         onclick={() =>
-          bpsScenes.stepActive({
+          playback.step({
             runtime: activeFile.runtime,
             name: activeFile.name,
             contents: activeFile.contents
@@ -169,12 +226,19 @@
     <span class="bpm-label">BPM</span>
   </div>
 
-  <button class="tap-btn" type="button" onclick={() => clock.tap()}>TAP</button>
+  <button
+    class="tap-btn"
+    type="button"
+    onclick={() => {
+      clock.tap();
+      writeTempoToScene();
+    }}>TAP</button
+  >
 
   <div class="beat-meter">
     <div class="beat-dots">
       {#each dots as i (i)}
-        <span class="beat-dot" class:active={i === clock.state.beat && clock.state.playing}></span>
+        <span class="beat-dot" class:active={i === ledBeat}></span>
       {/each}
     </div>
     <span class="beat-counter"
@@ -226,6 +290,29 @@
   .step-btn:hover {
     color: var(--amber);
     border-color: var(--amber-dim);
+  }
+
+  /* PRODUCE — the generative gesture; sits FIRST, set apart from the playback
+     transport by a divider. Accented (amber border) so it reads as distinct. */
+  .prod-btn {
+    padding: 6px 10px;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    font-weight: 600;
+    color: var(--amber);
+    border: 1px solid var(--amber-dim);
+    border-radius: 3px;
+    transition: all 0.15s;
+  }
+  .prod-btn:hover {
+    background: rgba(232, 156, 62, 0.12);
+    border-color: var(--amber);
+  }
+  .btn-sep {
+    width: 1px;
+    align-self: stretch;
+    margin: 3px 4px;
+    background: var(--border);
   }
 
   /* LOOP + RE-RANDOM toggles: same footprint as the transport icon buttons,

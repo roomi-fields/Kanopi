@@ -13,6 +13,12 @@ import temperamentsJson from 'bpscript/lib/temperaments.json';
 import scalesJson from 'bpscript/lib/scales.json';
 import octavesJson from 'bpscript/lib/octaves.json';
 import tablaPercJson from 'bpscript/lib/sounds/tabla_perc.json';
+// BPScript language modules (`@core`/`@controls` + the `mod` CV lib): real library
+// files with browsable content (core symbols/settings, control terminals, CV
+// objects + their declarative curves). Imported AS-IS so opening one shows it.
+import coreJson from 'bpscript/lib/core.json';
+import controlsJson from 'bpscript/lib/controls.json';
+import modJson from 'bpscript/lib/mod.json';
 
 import { catalog as audioBanks } from './audio-banks';
 import { visualsCatalog } from './visuals';
@@ -66,8 +72,28 @@ function soundEntries(): ResourceEntry[] {
   return files.map((f) => ({ id: f.id, label: f.json.description, data: f.json }));
 }
 
+// A bpscript library module (`core`/`controls`/`filter`) → a browsable entry.
+// `description`/`name` is the label when present; the whole JSON is the content.
+function moduleEntry(id: string, json: unknown): ResourceEntry {
+  const j = json as { description?: unknown; name?: unknown; type?: unknown } | undefined;
+  const label =
+    (j && typeof j.description === 'string' && j.description) ||
+    (j && typeof j.type === 'string' && j.type) ||
+    undefined;
+  return { id, label: label || undefined, data: json };
+}
+
 /** All resource libraries, grouped by type. Computed once at module load. */
 export const RESOURCE_GROUPS: ResourceGroup[] = [
+  {
+    type: 'module',
+    title: 'Modules (langage)',
+    entries: [
+      moduleEntry('core', coreJson),
+      moduleEntry('controls', controlsJson),
+      moduleEntry('mod', modJson)
+    ]
+  },
   {
     type: 'alphabet',
     title: 'Alphabets',

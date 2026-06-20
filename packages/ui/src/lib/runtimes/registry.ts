@@ -5,7 +5,7 @@ import { hydraAdapter } from './hydra';
 import { p5Adapter } from './p5';
 import { mercuryAdapter } from './mercury';
 import { csoundAdapter } from './csound';
-import { bp3Adapter, bpscriptAdapter } from './bp3';
+import { bp3Adapter, bpscriptAdapter } from './bpx-adapter';
 import { jsAdapter } from './webaudio';
 
 const adapters = new Map<Runtime, RuntimeAdapter>([

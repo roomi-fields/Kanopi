@@ -57,6 +57,11 @@ export interface DispatchEvent {
    *  payload-routing path folds it over controlState exactly as the flat
    *  `dispatcher.load()` path did off `token.runtimeQualifiers`. */
   rq?: Record<string, number> | null;
+  /** RESOLVED non-temporal controls (`{ wave:'sawtooth', vel:'30', … }`) off the
+   *  leaf's CANONICAL `controls` channel (BPx `resolveControls`: containment ⊕
+   *  flux ⊕ note-override, precedence applied — AST_SPEC §4.1). VERBATIM values
+   *  (string or number); the dispatcher coerces types and routes them. */
+  controls?: Record<string, unknown> | null;
 }
 
 // Minimal structural shapes we read off the tree. Mirrors BPx's `TreeNode`
@@ -75,6 +80,11 @@ type TreeNode =
       role: 'leaf' | 'rest' | 'prolongation';
       payload?: unknown;
       runtimeQualifiers?: Record<string, number>;
+      // BPx's `resolveControls` pass grafts the RESOLVED non-temporal controls
+      // (containment ⊕ flux ⊕ note-override, precedence already applied) onto each
+      // sounding leaf as an opaque `{ wave:'sawtooth', vel:30, … }` map. Verbatim
+      // values (string OR number). Absent if nothing governs the leaf.
+      controls?: Record<string, unknown>;
       span: Span;
     }
   | { type: 'control'; symbolId: number; payload?: unknown; nature?: string; span: Span }
@@ -125,7 +135,11 @@ export function treeToDispatchEvents(
             // E-016: carry the leaf's sealed runtime state so the dispatcher's
             // unified routing folds vel/transpose/chan exactly as the old flat
             // `token.runtimeQualifiers` path did.
-            rq: node.runtimeQualifiers ?? null
+            rq: node.runtimeQualifiers ?? null,
+            // CANONICAL channel (AST_SPEC §4.1): the resolved non-temporal controls
+            // ride DIRECTLY on the leaf's `controls`. Carried verbatim — the
+            // dispatcher coerces types and routes them.
+            controls: node.controls && Object.keys(node.controls).length > 0 ? node.controls : null
           });
         }
         return;

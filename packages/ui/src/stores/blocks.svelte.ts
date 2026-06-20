@@ -190,6 +190,55 @@ class OpenBlocksStore {
   }
 
   /**
+   * Arm a freshly-loaded program's blocks WITHOUT starting the transport. Loading
+   * a scene readies it (its blocks/actor light up) but does NOT auto-play — the
+   * user presses Play (or Ctrl+Enter) to hear it. The play edge then re-evals the
+   * armed blocks (installBlockReplay), so arming first means Play sounds the scene
+   * with no manual rearm. A program with no blocks (a `.kanopi` session) needs no
+   * arming — its actors come armed from `loadSession`.
+   */
+  armLoadedProgram(fileId: string) {
+    const fileBlocks = this.blocksForFile(fileId);
+    if (fileBlocks.length === 0) return;
+    const next = new Set(this.armed);
+    for (const b of fileBlocks) next.add(b.qualifiedName);
+    this.armed = next;
+  }
+
+  /**
+   * Open a program = PRODUCE it (Romain's play/produce split): arm its blocks AND
+   * derive the symbolic ones so the structure view shows immediately and the
+   * tempo (`@mm`) is adopted — WITHOUT starting the transport. Play then sounds
+   * the produced scene. Only bp3/bpscript blocks are derived (a `produceOnly`
+   * eval that publishes the production but creates no audio); code voices
+   * (Strudel/Hydra) have no symbolic production, so arming alone readies them.
+   */
+  async produceLoadedProgram(fileId: string) {
+    this.armLoadedProgram(fileId);
+    const file = workspace.fileById(fileId);
+    if (!file) return;
+    for (const b of this.blocksForFile(fileId)) {
+      if (b.runtime !== 'bp3' && b.runtime !== 'bpscript') continue;
+      const code = file.contents.slice(b.block.from, b.block.to);
+      if (!code.trim()) continue;
+      try {
+        await core.evaluateBlock(
+          b.runtime,
+          code,
+          b.fileName,
+          b.block.from,
+          b.qualifiedName,
+          undefined,
+          undefined,
+          true // produceOnly: derive + show structure, no audio, no transport
+        );
+      } catch {
+        /* per-block failures logged by the adapter */
+      }
+    }
+  }
+
+  /**
    * Play whatever was just loaded — the coherent "load = it sounds" gesture
    * (beta issues 3+5). A program file (`.bps`, `.gr`, a single sketch) arms its
    * own blocks and starts the transport; a `.kanopi` session (no blocks of its
@@ -290,7 +339,10 @@ export function installBlockReplay() {
     // edge flag first means the re-entrant emit sees `wasPlaying === true` and
     // does NOT replay again — otherwise the eval recurses into itself (stack
     // overflow on Play). Skip the surgical-manual-eval edge (startSilently).
-    const playEdge = s.playing && !wasPlaying && !core.clock.silentStart;
+    // Skip a pause→play RESUME edge too (`resuming`): the armed voices are still
+    // scheduled (pause only suspended their audio), so re-evaluating would restart
+    // them from the top instead of continuing in place.
+    const playEdge = s.playing && !wasPlaying && !core.clock.silentStart && !core.clock.resuming;
     wasPlaying = s.playing;
     if (playEdge) {
       void openBlocks.replayArmed();

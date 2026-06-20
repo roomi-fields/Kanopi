@@ -1,5 +1,6 @@
 <script lang="ts">
   import { workspace } from '../../stores/workspace.svelte';
+  import { programCompileStatus } from '../../lib/library/referenced';
   import Tab from './Tab.svelte';
 
   function onDropEnd(e: DragEvent) {
@@ -10,6 +11,13 @@
   function onDragOver(e: DragEvent) {
     e.preventDefault();
   }
+
+  // Compile status of the ACTIVE program — shown as a chip on the right of the
+  // tab bar (the editor's own header), contextual to the file being edited.
+  const activeFile = $derived(
+    workspace.activeTabId ? workspace.fileById(workspace.activeTabId) : undefined
+  );
+  const compile = $derived(programCompileStatus(activeFile?.name, activeFile?.contents));
 </script>
 
 <div class="tabbar" role="tablist" tabindex="-1" ondragover={onDragOver} ondrop={onDropEnd}>
@@ -19,6 +27,26 @@
     {#each workspace.openTabIds as id (id)}
       <Tab {id} />
     {/each}
+  {/if}
+
+  {#if compile.applicable}
+    <div
+      class="compile-chip"
+      class:ok={compile.ok}
+      class:fail={!compile.ok}
+      title={compile.ok
+        ? 'Program compiles'
+        : compile.errors.map((e) => (e.line ? `L${e.line}: ${e.message}` : e.message)).join('\n')}
+    >
+      <span class="compile-dot"></span>
+      {#if compile.ok}
+        <span class="compile-label">compiles</span>
+      {:else}
+        <span class="compile-label"
+          >{compile.errors.length} error{compile.errors.length > 1 ? 's' : ''}</span
+        >
+      {/if}
+    </div>
   {/if}
 </div>
 
@@ -38,5 +66,36 @@
     font-size: 10px;
     color: var(--text-faint);
     letter-spacing: 0.08em;
+  }
+  .compile-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+    align-self: center;
+    flex-shrink: 0;
+    padding: 2px 10px;
+    margin-right: 8px;
+    border-radius: 10px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: default;
+  }
+  .compile-chip.ok {
+    background: rgba(80, 200, 120, 0.08);
+    color: var(--green, #50c878);
+  }
+  .compile-chip.fail {
+    background: rgba(200, 64, 64, 0.12);
+    color: var(--red, #c84040);
+  }
+  .compile-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: currentColor;
   }
 </style>

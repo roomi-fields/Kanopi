@@ -36,6 +36,10 @@ export interface Clock {
   /** True only while a `startSilently()` is notifying subscribers — consumers
    * that re-evaluate on the play edge skip the surgical manual eval. */
   readonly silentStart: boolean;
+  /** True only while a pause→play RESUME is notifying subscribers — the
+   * block-replay listener skips its play-edge re-eval (the voices are still
+   * scheduled, resuming continues them in place rather than restarting). */
+  readonly resuming: boolean;
   play(): void;
   /**
    * Start the transport WITHOUT firing the re-eval hook (onTransport). Used by a
@@ -47,6 +51,9 @@ export interface Clock {
   startSilently(): void;
   stop(): void;
   pause(): void;
+  /** Enter STEP mode: clear playing+paused WITHOUT zeroing position or hushing.
+   * A discrete manual advance — never resumes a paused transport. */
+  enterStep(): void;
   toggle(): void;
   setBpm(n: number): void;
   setTimeSignature(beatsPerBar: number): void;
@@ -155,7 +162,8 @@ export interface CoreApi {
     docOffset?: number,
     actorId?: string,
     flags?: Record<string, number>,
-    section?: { index: number; count: number }
+    section?: { index: number; count: number },
+    produceOnly?: boolean
   ): Promise<void>;
   /** Inject a lookup so the core can resolve which file an actor refers to. */
   bindActorFiles(get: (actorName: string) => ActorFileRef | undefined): void;

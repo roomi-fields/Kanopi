@@ -20,6 +20,10 @@ import tuningsJson from 'bpscript/lib/tunings.json';
 import temperamentsJson from 'bpscript/lib/temperaments.json';
 import octavesJson from 'bpscript/lib/octaves.json';
 import scalesJson from 'bpscript/lib/scales.json';
+// CV modulation library (`mod.adsr/lfo/ramp`): the param signatures AND the curve
+// shape live here (declarative segments), consumed AS-IS — Kanopi's transport
+// renders the curve generically, no built-in modulator. See CV.md.
+import modLibJson from 'bpscript/lib/mod.json';
 import { createBPx } from 'bpx';
 import { BUNDLED_SE, BUNDLED_SOUND, BUNDLED_AL } from './bp3-aux';
 // MIDI output sink for the beta-ensemble. runtime-midi OWNS the ISO-BP3 MIDI
@@ -83,7 +87,12 @@ import { headSectionNamesFromAst, sectionLeafCounts } from './head-sections-ast'
 type DispatcherStart = {
   start(
     onEnd: (() => void) | undefined,
-    opts: { loop?: boolean; reDerive?: (() => unknown) | null }
+    opts: {
+      loop?: boolean;
+      reDerive?: (() => unknown) | null;
+      startOffsetSec?: number;
+      reRandom?: boolean;
+    }
   ): void;
 };
 
@@ -744,6 +753,62 @@ function actorTableFromAst(a: SceneAstView | null): AdapterActorTable {
   return out;
 }
 
+// CV modulation libraries Kanopi can resolve (by lib name). Each declares its
+// objects' param signatures + curve shape. The modulators live in `mod` (mod.json).
+interface CVLib {
+  objects?: Record<string, { parameters?: Record<string, { default?: unknown }>; curve?: unknown }>;
+}
+const CV_LIBS: Record<string, CVLib> = { mod: modLibJson as unknown as CVLib };
+
+// A CV modulator DECLARATION in the AST (`cv env1 : mod.adsr(…)`). It defines the
+// modulator only — its target/input is set at the BRANCHEMENT point on a note
+// (`Bass -> C2 (cutoff: env1)`), surfaced via `leaf.controls`, not here.
+interface CVInstanceNode {
+  name: string;
+  lib?: string;
+  objectType?: string;
+  args?: unknown[];
+  namedArgs?: Record<string, unknown>;
+  code?: string;
+}
+
+/** A resolved modulator: its named params + its curve (from the library). Keyed by
+ *  NAME in the registry. The destination input is decided at the note branchement. */
+export interface Modulator {
+  objectType?: string;
+  params: Record<string, unknown>;
+  curve: unknown;
+}
+
+// Build the MODULATOR REGISTRY (name → resolved modulator) from the AST's
+// `cvInstances` (the `cv name : mod.obj(…)` declarations). Resolves each
+// modulator's params (library defaults < positional args by the library's
+// parameter order < named args) and attaches the library's `curve` (declarative
+// segments/periodic) so the transport renders it generically per note. A backtick
+// modulator (code) becomes an `expr` curve. The note branchement `(cutoff: name)`
+// (in `leaf.controls`) selects WHICH modulator drives WHICH input on that note.
+export function modulatorsFromAst(ast: unknown): Record<string, Modulator> {
+  const instances = (ast as { cvInstances?: CVInstanceNode[] } | null)?.cvInstances;
+  const registry: Record<string, Modulator> = {};
+  if (!Array.isArray(instances)) return registry;
+  for (const cv of instances) {
+    const objDef = cv.lib ? CV_LIBS[cv.lib]?.objects?.[cv.objectType ?? ''] : undefined;
+    const paramDefs = objDef?.parameters ?? {};
+    const order = Object.keys(paramDefs);
+    const params: Record<string, unknown> = {};
+    for (const k of order) {
+      if (paramDefs[k]?.default !== undefined) params[k] = paramDefs[k].default;
+    }
+    (cv.args ?? []).forEach((v, idx) => {
+      if (order[idx]) params[order[idx]] = v;
+    });
+    Object.assign(params, cv.namedArgs ?? {});
+    const curve = cv.code ? { kind: 'expr', code: cv.code } : objDef?.curve;
+    registry[cv.name] = { objectType: cv.objectType, params, curve };
+  }
+  return registry;
+}
+
 // `.bps` — BPScript compiles to a SceneAST (`compileBPS().ast`) that BPx derives
 // directly. The front-end view (tempo, flagStates, libraries, actorTable,
 // sections) is read from THAT AST — the single source of truth — not the
@@ -911,28 +976,28 @@ type Tok = {
 /**
  * STEP windowing: keep only the tokens of ONE beat of the derivation, re-zeroed
  * in time. The STEP unit is the clock beat (`60/bpm` seconds, here `beatMs` in
- * ms), NOT the head-rule section: beat `index` covers `[index*beatMs,
- * (index+1)*beatMs)` along the dispatcher timeline, and we shift it back to t=0
- * so it plays immediately. This works for ANY derivation with a timeline (the
- * old section-slicing only made sense for a head rule with >1 section). Tokens
- * are kept by their onset falling inside the beat window.
+ * ms). A token belongs to the beat its onset is CLOSEST to (`round(start/beat)`),
+ * NOT a half-open window `[k·beat, (k+1)·beat)`. The window form floored, and the
+ * engine emits note onsets at a slightly different grid than the theoretical
+ * `60000/bpm` (rounding: a note at k·857.0 ms vs a beat at k·857.14 ms), so the
+ * window's upper edge swept the NEXT note into the current beat — beat 0 then held
+ * two notes and the error accumulated. Nearest-beat assignment is robust to that
+ * sub-millisecond drift: each onset lands in exactly one beat. Shifted back to ~0
+ * so the beat plays immediately.
  */
 export function sliceBeat<T extends Tok>(tokens: T[], index: number, beatMs: number): T[] {
   if (!(beatMs > 0)) return tokens;
   const from = index * beatMs;
-  const to = from + beatMs;
-  // A token belongs to the window whose start falls inside [from, to).
   return tokens
-    .filter((t) => t.start >= from - 1e-6 && t.start < to - 1e-6)
+    .filter((t) => Math.round(t.start / beatMs) === index)
     .map((t) => ({ ...t, start: t.start - from, end: t.end - from }));
 }
 
 /**
  * STEP windowing for tree-derived dispatch events — the `sliceBeat` twin on the
- * SECONDS timeline the dispatcher loads (`treeToDispatchEvents`). Keeps only the
- * events whose onset falls inside beat `index` (`[index*beatSec, +beatSec)`) and
- * re-zeroes them to t=0 so the beat plays immediately. Same onset rule as the
- * flat `sliceBeat`, applied uniformly now that ALL grammars load via events.
+ * SECONDS timeline the dispatcher loads (`treeToDispatchEvents`). Same
+ * nearest-beat assignment (`round(startSec/beatSec)`) as the flat `sliceBeat`, for
+ * the same reason (onset/beat-grid rounding drift), re-zeroed to ~0.
  */
 export function sliceBeatEvents(
   events: DispatchEvent[],
@@ -941,9 +1006,8 @@ export function sliceBeatEvents(
 ): DispatchEvent[] {
   if (!(beatSec > 0)) return events;
   const from = index * beatSec;
-  const to = from + beatSec;
   return events
-    .filter((e) => e.startSec >= from - 1e-9 && e.startSec < to - 1e-9)
+    .filter((e) => Math.round(e.startSec / beatSec) === index)
     .map((e) => ({ ...e, startSec: e.startSec - from }));
 }
 
@@ -1080,6 +1144,15 @@ function webMidiAvailable(): Promise<boolean> {
 // own default so a fresh page already matches the transport.
 let currentBpm = 128;
 
+// The random seed of the CURRENT production. A PRODUCE re-rolls it (a new
+// variation); a Play/Step reuses it so the heard audio matches the produced
+// structure. A loop cycle re-rolls only when re-random is on. undefined → BPx's
+// deterministic default (a scene with no random rules is unaffected either way).
+let currentSeed: number | undefined;
+function freshSeed(): number {
+  return Math.floor(Math.random() * 0x7ffffffe) + 1;
+}
+
 // Optional hook the core wires so a grammar's declared `@mm` can drive the
 // CENTRAL clock (and thus the transport display) at eval, keeping the shown BPM,
 // the derivation, and the STEP grid in agreement. The core sets this to
@@ -1088,6 +1161,68 @@ let currentBpm = 128;
 let onTempoFromGrammar: ((bpm: number) => void) | undefined;
 export function setTempoSink(fn: (bpm: number) => void): void {
   onTempoFromGrammar = fn;
+}
+
+// Resume offset (in beats) for the NEXT looping play, set by the transport state
+// machine (playback store) just before it triggers Play, and consumed ONCE by the
+// next non-STEP `evaluate`. Lets "Step → Play" continue from the next unplayed
+// beat instead of the top — the single source of the resume position is the
+// machine, not a guessed store value. null/0 → start from the top.
+let resumeBeat: number | null = null;
+export function setResumeBeat(beat: number | null): void {
+  resumeBeat = beat;
+}
+
+// LIVE transport-toggle plumbing: each adapter registers an updater that pushes
+// the loop / re-random toggle onto its currently-playing dispatchers, so flipping
+// the 🎲 (or loop) while a scene plays takes effect at the next cycle WITHOUT
+// re-evaluating. Pass null to leave a flag untouched.
+type TransportLiveUpdater = (reRandom: boolean | null, loop: boolean | null) => void;
+const transportLiveUpdaters: TransportLiveUpdater[] = [];
+export function setReRandomLive(on: boolean): void {
+  for (const u of transportLiveUpdaters) u(on, null);
+}
+export function setLoopLive(on: boolean): void {
+  for (const u of transportLiveUpdaters) u(null, on);
+}
+
+// The dispatcher currently driving the transport beat display (requirement B):
+// the most-recently-started running dispatcher. The central clock reads its
+// musical position so the beat dots + bar·beat·phase counter lock to the HEARD
+// audio (and to a live tempo change), instead of the independent rAF clock.
+// Cleared when that dispatcher stops. Shared by both BPx adapters (one transport
+// beat at a time) since it is module-scoped.
+let beatClockDispatcher: InstanceType<typeof Dispatcher> | null = null;
+// Generation counter: bumped every time a NEW dispatcher takes over the beat
+// display (a fresh Play, or a Ctrl+Enter restart while playing). The central
+// clock reads it to tell a genuine restart (position jumps back to the top) from
+// the harmless rAF/dispatcher hand-off at launch — so a re-eval restarts the
+// cursor, while a normal launch never appears to rewind.
+let beatGen = 0;
+
+interface DispatcherBeat {
+  beatsTotal: number;
+  bar: number;
+  beat: number;
+  phase: number;
+  gen: number;
+}
+
+/**
+ * The musical beat position of the dispatcher currently driving playback, or
+ * null when none is running. The central clock consumes this to phase-lock the
+ * transport beat display to the heard audio (requirement B). Beats advance at
+ * the live tempo, including after a live retune. Returns null so the central
+ * clock falls back to its own rAF behaviour (Strudel/Hydra/idle).
+ */
+export function getDispatcherBeat(): DispatcherBeat | null {
+  const d = beatClockDispatcher as unknown as {
+    _running?: boolean;
+    musicalBeatPosition?: (bpb?: number) => Omit<DispatcherBeat, 'gen'> | null;
+  } | null;
+  if (!d || !d._running) return null;
+  const pos = d.musicalBeatPosition?.();
+  return pos ? { ...pos, gen: beatGen } : null;
 }
 
 /** One orchestrated actor as published to the Actors panel. */
@@ -1189,6 +1324,18 @@ async function getCtx(): Promise<AudioContext> {
   if (!audioCtx) audioCtx = new AudioContext();
   if (audioCtx.state === 'suspended') await audioCtx.resume();
   return audioCtx;
+}
+
+// True PAUSE for the WebAudio path: suspend the shared audio context. The
+// dispatcher's lookahead clock schedules against `audioCtx.currentTime`, so
+// freezing the context freezes playback in place WITHOUT tearing down the
+// dispatchers — resume continues exactly where it stopped. No context yet (never
+// played) → no-op. The core wires these to the central clock's pause/resume.
+export async function pauseAudioContext(): Promise<void> {
+  if (audioCtx && audioCtx.state === 'running') await audioCtx.suspend();
+}
+export async function resumeAudioContext(): Promise<void> {
+  if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
 }
 
 function srcKey(s: EvalSource): string {
@@ -1402,6 +1549,18 @@ function makeBpxAdapter(
   // stops its previous dispatcher before scheduling the new derivation.
   const voices = new Map<string, BP3Voice>();
 
+  // Live loop/re-random updates reach THIS adapter's currently-playing voices.
+  transportLiveUpdaters.push((reRandom, loop) => {
+    for (const v of voices.values()) {
+      const d = v.dispatcher as unknown as {
+        setReRandom(on: boolean): void;
+        setLoop(on: boolean): void;
+      };
+      if (reRandom !== null) d.setReRandom(reRandom);
+      if (loop !== null) d.setLoop(loop);
+    }
+  });
+
   function emitLifecycle(name: 'eval' | 'stop', fileId: string) {
     adapterEvents.emit({
       schemaVersion: 1,
@@ -1475,6 +1634,18 @@ function makeBpxAdapter(
       // active scene in the scene bar (see `defaultScene` consumers).
       const effectiveFlags = withDefaultScene(src.flags, flagStates);
 
+      // RE-RANDOM seeding. BPx derives with a deterministic LCG seeded to a fixed
+      // default (1), so a grammar with weighted/`@mode:random` rules yields the
+      // EXACT same derivation every time. The seed model (Romain):
+      //   • Every PRODUCE (incl. the load-produce) re-rolls → a NEW variation:
+      //     `currentSeed` gets a fresh value here, on a produceOnly eval.
+      //   • A Play/Step REUSES `currentSeed` so the audio matches the produced
+      //     structure (same seed → same derivation), not a fresh roll.
+      //   • A loop cycle re-derives with a fresh seed ONLY when re-random is on
+      //     (`reDeriveTreeEvents` below); off → the dispatcher loops the same
+      //     events. `seed` is a documented BPx config field — glue, not a RNG port.
+      if (src.produceOnly) currentSeed = freshSeed();
+
       let tokens;
       let tree: ProductionTree | undefined;
       // The raw BPx `DerivationTree` (control nodes included) for the multi-actor
@@ -1489,7 +1660,12 @@ function makeBpxAdapter(
         // `effectiveFlags` (e.g. `{ scene: 2 }`) is applied as the BPx engine's
         // initial flag state, so a flag-guarded rule (`/scene=2/`) derives
         // instead of leaving `S` unexpanded. Absent named scenes → unchanged.
-        const bpx = createBPx({ tempo: currentBpm, settings, flags: effectiveFlags });
+        const bpx = createBPx({
+          tempo: currentBpm,
+          settings,
+          flags: effectiveFlags,
+          seed: currentSeed
+        });
         bpx.loadGrammar(ast);
         // Keep BOTH halves of the derivation: `.tokens` is the flat timed
         // sequence (audio/MIDI/text), `.tree` carries the polymetric structure
@@ -1533,10 +1709,29 @@ function makeBpxAdapter(
       // when the transport's re-random toggle is on AND looping.
       const reDeriveTreeEvents = (filterEvents: (e: DispatchEvent) => boolean) => () => {
         try {
-          const rbpx = createBPx({ tempo: currentBpm, settings, flags: effectiveFlags });
+          const rbpx = createBPx({
+            tempo: currentBpm,
+            settings,
+            flags: effectiveFlags,
+            seed: freshSeed()
+          });
           rbpx.loadGrammar(ast);
           const rderived = rbpx.derive({ output: 'complete' });
           const rnames = buildSymbolNames(rbpx, rderived.tree);
+          // Refresh the STRUCTURE view so it shows THIS cycle's variation — the
+          // re-derive otherwise only reloads the dispatcher (audio re-rolls) and
+          // the struct stays frozen on the first cycle. Same publish as the eval.
+          const rtokens = rderived.tokens.filter((t) => t.type !== 'control');
+          publishProduction(
+            id,
+            rtokens,
+            productionSounds,
+            headSections ?? [],
+            beatDurSec,
+            rderived.tree as unknown as ProductionTree,
+            rnames,
+            sectionLeafCounts(ast)
+          );
           return treeToDispatchEvents(
             rderived.tree as Parameters<typeof treeToDispatchEvents>[0],
             rnames
@@ -1593,6 +1788,32 @@ function makeBpxAdapter(
         leafCounts
       );
 
+      // PRODUCE-only (scene opened, not played): the derivation + structure are
+      // now published and the tempo (`@mm`) adopted — but we DON'T create a
+      // dispatcher, schedule anything, or start the transport. Play runs a full
+      // evaluate that sounds the scene. Publish the actor list so the panel
+      // reflects the scene (live arm/disarm handles are registered on the real
+      // play, when the dispatcher exists). A non-orchestrated scene publishes an
+      // empty list, clearing any previous orchestrator's voices — same as a full
+      // eval would. Outgoing code voices (a previous scene's Hydra/Strudel) are
+      // torn down so opening a new scene doesn't leave the old one rendering.
+      if (src.produceOnly) {
+        if (orchestration && orchestration.actors.length > 0) {
+          await tearDownOutgoingVoices(src.fileId);
+          const published: PublishedActor[] = orchestration.actors.map((a) => ({
+            name: a.name,
+            runtime: (a.evalInterp ? runtimeForInterp(a.evalInterp) : undefined) ?? id,
+            file: src.fileId
+          }));
+          onActorsFromGrammar?.(published, src.fileId);
+        } else {
+          await tearDownOutgoingVoices(undefined);
+          onActorsFromGrammar?.([], src.fileId);
+        }
+        emitLifecycle('eval', src.fileId);
+        return;
+      }
+
       // STEP: when a beat is requested, keep only that beat's tokens (re-zeroed)
       // and play them once. Otherwise loop the whole derivation when the
       // transport's LOOP toggle is on (default). A STEP window always plays once
@@ -1605,6 +1826,14 @@ function makeBpxAdapter(
       // the grammar's weighted/random choices tour to tour (vs replaying the same
       // derivation). Snapshotted here at start time off the session toggle.
       const reRandom = looping && transport.reRandom;
+      // Resume-from-step offset (STEP → Play): the transport machine set
+      // `resumeBeat` before triggering Play; start the loop at that beat instead of
+      // the top, then consume it (one-shot). Only for a looping, non-STEP start.
+      const startOffsetSec =
+        !section && resumeBeat != null && resumeBeat > 0 && currentBpm > 0
+          ? resumeBeat * (60 / currentBpm)
+          : 0;
+      if (!section) resumeBeat = null;
       if (section && section.count > 1) {
         const beatMs = currentBpm > 0 ? 60000 / currentBpm : 0;
         tokens = sliceBeat(tokens, section.index, beatMs);
@@ -1658,6 +1887,17 @@ function makeBpxAdapter(
 
       const ctx = await getCtx();
       const dispatcher = new Dispatcher(ctx);
+
+      // CV modulation table (CV.md): teach the dispatcher which terminals are CVs
+      // (env1…) and their resolved params + curve, so each CV occurrence routes to
+      // `transport.sendCV` (→ the generic curve renderer on the chosen CV input)
+      // Modulator registry (name → resolved curve/params) from the `cv … : mod.x(…)`
+      // declarations. The dispatcher forwards it to its transports; per-note
+      // modulation is applied at `send()` from a note's branchement controls
+      // (`leaf.controls` carrying e.g. `cutoff: 'env1'`). No `cvInstances` → {}.
+      (dispatcher as unknown as { setModulators(r: Record<string, unknown>): void }).setModulators(
+        modulatorsFromAst(ast)
+      );
 
       // Orchestrator-only: BT token → owning actor (rule LHS), and the live set
       // of disarmed actors (consulted by the backtick sink + the per-actor note
@@ -1794,10 +2034,23 @@ function makeBpxAdapter(
           symbolNames
         ).filter(orchestratedLive);
         (dispatcher as unknown as { loadEvents(ev: unknown[]): void }).loadEvents(treeEvents);
+        // The events' seconds encode `currentBpm` at derive time — tell the
+        // dispatcher so its anchored tempo map can live-rescale (requirement A).
+        (dispatcher as unknown as { setDerivedTempo(bpm: number): void }).setDerivedTempo(
+          currentBpm
+        );
         (dispatcher as unknown as DispatcherStart).start(undefined, {
           loop: looping,
-          reDerive: reRandom ? reDeriveTreeEvents(orchestratedLive) : null
+          // Build the re-derive function whenever LOOPING; the live `reRandom`
+          // flag decides whether each cycle actually re-rolls — so toggling
+          // re-random mid-playback takes effect without re-evaluating.
+          reDerive: looping ? reDeriveTreeEvents(orchestratedLive) : null,
+          reRandom,
+          startOffsetSec
         });
+        // This dispatcher now drives the transport beat display (requirement B).
+        beatClockDispatcher = dispatcher;
+        beatGen++;
         // Code-voice slots of THIS orchestrator (hydra/strudel + their per-actor
         // slot id), recorded on the dispatcher entry so a LATER program can hush
         // them after stopping this dispatcher (covers a fire in flight at stop).
@@ -1945,6 +2198,9 @@ function makeBpxAdapter(
         treeEvents = sliceBeatEvents(treeEvents, section.index, beatSec);
       }
       (dispatcher as unknown as { loadEvents(ev: unknown[]): void }).loadEvents(treeEvents);
+      // The events' seconds encode `currentBpm` at derive time — tell the
+      // dispatcher so its anchored tempo map can live-rescale (requirement A).
+      (dispatcher as unknown as { setDerivedTempo(bpm: number): void }).setDerivedTempo(currentBpm);
       // Loop so an armed actor sustains like a Strudel pattern: the grammar's
       // derivation repeats at each cycle boundary until the LOOP toggle is off,
       // the transport stops, or the page hushes. With RE-RANDOM on, the grammar
@@ -1954,8 +2210,14 @@ function makeBpxAdapter(
       // `looping` is false then, so `reRandom` is too.
       (dispatcher as unknown as DispatcherStart).start(undefined, {
         loop: looping,
-        reDerive: reRandom ? reDeriveTreeEvents(monoFilter) : null
+        // Build the re-derive whenever LOOPING; the live `reRandom` flag gates it.
+        reDerive: looping ? reDeriveTreeEvents(monoFilter) : null,
+        reRandom,
+        startOffsetSec
       });
+      // This dispatcher now drives the transport beat display (requirement B).
+      beatClockDispatcher = dispatcher;
+      beatGen++;
 
       // MIDI sink: route the SAME raw BPx tokens to runtime-midi, on the SAME
       // AudioContext clock — but only when Web MIDI access is actually granted
@@ -1987,14 +2249,13 @@ function makeBpxAdapter(
     },
     setBpm(bpm: number, _log: LogPush) {
       currentBpm = bpm;
-      // Retune live voices so a tempo change from the central clock (or a
-      // `@map tempo` MIDI knob) takes effect without re-deriving. The dispatcher
-      // reads `_tempo` for its beats→seconds conversion and pushes it onto the
-      // clock; setting both keeps already-scheduled and future cycles in step.
+      // Live retune every running voice WITHOUT re-deriving (requirement A): the
+      // dispatcher's anchored tempo map rescales its already-loaded events in
+      // place — slower BPM spreads notes out, faster compresses — anchored so the
+      // currently playing position does not jump. `currentBpm` still updates so
+      // the NEXT derivation uses the new tempo.
       for (const voice of voices.values()) {
-        const d = voice.dispatcher as unknown as { _tempo?: number; clock?: { tempo?: number } };
-        d._tempo = bpm;
-        if (d.clock) d.clock.tempo = bpm;
+        (voice.dispatcher as unknown as { setLiveTempo(bpm: number): void }).setLiveTempo(bpm);
       }
       // The MIDI sink owns its own internal dispatcher (runtime-midi private); we
       // don't reach into it to retune live. Its timing comes from the tokens it
@@ -2013,6 +2274,8 @@ function makeBpxAdapter(
           voice.midiSink?.stop();
         }
         voices.clear();
+        // Stop everything → the transport beat display falls back to the rAF clock.
+        beatClockDispatcher = null;
         // "Stop everything" also FORGETS the live orchestrated-voice handles: every
         // dispatcher is down and the core hushes every code runtime alongside this
         // call, so a lingering handle would only let a stale voice be torn down /
@@ -2028,6 +2291,7 @@ function makeBpxAdapter(
         voice.dispatcher.stop();
         voice.midiSink?.stop();
         voices.delete(key);
+        if (beatClockDispatcher === voice.dispatcher) beatClockDispatcher = null;
       }
       log({ runtime: id, level: 'info', msg: `stop [${key}]` });
       emitLifecycle('stop', src.fileId);
@@ -2037,6 +2301,7 @@ function makeBpxAdapter(
         try {
           voice.dispatcher.stop();
           voice.midiSink?.stop();
+          if (beatClockDispatcher === voice.dispatcher) beatClockDispatcher = null;
         } catch {
           /* engine may already be torn down */
         }
@@ -2047,6 +2312,12 @@ function makeBpxAdapter(
 }
 
 // `.gr` keystone (Bol Processor native grammar) and `.bps` (BPScript) — same
-// engine, different front-end.
+// engine, different front-end. Created here so both register their live
+// transport-updaters before the sinks below are wired.
 export const bp3Adapter: RuntimeAdapter = makeBpxAdapter('bp3', ['.gr'], grFrontend);
 export const bpscriptAdapter: RuntimeAdapter = makeBpxAdapter('bpscript', ['.bps'], bpsFrontend);
+
+// Wire the transport toggles to the live updaters: flipping loop / re-random now
+// reaches the playing dispatchers immediately (effective at the next cycle).
+transport.setReRandomSink(setReRandomLive);
+transport.setLoopSink(setLoopLive);

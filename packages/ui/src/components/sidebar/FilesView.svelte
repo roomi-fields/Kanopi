@@ -2,7 +2,8 @@
   import { tick } from 'svelte';
   import { workspace } from '../../stores/workspace.svelte';
   import { KNOWN_EXTENSIONS } from '../../lib/workspace/types';
-  import { referencedLibraries } from '../../lib/library/referenced';
+  import { referencedLibraries, type ReferencedLib } from '../../lib/library/referenced';
+  import { RESOURCE_GROUPS } from '../../lib/library/resources';
   import { ui } from '../../stores/ui.svelte';
   import FileTree from './FileTree.svelte';
 
@@ -60,6 +61,32 @@
     cancelDialog();
   }
 
+  // Open a referenced library's CONTENT in the editor display (not just switch
+  // the sidebar). A catalog-backed lib (alphabet/tuning/scale/…) opens its JSON
+  // read-only, exactly like the Resources view. A bare language module (@core /
+  // @controls — no Kanopi catalog, the content lives in the BPScript language)
+  // opens a short read-only note so the click still surfaces something.
+  function openReferenced(lib: ReferencedLib) {
+    const entry = RESOURCE_GROUPS.find((g) => g.type === lib.type)?.entries.find(
+      (e) => e.id === lib.name
+    );
+    if (entry) {
+      const path = `resources/${lib.type}/${entry.id}.json`;
+      const id = workspace.addFile(path, JSON.stringify(entry.data, null, 2), true);
+      workspace.openFile(id);
+    } else {
+      const path = `resources/${lib.type}/${lib.name}.json`;
+      const note = {
+        module: lib.name,
+        kind: `BPScript ${lib.typeLabel}`,
+        note: `@${lib.name} charge une bibliothèque du langage BPScript. Son contenu vit dans le langage (fonctions de grammaire / terminaux de contrôle), pas dans un catalogue de données Kanopi — rien à parcourir ici.`
+      };
+      const id = workspace.addFile(path, JSON.stringify(note, null, 2), true);
+      workspace.openFile(id);
+    }
+    ui.activeActivityView = 'files';
+  }
+
   function onKey(e: KeyboardEvent) {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -112,8 +139,8 @@
               <button
                 type="button"
                 class="lib-row"
-                title="Browse in Resources"
-                onclick={() => (ui.activeActivityView = 'resources')}
+                title="Ouvrir dans l'éditeur"
+                onclick={() => openReferenced(lib)}
               >
                 <span class="lib-type">{lib.typeLabel}</span>
                 <span class="lib-name">{lib.name}</span>

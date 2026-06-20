@@ -21,7 +21,9 @@ class MockTransport {
 type DispAny = InstanceType<typeof Dispatcher> & {
   _running: boolean;
   _reDerive: (() => unknown) | null;
+  _reRandom: boolean;
   loop: boolean;
+  setReRandom(on: boolean): void;
   setSoundPredicate(fn: (t: string) => boolean): void;
   loadEvents(ev: unknown[]): void;
   clock: { _startTime: number };
@@ -53,6 +55,7 @@ describe('dispatcher loop + re-random per cycle', () => {
     let calls = 0;
     d.loop = true;
     d._running = true;
+    d._reRandom = true; // re-random ENABLED (live flag)
     d._reDerive = () => {
       calls++;
       return [note('B')];
@@ -69,7 +72,7 @@ describe('dispatcher loop + re-random per cycle', () => {
     expect(events.map((e) => e.token)).toEqual(['B']);
   });
 
-  it('loop ON + re-random OFF → replays the SAME events, no re-derive', () => {
+  it('loop ON + re-random OFF (flag) → SAME events, even though the function is present', () => {
     const d = new Dispatcher(makeCtx()) as DispAny;
     const out = new MockTransport();
     d.addTransport('default', out);
@@ -78,14 +81,44 @@ describe('dispatcher loop + re-random per cycle', () => {
     d.loadEvents([note('A')]);
     d.loop = true;
     d._running = true;
-    d._reDerive = null; // re-random off
+    let calls = 0;
+    // The re-derive function is AVAILABLE but the live flag is OFF → not used.
+    d._reDerive = () => {
+      calls++;
+      return [note('B')];
+    };
+    d._reRandom = false;
 
     drain(d);
 
-    // Still looping, no re-derive, same events stand for the next cycle.
+    expect(calls).toBe(0); // gated off by the flag, not by the absence of the function
     expect(d._running).toBe(true);
     const events = (d as unknown as { events: { token: string }[] }).events;
     expect(events.map((e) => e.token)).toEqual(['A']);
+  });
+
+  it('setReRandom(true) flips it LIVE → the next cycle re-derives', () => {
+    const d = new Dispatcher(makeCtx()) as DispAny;
+    const out = new MockTransport();
+    d.addTransport('default', out);
+    d.setSoundPredicate(() => true);
+
+    d.loadEvents([note('A')]);
+    d.loop = true;
+    d._running = true;
+    let calls = 0;
+    d._reDerive = () => {
+      calls++;
+      return [note('B')];
+    };
+    d._reRandom = false;
+    d.setReRandom(true); // user flips the 🎲 mid-playback
+
+    drain(d);
+
+    expect(calls).toBe(1); // took effect without re-evaluating
+    const events = (d as unknown as { events: { token: string }[] }).events;
+    expect(events.map((e) => e.token)).toEqual(['B']);
   });
 
   it('loop OFF → plays once and stops (no relaunch, no re-derive)', () => {

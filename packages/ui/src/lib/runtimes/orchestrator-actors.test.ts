@@ -8,7 +8,7 @@ import {
   disarmOrchestratedActor,
   btTokenByActor,
   type PublishedActor
-} from './bp3';
+} from './bpx-adapter';
 import * as registry from './registry';
 
 // Minimal WebAudio + node stubs so the orchestrator eval can build its dispatcher.

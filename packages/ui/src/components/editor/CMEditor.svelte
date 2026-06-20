@@ -10,7 +10,12 @@
   } from '@codemirror/view';
   import { history, historyKeymap, defaultKeymap, indentWithTab } from '@codemirror/commands';
   import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
-  import { acceptCompletion, completionStatus } from '@codemirror/autocomplete';
+  import {
+    acceptCompletion,
+    completionStatus,
+    autocompletion,
+    completionKeymap
+  } from '@codemirror/autocomplete';
   import { kanopiTheme, kanopiGlobalStyles, kanopiHighlight } from './cm-theme';
   import { syntaxHighlighting, bracketMatching, indentOnInput } from '@codemirror/language';
   import { ui } from '../../stores/ui.svelte';
@@ -93,6 +98,10 @@
       bracketMatching(),
       indentOnInput(),
       languageFor(lang),
+      // Completion popup engine. Languages opt in via `languageData.autocomplete`
+      // (BPScript wires its reference-backed source in lang-resolver). Without this
+      // extension that source is never consulted and no popup ever shows.
+      autocompletion(),
       syntaxHighlighting(kanopiHighlight, { fallback: true }),
       strudel.ext,
       ...(lang === 'strudel' || lang === 'tidal' ? [miniOverlay, ...widgetPlugin] : []),
@@ -190,6 +199,7 @@
             run: (v) => (completionStatus(v.state) === 'active' ? acceptCompletion(v) : false)
           },
           indentWithTab,
+          ...completionKeymap,
           ...defaultKeymap,
           ...historyKeymap,
           ...searchKeymap
@@ -227,7 +237,8 @@
     view = undefined;
   });
 
-  // Swap state when the active doc changes (do NOT recreate the view)
+  // Swap state when the active doc changes (do NOT recreate the view); and
+  // reconcile an EXTERNAL content change for the SAME file into the view.
   $effect(() => {
     if (!view) return;
     if (docId !== currentDocId) {
@@ -237,6 +248,21 @@
       if (runtime === 'strudel' || runtime === 'tidal') {
         registerStrudelEditorView(fileName, view);
       }
+      return;
+    }
+    // Same file, but `doc` changed from OUTSIDE the editor (e.g. the tempo knob
+    // rewrote `@mm`): push it into the view so the editor reflects it. A user
+    // keystroke does NOT reach here — onChange already set the store to the view's
+    // own text, so `doc === current` and nothing is dispatched (no echo loop).
+    const current = view.state.doc.toString();
+    if (doc !== current) {
+      const sel = view.state.selection.main;
+      const anchor = Math.min(sel.anchor, doc.length);
+      const head = Math.min(sel.head, doc.length);
+      view.dispatch({
+        changes: { from: 0, to: current.length, insert: doc },
+        selection: { anchor, head }
+      });
     }
   });
 

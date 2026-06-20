@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 import { createBPx } from 'bpx';
 import { sectionLeafCounts, headSectionNamesFromAst } from './head-sections-ast';
-import { sectionBoundsFromTree } from './bp3';
+import { sectionBoundsFromTree } from './bpx-adapter';
 import type { ProductionTree } from '../../stores/production.svelte';
 
 // Maqam Rast (arabic.bps): Sayr 7 notes, Rujoo 7 notes, Qarar 1 note + 4 held

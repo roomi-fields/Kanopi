@@ -5,6 +5,8 @@
 - [EVENTS.md](design/EVENTS.md) — spec du bus `KanopiEvent`
 - [LIBRARY.md](design/LIBRARY.md) — système library 3 sources (bundled / mine / community)
 - [SCENES.md](design/SCENES.md) — hiérarchie scènes + scoping flags
+- [PLAYBACK_LOOP.md](design/PLAYBACK_LOOP.md) — boucle de lecture : horloge/curseur, modèle continu↔discret, perf
+- [MODULATION_INPUTS.md](design/MODULATION_INPUTS.md) — registre CV du runtime webaudio (cutoff/amplitude/resonance/pitch/pan)
 
 ## Intégrations
 - [TIDAL.md](integrations/TIDAL.md) — matrice Tidal/Strudel, keymap, coloration, autocomplete

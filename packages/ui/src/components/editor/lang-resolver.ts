@@ -4,11 +4,30 @@ import { python } from '@codemirror/lang-python';
 import { csoundMode } from '@hlolli/codemirror-lang-csound';
 import type { Runtime } from '../../lib/core-mock';
 import { kanopiLanguage } from './lang-kanopi';
+// BPScript's own CodeMirror 6 language modes (Lezer parser + highlighting),
+// consumed AS-IS from the dep — the same modes its web editor uses. `.bps` also
+// gets autocompletion sourced from BPScript's `reference.json` (see lang-bpscript).
+import { bpscriptLanguage, bp3Language } from 'bpscript/public/editor/bpscript-lang.js';
+import { lintGutter } from '@codemirror/lint';
+import { bpscriptCompletion, bpscriptExtras } from './lang-bpscript';
 
 export function languageFor(runtime: Runtime): Extension {
   switch (runtime) {
     case 'kanopi':
       return kanopiLanguage;
+    case 'bpscript':
+      // BPScript: upstream CM6 highlighting + autocompletion from its reference,
+      // plus the transpiler linter (underlines errors) and reference hover
+      // tooltips — the features its old web editor shipped, ported AS-IS.
+      return [
+        bpscriptLanguage,
+        bpscriptLanguage.language.data.of({ autocomplete: bpscriptCompletion }),
+        ...bpscriptExtras,
+        lintGutter()
+      ];
+    case 'bp3':
+      // `.gr` native grammar: upstream CM6 highlighting (autocomplete is bps-only).
+      return bp3Language;
     case 'strudel':
     case 'tidal':
     case 'hydra':

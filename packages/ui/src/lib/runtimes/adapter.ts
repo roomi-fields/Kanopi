@@ -27,6 +27,14 @@ export type EvalSource = {
    * Ignored by adapters that have no timeline (everything but bp3/bpscript).
    */
   section?: { index: number; count: number };
+  /**
+   * PRODUCE-only: derive the scene and publish its production (structure view +
+   * tempo + actor list) WITHOUT scheduling or sounding it. Opening a scene
+   * produces it (the structure shows, the transport stays put); Play then runs a
+   * full evaluate that creates the dispatcher and sounds it. Ignored by adapters
+   * with no derivation (everything but bp3/bpscript).
+   */
+  produceOnly?: boolean;
 };
 
 export type LogPush = (e: {
