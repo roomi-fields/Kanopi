@@ -45,7 +45,7 @@ import { resolveScaleRatios } from '../../../../core/src/dispatcher/scale.js';
 // Tree-derived dispatch events (M5+ multi-actor refacto): flatten BPx's
 // `derive({ output: 'complete' }).tree` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
-import { treeToDispatchEvents, type DispatchEvent } from './tree-dispatch';
+import { treeToDispatchEvents, resolveCvControls, type DispatchEvent } from './tree-dispatch';
 // The FULL derived production, set ONCE per eval (the complete TimedToken[] BPx
 // produced at derive time, BEFORE playback). This is the whole sequence, the
 // source of truth the Text panel (read by order via the tree) and the Structure
@@ -1681,6 +1681,20 @@ function makeBpxAdapter(
         // dispatcher.load): `'complete'` ALSO injects zero-duration `type:
         // 'control'` tokens into the flat stream, which those paths never saw —
         // drop them here so nothing downstream regresses.
+        // Apply the three modulation clocks (per-note / signal / terminal) and
+        // resolve sibling-voice CV refs: BPx graves a subject-encoded value on each
+        // sounding leaf's `controls`; this rewrites it into the uniform `{__cv:true,
+        // …}` descriptor the webaudio transport applies — mutates leaf.controls in
+        // place BEFORE the tree feeds any consumer below. The modulator-name set
+        // (`cv … : mod.x(…)` declarations) makes the plain-string SIGNAL case exact.
+        resolveCvControls(
+          derived.tree,
+          (sid) =>
+            (bpx as { grammar?: { symbols?: Partial<SymbolTable> } }).grammar?.symbols?.getName?.(
+              sid
+            ),
+          new Set(Object.keys(modulatorsFromAst(ast)))
+        );
         rawTree = derived.tree;
         tokens = derived.tokens.filter((t) => t.type !== 'control');
         tree = derived.tree as unknown as ProductionTree;
@@ -1717,6 +1731,16 @@ function makeBpxAdapter(
           });
           rbpx.loadGrammar(ast);
           const rderived = rbpx.derive({ output: 'complete' });
+          // Same modulation-clock resolution as the main path — each re-roll
+          // re-samples the phrase spans and which env sounds under each leaf.
+          resolveCvControls(
+            rderived.tree,
+            (sid) =>
+              (
+                rbpx as { grammar?: { symbols?: Partial<SymbolTable> } }
+              ).grammar?.symbols?.getName?.(sid),
+            new Set(Object.keys(modulatorsFromAst(ast)))
+          );
           const rnames = buildSymbolNames(rbpx, rderived.tree);
           // Refresh the STRUCTURE view so it shows THIS cycle's variation — the
           // re-derive otherwise only reloads the dispatcher (audio re-rolls) and

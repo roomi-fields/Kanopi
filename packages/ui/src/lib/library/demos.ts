@@ -72,13 +72,14 @@ const DEMO_META: Record<string, DemoMeta> = {
     showcase: true
   },
   'cv-adsr': {
-    name: 'Acid Bass — ADSR',
-    tagline: 'envelope on a resonant filter',
-    description: 'An acid bassline driving an ADSR envelope into a resonant filter cutoff.',
+    name: 'Acid Bass — ADSR + pan LFO',
+    tagline: 'per-note filter envelope, LFO panning',
+    description:
+      'TB-303 acid bass: the filter envelope retriggers per note (*:cutoff) while an LFO pans the sound across the stereo field (signal).',
     category: 'bpscript',
     outputs: ['audio'],
     level: 'intermediate',
-    tags: ['cv', 'bass'],
+    tags: ['cv', 'bass', 'modulation'],
     showcase: true
   },
   'cv-lfo': {

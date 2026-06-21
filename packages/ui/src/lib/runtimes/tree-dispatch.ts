@@ -172,3 +172,276 @@ function resolveRoot(tree: TreeRoot): TreeNode | null {
   if (typeof tree === 'object' && 'type' in tree) return tree as TreeNode;
   return null;
 }
+
+// ── CV piloté par le SUJET (décision hub 2026-06-20) ──────────────────────────
+// BPx (`resolveControls`) grave sur chaque feuille sonnante la valeur de contrôle
+// qui pilote une modulation, dans une forme qui ENCODE le SUJET du branchement :
+//
+//   • chaîne nue nommant un modulateur déclaré (`cutoff: 'env1'`)      → SIGNAL,
+//     l'enveloppe se déroule UNE fois sur la PHRASE (l'occurrence de règle) ;
+//   • `{__subject:'*', value:'env1'}`                                   → PAR NOTE,
+//     l'enveloppe repart à chaque note (acid bass) ;
+//   • `{__cvRef:'voice', name, voiceIndex, …}` (sans `subject`)         → SIGNAL,
+//     l'enveloppe suit le segment de la VOIX SŒUR qui couvre la note ;
+//   • `{__cvRef:'voice', …, subject:'*'}`                              → PAR NOTE,
+//     l'env de la voix sœur échantillonnée à l'attaque, retriggée par note.
+//   • un terminal (`C2:cutoff: env1`) n'est gravé QUE sur les feuilles dont le
+//     terminal correspond — BPx fait déjà le filtrage STRUCTUREL, la valeur
+//     arrive donc en chaîne nue (cas SIGNAL) sur les seules feuilles concernées.
+//
+// BPx pose LE FIL ; c'est L'AVAL (ici) qui APPLIQUE les trois horloges. On
+// réécrit chaque valeur de modulation en un DESCRIPTEUR UNIFORME que le transport
+// webaudio comprend, AVANT que l'arbre n'atteigne `treeToDispatchEvents` :
+//
+//   par note :  { __cv:true, mod:'env1', clock:'note' }
+//   signal   :  { __cv:true, mod:'env1', clock:'signal', startSec, durSec }
+//
+// startSec/durSec = la FENÊTRE d'horloge en SECONDES (la phrase, ou le segment de
+// la voix sœur). TOUTES les coordonnées viennent des SPANS DE FEUILLE RÉALISÉES
+// (`leaf.span.startMs/endMs`) — jamais des spans de nœud polymétrique/voix, qui
+// portent une coordonnée pré-dilatation trompeuse.
+
+/** Descripteur uniforme de modulation posé en valeur de contrôle pour le transport. */
+export interface CvDescriptor {
+  __cv: true;
+  mod: string;
+  clock: 'note' | 'signal';
+  /** Fenêtre d'horloge (s) — présents pour `clock:'signal'` uniquement. */
+  startSec?: number;
+  durSec?: number;
+}
+
+/** Référence opaque de voix sœur posée par BPx en valeur de contrôle. */
+interface CvVoiceRef {
+  __cvRef: 'voice';
+  name: string;
+  sourceSymbolId: number;
+  voiceIndex: number;
+  /** `'*'` quand le branchement est PAR NOTE (`*:cutoff: Env`). */
+  subject?: string;
+}
+
+function isCvVoiceRef(v: unknown): v is CvVoiceRef {
+  return (
+    typeof v === 'object' &&
+    v !== null &&
+    (v as { __cvRef?: unknown }).__cvRef === 'voice' &&
+    typeof (v as CvVoiceRef).voiceIndex === 'number'
+  );
+}
+
+/** Enveloppe PAR NOTE d'un modulateur déclaré (`*:cutoff: env1`) posée par BPx. */
+interface SubjectWrap {
+  __subject: string;
+  value: string;
+}
+
+function isSubjectWrap(v: unknown): v is SubjectWrap {
+  return (
+    typeof v === 'object' &&
+    v !== null &&
+    (v as { __subject?: unknown }).__subject !== undefined &&
+    typeof (v as SubjectWrap).value === 'string'
+  );
+}
+
+// Loose node shape — the raw BPx tree carries `sourceSymbolId` on voice nodes,
+// `ruleRef` on leaves (the rule occurrence), and `controls`/`span` on leaves; the
+// strict `TreeNode` union above only models what the flattener reads, so we widen.
+interface RuleRef {
+  subgrammarIndex?: number;
+  ruleIndex?: number;
+  lhsSymbolId?: number;
+}
+interface RawNode {
+  type?: string;
+  role?: string;
+  symbolId?: number;
+  sourceSymbolId?: number;
+  controls?: Record<string, unknown>;
+  ruleRef?: RuleRef;
+  span?: Span;
+  children?: RawNode[];
+  voices?: RawNode[];
+}
+
+/** Collect a subtree's SOUNDING leaves (role === 'leaf') in DFS order (children
+ *  before voices) — the SAME order `treeToDispatchEvents` flattens in, so the
+ *  contiguous-run phrase grouping below matches derivation order. */
+function collectSoundingLeaves(node: RawNode | undefined, acc: RawNode[]): RawNode[] {
+  if (!node || typeof node !== 'object') return acc;
+  if (node.role === 'leaf') acc.push(node);
+  if (Array.isArray(node.children)) for (const c of node.children) collectSoundingLeaves(c, acc);
+  if (Array.isArray(node.voices)) for (const v of node.voices) collectSoundingLeaves(v, acc);
+  return acc;
+}
+
+/** Two rule occurrences are the SAME phrase iff their `ruleRef` triplet matches. */
+function sameRuleRef(a: RuleRef | undefined, b: RuleRef | undefined): boolean {
+  if (!a || !b) return false;
+  return (
+    a.subgrammarIndex === b.subgrammarIndex &&
+    a.ruleIndex === b.ruleIndex &&
+    a.lhsSymbolId === b.lhsSymbolId
+  );
+}
+
+/**
+ * Resolve every SUBJECT-driven modulation control on the tree's sounding leaves
+ * into the uniform `{__cv:true, …}` descriptor the webaudio transport applies,
+ * mutating `leaf.controls` in place (clone-swap — BPx froze the map).
+ *
+ * For each sounding leaf and each control whose VALUE drives modulation:
+ *  - plain string naming a declared modulator (`modNames`)  → SIGNAL on the
+ *    PHRASE (the maximal contiguous run of sounding leaves, in derivation order,
+ *    sharing this leaf's `ruleRef`; leaves of the same rule WITHOUT the key still
+ *    count toward the span — e.g. the un-filtered `G2` of a `C2:`-filtered phrase);
+ *  - `{__subject:'*', value}`                               → PER-NOTE (retrigger);
+ *  - `{__cvRef:'voice', …}` (no subject)                    → SIGNAL on the sibling
+ *    voice SEGMENT covering this leaf's attack (`span.startMs`);
+ *  - `{__cvRef:'voice', …, subject:'*'}`                    → PER-NOTE, mod = the
+ *    sibling env sounding at the attack.
+ * Every other control (numbers, `wave:'sawtooth'`, strings NOT in `modNames`) is
+ * a normal control — left untouched. A `mod` name absent from the registry is
+ * still emitted (the transport simply won't modulate); a sibling ref that can't
+ * be resolved (no segment / no name) has its key DROPPED. Never throws.
+ *
+ * COORDINATES: all spans are realized LEAF spans. Sibling notes spanning two
+ * segments use the segment covering their START (single-segment limitation).
+ *
+ * @param tree     `derive({ output: 'complete' }).tree` (or its `.root`).
+ * @param nameOf   `symbolId → terminal name` (e.g. `bpx.grammar.symbols.getName`).
+ * @param modNames names of the declared modulators (`Object.keys(registry)`) — a
+ *                 plain-string value counts as a SIGNAL branchement iff in this set.
+ */
+export function resolveCvControls(
+  tree: unknown,
+  nameOf: (symbolId: number) => string | undefined,
+  modNames: ReadonlySet<string>
+): void {
+  const root = resolveRoot(tree as TreeRoot) as RawNode | null;
+  if (!root) return;
+
+  // Global sounding-leaf order (derivation order) + index map — the phrase span
+  // of a declared-modulator SIGNAL is the maximal contiguous run sharing ruleRef.
+  const order = collectSoundingLeaves(root, []);
+  const indexOf = new Map<RawNode, number>();
+  order.forEach((l, i) => indexOf.set(l, i));
+  const phraseSpan = (leaf: RawNode): { startMs: number; endMs: number } => {
+    const i = indexOf.get(leaf);
+    const own = { startMs: leaf.span?.startMs ?? 0, endMs: leaf.span?.endMs ?? 0 };
+    if (i === undefined || !leaf.ruleRef) return own;
+    let lo = i;
+    let hi = i;
+    while (lo > 0 && sameRuleRef(order[lo - 1].ruleRef, leaf.ruleRef)) lo--;
+    while (hi < order.length - 1 && sameRuleRef(order[hi + 1].ruleRef, leaf.ruleRef)) hi++;
+    return {
+      startMs: order[lo].span?.startMs ?? own.startMs,
+      endMs: order[hi].span?.endMs ?? own.endMs
+    };
+  };
+
+  // Cache of sibling-voice sounding leaves per (block, voiceIndex) so repeated
+  // refs across a voice's notes don't re-walk the sibling each time.
+  const leafCache = new Map<RawNode, Map<number, RawNode[]>>();
+  const siblingLeaves = (block: RawNode, ref: CvVoiceRef): RawNode[] | null => {
+    let byIndex = leafCache.get(block);
+    if (!byIndex) {
+      byIndex = new Map();
+      leafCache.set(block, byIndex);
+    }
+    const cached = byIndex.get(ref.voiceIndex);
+    if (cached) return cached;
+    const voices = (block.voices ?? block.children) as RawNode[] | undefined;
+    if (!Array.isArray(voices) || voices.length === 0) return null;
+    // Prefer the indexed voice; fall back to matching by sourceSymbolId when the
+    // index disagrees (synthetic scaling voices can shift positions).
+    let voice = voices[ref.voiceIndex];
+    if (!voice || (voice.sourceSymbolId !== undefined && voice.sourceSymbolId !== ref.sourceSymbolId)) {
+      const byId = voices.find((v) => v.sourceSymbolId === ref.sourceSymbolId);
+      if (byId) voice = byId;
+    }
+    if (!voice) return null;
+    const leaves = collectSoundingLeaves(voice, []);
+    byIndex.set(ref.voiceIndex, leaves);
+    return leaves;
+  };
+
+  // Resolve a sibling-voice ref at a leaf's attack → { name, segment span } or null.
+  const resolveSibling = (
+    block: RawNode | undefined,
+    ref: CvVoiceRef,
+    attackMs: number
+  ): { name: string; startMs: number; endMs: number } | null => {
+    if (!block) return null;
+    const leaves = siblingLeaves(block, ref);
+    const seg = leaves?.find(
+      (l) => (l.span?.startMs ?? 0) <= attackMs && attackMs < (l.span?.endMs ?? 0)
+    );
+    if (!seg || typeof seg.symbolId !== 'number' || seg.symbolId < 0) return null;
+    const name = nameOf(seg.symbolId);
+    if (name === undefined || name === null) return null;
+    return { name, startMs: seg.span?.startMs ?? 0, endMs: seg.span?.endMs ?? 0 };
+  };
+
+  const signalDesc = (mod: string, startMs: number, endMs: number): CvDescriptor => ({
+    __cv: true,
+    mod,
+    clock: 'signal',
+    startSec: startMs / 1000,
+    durSec: Math.max(0, endMs - startMs) / 1000
+  });
+
+  const polyStack: RawNode[] = [];
+  const visit = (node: RawNode | undefined): void => {
+    if (!node || typeof node !== 'object') return;
+    const isPoly = node.type === 'polymetric';
+    if (isPoly) polyStack.push(node);
+
+    if (node.role === 'leaf' && node.controls && typeof node.controls === 'object') {
+      const controls = node.controls;
+      const block = polyStack[polyStack.length - 1];
+      const attack = node.span?.startMs ?? 0;
+      // Only rebuild when at least one value drives modulation; otherwise leave
+      // the frozen original in place (cheaper, no needless clone).
+      const needsRewrite = Object.values(controls).some(
+        (v) =>
+          isSubjectWrap(v) ||
+          isCvVoiceRef(v) ||
+          (typeof v === 'string' && modNames.has(v))
+      );
+      if (needsRewrite) {
+        const next: Record<string, unknown> = {};
+        for (const key of Object.keys(controls)) {
+          const val = controls[key];
+          if (isSubjectWrap(val)) {
+            // Declared modulator, PER NOTE — unwrap the modulator name.
+            next[key] = { __cv: true, mod: val.value, clock: 'note' } as CvDescriptor;
+          } else if (isCvVoiceRef(val)) {
+            const sib = resolveSibling(block, val, attack);
+            // Unresolvable sibling (no segment / no name) → DROP the key.
+            if (!sib) continue;
+            next[key] =
+              val.subject === '*'
+                ? ({ __cv: true, mod: sib.name, clock: 'note' } as CvDescriptor)
+                : signalDesc(sib.name, sib.startMs, sib.endMs);
+          } else if (typeof val === 'string' && modNames.has(val)) {
+            // Declared modulator, SIGNAL — clock = the phrase (rule occurrence).
+            const ph = phraseSpan(node);
+            next[key] = signalDesc(val, ph.startMs, ph.endMs);
+          } else {
+            next[key] = val; // normal control — untouched
+          }
+        }
+        node.controls = next;
+      }
+    }
+
+    if (Array.isArray(node.children)) for (const c of node.children) visit(c);
+    if (Array.isArray(node.voices)) for (const v of node.voices) visit(v);
+
+    if (isPoly) polyStack.pop();
+  };
+
+  visit(root);
+}

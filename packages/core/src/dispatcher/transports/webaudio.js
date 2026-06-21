@@ -91,20 +91,36 @@ export class WebAudioTransport {
     const pitchbendCents = (pitchbend / 8192) * pitchrange;
     const totalDetune = detune + pitchbendCents;
 
-    // Per-note modulation (CV.md): a control whose VALUE is a modulator NAME (in
-    // the registry, e.g. `cutoff: 'env1'`) is a BRANCHEMENT — modulate THIS note's
-    // input with that modulator over the note's duration. A numeric/literal value
-    // is a plain control. `mod(input)` → the modulator def, or null.
+    // Modulation (CV.md): a control whose VALUE is the uniform descriptor
+    // `{ __cv:true, mod, clock, startSec?, durSec? }` (stamped by Kanopi's
+    // `resolveCvControls`) is a BRANCHEMENT. The `clock` picks how the modulator
+    // renders: `'note'` retriggers it per note; `'signal'` phase-locks it to a
+    // clock window (the phrase, or a sibling-voice segment) so it unrolls ONCE
+    // across the notes it covers. A numeric/literal value is a plain control.
+    // `cvOf(input)` → { modulator, clock, startSec, durSec } or null.
     const reg = this._modulators || {};
-    const mod = (input) => {
+    const cvOf = (input) => {
       const v = event[input];
-      return typeof v === 'string' && reg[v] ? reg[v] : null;
+      if (!v || typeof v !== 'object' || v.__cv !== true) return null;
+      const modulator = reg[v.mod] || null;
+      if (!modulator) return null; // unknown modulator name → no modulation (graceful)
+      return { modulator, clock: v.clock, startSec: v.startSec || 0, durSec: v.durSec || 0 };
     };
-    const cutoffMod = mod('cutoff');
-    const resoMod = mod('resonance');
-    const pitchMod = mod('pitch');
-    const ampMod = mod('amplitude');
-    const panMod = mod('pan');
+    // Apply a CV branchement to an AudioParam: per-note retriggers `_applyMod`
+    // (unchanged); signal phase-locks via `_applyModSignal` over [noteStart-clock].
+    const applyCv = (cv, param, scale) => {
+      if (cv.clock === 'signal') {
+        const noteStartSec = event.startSec || 0; // derivation-seconds note onset
+        this._applyModSignal(cv.modulator, param, scale, absTime, dur, noteStartSec - cv.startSec, cv.durSec);
+      } else {
+        this._applyMod(cv.modulator, param, scale, absTime, dur);
+      }
+    };
+    const cutoffMod = cvOf('cutoff');
+    const resoMod = cvOf('resonance');
+    const pitchMod = cvOf('pitch');
+    const ampMod = cvOf('amplitude');
+    const panMod = cvOf('pan');
 
     // Build audio graph: osc → [filter] → gain(env) → [ampGain] → [panner] → dest
     const osc = this.audioCtx.createOscillator();
@@ -115,7 +131,7 @@ export class WebAudioTransport {
 
     // Pitch: modulated detune (cents), else literal detune.
     if (pitchMod) {
-      this._applyMod(pitchMod, osc.detune, MOD_SCALE.pitch, absTime, dur);
+      applyCv(pitchMod, osc.detune, MOD_SCALE.pitch);
     } else if (totalDetune !== 0) {
       if (event.pitchcont && this._prevDetune !== undefined) {
         osc.detune.setValueAtTime(this._prevDetune, absTime);
@@ -140,9 +156,9 @@ export class WebAudioTransport {
     if (filterFreq > 0 || cutoffMod || resoMod) {
       const biquad = this.audioCtx.createBiquadFilter();
       biquad.type = 'lowpass';
-      if (cutoffMod) this._applyMod(cutoffMod, biquad.frequency, MOD_SCALE.cutoff, absTime, dur);
+      if (cutoffMod) applyCv(cutoffMod, biquad.frequency, MOD_SCALE.cutoff);
       else biquad.frequency.value = filterFreq > 0 ? filterFreq : 20000;
-      if (resoMod) this._applyMod(resoMod, biquad.Q, MOD_SCALE.resonance, absTime, dur);
+      if (resoMod) applyCv(resoMod, biquad.Q, MOD_SCALE.resonance);
       else biquad.Q.value = filterQ;
       source.connect(biquad);
       source = biquad;
@@ -155,7 +171,7 @@ export class WebAudioTransport {
     // Amplitude modulation: a dedicated gain stage after the note envelope.
     if (ampMod) {
       const cvGain = this.audioCtx.createGain();
-      this._applyMod(ampMod, cvGain.gain, MOD_SCALE.amplitude, absTime, dur);
+      applyCv(ampMod, cvGain.gain, MOD_SCALE.amplitude);
       gain.connect(cvGain);
       tail = cvGain;
       this._nodes.push({ node: cvGain });
@@ -164,7 +180,7 @@ export class WebAudioTransport {
     // Pan: modulated panner, else literal pan, else direct to destination.
     if (panMod || panValue !== 0) {
       const panner = this.audioCtx.createStereoPanner();
-      if (panMod) this._applyMod(panMod, panner.pan, MOD_SCALE.pan, absTime, dur);
+      if (panMod) applyCv(panMod, panner.pan, MOD_SCALE.pan);
       else panner.pan.value = Math.max(-1, Math.min(1, panValue));
       tail.connect(panner);
       panner.connect(this.audioCtx.destination);
@@ -255,6 +271,105 @@ export class WebAudioTransport {
       lfo.stop(absTime + dur);
       this._nodes.push({ osc: lfo, node: lfoGain });
     }
+  }
+
+  /**
+   * Phase-locked modulation (`clock:'signal'`): render the modulator over a CLOCK
+   * WINDOW and apply only the slice covering THIS note. The window starts
+   * `offsetSec` before the note (noteStart − clockStart) and lasts `clockDurSec`;
+   * we sample the curve at clock-time `offsetSec + localT` for localT spanning the
+   * note, build a value array, and `setValueCurveAtTime` it. So a phrase's envelope
+   * unrolls ONCE over the notes it covers, and a periodic LFO's phase is continuous
+   * across them (time origin = the clock, not the note — a sustained pan sweeps).
+   * Limitation: `offsetSec` is exact on the first cycle; a looped cycle may drift
+   * by the loop length (the clock window is not re-based per cycle).
+   */
+  _applyModSignal(modulator, param, scale, absTime, noteDur, offsetSec, clockDurSec) {
+    if (!modulator || !(noteDur > 0) || !(clockDurSec > 0)) return;
+    const sampler = this._curveSampler(modulator, clockDurSec);
+    if (!sampler) return;
+    // ~5 ms resolution (200 samples/s), clamped to a sane range.
+    const n = Math.max(2, Math.min(2048, Math.ceil(noteDur * 200)));
+    const values = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const localT = (i / (n - 1)) * noteDur;
+      values[i] = scale(clamp01(sampler(offsetSec + localT)));
+    }
+    try {
+      param.setValueCurveAtTime(values, absTime, noteDur);
+    } catch (e) {
+      console.warn('CV signal curve error:', e.message);
+    }
+  }
+
+  /**
+   * Build a normalized [0..1] sampler `tSec → value` for a modulator over a clock
+   * window of `clockDurSec`. Segments → breakpoint interpolation (lin/exp);
+   * periodic → an LFO read at absolute clock time (continuous phase); expr → the
+   * backtick function. Returns null for an unrenderable curve.
+   */
+  _curveSampler(modulator, clockDurSec) {
+    const curve = modulator.curve;
+    if (!curve || curve.kind === undefined) return null;
+    if (curve.kind === 'expr') {
+      let userFn;
+      try {
+        userFn = new Function(`return (${curve.code});`)();
+      } catch (e) {
+        console.warn('CV expr error:', e.message);
+        return null;
+      }
+      return (t) =>
+        typeof userFn === 'function' ? Number(userFn(t, clockDurSec)) : Number(userFn);
+    }
+    const rendered = renderCVCurve(curve, modulator.params || {}, clockDurSec);
+    if (rendered.kind === 'breakpoints') {
+      const pts = rendered.points || [];
+      if (pts.length === 0) return null;
+      return (t) => {
+        if (t <= pts[0].tSec) return pts[0].value;
+        for (let i = 1; i < pts.length; i++) {
+          const a = pts[i - 1];
+          const b = pts[i];
+          if (t <= b.tSec) {
+            const span = b.tSec - a.tSec;
+            if (span <= 0) return b.value;
+            const u = (t - a.tSec) / span;
+            if (b.shape === 'exp' && a.value > 0 && b.value > 0) {
+              return a.value * Math.pow(b.value / a.value, u);
+            }
+            return a.value + (b.value - a.value) * u;
+          }
+        }
+        return pts[pts.length - 1].value;
+      };
+    }
+    if (rendered.kind === 'periodic') {
+      const spec = rendered.spec;
+      const mp = modulator.params || {};
+      const ref = (x) => (typeof x === 'string' && x.charAt(0) === '$' ? mp[x.slice(1)] : x);
+      const rate = Number(ref(spec.rate)) || 4;
+      const amplitude = ref(spec.amplitude) != null ? Number(ref(spec.amplitude)) : 0.5;
+      let shape = ref(spec.shape) || 'sine';
+      if (shape === 'saw') shape = 'sawtooth';
+      const wave = (ph) => {
+        const p = ph - Math.floor(ph); // 0..1 phase
+        switch (shape) {
+          case 'square':
+            return p < 0.5 ? 1 : -1;
+          case 'sawtooth':
+            return 2 * p - 1;
+          case 'triangle':
+            return 1 - 4 * Math.abs(Math.round(p) - p);
+          default:
+            return Math.sin(2 * Math.PI * p);
+        }
+      };
+      // Normalized 0..1, centered 0.5, depth = 0.5·amplitude — same mapping as the
+      // per-note LFO path, but read at clock time so phase tracks the clock.
+      return (t) => 0.5 + 0.5 * amplitude * wave(rate * t);
+    }
+    return null;
   }
 
   close() {
