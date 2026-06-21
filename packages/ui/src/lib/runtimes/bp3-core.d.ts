@@ -13,6 +13,12 @@ declare module '*/core/src/dispatcher/dispatcher.js' {
     start(onEnd?: (() => void) | undefined, options?: { loop?: boolean }): void;
     stop(): void;
   }
+  // Coerces numeric-string control values to numbers (vel/filterQ/…) while
+  // leaving non-numeric strings (wave) and CV descriptor objects untouched.
+  // Reused AS-IS by the Kronos audio adapter to build the WebAudio event.
+  export function coerceControlValues(
+    controls: Record<string, unknown> | null | undefined
+  ): Record<string, unknown>;
 }
 
 declare module '*/core/src/dispatcher/transports/webaudio.js' {

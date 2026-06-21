@@ -18,6 +18,17 @@
 // dispatcher re-sorts events by `startSec` on load, so the only contract here is
 // that every node appears with its correct span — not a globally sorted list.
 
+// CV composition is Kronos's job (frontier R2: BPx distributes the raw facets,
+// Kronos composes them into modulation bindings). We consume `composeLeafModulations`
+// AS-IS and only carry its output onto the dispatch events.
+import {
+  composeLeafModulations,
+  type ModulationBinding,
+  type VoiceRef,
+  type VoiceSegment,
+  type Modulator
+} from '@kronos/core';
+
 /** A control-marker payload as it lives on a `ControlNode` (opaque to BPx). */
 export interface ControlMarkerPayload {
   role?: string;
@@ -62,6 +73,11 @@ export interface DispatchEvent {
    *  flux ⊕ note-override, precedence applied — AST_SPEC §4.1). VERBATIM values
    *  (string or number); the dispatcher coerces types and routes them. */
   controls?: Record<string, unknown> | null;
+  /** Kronos modulation bindings composed for this leaf (one per modulated input:
+   *  cutoff/pan/…). Each carries a samplable `source` + its clock window. Driven
+   *  by the Kronos audio path; the legacy path ignores it (it reads `{__cv}` off
+   *  `controls`). Absent when the leaf has no modulated control. */
+  modulations?: ModulationBinding[] | null;
 }
 
 // Minimal structural shapes we read off the tree. Mirrors BPx's `TreeNode`
@@ -139,7 +155,10 @@ export function treeToDispatchEvents(
             // CANONICAL channel (AST_SPEC §4.1): the resolved non-temporal controls
             // ride DIRECTLY on the leaf's `controls`. Carried verbatim — the
             // dispatcher coerces types and routes them.
-            controls: node.controls && Object.keys(node.controls).length > 0 ? node.controls : null
+            controls: node.controls && Object.keys(node.controls).length > 0 ? node.controls : null,
+            // Kronos CV bindings stamped by `composeCvBindings` (before this flatten),
+            // carried opaque to the Kronos audio path.
+            modulations: (node as { __cvBindings?: ModulationBinding[] }).__cvBindings ?? null
           });
         }
         return;
@@ -211,14 +230,14 @@ export interface CvDescriptor {
   durSec?: number;
 }
 
-/** Référence opaque de voix sœur posée par BPx en valeur de contrôle. */
+/** Référence opaque de voix sœur posée par BPx en valeur de contrôle (NEW form:
+ *  le sujet `'*'` / `'<terminal>'` vit désormais dans `controlSubjects`, plus dans
+ *  la réf elle-même). */
 interface CvVoiceRef {
   __cvRef: 'voice';
   name: string;
   sourceSymbolId: number;
   voiceIndex: number;
-  /** `'*'` quand le branchement est PAR NOTE (`*:cutoff: Env`). */
-  subject?: string;
 }
 
 function isCvVoiceRef(v: unknown): v is CvVoiceRef {
@@ -227,21 +246,6 @@ function isCvVoiceRef(v: unknown): v is CvVoiceRef {
     v !== null &&
     (v as { __cvRef?: unknown }).__cvRef === 'voice' &&
     typeof (v as CvVoiceRef).voiceIndex === 'number'
-  );
-}
-
-/** Enveloppe PAR NOTE d'un modulateur déclaré (`*:cutoff: env1`) posée par BPx. */
-interface SubjectWrap {
-  __subject: string;
-  value: string;
-}
-
-function isSubjectWrap(v: unknown): v is SubjectWrap {
-  return (
-    typeof v === 'object' &&
-    v !== null &&
-    (v as { __subject?: unknown }).__subject !== undefined &&
-    typeof (v as SubjectWrap).value === 'string'
   );
 }
 
@@ -259,10 +263,17 @@ interface RawNode {
   symbolId?: number;
   sourceSymbolId?: number;
   controls?: Record<string, unknown>;
+  // NEW BPx control form (EX5): the subject ('*' per-note | '<terminal>' | absent
+  // signal) and the clock window live in PARALLEL maps beside `controls`, no longer
+  // embedded in the value (which is now a bare modulator name or voice ref).
+  controlSubjects?: Record<string, string>;
+  controlScopes?: Record<string, { kind: 'rule' | 'group' | 'voice'; startMs: number; endMs: number }>;
   ruleRef?: RuleRef;
   span?: Span;
   children?: RawNode[];
   voices?: RawNode[];
+  /** Kronos bindings stamped by `composeCvBindings` and read back in the flatten. */
+  __cvBindings?: ModulationBinding[];
 }
 
 /** Collect a subtree's SOUNDING leaves (role === 'leaf') in DFS order (children
@@ -286,20 +297,120 @@ function sameRuleRef(a: RuleRef | undefined, b: RuleRef | undefined): boolean {
   );
 }
 
+// ── Kronos CV composition (the AUDIO path) ───────────────────────────────────
+// BPx distributes three orthogonal facets per controlled input on each sounding
+// leaf (`controls` = what, `controlSubjects` = clock, `controlScopes` = window);
+// Kronos's `composeLeafModulations` assembles them into samplable bindings. We
+// only wire the host glue: a voice resolver (sibling-voice ref → its sounding
+// segments) and the per-leaf call. The composed bindings are stamped on each
+// leaf (`__cvBindings`) so the flatten carries them onto the dispatch events.
+
+/** Build the `resolveVoice` callback Kronos needs: a sibling-voice ref → the
+ *  sounding segments of that voice (each leaf → `{window, modulator name}`).
+ *  Only leaves whose terminal is a DECLARED modulator (env1/env2/…) become
+ *  segments — that's what `VoiceModulation` samples to follow env1→env2→env3. */
+function makeVoiceResolver(
+  root: RawNode,
+  nameOf: (symbolId: number) => string | undefined,
+  registry: Readonly<Record<string, Modulator>>
+): (ref: VoiceRef) => readonly VoiceSegment[] {
+  const blocks: RawNode[] = [];
+  const gather = (n: RawNode | undefined): void => {
+    if (!n || typeof n !== 'object') return;
+    if (n.type === 'polymetric') blocks.push(n);
+    if (Array.isArray(n.children)) for (const c of n.children) gather(c);
+    if (Array.isArray(n.voices)) for (const v of n.voices) gather(v);
+  };
+  gather(root);
+  return (ref: VoiceRef): readonly VoiceSegment[] => {
+    for (const block of blocks) {
+      const voices = (block.voices ?? block.children) as RawNode[] | undefined;
+      if (!Array.isArray(voices) || voices.length === 0) continue;
+      // Prefer the indexed voice; fall back to matching by sourceSymbolId when the
+      // index disagrees (synthetic scaling voices can shift positions).
+      let voice = voices[ref.voiceIndex];
+      if (
+        !voice ||
+        (voice.sourceSymbolId !== undefined && voice.sourceSymbolId !== ref.sourceSymbolId)
+      ) {
+        const byId = voices.find((v) => v.sourceSymbolId === ref.sourceSymbolId);
+        if (byId) voice = byId;
+      }
+      if (!voice) continue;
+      const segments: VoiceSegment[] = [];
+      for (const leaf of collectSoundingLeaves(voice, [])) {
+        if (typeof leaf.symbolId !== 'number' || leaf.symbolId < 0) continue;
+        const name = nameOf(leaf.symbolId);
+        if (!name || registry[name] === undefined) continue; // not a declared modulator
+        segments.push({
+          startScene: (leaf.span?.startMs ?? 0) / 1000,
+          endScene: (leaf.span?.endMs ?? 0) / 1000,
+          modulator: name
+        });
+      }
+      if (segments.length > 0) return segments;
+    }
+    return []; // unresolvable ref → no segments (compose then drops the binding)
+  };
+}
+
+/**
+ * Compose Kronos modulation bindings for every sounding leaf and stamp them on the
+ * leaf (`__cvBindings`). Reads the NEW BPx facets (`controls` ⊕ `controlSubjects` ⊕
+ * `controlScopes`) — call this BEFORE `resolveCvControls` (which rewrites
+ * `controls` for the legacy path). Bindings are consumed by the Kronos audio path.
+ *
+ * @param tree     `derive({ output: 'complete' }).tree` (or its `.root`).
+ * @param nameOf   `symbolId → terminal name` (grammar's symbol table).
+ * @param registry Kronos modulator registry (`buildModulators(ast.cvInstances, mod)`).
+ */
+export function composeCvBindings(
+  tree: unknown,
+  nameOf: (symbolId: number) => string | undefined,
+  registry: Readonly<Record<string, Modulator>>
+): void {
+  const root = resolveRoot(tree as TreeRoot) as RawNode | null;
+  if (!root) return;
+  const resolveVoice = makeVoiceResolver(root, nameOf, registry);
+  const visit = (node: RawNode | undefined): void => {
+    if (!node || typeof node !== 'object') return;
+    if (node.role === 'leaf' && node.controls && node.span) {
+      const bindings = composeLeafModulations(
+        {
+          controls: node.controls as Record<string, number | string | VoiceRef>,
+          controlSubjects: node.controlSubjects,
+          controlScopes: node.controlScopes
+        },
+        registry,
+        {
+          onsetScene: (node.span.startMs ?? 0) / 1000,
+          durationScene: Math.max(0, (node.span.endMs ?? 0) - (node.span.startMs ?? 0)) / 1000
+        },
+        { resolveVoice }
+      );
+      if (bindings.length > 0) node.__cvBindings = bindings;
+    }
+    if (Array.isArray(node.children)) for (const c of node.children) visit(c);
+    if (Array.isArray(node.voices)) for (const v of node.voices) visit(v);
+  };
+  visit(root);
+}
+
 /**
  * Resolve every SUBJECT-driven modulation control on the tree's sounding leaves
  * into the uniform `{__cv:true, …}` descriptor the webaudio transport applies,
  * mutating `leaf.controls` in place (clone-swap — BPx froze the map).
  *
+ * Reads the NEW BPx facets: the value sits bare in `controls`, the subject ('*' |
+ * '<terminal>' | absent) in `controlSubjects`, the clock window in `controlScopes`.
  * For each sounding leaf and each control whose VALUE drives modulation:
- *  - plain string naming a declared modulator (`modNames`)  → SIGNAL on the
- *    PHRASE (the maximal contiguous run of sounding leaves, in derivation order,
- *    sharing this leaf's `ruleRef`; leaves of the same rule WITHOUT the key still
- *    count toward the span — e.g. the un-filtered `G2` of a `C2:`-filtered phrase);
- *  - `{__subject:'*', value}`                               → PER-NOTE (retrigger);
- *  - `{__cvRef:'voice', …}` (no subject)                    → SIGNAL on the sibling
+ *  - plain string naming a declared modulator (`modNames`), no subject (or a
+ *    terminal subject) → SIGNAL over the declared scope window (`controlScopes`),
+ *    falling back to the phrase span when no scope is present;
+ *  - same string with subject `'*'`                         → PER-NOTE (retrigger);
+ *  - `{__cvRef:'voice', …}`, no subject (or terminal)       → SIGNAL on the sibling
  *    voice SEGMENT covering this leaf's attack (`span.startMs`);
- *  - `{__cvRef:'voice', …, subject:'*'}`                    → PER-NOTE, mod = the
+ *  - `{__cvRef:'voice', …}` with subject `'*'`              → PER-NOTE, mod = the
  *    sibling env sounding at the attack.
  * Every other control (numbers, `wave:'sawtooth'`, strings NOT in `modNames`) is
  * a normal control — left untouched. A `mod` name absent from the registry is
@@ -400,35 +511,39 @@ export function resolveCvControls(
 
     if (node.role === 'leaf' && node.controls && typeof node.controls === 'object') {
       const controls = node.controls;
+      const subjects = node.controlSubjects ?? {};
       const block = polyStack[polyStack.length - 1];
       const attack = node.span?.startMs ?? 0;
       // Only rebuild when at least one value drives modulation; otherwise leave
       // the frozen original in place (cheaper, no needless clone).
       const needsRewrite = Object.values(controls).some(
-        (v) =>
-          isSubjectWrap(v) ||
-          isCvVoiceRef(v) ||
-          (typeof v === 'string' && modNames.has(v))
+        (v) => isCvVoiceRef(v) || (typeof v === 'string' && modNames.has(v))
       );
       if (needsRewrite) {
         const next: Record<string, unknown> = {};
         for (const key of Object.keys(controls)) {
           const val = controls[key];
-          if (isSubjectWrap(val)) {
-            // Declared modulator, PER NOTE — unwrap the modulator name.
-            next[key] = { __cv: true, mod: val.value, clock: 'note' } as CvDescriptor;
-          } else if (isCvVoiceRef(val)) {
+          const subject = subjects[key]; // '*' | '<terminal>' | undefined
+          if (isCvVoiceRef(val)) {
             const sib = resolveSibling(block, val, attack);
             // Unresolvable sibling (no segment / no name) → DROP the key.
             if (!sib) continue;
             next[key] =
-              val.subject === '*'
+              subject === '*'
                 ? ({ __cv: true, mod: sib.name, clock: 'note' } as CvDescriptor)
                 : signalDesc(sib.name, sib.startMs, sib.endMs);
           } else if (typeof val === 'string' && modNames.has(val)) {
-            // Declared modulator, SIGNAL — clock = the phrase (rule occurrence).
-            const ph = phraseSpan(node);
-            next[key] = signalDesc(val, ph.startMs, ph.endMs);
+            if (subject === '*') {
+              // Declared modulator, PER NOTE — retriggered each note.
+              next[key] = { __cv: true, mod: val, clock: 'note' } as CvDescriptor;
+            } else {
+              // SIGNAL — window = the phrase (the rule occurrence's contiguous leaf
+              // run, via `ruleRef`). NOT `controlScopes`: BPx's scope for a terminal
+              // subject (`C2:cutoff:`) currently bleeds into the previous rule, so the
+              // ruleRef phrase span stays the correct, tighter window here.
+              const ph = phraseSpan(node);
+              next[key] = signalDesc(val, ph.startMs, ph.endMs);
+            }
           } else {
             next[key] = val; // normal control — untouched
           }

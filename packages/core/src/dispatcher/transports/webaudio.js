@@ -122,6 +122,35 @@ export class WebAudioTransport {
     const ampMod = cvOf('amplitude');
     const panMod = cvOf('pan');
 
+    // EX4 Kronos audio path: Kronos COMPOSES the modulation (which env, which
+    // window, which clock) and hands us a PRE-RENDERED normalized [0..1] curve per
+    // input in `event.__modCurves`. We only APPLY it to the AudioParam, scaling via
+    // the same `MOD_SCALE` the `{__cv}` path uses. (Kronos already strips these
+    // inputs from the literal controls, so a curve and a literal never collide.)
+    const modCurves = event.__modCurves || null;
+    const curveOf = (input, scale) => {
+      const vals = modCurves && modCurves[input];
+      if (!vals || vals.length === 0) return null;
+      const scaled = new Float32Array(vals.length);
+      for (let i = 0; i < vals.length; i++) scaled[i] = scale(vals[i]);
+      return scaled;
+    };
+    // Apply a pre-rendered curve over [absTime, absTime+dur]. `setValueCurveAtTime`
+    // needs ≥2 points; a degenerate 1-point curve falls back to a held value.
+    const applyCurve = (param, scaled) => {
+      try {
+        if (scaled.length >= 2) param.setValueCurveAtTime(scaled, absTime, dur);
+        else param.setValueAtTime(scaled[0], absTime);
+      } catch (e) {
+        console.warn('CV curve error:', e.message);
+      }
+    };
+    const cutoffCurve = curveOf('cutoff', MOD_SCALE.cutoff);
+    const resoCurve = curveOf('resonance', MOD_SCALE.resonance);
+    const pitchCurve = curveOf('pitch', MOD_SCALE.pitch);
+    const ampCurve = curveOf('amplitude', MOD_SCALE.amplitude);
+    const panCurve = curveOf('pan', MOD_SCALE.pan);
+
     // Build audio graph: osc → [filter] → gain(env) → [ampGain] → [panner] → dest
     const osc = this.audioCtx.createOscillator();
     const gain = this.audioCtx.createGain();
@@ -129,9 +158,11 @@ export class WebAudioTransport {
     osc.type = wave;
     osc.frequency.value = freq;
 
-    // Pitch: modulated detune (cents), else literal detune.
+    // Pitch: modulated detune (cents), else Kronos curve, else literal detune.
     if (pitchMod) {
       applyCv(pitchMod, osc.detune, MOD_SCALE.pitch);
+    } else if (pitchCurve) {
+      applyCurve(osc.detune, pitchCurve);
     } else if (totalDetune !== 0) {
       if (event.pitchcont && this._prevDetune !== undefined) {
         osc.detune.setValueAtTime(this._prevDetune, absTime);
@@ -152,13 +183,16 @@ export class WebAudioTransport {
     // Connect graph
     let source = osc;
 
-    // Filter: present for a literal cutoff OR when cutoff/resonance is modulated.
-    if (filterFreq > 0 || cutoffMod || resoMod) {
+    // Filter: present for a literal cutoff OR when cutoff/resonance is modulated
+    // (legacy `{__cv}` mod OR a pre-rendered Kronos curve).
+    if (filterFreq > 0 || cutoffMod || resoMod || cutoffCurve || resoCurve) {
       const biquad = this.audioCtx.createBiquadFilter();
       biquad.type = 'lowpass';
       if (cutoffMod) applyCv(cutoffMod, biquad.frequency, MOD_SCALE.cutoff);
+      else if (cutoffCurve) applyCurve(biquad.frequency, cutoffCurve);
       else biquad.frequency.value = filterFreq > 0 ? filterFreq : 20000;
       if (resoMod) applyCv(resoMod, biquad.Q, MOD_SCALE.resonance);
+      else if (resoCurve) applyCurve(biquad.Q, resoCurve);
       else biquad.Q.value = filterQ;
       source.connect(biquad);
       source = biquad;
@@ -169,18 +203,21 @@ export class WebAudioTransport {
     let tail = gain;
 
     // Amplitude modulation: a dedicated gain stage after the note envelope.
-    if (ampMod) {
+    if (ampMod || ampCurve) {
       const cvGain = this.audioCtx.createGain();
-      applyCv(ampMod, cvGain.gain, MOD_SCALE.amplitude);
+      if (ampMod) applyCv(ampMod, cvGain.gain, MOD_SCALE.amplitude);
+      else applyCurve(cvGain.gain, ampCurve);
       gain.connect(cvGain);
       tail = cvGain;
       this._nodes.push({ node: cvGain });
     }
 
-    // Pan: modulated panner, else literal pan, else direct to destination.
-    if (panMod || panValue !== 0) {
+    // Pan: modulated panner (legacy mod OR Kronos curve), else literal pan, else
+    // direct to destination.
+    if (panMod || panCurve || panValue !== 0) {
       const panner = this.audioCtx.createStereoPanner();
       if (panMod) applyCv(panMod, panner.pan, MOD_SCALE.pan);
+      else if (panCurve) applyCurve(panner.pan, panCurve);
       else panner.pan.value = Math.max(-1, Math.min(1, panValue));
       tail.connect(panner);
       panner.connect(this.audioCtx.destination);

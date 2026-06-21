@@ -62,6 +62,7 @@ Located in `.claude/skills/`:
 - **`live-coding-verify`** — triggers on any UI/Svelte/CSS/CM6 edit. Forces Playwright-based verification before "done".
 - **`svelte-5-patterns`** — Svelte 5 runes rules ($state / $derived / $effect / $props / $bindable), compiler traps (await rewriting), CodeMirror-inside-Svelte pattern.
 - **`vite-hmr-reset`** — deterministic HMR recovery procedure (legacy WSL2 fallback; rarely needed on native PC2). Use if HMR misbehaves under forced polling.
+- **`cv-verify-node`** — prove modulation/envelope/clock/re-random behavior in Node/vitest on the pure functions (+ mocked AudioParam), NOT via a slow headless browser. Browser reserved for the final "does it sound" smoke.
 
 ## Protocole tour (hub `/home/romi/dev/bp/hub`, CLI `tour`)
 

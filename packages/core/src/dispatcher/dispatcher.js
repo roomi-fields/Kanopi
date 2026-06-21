@@ -22,7 +22,7 @@ import { MapEngine } from './map-engine.js';
  * @param {Record<string, unknown>|null|undefined} controls
  * @returns {Record<string, unknown>}
  */
-function coerceControlValues(controls) {
+export function coerceControlValues(controls) {
   if (!controls) return {};
   const out = {};
   for (const [k, v] of Object.entries(controls)) {

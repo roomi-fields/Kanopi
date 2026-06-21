@@ -45,7 +45,25 @@ import { resolveScaleRatios } from '../../../../core/src/dispatcher/scale.js';
 // Tree-derived dispatch events (M5+ multi-actor refacto): flatten BPx's
 // `derive({ output: 'complete' }).tree` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
-import { treeToDispatchEvents, resolveCvControls, type DispatchEvent } from './tree-dispatch';
+import {
+  treeToDispatchEvents,
+  resolveCvControls,
+  composeCvBindings,
+  type DispatchEvent
+} from './tree-dispatch';
+// Kronos owns CV COMPOSITION (frontier R2): `buildModulators` fuses the scene's
+// `cv … : mod.x(…)` declarations with the `mod` library into the modulator registry
+// the composer samples. Consumed AS-IS — the registry the Kronos audio path uses.
+import { buildModulators, type ModLib } from '@kronos/core';
+// EX4 flip: Kronos drives the REAL audio (default `audio-engine=kronos`). The
+// Kronos scheduler produces the timed events; a thin adapter bridges each to the
+// existing WebAudio synth. In kronos mode the old dispatcher is NOT started for
+// sound. `audio-engine=legacy` keeps the old dispatcher on the audio path.
+import {
+  startKronosAudio,
+  audioEngine,
+  type KronosAudioHandle
+} from './kronos-audio';
 // The FULL derived production, set ONCE per eval (the complete TimedToken[] BPx
 // produced at derive time, BEFORE playback). This is the whole sequence, the
 // source of truth the Text panel (read by order via the tree) and the Structure
@@ -909,6 +927,10 @@ interface BP3Voice {
    *  these runtimes right after to guarantee the outgoing canvas/audio is cleared,
    *  independent of the per-actor handle map (which `__hush__` may have emptied). */
   codeSlots?: Array<{ runtime: Runtime; actorId: string }>;
+  /** EX4 flip: Kronos audio driver for this scene (when `audio-engine=kronos`).
+   *  Stopped alongside the dispatcher; the dispatcher's own stop closes the
+   *  transports that cut the scheduled sound. */
+  kronosAudio?: KronosAudioHandle;
 }
 
 // Minimal shape of the grammar's own symbol table: the engine resolves a leaf's
@@ -1681,18 +1703,26 @@ function makeBpxAdapter(
         // dispatcher.load): `'complete'` ALSO injects zero-duration `type:
         // 'control'` tokens into the flat stream, which those paths never saw —
         // drop them here so nothing downstream regresses.
-        // Apply the three modulation clocks (per-note / signal / terminal) and
-        // resolve sibling-voice CV refs: BPx graves a subject-encoded value on each
-        // sounding leaf's `controls`; this rewrites it into the uniform `{__cv:true,
-        // …}` descriptor the webaudio transport applies — mutates leaf.controls in
-        // place BEFORE the tree feeds any consumer below. The modulator-name set
-        // (`cv … : mod.x(…)` declarations) makes the plain-string SIGNAL case exact.
+        // CV (A) — Kronos audio path: compose a modulation BINDING per modulated
+        // input off the NEW BPx facets (`controls` ⊕ `controlSubjects` ⊕
+        // `controlScopes`) and stamp it on each leaf, BEFORE `resolveCvControls`
+        // rewrites `controls` for the legacy path. The sibling-voice resolver lets
+        // `*:cutoff:Env` follow env1→env2→env3 as the Env voice drew them.
+        const nameOf = (sid: number) =>
+          (bpx as { grammar?: { symbols?: Partial<SymbolTable> } }).grammar?.symbols?.getName?.(sid);
+        const kronosRegistry = buildModulators(
+          ((ast as { cvInstances?: unknown[] } | null)?.cvInstances ?? []) as Parameters<
+            typeof buildModulators
+          >[0],
+          modLibJson as unknown as ModLib
+        );
+        composeCvBindings(derived.tree, nameOf, kronosRegistry);
+        // Legacy fallback (`audio-engine=legacy`): rewrite each subject-driven value
+        // into the uniform `{__cv:true, …}` descriptor the webaudio transport reads
+        // — mutates leaf.controls in place. Reads the SAME new facets.
         resolveCvControls(
           derived.tree,
-          (sid) =>
-            (bpx as { grammar?: { symbols?: Partial<SymbolTable> } }).grammar?.symbols?.getName?.(
-              sid
-            ),
+          nameOf,
           new Set(Object.keys(modulatorsFromAst(ast)))
         );
         rawTree = derived.tree;
@@ -1731,16 +1761,24 @@ function makeBpxAdapter(
           });
           rbpx.loadGrammar(ast);
           const rderived = rbpx.derive({ output: 'complete' });
-          // Same modulation-clock resolution as the main path — each re-roll
-          // re-samples the phrase spans and which env sounds under each leaf.
-          resolveCvControls(
+          const rNameOf = (sid: number) =>
+            (rbpx as { grammar?: { symbols?: Partial<SymbolTable> } }).grammar?.symbols?.getName?.(
+              sid
+            );
+          // Same CV composition + legacy resolution as the main path — each re-roll
+          // re-samples the phrase spans and which env sounds under each leaf, so the
+          // Kronos audio path keeps its env variety on every re-randomised cycle.
+          composeCvBindings(
             rderived.tree,
-            (sid) =>
-              (
-                rbpx as { grammar?: { symbols?: Partial<SymbolTable> } }
-              ).grammar?.symbols?.getName?.(sid),
-            new Set(Object.keys(modulatorsFromAst(ast)))
+            rNameOf,
+            buildModulators(
+              ((ast as { cvInstances?: unknown[] } | null)?.cvInstances ?? []) as Parameters<
+                typeof buildModulators
+              >[0],
+              modLibJson as unknown as ModLib
+            )
           );
+          resolveCvControls(rderived.tree, rNameOf, new Set(Object.keys(modulatorsFromAst(ast))));
           const rnames = buildSymbolNames(rbpx, rderived.tree);
           // Refresh the STRUCTURE view so it shows THIS cycle's variation — the
           // re-derive otherwise only reloads the dispatcher (audio re-rolls) and
@@ -1873,6 +1911,7 @@ function makeBpxAdapter(
       const key = srcKey(src);
       const prev = voices.get(key);
       if (prev) {
+        prev.kronosAudio?.stop();
         prev.dispatcher.stop();
         prev.midiSink?.stop();
       }
@@ -1891,6 +1930,7 @@ function makeBpxAdapter(
       for (const [vKey, v] of voices) {
         if (vKey === key) continue;
         if (v.orchestrator && v.file !== undefined && v.file !== src.fileId) {
+          v.kronosAudio?.stop();
           v.dispatcher.stop();
           v.midiSink?.stop();
           if (v.codeSlots) outgoingCodeSlots.push(...v.codeSlots);
@@ -2063,6 +2103,18 @@ function makeBpxAdapter(
         (dispatcher as unknown as { setDerivedTempo(bpm: number): void }).setDerivedTempo(
           currentBpm
         );
+        // EX4 flip — phase 1: Kronos audio covers the MONO note+CV path only.
+        // An orchestrator scene (per-actor transports, code/backtick voices,
+        // MIDI) is NOT yet driven by Kronos, so it stays on the LEGACY engine
+        // even when `audio-engine=kronos`. Honest fallback, logged — never a
+        // silent drop.
+        if (audioEngine() === 'kronos') {
+          log({
+            runtime: id,
+            level: 'info',
+            msg: `[kronos] orchestrated scene "${key}" — kronos audio is mono-only (phase 1); using legacy engine for this scene`
+          });
+        }
         (dispatcher as unknown as DispatcherStart).start(undefined, {
           loop: looping,
           // Build the re-derive function whenever LOOPING; the live `reRandom`
@@ -2225,20 +2277,46 @@ function makeBpxAdapter(
       // The events' seconds encode `currentBpm` at derive time — tell the
       // dispatcher so its anchored tempo map can live-rescale (requirement A).
       (dispatcher as unknown as { setDerivedTempo(bpm: number): void }).setDerivedTempo(currentBpm);
-      // Loop so an armed actor sustains like a Strudel pattern: the grammar's
-      // derivation repeats at each cycle boundary until the LOOP toggle is off,
-      // the transport stops, or the page hushes. With RE-RANDOM on, the grammar
-      // is re-derived each cycle (weighted/random rules re-roll); with it off the
-      // same derivation replays. A Ctrl+Enter on a standalone grammar goes
-      // through this same code. A STEP (section window) plays once instead —
-      // `looping` is false then, so `reRandom` is too.
-      (dispatcher as unknown as DispatcherStart).start(undefined, {
-        loop: looping,
-        // Build the re-derive whenever LOOPING; the live `reRandom` flag gates it.
-        reDerive: looping ? reDeriveTreeEvents(monoFilter) : null,
-        reRandom,
-        startOffsetSec
-      });
+      // EX4 flip: in kronos mode, Kronos drives the REAL sound for this mono
+      // note path and the OLD dispatcher is NOT started (it would double the
+      // audio). The dispatcher's transports are already configured (resolver +
+      // modulator registry), so Kronos sends through them. `audio-engine=legacy`
+      // keeps the old dispatcher driving the sound (safety net).
+      const engine = audioEngine();
+      let kronosAudio: KronosAudioHandle | undefined;
+      if (engine === 'kronos') {
+        kronosAudio = startKronosAudio({
+          events: treeEvents,
+          audioCtx: ctx,
+          derivedTempo: currentBpm,
+          loop: looping,
+          dispatcher: dispatcher as unknown as Parameters<
+            typeof startKronosAudio
+          >[0]['dispatcher'],
+          startSceneSec: startOffsetSec,
+          soundsFn,
+          // RE-RANDOM (B): hand Kronos the host's re-derivation; it re-runs the BPx
+          // draw at each loop boundary and rebuilds the timeline. Off ⇒ replay.
+          reDerive: looping ? reDeriveTreeEvents(monoFilter) : null,
+          reRandom,
+          log: (m) => log({ runtime: id, level: 'info', msg: `[kronos] ${m}` })
+        });
+      } else {
+        // Legacy engine: the old dispatcher schedules the sound.
+        // Loop so an armed actor sustains like a Strudel pattern: the grammar's
+        // derivation repeats at each cycle boundary until the LOOP toggle is off,
+        // the transport stops, or the page hushes. With RE-RANDOM on, the grammar
+        // is re-derived each cycle (weighted/random rules re-roll); with it off the
+        // same derivation replays. A STEP (section window) plays once instead —
+        // `looping` is false then, so `reRandom` is too.
+        (dispatcher as unknown as DispatcherStart).start(undefined, {
+          loop: looping,
+          // Build the re-derive whenever LOOPING; the live `reRandom` flag gates it.
+          reDerive: looping ? reDeriveTreeEvents(monoFilter) : null,
+          reRandom,
+          startOffsetSec
+        });
+      }
       // This dispatcher now drives the transport beat display (requirement B).
       beatClockDispatcher = dispatcher;
       beatGen++;
@@ -2267,7 +2345,13 @@ function makeBpxAdapter(
         log({ runtime: id, level: 'info', msg: 'no Web MIDI — WebAudio only' });
       }
 
-      voices.set(key, { dispatcher, midiSink, file: src.fileId, orchestrator: false });
+      voices.set(key, {
+        dispatcher,
+        midiSink,
+        file: src.fileId,
+        orchestrator: false,
+        kronosAudio
+      });
       log({ runtime: id, level: 'info', msg: `eval ok [${key}] (${tokens.length} tokens)` });
       emitLifecycle('eval', src.fileId);
     },
@@ -2294,6 +2378,7 @@ function makeBpxAdapter(
       // dispatcher. Without this, stopping the transport left playback looping.
       if (key === '__hush__') {
         for (const voice of voices.values()) {
+          voice.kronosAudio?.stop();
           voice.dispatcher.stop();
           voice.midiSink?.stop();
         }
@@ -2312,6 +2397,7 @@ function makeBpxAdapter(
       }
       const voice = voices.get(key);
       if (voice) {
+        voice.kronosAudio?.stop();
         voice.dispatcher.stop();
         voice.midiSink?.stop();
         voices.delete(key);
@@ -2323,6 +2409,7 @@ function makeBpxAdapter(
     async dispose() {
       for (const voice of voices.values()) {
         try {
+          voice.kronosAudio?.stop();
           voice.dispatcher.stop();
           voice.midiSink?.stop();
           if (beatClockDispatcher === voice.dispatcher) beatClockDispatcher = null;
