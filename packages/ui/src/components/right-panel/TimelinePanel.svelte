@@ -3,6 +3,8 @@
   import { production } from '../../stores/production.svelte';
   import { clock } from '../../stores/clock.svelte';
   import { playback } from '../../stores/playback.svelte';
+  import { kronosCursor } from '../../stores/kronos-cursor.svelte';
+  import { audioEngine } from '../../lib/runtimes/kronos-audio';
   import { Timeline } from '../../lib/timeline/timeline.js';
   import { bpxTreeToTimelineStream } from '../../lib/timeline/bpx-tree-stream';
 
@@ -110,9 +112,24 @@
     // Compute the target cursor position (ms), or null when there's nothing to show.
     let ms: number | null = null;
     if (mode === 'playing' && beatDurSec > 0 && durationSec > 0) {
-      const bpb = clock.state.beatsPerBar || 4;
-      const absBeats = (clock.state.bar - 1) * bpb + clock.state.beat + clock.state.phase;
-      ms = ((absBeats * beatDurSec) % durationSec) * 1000;
+      // Read the central clock's state every frame regardless of engine: it
+      // free-runs while playing and emits a fresh state each rAF tick, which is
+      // what re-runs THIS effect — the per-frame heartbeat the cursor rides on.
+      const cs = clock.state;
+      const kc = kronosCursor.active;
+      if (audioEngine() === 'kronos' && kc) {
+        // Kronos drives the sound AND owns the playhead: its cursor reads the SAME
+        // clock as the scheduler, so the drawn position is aligned to the heard
+        // audio (no ~1-note lag) and monotone from 0 (no backward jump at launch;
+        // the only return-to-0 is the legitimate loop crossing). Already loop-folded.
+        ms = kc.position() * 1000;
+      } else {
+        // Legacy engine: the old dispatcher sounds; the central rAF clock's
+        // phase-locked beat/bar/phase is the playhead (unchanged).
+        const bpb = cs.beatsPerBar || 4;
+        const absBeats = (cs.bar - 1) * bpb + cs.beat + cs.phase;
+        ms = ((absBeats * beatDurSec) % durationSec) * 1000;
+      }
     } else if ((mode === 'paused' || mode === 'stepped') && lastBeat >= 0 && beatDurSec > 0) {
       // Pause and Step both leave the playhead at the END of the beat that just
       // played/was-heard ((lastBeat+1)·beat) — the discrete grid boundary. Pause

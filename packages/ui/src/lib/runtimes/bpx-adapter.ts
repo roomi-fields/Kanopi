@@ -64,6 +64,10 @@ import {
   audioEngine,
   type KronosAudioHandle
 } from './kronos-audio';
+// EX4 phase 2: surface the ACTIVE Kronos cursor to the UI so the timeline draws
+// the playhead off the SAME clock as the audio (aligned + monotone-from-0),
+// instead of the central rAF clock (which lags ~1 note and jumps back at launch).
+import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 // The FULL derived production, set ONCE per eval (the complete TimedToken[] BPx
 // produced at derive time, BEFORE playback). This is the whole sequence, the
 // source of truth the Text panel (read by order via the tree) and the Structure
@@ -2301,6 +2305,8 @@ function makeBpxAdapter(
           reRandom,
           log: (m) => log({ runtime: id, level: 'info', msg: `[kronos] ${m}` })
         });
+        // The timeline now reads ITS playhead (aligned to the heard audio).
+        kronosCursor.set(kronosAudio);
       } else {
         // Legacy engine: the old dispatcher schedules the sound.
         // Loop so an armed actor sustains like a Strudel pattern: the grammar's
@@ -2383,6 +2389,8 @@ function makeBpxAdapter(
           voice.midiSink?.stop();
         }
         voices.clear();
+        // Stop everything → the timeline cursor falls back to the central clock.
+        kronosCursor.set(null);
         // Stop everything → the transport beat display falls back to the rAF clock.
         beatClockDispatcher = null;
         // "Stop everything" also FORGETS the live orchestrated-voice handles: every
@@ -2397,6 +2405,7 @@ function makeBpxAdapter(
       }
       const voice = voices.get(key);
       if (voice) {
+        if (voice.kronosAudio) kronosCursor.set(null);
         voice.kronosAudio?.stop();
         voice.dispatcher.stop();
         voice.midiSink?.stop();
@@ -2418,6 +2427,7 @@ function makeBpxAdapter(
         }
       }
       voices.clear();
+      kronosCursor.set(null);
     }
   };
 }

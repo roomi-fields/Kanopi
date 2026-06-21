@@ -23,6 +23,7 @@ import {
   InternalClock,
   Scheduler,
   RealtimeDriver,
+  Cursor,
   PeriodicModulation,
   renderToBreakpoints,
   type RuntimeAdapter,
@@ -93,9 +94,31 @@ export interface KronosAudioOptions {
   log?: (msg: string) => void;
 }
 
+/** Beat/bar readout for the transport display, derived from the SAME playhead as
+ *  the audio (loop-folded) → aligned + monotone-from-0. */
+export interface KronosCursorBeat {
+  beatsTotal: number;
+  bar: number;
+  beat: number;
+  phase: number;
+}
+
 export interface KronosAudioHandle {
   stop(): void;
+  /** Current playhead in scene seconds (loop-folded). Reads the SAME clock the
+   *  scheduler does, so the drawn cursor cannot drift from the heard audio. */
+  position(): number;
+  /** Current beat/bar position for the transport readout (loop-folded). */
+  beatPosition(): KronosCursorBeat;
+  /** Re-anchor + reposition the playhead to a scene second (seek, no new audio):
+   *  same primitive a Play-from-position uses — the next scheduled events fire
+   *  from there and the cursor reads from there. */
+  seek(sceneSec: number): void;
 }
+
+// Transport beats-per-bar for the Kronos beat readout. Matches the central
+// clock's default (4); the cursor folds beats to the scene loop regardless.
+const BEATS_PER_BAR = 4;
 
 /**
  * Start Kronos driving the real audio for one scene. Call JUST BEFORE the host
@@ -287,6 +310,14 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   //    registered so a routed event reaches its actor's transport explicitly.
   const scheduler = new Scheduler({ clock, timeline, loop });
   scheduler.setDefaultAdapter(adapter);
+
+  // The playing cursor (EX4 phase 2): the INVERSE of the time authority, not a
+  // separate counter — it reads the same `clock` the scheduler does, so the drawn
+  // playhead is rigorously aligned to the heard audio (no ~1-note lag) and
+  // monotone from `startScene` (no backward jump at launch; the only return-to-0
+  // is the legitimate loop crossing). The host swaps the timeline's cursor source
+  // to this when `audio-engine=kronos`.
+  const cursor = new Cursor(clock, { loopDuration: duration, loop });
   const actors = new Set<string>();
   for (const e of events) {
     const a = (e.payload as { actor?: string } | null | undefined)?.actor;
@@ -302,7 +333,11 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     scheduler.setReDerive((): Timeline | null => {
       const fresh = reDerive();
       if (!fresh || fresh.length === 0) return null;
-      return buildTimeline(fresh).timeline;
+      const rebuilt = buildTimeline(fresh).timeline;
+      // Keep the cursor's loop length in step with the fresh derivation so the
+      // playhead folds at the right boundary if re-random changed the length.
+      cursor.setLoopDuration(rebuilt.duration);
+      return rebuilt;
     });
   } else {
     scheduler.setReDerive(null);
@@ -342,6 +377,19 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       } catch {
         /* already torn down */
       }
+    },
+    position() {
+      return cursor.position();
+    },
+    beatPosition() {
+      return cursor.beatPosition(clock.derivedTempo, BEATS_PER_BAR);
+    },
+    seek(sceneSec: number) {
+      // Re-anchor the time authority and the scheduler to the SAME scene second
+      // (no new audio graph): the next scheduled events fire from there and the
+      // cursor reads from there — used by a Play-from-position / STEP resume.
+      clock.start(sceneSec);
+      scheduler.start(sceneSec);
     }
   };
 }
