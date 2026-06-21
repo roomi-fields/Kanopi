@@ -1,13 +1,15 @@
 // CV: Acid Bass — ADSR filter envelope on resonant sawtooth
-// TB-303 style: short attack, sharp decay, low sustain
-// The filter opens on each note then closes (per-note envelope)
+// TB-303 style: each Bass rule carries its own filter envelope
+// The filter opens on each note then closes (per-note, per-rule)
 
 @core
 @controls
 @alphabet.western:browser
 @mm:138
 
-cv env1 : mod.adsr(attack:5, decay:150, sustain:0.2, release:400)
+cv envSnap : mod.adsr(attack:5, decay:120, sustain:0.15, release:300)
+cv envOpen : mod.adsr(attack:5, decay:250, sustain:0.40, release:400)
+cv envPluck : mod.adsr(attack:2, decay:80, sustain:0.10, release:200)
 
 S -> Bass Bass Bass Bass
 
@@ -15,6 +17,6 @@ S -> Bass Bass Bass Bass
 
 @mode:random
 
-Bass -> C2 C2 C3 C2 - C2 Eb2 C2 (cutoff: env1, wave:sawtooth, vel:100, filterQ:8) [weight:50]
-Bass -> C2 - Eb2 F2 F#2 F2 Eb2 - (cutoff: env1, wave:sawtooth, vel:100, filterQ:8) [weight:30]
-Bass -> C2 C2 C2 - G2 - Eb2 C2 (cutoff: env1, wave:sawtooth, vel:100, filterQ:8)
+Bass -> C2 C2 C3 C2 - C2 Eb2 C2 (cutoff: envSnap, wave:sawtooth, vel:100, filterQ:8) [weight:50]
+Bass -> C2 - Eb2 F2 F#2 F2 Eb2 - (cutoff: envOpen, wave:sawtooth, vel:100, filterQ:8) [weight:30]
+Bass -> C2 C2 C2 - G2 - Eb2 C2 (cutoff: envPluck, wave:sawtooth, vel:100, filterQ:8)
