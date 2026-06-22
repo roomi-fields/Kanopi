@@ -38,6 +38,9 @@ export class Timeline {
   resize(): void;
   render(): void;
   setCursor(ms: number): void;
+  /** Set the cursor and paint synchronously (no deferred rAF) — for callers
+   *  already inside their own coalescing rAF that must not lag a frame behind. */
+  setCursorNow(ms: number): void;
   clearCursor(): void;
   setSections(sections: TimelineSection[]): void;
   destroy(): void;

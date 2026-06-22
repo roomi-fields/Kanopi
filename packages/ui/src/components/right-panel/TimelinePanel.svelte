@@ -28,19 +28,33 @@
   // frame (its reactive deps fire ≈16×/frame during playback). Each redraw repaints
   // the canvas → ≈1500 repaints/s made playback janky. We coalesce to ONE repaint
   // per frame: the effect only records the desired position; a single rAF flushes it.
+  //
+  // Lag fix (measured ~21 ms / ~1.3 frames behind the heard audio): the flush
+  //   (a) RE-READS the live playhead at paint time via `liveMsAtFlush` instead of
+  //       drawing the position the effect captured earlier in the SAME frame, and
+  //   (b) paints SYNCHRONOUSLY here (`setCursorNow`) instead of letting `setCursor`
+  //       defer to its own rAF — that extra hop was a whole frame of lag.
+  // The coalescing (one flush per frame) and the legacy/paused/stepped paths are
+  // unchanged: they pass a fixed `ms` and no live source, so the recorded value is
+  // drawn verbatim.
   let pendingCursorMs: number | null = null; // ms, or null = clear
+  let liveMsAtFlush: (() => number | null) | null = null; // re-read at paint time
   let cursorRaf = 0;
   let lastFlushedMs: number | null = null;
-  function scheduleCursor(ms: number | null) {
+  function scheduleCursor(ms: number | null, live: (() => number | null) | null = null) {
     pendingCursorMs = ms;
+    liveMsAtFlush = live;
     if (cursorRaf) return;
     cursorRaf = requestAnimationFrame(() => {
       cursorRaf = 0;
       if (!timeline) return;
-      if (pendingCursorMs === lastFlushedMs) return; // nothing moved
-      lastFlushedMs = pendingCursorMs;
-      if (pendingCursorMs === null) timeline.clearCursor();
-      else timeline.setCursor(pendingCursorMs);
+      // Freshest possible position: if a live source is set (kronos playhead),
+      // sample it NOW (paint time), otherwise use the value the effect recorded.
+      const target = liveMsAtFlush ? liveMsAtFlush() : pendingCursorMs;
+      if (target === lastFlushedMs) return; // nothing moved
+      lastFlushedMs = target;
+      if (target === null) timeline.clearCursor();
+      else timeline.setCursorNow(target); // synchronous paint — no extra rAF hop
     });
   }
 
@@ -111,6 +125,10 @@
     if (!timeline) return;
     // Compute the target cursor position (ms), or null when there's nothing to show.
     let ms: number | null = null;
+    // Live re-read sampled at PAINT time (kronos playing only) so the drawn cursor
+    // is the freshest playhead, not the one captured when this effect ran earlier
+    // in the frame. Null for every other state → the recorded `ms` is drawn as-is.
+    let live: (() => number | null) | null = null;
     if (mode === 'playing' && beatDurSec > 0 && durationSec > 0) {
       // Read the central clock's state every frame regardless of engine: it
       // free-runs while playing and emits a fresh state each rAF tick, which is
@@ -123,6 +141,7 @@
         // audio (no ~1-note lag) and monotone from 0 (no backward jump at launch;
         // the only return-to-0 is the legitimate loop crossing). Already loop-folded.
         ms = kc.position() * 1000;
+        live = () => kc.position() * 1000;
       } else {
         // Legacy engine: the old dispatcher sounds; the central rAF clock's
         // phase-locked beat/bar/phase is the playhead (unchanged).
@@ -137,8 +156,9 @@
       // jump when stepping afterwards; same formula now → consistent.
       ms = Math.min((lastBeat + 1) * beatDurSec, durationSec) * 1000;
     }
-    // Record the target; the rAF flush repaints at most once per frame.
-    scheduleCursor(ms);
+    // Record the target; the rAF flush repaints at most once per frame, sampling
+    // `live` (kronos) at paint time when present.
+    scheduleCursor(ms, live);
   });
 </script>
 

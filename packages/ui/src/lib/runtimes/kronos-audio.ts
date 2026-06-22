@@ -90,6 +90,13 @@ export interface KronosAudioOptions {
   reDerive?: (() => DispatchEvent[] | null) | null;
   /** Whether re-random is active (gates `reDerive`). */
   reRandom?: boolean;
+  /** STEP audition: render each CV binding over its OWN window (`b.windowStartScene`),
+   *  not the leaf's (re-zeroed) scene onset. A sliced+re-zeroed step note has a leaf
+   *  onset of ~0 while its bindings still carry full-scene windows, so the default
+   *  (onset-anchored) render samples BEFORE the window → the curve sits held at its
+   *  closed value → inaudible. Anchoring on the binding window makes the envelope
+   *  open fresh over the note (per-note clock). Default false (normal Play). */
+  cvPerNote?: boolean;
   /** Host logger (routed to the Console panel). */
   log?: (msg: string) => void;
 }
@@ -105,6 +112,14 @@ export interface KronosCursorBeat {
 
 export interface KronosAudioHandle {
   stop(): void;
+  /** Live re-random toggle (transport): installs/removes the re-derive on the
+   *  ACTIVE scheduler so toggling re-random mid-play takes effect at the next loop
+   *  boundary (gated by the current loop state). The legacy dispatcher path has the
+   *  twin; in kronos mode this handle drives the audio, so the toggle must reach it. */
+  setReRandom(on: boolean): void;
+  /** Live loop toggle (transport): updates the scheduler + cursor loop state and
+   *  re-evaluates whether the re-derive should be installed (re-random ⊗ loop). */
+  setLoop(on: boolean): void;
   /** Current playhead in scene seconds (loop-folded). Reads the SAME clock the
    *  scheduler does, so the drawn cursor cannot drift from the heard audio. */
   position(): number;
@@ -132,6 +147,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   const startScene = opts.startSceneSec ?? 0;
   const log = opts.log ?? (() => {});
   const sounds = opts.soundsFn ?? (() => true);
+  const perNoteCv = opts.cvPerNote ?? false;
 
   // 1. Map DispatchEvents → Kronos TimelineEvents. Non-sounding terminals and
   //    control/rest markers are flagged so Kronos's note-only dispatch skips
@@ -265,9 +281,16 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       const durScene = c.durSec ?? 0;
       if (bindings.length > 0 && durScene > 0) {
         for (const b of bindings) {
+          // Normal Play: render the source over THIS note's scene window so a SIGNAL
+          // unrolls its phrase slice at the note's position. STEP audition: the note
+          // was sliced + re-zeroed (`onsetScene≈0`) while the binding keeps its
+          // full-scene window — anchor on the binding's OWN window so the envelope
+          // opens fresh over the note instead of sampling before the window (held
+          // closed → inaudible).
+          const renderStart = perNoteCv ? b.windowStartScene : onsetScene;
           // ~2 ms resolution → a smooth value curve for setValueCurveAtTime
           // (Kronos guidance: finer than 10 ms avoids stair-stepping the envelope).
-          const pts = renderToBreakpoints(b.source, onsetScene, onsetScene + durScene, 0.002);
+          const pts = renderToBreakpoints(b.source, renderStart, renderStart + durScene, 0.002);
           if (pts.length === 0) continue;
           // ADSR/breakpoint sources are unipolar 0..1; a periodic LFO is bipolar
           // (±amp centred on 0) → recentre to 0.5 with half-depth so the transport's
@@ -328,20 +351,28 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // RE-RANDOM (B): Kronos calls `setReDerive` ONCE at each loop boundary. The host
   // re-runs the BPx derivation (fresh random draw) and hands back a fresh timeline
   // for the next cycle — Kronos never derives. Off ⇒ replay the same derivation.
-  if (loop && opts.reRandom && opts.reDerive) {
-    const reDerive = opts.reDerive;
-    scheduler.setReDerive((): Timeline | null => {
-      const fresh = reDerive();
-      if (!fresh || fresh.length === 0) return null;
-      const rebuilt = buildTimeline(fresh).timeline;
-      // Keep the cursor's loop length in step with the fresh derivation so the
-      // playhead folds at the right boundary if re-random changed the length.
-      cursor.setLoopDuration(rebuilt.duration);
-      return rebuilt;
-    });
-  } else {
-    scheduler.setReDerive(null);
-  }
+  //
+  // The closure is built UNCONDITIONALLY (whenever the host gave a `reDerive`), so a
+  // LIVE re-random/loop toggle can install it on the active scheduler mid-play. Which
+  // of the two states is live is tracked here; `applyReDerive` installs the closure
+  // only when re-random AND loop are both on (else removes it → replay/stop at bord).
+  const reDeriveClosure: (() => Timeline | null) | null = opts.reDerive
+    ? (): Timeline | null => {
+        const fresh = opts.reDerive!();
+        if (!fresh || fresh.length === 0) return null;
+        const rebuilt = buildTimeline(fresh).timeline;
+        // Keep the cursor's loop length in step with the fresh derivation so the
+        // playhead folds at the right boundary if re-random changed the length.
+        cursor.setLoopDuration(rebuilt.duration);
+        return rebuilt;
+      }
+    : null;
+  let loopActive = loop;
+  let reRandomActive = !!opts.reRandom;
+  const applyReDerive = (): void => {
+    scheduler.setReDerive(reRandomActive && loopActive && reDeriveClosure ? reDeriveClosure : null);
+  };
+  applyReDerive();
 
   scheduler.start(startScene);
 
@@ -363,7 +394,9 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     );
   }
   if (transposeWarned) {
-    log(`⚠ a note carries a transpose qualifier — not folded in kronos phase 1 (plays untransposed).`);
+    log(
+      `⚠ a note carries a transpose qualifier — not folded in kronos phase 1 (plays untransposed).`
+    );
   }
 
   let stopped = false;
@@ -377,6 +410,16 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       } catch {
         /* already torn down */
       }
+    },
+    setReRandom(on: boolean) {
+      reRandomActive = on;
+      applyReDerive();
+    },
+    setLoop(on: boolean) {
+      loopActive = on;
+      scheduler.setLoop(on);
+      cursor.setLoop(on);
+      applyReDerive();
     },
     position() {
       return cursor.position();

@@ -84,10 +84,16 @@ const fakeCtx = {
 This is the same idea as the Kronos parity oracle and the EX4 shadow comparator — but in Node, no
 browser. Assert that the cutoff param got distinct env shapes, that onset/duration are correct, etc.
 
-### Level 3 — BROWSER smoke (ONCE, at the very end, never for logic)
-Only to answer "does sound actually come out": Playwright (`live-coding-verify`), load the scene,
-PROD + Play, assert RMS > 0 and 0 console errors, then **HUSH (Ctrl+.)** (cf the hush-after-test
-rule). Do NOT instrument the filter per note to "prove env variety" here — that's Level 1's job.
+### Level 3 — BROWSER smoke (LAST RESORT, ONCE, kept SHORT — never for logic)
+The browser is SLOW and the user dislikes it; use it ONLY for what is **genuinely impossible in
+Node** and keep it to a handful of calls. Two legitimate cases:
+- **"does sound actually come out"**: load the scene, PROD + Play, assert RMS > 0 and 0 console
+  errors, then **HUSH (Ctrl+.)** (cf hush-after-test).
+- **paint/frame timing** (e.g. cursor lag = rAF/draw pipeline): this CANNOT be measured in Node,
+  so one short Playwright measurement is allowed — but ONE measurement, not an exploration.
+Hard limits: NO long sessions, NO dozens of tool calls, NO instrumenting curves to "prove" CV
+behavior (that's Level 1). If you find yourself doing many browser calls, STOP — the question is
+almost certainly a Level-1/2 Node check. A PM delegating MUST state this in the agent prompt.
 
 ## What NOT to do
 - ❌ Boot a headless chromium to read `setValueCurveAtTime` curves and prove which envelope applies.

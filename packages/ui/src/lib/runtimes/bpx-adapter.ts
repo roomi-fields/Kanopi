@@ -59,11 +59,7 @@ import { buildModulators, type ModLib } from '@kronos/core';
 // Kronos scheduler produces the timed events; a thin adapter bridges each to the
 // existing WebAudio synth. In kronos mode the old dispatcher is NOT started for
 // sound. `audio-engine=legacy` keeps the old dispatcher on the audio path.
-import {
-  startKronosAudio,
-  audioEngine,
-  type KronosAudioHandle
-} from './kronos-audio';
+import { startKronosAudio, audioEngine, type KronosAudioHandle } from './kronos-audio';
 // EX4 phase 2: surface the ACTIVE Kronos cursor to the UI so the timeline draws
 // the playhead off the SAME clock as the audio (aligned + monotone-from-0),
 // instead of the central rAF clock (which lags ~1 note and jumps back at launch).
@@ -1576,14 +1572,24 @@ function makeBpxAdapter(
   const voices = new Map<string, BP3Voice>();
 
   // Live loop/re-random updates reach THIS adapter's currently-playing voices.
+  // Both audio paths are updated: the LEGACY dispatcher (its own re-derive gate) and
+  // the ACTIVE Kronos handle (kronos mode — it, not the dispatcher, drives the audio,
+  // so the toggle must reach its scheduler too). A voice with no kronos handle
+  // (orchestrated/legacy scene) just skips the optional call.
   transportLiveUpdaters.push((reRandom, loop) => {
     for (const v of voices.values()) {
       const d = v.dispatcher as unknown as {
         setReRandom(on: boolean): void;
         setLoop(on: boolean): void;
       };
-      if (reRandom !== null) d.setReRandom(reRandom);
-      if (loop !== null) d.setLoop(loop);
+      if (reRandom !== null) {
+        d.setReRandom(reRandom);
+        v.kronosAudio?.setReRandom(reRandom);
+      }
+      if (loop !== null) {
+        d.setLoop(loop);
+        v.kronosAudio?.setLoop(loop);
+      }
     }
   });
 
@@ -1713,7 +1719,9 @@ function makeBpxAdapter(
         // rewrites `controls` for the legacy path. The sibling-voice resolver lets
         // `*:cutoff:Env` follow env1→env2→env3 as the Env voice drew them.
         const nameOf = (sid: number) =>
-          (bpx as { grammar?: { symbols?: Partial<SymbolTable> } }).grammar?.symbols?.getName?.(sid);
+          (bpx as { grammar?: { symbols?: Partial<SymbolTable> } }).grammar?.symbols?.getName?.(
+            sid
+          );
         const kronosRegistry = buildModulators(
           ((ast as { cvInstances?: unknown[] } | null)?.cvInstances ?? []) as Parameters<
             typeof buildModulators
@@ -1724,11 +1732,7 @@ function makeBpxAdapter(
         // Legacy fallback (`audio-engine=legacy`): rewrite each subject-driven value
         // into the uniform `{__cv:true, …}` descriptor the webaudio transport reads
         // — mutates leaf.controls in place. Reads the SAME new facets.
-        resolveCvControls(
-          derived.tree,
-          nameOf,
-          new Set(Object.keys(modulatorsFromAst(ast)))
-        );
+        resolveCvControls(derived.tree, nameOf, new Set(Object.keys(modulatorsFromAst(ast))));
         rawTree = derived.tree;
         tokens = derived.tokens.filter((t) => t.type !== 'control');
         tree = derived.tree as unknown as ProductionTree;
@@ -2294,15 +2298,20 @@ function makeBpxAdapter(
           audioCtx: ctx,
           derivedTempo: currentBpm,
           loop: looping,
-          dispatcher: dispatcher as unknown as Parameters<
-            typeof startKronosAudio
-          >[0]['dispatcher'],
+          dispatcher: dispatcher as unknown as Parameters<typeof startKronosAudio>[0]['dispatcher'],
           startSceneSec: startOffsetSec,
           soundsFn,
-          // RE-RANDOM (B): hand Kronos the host's re-derivation; it re-runs the BPx
-          // draw at each loop boundary and rebuilds the timeline. Off ⇒ replay.
-          reDerive: looping ? reDeriveTreeEvents(monoFilter) : null,
+          // RE-RANDOM (B): hand Kronos the host's re-derivation ALWAYS (not just when
+          // looping at start) so a LIVE re-random/loop toggle can install it on the
+          // active scheduler mid-play. A STEP (sliced window) never re-derives, so it
+          // gets null. The handle gates whether the closure actually runs (re-random
+          // ⊗ loop), so a non-looping start keeps it dormant until toggled.
+          reDerive: section ? null : reDeriveTreeEvents(monoFilter),
           reRandom,
+          // STEP audition: render CV per-note (window = the note) so a sliced,
+          // re-zeroed beat opens its envelope over the note instead of sitting at the
+          // (out-of-window) closed value → inaudible. Normal Play keeps scene windows.
+          cvPerNote: !!(section && section.count > 1),
           log: (m) => log({ runtime: id, level: 'info', msg: `[kronos] ${m}` })
         });
         // The timeline now reads ITS playhead (aligned to the heard audio).

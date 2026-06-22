@@ -1267,6 +1267,22 @@ export class Timeline {
     this._scheduleRender();
   }
 
+  // Synchronous variant of setCursor: paints THIS frame instead of deferring to a
+  // rAF. The caller is already inside its own coalescing rAF, so the extra
+  // _scheduleRender() hop is a full frame of cursor lag behind the heard audio.
+  // A render scheduled by a prior setCursor is cancelled so we don't double-paint.
+  setCursorNow(ms) {
+    this._cursorMs = ms;
+    if (this._autoFollow) {
+      this.range.ensureVisible(ms);
+    }
+    if (this._animFrame) {
+      cancelAnimationFrame(this._animFrame);
+      this._animFrame = 0;
+    }
+    this.render();
+  }
+
   clearCursor() {
     this._cursorMs = -1;
     this._scheduleRender();
