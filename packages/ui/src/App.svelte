@@ -142,20 +142,13 @@
         void openBlocks.produceLoadedProgram(active.id);
       });
 
-      // Auto-create missing files referenced by declared @actor.
-      $effect(() => {
-        for (const a of actorsStore.list) {
-          if (!a.file) continue;
-          const exists = workspace.files.some((x) => x.name === a.file || x.path === a.file);
-          if (!exists) {
-            // Comment syntax per runtime: Strudel/Tidal/Hydra/JS are JS-based,
-            // .scd uses // too, .kanopi/.py use #.
-            const hash = a.runtime === 'kanopi' || a.runtime === 'python';
-            const prefix = hash ? '#' : '//';
-            workspace.addFile(a.file, `${prefix} ${a.name} (${a.runtime}) — empty\n`);
-          }
-        }
-      });
+      // (Removed) Per-actor file auto-creation. It violated the projection contract
+      // (`contrats/kanopi-architecture.md` §4 + audit-etat-kanopi.md §3): an unguarded
+      // `$effect` minted a real workspace file for every actor whose `a.file` matched
+      // nothing — and `a.file` is unreliable (sometimes an actor name / synthetic id /
+      // `transport.audio`), so it spawned phantom files on every eval and never cleared
+      // them. The file list must project ONLY the real workspace; an inline `@actor`
+      // legitimately has no file (the actor↔file binding goes through `bindActorFiles`).
 
       // `.bps` file-scenes (`@scene calm "calm.bps"`): when the active file is a
       // `.bps` declaring a scene table, feed the right-panel Scenes cards from it.
