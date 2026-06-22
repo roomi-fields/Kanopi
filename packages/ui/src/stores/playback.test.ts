@@ -27,7 +27,12 @@ const h = vi.hoisted(() => {
     evaluateBlock: vi.fn(async () => {}),
     setResumeBeat: vi.fn(),
     // 19-beat production (arabic @70bpm): durationSec / beatDurSec ≈ 19.
-    production: { current: { durationSec: (60 / 70) * 19, beatDurSec: 60 / 70 } }
+    production: { current: { durationSec: (60 / 70) * 19, beatDurSec: 60 / 70 } },
+    // Selected audio engine + the active Kronos cursor handle. Default = kronos
+    // with NO active handle (falls back to core.clock); tests flip these to drive
+    // the kronos path.
+    engine: { value: 'kronos' as 'kronos' | 'legacy' },
+    kronosCursor: { active: null as { beatPosition: () => { beatsTotal: number } } | null }
   };
 });
 
@@ -39,6 +44,8 @@ vi.mock('../lib/core', () => ({
   }
 }));
 vi.mock('../lib/runtimes/bpx-adapter', () => ({ setResumeBeat: h.setResumeBeat }));
+vi.mock('../lib/runtimes/kronos-audio', () => ({ audioEngine: () => h.engine.value }));
+vi.mock('./kronos-cursor.svelte', () => ({ kronosCursor: h.kronosCursor }));
 vi.mock('./production.svelte', () => ({
   production: h.production,
   beatCount: (durationSec: number, beatDurSec: number) =>
@@ -52,6 +59,9 @@ const FILE = { runtime: 'bpscript' as const, name: 'arabic.bps', contents: 'S ->
 beforeEach(() => {
   vi.clearAllMocks();
   Object.assign(h.clockState, { bar: 1, beat: 0, phase: 0, playing: false, paused: false });
+  // Default: kronos engine, no active cursor handle → liveBeat falls back to core.clock.
+  h.engine.value = 'kronos';
+  h.kronosCursor.active = null;
   playback.mode = 'stopped';
   playback.lastBeat = -1;
 });
@@ -134,5 +144,35 @@ describe('transport state machine', () => {
     playback.mode = 'playing';
     Object.assign(h.clockState, { bar: 1, beat: 2 });
     expect(playback.activeBeat()).toBe(2);
+  });
+});
+
+describe('liveBeat position source (kronos vs legacy)', () => {
+  it('reads the Kronos playhead when the kronos engine is active with a handle', () => {
+    h.engine.value = 'kronos';
+    // The kronos cursor is at beat 7 (beatsTotal already loop-folded into 0..n-1).
+    h.kronosCursor.active = { beatPosition: () => ({ beatsTotal: 7.6 }) };
+    // The legacy clock disagrees on purpose (rAF-driven, NOT the heard audio).
+    Object.assign(h.clockState, { bar: 3, beat: 1 }); // legacy would read 9
+    expect(playback.liveBeat()).toBe(7); // floor(7.6) — the Kronos beat, not 9
+
+    // Pause must freeze on the HEARD (Kronos) beat, not the legacy one.
+    playback.mode = 'playing';
+    playback.pause();
+    expect(playback.lastBeat).toBe(7);
+  });
+
+  it('falls back to the central clock when no Kronos handle is active', () => {
+    h.engine.value = 'kronos';
+    h.kronosCursor.active = null; // kronos engine but no scene playing through it
+    Object.assign(h.clockState, { bar: 2, beat: 1 }); // 4 + 1 = 5
+    expect(playback.liveBeat()).toBe(5);
+  });
+
+  it('uses the central clock in legacy engine mode even with a stale handle', () => {
+    h.engine.value = 'legacy';
+    h.kronosCursor.active = { beatPosition: () => ({ beatsTotal: 7 }) };
+    Object.assign(h.clockState, { bar: 1, beat: 3 }); // legacy reads 3
+    expect(playback.liveBeat()).toBe(3); // legacy path untouched
   });
 });

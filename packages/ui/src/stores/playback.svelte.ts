@@ -29,6 +29,8 @@
 import { core } from '../lib/core';
 import { production, beatCount } from './production.svelte';
 import { setResumeBeat } from '../lib/runtimes/bpx-adapter';
+import { audioEngine } from '../lib/runtimes/kronos-audio';
+import { kronosCursor } from './kronos-cursor.svelte';
 
 type Mode = 'stopped' | 'playing' | 'paused' | 'stepped';
 
@@ -51,8 +53,16 @@ class Playback {
     return cur ? beatCount(cur.durationSec, cur.beatDurSec) : 0;
   }
 
-  /** The live audio beat (integer) read off the phase-locked transport clock. */
+  /** The live audio beat (integer) read off the SAME playhead the user hears.
+   *  In kronos mode the heard audio is driven by the Kronos clock and the cursor
+   *  reads the Kronos playhead, so the position counter must read it too — else
+   *  Pause records a beat off the legacy rAF clock (which the kronos audio path
+   *  does NOT drive) and Step/Play inherit an off-by-one. `beatsTotal` is already
+   *  loop-folded into 0..n-1. Legacy engine: keep the central clock path. */
   liveBeat(): number {
+    if (audioEngine() === 'kronos' && kronosCursor.active) {
+      return Math.max(0, Math.floor(kronosCursor.active.beatPosition().beatsTotal));
+    }
     const bpb = core.clock.state.beatsPerBar || 4;
     const abs = (core.clock.state.bar - 1) * bpb + core.clock.state.beat;
     return Math.max(0, Math.floor(abs));
