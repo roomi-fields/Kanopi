@@ -64,7 +64,11 @@ function buildFullProduction(): DispatchEvent[] {
   const collect = (n: unknown): void => {
     if (!n || typeof n !== 'object') return;
     const node = n as { symbolId?: number; children?: unknown[]; voices?: unknown[] };
-    if (typeof node.symbolId === 'number' && node.symbolId >= 0 && symbolNames[node.symbolId] === undefined) {
+    if (
+      typeof node.symbolId === 'number' &&
+      node.symbolId >= 0 &&
+      symbolNames[node.symbolId] === undefined
+    ) {
       const nm = nameOf(node.symbolId);
       if (nm) symbolNames[node.symbolId] = nm;
     }
@@ -148,9 +152,7 @@ function capture(events: DispatchEvent[], step?: { fromSec: number; durSec: numb
 describe('cv-adsr.bps — STEP CV == full-production CV (real demo, end-to-end, Node)', () => {
   it('the demo derives a cutoff-modulated bass timeline', () => {
     const events = buildFullProduction();
-    const modulated = events.filter(
-      (e) => (e.modulations ?? []).some((b) => b.input === 'cutoff')
-    );
+    const modulated = events.filter((e) => (e.modulations ?? []).some((b) => b.input === 'cutoff'));
     expect(modulated.length).toBeGreaterThan(0);
   });
 

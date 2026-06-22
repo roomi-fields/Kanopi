@@ -1733,7 +1733,11 @@ function makeBpxAdapter(
         );
         // Stamp Kronos's composed bindings onto each modulated leaf (the flatten reads
         // `leaf.__cvBindings`); `composeTreeModulations` itself leaves the tree untouched.
-        for (const { leaf, bindings } of composeTreeModulations(derived.tree, nameOf, kronosRegistry)) {
+        for (const { leaf, bindings } of composeTreeModulations(
+          derived.tree,
+          nameOf,
+          kronosRegistry
+        )) {
           (leaf as { __cvBindings?: ModulationBinding[] }).__cvBindings = bindings;
         }
         // Legacy fallback (`audio-engine=legacy`): rewrite each subject-driven value

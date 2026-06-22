@@ -21,7 +21,13 @@ import type { DispatchEvent } from './tree-dispatch';
 // emitted token, so a bounded beat shows up as an ABSENT token.
 
 function note(token: string, onset: number, dur: number): DispatchEvent {
-  return { token, startSec: onset, durSec: dur, type: 'note', payload: null } as unknown as DispatchEvent;
+  return {
+    token,
+    startSec: onset,
+    durSec: dur,
+    type: 'note',
+    payload: null
+  } as unknown as DispatchEvent;
 }
 
 function fakeCtx(now: { t: number }): AudioContext {

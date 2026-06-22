@@ -53,19 +53,24 @@ function setup(src: string) {
   bpx.loadGrammar(ast);
   const tree = bpx.derive({ output: 'complete' }).tree as unknown as { root?: RawNode };
   const nameOf = (sid: number) =>
-    (bpx as { grammar?: { symbols?: { getName?: (id: number) => string } } }).grammar?.symbols
-      ?.getName?.(sid);
+    (
+      bpx as { grammar?: { symbols?: { getName?: (id: number) => string } } }
+    ).grammar?.symbols?.getName?.(sid);
   const modNames = new Set(Object.keys(modulatorsFromAst(ast)));
   return { tree, nameOf, modNames, root: (tree.root ?? tree) as RawNode };
 }
 
 /** Sounding leaves in derivation order, each with its resolved name + span. */
-function leavesInOrder(node: RawNode, nameOf: (s: number) => string | undefined, acc: Array<{
-  name: string | undefined;
-  startMs: number;
-  endMs: number;
-  controls: Record<string, unknown> | undefined;
-}> = []) {
+function leavesInOrder(
+  node: RawNode,
+  nameOf: (s: number) => string | undefined,
+  acc: Array<{
+    name: string | undefined;
+    startMs: number;
+    endMs: number;
+    controls: Record<string, unknown> | undefined;
+  }> = []
+) {
   if (!node || typeof node !== 'object') return acc;
   if (node.role === 'leaf') {
     acc.push({
@@ -95,7 +100,6 @@ describe('resolveCvControls — subject-driven modulation clocks (cv-adsr.bps)',
 
     // Print the resolved descriptors (this test doubles as the node probe).
     for (const l of cutoffs) {
-      // eslint-disable-next-line no-console
       console.log(
         `${(l.name ?? '?').padEnd(5)} [${l.startMs}-${l.endMs}] cutoff=${JSON.stringify(l.cutoff)}`
       );
@@ -105,7 +109,13 @@ describe('resolveCvControls — subject-driven modulation clocks (cv-adsr.bps)',
     const sig = cutoffs.filter((l) => l.startMs < 2000);
     expect(sig).toHaveLength(4);
     for (const l of sig) {
-      expect(l.cutoff).toEqual({ __cv: true, mod: 'env1', clock: 'signal', startSec: 0, durSec: 2 });
+      expect(l.cutoff).toEqual({
+        __cv: true,
+        mod: 'env1',
+        clock: 'signal',
+        startSec: 0,
+        durSec: 2
+      });
       // Non-modulation controls survive untouched.
       expect(l.controls!.wave).toBe('sawtooth');
       expect(l.controls!.vel).toBe(95);

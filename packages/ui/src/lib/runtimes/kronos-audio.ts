@@ -536,7 +536,9 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       // The beat that completes, folded into the production's beat range so the
       // paused cursor + a following Step agree (Step already wraps).
       const completed =
-        beatsInLoop && beatsInLoop > 0 ? ((bGlobal % beatsInLoop) + beatsInLoop) % beatsInLoop : bGlobal;
+        beatsInLoop && beatsInLoop > 0
+          ? ((bGlobal % beatsInLoop) + beatsInLoop) % beatsInLoop
+          : bGlobal;
       // Bound emission to the rest of beat B and ask Kronos to notify us once when the
       // cursor reaches the bound (emission done). We do NOT touch the clock: the cursor
       // follows the heard audio through beat B (mode still 'playing') and freezes at the

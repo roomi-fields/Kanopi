@@ -262,7 +262,10 @@ interface RawNode {
   // signal) and the clock window live in PARALLEL maps beside `controls`, no longer
   // embedded in the value (which is now a bare modulator name or voice ref).
   controlSubjects?: Record<string, string>;
-  controlScopes?: Record<string, { kind: 'rule' | 'group' | 'voice'; startMs: number; endMs: number }>;
+  controlScopes?: Record<
+    string,
+    { kind: 'rule' | 'group' | 'voice'; startMs: number; endMs: number }
+  >;
   ruleRef?: RuleRef;
   span?: Span;
   children?: RawNode[];
@@ -365,7 +368,10 @@ export function resolveCvControls(
     // Prefer the indexed voice; fall back to matching by sourceSymbolId when the
     // index disagrees (synthetic scaling voices can shift positions).
     let voice = voices[ref.voiceIndex];
-    if (!voice || (voice.sourceSymbolId !== undefined && voice.sourceSymbolId !== ref.sourceSymbolId)) {
+    if (
+      !voice ||
+      (voice.sourceSymbolId !== undefined && voice.sourceSymbolId !== ref.sourceSymbolId)
+    ) {
       const byId = voices.find((v) => v.sourceSymbolId === ref.sourceSymbolId);
       if (byId) voice = byId;
     }
