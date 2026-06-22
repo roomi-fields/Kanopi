@@ -4,7 +4,6 @@
   import { clock } from '../../stores/clock.svelte';
   import { playback } from '../../stores/playback.svelte';
   import { kronosCursor } from '../../stores/kronos-cursor.svelte';
-  import { audioEngine } from '../../lib/runtimes/kronos-audio';
   import { Timeline } from '../../lib/timeline/timeline.js';
   import { bpxTreeToTimelineStream } from '../../lib/timeline/bpx-tree-stream';
 
@@ -153,7 +152,7 @@
     // `currentTime − outputLatency − baseLatency`, so the cursor sits on the note
     // being heard, not the one ~one buffer ahead being scheduled). Already
     // loop-folded; monotone from start (the only return-to-0 is the loop crossing).
-    if (mode === 'playing' && kc && audioEngine() === 'kronos' && durationSec > 0) {
+    if (mode === 'playing' && kc && durationSec > 0) {
       startKronosCursorLoop(() => kc.displayPosition() * 1000);
       return () => stopKronosCursorLoop();
     }

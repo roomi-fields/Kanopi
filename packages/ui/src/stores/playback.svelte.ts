@@ -29,7 +29,6 @@
 import { core } from '../lib/core';
 import { production, beatCount } from './production.svelte';
 import { setResumeBeat } from '../lib/runtimes/bpx-adapter';
-import { audioEngine } from '../lib/runtimes/kronos-audio';
 import { kronosCursor } from './kronos-cursor.svelte';
 
 type Mode = 'stopped' | 'playing' | 'paused' | 'stepped';
@@ -60,7 +59,7 @@ class Playback {
    *  does NOT drive) and Step/Play inherit an off-by-one. `beatsTotal` is already
    *  loop-folded into 0..n-1. Legacy engine: keep the central clock path. */
   liveBeat(): number {
-    if (audioEngine() === 'kronos' && kronosCursor.active) {
+    if (kronosCursor.active) {
       return Math.max(0, Math.floor(kronosCursor.active.beatPosition().beatsTotal));
     }
     const bpb = core.clock.state.beatsPerBar || 4;
@@ -77,14 +76,18 @@ class Playback {
   play() {
     if (this.mode === 'paused') {
       if (this.kronosPaused) {
-        // Kronos pause-at-beat-end left the clock running and bounded emission at
-        // `lastBeat+1`. Resuming "in place" is WRONG (no suspended audio to resume,
-        // and the bound must be cleared): forward-resume from the frozen boundary =
-        // the SAME path as Step→Play (seek to `(lastBeat+1)·beat`, fresh start with
-        // emission unbounded again). Never backward, no gap, no double beat.
+        // Resume IN PLACE on the SAME Kronos scheduler — NO re-eval. The old path
+        // (`setResumeBeat` + `clock.play()` → `handleTransport` re-evaluates the
+        // scene) raced the teardown of the previous scheduler against the freshly
+        // started one, intermittently DOUBLING the audio and leaving a voice ringing
+        // through the next pause. Now the one live scheduler re-anchors at the frozen
+        // boundary `(lastBeat+1)·beat` and restarts its pump; `startSilently` marks
+        // the clock "playing" for the UI WITHOUT re-evaluating the armed set or
+        // replaying blocks (it sets the `silentStart` flag both consult).
         this.kronosPaused = false;
-        setResumeBeat(this.lastBeat + 1);
-        core.clock.play();
+        const beatDurSec = production.current?.beatDurSec ?? 0;
+        kronosCursor.active?.resume((this.lastBeat + 1) * beatDurSec);
+        core.clock.startSilently();
         this.mode = 'playing';
         return;
       }
@@ -114,7 +117,7 @@ class Playback {
     // in a QUIET paused state (no context suspend, and `play` afterwards takes the
     // forward-resume branch) via `enterStep()` — which only flips the playing/paused
     // flags, no hush, no suspend.
-    if (audioEngine() === 'kronos' && handle && beatDurSec > 0) {
+    if (handle && beatDurSec > 0) {
       this.kronosPaused = true;
       this.lastBeat = handle.pauseAtBeatEnd(
         beatDurSec,

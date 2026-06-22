@@ -62,7 +62,7 @@ import {
 // Kronos scheduler produces the timed events; a thin adapter bridges each to the
 // existing WebAudio synth. In kronos mode the old dispatcher is NOT started for
 // sound. `audio-engine=legacy` keeps the old dispatcher on the audio path.
-import { startKronosAudio, audioEngine, type KronosAudioHandle } from './kronos-audio';
+import { startKronosAudio, type KronosAudioHandle, type KronosAudioOptions } from './kronos-audio';
 // EX4 phase 2: surface the ACTIVE Kronos cursor to the UI so the timeline draws
 // the playhead off the SAME clock as the audio (aligned + monotone-from-0),
 // instead of the central rAF clock (which lags ~1 note and jumps back at launch).
@@ -100,22 +100,6 @@ import { loadSampleBank } from './strudel';
 // `.bps` path. The `.gr` path keeps the local text reader (it never compiles
 // through BPScript, so it has no AST — see `headSectionNames` below).
 import { headSectionNamesFromAst, sectionLeafCounts } from './head-sections-ast';
-
-// Typed view of the dispatcher's `start(onEnd, { loop, reDerive })`. The
-// dispatcher is JS (JSDoc-typed): its `reDerive` option (re-derive the grammar
-// at each loop boundary) infers as `null` from its default, so we cast the start
-// call to this surface to pass a function. Mirrors the `loadEvents` cast above.
-type DispatcherStart = {
-  start(
-    onEnd: (() => void) | undefined,
-    opts: {
-      loop?: boolean;
-      reDerive?: (() => unknown) | null;
-      startOffsetSec?: number;
-      reRandom?: boolean;
-    }
-  ): void;
-};
 
 /**
  * BPx language adapters (PRIMARY vertical slice).
@@ -424,6 +408,10 @@ interface OrchestratedActor {
 interface Orchestration {
   actorTable: Record<string, unknown>;
   actors: OrchestratedActor[];
+  /** True when there is NO `@actor` in the scene: a single implicit `default` actor
+   *  was synthesized so a plain grammar travels the SAME path as an orchestrated one
+   *  (mono = orchestration with one actor). The Actors panel stays empty for these. */
+  synthetic?: boolean;
 }
 
 // Sounding alphabet symbols, loaded from the `-so`/`-mi`/`-cs` aux files the
@@ -899,7 +887,20 @@ const bpsFrontend: Frontend = (code) => {
   // the adapter routes each voice to its own transport (midi / webaudio).
   const actorTable = actorTableFromAst(a);
   const names = Object.keys(actorTable);
-  if (names.length === 0) return base;
+  if (names.length === 0) {
+    // No `@actor`: synthesize a single implicit `default` actor so a plain grammar
+    // travels the SAME orchestrated path (mono = orchestration with one actor). Its
+    // pitch resolution comes from the scene `@alphabet`/`@tuning` via the WebAudio
+    // transport's base resolver (events carry no `payload.actor` → that fallback), so
+    // the `default` actor's own alphabet is nominal. Marked `synthetic` so the Actors
+    // panel stays empty for plain scenes.
+    const orchestration: Orchestration = {
+      actorTable: { default: { transport: { key: 'audio' }, alphabet: 'western' } },
+      actors: [{ name: 'default', transportKey: 'audio', alphabet: 'western' }],
+      synthetic: true
+    };
+    return { ...base, orchestration };
+  }
   const orchestration: Orchestration = {
     actorTable,
     actors: names.map((name) => ({
@@ -1461,7 +1462,7 @@ function registerBacktickSink(
     mutedActors: Set<string>;
     slotForActor: (actor: string) => string;
   }
-): void {
+): { isBacktick: (t: string) => boolean; sink: (t: string) => void } {
   const isBacktick = (token: string) => Object.prototype.hasOwnProperty.call(backticks, token);
   const sink = (token: string) => {
     const entry = backticks[token];
@@ -1513,6 +1514,9 @@ function registerBacktickSink(
       ): void;
     }
   ).setBacktickSink(isBacktick, sink);
+  // Return the closures so the orchestrated kronos path can hand them to the Kronos
+  // scheduler (it intercepts BT tokens itself; the dispatcher is not started there).
+  return { isBacktick, sink };
 }
 
 /**
@@ -2004,8 +2008,11 @@ function makeBpxAdapter(
       // Backtick voices (lot 4): route each `BT<interp><id>` terminal to its
       // interpreter, fired in time by the dispatcher. Registered before load so
       // both the orchestrated and the simple path place backticks correctly.
+      let backtickHandles:
+        | { isBacktick: (t: string) => boolean; sink: (t: string) => void }
+        | undefined;
       if (backticks && Object.keys(backticks).length > 0) {
-        registerBacktickSink(
+        backtickHandles = registerBacktickSink(
           dispatcher,
           backticks,
           id,
@@ -2040,12 +2047,37 @@ function makeBpxAdapter(
           setActorResolver(actor: string, resolver: Resolver): void;
         };
         da.setActors(orchestration.actorTable);
-        const webaudio = new WebAudioTransport(ctx, { resolver: makeWesternResolver() });
+        // Scene-level resolver + sound predicate (the mono concerns, now universal so
+        // the single path covers a plain grammar = an orchestration with 1 `default`
+        // actor). The scene `@alphabet`/`@tuning` builds a catalog resolver (bohlen,
+        // gamelan, …) and marks its notes as sounding; otherwise the western/solfège
+        // sniff stays. `soundsFn` decides play-vs-skip per symbol — a note OR a
+        // front-end sound assignment sounds, everything else is skipped (it still
+        // shows in the Text panel's tree view).
+        const sceneCatalog = catalogResolver(declaredAlphabet, declaredTuning);
+        const sounding = new Set(soundingSymbols ?? []);
+        if (sceneCatalog) for (const n of sceneCatalog.notes) sounding.add(n);
+        // Each actor's own alphabet contributes its catalog notes too, so a non-western
+        // actor (gamelan/bohlen) sounds (its tokens aren't western note names — without
+        // this `soundsFn` would mark them non-sounding rests).
+        for (const actor of orchestration.actors) {
+          const c = catalogResolver(actor.alphabet, declaredTuning);
+          if (c) for (const n of c.notes) sounding.add(n);
+        }
+        const soundsFn = (token: string) => isNoteName(token) || sounding.has(token);
+        const sceneResolver = sceneCatalog ? sceneCatalog.resolver : pickResolver(tokens);
+        // Per-actor resolver: an actor's own alphabet wins (catalog for bohlen/gamelan,
+        // else western/solfège); the `default` actor (no `@actor`) inherits the scene
+        // resolver. The shared WebAudio transport's BASE resolver is the scene one, so
+        // an event with NO `payload.actor` (the mono/default case) still resolves right.
+        const resolverFor = (alphabet: string): Resolver =>
+          catalogResolver(alphabet, declaredTuning)?.resolver ??
+          (alphabet === 'solfège' ? makeSolfegeResolver() : makeWesternResolver());
+        const webaudio = new WebAudioTransport(ctx, { resolver: sceneResolver });
         let webaudioAdded = false;
         let midi: InstanceType<typeof MidiTransport> | undefined;
         for (const actor of orchestration.actors) {
-          const resolver =
-            actor.alphabet === 'solfège' ? makeSolfegeResolver() : makeWesternResolver();
+          const resolver = resolverFor(actor.alphabet);
           // Drive transport selection off the RESOLVED device TYPE, not the raw
           // key string: `transport.audio` and `transport.webaudio` (alias) both
           // map to WebAudio, `transport.midi` to MIDI.
@@ -2140,37 +2172,18 @@ function makeBpxAdapter(
         // Dispatcher per-actor NOTE mute (native voices). Declared here so the
         // kronos-mode pre-mute below and the live arm/disarm handle later share it.
         const da2 = dispatcher as unknown as { setActorMuted(actor: string, muted: boolean): void };
-        const engine = audioEngine();
         let kronosAudio: KronosAudioHandle | undefined;
-        if (engine === 'kronos') {
-          // Silence the dispatcher's NOTE routing for every audio/midi actor so it
-          // does not double Kronos. A code-voice actor has no note transport, so
-          // muting it is harmless; its backtick still fires through the sink.
-          for (const actor of orchestration.actors) {
-            const device = devices.get(actor.name)!;
-            if (device.type === 'midi' || device.type === 'audio') {
-              da2.setActorMuted(actor.name, true);
-            }
-          }
-        }
-        // Start the dispatcher. In kronos mode it drives only the code voices (note
-        // actors muted above) + the beat display; in legacy mode it drives the sound.
-        (dispatcher as unknown as DispatcherStart).start(undefined, {
-          loop: looping,
-          // Build the re-derive function whenever LOOPING; the live `reRandom`
-          // flag decides whether each cycle actually re-rolls — so toggling
-          // re-random mid-playback takes effect without re-evaluating.
-          reDerive: looping ? reDeriveTreeEvents(orchestratedLive) : null,
-          reRandom,
-          startOffsetSec
-        });
-        if (engine === 'kronos') {
-          // Kronos drives notes + per-note CV for the orchestrated scene. Same call
-          // as the mono path, but: NO `soundsFn` (an actor's declared notes always
-          // sound — the mono play-vs-skip is a no-actor concern), and the ORCHESTRATED
-          // re-derive/live filter (`orchestratedLive`, honours the live mute set), so
-          // re-random/loop re-roll the multi-actor derivation. Routing is per-actor via
-          // the dispatcher's `_actors` map (already wired above) + its transports.
+        // Kronos is the ONLY engine (legacy removed): it drives notes + CV + the code
+        // voices. The dispatcher is NEVER started as an emitter — it remains purely the
+        // transport/resolver/`_actors` structure Kronos reads through `pickTransport`.
+        {
+          // Kronos drives notes + per-note CV for the scene. `soundsFn` does play-vs-skip
+          // (universal: notes + sound-assigned symbols + every actor alphabet's catalog
+          // notes sound; backticks are always dispatched, handled in the adapter). The
+          // ORCHESTRATED re-derive/live filter (`orchestratedLive`, honours the live mute
+          // set) lets re-random/loop re-roll the derivation. Routing is per-actor via the
+          // dispatcher's `_actors` map (wired above) + its transports; an event with no
+          // actor (the `default`/mono case) falls back to the WebAudio transport's scene resolver.
           kronosAudio = startKronosAudio({
             events: treeEvents,
             audioCtx: ctx,
@@ -2180,10 +2193,21 @@ function makeBpxAdapter(
               typeof startKronosAudio
             >[0]['dispatcher'],
             startSceneSec: startOffsetSec,
+            soundsFn,
             // STEP audition + re-derive mirror the mono path; a STEP never re-derives.
             reDerive: section ? null : reDeriveTreeEvents(orchestratedLive),
             reRandom,
             step: stepWindow,
+            // Kronos is the single emitter: it intercepts BT (code-voice) tokens and
+            // fires them through the SAME sink the legacy dispatcher used, and cuts the
+            // sustained code voices when the scheduler stops.
+            isBacktick: backtickHandles?.isBacktick,
+            backtickSink: backtickHandles?.sink as KronosAudioOptions['backtickSink'],
+            stopCodeVoices: () => {
+              for (const a of orchestration.actors) {
+                void orchestratedVoices.get(a.name)?.stopCode?.();
+              }
+            },
             log: (m) => log({ runtime: id, level: 'info', msg: `[kronos] ${m}` })
           });
           // The timeline reads ITS playhead (aligned to the heard audio), as on mono.
@@ -2216,7 +2240,10 @@ function makeBpxAdapter(
         // on top. Keep this file's own voices (a re-eval of the SAME orchestrator).
         await tearDownOutgoingVoices(src.fileId);
         const published: PublishedActor[] = [];
-        for (const actor of orchestration.actors) {
+        // A synthetic `default` actor (plain scene, no `@actor`) is never shown nor
+        // armed: publish an empty list (the panel clears, as the old mono path did) and
+        // register no per-actor handle. Real orchestrators publish every actor.
+        for (const actor of orchestration.synthetic ? [] : orchestration.actors) {
           const codeRuntime = actor.evalInterp ? runtimeForInterp(actor.evalInterp) : undefined;
           if (codeRuntime)
             codeSlots.push({ runtime: codeRuntime, actorId: slotForActor(actor.name) });
@@ -2351,14 +2378,13 @@ function makeBpxAdapter(
       // The events' seconds encode `currentBpm` at derive time — tell the
       // dispatcher so its anchored tempo map can live-rescale (requirement A).
       (dispatcher as unknown as { setDerivedTempo(bpm: number): void }).setDerivedTempo(currentBpm);
-      // EX4 flip: in kronos mode, Kronos drives the REAL sound for this mono
-      // note path and the OLD dispatcher is NOT started (it would double the
-      // audio). The dispatcher's transports are already configured (resolver +
-      // modulator registry), so Kronos sends through them. `audio-engine=legacy`
-      // keeps the old dispatcher driving the sound (safety net).
-      const engine = audioEngine();
+      // Kronos is the ONLY engine (legacy removed): it drives the REAL sound for this
+      // note path; the dispatcher is never started as an emitter (it stays only as the
+      // configured transport/resolver structure Kronos sends through). This branch is
+      // now reached only by `.gr` (the `.bps` path always builds an orchestration); it
+      // is folded into the single orchestrated path once `.gr` synthesizes a default actor.
       let kronosAudio: KronosAudioHandle | undefined;
-      if (engine === 'kronos') {
+      {
         kronosAudio = startKronosAudio({
           events: treeEvents,
           audioCtx: ctx,
@@ -2382,21 +2408,6 @@ function makeBpxAdapter(
         });
         // The timeline now reads ITS playhead (aligned to the heard audio).
         kronosCursor.set(kronosAudio);
-      } else {
-        // Legacy engine: the old dispatcher schedules the sound.
-        // Loop so an armed actor sustains like a Strudel pattern: the grammar's
-        // derivation repeats at each cycle boundary until the LOOP toggle is off,
-        // the transport stops, or the page hushes. With RE-RANDOM on, the grammar
-        // is re-derived each cycle (weighted/random rules re-roll); with it off the
-        // same derivation replays. A STEP (section window) plays once instead —
-        // `looping` is false then, so `reRandom` is too.
-        (dispatcher as unknown as DispatcherStart).start(undefined, {
-          loop: looping,
-          // Build the re-derive whenever LOOPING; the live `reRandom` flag gates it.
-          reDerive: looping ? reDeriveTreeEvents(monoFilter) : null,
-          reRandom,
-          startOffsetSec
-        });
       }
       // This dispatcher now drives the transport beat display (requirement B).
       beatClockDispatcher = dispatcher;

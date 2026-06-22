@@ -38,16 +38,6 @@ import type { DispatchEvent } from './tree-dispatch';
 // (`{__cv:true,…}`) untouched — exactly what the WebAudio transport reads.
 import { coerceControlValues } from '../../../../core/src/dispatcher/dispatcher.js';
 
-/** Selected audio engine. Default = kronos (the flip). `localStorage` opt-out
- *  to 'legacy' keeps the old dispatcher driving the sound (safety net). */
-export function audioEngine(): 'kronos' | 'legacy' {
-  try {
-    return localStorage.getItem('audio-engine') === 'legacy' ? 'legacy' : 'kronos';
-  } catch {
-    return 'kronos';
-  }
-}
-
 /** The WebAudio transport surface this module drives (configured by the host
  *  with the scene's resolver + modulator registry before we touch it). */
 interface TransportLike {
@@ -102,6 +92,15 @@ export interface KronosAudioOptions {
   step?: { fromSec: number; durSec: number };
   /** Host logger (routed to the Console panel). */
   log?: (msg: string) => void;
+  /** True si ce token est une voix de code (backtick BT<interp><id>), pas une note. */
+  isBacktick?: (token: string) => boolean;
+  /** Déclenche la voix de code à son moment ordonnancé. Le même sink que le dispatcher legacy. */
+  backtickSink?: (
+    token: string,
+    info: { startSec: number; durSec: number; absTime: number }
+  ) => void;
+  /** Coupe les voix de code orchestrées (Strudel/Hydra) quand le scheduler s'arrête (Stop/teardown). */
+  stopCodeVoices?: () => void;
 }
 
 /** Beat/bar readout for the transport display, derived from the SAME playhead as
@@ -153,6 +152,12 @@ export interface KronosAudioHandle {
     onReached: (completedBeat: number) => void,
     beatsInLoop?: number
   ): number;
+  /** Resume IN PLACE after a `pauseAtBeatEnd` — WITHOUT re-evaluating the scene.
+   *  Clears the pause emission bound, re-anchors clock+scheduler at `sceneSec` (the
+   *  frozen beat boundary), and restarts the driver pump. The SAME scheduler/timeline
+   *  lives across the whole play→pause→play cycle, so no second emitter is ever
+   *  created (the re-eval-on-resume path stacked schedulers → intermittent doubling). */
+  resume(sceneSec: number): void;
   /** Live tempo change WITHOUT re-deriving: warps the heard tempo by re-anchoring
    *  the clock at the current instant and adopting the new BPM for future
    *  scene→audio conversions (the scene position stays continuous, no jump). The
@@ -194,6 +199,8 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   const startScene = step ? step.fromSec : (opts.startSceneSec ?? 0);
   const log = opts.log ?? (() => {});
   const sounds = opts.soundsFn ?? (() => true);
+  const isBacktick = opts.isBacktick;
+  const backtickSink = opts.backtickSink;
 
   // 1. Map DispatchEvents → Kronos TimelineEvents. Non-sounding terminals and
   //    control/rest markers are flagged so Kronos's note-only dispatch skips
@@ -222,6 +229,12 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       } else if (e.type === 'control') {
         kind = 'control';
         controls++;
+      } else if (isBacktick?.(e.token)) {
+        // Code voice (backtick): ALWAYS dispatched as a note so `send` can intercept
+        // it and fire the interpreter — independent of `soundsFn` (which would mark
+        // an unknown `BT…` token a non-sounding rest and silence the code voice).
+        kind = 'note';
+        notes++;
       } else if (!sounds(e.token)) {
         kind = 'rest'; // non-sounding terminal (CV name, mute symbol)
         mutes++;
@@ -293,6 +306,18 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   };
   const adapter: RuntimeAdapter = {
     send(ev: ScheduledEvent) {
+      // Voix de code (backtick BT<interp><id>) : Kronos l'ordonnance comme un event
+      // `kind:'note'`, mais ce n'est PAS une note — la déclencher via le même sink que
+      // le dispatcher legacy et NE PAS la router vers le synthé.
+      const tok = (ev.content as { token?: string }).token;
+      if (tok && isBacktick?.(tok)) {
+        backtickSink?.(tok, {
+          startSec: (ev.content as { startSec?: number }).startSec ?? 0,
+          durSec: ev.duration,
+          absTime: ev.onset
+        });
+        return;
+      }
       const c = ev.content as {
         token: string;
         controls?: Record<string, unknown> | null;
@@ -371,6 +396,12 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       // applies to the note's AudioParams via setValueCurveAtTime.
       if (Object.keys(modCurves).length > 0) event.__modCurves = modCurves;
       transport.send(event, ev.onset);
+    },
+    stop() {
+      // Stop de scène : l'ordonnanceur appelle `adapter.stop?.()` à `scheduler.stop()`.
+      // Les voix de code (Strudel boucle, Hydra rend en continu) ne se taisent pas par
+      // simple arrêt de planification → couper via le sink hôte.
+      opts.stopCodeVoices?.();
     }
   };
 
@@ -462,6 +493,10 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     stop() {
       if (stopped) return;
       stopped = true;
+      // Filet sûr : couper les voix de code même si l'adaptateur de scène ne reçoit pas
+      // `stop()` (teardown hôte direct). `scheduler.stop()` ci-dessous fait aussi passer
+      // l'adaptateur, donc `stopCodeVoices` doit être idempotent côté hôte.
+      opts.stopCodeVoices?.();
       // Drop any pending pause-at-beat-end bound + its one-shot callback so a Stop
       // pressed while a beat is finishing can't fire a stale `onReached` later
       // (deterministic teardown — no timer to clear, the scheduler owns the bound).
@@ -504,6 +539,17 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       // cursor reads from there — used by a Play-from-position / STEP resume.
       clock.start(sceneSec);
       scheduler.start(sceneSec);
+    },
+    resume(sceneSec: number) {
+      // Resume IN PLACE (no re-eval): drop the pause bound, re-anchor at the frozen
+      // boundary, restart the pump. ONE scheduler lives across play→pause→play, so a
+      // rapid cycle can't stack a second emitter (the old re-eval-on-resume race that
+      // intermittently doubled the audio + left a voice ringing through pause).
+      if (stopped) return;
+      scheduler.setSceneBound(null);
+      clock.start(sceneSec);
+      scheduler.start(sceneSec);
+      driver.start(); // idempotent: no-op if still running, restarts if pause stopped it
     },
     pauseAtBeatEnd(beatDurScene, onReached, beatsInLoop) {
       // B7 — pause at the END of the current beat. The clock keeps running (we do

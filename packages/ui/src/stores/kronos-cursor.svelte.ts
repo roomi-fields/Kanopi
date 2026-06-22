@@ -33,6 +33,10 @@ export interface KronosCursorView {
     onReached: (completedBeat: number) => void,
     beatsInLoop?: number
   ): number;
+  /** Resume IN PLACE after `pauseAtBeatEnd` (no re-eval): re-anchor at the frozen
+   *  beat boundary `sceneSec` and restart the pump on the SAME scheduler — so a
+   *  play→pause→play cycle never stacks a second emitter. */
+  resume(sceneSec: number): void;
 }
 
 class KronosCursorStore {
