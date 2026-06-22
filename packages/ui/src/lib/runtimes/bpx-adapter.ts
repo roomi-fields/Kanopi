@@ -2127,18 +2127,34 @@ function makeBpxAdapter(
         (dispatcher as unknown as { setDerivedTempo(bpm: number): void }).setDerivedTempo(
           currentBpm
         );
-        // EX4 flip — phase 1: Kronos audio covers the MONO note+CV path only.
-        // An orchestrator scene (per-actor transports, code/backtick voices,
-        // MIDI) is NOT yet driven by Kronos, so it stays on the LEGACY engine
-        // even when `audio-engine=kronos`. Honest fallback, logged — never a
-        // silent drop.
-        if (audioEngine() === 'kronos') {
-          log({
-            runtime: id,
-            level: 'info',
-            msg: `[kronos] orchestrated scene "${key}" — kronos audio is mono-only (phase 1); using legacy engine for this scene`
-          });
+        // EX4 flip — orchestrated path: Kronos drives the REAL note+CV audio for
+        // EVERY actor (routed per-actor through `pickTransport`), exactly as on the
+        // mono path. The legacy dispatcher is NOT started for sound here; it is
+        // started ONLY to fire the CODE voices (Strudel/Hydra backticks) in time —
+        // those are not notes, so Kronos never routes them, and the dispatcher's
+        // backtick sink stays the single place they fire. To stop the dispatcher
+        // from DOUBLING the note audio, every note-routed actor (audio/midi) is
+        // muted on it: `_sendActorNote` then skips them while the backtick sink
+        // keeps firing. `audio-engine=legacy` keeps the dispatcher driving the
+        // sound (safety net) with no per-actor mute.
+        // Dispatcher per-actor NOTE mute (native voices). Declared here so the
+        // kronos-mode pre-mute below and the live arm/disarm handle later share it.
+        const da2 = dispatcher as unknown as { setActorMuted(actor: string, muted: boolean): void };
+        const engine = audioEngine();
+        let kronosAudio: KronosAudioHandle | undefined;
+        if (engine === 'kronos') {
+          // Silence the dispatcher's NOTE routing for every audio/midi actor so it
+          // does not double Kronos. A code-voice actor has no note transport, so
+          // muting it is harmless; its backtick still fires through the sink.
+          for (const actor of orchestration.actors) {
+            const device = devices.get(actor.name)!;
+            if (device.type === 'midi' || device.type === 'audio') {
+              da2.setActorMuted(actor.name, true);
+            }
+          }
         }
+        // Start the dispatcher. In kronos mode it drives only the code voices (note
+        // actors muted above) + the beat display; in legacy mode it drives the sound.
         (dispatcher as unknown as DispatcherStart).start(undefined, {
           loop: looping,
           // Build the re-derive function whenever LOOPING; the live `reRandom`
@@ -2148,6 +2164,31 @@ function makeBpxAdapter(
           reRandom,
           startOffsetSec
         });
+        if (engine === 'kronos') {
+          // Kronos drives notes + per-note CV for the orchestrated scene. Same call
+          // as the mono path, but: NO `soundsFn` (an actor's declared notes always
+          // sound — the mono play-vs-skip is a no-actor concern), and the ORCHESTRATED
+          // re-derive/live filter (`orchestratedLive`, honours the live mute set), so
+          // re-random/loop re-roll the multi-actor derivation. Routing is per-actor via
+          // the dispatcher's `_actors` map (already wired above) + its transports.
+          kronosAudio = startKronosAudio({
+            events: treeEvents,
+            audioCtx: ctx,
+            derivedTempo: currentBpm,
+            loop: looping,
+            dispatcher: dispatcher as unknown as Parameters<
+              typeof startKronosAudio
+            >[0]['dispatcher'],
+            startSceneSec: startOffsetSec,
+            // STEP audition + re-derive mirror the mono path; a STEP never re-derives.
+            reDerive: section ? null : reDeriveTreeEvents(orchestratedLive),
+            reRandom,
+            step: stepWindow,
+            log: (m) => log({ runtime: id, level: 'info', msg: `[kronos] ${m}` })
+          });
+          // The timeline reads ITS playhead (aligned to the heard audio), as on mono.
+          kronosCursor.set(kronosAudio);
+        }
         // This dispatcher now drives the transport beat display (requirement B).
         beatClockDispatcher = dispatcher;
         beatGen++;
@@ -2159,15 +2200,16 @@ function makeBpxAdapter(
           dispatcher,
           file: src.fileId,
           orchestrator: true,
-          codeSlots
+          codeSlots,
+          kronosAudio
         });
 
         // Publish the actor list to the Actors panel (groove + viz, …) and
         // register a live arm/disarm handle per actor. A code voice (Strudel/
         // Hydra) is stopped/re-evaluated through its own adapter + slot; a native
         // notes voice is muted on this dispatcher's per-actor note gate. The
-        // handle map is keyed by actor name and replaced on each re-eval.
-        const da2 = dispatcher as unknown as { setActorMuted(actor: string, muted: boolean): void };
+        // handle map is keyed by actor name and replaced on each re-eval (`da2`
+        // — the dispatcher's per-actor note mute — was declared above).
         // Tear down the OUTGOING program's code voices (a previous orchestrator's
         // Hydra canvas + its rAF loop, Strudel audio) before registering this one's
         // — loading a new program must not leave the old scene's voices rendering
@@ -2183,9 +2225,20 @@ function makeBpxAdapter(
           orchestratedVoices.set(actor.name, {
             file: src.fileId,
             setNoteMuted: (muted: boolean) => {
+              // The live mute set is the single source of truth per re-derive cycle
+              // (consulted by `orchestratedLive` + the backtick sink), in BOTH engines.
               if (muted) mutedActors.add(actor.name);
               else mutedActors.delete(actor.name);
-              da2.setActorMuted(actor.name, muted);
+              if (kronosAudio) {
+                // Kronos mode: it drives the notes, so the note mute must reach ITS
+                // scheduler. The dispatcher's note-actors are PERMANENTLY muted here
+                // (no double audio), so we must NOT toggle `da2` — re-arming it would
+                // make the dispatcher start routing this actor's notes too.
+                kronosAudio.setActorMuted(actor.name, muted);
+              } else {
+                // Legacy mode: the dispatcher drives the notes; mute it directly.
+                da2.setActorMuted(actor.name, muted);
+              }
             },
             stopCode: codeRuntime
               ? () =>

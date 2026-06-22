@@ -133,6 +133,17 @@ const DEMO_META: Record<string, DemoMeta> = {
     level: 'intermediate',
     tags: ['orchestration', 'multi-actor', 'midi'],
     showcase: true
+  },
+  'dual-actors-audio': {
+    name: 'Twin synth voices — all audio',
+    tagline: 'lead + bass, one synth',
+    description:
+      'A BPScript orchestrator with a lead and a bass actor, both routed to the in-browser synth and voiced together from one scene. Arm/disarm silences one voice while the other plays on.',
+    category: 'orchestrator',
+    outputs: ['audio'],
+    level: 'intermediate',
+    tags: ['orchestration', 'multi-actor'],
+    showcase: true
   }
 };
 

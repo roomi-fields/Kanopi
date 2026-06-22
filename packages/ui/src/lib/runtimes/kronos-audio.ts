@@ -159,6 +159,13 @@ export interface KronosAudioHandle {
    *  legacy dispatcher's `setLiveTempo` has the twin; in kronos mode this handle
    *  drives the audio, so a BPM/TAP change mid-play must reach it here. */
   retune(bpm: number): void;
+  /** Arm/disarm an orchestrated actor's NOTE voice while the rest keep playing
+   *  (orchestrated kronos path). Disarming silences that actor's notes at the
+   *  scheduler's emission gate (Kronos owns the audio in this mode); re-arming
+   *  lets them through again at the next emission. A code voice (Strudel/Hydra)
+   *  is NOT note-routed — its arm/disarm is handled by its own adapter, not here.
+   *  No-op for the mono path (no actors). */
+  setActorMuted(actor: string, muted: boolean): void;
 }
 
 // Transport beats-per-bar for the Kronos beat readout. Matches the central
@@ -559,6 +566,14 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       // conversions stretch/compress — the scheduler and cursor both read this
       // same clock, so the audio and the drawn playhead warp together.
       clock.retune(bpm);
+    },
+    setActorMuted(actor: string, muted: boolean) {
+      // Orchestrated arm/disarm (kronos path): gate this actor's notes at the
+      // scheduler's own emission filter — the SAME `_mutedActors` set the legacy
+      // dispatcher exposes, but here Kronos drives the audio so the mute must reach
+      // ITS scheduler (consumed AS-IS). Re-derive cycles re-emit through the same
+      // gate, so a disarmed actor stays silent across loop boundaries until re-armed.
+      scheduler.setActorMuted(actor, muted);
     }
   };
 }
