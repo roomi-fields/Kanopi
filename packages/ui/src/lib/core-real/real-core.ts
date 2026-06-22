@@ -140,14 +140,19 @@ class RealCore implements CoreApi {
         }
         return;
       }
-      const before = new Map(this.actors.list().map((a) => [a.name, a.active]));
       this.actorsAreOrchestrated = true;
+      // A PRODUCE/scene-load arms EVERY actor (they all sound — Kronos plays the whole
+      // scene). The LED reflects "this actor is sounding", so all light up together;
+      // a previous Stop set them `active:false`, and the old `before.get(name) ?? true`
+      // re-inherited that false → only the evaluated block's actor re-lit (the « un seul
+      // acteur armé alors que les deux jouent » bug). Live arm/disarm still toggles one
+      // actor at a time through `handleActorToggle`, not this publish.
       this.actors.setActors(
         published.map((p) => ({
           name: p.name,
           runtime: p.runtime,
           file: p.file,
-          active: before.get(p.name) ?? true
+          active: true
         }))
       );
     });
