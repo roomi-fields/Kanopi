@@ -1,16 +1,15 @@
-// Kronos AUDIO driver (EX4 flip — Kronos drives the REAL sound).
+// Kronos AUDIO driver — Kronos drives the REAL sound (the ONLY engine; legacy removed).
 //
 // Replaces Kanopi's old dispatcher on the audio path: the Kronos scheduler
 // produces the timed events and a thin RuntimeAdapter bridges each one to the
-// EXISTING WebAudio synthesis (`core/dispatcher/transports/webaudio.js`). The
-// old engine no longer schedules sound in this mode — Kronos alone does.
+// EXISTING WebAudio synthesis (`core/dispatcher/transports/webaudio.js`). The old
+// dispatcher never schedules sound — Kronos alone does (it is kept only as the
+// inert structure of transports/resolvers that Kronos reads, never as an emitter).
 //
-// Phase 1 scope (honest): NOTE + per-note CV (cutoff/pan/…) + basic actor
-// routing, for the MONO note path (covers cv-adsr, polymetric, every
-// single-voice note scene). Advanced live features (control-token state
-// mutation, backtick/code voices, MIDI orchestration, arm/disarm) are NOT yet
-// driven here — the host falls those scenes back to the legacy engine and this
-// module logs what it skips (never a silent drop).
+// Coverage: NOTE + per-note CV (cutoff/pan/…) + actor routing + backtick/code
+// voices (via the backtick sink) + per-actor MIDI (MidiTransport). The one
+// residual gap is control-token STATE mutation — NOT folded yet; this module
+// LOGS what it skips (never a silent drop), it does not fall back anywhere.
 //
 // Integration rule: `@kronos/core` and the WebAudio transport are consumed
 // AS-IS. This file is glue — it maps `DispatchEvent[]` → `MaterializedTimeline`
@@ -417,8 +416,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // separate counter — it reads the same `clock` the scheduler does, so the drawn
   // playhead is rigorously aligned to the heard audio (no ~1-note lag) and
   // monotone from `startScene` (no backward jump at launch; the only return-to-0
-  // is the legitimate loop crossing). The host swaps the timeline's cursor source
-  // to this when `audio-engine=kronos`.
+  // is the legitimate loop crossing). This is the timeline's single cursor source.
   const cursor = new Cursor(clock, { loopDuration: duration, loop });
   const actors = new Set<string>();
   for (const e of events) {
@@ -494,10 +492,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       (loop && opts.reRandom && opts.reDerive ? ', re-random ON' : '')
   );
   if (controlCount > 0) {
-    log(
-      `⚠ ${controlCount} control event(s) not applied (kronos phase 1 = notes + CV). ` +
-        `If a control-driven scene misbehaves, set localStorage['audio-engine']='legacy'.`
-    );
+    log(`⚠ ${controlCount} control event(s) not applied (kronos phase 1 = notes + CV).`);
   }
   if (transposeWarned) {
     log(

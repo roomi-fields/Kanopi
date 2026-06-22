@@ -26,12 +26,6 @@ import scalesJson from 'bpscript/lib/scales.json';
 import modLibJson from 'bpscript/lib/mod.json';
 import { createBPx } from 'bpx';
 import { BUNDLED_SE, BUNDLED_SOUND, BUNDLED_AL } from './bp3-aux';
-// MIDI output sink for the beta-ensemble. runtime-midi OWNS the ISO-BP3 MIDI
-// path (hub/contrats/kanopi-runtime-midi.md); Kanopi feeds it the SAME raw BPx
-// timed tokens it sends to the WebAudio dispatcher, on the SAME AudioContext
-// clock, and runtime-midi emits the MIDI bytes. Consumed AS-IS — no
-// reimplementation of the MIDI transport here.
-import { MidiSink } from 'runtime-midi';
 // Core runtime, reused AS-IS (no port): the dispatcher schedules timed tokens
 // on the WebAudio transport; the resolver turns pitch names into frequencies.
 import { Dispatcher } from '../../../../core/src/dispatcher/dispatcher.js';
@@ -58,10 +52,10 @@ import {
   type ModLib,
   type ModulationBinding
 } from '@kronos/core';
-// EX4 flip: Kronos drives the REAL audio (default `audio-engine=kronos`). The
-// Kronos scheduler produces the timed events; a thin adapter bridges each to the
-// existing WebAudio synth. In kronos mode the old dispatcher is NOT started for
-// sound. `audio-engine=legacy` keeps the old dispatcher on the audio path.
+// Kronos drives the REAL audio (the only engine; legacy removed). The Kronos
+// scheduler produces the timed events; a thin adapter bridges each to the existing
+// WebAudio synth. The old dispatcher is NEVER started for sound — it survives only
+// as the inert structure of transports/resolvers that Kronos reads.
 import { startKronosAudio, type KronosAudioHandle, type KronosAudioOptions } from './kronos-audio';
 // EX4 phase 2: surface the ACTIVE Kronos cursor to the UI so the timeline draws
 // the playhead off the SAME clock as the audio (aligned + monotone-from-0),
@@ -923,7 +917,6 @@ const bpsFrontend: Frontend = (code) => {
 
 interface BP3Voice {
   dispatcher: InstanceType<typeof Dispatcher>;
-  midiSink?: MidiSink;
   /** Source file this dispatcher was evaluated from. Lets a new program stop the
    *  OUTGOING program's dispatcher (whose `loop:true` keeps re-firing its code
    *  voices — Hydra/Strudel — each cycle) without depending on the per-actor
@@ -939,7 +932,7 @@ interface BP3Voice {
    *  these runtimes right after to guarantee the outgoing canvas/audio is cleared,
    *  independent of the per-actor handle map (which `__hush__` may have emptied). */
   codeSlots?: Array<{ runtime: Runtime; actorId: string }>;
-  /** EX4 flip: Kronos audio driver for this scene (when `audio-engine=kronos`).
+  /** Kronos audio driver for this scene (the engine that actually sounds it).
    *  Stopped alongside the dispatcher; the dispatcher's own stop closes the
    *  transports that cut the scheduled sound. */
   kronosAudio?: KronosAudioHandle;
@@ -1214,44 +1207,28 @@ export function setLoopLive(on: boolean): void {
   for (const u of transportLiveUpdaters) u(null, on);
 }
 
-// The dispatcher currently driving the transport beat display (requirement B):
-// the most-recently-started running dispatcher. The central clock reads its
-// musical position so the beat dots + bar·beat·phase counter lock to the HEARD
-// audio (and to a live tempo change), instead of the independent rAF clock.
-// Cleared when that dispatcher stops. Shared by both BPx adapters (one transport
-// beat at a time) since it is module-scoped.
-let beatClockDispatcher: InstanceType<typeof Dispatcher> | null = null;
-// Generation counter: bumped every time a NEW dispatcher takes over the beat
-// display (a fresh Play, or a Ctrl+Enter restart while playing). The central
-// clock reads it to tell a genuine restart (position jumps back to the top) from
-// the harmless rAF/dispatcher hand-off at launch — so a re-eval restarts the
-// cursor, while a normal launch never appears to rewind.
-let beatGen = 0;
-
 interface DispatcherBeat {
   beatsTotal: number;
   bar: number;
   beat: number;
   phase: number;
-  gen: number;
 }
 
 /**
- * The musical beat position of the dispatcher currently driving playback, or
- * null when none is running. The central clock consumes this to phase-lock the
- * transport beat display to the heard audio (requirement B). Beats advance at
- * the live tempo, including after a live retune. Returns null so the central
- * clock falls back to its own rAF behaviour (Strudel/Hydra/idle).
+ * The musical beat position driving the transport display, read from the KRONOS
+ * TRANSPORT's cursor (the single position authority) — or null when no scene is
+ * live. The central clock's render loop consumes this each frame to project
+ * `clock.state` and derive the beat/bar UI events; null → nothing to advance.
  */
 export function getDispatcherBeat(): DispatcherBeat | null {
-  // The beat source is now the KRONOS TRANSPORT's position (the single authority), not the
-  // legacy dispatcher. The central clock's render loop reads this each frame to project
-  // `clock.state` + derive the beat/bar UI events (p5/hydra onBeat/onBar) — no rAF position
-  // integrator. `beatPosition()` is frozen-aware (advances running, frozen when paused).
+  // The beat source is the KRONOS TRANSPORT's position (the single authority). The central
+  // clock's render loop reads this each frame to project `clock.state` + derive the beat/bar
+  // UI events (p5/hydra onBeat/onBar) — no rAF position integrator. `beatPosition()` is
+  // frozen-aware (advances running, frozen when paused).
   const kc = kronosCursor.active;
   if (!kc) return null;
   const bp = kc.beatPosition();
-  return { beatsTotal: bp.beatsTotal, bar: bp.bar, beat: bp.beat, phase: bp.phase, gen: beatGen };
+  return { beatsTotal: bp.beatsTotal, bar: bp.bar, beat: bp.beat, phase: bp.phase };
 }
 
 /** One orchestrated actor as published to the Actors panel. */
@@ -1747,9 +1724,10 @@ function makeBpxAdapter(
         )) {
           (leaf as { __cvBindings?: ModulationBinding[] }).__cvBindings = bindings;
         }
-        // Legacy fallback (`audio-engine=legacy`): rewrite each subject-driven value
-        // into the uniform `{__cv:true, …}` descriptor the webaudio transport reads
-        // — mutates leaf.controls in place. Reads the SAME new facets.
+        // Resolve each subject-driven value into the uniform `{__cv:true, …}` descriptor
+        // the WebAudio transport reads — mutates leaf.controls in place, reading the SAME
+        // facets as the Kronos CV bindings above. Runs unconditionally (the WebAudio synth
+        // Kronos drives consumes these descriptors).
         resolveCvControls(derived.tree, nameOf, new Set(Object.keys(modulatorsFromAst(ast))));
         rawTree = derived.tree;
         tokens = derived.tokens.filter((t) => t.type !== 'control');
@@ -1944,7 +1922,6 @@ function makeBpxAdapter(
       if (prev) {
         prev.kronosAudio?.stop();
         prev.dispatcher.stop();
-        prev.midiSink?.stop();
       }
       // Loading a DIFFERENT program: stop the previous ORCHESTRATOR's dispatcher.
       // Its `loop:true` keeps re-firing its code voices (re-evaluating the Hydra
@@ -1963,7 +1940,6 @@ function makeBpxAdapter(
         if (v.orchestrator && v.file !== undefined && v.file !== src.fileId) {
           v.kronosAudio?.stop();
           v.dispatcher.stop();
-          v.midiSink?.stop();
           if (v.codeSlots) outgoingCodeSlots.push(...v.codeSlots);
           voices.delete(vKey);
         }
@@ -2170,18 +2146,14 @@ function makeBpxAdapter(
         (dispatcher as unknown as { setDerivedTempo(bpm: number): void }).setDerivedTempo(
           currentBpm
         );
-        // EX4 flip — orchestrated path: Kronos drives the REAL note+CV audio for
-        // EVERY actor (routed per-actor through `pickTransport`), exactly as on the
-        // mono path. The legacy dispatcher is NOT started for sound here; it is
-        // started ONLY to fire the CODE voices (Strudel/Hydra backticks) in time —
-        // those are not notes, so Kronos never routes them, and the dispatcher's
-        // backtick sink stays the single place they fire. To stop the dispatcher
-        // from DOUBLING the note audio, every note-routed actor (audio/midi) is
-        // muted on it: `_sendActorNote` then skips them while the backtick sink
-        // keeps firing. `audio-engine=legacy` keeps the dispatcher driving the
-        // sound (safety net) with no per-actor mute.
-        // Dispatcher per-actor NOTE mute (native voices). Declared here so the
-        // kronos-mode pre-mute below and the live arm/disarm handle later share it.
+        // Orchestrated path: Kronos drives the REAL note+CV audio for EVERY actor
+        // (routed per-actor through `pickTransport`), exactly as on the mono path, AND
+        // the CODE voices (Strudel/Hydra backticks) via the Kronos adapter's backtick
+        // sink. The dispatcher is NEVER started as an emitter (no `.start()`); it stays
+        // the inert transport/resolver/`_actors` structure Kronos reads.
+        // The per-actor mute set below is SHARED with the Kronos scheduler (it reads the
+        // same `_mutedActors` to skip an actor), so it backs live arm/disarm — not a
+        // dispatcher emission guard.
         const da2 = dispatcher as unknown as { setActorMuted(actor: string, muted: boolean): void };
         let kronosAudio: KronosAudioHandle | undefined;
         // Kronos is the ONLY engine (legacy removed): it drives notes + CV + the code
@@ -2229,9 +2201,6 @@ function makeBpxAdapter(
           // The timeline reads ITS playhead (aligned to the heard audio), as on mono.
           kronosCursor.set(kronosAudio);
         }
-        // This dispatcher now drives the transport beat display (requirement B).
-        beatClockDispatcher = dispatcher;
-        beatGen++;
         // Code-voice slots of THIS orchestrator (hydra/strudel + their per-actor
         // slot id), recorded on the dispatcher entry so a LATER program can hush
         // them after stopping this dispatcher (covers a fire in flight at stop).
@@ -2357,13 +2326,11 @@ function makeBpxAdapter(
         for (const voice of voices.values()) {
           voice.kronosAudio?.stop();
           voice.dispatcher.stop();
-          voice.midiSink?.stop();
         }
         voices.clear();
-        // Stop everything → the timeline cursor falls back to the central clock.
+        // Stop everything → the timeline cursor + transport beat display fall back
+        // to the idle clock (getDispatcherBeat returns null with no live cursor).
         kronosCursor.set(null);
-        // Stop everything → the transport beat display falls back to the rAF clock.
-        beatClockDispatcher = null;
         // "Stop everything" also FORGETS the live orchestrated-voice handles: every
         // dispatcher is down and the core hushes every code runtime alongside this
         // call, so a lingering handle would only let a stale voice be torn down /
@@ -2379,9 +2346,7 @@ function makeBpxAdapter(
         if (voice.kronosAudio) kronosCursor.set(null);
         voice.kronosAudio?.stop();
         voice.dispatcher.stop();
-        voice.midiSink?.stop();
         voices.delete(key);
-        if (beatClockDispatcher === voice.dispatcher) beatClockDispatcher = null;
       }
       log({ runtime: id, level: 'info', msg: `stop [${key}]` });
       emitLifecycle('stop', src.fileId);
@@ -2391,8 +2356,6 @@ function makeBpxAdapter(
         try {
           voice.kronosAudio?.stop();
           voice.dispatcher.stop();
-          voice.midiSink?.stop();
-          if (beatClockDispatcher === voice.dispatcher) beatClockDispatcher = null;
         } catch {
           /* engine may already be torn down */
         }
