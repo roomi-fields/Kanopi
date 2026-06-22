@@ -100,8 +100,10 @@ export interface KronosAudioOptions {
     token: string,
     info: { startSec: number; durSec: number; absTime: number }
   ) => void;
-  /** Coupe les voix de code orchestrées (Strudel/Hydra) quand le scheduler s'arrête (Stop/teardown). */
+  /** Coupe les voix de code orchestrées (Strudel/Hydra) — appelé explicitement à la PAUSE. */
   stopCodeVoices?: () => void;
+  /** Re-déclenche les voix de code dans leurs slots — appelé à la REPRISE après une pause-cut. */
+  refireCodeVoices?: () => void;
 }
 
 /** Beat/bar readout for the transport display, derived from the SAME playhead as
@@ -119,6 +121,10 @@ export interface KronosAudioHandle {
    *  beatPosition()/onStateChange`). The host projects on it; it holds no FSM/counter. */
   transport: Transport;
   stop(): void;
+  /** Cut the scene's sustained code voices (Strudel/Hydra) — host-managed PAUSE-cut. */
+  cutCodeVoices(): void;
+  /** Re-fire the scene's code voices in their slots — RESUME after a pause-cut. */
+  refireCodeVoices(): void;
   /** Live re-random toggle (transport): installs/removes the re-derive on the
    *  ACTIVE scheduler so toggling re-random mid-play takes effect at the next loop
    *  boundary (gated by the current loop state). The legacy dispatcher path has the
@@ -394,13 +400,12 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       // applies to the note's AudioParams via setValueCurveAtTime.
       if (Object.keys(modCurves).length > 0) event.__modCurves = modCurves;
       transport.send(event, ev.onset);
-    },
-    stop() {
-      // Stop de scène : l'ordonnanceur appelle `adapter.stop?.()` à `scheduler.stop()`.
-      // Les voix de code (Strudel boucle, Hydra rend en continu) ne se taisent pas par
-      // simple arrêt de planification → couper via le sink hôte.
-      opts.stopCodeVoices?.();
     }
+    // NOTE: no `stop()` here. The scheduler's stop must NOT cut the code voices, or a
+    // SAME-FILE re-eval (which calls `transport.stop()` on the previous handle to drop
+    // its note timeline) would tear down the still-wanted Hydra/Strudel voice (canvas
+    // flicker). Code voices are host-managed: cut explicitly on Pause/Stop, preserved on
+    // a same-file re-eval (the new eval re-fires them in their slot).
   };
 
   // 4. Scheduler + driver. Default adapter handles mono; per-actor adapters are
@@ -509,19 +514,27 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     stop() {
       if (stopped) return;
       stopped = true;
-      // Belt: cut the sustained code voices even if the scene adapter's `stop()` isn't
-      // reached through the scheduler (host teardown). `transport.stop()` also closes
-      // the sinks via the scheduler, so `stopCodeVoices` must be idempotent host-side.
-      opts.stopCodeVoices?.();
-      // Transport.stop() disarms emission, closes the voices (scheduler.stop → adapter
-      // stop?()), and resets the position. The external pump is host-owned, so stop it
-      // here (Transport doesn't own the driver).
+      // Transport.stop() disarms emission + resets the position; the external pump is
+      // host-owned, so stop it here. Code voices are NOT cut here — a same-file re-eval
+      // calls this on the previous handle to drop its note timeline and must keep the
+      // Hydra/Strudel voice. The explicit transport Stop cuts code voices separately
+      // (host `silenceRuntimes` → each code adapter `stop('__hush__')`).
       try {
         transport.stop();
         driver.stop();
       } catch {
         /* already torn down */
       }
+    },
+    /** Cut this scene's sustained code voices (Strudel/Hydra) — called on PAUSE (and any
+     *  point that must silence them without a full teardown). Host-managed, idempotent. */
+    cutCodeVoices() {
+      opts.stopCodeVoices?.();
+    },
+    /** Re-fire this scene's code voices in their slots (RESUME after a pause-cut) — the
+     *  pattern restarts in place, no re-derivation of the note timeline. */
+    refireCodeVoices() {
+      opts.refireCodeVoices?.();
     },
     setReRandom(on: boolean) {
       reRandomActive = on;

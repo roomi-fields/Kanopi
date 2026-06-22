@@ -48,6 +48,8 @@ class Playback {
     // play→pause→play cycle.
     if (t && t.state === 'paused') {
       t.play();
+      // Resume the sustained code voices that PAUSE cut (Strudel/Hydra restart in place).
+      kronosCursor.active?.refireCodeVoices();
       return;
     }
     // From stopped (no live Transport): evaluate the active scene — the clock's play edge
@@ -58,9 +60,11 @@ class Playback {
   }
 
   pause() {
-    // Kronos freezes the position and closes the sustained sinks (code voices). No host
-    // bookkeeping — the state mirror flips to `paused` via `onStateChange`.
+    // Kronos freezes the position (notes ring their tail). The sustained code voices
+    // (Strudel/Hydra) are host-managed, so cut them explicitly here (the scheduler's
+    // stop must NOT, or a same-file re-eval would tear them down). Resume re-fires them.
     this.transport?.pause();
+    kronosCursor.active?.cutCodeVoices();
   }
 
   stop() {

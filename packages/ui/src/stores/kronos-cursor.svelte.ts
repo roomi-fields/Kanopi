@@ -21,6 +21,10 @@ export interface KronosCursorView {
   position(): number;
   /** Beat/bar readout (frozen-aware), for the transport display. */
   beatPosition(): KronosCursorBeat;
+  /** Cut the scene's sustained code voices (Strudel/Hydra) — PAUSE-cut. */
+  cutCodeVoices(): void;
+  /** Re-fire the scene's code voices in their slots — RESUME after a pause-cut. */
+  refireCodeVoices(): void;
 }
 
 class KronosCursorStore {

@@ -2191,6 +2191,11 @@ function makeBpxAdapter(
                 void orchestratedVoices.get(a.name)?.stopCode?.();
               }
             },
+            refireCodeVoices: () => {
+              for (const a of orchestration.actors) {
+                orchestratedVoices.get(a.name)?.evalCode?.();
+              }
+            },
             log: (m) => log({ runtime: id, level: 'info', msg: `[kronos] ${m}` })
           });
           // The timeline reads ITS playhead (aligned to the heard audio), as on mono.
@@ -2316,6 +2321,11 @@ function makeBpxAdapter(
       // Ctrl+. panic): no single voice matches it, so we tear down every live
       // dispatcher. Without this, stopping the transport left playback looping.
       if (key === '__hush__') {
+        // EXPLICIT stop → cut the sustained code voices (Strudel/Hydra). This is the
+        // single place a transport Stop kills them; the per-handle stop does NOT (a
+        // same-file re-eval reuses that handle's stop to drop only its note timeline,
+        // keeping the code voice). Cut BEFORE clearing the map so each slot is reached.
+        for (const h of orchestratedVoices.values()) void h.stopCode?.();
         for (const voice of voices.values()) {
           voice.kronosAudio?.stop();
           voice.dispatcher.stop();
