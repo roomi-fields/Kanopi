@@ -27,14 +27,20 @@ class Playback {
   /** PROJECTION of Kronos's Transport state (reactive via `kronosCursor.state`). Kanopi
    *  keeps no FSM. `running`→`playing`; `step` lands on `paused` (no separate `stepped`). */
   get mode(): Mode {
-    switch (kronosCursor.state) {
-      case 'running':
-        return 'playing';
-      case 'paused':
-        return 'paused';
-      default:
-        return 'stopped';
+    // A live scene → PROJECT the Kronos Transport's state (the authority). No live scene
+    // (empty/idle workspace, or a code-only scene that produced no Kronos timeline) →
+    // reflect the central clock's play/stop intent so the transport buttons still respond.
+    if (kronosCursor.active) {
+      switch (kronosCursor.state) {
+        case 'running':
+          return 'playing';
+        case 'paused':
+          return 'paused';
+        default:
+          return 'stopped';
+      }
     }
+    return core.clock.state.playing ? 'playing' : 'stopped';
   }
 
   /** The live Kronos Transport, or null when no scene is loaded/playing. */
