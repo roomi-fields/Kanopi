@@ -147,13 +147,14 @@
 
     // KRONOS PLAYING — own the frames. Kronos drives the sound and the playhead;
     // the legacy clock's 25 ms timer is NOT its time source, so the cursor runs its
-    // own rAF loop (smooth 60 fps) and samples the HEARD-audio position each frame
-    // (latency-compensated: `displayPosition` reads the scene at
-    // `currentTime − outputLatency − baseLatency`, so the cursor sits on the note
-    // being heard, not the one ~one buffer ahead being scheduled). Already
-    // loop-folded; monotone from start (the only return-to-0 is the loop crossing).
+    // own rAF loop (smooth 60 fps). It samples the TRANSPORT position (`position()` =
+    // the scene time being scheduled now), the DAW-standard playhead: it sits ON the
+    // drawn notes and stays consistent with the bar·beat readout (which is also
+    // position-based). NOTE: do NOT use `displayPosition()` (latency-compensated to the
+    // HEARD audio) here — that parks the cursor ~43 ms BEHIND the drawn notes and the
+    // counter, which reads as "the bar lags / is never aligned". Loop-folded; monotone.
     if (mode === 'playing' && kc && durationSec > 0) {
-      startKronosCursorLoop(() => kc.displayPosition() * 1000);
+      startKronosCursorLoop(() => kc.position() * 1000);
       return () => stopKronosCursorLoop();
     }
 
