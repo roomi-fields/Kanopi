@@ -2,40 +2,43 @@
 
 Items différés (hors périmètre immédiat), tracés pour ne pas les perdre.
 
-## Migration Kronos — features de l'ancien dispatcher NON portées au 1er flip
+## Migration Kronos — retirer l'ancien dispatcher (état fait / reste)
 
-> Le 1er flip audio (Kronos drive le son) couvre : **planification des notes, CV
-> (note + signal via webaudio), routage acteur basique, boucle, tempo de dérivation
-> initial**. Tout le reste de la surface de l'ancien `@kanopi/core` dispatcher est
-> listé ci-dessous — à porter/câbler avec Kronos. Tant qu'un item n'est pas porté :
-> **repli legacy + warning**, jamais de drop silencieux. `[K]` = l'API Kronos existe
-> déjà (à câbler côté hôte) ; `[N]` = à concevoir.
+> Kronos drive le son sur le **chemin audio mono** (flag `audio-engine=kronos` défaut |
+> `legacy` filet). **Tout ce qui n'est pas couvert retombe sur legacy** (repli + warning,
+> jamais de drop silencieux). Pour **retirer legacy**, le chemin Kronos doit couvrir le
+> RESTE ci-dessous. `[P]` = primitive Kronos prête → câblage HÔTE ; `[N]` = à concevoir.
 
-1. **Arm/désarm d'acteur live** `[N]` — gate jouer/sauter par token (`setSoundPredicate`/
-   `soundsFn`). L'hôte capte le geste ; il faut un hook Kronos pour muter/sauter un token
-   à la volée. (live coding)
-2. **Backtick cross-runtime + voix de code** `[N]` — token `BT<interp><id>` → interpréteur
-   (Strudel/Hydra) déclenché dans le temps (`setBacktickSink`/`registerBacktickSink`),
-   slots `<fileId>::<actor>`, re-arm. Câblage hôte + hook de timing Kronos.
-3. **Events de nature control** `[N]` — `transport-control` / `instant` / `engine-control`
-   routés sur `nature` (pas des notes). À router côté adaptateur/Scheduler.
-4. **Hot-swap / re-dérivation live** `[K]` — `reDerive`/`reRandom` entre cycles, `hotSwap`,
-   `setLoop`/`setReRandom`. Kronos a `Scheduler.swap(newTimeline, 'quantized')` → l'hôte
-   appelle au bord de cycle.
-5. **Tempo warp live** `[K]` — `setDerivedTempo`/`retune` (le tempo entendu change sans
-   re-dériver la grille). Kronos a `InternalClock.retune(bpm)` → câbler le contrôle de tempo.
-6. **Reprise depuis un offset** `[N]` — `startOffsetSec` (STEP → Play reprend au beat
-   stepé, saute les events avant l'offset au 1er cycle). Lié au curseur/transport.
-7. **Pause / Step + curseur** `[K]` — phase 2 explicite de l'EX4 : `Cursor.position()`
-   (inverse de l'horloge), l'hôte dessine. Le curseur reste sur l'ancien chemin jusque-là.
-8. **Sorties multi-runtime** `[N]` — MIDI (`runtime-midi`), OSC : des `RuntimeAdapter`
-   additionnels (`addTransport` → `addAdapter` par acteur/sortie, avec latence propre).
-9. **CV expr / samples** `[N]` — courbes pilotées par backtick (`kind:'expr'`) + LFO
-   périodique (worklet/oscillo) : descripteurs opaques, traitement à caler (non capturables
-   headless).
-10. **Migration de la composition CV** `[K/N]` — `resolveCvControls` + `modulatorsFromAst`
-    (aujourd'hui dans `@kanopi/ui`, transitoires) → couche 1 Kronos, consommant le triplet
-    BPx `controls` + `controlSubjects` + `controlScopes` ensemble. (acté par l'architecte)
+### FAIT (passe par Kronos)
+- Flip audio mono (notes), boucle.
+- CV : signal / par-note (`*:`) / terminal (`<term>:`) / **voix sœur** (env1/2/3 suivies)
+  + pan ; composition via `buildModulators`/`resolveVoice`/`composeLeafModulations`.
+- **Re-random** (toggle LIVE → handle kronos).
+- **Curseur** (depuis `Cursor.position`, calé sur le son, ~1 frame).
+- **Seek / Pause / Step** : seek = `clock.start`+`scheduler.start` ; Step = un temps EN PLACE
+  (timeline complète, seek, stop après un temps — ne modifie pas la production).
+
+### RESTE pour retirer legacy (par priorité)
+1. **Scènes orchestrées multi-acteurs** `[P]` — le flip est mono ; `@actor/@scene` → legacy.
+   Kronos route par acteur (`addAdapter`) ; câbler l'orchestration (un adaptateur/acteur,
+   mapping acteur→voix). **Gros morceau.**
+2. **Backtick cross-runtime + voix de code** `[N]` — `BT<interp><id>` → Strudel/Hydra
+   déclenché dans le temps (sinks `<fileId>::<actor>`, re-arm) via l'ordonnanceur Kronos.
+3. **Sorties multi-runtime** `[P]` — MIDI (`runtime-midi`), OSC, DMX : un `RuntimeAdapter`
+   Kronos par sortie (latence propre). Aujourd'hui MIDI passe encore par legacy (sink MIDI
+   sauté sur step). **Gros morceau, recoupe #1 (routage par acteur/sortie).**
+4. **Events de nature control** `[N]` — `transport-control` / `instant` / `engine-control`
+   routés sur `nature`. À router côté adaptateur/Scheduler.
+5. **Tempo warp live** `[P]` — changer le BPM en lecture → `InternalClock.retune` (comme le
+   re-random live). Câblage du contrôle de tempo vers le handle kronos.
+6. **Arm/désarm acteur** `[P]` — `Scheduler.setActorMuted` livré par Kronos ; brancher le
+   geste UI dessus.
+7. **CV expr / samples** `[N]` — courbes backtick (`kind:'expr'`) + LFO périodique worklet.
+8. **(propreté, pas bloquant)** migrer la composition CV (`composeCvBindings`, transitoire
+   @kanopi/ui) → **couche 1 Kronos** (acté archi).
+
+Ordre suggéré : **6 + 5** (petits, primitives prêtes) → **1 + 3** ensemble (orchestration +
+MIDI, routage commun) → **2** (backtick) → **4 / 7**. Legacy retirable quand 1-7 passent par Kronos.
 
 Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 `docs/design/TEMPORAL_INTERPRETER.md`.
