@@ -92,12 +92,13 @@ export interface KronosAudioOptions {
   reRandom?: boolean;
   /** STEP audition (one beat of the REAL production, in place). The host builds the
    *  SAME full timeline as normal Play (real scene times, full CV windows) and asks
-   *  Kronos to seek to the beat's scene-second and play exactly one beat: the clock +
-   *  scheduler start at `fromSec` (the seek primitive prunes earlier events), and a
-   *  host-timer `driver.stop()` fires after `durSec` real seconds so no event past the
-   *  beat is scheduled — the beat's note(s) + their release tails play out, nothing
-   *  after. The CV is sampled at `fromSec` EXACTLY as in full Play (no re-window, no
-   *  distortion). Absent ⇒ normal Play / loop. */
+   *  Kronos to seek to the beat's scene-second and play exactly one beat: the clock
+   *  re-anchors at `fromSec` and the scheduler's `playWindow(fromSec, fromSec+durSec)`
+   *  bounds EMISSION to that half-open scene window (lookahead included), so no event
+   *  past the beat — including the next beat at the window boundary — is ever scheduled.
+   *  The beat's note(s) + their release tails play out, nothing after. The CV is sampled
+   *  at `fromSec` EXACTLY as in full Play (no re-window, no distortion). Absent ⇒ normal
+   *  Play / loop. */
   step?: { fromSec: number; durSec: number };
   /** Host logger (routed to the Console panel). */
   log?: (msg: string) => void;
@@ -384,30 +385,23 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   };
   applyReDerive();
 
-  scheduler.start(startScene);
+  // STEP: audition ONE beat in place. EMISSION-bounded (not wall-clock): the
+  // scheduler resumes at `step.fromSec` and bounds emission to the half-open scene
+  // window `[fromSec, fromSec + durSec)` — lookahead INCLUDED, so it NEVER schedules
+  // the next beat (whose onset is the window boundary). The previous wall-clock
+  // `setTimeout(driver.stop)` was fundamentally racy: the lookahead (0.12 s) emitted
+  // the next beat before the timer fired → 2 notes on the first step. The scene bound
+  // clamps emission deterministically; a note whose duration overflows the window
+  // still sounds fully (only emission is bounded). Normal Play keeps `start()`
+  // (unbounded) below; a normal `start()` does not inherit the bound.
+  if (step) {
+    scheduler.playWindow(step.fromSec, step.fromSec + step.durSec);
+  } else {
+    scheduler.start(startScene);
+  }
 
   const driver = new RealtimeDriver({ clock, scheduler, lookahead: 0.12, intervalMs: 25 });
   driver.start();
-
-  // STEP: audition ONE beat in place. The clock + scheduler were seeked to the
-  // beat's scene second (`startScene = step.fromSec`), so the scheduler only fires
-  // events from there on. With loop off it would otherwise keep scheduling the rest
-  // of the scene; stop the driver after the beat's real duration so NO event past
-  // the beat is scheduled. Note(s) already scheduled within the lookahead + their
-  // release tails play out — exactly one beat sounds, with its TRUE modulation
-  // (the CV sampled at `step.fromSec` as in full Play). A small guard margin past
-  // the beat lets the onset (scheduled `lookahead` ahead) actually be reached.
-  let stepTimer: ReturnType<typeof setTimeout> | undefined;
-  if (step) {
-    const stopAfterSec = step.durSec + 0.12; // beat + one lookahead window
-    stepTimer = setTimeout(() => {
-      try {
-        driver.stop();
-      } catch {
-        /* already torn down */
-      }
-    }, stopAfterSec * 1000);
-  }
 
   log(
     `▶ kronos audio — ${noteCount} notes` +
@@ -434,7 +428,6 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     stop() {
       if (stopped) return;
       stopped = true;
-      if (stepTimer !== undefined) clearTimeout(stepTimer);
       try {
         driver.stop();
         scheduler.stop();
