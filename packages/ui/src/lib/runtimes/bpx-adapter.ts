@@ -414,6 +414,18 @@ interface Orchestration {
   synthetic?: boolean;
 }
 
+/** A scene with no `@actor` (plain `.bps` OR any `.gr`) routes through the SAME single
+ *  orchestrated path as a multi-actor one — it just owns one implicit `default` actor
+ *  (audio transport; pitch resolution falls to the scene resolver since events carry no
+ *  `payload.actor`). Shared by both frontends so there is ONE code path, never a mono one. */
+function syntheticDefaultOrchestration(): Orchestration {
+  return {
+    actorTable: { default: { transport: { key: 'audio' }, alphabet: 'western' } },
+    actors: [{ name: 'default', transportKey: 'audio', alphabet: 'western' }],
+    synthetic: true
+  };
+}
+
 // Sounding alphabet symbols, loaded from the `-so`/`-mi`/`-cs` aux files the
 // grammar references. Loads the raw aux text by reference. Injectable so a test
 // can feed fixtures; the adapter wires it to the bundled aux maps.
@@ -521,7 +533,11 @@ const WESTERN_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const grFrontend: Frontend = (code) => {
   const parsed = parseWithSound(code, WESTERN_NOTES);
   const sections = headSectionNames(code);
-  return sections.length > 0 ? { ...parsed, sections } : parsed;
+  const base = sections.length > 0 ? { ...parsed, sections } : parsed;
+  // `.gr` (BP3) has no `@actor` → one implicit `default` actor, SAME path as `.bps`.
+  // Pitch resolution falls to the scene resolver (`pickResolver(tokens)` — no declared
+  // alphabet), exactly as the old mono branch did for `.gr`.
+  return { ...base, orchestration: syntheticDefaultOrchestration() };
 };
 
 // Head-rule top-level sections of a `.gr` grammar TEXT — the macro structure STEP
@@ -888,18 +904,10 @@ const bpsFrontend: Frontend = (code) => {
   const actorTable = actorTableFromAst(a);
   const names = Object.keys(actorTable);
   if (names.length === 0) {
-    // No `@actor`: synthesize a single implicit `default` actor so a plain grammar
-    // travels the SAME orchestrated path (mono = orchestration with one actor). Its
-    // pitch resolution comes from the scene `@alphabet`/`@tuning` via the WebAudio
-    // transport's base resolver (events carry no `payload.actor` → that fallback), so
-    // the `default` actor's own alphabet is nominal. Marked `synthetic` so the Actors
-    // panel stays empty for plain scenes.
-    const orchestration: Orchestration = {
-      actorTable: { default: { transport: { key: 'audio' }, alphabet: 'western' } },
-      actors: [{ name: 'default', transportKey: 'audio', alphabet: 'western' }],
-      synthetic: true
-    };
-    return { ...base, orchestration };
+    // No `@actor`: one implicit `default` actor so a plain grammar travels the SAME
+    // orchestrated path (its pitch resolution comes from the scene resolver via the
+    // WebAudio transport base, events carrying no `payload.actor`). Shared helper.
+    return { ...base, orchestration: syntheticDefaultOrchestration() };
   }
   const orchestration: Orchestration = {
     actorTable,
@@ -1137,31 +1145,6 @@ function publishProduction(
     tree,
     symbolNames
   });
-}
-
-// One-shot info when no MIDI output port is present (the normal headless / no
-// hardware case): WebAudio still plays, so this is informational, not an error,
-// and we log it once to avoid spamming on every eval. Shared across both
-// adapters — the MIDI availability of the machine is a global fact.
-let midiUnavailableLogged = false;
-
-// Probe Web MIDI permission ONCE (cached). Without MIDI access, requestMIDIAccess
-// rejects (NotAllowedError); we record that and never construct a MidiSink —
-// runtime-midi's transport logs a console.error on denial (transports/midi.js:49),
-// pure noise on a machine without MIDI. Probing ourselves keeps that denial silent.
-let midiProbe: Promise<boolean> | undefined;
-function webMidiAvailable(): Promise<boolean> {
-  if (!midiProbe) {
-    const req = (navigator as Navigator & { requestMIDIAccess?: () => Promise<unknown> })
-      .requestMIDIAccess;
-    midiProbe = req
-      ? req
-          .call(navigator)
-          .then(() => true)
-          .catch(() => false)
-      : Promise.resolve(false);
-  }
-  return midiProbe;
 }
 
 // Current global tempo, kept in sync with the central clock via `setBpm`.
@@ -2306,149 +2289,6 @@ function makeBpxAdapter(
         emitLifecycle('eval', src.fileId);
         return;
       }
-
-      // NON-orchestrated scene (no `@actor`): publish an EMPTY actor list so the
-      // Actors panel drops any orchestrator voices left over from a previous
-      // program (loading `arabic.bps` after `02-strudel-hydra.bps` must clear
-      // groove/viz). The sink guards this: an empty publish only clears when the
-      // panel was showing orchestrator actors — a `.kanopi` session (which owns
-      // its actors through `loadSession`) is left untouched.
-      //
-      // Stop the OUTGOING program's code voices too (Hydra canvas + rAF, Strudel
-      // audio): clearing the actor LIST alone left the previous scene's Hydra
-      // rendering on top of the new one. A plain scene has no code voices of its
-      // own, so tear down ALL currently-registered orchestrated voices.
-      await tearDownOutgoingVoices(undefined);
-      onActorsFromGrammar?.([], src.fileId);
-
-      // Per-symbol play-vs-skip (decision routage-texte-son-par-symbole): a
-      // token sounds if it's a note OR its symbol carries a sound assignment
-      // from the front-end — those reach audio/MIDI. A mute token is simply NOT
-      // PLAYED (skipped by the dispatcher); the symbolic readout is a VIEW of
-      // the production tree (Text panel via `orderedTokensFromTree`), not a
-      // routed output. Decided per token, so a mixed grammar voices its sounding
-      // symbols and skips the rest.
-      const sounding = new Set(soundingSymbols ?? []);
-      // When the scene declares an `@alphabet` (+ a resolvable `@tuning`, or the
-      // catalog default for that alphabet), build the pitch resolver from the
-      // bpscript catalogs and treat the alphabet's own notes as sounding — so
-      // non-western symbols (`C H J` bohlen, `nem barang…` gamelan) reach audio.
-      // Otherwise keep the western/solfège sniffing fallback unchanged (western
-      // scenes with octaves like cv-adsr resolve identically through either).
-      const catalog = catalogResolver(declaredAlphabet, declaredTuning);
-      if (catalog) for (const n of catalog.notes) sounding.add(n);
-      const soundsFn = (token: string) => isNoteName(token) || sounding.has(token);
-
-      const resolver = catalog ? catalog.resolver : pickResolver(tokens);
-      dispatcher.addTransport('default', new WebAudioTransport(ctx, { resolver }));
-      // The dispatcher routes via per-token resolver/transport lookup; this
-      // global resolver is the fallback the WebAudio path uses for pitches.
-      (dispatcher as unknown as { _resolver: Resolver })._resolver = resolver;
-      // The predicate decides play-vs-skip — there is no text transport. A mute
-      // token is not routed anywhere.
-      (
-        dispatcher as unknown as {
-          setSoundPredicate(fn: (t: string) => boolean): void;
-        }
-      ).setSoundPredicate(soundsFn);
-
-      // Unified routing (M5+ refacto): a NON-orchestrated grammar loads through
-      // the SAME payload path as an orchestrated one. Flatten the tree to events
-      // (no `payload.actor`). The dispatcher routes each terminal uniformly: a
-      // SOUNDING token (`soundsFn` true) → 'default' audio, a MUTE token is
-      // SKIPPED (not played) — the per-symbol split is honoured for every token,
-      // so a mixed grammar voices its notes and skips its mute symbols (which
-      // still appear in the Text panel's tree view). Each leaf carries its
-      // sealed E-016 `rq`, so velocity/transpose/channel still fold over
-      // controlState exactly as the old flat `dispatcher.load` did. We keep ALL
-      // terminals (sounding AND mute) — only rests drop here (the dispatcher
-      // itself skips silences/prolongations). BPx already expanded the grammar,
-      // so the flat terminal stream carries no unexpanded start symbol to guard
-      // against (that leak was scene-guarded `.bps` only, handled by the
-      // orchestrated/default-scene paths above).
-      const monoFilter = (e: DispatchEvent) => e.type !== 'rest';
-      // STEP keeps the FULL event timeline (no slice, no re-zero): the beat is
-      // auditioned in place by seeking Kronos to it (see `stepWindow`), so the CV
-      // windows that reference the ORIGINAL scene times stay correct.
-      const treeEvents = treeToDispatchEvents(
-        rawTree as Parameters<typeof treeToDispatchEvents>[0],
-        symbolNames
-      ).filter(monoFilter);
-      (dispatcher as unknown as { loadEvents(ev: unknown[]): void }).loadEvents(treeEvents);
-      // The events' seconds encode `currentBpm` at derive time — tell the
-      // dispatcher so its anchored tempo map can live-rescale (requirement A).
-      (dispatcher as unknown as { setDerivedTempo(bpm: number): void }).setDerivedTempo(currentBpm);
-      // Kronos is the ONLY engine (legacy removed): it drives the REAL sound for this
-      // note path; the dispatcher is never started as an emitter (it stays only as the
-      // configured transport/resolver structure Kronos sends through). This branch is
-      // now reached only by `.gr` (the `.bps` path always builds an orchestration); it
-      // is folded into the single orchestrated path once `.gr` synthesizes a default actor.
-      let kronosAudio: KronosAudioHandle | undefined;
-      {
-        kronosAudio = startKronosAudio({
-          events: treeEvents,
-          audioCtx: ctx,
-          derivedTempo: currentBpm,
-          loop: looping,
-          dispatcher: dispatcher as unknown as Parameters<typeof startKronosAudio>[0]['dispatcher'],
-          startSceneSec: startOffsetSec,
-          soundsFn,
-          // RE-RANDOM (B): hand Kronos the host's re-derivation ALWAYS (not just when
-          // looping at start) so a LIVE re-random/loop toggle can install it on the
-          // active scheduler mid-play. A STEP (sliced window) never re-derives, so it
-          // gets null. The handle gates whether the closure actually runs (re-random
-          // ⊗ loop), so a non-looping start keeps it dormant until toggled.
-          reDerive: section ? null : reDeriveTreeEvents(monoFilter),
-          reRandom,
-          // STEP audition: hand Kronos the beat's window on the REAL timeline. It
-          // seeks the full timeline there and stops after one beat, so the CV is the
-          // true full-production modulation at that beat (not shrunk-to-note).
-          step: stepWindow,
-          log: (m) => log({ runtime: id, level: 'info', msg: `[kronos] ${m}` })
-        });
-        // The timeline now reads ITS playhead (aligned to the heard audio).
-        kronosCursor.set(kronosAudio);
-      }
-      // This dispatcher now drives the transport beat display (requirement B).
-      beatClockDispatcher = dispatcher;
-      beatGen++;
-
-      // MIDI sink: route the SAME raw BPx tokens to runtime-midi, on the SAME
-      // AudioContext clock — but only when Web MIDI access is actually granted
-      // (probed once, silently). Otherwise skip it entirely: WebAudio playback
-      // stays intact and the console stays clean on machines without MIDI.
-      // A STEP auditions one beat on the audio path only — the MIDI sink has no
-      // seek/one-beat primitive (its `start()` plays the whole loaded sequence), so
-      // starting it on a STEP press would fire the entire scene over MIDI. Skip it.
-      let midiSink: MidiSink | undefined;
-      if (!isStep && (await webMidiAvailable())) {
-        try {
-          const sink = new MidiSink(ctx);
-          const hasPort = await sink.init();
-          if (hasPort) {
-            sink.load(tokens);
-            sink.start();
-            midiSink = sink;
-            log({ runtime: id, level: 'info', msg: `midi out [${key}]` });
-          }
-        } catch (err) {
-          // A MIDI failure must never take down the (already-playing) WebAudio path.
-          log({ runtime: id, level: 'info', msg: `midi sink skipped: ${String(err)}` });
-        }
-      } else if (!midiUnavailableLogged) {
-        midiUnavailableLogged = true;
-        log({ runtime: id, level: 'info', msg: 'no Web MIDI — WebAudio only' });
-      }
-
-      voices.set(key, {
-        dispatcher,
-        midiSink,
-        file: src.fileId,
-        orchestrator: false,
-        kronosAudio
-      });
-      log({ runtime: id, level: 'info', msg: `eval ok [${key}] (${tokens.length} tokens)` });
-      emitLifecycle('eval', src.fileId);
     },
     setBpm(bpm: number, _log: LogPush) {
       currentBpm = bpm;
