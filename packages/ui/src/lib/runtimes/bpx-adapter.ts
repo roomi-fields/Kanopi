@@ -1884,13 +1884,18 @@ function makeBpxAdapter(
         return;
       }
 
-      // STEP: when a beat is requested, keep only that beat's tokens (re-zeroed)
-      // and play them once. Otherwise loop the whole derivation when the
-      // transport's LOOP toggle is on (default). A STEP window always plays once
-      // regardless of the toggle. The window is ONE beat (`60000/bpm` ms) of the
-      // timeline; `section.index` is the beat index (the `section` field is
-      // reused as a generic step window).
+      // STEP: when a beat is requested, audition exactly ONE beat of the REAL
+      // production, IN PLACE — NOT a sliced + re-zeroed copy. We keep the FULL
+      // timeline (full tokens, full treeEvents, real scene times, full CV windows)
+      // and ask Kronos to seek to the beat's scene-second and stop after one beat
+      // (clock.start + scheduler.start = seek; a timed driver.stop ends the beat).
+      // This way the modulation at that beat is EXACTLY what full Play would sound
+      // there (no envelope shrink-to-note, no muted successive steps). Otherwise
+      // loop the whole derivation when the transport's LOOP toggle is on (default).
+      // `section.index` is the beat index (the `section` field is reused as a
+      // generic step window).
       const section = src.section;
+      const isStep = !!(section && section.count > 1);
       const looping = !section && transport.loop;
       // Re-derive at each cycle only when looping AND re-random is on — re-rolls
       // the grammar's weighted/random choices tour to tour (vs replaying the same
@@ -1904,17 +1909,14 @@ function makeBpxAdapter(
           ? resumeBeat * (60 / currentBpm)
           : 0;
       if (!section) resumeBeat = null;
-      if (section && section.count > 1) {
-        const beatMs = currentBpm > 0 ? 60000 / currentBpm : 0;
-        tokens = sliceBeat(tokens, section.index, beatMs);
-        if (tokens.length === 0) {
-          log({
-            runtime: id,
-            level: 'info',
-            msg: `step: beat ${section.index + 1}/${section.count} is empty`
-          });
-        }
-      }
+      // The beat's position on the REAL (full-production) timeline + its duration:
+      // one beat = 60/bpm s, at `section.index * (60/bpm)` — the same beat grid the
+      // flat slice used (`round(start / (60000/bpm)) === index`). The full timeline
+      // is seeked here, so the beat's note(s) keep their true scene onset and CV.
+      const beatDurSecStep = currentBpm > 0 ? 60 / currentBpm : 0;
+      const stepWindow = isStep
+        ? { fromSec: section!.index * beatDurSecStep, durSec: beatDurSecStep }
+        : undefined;
 
       const key = srcKey(src);
       const prev = voices.get(key);
@@ -2271,16 +2273,13 @@ function makeBpxAdapter(
       // against (that leak was scene-guarded `.bps` only, handled by the
       // orchestrated/default-scene paths above).
       const monoFilter = (e: DispatchEvent) => e.type !== 'rest';
-      let treeEvents = treeToDispatchEvents(
+      // STEP keeps the FULL event timeline (no slice, no re-zero): the beat is
+      // auditioned in place by seeking Kronos to it (see `stepWindow`), so the CV
+      // windows that reference the ORIGINAL scene times stay correct.
+      const treeEvents = treeToDispatchEvents(
         rawTree as Parameters<typeof treeToDispatchEvents>[0],
         symbolNames
       ).filter(monoFilter);
-      // STEP: when a beat is requested, keep only that beat's events (re-zeroed)
-      // — the events twin of the flat `sliceBeat` already applied to `tokens`.
-      if (section && section.count > 1) {
-        const beatSec = currentBpm > 0 ? 60 / currentBpm : 0;
-        treeEvents = sliceBeatEvents(treeEvents, section.index, beatSec);
-      }
       (dispatcher as unknown as { loadEvents(ev: unknown[]): void }).loadEvents(treeEvents);
       // The events' seconds encode `currentBpm` at derive time — tell the
       // dispatcher so its anchored tempo map can live-rescale (requirement A).
@@ -2308,10 +2307,10 @@ function makeBpxAdapter(
           // ⊗ loop), so a non-looping start keeps it dormant until toggled.
           reDerive: section ? null : reDeriveTreeEvents(monoFilter),
           reRandom,
-          // STEP audition: render CV per-note (window = the note) so a sliced,
-          // re-zeroed beat opens its envelope over the note instead of sitting at the
-          // (out-of-window) closed value → inaudible. Normal Play keeps scene windows.
-          cvPerNote: !!(section && section.count > 1),
+          // STEP audition: hand Kronos the beat's window on the REAL timeline. It
+          // seeks the full timeline there and stops after one beat, so the CV is the
+          // true full-production modulation at that beat (not shrunk-to-note).
+          step: stepWindow,
           log: (m) => log({ runtime: id, level: 'info', msg: `[kronos] ${m}` })
         });
         // The timeline now reads ITS playhead (aligned to the heard audio).
@@ -2340,8 +2339,11 @@ function makeBpxAdapter(
       // AudioContext clock — but only when Web MIDI access is actually granted
       // (probed once, silently). Otherwise skip it entirely: WebAudio playback
       // stays intact and the console stays clean on machines without MIDI.
+      // A STEP auditions one beat on the audio path only — the MIDI sink has no
+      // seek/one-beat primitive (its `start()` plays the whole loaded sequence), so
+      // starting it on a STEP press would fire the entire scene over MIDI. Skip it.
       let midiSink: MidiSink | undefined;
-      if (await webMidiAvailable()) {
+      if (!isStep && (await webMidiAvailable())) {
         try {
           const sink = new MidiSink(ctx);
           const hasPort = await sink.init();

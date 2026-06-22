@@ -1,17 +1,18 @@
 import { describe, it, expect } from 'vitest';
-import { BreakpointModulation, type ModulationBinding } from '@kronos/core';
+import { BreakpointModulation, renderToBreakpoints, type ModulationBinding } from '@kronos/core';
 import { startKronosAudio } from './kronos-audio';
 import type { DispatchEvent } from './tree-dispatch';
 
-// BUG 2 — STEP is inaudible in kronos mode. A stepped beat is sliced and RE-ZEROED
-// (onset ≈ 0) but its CV bindings still carry FULL-scene windows. The default render
-// anchors on the (re-zeroed) leaf onset, sampling BEFORE the binding window → the
-// envelope sits HELD at its closed value → the filter never opens → no sound.
+// STEP = audition ONE beat of the REAL production, in place — NOT a sliced + re-zeroed
+// copy. The host builds the SAME full timeline as normal Play (real scene times, full
+// CV windows) and asks Kronos to seek to the beat's scene-second and stop after one
+// beat. So the CV the transport receives for a stepped beat must be IDENTICAL to what
+// full Play sends for that same beat: the envelope opens for real (not shrunk-to-note),
+// and a later beat auditions its OWN modulation (no mute).
 //
-// `cvPerNote: true` (set for a sliced step) anchors the render on the binding's OWN
-// window so the envelope opens fresh over the note. We capture the curve the adapter
-// hands the transport (`event.__modCurves`) — the RealtimeDriver pumps once
-// synchronously at `start()`, so the single step note dispatches immediately.
+// We capture the curve the adapter hands the transport (`event.__modCurves`). The
+// RealtimeDriver pumps once synchronously at `start()`, so the note(s) within the seek
+// window + lookahead dispatch immediately.
 
 function captureCtx(): AudioContext {
   const param = () => ({
@@ -41,76 +42,126 @@ function captureCtx(): AudioContext {
   } as unknown as AudioContext;
 }
 
-// An attack-led cutoff envelope, windowed at scene 1.0 s (the note's ORIGINAL
-// pre-slice position). After the step slice the note's own onset is re-zeroed to 0.
-function cutoffBinding(): ModulationBinding {
+// An attack-led cutoff envelope on a note at scene `onset` s (its TRUE position in the
+// full production). The binding window IS the note's scene window — exactly what the
+// full-production composer produces (no re-window).
+function cutoffEnvNote(token: string, onset: number, dur: number): DispatchEvent {
   const source = new BreakpointModulation(
     [
       { tSec: 0, value: 0, shape: 'lin' },
       { tSec: 0.1, value: 1, shape: 'lin' },
       { tSec: 0.5, value: 0.3, shape: 'lin' }
     ],
-    1.0 // windowStartScene — full-scene window, NOT the re-zeroed onset
+    onset // windowStartScene = the note's real scene onset
   );
-  return {
+  const binding: ModulationBinding = {
     input: 'cutoff',
     clock: 'signal',
-    windowStartScene: 1.0,
-    windowEndScene: 1.5,
+    windowStartScene: onset,
+    windowEndScene: onset + dur,
     source
   } as ModulationBinding;
+  return {
+    token,
+    startSec: onset,
+    durSec: dur,
+    type: 'note',
+    payload: null,
+    modulations: [binding]
+  } as unknown as DispatchEvent;
 }
 
-function runStep(cvPerNote: boolean): number[] | undefined {
-  let captured: number[] | undefined;
+// Capture all cutoff curves the transport receives, keyed by the note token.
+function capturePlay(opts: {
+  events: DispatchEvent[];
+  step?: { fromSec: number; durSec: number };
+  loop?: boolean;
+}): Record<string, number[]> {
+  const curves: Record<string, number[]> = {};
   const transport = {
     send(event: Record<string, unknown>) {
       const mc = event.__modCurves as Record<string, number[]> | undefined;
-      if (mc?.cutoff) captured = mc.cutoff;
+      if (mc?.cutoff) curves[String(event.token)] = mc.cutoff;
     }
   };
-  // Sliced + re-zeroed step note: onset 0, but the binding keeps its scene-1.0 window.
-  const events: DispatchEvent[] = [
-    {
-      token: 'C4',
-      startSec: 0,
-      durSec: 0.5,
-      type: 'note',
-      payload: null,
-      modulations: [cutoffBinding()]
-    }
-  ] as unknown as DispatchEvent[];
+  const totalDur = Math.max(...opts.events.map((e) => e.startSec + e.durSec), 0);
   const handle = startKronosAudio({
-    events,
-    durationSec: 0.5,
+    events: opts.events,
+    durationSec: totalDur,
     audioCtx: captureCtx(),
     derivedTempo: 60,
-    loop: false,
-    dispatcher: { duration: 0.5, transports: { default: transport } },
-    startSceneSec: 0,
-    cvPerNote
+    loop: opts.loop ?? false,
+    dispatcher: { duration: totalDur, transports: { default: transport } },
+    step: opts.step
   });
   handle.stop();
-  return captured;
+  return curves;
 }
 
-describe('Kronos audio — STEP renders CV per-note (filter opens)', () => {
-  it('the BUG: onset-anchored render sits HELD at the closed value (inaudible)', () => {
-    const curve = runStep(false);
-    expect(curve).toBeDefined();
-    const max = Math.max(...curve!);
-    // Sampling [0, 0.5] against a window at 1.0 → all before the window → held at 0.
-    expect(max).toBeLessThan(1e-6);
+describe('Kronos audio — STEP auditions one beat of the REAL production (no re-window)', () => {
+  // A 3-beat scene at 60 bpm: one cutoff-enveloped note per beat (scene 0, 1, 2 s).
+  const scene = (): DispatchEvent[] => [
+    cutoffEnvNote('B0', 0, 0.5),
+    cutoffEnvNote('B1', 1, 0.5),
+    cutoffEnvNote('B2', 2, 0.5)
+  ];
+
+  it('the envelope OPENS for real (not held closed, not shrunk-to-note)', () => {
+    // STEP beat 0: seek to scene 0, stop after one beat (60/60 = 1 s).
+    const step = capturePlay({ events: scene(), step: { fromSec: 0, durSec: 1 } });
+    expect(step.B0).toBeDefined();
+    // Starts ~closed and ramps UP to the envelope peak — the filter opens.
+    expect(step.B0[0]).toBeLessThan(0.05);
+    expect(Math.max(...step.B0)).toBeGreaterThan(0.9);
+    // Attack reached within the first 0.1 s of the note (true envelope, not shrunk).
+    const atAttack = step.B0[Math.floor(0.1 / 0.002)];
+    expect(atAttack).toBeGreaterThan(0.9);
   });
 
-  it('the FIX: per-note render OPENS the envelope over the note (ramps up)', () => {
-    const curve = runStep(true);
-    expect(curve).toBeDefined();
-    // Starts ~closed and ramps UP to the envelope peak — the filter opens.
-    expect(curve![0]).toBeLessThan(0.05);
-    expect(Math.max(...curve!)).toBeGreaterThan(0.9);
-    // And it actually rises early (attack within the first 0.1 s of the note).
-    const atAttack = curve![Math.floor(0.1 / 0.002)];
-    expect(atAttack).toBeGreaterThan(0.9);
+  it('STEP CV == full-Play CV for the first beat (bit-for-bit, no distortion)', () => {
+    // Full Play and STEP-of-beat-0 both seek the timeline to scene 0, so the curve the
+    // transport receives for beat 0 must be IDENTICAL — STEP does not re-window.
+    // (The synchronous test pump only dispatches the beat at the seek point + lookahead;
+    //  later beats fire on later real ticks, which a synchronous stop() never reaches —
+    //  hence per-beat equality is asserted against the source render below.)
+    const full = capturePlay({ events: scene() });
+    const step0 = capturePlay({ events: scene(), step: { fromSec: 0, durSec: 1 } });
+    expect(full.B0).toBeDefined();
+    expect(step0.B0).toBeDefined();
+    expect(step0.B0).toEqual(full.B0);
+  });
+
+  it('each stepped beat = its source over its TRUE scene window (not shrunk-to-note)', () => {
+    // The exact full-production curve for a note at scene `onset`: its source rendered
+    // over the note's REAL scene window [onset, onset+dur] (the same call the adapter
+    // makes in full Play). STEP must reproduce it bit-for-bit — proving no re-window /
+    // no shrink-to-note distortion.
+    for (const [i, token] of ['B0', 'B1', 'B2'].entries()) {
+      const onset = i;
+      const note = scene()[i];
+      const src = note.modulations![0].source;
+      const expected = renderToBreakpoints(src, onset, onset + 0.5, 0.002).map((p) => p.value);
+      const step = capturePlay({ events: scene(), step: { fromSec: onset, durSec: 1 } });
+      expect(step[token], `beat ${i} (${token}) dispatched`).toBeDefined();
+      expect(step[token]).toEqual(expected);
+    }
+  });
+
+  it('successive steps each audition their OWN beat (later beats are NOT muted)', () => {
+    // The bug a per-note re-window introduced: beat 0 sounded, beats 1+ came out muted.
+    // Each step must produce a real (opening) envelope for its own note.
+    for (const [i, token] of ['B0', 'B1', 'B2'].entries()) {
+      const step = capturePlay({ events: scene(), step: { fromSec: i, durSec: 1 } });
+      expect(step[token], `beat ${i} audible`).toBeDefined();
+      expect(Math.max(...step[token]), `beat ${i} envelope opens`).toBeGreaterThan(0.9);
+    }
+  });
+
+  it('a STEP seeks PAST earlier beats: only the stepped beat dispatches', () => {
+    // Stepping beat 2 must not also fire beats 0/1 (the seek prunes earlier events).
+    const step = capturePlay({ events: scene(), step: { fromSec: 2, durSec: 1 } });
+    expect(step.B2).toBeDefined();
+    expect(step.B0).toBeUndefined();
+    expect(step.B1).toBeUndefined();
   });
 });

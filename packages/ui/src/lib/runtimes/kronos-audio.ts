@@ -90,13 +90,15 @@ export interface KronosAudioOptions {
   reDerive?: (() => DispatchEvent[] | null) | null;
   /** Whether re-random is active (gates `reDerive`). */
   reRandom?: boolean;
-  /** STEP audition: render each CV binding over its OWN window (`b.windowStartScene`),
-   *  not the leaf's (re-zeroed) scene onset. A sliced+re-zeroed step note has a leaf
-   *  onset of ~0 while its bindings still carry full-scene windows, so the default
-   *  (onset-anchored) render samples BEFORE the window → the curve sits held at its
-   *  closed value → inaudible. Anchoring on the binding window makes the envelope
-   *  open fresh over the note (per-note clock). Default false (normal Play). */
-  cvPerNote?: boolean;
+  /** STEP audition (one beat of the REAL production, in place). The host builds the
+   *  SAME full timeline as normal Play (real scene times, full CV windows) and asks
+   *  Kronos to seek to the beat's scene-second and play exactly one beat: the clock +
+   *  scheduler start at `fromSec` (the seek primitive prunes earlier events), and a
+   *  host-timer `driver.stop()` fires after `durSec` real seconds so no event past the
+   *  beat is scheduled — the beat's note(s) + their release tails play out, nothing
+   *  after. The CV is sampled at `fromSec` EXACTLY as in full Play (no re-window, no
+   *  distortion). Absent ⇒ normal Play / loop. */
+  step?: { fromSec: number; durSec: number };
   /** Host logger (routed to the Console panel). */
   log?: (msg: string) => void;
 }
@@ -143,11 +145,14 @@ const BEATS_PER_BAR = 4;
  * transports (cuts the scheduled audio) as usual.
  */
 export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
-  const { events, audioCtx, derivedTempo, loop, dispatcher } = opts;
-  const startScene = opts.startSceneSec ?? 0;
+  const { events, audioCtx, derivedTempo, dispatcher } = opts;
+  // STEP auditions ONE beat in place: never loop, and seek to the beat's scene
+  // second (the timeline + CV windows are the full production's, untouched).
+  const step = opts.step;
+  const loop = step ? false : opts.loop;
+  const startScene = step ? step.fromSec : (opts.startSceneSec ?? 0);
   const log = opts.log ?? (() => {});
   const sounds = opts.soundsFn ?? (() => true);
-  const perNoteCv = opts.cvPerNote ?? false;
 
   // 1. Map DispatchEvents → Kronos TimelineEvents. Non-sounding terminals and
   //    control/rest markers are flagged so Kronos's note-only dispatch skips
@@ -281,13 +286,12 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       const durScene = c.durSec ?? 0;
       if (bindings.length > 0 && durScene > 0) {
         for (const b of bindings) {
-          // Normal Play: render the source over THIS note's scene window so a SIGNAL
-          // unrolls its phrase slice at the note's position. STEP audition: the note
-          // was sliced + re-zeroed (`onsetScene≈0`) while the binding keeps its
-          // full-scene window — anchor on the binding's OWN window so the envelope
-          // opens fresh over the note instead of sampling before the window (held
-          // closed → inaudible).
-          const renderStart = perNoteCv ? b.windowStartScene : onsetScene;
+          // Render the source over THIS note's scene window so a SIGNAL unrolls its
+          // phrase slice at the note's position and a per-note envelope retriggers at
+          // the note's onset. STEP uses the SAME (full-production) windows: the host
+          // seeks the whole timeline to the beat, so a stepped note keeps its real
+          // scene onset and its CV is sampled exactly as in full Play (no re-window).
+          const renderStart = onsetScene;
           // ~2 ms resolution → a smooth value curve for setValueCurveAtTime
           // (Kronos guidance: finer than 10 ms avoids stair-stepping the envelope).
           const pts = renderToBreakpoints(b.source, renderStart, renderStart + durScene, 0.002);
@@ -379,6 +383,26 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   const driver = new RealtimeDriver({ clock, scheduler, lookahead: 0.12, intervalMs: 25 });
   driver.start();
 
+  // STEP: audition ONE beat in place. The clock + scheduler were seeked to the
+  // beat's scene second (`startScene = step.fromSec`), so the scheduler only fires
+  // events from there on. With loop off it would otherwise keep scheduling the rest
+  // of the scene; stop the driver after the beat's real duration so NO event past
+  // the beat is scheduled. Note(s) already scheduled within the lookahead + their
+  // release tails play out — exactly one beat sounds, with its TRUE modulation
+  // (the CV sampled at `step.fromSec` as in full Play). A small guard margin past
+  // the beat lets the onset (scheduled `lookahead` ahead) actually be reached.
+  let stepTimer: ReturnType<typeof setTimeout> | undefined;
+  if (step) {
+    const stopAfterSec = step.durSec + 0.12; // beat + one lookahead window
+    stepTimer = setTimeout(() => {
+      try {
+        driver.stop();
+      } catch {
+        /* already torn down */
+      }
+    }, stopAfterSec * 1000);
+  }
+
   log(
     `▶ kronos audio — ${noteCount} notes` +
       (muteCount ? `, ${muteCount} non-sounding skipped` : '') +
@@ -404,6 +428,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     stop() {
       if (stopped) return;
       stopped = true;
+      if (stepTimer !== undefined) clearTimeout(stepTimer);
       try {
         driver.stop();
         scheduler.stop();
