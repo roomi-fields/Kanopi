@@ -126,6 +126,13 @@ export interface KronosAudioHandle {
   /** Current playhead in scene seconds (loop-folded). Reads the SAME clock the
    *  scheduler does, so the drawn cursor cannot drift from the heard audio. */
   position(): number;
+  /** Playhead in scene seconds aligned to the HEARD audio (loop-folded): the same
+   *  clock as `position()` but sampled at `currentTime − outputLatency − baseLatency`,
+   *  the instant whose sound is reaching the speakers NOW. `position()` reads the
+   *  scene at `currentTime`, which is what is being SCHEDULED, ~one output buffer
+   *  ahead of what is heard — so the drawn cursor must use THIS, not `position()`,
+   *  to sit on the note the listener hears (no ~50 ms visual lead). */
+  displayPosition(): number;
   /** Current beat/bar position for the transport readout (loop-folded). */
   beatPosition(): KronosCursorBeat;
   /** Re-anchor + reposition the playhead to a scene second (seek, no new audio):
@@ -447,6 +454,15 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     },
     position() {
       return cursor.position();
+    },
+    displayPosition() {
+      // What is HEARD now left the scheduler ~one output buffer ago: the audio at
+      // the speakers corresponds to scene time at `currentTime − outputLatency −
+      // baseLatency`. Sampling the cursor there (same clock, same fold) makes the
+      // drawn playhead sit on the heard note instead of the scheduled one.
+      const heardAudioTime =
+        audioCtx.currentTime - (audioCtx.outputLatency || 0) - (audioCtx.baseLatency || 0);
+      return cursor.positionAt(Math.max(0, heardAudioTime));
     },
     beatPosition() {
       return cursor.beatPosition(clock.derivedTempo, BEATS_PER_BAR);

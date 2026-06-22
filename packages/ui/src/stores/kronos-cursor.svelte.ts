@@ -15,8 +15,12 @@ import type { KronosCursorBeat } from '../lib/runtimes/kronos-audio';
 
 /** What the timeline needs off the active Kronos cursor. */
 export interface KronosCursorView {
-  /** Scene seconds (loop-folded). */
+  /** Scene seconds (loop-folded) at the SCHEDULED instant (`currentTime`). */
   position(): number;
+  /** Scene seconds (loop-folded) aligned to the HEARD audio (latency-compensated):
+   *  what the drawn cursor must use so it sits on the note being heard, not the one
+   *  being scheduled ~one output buffer ahead. */
+  displayPosition(): number;
   /** Beat/bar readout (loop-folded). */
   beatPosition(): KronosCursorBeat;
 }

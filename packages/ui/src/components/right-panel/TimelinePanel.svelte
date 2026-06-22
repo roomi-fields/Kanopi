@@ -24,38 +24,58 @@
   // Imperative, long-lived, NOT reactive — plain `let`, never `$state`.
   let timeline: Timeline | undefined;
   let resizeObs: ResizeObserver | undefined;
-  // Cursor redraw coalescing: the cursor effect re-runs MANY times per animation
-  // frame (its reactive deps fire ≈16×/frame during playback). Each redraw repaints
-  // the canvas → ≈1500 repaints/s made playback janky. We coalesce to ONE repaint
-  // per frame: the effect only records the desired position; a single rAF flushes it.
+  // Cursor paint. One repaint at most per change; the canvas is only touched when
+  // the position actually moved (`lastFlushedMs` dedup). Two distinct drivers feed
+  // this, depending on engine:
   //
-  // Lag fix (measured ~21 ms / ~1.3 frames behind the heard audio): the flush
-  //   (a) RE-READS the live playhead at paint time via `liveMsAtFlush` instead of
-  //       drawing the position the effect captured earlier in the SAME frame, and
-  //   (b) paints SYNCHRONOUSLY here (`setCursorNow`) instead of letting `setCursor`
-  //       defer to its own rAF — that extra hop was a whole frame of lag.
-  // The coalescing (one flush per frame) and the legacy/paused/stepped paths are
-  // unchanged: they pass a fixed `ms` and no live source, so the recorded value is
-  // drawn verbatim.
-  let pendingCursorMs: number | null = null; // ms, or null = clear
-  let liveMsAtFlush: (() => number | null) | null = null; // re-read at paint time
-  let cursorRaf = 0;
+  //  • KRONOS PLAYING → a SELF-OWNED rAF loop (`kronosCursorLoop`) samples the
+  //    latency-compensated playhead every animation frame (smooth, vsync 60 fps).
+  //    The earlier code rode the legacy clock's heartbeat (a 25 ms setInterval),
+  //    which gated paints to ~30 fps and read as saccadé — Kronos drives the sound
+  //    here, the legacy clock is not its time source, so the cursor owns its frames.
+  //  • EVERY OTHER STATE (legacy playing, paused, stepped, stopped) → the one-shot
+  //    `scheduleCursor`: the effect records a fixed position and a single rAF flush
+  //    paints it. Unchanged.
   let lastFlushedMs: number | null = null;
-  function scheduleCursor(ms: number | null, live: (() => number | null) | null = null) {
+  function paintCursor(target: number | null) {
+    if (!timeline) return;
+    if (target === lastFlushedMs) return; // nothing moved
+    lastFlushedMs = target;
+    if (target === null) timeline.clearCursor();
+    else timeline.setCursorNow(target); // synchronous paint — no extra rAF hop
+  }
+
+  // One-shot coalescing flush for the NON-kronos states (legacy/paused/stepped/
+  // stopped). Records the desired position; a single rAF paints it at most once.
+  let pendingCursorMs: number | null = null; // ms, or null = clear
+  let cursorRaf = 0;
+  function scheduleCursor(ms: number | null) {
     pendingCursorMs = ms;
-    liveMsAtFlush = live;
     if (cursorRaf) return;
     cursorRaf = requestAnimationFrame(() => {
       cursorRaf = 0;
-      if (!timeline) return;
-      // Freshest possible position: if a live source is set (kronos playhead),
-      // sample it NOW (paint time), otherwise use the value the effect recorded.
-      const target = liveMsAtFlush ? liveMsAtFlush() : pendingCursorMs;
-      if (target === lastFlushedMs) return; // nothing moved
-      lastFlushedMs = target;
-      if (target === null) timeline.clearCursor();
-      else timeline.setCursorNow(target); // synchronous paint — no extra rAF hop
+      paintCursor(pendingCursorMs);
     });
+  }
+
+  // Self-owned continuous rAF loop for kronos playing: samples the heard-audio
+  // position every frame so the cursor advances at the display's refresh rate
+  // (≈16 ms), not the 25 ms clock timer. `sample()` returns scene ms aligned to the
+  // heard audio (latency-compensated) or null to clear.
+  let kronosCursorRaf = 0;
+  function startKronosCursorLoop(sample: () => number | null) {
+    if (kronosCursorRaf) return;
+    const tick = () => {
+      kronosCursorRaf = requestAnimationFrame(tick);
+      paintCursor(sample());
+    };
+    kronosCursorRaf = requestAnimationFrame(tick);
+  }
+  function stopKronosCursorLoop() {
+    if (kronosCursorRaf) {
+      cancelAnimationFrame(kronosCursorRaf);
+      kronosCursorRaf = 0;
+    }
   }
 
   const set = $derived(production.current);
@@ -81,6 +101,7 @@
   onDestroy(() => {
     resizeObs?.disconnect();
     if (cursorRaf) cancelAnimationFrame(cursorRaf);
+    stopKronosCursorLoop();
     timeline?.destroy();
     timeline = undefined;
   });
@@ -122,33 +143,33 @@
     const lastBeat = playback.lastBeat;
     const beatDurSec = set?.beatDurSec ?? 0;
     const durationSec = set?.durationSec ?? 0;
+    const kc = kronosCursor.active;
     if (!timeline) return;
-    // Compute the target cursor position (ms), or null when there's nothing to show.
+
+    // KRONOS PLAYING — own the frames. Kronos drives the sound and the playhead;
+    // the legacy clock's 25 ms timer is NOT its time source, so the cursor runs its
+    // own rAF loop (smooth 60 fps) and samples the HEARD-audio position each frame
+    // (latency-compensated: `displayPosition` reads the scene at
+    // `currentTime − outputLatency − baseLatency`, so the cursor sits on the note
+    // being heard, not the one ~one buffer ahead being scheduled). Already
+    // loop-folded; monotone from start (the only return-to-0 is the loop crossing).
+    if (mode === 'playing' && kc && audioEngine() === 'kronos' && durationSec > 0) {
+      startKronosCursorLoop(() => kc.displayPosition() * 1000);
+      return () => stopKronosCursorLoop();
+    }
+
+    // EVERY OTHER STATE — one-shot flush. Stop any running kronos loop first, then
+    // compute a fixed target and let the single rAF paint it.
+    stopKronosCursorLoop();
     let ms: number | null = null;
-    // Live re-read sampled at PAINT time (kronos playing only) so the drawn cursor
-    // is the freshest playhead, not the one captured when this effect ran earlier
-    // in the frame. Null for every other state → the recorded `ms` is drawn as-is.
-    let live: (() => number | null) | null = null;
     if (mode === 'playing' && beatDurSec > 0 && durationSec > 0) {
-      // Read the central clock's state every frame regardless of engine: it
-      // free-runs while playing and emits a fresh state each rAF tick, which is
-      // what re-runs THIS effect — the per-frame heartbeat the cursor rides on.
+      // Legacy engine: the old dispatcher sounds; the central clock's phase-locked
+      // beat/bar/phase is the playhead. Its `clock.state` heartbeat re-runs this
+      // effect each tick, which is the per-tick repaint cadence (unchanged).
       const cs = clock.state;
-      const kc = kronosCursor.active;
-      if (audioEngine() === 'kronos' && kc) {
-        // Kronos drives the sound AND owns the playhead: its cursor reads the SAME
-        // clock as the scheduler, so the drawn position is aligned to the heard
-        // audio (no ~1-note lag) and monotone from 0 (no backward jump at launch;
-        // the only return-to-0 is the legitimate loop crossing). Already loop-folded.
-        ms = kc.position() * 1000;
-        live = () => kc.position() * 1000;
-      } else {
-        // Legacy engine: the old dispatcher sounds; the central rAF clock's
-        // phase-locked beat/bar/phase is the playhead (unchanged).
-        const bpb = cs.beatsPerBar || 4;
-        const absBeats = (cs.bar - 1) * bpb + cs.beat + cs.phase;
-        ms = ((absBeats * beatDurSec) % durationSec) * 1000;
-      }
+      const bpb = cs.beatsPerBar || 4;
+      const absBeats = (cs.bar - 1) * bpb + cs.beat + cs.phase;
+      ms = ((absBeats * beatDurSec) % durationSec) * 1000;
     } else if ((mode === 'paused' || mode === 'stepped') && lastBeat >= 0 && beatDurSec > 0) {
       // Pause and Step both leave the playhead at the END of the beat that just
       // played/was-heard ((lastBeat+1)·beat) — the discrete grid boundary. Pause
@@ -156,9 +177,7 @@
       // jump when stepping afterwards; same formula now → consistent.
       ms = Math.min((lastBeat + 1) * beatDurSec, durationSec) * 1000;
     }
-    // Record the target; the rAF flush repaints at most once per frame, sampling
-    // `live` (kronos) at paint time when present.
-    scheduleCursor(ms, live);
+    scheduleCursor(ms);
   });
 </script>
 
