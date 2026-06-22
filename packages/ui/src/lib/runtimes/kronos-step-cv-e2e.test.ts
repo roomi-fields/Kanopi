@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 import { createBPx } from 'bpx';
-import { buildModulators } from '@kronos/core';
+import { buildModulators, composeTreeModulations, type ModulationBinding } from '@kronos/core';
 import modLibJson from 'bpscript/lib/mod.json';
 import { modulatorsFromAst } from './bpx-adapter';
-import { composeCvBindings, treeToDispatchEvents, type DispatchEvent } from './tree-dispatch';
+import { treeToDispatchEvents, type DispatchEvent } from './tree-dispatch';
 import { startKronosAudio } from './kronos-audio';
 
 // END-TO-END Node proof (no browser): derive the REAL bundled demo `cv-adsr.bps`,
@@ -77,9 +77,12 @@ function buildFullProduction(): DispatchEvent[] {
     ...modulatorsFromAst(ast),
     ...buildModulators((ast.cvInstances ?? []) as never, modLibJson as never)
   };
-  // composeCvBindings reads the modulator curves; buildModulators is Kronos's own
-  // registry (the one startKronosAudio expects). Compose stamps __cvBindings on leaves.
-  composeCvBindings(tree, nameOf, registry as never);
+  // composeTreeModulations reads the modulator curves; buildModulators is Kronos's own
+  // registry (the one startKronosAudio expects). It returns {leaf, bindings} pairs; the
+  // host stamps __cvBindings on each leaf exactly as the adapter does.
+  for (const { leaf, bindings } of composeTreeModulations(tree, nameOf, registry as never)) {
+    (leaf as { __cvBindings?: ModulationBinding[] }).__cvBindings = bindings;
+  }
   return treeToDispatchEvents(
     tree as Parameters<typeof treeToDispatchEvents>[0],
     symbolNames

@@ -18,16 +18,11 @@
 // dispatcher re-sorts events by `startSec` on load, so the only contract here is
 // that every node appears with its correct span — not a globally sorted list.
 
-// CV composition is Kronos's job (frontier R2: BPx distributes the raw facets,
-// Kronos composes them into modulation bindings). We consume `composeLeafModulations`
-// AS-IS and only carry its output onto the dispatch events.
-import {
-  composeLeafModulations,
-  type ModulationBinding,
-  type VoiceRef,
-  type VoiceSegment,
-  type Modulator
-} from '@kronos/core';
+// CV composition is Kronos's job (frontier R2 / migration #8): BPx distributes the
+// raw facets, Kronos's `composeTreeModulations` (called in bpx-adapter) walks the
+// tree and composes the modulation bindings. This flattener only carries the stamped
+// bindings (`__cvBindings`) onto the dispatch events as `ModulationBinding[]`.
+import { type ModulationBinding } from '@kronos/core';
 
 /** A control-marker payload as it lives on a `ControlNode` (opaque to BPx). */
 export interface ControlMarkerPayload {
@@ -156,8 +151,8 @@ export function treeToDispatchEvents(
             // ride DIRECTLY on the leaf's `controls`. Carried verbatim — the
             // dispatcher coerces types and routes them.
             controls: node.controls && Object.keys(node.controls).length > 0 ? node.controls : null,
-            // Kronos CV bindings stamped by `composeCvBindings` (before this flatten),
-            // carried opaque to the Kronos audio path.
+            // Kronos CV bindings stamped on the leaf (by `composeTreeModulations` in
+            // bpx-adapter, before this flatten), carried opaque to the Kronos audio path.
             modulations: (node as { __cvBindings?: ModulationBinding[] }).__cvBindings ?? null
           });
         }
@@ -272,7 +267,8 @@ interface RawNode {
   span?: Span;
   children?: RawNode[];
   voices?: RawNode[];
-  /** Kronos bindings stamped by `composeCvBindings` and read back in the flatten. */
+  /** Kronos bindings stamped by `composeTreeModulations` (in bpx-adapter) and read
+   *  back in the flatten. */
   __cvBindings?: ModulationBinding[];
 }
 
@@ -295,105 +291,6 @@ function sameRuleRef(a: RuleRef | undefined, b: RuleRef | undefined): boolean {
     a.ruleIndex === b.ruleIndex &&
     a.lhsSymbolId === b.lhsSymbolId
   );
-}
-
-// ── Kronos CV composition (the AUDIO path) ───────────────────────────────────
-// BPx distributes three orthogonal facets per controlled input on each sounding
-// leaf (`controls` = what, `controlSubjects` = clock, `controlScopes` = window);
-// Kronos's `composeLeafModulations` assembles them into samplable bindings. We
-// only wire the host glue: a voice resolver (sibling-voice ref → its sounding
-// segments) and the per-leaf call. The composed bindings are stamped on each
-// leaf (`__cvBindings`) so the flatten carries them onto the dispatch events.
-
-/** Build the `resolveVoice` callback Kronos needs: a sibling-voice ref → the
- *  sounding segments of that voice (each leaf → `{window, modulator name}`).
- *  Only leaves whose terminal is a DECLARED modulator (env1/env2/…) become
- *  segments — that's what `VoiceModulation` samples to follow env1→env2→env3. */
-function makeVoiceResolver(
-  root: RawNode,
-  nameOf: (symbolId: number) => string | undefined,
-  registry: Readonly<Record<string, Modulator>>
-): (ref: VoiceRef) => readonly VoiceSegment[] {
-  const blocks: RawNode[] = [];
-  const gather = (n: RawNode | undefined): void => {
-    if (!n || typeof n !== 'object') return;
-    if (n.type === 'polymetric') blocks.push(n);
-    if (Array.isArray(n.children)) for (const c of n.children) gather(c);
-    if (Array.isArray(n.voices)) for (const v of n.voices) gather(v);
-  };
-  gather(root);
-  return (ref: VoiceRef): readonly VoiceSegment[] => {
-    for (const block of blocks) {
-      const voices = (block.voices ?? block.children) as RawNode[] | undefined;
-      if (!Array.isArray(voices) || voices.length === 0) continue;
-      // Prefer the indexed voice; fall back to matching by sourceSymbolId when the
-      // index disagrees (synthetic scaling voices can shift positions).
-      let voice = voices[ref.voiceIndex];
-      if (
-        !voice ||
-        (voice.sourceSymbolId !== undefined && voice.sourceSymbolId !== ref.sourceSymbolId)
-      ) {
-        const byId = voices.find((v) => v.sourceSymbolId === ref.sourceSymbolId);
-        if (byId) voice = byId;
-      }
-      if (!voice) continue;
-      const segments: VoiceSegment[] = [];
-      for (const leaf of collectSoundingLeaves(voice, [])) {
-        if (typeof leaf.symbolId !== 'number' || leaf.symbolId < 0) continue;
-        const name = nameOf(leaf.symbolId);
-        if (!name || registry[name] === undefined) continue; // not a declared modulator
-        segments.push({
-          startScene: (leaf.span?.startMs ?? 0) / 1000,
-          endScene: (leaf.span?.endMs ?? 0) / 1000,
-          modulator: name
-        });
-      }
-      if (segments.length > 0) return segments;
-    }
-    return []; // unresolvable ref → no segments (compose then drops the binding)
-  };
-}
-
-/**
- * Compose Kronos modulation bindings for every sounding leaf and stamp them on the
- * leaf (`__cvBindings`). Reads the NEW BPx facets (`controls` ⊕ `controlSubjects` ⊕
- * `controlScopes`) — call this BEFORE `resolveCvControls` (which rewrites
- * `controls` for the legacy path). Bindings are consumed by the Kronos audio path.
- *
- * @param tree     `derive({ output: 'complete' }).tree` (or its `.root`).
- * @param nameOf   `symbolId → terminal name` (grammar's symbol table).
- * @param registry Kronos modulator registry (`buildModulators(ast.cvInstances, mod)`).
- */
-export function composeCvBindings(
-  tree: unknown,
-  nameOf: (symbolId: number) => string | undefined,
-  registry: Readonly<Record<string, Modulator>>
-): void {
-  const root = resolveRoot(tree as TreeRoot) as RawNode | null;
-  if (!root) return;
-  const resolveVoice = makeVoiceResolver(root, nameOf, registry);
-  const visit = (node: RawNode | undefined): void => {
-    if (!node || typeof node !== 'object') return;
-    if (node.role === 'leaf' && node.controls && node.span) {
-      const bindings = composeLeafModulations(
-        {
-          controls: node.controls as Record<string, number | string | VoiceRef>,
-          controlSubjects: node.controlSubjects,
-          controlScopes: node.controlScopes
-        },
-        registry,
-        {
-          onsetScene: (node.span.startMs ?? 0) / 1000,
-          durationScene: Math.max(0, (node.span.endMs ?? 0) - (node.span.startMs ?? 0)) / 1000
-        },
-        { resolveVoice }
-      );
-      if (bindings.length > 0) node.__cvBindings = bindings;
-    }
-    if (Array.isArray(node.children)) for (const c of node.children) visit(c);
-    if (Array.isArray(node.voices)) for (const v of node.voices) visit(v);
-  };
-  visit(root);
 }
 
 /**

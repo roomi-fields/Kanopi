@@ -45,16 +45,19 @@ import { resolveScaleRatios } from '../../../../core/src/dispatcher/scale.js';
 // Tree-derived dispatch events (M5+ multi-actor refacto): flatten BPx's
 // `derive({ output: 'complete' }).tree` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
+import { treeToDispatchEvents, resolveCvControls, type DispatchEvent } from './tree-dispatch';
+// Kronos owns CV COMPOSITION (frontier R2 / migration #8): `buildModulators` fuses
+// the scene's `cv … : mod.x(…)` declarations with the `mod` library into the modulator
+// registry, and `composeTreeModulations` walks the realized tree to produce one
+// `{leaf, bindings}` pair per modulated leaf (PURE — does NOT mutate the tree). The
+// host only stamps each binding set onto its leaf so the flatten carries it to the
+// Kronos audio path. Both consumed AS-IS.
 import {
-  treeToDispatchEvents,
-  resolveCvControls,
-  composeCvBindings,
-  type DispatchEvent
-} from './tree-dispatch';
-// Kronos owns CV COMPOSITION (frontier R2): `buildModulators` fuses the scene's
-// `cv … : mod.x(…)` declarations with the `mod` library into the modulator registry
-// the composer samples. Consumed AS-IS — the registry the Kronos audio path uses.
-import { buildModulators, type ModLib } from '@kronos/core';
+  buildModulators,
+  composeTreeModulations,
+  type ModLib,
+  type ModulationBinding
+} from '@kronos/core';
 // EX4 flip: Kronos drives the REAL audio (default `audio-engine=kronos`). The
 // Kronos scheduler produces the timed events; a thin adapter bridges each to the
 // existing WebAudio synth. In kronos mode the old dispatcher is NOT started for
@@ -1728,7 +1731,11 @@ function makeBpxAdapter(
           >[0],
           modLibJson as unknown as ModLib
         );
-        composeCvBindings(derived.tree, nameOf, kronosRegistry);
+        // Stamp Kronos's composed bindings onto each modulated leaf (the flatten reads
+        // `leaf.__cvBindings`); `composeTreeModulations` itself leaves the tree untouched.
+        for (const { leaf, bindings } of composeTreeModulations(derived.tree, nameOf, kronosRegistry)) {
+          (leaf as { __cvBindings?: ModulationBinding[] }).__cvBindings = bindings;
+        }
         // Legacy fallback (`audio-engine=legacy`): rewrite each subject-driven value
         // into the uniform `{__cv:true, …}` descriptor the webaudio transport reads
         // — mutates leaf.controls in place. Reads the SAME new facets.
@@ -1776,16 +1783,19 @@ function makeBpxAdapter(
           // Same CV composition + legacy resolution as the main path — each re-roll
           // re-samples the phrase spans and which env sounds under each leaf, so the
           // Kronos audio path keeps its env variety on every re-randomised cycle.
-          composeCvBindings(
+          const rRegistry = buildModulators(
+            ((ast as { cvInstances?: unknown[] } | null)?.cvInstances ?? []) as Parameters<
+              typeof buildModulators
+            >[0],
+            modLibJson as unknown as ModLib
+          );
+          for (const { leaf, bindings } of composeTreeModulations(
             rderived.tree,
             rNameOf,
-            buildModulators(
-              ((ast as { cvInstances?: unknown[] } | null)?.cvInstances ?? []) as Parameters<
-                typeof buildModulators
-              >[0],
-              modLibJson as unknown as ModLib
-            )
-          );
+            rRegistry
+          )) {
+            (leaf as { __cvBindings?: ModulationBinding[] }).__cvBindings = bindings;
+          }
           resolveCvControls(rderived.tree, rNameOf, new Set(Object.keys(modulatorsFromAst(ast))));
           const rnames = buildSymbolNames(rbpx, rderived.tree);
           // Refresh the STRUCTURE view so it shows THIS cycle's variation — the
