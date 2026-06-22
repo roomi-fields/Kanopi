@@ -14,6 +14,7 @@ import { core } from '../lib/core';
 import { production, beatCount } from './production.svelte';
 import { setResumeBeat } from '../lib/runtimes/bpx-adapter';
 import { kronosCursor } from './kronos-cursor.svelte';
+import { clock } from './clock.svelte';
 
 type Mode = 'stopped' | 'playing' | 'paused';
 
@@ -29,7 +30,10 @@ class Playback {
   get mode(): Mode {
     // A live scene → PROJECT the Kronos Transport's state (the authority). No live scene
     // (empty/idle workspace, or a code-only scene that produced no Kronos timeline) →
-    // reflect the central clock's play/stop intent so the transport buttons still respond.
+    // reflect the central clock's play/stop INTENT so the transport buttons still respond.
+    // Read the REACTIVE `clock.state` mirror (a `$state`), NOT `core.clock.state` (a plain
+    // object whose mutations Svelte can't track) — otherwise the button never re-renders on
+    // an empty-scene Play (it used to be saved only by the rAF integrator's per-frame emits).
     if (kronosCursor.active) {
       switch (kronosCursor.state) {
         case 'running':
@@ -40,7 +44,7 @@ class Playback {
           return 'stopped';
       }
     }
-    return core.clock.state.playing ? 'playing' : 'stopped';
+    return clock.state.playing ? 'playing' : 'stopped';
   }
 
   /** The live Kronos Transport, or null when no scene is loaded/playing. */

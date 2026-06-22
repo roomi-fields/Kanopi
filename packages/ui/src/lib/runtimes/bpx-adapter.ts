@@ -1244,13 +1244,14 @@ interface DispatcherBeat {
  * clock falls back to its own rAF behaviour (Strudel/Hydra/idle).
  */
 export function getDispatcherBeat(): DispatcherBeat | null {
-  const d = beatClockDispatcher as unknown as {
-    _running?: boolean;
-    musicalBeatPosition?: (bpb?: number) => Omit<DispatcherBeat, 'gen'> | null;
-  } | null;
-  if (!d || !d._running) return null;
-  const pos = d.musicalBeatPosition?.();
-  return pos ? { ...pos, gen: beatGen } : null;
+  // The beat source is now the KRONOS TRANSPORT's position (the single authority), not the
+  // legacy dispatcher. The central clock's render loop reads this each frame to project
+  // `clock.state` + derive the beat/bar UI events (p5/hydra onBeat/onBar) — no rAF position
+  // integrator. `beatPosition()` is frozen-aware (advances running, frozen when paused).
+  const kc = kronosCursor.active;
+  if (!kc) return null;
+  const bp = kc.beatPosition();
+  return { beatsTotal: bp.beatsTotal, bar: bp.bar, beat: bp.beat, phase: bp.phase, gen: beatGen };
 }
 
 /** One orchestrated actor as published to the Actors panel. */

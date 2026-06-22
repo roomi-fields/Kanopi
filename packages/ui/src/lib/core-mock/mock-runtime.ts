@@ -39,7 +39,6 @@ export class MockClock implements Clock {
     playing: false,
     paused: false
   };
-  private lastTick = performance.now();
   private tapTimes: number[] = [];
   private b = bus<ClockState>();
   private rafId = 0;
@@ -59,10 +58,13 @@ export class MockClock implements Clock {
   /** Last beat-source generation seen — a change means a NEW dispatcher took over
    *  (fresh Play / Ctrl+Enter restart); used to allow the cursor to jump back to
    *  the top on a genuine restart while clamping the harmless launch hand-off. */
-  private lastBeatGen = -1;
   private absBeat = 0;
   private absBar = 0;
-  private absPhase = 0;
+  // Last integer beat/bar the render loop saw, for crossing detection (−1 = no baseline
+  // yet). Replaces the old `absPhase` rAF position integrator — position now comes from
+  // the Transport's beatPosition; this only marks where the last beat/bar event fired.
+  private lastBeatFloor = -1;
+  private lastBarFloor = -1;
   private eventsBus?: EventBus;
   /** True only during the synchronous subscriber notification of a
    * `startSilently()` — lets the block-replay listener skip a surgical eval. */
@@ -99,31 +101,17 @@ export class MockClock implements Clock {
   }
 
   private loop(now: number) {
-    const dt = (now - this.lastTick) / 1000;
-    this.lastTick = now;
     if (this.state.playing) {
       const ext = this.beatSource?.();
       if (ext) {
-        // A dispatcher is playing → it is the source of truth (requirement B).
-        // Phase-lock the transport beat dots + counter to its musical position,
-        // which advances at the live tempo and stays locked to the heard audio
-        // (including after a live retune). The free rAF integrator is bypassed.
+        // POSITION = the Transport's (Kronos cursor), DERIVED here — never integrated.
+        // The old free rAF position integrator (and its monotonic clamp, the "15-25
+        // réajustements de barre") is GONE: Kronos's Transport is the single position
+        // authority (contract kanopi-architecture.md). This loop only PROJECTS it onto
+        // `clock.state` (the per-frame tick readers consult) and DERIVES the beat/bar UI
+        // events (p5/hydra `onBeat`/`onBar`) from beat crossings of that position.
         const bpb = this.state.beatsPerBar || 4;
-        // MONOTONIC: never let the position go backward when the dispatcher takes
-        // over. At play start the rAF integrator advances a frame or two BEFORE
-        // the dispatcher spins up (its eval is async); the dispatcher then reports
-        // ~0, which would yank the cursor backward. Clamping to the integrator's
-        // value holds the position until the dispatcher catches up — forward only.
-        // A NEW dispatcher (gen changed) that reports a position well BEHIND the
-        // current one is a genuine restart (Ctrl+Enter while playing) → re-anchor,
-        // let the cursor jump back to the top. Otherwise stay MONOTONIC so the
-        // harmless rAF/dispatcher hand-off at launch can't make the cursor rewind.
-        const genChanged = ext.gen !== undefined && ext.gen !== this.lastBeatGen;
-        if (ext.gen !== undefined) this.lastBeatGen = ext.gen;
-        const restarted = genChanged && this.absPhase - ext.beatsTotal > 1;
-        const totalBeats = restarted
-          ? Math.max(0, ext.beatsTotal)
-          : Math.max(this.absPhase, ext.beatsTotal, 0);
+        const totalBeats = Math.max(0, ext.beatsTotal);
         const beatAbs = Math.floor(totalBeats);
         const barAbs = Math.floor(beatAbs / bpb);
         this.state = {
@@ -133,77 +121,43 @@ export class MockClock implements Clock {
           bar: 1 + barAbs
         };
         this.b.emit(this.state);
-        // Keep the rAF integrator aligned so a later fallback (the dispatcher
-        // stops while the clock keeps playing) continues smoothly, no jump.
-        this.absPhase = totalBeats;
-        // Beat/bar events on each integer crossing, locked to the audio (these
-        // drive @map beat routing + adapter onBeat/onBar).
-        while (this.absBeat < beatAbs && this.eventsBus) {
-          this.absBeat += 1;
-          this.eventsBus.emit({
-            schemaVersion: 1,
-            type: 'beat',
-            runtime: 'clock',
-            t: now,
-            count: this.absBeat,
-            bpm: this.state.bpm,
-            phase: this.state.phase
-          });
-        }
-        while (this.absBar < barAbs && this.eventsBus) {
-          this.absBar += 1;
-          this.eventsBus.emit({
-            schemaVersion: 1,
-            type: 'bar',
-            runtime: 'clock',
-            t: now,
-            count: this.absBar
-          });
-        }
-        this.rafId = requestAnimationFrame(this.loop);
-        return;
-      }
-      const beatsPerSec = this.state.bpm / 60;
-      const prevAbsPhase = this.absPhase;
-      this.absPhase += dt * beatsPerSec;
-      const newBeatAbs = Math.floor(this.absPhase);
-      const beatInc = newBeatAbs - Math.floor(prevAbsPhase);
-      const bpb = this.state.beatsPerBar || 4;
-      const newBarAbs = Math.floor(newBeatAbs / bpb);
-      const barInc = newBarAbs - Math.floor(Math.floor(prevAbsPhase) / bpb);
-      this.state = {
-        ...this.state,
-        beat: newBeatAbs % bpb,
-        phase: this.absPhase - newBeatAbs,
-        bar: 1 + newBarAbs
-      };
-      this.b.emit(this.state);
-      if (beatInc > 0 && this.eventsBus) {
-        for (let i = 0; i < beatInc; i++) {
-          this.absBeat += 1;
-          this.eventsBus.emit({
-            schemaVersion: 1,
-            type: 'beat',
-            runtime: 'clock',
-            t: now,
-            count: this.absBeat,
-            bpm: this.state.bpm,
-            phase: this.state.phase
-          });
+        // Beat/bar EVENTS on each crossing of the integer beat — INCLUDING the loop wrap
+        // (n-1 → 0), so the monotone `count` keeps climbing across loops. At musical
+        // tempi a beat is ≫16 ms, so 60 fps sees one crossing per frame (a dropped frame
+        // at most skips one purely-visual event). The first frame sets the baseline only
+        // (so the downbeat isn't counted, matching the previous while-loop semantics).
+        if (this.lastBeatFloor === -1) {
+          this.lastBeatFloor = beatAbs;
+          this.lastBarFloor = barAbs;
+        } else {
+          if (beatAbs !== this.lastBeatFloor) {
+            this.lastBeatFloor = beatAbs;
+            this.absBeat += 1;
+            this.eventsBus?.emit({
+              schemaVersion: 1,
+              type: 'beat',
+              runtime: 'clock',
+              t: now,
+              count: this.absBeat,
+              bpm: this.state.bpm,
+              phase: this.state.phase
+            });
+          }
+          if (barAbs !== this.lastBarFloor) {
+            this.lastBarFloor = barAbs;
+            this.absBar += 1;
+            this.eventsBus?.emit({
+              schemaVersion: 1,
+              type: 'bar',
+              runtime: 'clock',
+              t: now,
+              count: this.absBar
+            });
+          }
         }
       }
-      if (barInc > 0 && this.eventsBus) {
-        for (let i = 0; i < barInc; i++) {
-          this.absBar += 1;
-          this.eventsBus.emit({
-            schemaVersion: 1,
-            type: 'bar',
-            runtime: 'clock',
-            t: now,
-            count: this.absBar
-          });
-        }
-      }
+      // No beatSource (no live Transport) → nothing to advance: the rAF position
+      // integrator was removed. An idle/empty transport has no position to derive.
     }
     this.rafId = requestAnimationFrame(this.loop);
   }
@@ -236,7 +190,8 @@ export class MockClock implements Clock {
       // dispatcher handoff can't appear to rewind the cursor.
       this.absBeat = 0;
       this.absBar = 0;
-      this.absPhase = 0;
+      this.lastBeatFloor = -1;
+      this.lastBarFloor = -1;
       this.b.emit(this.state);
       this.onTransport?.(true);
     }
@@ -296,7 +251,8 @@ export class MockClock implements Clock {
     if (was) {
       this.absBeat = 0;
       this.absBar = 0;
-      this.absPhase = 0;
+      this.lastBeatFloor = -1;
+      this.lastBarFloor = -1;
       this.onTransport?.(false);
       this.eventsBus?.emit({
         schemaVersion: 1,

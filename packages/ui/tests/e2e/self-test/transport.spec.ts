@@ -3,15 +3,15 @@ import { expectNoConsoleErrors } from '../../helpers';
 
 // Transport self-test layer: validates the topbar transport cluster
 // (TransportCluster.svelte) and the bar.beat readout in the statusbar
-// (Statusbar.svelte). The clock under the hood is MockClock
-// (packages/ui/src/lib/core-mock/mock-runtime.ts) — bpm defaults to 128,
-// `play()` flips `state.playing`, and a setInterval-driven loop advances
-// `bar.beat` while playing. No audio is produced by the transport itself
-// (actors carry that), so no AudioContext / RMS plumbing is required here.
+// (Statusbar.svelte). bar.beat is a PROJECTION of Kronos's Transport position
+// (contract kronos-transport.md): there is NO free-running idle metronome any
+// more, so it only advances while a real scene plays — the position-advance and
+// Stop-freeze tests load + arm a minimal `.bps` (loadAndArm) before Play. The
+// empty Play case only checks the buttons respond (play/stop intent).
 //
 // Stable DOM selectors come from TransportCluster.svelte:
 //   - `.tbtn[title="Play"]` / `.tbtn[title="Stop"]` — two icon buttons; the
-//     Play button gains class `.playing` once `clock.state.playing` flips.
+//     Play button gains class `.playing` once the transport state reads playing.
 //   - `.tap-btn` — TAP tempo trigger; clicking ≥2 times within 2.5s lets
 //     MockClock.tap() compute and apply a new BPM.
 // Statusbar.svelte exposes `bar.beat` via the `.sb-item` whose tooltip is
@@ -19,6 +19,63 @@ import { expectNoConsoleErrors } from '../../helpers';
 // inside that item.
 
 const POS_LOCATOR = '.sb-item[title^="bar.beat"] .num';
+
+// Minimal BPScript scene: 8 Western pitches → 8 beats at the default 128 BPM.
+// Enough span for bar.beat to visibly advance once the Kronos Transport plays it.
+const PROBE_SCENE = `@core
+@controls
+@alphabet.western:midi
+
+S -> C4 D4 E4 G4 C5 G4 E4 C4
+`;
+
+// Load the probe scene, focus its editor, and PRODUCE it (arm at rest) so the
+// Play button's replay edge re-evaluates it into a live Kronos Transport. bar.beat
+// has no idle metronome any more — it only moves when a real scene plays.
+async function loadAndArm(page: import('@playwright/test').Page) {
+  await page.evaluate((contents) => {
+    const w = window as unknown as {
+      __kanopi: {
+        workspace: {
+          loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+        };
+      };
+    };
+    w.__kanopi.workspace.loadFiles(
+      [{ path: 'transport-probe.bps', contents }],
+      'transport-probe.bps'
+    );
+  }, PROBE_SCENE);
+  await page.waitForFunction(() => {
+    const w = window as unknown as { __kanopi?: { workspace: { files: { path: string }[] } } };
+    return !!w.__kanopi?.workspace.files.find((f) => f.path === 'transport-probe.bps');
+  });
+  const id = await page.evaluate(() => {
+    const w = window as unknown as {
+      __kanopi: {
+        workspace: {
+          files: { id: string; path: string }[];
+          openFile: (id: string) => void;
+          setActive: (id: string) => void;
+        };
+      };
+    };
+    const t = w.__kanopi.workspace.files.find((f) => f.path === 'transport-probe.bps');
+    if (t) {
+      w.__kanopi.workspace.openFile(t.id);
+      w.__kanopi.workspace.setActive(t.id);
+    }
+    return t?.id ?? '';
+  });
+  await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
+  await page.evaluate(async (fid) => {
+    const w = window as unknown as {
+      __kanopi: { openBlocks: { produceLoadedProgram: (id: string) => Promise<void> } };
+    };
+    await w.__kanopi.openBlocks.produceLoadedProgram(fid);
+  }, id);
+  await page.waitForTimeout(300);
+}
 
 test('Play button click activates transport', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
@@ -52,16 +109,21 @@ test('bar.beat counter advances within 3 seconds after Play at default BPM (128)
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
+  // bar.beat is a PROJECTION of Kronos's Transport position (contract
+  // kronos-transport.md) — there is no free-running idle metronome any more, so
+  // it only advances while a real scene PLAYS. Load a minimal .bps (8 beats),
+  // arm it (Produce), then Play through the transport button.
+  await loadAndArm(page);
+
   const posBefore = (await page.locator(POS_LOCATOR).innerText()).trim();
-  // Default stopped state is 001.01 — record whatever it is and assert the
-  // string CHANGES post-Play, rather than hardcoding the initial value (the
-  // mock formatter is the source of truth).
+  // Stopped state is 001.01 — record whatever it is and assert the string
+  // CHANGES post-Play, rather than hardcoding (the formatter is the truth).
   await page.locator('.tbtn[title="Play"]').click();
   await expect(page.locator('.tbtn.playing')).toBeVisible({ timeout: 3_000 });
 
   // At 128 BPM a beat is ~469ms, so within 3s the bar.beat string must have
-  // moved from its frozen initial value. `expect.poll` re-reads the DOM until
-  // the predicate holds or the timeout fires.
+  // moved from its frozen initial value (DERIVED from transport.beatPosition()).
+  // `expect.poll` re-reads the DOM until the predicate holds or the timeout fires.
   await expect
     .poll(async () => (await page.locator(POS_LOCATOR).innerText()).trim(), {
       timeout: 3_000,
@@ -172,6 +234,9 @@ test('Stop button halts the transport — bar.beat freezes', async ({ page }) =>
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
+  // A real scene must be playing for the position to advance (no idle metronome).
+  await loadAndArm(page);
+
   // Start.
   await page.locator('.tbtn[title="Play"]').click();
   await expect(page.locator('.tbtn.playing')).toBeVisible({ timeout: 3_000 });
@@ -180,10 +245,10 @@ test('Stop button halts the transport — bar.beat freezes', async ({ page }) =>
   // counter has moved from its initial value.
   await page.waitForTimeout(800);
 
-  // Stop. MockClock.stop() resets bar/beat to 1/0 (mock-runtime.ts:127), so
-  // the post-stop position is the same frozen "001.01" string the player
-  // started from. We capture the FIRST post-stop reading and then assert the
-  // string does NOT change over a 1.5s observation window.
+  // Stop. Kronos's Transport.stop() resets the position to 0, so the post-stop
+  // bar.beat is the frozen "001.01" string the player started from. We capture
+  // the FIRST post-stop reading and assert the string does NOT change over a
+  // 1.5s observation window (the position authority is frozen, not ticking).
   await page.locator('.tbtn[title="Stop"]').click();
   await expect(page.locator('.tbtn.playing')).toHaveCount(0, { timeout: 2_000 });
 
