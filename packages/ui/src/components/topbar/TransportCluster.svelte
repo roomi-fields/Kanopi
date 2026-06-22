@@ -6,6 +6,8 @@
   import { playback } from '../../stores/playback.svelte';
   import { openBlocks } from '../../stores/blocks.svelte';
   import { writeMmDirective } from '../../lib/runtimes/mm-directive';
+  import { audioEngine } from '../../lib/runtimes/kronos-audio';
+  import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 
   // STEP lives in the transport cluster (beta issue 4 — transport buttons
   // grouped). It's driven off the PRODUCED timeline, not the `.bps` head rule, so
@@ -54,6 +56,13 @@
   // while paused/stepped, nothing when stopped.
   const pos = $derived.by(() => {
     if (playback.mode === 'playing') {
+      // In kronos mode the Kronos playhead — not the rAF central clock — drives the
+      // heard audio, so read bar/beat off it (same alignment as the cursor + LEDs +
+      // the playback state machine's liveBeat). Legacy clock path otherwise.
+      if (audioEngine() === 'kronos' && kronosCursor.active) {
+        const bp = kronosCursor.active.beatPosition();
+        return { bar: bp.bar, beat: bp.beat, phase: bp.phase };
+      }
       return { bar: clock.state.bar, beat: clock.state.beat, phase: clock.state.phase };
     }
     const ab = playback.activeBeat();
