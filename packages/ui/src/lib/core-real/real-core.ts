@@ -258,18 +258,25 @@ class RealCore implements CoreApi {
   private async handleTransport(playing: boolean) {
     const actives = this.actors.list().filter((a) => a.active);
     if (playing) {
-      // re-evaluate all active actors; swallow per-actor failures so one
-      // broken file doesn't abort the whole scene and surface as an
-      // unhandled rejection (clock.play isn't awaited by its callers).
-      for (const a of actives) {
-        const ref = this.getActorFile?.(a.name);
-        if (!ref) continue;
-        const adapter = getAdapter(ref.runtime);
-        if (!adapter) continue;
-        try {
-          await adapter.evaluate(ref.contents, { actorId: a.name, fileId: a.name }, this.log);
-        } catch {
-          /* error already logged by adapter */
+      // ORCHESTRATED scene (.bps with inline @actor): its actors all map to the SAME
+      // orchestrator file, so a per-actor eval here re-runs the WHOLE scene once per
+      // actor (the double/triple voice + pause leak). An orchestrated scene plays via
+      // its SINGLE scene eval (the active block's replay), never per-actor. Only a
+      // `.kanopi` SESSION (actors = separate real files, `actorsAreOrchestrated`=false)
+      // gets a per-actor eval here. `actorsAreOrchestrated` is set at produce time, so
+      // it is reliable on the play edge (unlike `isOrchestratedActor`, which depends on
+      // the full eval having already registered the live voices).
+      if (!this.actorsAreOrchestrated) {
+        for (const a of actives) {
+          const ref = this.getActorFile?.(a.name);
+          if (!ref) continue;
+          const adapter = getAdapter(ref.runtime);
+          if (!adapter) continue;
+          try {
+            await adapter.evaluate(ref.contents, { actorId: a.name, fileId: a.name }, this.log);
+          } catch {
+            /* error already logged by adapter */
+          }
         }
       }
       this.log({ runtime: 'system', level: 'info', msg: `play: ${actives.length} actor(s)` });

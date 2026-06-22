@@ -266,12 +266,15 @@ class OpenBlocksStore {
     if (this._replaying) return;
     this._replaying = true;
     try {
-      const seen = new Set<string>();
+      // Replay ONLY the ACTIVE scene's armed blocks — NOT every open tab. Replaying
+      // all open tabs made other tabs' armed scenes sound on Play (the « voix open
+      // blocks en plus » / phantom voices, not cut by Pause because only the last
+      // Kronos handle is transport-tracked). Contract `kanopi-architecture.md` §3 +
+      // audit §2: what plays = the active compiled scene, never every open tab.
       const armedList: OpenBlock[] = [];
-      for (const tabId of workspace.openTabIds) {
-        if (seen.has(tabId)) continue;
-        seen.add(tabId);
-        for (const b of this.blocksForFile(tabId)) {
+      const activeTab = workspace.activeTabId;
+      if (activeTab) {
+        for (const b of this.blocksForFile(activeTab)) {
           if (this.armed.has(b.qualifiedName)) armedList.push(b);
         }
       }
