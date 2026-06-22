@@ -1,5 +1,6 @@
 <script lang="ts">
   import { clock } from '../../stores/clock.svelte';
+  import { kronosCursor } from '../../stores/kronos-cursor.svelte';
   import { scenes } from '../../stores/scenes.svelte';
   import { actors } from '../../stores/actors.svelte';
   import { consoleLog } from '../../stores/console.svelte';
@@ -16,7 +17,18 @@
   // holds (first beat is 1, not 0). Absolute beat count stays available in the
   // event overlay (`?events=1`) for debugging.
   const bpmStr = $derived(clock.state.bpm.toFixed(1));
-  const posStr = $derived(fmt3(clock.state.bar) + '.' + fmt2(clock.state.beat + 1));
+  // Position from Kronos's Transport (frozen-aware); `clock.state` is only the per-frame
+  // reactivity tick, not the position (it kept advancing through pause = the old bug).
+  const posStr = $derived.by(() => {
+    void clock.state;
+    void kronosCursor.state;
+    const kc = kronosCursor.active;
+    if (kc) {
+      const bp = kc.beatPosition();
+      return fmt3(bp.bar) + '.' + fmt2(bp.beat + 1);
+    }
+    return fmt3(clock.state.bar) + '.' + fmt2(clock.state.beat + 1);
+  });
   const sceneName = $derived(scenes.active?.name ?? '—');
   const activeRuntimes = $derived(
     new Set(actors.list.filter((a) => a.active).map((a) => a.runtime)).size

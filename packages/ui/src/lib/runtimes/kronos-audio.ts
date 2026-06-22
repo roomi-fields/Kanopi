@@ -127,17 +127,10 @@ export interface KronosAudioHandle {
   /** Live loop toggle (transport): updates the scheduler + cursor loop state and
    *  re-evaluates whether the re-derive should be installed (re-random ⊗ loop). */
   setLoop(on: boolean): void;
-  /** Current playhead in scene seconds (loop-folded). Reads the SAME clock the
-   *  scheduler does, so the drawn cursor cannot drift from the heard audio. */
+  /** Playhead in scene seconds, READ from the Transport (cursor while running, frozen
+   *  position when paused/stopped). The host reads this per-frame; one authority. */
   position(): number;
-  /** Playhead in scene seconds aligned to the HEARD audio (loop-folded): the same
-   *  clock as `position()` but sampled at `currentTime − outputLatency − baseLatency`,
-   *  the instant whose sound is reaching the speakers NOW. `position()` reads the
-   *  scene at `currentTime`, which is what is being SCHEDULED, ~one output buffer
-   *  ahead of what is heard — so the drawn cursor must use THIS, not `position()`,
-   *  to sit on the note the listener hears (no ~50 ms visual lead). */
-  displayPosition(): number;
-  /** Current beat/bar position for the transport readout (loop-folded). */
+  /** Beat/bar readout, READ from the Transport (frozen-aware). */
   beatPosition(): KronosCursorBeat;
   /** Re-anchor + reposition the playhead to a scene second (seek, no new audio):
    *  same primitive a Play-from-position uses — the next scheduled events fire
@@ -541,19 +534,13 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       applyReDerive();
     },
     position() {
-      return cursor.position();
-    },
-    displayPosition() {
-      // What is HEARD now left the scheduler ~one output buffer ago: the audio at
-      // the speakers corresponds to scene time at `currentTime − outputLatency −
-      // baseLatency`. Sampling the cursor there (same clock, same fold) makes the
-      // drawn playhead sit on the heard note instead of the scheduled one.
-      const heardAudioTime =
-        audioCtx.currentTime - (audioCtx.outputLatency || 0) - (audioCtx.baseLatency || 0);
-      return cursor.positionAt(Math.max(0, heardAudioTime));
+      // The TRANSPORT's position: the cursor while running, the FROZEN position when
+      // paused/stopped. The host reads this per-frame to draw the playhead — one
+      // authority (Kronos), never a host counter.
+      return transport.position();
     },
     beatPosition() {
-      return cursor.beatPosition(clock.derivedTempo, BEATS_PER_BAR);
+      return transport.beatPosition(BEATS_PER_BAR);
     },
     seek(sceneSec: number) {
       // Re-anchor the time authority and the scheduler to the SAME scene second
@@ -629,11 +616,9 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       return completed;
     },
     retune(bpm: number) {
-      // Warp the heard tempo live: the clock re-anchors at the current instant
-      // (scene position continuous) and adopts the new BPM, so future scene→audio
-      // conversions stretch/compress — the scheduler and cursor both read this
-      // same clock, so the audio and the drawn playhead warp together.
-      clock.retune(bpm);
+      // Live tempo via the Transport (re-anchor, position continuous): the clock adopts
+      // the new BPM, scheduler+cursor read it, so audio and playhead warp together.
+      transport.setTempo(bpm);
     },
     setActorMuted(actor: string, muted: boolean) {
       // Orchestrated arm/disarm (kronos path): gate this actor's notes at the

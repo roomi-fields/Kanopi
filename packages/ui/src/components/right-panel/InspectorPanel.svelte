@@ -1,5 +1,6 @@
 <script lang="ts">
   import { clock } from '../../stores/clock.svelte';
+  import { kronosCursor } from '../../stores/kronos-cursor.svelte';
   import { actors } from '../../stores/actors.svelte';
   import { scenes } from '../../stores/scenes.svelte';
   import { inspector } from '../../stores/inspector.svelte';
@@ -10,9 +11,17 @@
   function fmt3(n: number) {
     return n.toString().padStart(3, '0');
   }
-  const beatStr = $derived(
-    `${fmt3(clock.state.bar)}·${fmt2(clock.state.beat + 1)}.${fmt2(Math.floor(clock.state.phase * 100))}`
-  );
+  // Position from Kronos's Transport (frozen-aware); `clock.state` is only the per-frame
+  // tick (it kept advancing through pause = the old bug).
+  const beatStr = $derived.by(() => {
+    void clock.state;
+    void kronosCursor.state;
+    const kc = kronosCursor.active;
+    const bp = kc
+      ? kc.beatPosition()
+      : { bar: clock.state.bar, beat: clock.state.beat, phase: clock.state.phase };
+    return `${fmt3(bp.bar)}·${fmt2(bp.beat + 1)}.${fmt2(Math.floor(bp.phase * 100))}`;
+  });
 
   function srcLabel(s: (typeof inspector.mappings)[number]['source']) {
     const ch = s.ch ? '/ch' + s.ch : '';

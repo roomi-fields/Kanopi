@@ -1,50 +1,51 @@
-// The ACTIVE Kronos playing cursor, surfaced from the audio runtime to the UI.
+// The ACTIVE Kronos transport, surfaced from the audio runtime to the UI.
 //
-// When `audio-engine=kronos`, the Kronos audio runtime (kronos-audio.ts) drives
-// the real sound AND owns the playhead. The timeline cursor must read THAT
-// playhead — not the central rAF clock — so the drawn position is aligned to the
-// heard audio (no ~1-note lag) and monotone from 0 (no backward jump at launch).
+// Kronos owns the transport: its `Transport` is the SINGLE execution state machine
+// AND the position authority (contract `kronos-transport.md`). Kanopi PROJECTS on it —
+// it calls the commands and READS the state/position. This store is the bridge: it holds
+// the active handle (whose `.transport` is the live Transport) and a REACTIVE MIRROR of
+// `transport.state` (updated via `onStateChange`, display only — never an authority).
 //
-// The runtime sets this handle when it starts a kronos scene and clears it when
-// playback stops. The timeline reads `position()` once per rAF tick. Only the
-// HANDLE reference is reactive (set/clear re-runs readers); the position itself
-// is sampled imperatively each frame, driven by the central clock's tick — the
-// same coalescing the timeline already uses.
+// The drawn position is sampled per-frame from `transport.position()`/`beatPosition()`
+// (the cursor in running, the frozen position when paused) — never a host counter.
 
+import type { Transport, TransportState } from '@kronos/core';
 import type { KronosCursorBeat } from '../lib/runtimes/kronos-audio';
 
-/** What the timeline needs off the active Kronos cursor. */
+/** What the UI needs off the active Kronos handle. */
 export interface KronosCursorView {
-  /** Scene seconds (loop-folded) at the SCHEDULED instant (`currentTime`). */
+  /** The live Transport — commands (play/pause/stop/step/seek/…) + observable state. */
+  transport: Transport;
+  /** Scene seconds of the playhead (frozen-aware): the cursor in running, the frozen
+   *  position when paused. Read per-frame by the timeline. */
   position(): number;
-  /** Scene seconds (loop-folded) aligned to the HEARD audio (latency-compensated):
-   *  what the drawn cursor must use so it sits on the note being heard, not the one
-   *  being scheduled ~one output buffer ahead. */
-  displayPosition(): number;
-  /** Beat/bar readout (loop-folded). */
+  /** Beat/bar readout (frozen-aware), for the transport display. */
   beatPosition(): KronosCursorBeat;
-  /** Pause at the END of the current beat (B7): bound emission so the current beat
-   *  rings out and the next never starts, notifying when the boundary is reached.
-   *  Returns the integer beat that will complete (loop-folded when `beatsInLoop` is
-   *  given). The transport state machine calls this in kronos mode instead of an
-   *  instant suspend. */
-  pauseAtBeatEnd(
-    beatDurScene: number,
-    onReached: (completedBeat: number) => void,
-    beatsInLoop?: number
-  ): number;
-  /** Resume IN PLACE after `pauseAtBeatEnd` (no re-eval): re-anchor at the frozen
-   *  beat boundary `sceneSec` and restart the pump on the SAME scheduler — so a
-   *  play→pause→play cycle never stacks a second emitter. */
-  resume(sceneSec: number): void;
 }
 
 class KronosCursorStore {
-  /** The currently-playing Kronos cursor, or null when no kronos scene plays. */
+  /** The currently-active Kronos handle, or null when no kronos scene is live. */
   active = $state<KronosCursorView | null>(null);
+  /** REACTIVE PROJECTION of `transport.state` (`stopped|running|paused`). Mirrored from
+   *  Kronos via `onStateChange` — the host reads this for the UI; it is never an
+   *  authority (the truth is `active.transport.state`). */
+  state = $state<TransportState>('stopped');
+  #unsub: (() => void) | null = null;
 
   set(handle: KronosCursorView | null) {
+    this.#unsub?.();
+    this.#unsub = null;
     this.active = handle;
+    if (handle?.transport) {
+      // Capture the current state (the init `transport.play()` already fired before this
+      // subscription), then mirror every later transition.
+      this.state = handle.transport.state;
+      this.#unsub = handle.transport.onStateChange((s) => {
+        this.state = s;
+      });
+    } else {
+      this.state = 'stopped';
+    }
   }
 }
 

@@ -54,19 +54,19 @@
   // what's actually happening: live audio beat while playing, the committed beat
   // while paused/stepped, nothing when stopped.
   const pos = $derived.by(() => {
-    if (playback.mode === 'playing') {
-      // In kronos mode the Kronos playhead — not the rAF central clock — drives the
-      // heard audio, so read bar/beat off it (same alignment as the cursor + LEDs +
-      // the playback state machine's liveBeat). Legacy clock path otherwise.
-      if (kronosCursor.active) {
-        const bp = kronosCursor.active.beatPosition();
-        return { bar: bp.bar, beat: bp.beat, phase: bp.phase };
-      }
-      return { bar: clock.state.bar, beat: clock.state.beat, phase: clock.state.phase };
+    // The VALUE comes from Kronos's Transport (frozen-aware: advances while running,
+    // frozen when paused) — the single position authority. `clock.state` is read only
+    // as the per-frame reactivity TICK (it emits each rAF frame), NOT as the position:
+    // that keeps the readout updating live while reading the Transport's frozen position
+    // during pause (the old `clock.state` value kept advancing through pause = the bug).
+    void clock.state;
+    void kronosCursor.state; // recompute on transport transitions (step/pause land here)
+    const kc = kronosCursor.active;
+    if (kc) {
+      const bp = kc.beatPosition();
+      return { bar: bp.bar, beat: bp.beat, phase: bp.phase };
     }
-    const ab = playback.activeBeat();
-    if (ab < 0) return { bar: 1, beat: 0, phase: 0 };
-    return { bar: Math.floor(ab / bpb) + 1, beat: ab % bpb, phase: 0 };
+    return { bar: clock.state.bar, beat: clock.state.beat, phase: clock.state.phase };
   });
   const barStr = $derived(fmt3(pos.bar));
   const beatStr = $derived(fmt2(pos.beat + 1));

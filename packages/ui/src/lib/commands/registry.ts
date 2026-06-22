@@ -1,4 +1,5 @@
 import { clock } from '../../stores/clock.svelte';
+import { playback } from '../../stores/playback.svelte';
 import { scenes } from '../../stores/scenes.svelte';
 import { actors } from '../../stores/actors.svelte';
 import { workspace } from '../../stores/workspace.svelte';
@@ -17,9 +18,16 @@ export interface Command {
 
 function staticCommands(): Command[] {
   return [
-    { id: 'clock.play', title: 'Play', category: 'Clock', run: () => clock.play() },
-    { id: 'clock.stop', title: 'Stop', category: 'Clock', run: () => clock.stop() },
-    { id: 'clock.toggle', title: 'Toggle play/stop', category: 'Clock', run: () => clock.toggle() },
+    // Transport commands route through `playback` → Kronos's Transport (never the clock
+    // directly): the palette must not short-circuit the single transport authority.
+    { id: 'clock.play', title: 'Play', category: 'Clock', run: () => playback.play() },
+    { id: 'clock.stop', title: 'Stop', category: 'Clock', run: () => playback.stop() },
+    {
+      id: 'clock.toggle',
+      title: 'Toggle play/stop',
+      category: 'Clock',
+      run: () => (playback.mode === 'stopped' ? playback.play() : playback.stop())
+    },
     { id: 'clock.tap', title: 'Tap tempo', category: 'Clock', run: () => clock.tap() },
     {
       id: 'console.clear',
