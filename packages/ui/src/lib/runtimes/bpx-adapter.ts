@@ -1147,6 +1147,25 @@ function publishProduction(
   });
 }
 
+// Probe Web MIDI permission ONCE (cached). A `.gr` (BP3 = MIDI-native) routes its
+// `default` actor to MIDI when an output port is granted; without MIDI it falls back
+// to WebAudio. `requestMIDIAccess` rejects (NotAllowedError) on a machine without MIDI
+// — we record that and never reach for a port, keeping the console clean.
+let midiProbe: Promise<boolean> | undefined;
+function webMidiAvailable(): Promise<boolean> {
+  if (!midiProbe) {
+    const req = (navigator as Navigator & { requestMIDIAccess?: () => Promise<unknown> })
+      .requestMIDIAccess;
+    midiProbe = req
+      ? req
+          .call(navigator)
+          .then(() => true)
+          .catch(() => false)
+      : Promise.resolve(false);
+  }
+  return midiProbe;
+}
+
 // Current global tempo, kept in sync with the central clock via `setBpm`.
 // A grammar derives at this tempo and live voices retune to it. Shared: both
 // languages play under the one central transport tempo. Defaults to the clock's
@@ -2016,6 +2035,14 @@ function makeBpxAdapter(
         // (logged AND thrown so the promise rejects) — never a silent skip. Done
         // up-front for all actors so a later voice's rejection doesn't leave the
         // earlier ones already playing.
+        // `.gr` (BP3 = MIDI-native): with no `@actor` (synthetic `default`) and a granted
+        // Web MIDI output, route that actor to MIDI through the SAME per-actor Kronos path
+        // — the loop below registers a MidiTransport (the only transport), so a no-actor
+        // event falls back to it (`pickTransport`) → MIDI NoteOn. No standalone MidiSink,
+        // so no double-fire. No MIDI port → stays WebAudio; `.bps` keeps WebAudio + CV.
+        if (orchestration.synthetic && id === 'bp3' && (await webMidiAvailable())) {
+          orchestration.actors[0].transportKey = 'midi';
+        }
         const devices = new Map<string, Device>();
         for (const actor of orchestration.actors) {
           devices.set(
