@@ -27,8 +27,11 @@ Items différés (hors périmètre immédiat), tracés pour ne pas les perdre.
 3. **Sorties multi-runtime** `[P]` — MIDI (`runtime-midi`), OSC, DMX : un `RuntimeAdapter`
    Kronos par sortie (latence propre). Aujourd'hui MIDI passe encore par legacy (sink MIDI
    sauté sur step). **Gros morceau, recoupe #1 (routage par acteur/sortie).**
-4. **Events de nature control** `[N]` — `transport-control` / `instant` / `engine-control`
-   routés sur `nature`. À router côté adaptateur/Scheduler.
+4. **Events de nature control** `[P]` — cœur prêt (S1 : un `TimelineEvent` `kind:'control'`
+   + `nature` est émis horodaté). Action HÔTE : porter les nœuds `control` de l'arbre dans la
+   timeline Kronos (`kind:'control'`+`nature`) et les APPLIQUER dans l'adaptateur. Latent
+   (0 nœud control dans les démos actuelles ; le flux per-note est déjà sur `leaf.controls`).
+   `transport-control` = output-facing (émis) ; `instant` aussi ; `engine-control` → cœur (différé).
 5. **Tempo warp live** `[P]` — changer le BPM en lecture → `InternalClock.retune` (comme le
    re-random live). Câblage du contrôle de tempo vers le handle kronos.
 6. **Arm/désarm acteur** `[P]` — `Scheduler.setActorMuted` livré par Kronos ; brancher le
