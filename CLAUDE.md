@@ -4,13 +4,45 @@
 
 Kanopi is the IDE product. BPscript is the optional native sequencer language (separate repo). BPx is the JS engine for BPscript (lives in bpscript repo). osc-bridge is the hardware sidecar (separate repo).
 
+## Architecture — LOI NON NÉGOCIABLE (lire AVANT de coder)
+
+Contrats contraignants, à respecter sans dérogation (les contourner = bug, pas « choix sain ») :
+- **`hub/contrats/kanopi-architecture.md`** — Kanopi ne détient **AUCUN état d'autorité** ;
+  chaque store est une **projection** d'une source amont. Tout ce que l'hôte *invente* est un bug.
+- **`hub/contrats/kronos-transport.md`** — le **temps, la position et l'état de transport
+  appartiennent à Kronos**. Kanopi **émet des commandes** (`play/pause/stop/step/seek/tempo/loop`)
+  et **lit** la position/état ; il ne tient ni compteur de position ni machine d'état.
+- Étude : `hub/projets/design-frontiere-hote-moteur.md` (SOTA + openDAW). Cause des bugs
+  passés : `hub/projets/audit-etat-kanopi.md`.
+
+**Modèle (magnétophone)** : BPx = les bandes (contenu) · Kronos = la tête de lecture + le
+mécanisme (temps/transport/position) · **Kanopi = les boutons + l'afficheur** (intention +
+rendu) · runtimes = les sorties. Le magnétophone **ne fabrique rien**.
+
+**Carte d'autorité** : position/transport → Kronos ; structure (acteurs/blocs/scène) → BPx
+(scène compilée, jamais re-parsée du texte) ; fichiers → workspace réel (jamais auto-créés) ;
+charge → opaque. Seul état mutable propre = la saisie utilisateur locale avant compilation.
+
+**Anti-patterns INTERDITS** (à supprimer, pas à polir) : compteur de position maison ;
+2ᵉ machine d'état de transport ; `$effect`/subscribe qui recopie un store dans un autre
+(dériver ≠ synchroniser) ; blocs re-parsés du texte alimentant la lecture ; `active` fabriqué
+côté hôte ; auto-création de fichiers/entités sans support réel.
+
+**Discipline** : cause racine AVANT patch ; vérifier sur la VRAIE scène avant « fait » (le
+« corrigé en 2 s, toujours cassé » est interdit) ; toute dérogation se remonte à l'architecte
+AVANT de dévier.
+
 ## Boundaries
 
-- **In Kanopi scope**: UI, session parser (@actor/@scene/@map), runtime orchestration (dispatcher, clock, actors), library management, osc-bridge integration, packaging (Tauri).
-- **Out of scope (other repos)**:
+- **In Kanopi scope**: UI (Svelte/CodeMirror), saisie, session parser (@actor/@scene/@map),
+  **branchement** (instancier Kronos + BPx + runtimes), routage des commandes, rendu, library
+  management, osc-bridge integration, packaging (Tauri).
+- **Out of scope — Kanopi ne possède PAS** (cf. contrats ci-dessus) :
+  - **Temps / transport / position / ordonnancement → `kronos`** (autorité du temps)
   - Language parser/encoder → `bpscript` repo
   - BP3 WASM engine → `bp3-engine` repo
-  - BPx derivation engine → `bpscript` repo
+  - **BPx derivation engine + structure/scène compilée → `bpscript` (BPx)**
+  - Synthèse / sorties / format natif → runtimes (`runtime-midi`, `runtime-osc`, …)
   - Hardware JSON profiles + Rust bridge → `osc-bridge` repo
 
 ## Structure

@@ -7,6 +7,27 @@ description: Protocol for sub-agents implementing code changes in Kanopi (packag
 
 You are a developer sub-agent working in the Kanopi codebase under PM direction. You write code, not plans. Your scope is exactly what the PM hands you — no creep, no "while I'm at it" cleanups.
 
+## Architecture law — NON-NEGOTIABLE (read first)
+
+Binding contracts. Violating them is a bug, not a "sane local choice". If a rule seems to block you, STOP and report to the PM/architect — do not work around it.
+
+- **`hub/contrats/kanopi-architecture.md`** — Kanopi holds **NO authoritative state**. Every store is a **projection** of an upstream source. Anything the host *invents* is a bug.
+- **`hub/contrats/kronos-transport.md`** — **time, position and transport state belong to Kronos.** The host issues commands (`play/pause/stop/step/seek/tempo/loop`) and **reads** position/state; it keeps no position counter, no transport state machine.
+- Background: `hub/projets/design-frontiere-hote-moteur.md` (SOTA + openDAW), `hub/projets/audit-etat-kanopi.md` (the bugs and their cause).
+
+**Authority map** — before adding/editing any store, name its upstream source:
+- position / transport → **Kronos** (read the cursor per frame; never a local counter).
+- structure (actors/blocks/scene) → **BPx** compiled scene (never re-parse tab text to feed playback).
+- files → the **real workspace** (never auto-create files/entities).
+- payload/content → opaque (do not read it).
+- only legitimate local mutable state = user input being typed before compile.
+
+**Forbidden patterns** (delete, don't polish): a home-grown position counter / rAF position integrator; a 2nd transport state machine; any `$effect`/subscribe that COPIES one store into another (derive, don't sync — `$derived`); blocks re-parsed from tab text feeding playback; host-fabricated `active` armement; auto-creating files/entities without real backing.
+
+**Pure-projection test**: emptying a store and rebuilding it from its source must leave the UI identical. If not, the store hides authority → contract violation.
+
+**Discipline**: root cause BEFORE patching; verify on the REAL scene before "done" (the "fixed in 2s, still broken" pattern is banned).
+
 ## Before you touch any code
 
 1. **Read the target file fully** + every file that imports or extends it (grep the symbol).
