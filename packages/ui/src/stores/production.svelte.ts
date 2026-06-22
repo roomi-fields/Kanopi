@@ -139,27 +139,23 @@ export function beatCount(durationSec: number, beatDurSec: number): number {
 }
 
 class ProductionStore {
-  // The whole derived production of the most recent eval (null before any).
+  // The whole derived production of the most recent eval (null before any). This
+  // is a PROJECTION of BPx's `derive()` output (set by the adapter), NOT a host
+  // re-derivation — the symbolic readout/piano-roll/STEP all read this snapshot.
+  // The playhead position is NEVER stored here: STEP and the Structure cursor read
+  // it from Kronos's Transport (contract kronos-architecture.md §2). The former
+  // `stepIndex` host position counter was removed — it had become write-only dead
+  // code once `playback.step` started deriving the beat from `transport.beatPosition()`.
   current = $state<ProductionSet | null>(null);
-
-  // Which BEAT STEP last played (-1 = none / whole structure). The unit is a
-  // clock beat (`beatDurSec`), NOT a head-rule section. Owned here because it's a
-  // property OF the current production: every fresh eval replaces the production
-  // and therefore resets the STEP cursor. The Structure visualizer draws a beat
-  // cursor over `[stepIndex*beatDurSec, (stepIndex+1)*beatDurSec]`; STEP sets it
-  // after re-evaluating a one-beat window.
-  stepIndex = $state<number>(-1);
 
   /** Replace (never append) the production with the full derived set of one eval. */
   set(p: ProductionSet) {
     this.current = p;
-    this.stepIndex = -1;
   }
 
   /** A backtick-only / non-notes eval produced no symbolic tokens — clear the readout. */
   clear() {
     this.current = null;
-    this.stepIndex = -1;
   }
 }
 
