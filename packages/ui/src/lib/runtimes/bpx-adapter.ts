@@ -2391,6 +2391,10 @@ function makeBpxAdapter(
       // the NEXT derivation uses the new tempo.
       for (const voice of voices.values()) {
         (voice.dispatcher as unknown as { setLiveTempo(bpm: number): void }).setLiveTempo(bpm);
+        // In kronos mode the Kronos handle (not the legacy dispatcher) drives the
+        // audio, so the live retune must reach its clock too — same warp, no
+        // re-derivation. Mirrors the re-random / loop live-toggle wiring.
+        voice.kronosAudio?.retune(bpm);
       }
       // The MIDI sink owns its own internal dispatcher (runtime-midi private); we
       // don't reach into it to retune live. Its timing comes from the tokens it

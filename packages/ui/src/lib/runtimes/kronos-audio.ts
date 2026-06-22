@@ -131,6 +131,12 @@ export interface KronosAudioHandle {
    *  same primitive a Play-from-position uses — the next scheduled events fire
    *  from there and the cursor reads from there. */
   seek(sceneSec: number): void;
+  /** Live tempo change WITHOUT re-deriving: warps the heard tempo by re-anchoring
+   *  the clock at the current instant and adopting the new BPM for future
+   *  scene→audio conversions (the scene position stays continuous, no jump). The
+   *  legacy dispatcher's `setLiveTempo` has the twin; in kronos mode this handle
+   *  drives the audio, so a BPM/TAP change mid-play must reach it here. */
+  retune(bpm: number): void;
 }
 
 // Transport beats-per-bar for the Kronos beat readout. Matches the central
@@ -458,6 +464,13 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       // cursor reads from there — used by a Play-from-position / STEP resume.
       clock.start(sceneSec);
       scheduler.start(sceneSec);
+    },
+    retune(bpm: number) {
+      // Warp the heard tempo live: the clock re-anchors at the current instant
+      // (scene position continuous) and adopts the new BPM, so future scene→audio
+      // conversions stretch/compress — the scheduler and cursor both read this
+      // same clock, so the audio and the drawn playhead warp together.
+      clock.retune(bpm);
     }
   };
 }
