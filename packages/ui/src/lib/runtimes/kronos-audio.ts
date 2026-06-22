@@ -24,6 +24,7 @@ import {
   Scheduler,
   RealtimeDriver,
   Cursor,
+  Transport,
   PeriodicModulation,
   renderToBreakpoints,
   type RuntimeAdapter,
@@ -113,6 +114,10 @@ export interface KronosCursorBeat {
 }
 
 export interface KronosAudioHandle {
+  /** Kronos's Transport — the single execution state machine + position authority
+   *  (`play/pause/stop/step/seek/setTempo/setLoop`, observable `state/position()/
+   *  beatPosition()/onStateChange`). The host projects on it; it holds no FSM/counter. */
+  transport: Transport;
   stop(): void;
   /** Live re-random toggle (transport): installs/removes the re-derive on the
    *  ACTIVE scheduler so toggling re-random mid-play takes effect at the next loop
@@ -459,12 +464,26 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // clamps emission deterministically; a note whose duration overflows the window
   // still sounds fully (only emission is bounded). Normal Play keeps `start()`
   // (unbounded) below; a normal `start()` does not inherit the bound.
+  // TRANSPORT (REBUILD) — Kronos's single execution state machine + position authority
+  // (contract `kronos-transport.md`). Kanopi PROJECTS on it: it calls the commands and
+  // READS state/position; it holds no FSM and no position counter. Composition over the
+  // same clock/scheduler/cursor, so there is ZERO duplicated state — the position stays
+  // the cursor. The host drives play/pause/stop/step/seek/setTempo/setLoop through this.
+  const transport = new Transport({ clock, scheduler, cursor });
   if (step) {
-    scheduler.playWindow(step.fromSec, step.fromSec + step.durSec);
+    // Audition one beat IN PLACE: seek to the beat, grain = the beat window, step once.
+    transport.setStepGrain(step.durSec);
+    transport.seek(step.fromSec);
+    transport.step(1);
   } else {
-    scheduler.start(startScene);
+    // Normal play from the start position (re-anchors clock + arms the scheduler).
+    transport.seek(startScene);
+    transport.play();
   }
 
+  // External pump (Kronos has no internal timer): the driver ticks the scheduler each
+  // ~25 ms within the lookahead window. Transport arms/disarms emission; the driver
+  // just advances it.
   const driver = new RealtimeDriver({ clock, scheduler, lookahead: LOOKAHEAD_SEC, intervalMs: 25 });
   driver.start();
 
@@ -490,20 +509,23 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
 
   let stopped = false;
   return {
+    // The Kronos Transport — the SINGLE state machine + position authority. The host
+    // (playback store + transport UI) projects on it: calls its commands and reads
+    // state/position. Kanopi keeps no FSM and no position counter.
+    transport,
     stop() {
       if (stopped) return;
       stopped = true;
-      // Filet sûr : couper les voix de code même si l'adaptateur de scène ne reçoit pas
-      // `stop()` (teardown hôte direct). `scheduler.stop()` ci-dessous fait aussi passer
-      // l'adaptateur, donc `stopCodeVoices` doit être idempotent côté hôte.
+      // Belt: cut the sustained code voices even if the scene adapter's `stop()` isn't
+      // reached through the scheduler (host teardown). `transport.stop()` also closes
+      // the sinks via the scheduler, so `stopCodeVoices` must be idempotent host-side.
       opts.stopCodeVoices?.();
-      // Drop any pending pause-at-beat-end bound + its one-shot callback so a Stop
-      // pressed while a beat is finishing can't fire a stale `onReached` later
-      // (deterministic teardown — no timer to clear, the scheduler owns the bound).
-      scheduler.setSceneBound(null);
+      // Transport.stop() disarms emission, closes the voices (scheduler.stop → adapter
+      // stop?()), and resets the position. The external pump is host-owned, so stop it
+      // here (Transport doesn't own the driver).
       try {
+        transport.stop();
         driver.stop();
-        scheduler.stop();
       } catch {
         /* already torn down */
       }
