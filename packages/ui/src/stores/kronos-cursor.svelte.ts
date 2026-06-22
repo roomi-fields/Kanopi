@@ -23,6 +23,16 @@ export interface KronosCursorView {
   displayPosition(): number;
   /** Beat/bar readout (loop-folded). */
   beatPosition(): KronosCursorBeat;
+  /** Pause at the END of the current beat (B7): bound emission so the current beat
+   *  rings out and the next never starts, notifying when the boundary is reached.
+   *  Returns the integer beat that will complete (loop-folded when `beatsInLoop` is
+   *  given). The transport state machine calls this in kronos mode instead of an
+   *  instant suspend. */
+  pauseAtBeatEnd(
+    beatDurScene: number,
+    onReached: (completedBeat: number) => void,
+    beatsInLoop?: number
+  ): number;
 }
 
 class KronosCursorStore {

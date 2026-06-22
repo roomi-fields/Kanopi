@@ -32,7 +32,16 @@ const h = vi.hoisted(() => {
     // with NO active handle (falls back to core.clock); tests flip these to drive
     // the kronos path.
     engine: { value: 'kronos' as 'kronos' | 'legacy' },
-    kronosCursor: { active: null as { beatPosition: () => { beatsTotal: number } } | null }
+    kronosCursor: {
+      active: null as {
+        beatPosition: () => { beatsTotal: number };
+        pauseAtBeatEnd?: (
+          beatDurScene: number,
+          onReached: (b: number) => void,
+          beatsInLoop?: number
+        ) => number;
+      } | null
+    }
   };
 });
 
@@ -151,7 +160,11 @@ describe('liveBeat position source (kronos vs legacy)', () => {
   it('reads the Kronos playhead when the kronos engine is active with a handle', () => {
     h.engine.value = 'kronos';
     // The kronos cursor is at beat 7 (beatsTotal already loop-folded into 0..n-1).
-    h.kronosCursor.active = { beatPosition: () => ({ beatsTotal: 7.6 }) };
+    h.kronosCursor.active = {
+      beatPosition: () => ({ beatsTotal: 7.6 }),
+      // Pause-at-beat-end reports the completed beat (here beat 7) — the heard beat.
+      pauseAtBeatEnd: (_d, _cb, _n) => 7
+    };
     // The legacy clock disagrees on purpose (rAF-driven, NOT the heard audio).
     Object.assign(h.clockState, { bar: 3, beat: 1 }); // legacy would read 9
     expect(playback.liveBeat()).toBe(7); // floor(7.6) — the Kronos beat, not 9
@@ -174,5 +187,60 @@ describe('liveBeat position source (kronos vs legacy)', () => {
     h.kronosCursor.active = { beatPosition: () => ({ beatsTotal: 7 }) };
     Object.assign(h.clockState, { bar: 1, beat: 3 }); // legacy reads 3
     expect(playback.liveBeat()).toBe(3); // legacy path untouched
+  });
+});
+
+describe('B7/B8 — kronos pause-at-beat-end + forward resume', () => {
+  it('B7: kronos pause bounds emission at the beat end, freezes on the heard beat (no instant suspend)', () => {
+    h.engine.value = 'kronos';
+    const pauseAtBeatEnd = vi.fn((_d: number, _cb: (b: number) => void, _n?: number) => 5);
+    h.kronosCursor.active = {
+      beatPosition: () => ({ beatsTotal: 5.4 }),
+      pauseAtBeatEnd
+    };
+    playback.mode = 'playing';
+    playback.pause();
+
+    // Pause routed through the kronos beat-end bound, NOT the legacy context suspend.
+    expect(pauseAtBeatEnd).toHaveBeenCalledTimes(1);
+    expect(h.clock.pause).not.toHaveBeenCalled(); // no instant suspend (would cut tails)
+    // beatDurScene = production beatDurSec; n (19) passed for loop-folding.
+    expect(pauseAtBeatEnd.mock.calls[0][0]).toBeCloseTo(60 / 70);
+    expect(pauseAtBeatEnd.mock.calls[0][2]).toBe(19);
+    // State frozen on the completed (heard) beat.
+    expect(playback.mode).toBe('paused');
+    expect(playback.lastBeat).toBe(5);
+  });
+
+  it('B8: play after a kronos pause resumes FORWARD at lastBeat+1 (unbounded again), never in place', () => {
+    h.engine.value = 'kronos';
+    h.kronosCursor.active = {
+      beatPosition: () => ({ beatsTotal: 5.4 }),
+      pauseAtBeatEnd: (_d, _cb, _n) => 5
+    };
+    playback.mode = 'playing';
+    playback.pause();
+    expect(playback.lastBeat).toBe(5);
+
+    // Resume: forward-seek to beat 6 (the frozen boundary), fresh start (= Step→Play).
+    playback.play();
+    expect(h.setResumeBeat).toHaveBeenCalledWith(6); // lastBeat+1, forward, no backward
+    expect(h.clock.play).toHaveBeenCalled();
+    expect(playback.mode).toBe('playing');
+  });
+
+  it('legacy pause still suspends in place and resumes in place (B7/B8 legacy unchanged)', () => {
+    h.engine.value = 'legacy';
+    h.kronosCursor.active = null;
+    playback.mode = 'playing';
+    Object.assign(h.clockState, { bar: 2, beat: 1 }); // live beat 5
+    playback.pause();
+    expect(h.clock.pause).toHaveBeenCalled(); // legacy = instant suspend in place
+    expect(playback.lastBeat).toBe(5);
+
+    playback.play();
+    expect(h.setResumeBeat).not.toHaveBeenCalled(); // resume in place, no forward seek
+    expect(h.clock.play).toHaveBeenCalled();
+    expect(playback.mode).toBe('playing');
   });
 });

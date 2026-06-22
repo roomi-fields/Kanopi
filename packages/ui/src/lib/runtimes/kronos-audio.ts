@@ -139,6 +139,20 @@ export interface KronosAudioHandle {
    *  same primitive a Play-from-position uses — the next scheduled events fire
    *  from there and the cursor reads from there. */
   seek(sceneSec: number): void;
+  /** Pause AT THE END OF THE CURRENT BEAT (B7), not instantly. Bounds EMISSION at
+   *  the end of the beat currently heard so that beat's note(s)/release ring out in
+   *  full but the NEXT beat is never emitted — WITHOUT suspending the AudioContext
+   *  (which would cut the tails). `beatDurScene` = one clock beat in scene seconds
+   *  (`60/derivedTempo`). When the boundary is reached (emission stopped) the clock
+   *  is frozen there so the cursor parks at the beat boundary, and `onReached(beat)`
+   *  fires once with the integer index of the beat that just completed (loop-folded
+   *  into the production's beat range when `beatsInLoop` is given). Returns the
+   *  integer beat that will complete (the same value `onReached` later reports). */
+  pauseAtBeatEnd(
+    beatDurScene: number,
+    onReached: (completedBeat: number) => void,
+    beatsInLoop?: number
+  ): number;
   /** Live tempo change WITHOUT re-deriving: warps the heard tempo by re-anchoring
    *  the clock at the current instant and adopting the new BPM for future
    *  scene→audio conversions (the scene position stays continuous, no jump). The
@@ -150,6 +164,12 @@ export interface KronosAudioHandle {
 // Transport beats-per-bar for the Kronos beat readout. Matches the central
 // clock's default (4); the cursor folds beats to the scene loop regardless.
 const BEATS_PER_BAR = 4;
+
+// Scheduler look-ahead window (seconds). Single source of truth shared by the
+// RealtimeDriver and `pauseAtBeatEnd`: the latter must re-anchor at the scheduler's
+// own scheduling HORIZON (`now + lookahead`), never behind it, or rewinding the
+// scene cursor would re-emit notes already queued in this window (doubled notes).
+const LOOKAHEAD_SEC = 0.12;
 
 /**
  * Start Kronos driving the real audio for one scene. Call JUST BEFORE the host
@@ -407,7 +427,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     scheduler.start(startScene);
   }
 
-  const driver = new RealtimeDriver({ clock, scheduler, lookahead: 0.12, intervalMs: 25 });
+  const driver = new RealtimeDriver({ clock, scheduler, lookahead: LOOKAHEAD_SEC, intervalMs: 25 });
   driver.start();
 
   log(
@@ -435,6 +455,10 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     stop() {
       if (stopped) return;
       stopped = true;
+      // Drop any pending pause-at-beat-end bound + its one-shot callback so a Stop
+      // pressed while a beat is finishing can't fire a stale `onReached` later
+      // (deterministic teardown — no timer to clear, the scheduler owns the bound).
+      scheduler.setSceneBound(null);
       try {
         driver.stop();
         scheduler.stop();
@@ -473,6 +497,59 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       // cursor reads from there — used by a Play-from-position / STEP resume.
       clock.start(sceneSec);
       scheduler.start(sceneSec);
+    },
+    pauseAtBeatEnd(beatDurScene, onReached, beatsInLoop) {
+      // B7 — pause at the END of the current beat. The clock keeps running (we do
+      // NOT suspend the AudioContext, which would cut beat B's tails); we only bound
+      // EMISSION so no event of beat B+1 is scheduled. Beat B's already-emitted
+      // note(s) ring their FULL duration past the bound.
+      //
+      // DETERMINISTIC transition (no poll): Kronos's `playWindow(from, to, onEnd)`
+      // bounds emission to `[from, to)` and fires `onEnd` EXACTLY ONCE — from inside
+      // `tick`, the instant the scene cursor reaches the bound. That is the precise
+      // "boundary reached" signal the state machine needs; no `setInterval` watching
+      // `scheduler.running`.
+      //
+      // GLOBAL scene seconds: the scheduler's cursor and bound both count across loop
+      // tours (they do NOT fold), so the boundary is computed in GLOBAL coords too —
+      // read straight off the clock (`musicalNow`), the same authority the scheduler
+      // converts against.
+      if (!(beatDurScene > 0)) {
+        // No beat grid → nothing to bound; report the current folded beat.
+        const bp = cursor.beatPosition(clock.derivedTempo, BEATS_PER_BAR);
+        const b = Math.max(0, Math.floor(bp.beatsTotal));
+        onReached(b);
+        return b;
+      }
+      const gNow = clock.musicalNow(clock.now());
+      const bGlobal = Math.max(0, Math.floor(gNow / beatDurScene));
+      const boundaryGlobal = (bGlobal + 1) * beatDurScene;
+      // Re-anchor `from` at the scheduler's own scheduling HORIZON (`now + lookahead`),
+      // NOT at the heard position `gNow`. `playWindow` re-arms via `start(from)`, which
+      // resets the scene cursor to `from`; anchoring at `gNow` (behind the horizon)
+      // would re-query — and re-emit — the notes already queued in the lookahead
+      // window = doubled notes (B3). At the horizon, `[from, boundary)` is exactly the
+      // not-yet-emitted remainder of beat B: no double, no skip. (`from` never exceeds
+      // the boundary: the boundary is the end of the CURRENT beat, the horizon is at
+      // most ~120 ms ahead of the heard position within that same beat.)
+      const from = clock.musicalNow(clock.now() + LOOKAHEAD_SEC);
+      // The beat that completes, folded into the production's beat range so the
+      // paused cursor + a following Step agree (Step already wraps).
+      const completed =
+        beatsInLoop && beatsInLoop > 0 ? ((bGlobal % beatsInLoop) + beatsInLoop) % beatsInLoop : bGlobal;
+      // Bound emission to the rest of beat B and ask Kronos to notify us once when the
+      // cursor reaches the bound (emission done). We do NOT touch the clock: the cursor
+      // follows the heard audio through beat B (mode still 'playing') and freezes at the
+      // boundary only once the host flips `mode='paused'` on this callback (which parks
+      // the drawn cursor at `(B+1)·beat`, B13). Beat B's already-scheduled note(s) ring
+      // their full tail meanwhile (only EMISSION is bounded, not the queued audio).
+      scheduler.playWindow(from, boundaryGlobal, () => {
+        // Emission is complete — the driver's remaining wakeups are no-ops (scheduler
+        // not running), but stop it so nothing keeps pumping while paused.
+        driver.stop();
+        onReached(completed);
+      });
+      return completed;
     },
     retune(bpm: number) {
       // Warp the heard tempo live: the clock re-anchors at the current instant

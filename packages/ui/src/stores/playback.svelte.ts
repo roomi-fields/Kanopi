@@ -68,9 +68,27 @@ class Playback {
     return Math.max(0, Math.floor(abs));
   }
 
+  /** Kronos-mode pause keeps the clock RUNNING (it only bounds emission at the beat
+   *  end), so resuming is NOT an in-place audio resume — it must seek forward to the
+   *  frozen boundary like Step→Play. The legacy pause suspends the context in place,
+   *  so it resumes in place. This flag records which kind of pause is live. */
+  private kronosPaused = false;
+
   play() {
     if (this.mode === 'paused') {
-      // Resume the suspended audio in place (no re-eval, no offset).
+      if (this.kronosPaused) {
+        // Kronos pause-at-beat-end left the clock running and bounded emission at
+        // `lastBeat+1`. Resuming "in place" is WRONG (no suspended audio to resume,
+        // and the bound must be cleared): forward-resume from the frozen boundary =
+        // the SAME path as Step→Play (seek to `(lastBeat+1)·beat`, fresh start with
+        // emission unbounded again). Never backward, no gap, no double beat.
+        this.kronosPaused = false;
+        setResumeBeat(this.lastBeat + 1);
+        core.clock.play();
+        this.mode = 'playing';
+        return;
+      }
+      // Legacy pause suspended the context in place → resume it in place (no re-eval).
       core.clock.play();
       this.mode = 'playing';
       return;
@@ -84,11 +102,37 @@ class Playback {
 
   pause() {
     if (this.mode !== 'playing') return;
-    // Freeze on the beat currently being heard, brought back INTO the production's
-    // range: during a loop `liveBeat()` keeps growing across cycles, but the
-    // position counter must stay in `0..n-1` so the paused cursor and a following
-    // Step (which already wraps) agree. n=0 (no production) → keep the raw beat.
     const n = this.beatTotal();
+    const handle = kronosCursor.active;
+    const beatDurSec = production.current?.beatDurSec ?? 0;
+    // KRONOS — pause at the END of the current beat (B7), NOT instant. Bound emission
+    // so beat B finishes ringing and beat B+1 never starts; do NOT suspend the
+    // context (that would cut B's tails). The handle reports the completed beat
+    // (loop-folded into 0..n-1). We flip to `paused` immediately (the button/state
+    // must respond at once); the cursor follows the heard audio through beat B then
+    // parks at the boundary `(lastBeat+1)·beat` once paused (B13). The clock is put
+    // in a QUIET paused state (no context suspend, and `play` afterwards takes the
+    // forward-resume branch) via `enterStep()` — which only flips the playing/paused
+    // flags, no hush, no suspend.
+    if (audioEngine() === 'kronos' && handle && beatDurSec > 0) {
+      this.kronosPaused = true;
+      this.lastBeat = handle.pauseAtBeatEnd(
+        beatDurSec,
+        () => {
+          // Boundary reached: nothing more to do for the audio (emission already
+          // bounded). State is already `paused`; the completed beat was recorded
+          // synchronously below from the return value.
+        },
+        n > 0 ? n : undefined
+      );
+      core.clock.enterStep();
+      this.mode = 'paused';
+      return;
+    }
+    // LEGACY (or no kronos handle) — instant suspend in place (unchanged). Freeze on
+    // the beat currently heard, brought back INTO the production's range (the loop
+    // counter grows across cycles; the position counter must stay in 0..n-1).
+    this.kronosPaused = false;
     const live = this.liveBeat();
     this.lastBeat = n > 0 ? ((live % n) + n) % n : live;
     core.clock.pause();
@@ -99,6 +143,7 @@ class Playback {
     // Works from EVERY mode, including `stepped` (where the clock's own stop is a
     // near-noop because nothing reads as "playing"): hush the audio, reset the
     // clock display, and zero the position.
+    this.kronosPaused = false;
     core.clock.stop();
     void core.silenceRuntimes();
     this.lastBeat = -1;
@@ -108,6 +153,7 @@ class Playback {
   async step(file: PlayableFile) {
     const n = this.beatTotal();
     if (n < 2) return;
+    this.kronosPaused = false;
     const next = (((this.lastBeat + 1) % n) + n) % n;
     // Discrete advance: clear the playing/paused flags WITHOUT zeroing, hush any
     // in-flight audio for a clean slate, then play exactly this one beat.
