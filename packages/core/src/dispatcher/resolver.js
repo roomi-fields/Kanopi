@@ -415,15 +415,6 @@ export class Resolver {
       return pitched;
     }
 
-    // Fallback: sounds resolver (percussion, samples, etc.)
-    if (this.soundsResolver) {
-      const sounds = this.soundsResolver.resolve(token);
-      if (sounds) {
-        this._cache[cacheKey] = sounds;
-        return sounds;
-      }
-    }
-
     return null;
   }
 
