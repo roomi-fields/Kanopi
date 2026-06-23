@@ -53,7 +53,8 @@ import {
   buildModulators,
   composeTreeModulations,
   type ModLib,
-  type ModulationBinding
+  type ModulationBinding,
+  type ExprSource
 } from '@kronos/core';
 // Kronos drives the REAL audio (the only engine; legacy removed). The Kronos
 // scheduler produces the timed events; a thin adapter bridges each to the existing
@@ -1219,6 +1220,16 @@ export function setActorsSink(fn: (actors: PublishedActor[], file: string) => vo
   onActorsFromGrammar = fn;
 }
 
+// CV-native expr (décision langage Romain) : la factory qui compile une courbe `expr`
+// (backtick custom) en `ModulationSource` est FOURNIE PAR LE RUNTIME (runtime-audio),
+// jamais par Kanopi (Loi fondamentale n°2 : l'hôte ne compose/rend rien). Kanopi se
+// contente de la PASSER à la composition Kronos. Absente ⇒ `expr` ignoré par Kronos
+// (comportement actuel, additif et sans risque).
+let onExprSource: ExprSource | undefined;
+export function setExprSource(fn: ExprSource | undefined): void {
+  onExprSource = fn;
+}
+
 // Live arm/disarm handle for ONE orchestrated actor's voice. Registered per
 // (file, actor) when an orchestrator evaluates; the core reaches it by actor
 // name to silence/restore that single voice while the rest keep playing.
@@ -1696,7 +1707,8 @@ function makeBpxAdapter(
         for (const { leaf, bindings } of composeTreeModulations(
           derived.tree,
           nameOf,
-          kronosRegistry
+          kronosRegistry,
+          { exprSource: onExprSource }
         )) {
           (leaf as { __cvBindings?: ModulationBinding[] }).__cvBindings = bindings;
         }
@@ -1757,7 +1769,8 @@ function makeBpxAdapter(
           for (const { leaf, bindings } of composeTreeModulations(
             rderived.tree,
             rNameOf,
-            rRegistry
+            rRegistry,
+            { exprSource: onExprSource }
           )) {
             (leaf as { __cvBindings?: ModulationBinding[] }).__cvBindings = bindings;
           }
