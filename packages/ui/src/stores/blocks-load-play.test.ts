@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { openBlocks } from './blocks.svelte';
 import { playback } from './playback.svelte';
 import { workspace } from './workspace.svelte';
-import { core } from '../lib/core';
+import { clock } from './clock.svelte';
 
 // load→play regression guard (beta issues 3+5): a freshly-loaded program must
 // be playable immediately, WITHOUT waiting for the reactively-`$derived`
@@ -31,10 +31,11 @@ describe('openBlocks.blocksForFile — deterministic, not derived-list dependent
   });
 });
 
-// Play-from-stopped now evals the armed blocks via an EXPLICIT call
+// Play-from-stopped evals the armed blocks via an EXPLICIT call
 // (`playback.play()` → `openBlocks.replayArmed()`), not a clock subscriber. The
 // living behavior (Play sounds the armed scene) must hold, and — with no
-// subscriber — a `@mm` re-emit fired inside the eval cannot re-enter the replay.
+// subscriber and no host clock — a `@mm` re-emit fired inside the eval cannot
+// re-enter the replay.
 describe('Play-from-stopped — explicit armed-block eval, runs once, no recursion', () => {
   it('Play sounds the active scene armed blocks exactly once', async () => {
     const id = workspace.loadFiles(
@@ -47,29 +48,28 @@ describe('Play-from-stopped — explicit armed-block eval, runs once, no recursi
     let replayCount = 0;
     const realReplay = openBlocks.replayArmed.bind(openBlocks);
     // Simulate a `.bps` `@mm` re-emit from inside the eval: a genuine tempo change
-    // re-emits the clock state synchronously. With the subscriber gone, nothing
-    // listens on that emit, so the replay cannot re-enter itself.
+    // updates the tempo store synchronously. With no subscriber/host clock, nothing
+    // listens on that change, so the replay cannot re-enter itself.
     openBlocks.replayArmed = async () => {
       replayCount++;
-      core.clock.setBpm(replayCount % 2 === 0 ? 137 : 143); // genuine change → re-emit
+      clock.setBpm(replayCount % 2 === 0 ? 137 : 143); // genuine change → fan-out, no re-entry
     };
     try {
-      core.clock.stop(); // ensure stopped → Play takes the from-stopped branch
+      // No live Kronos handle (nothing was evaluated) → Play takes the from-stopped branch.
       playback.play(); // the ONE Play → exactly one explicit replay
       await Promise.resolve();
     } finally {
       openBlocks.replayArmed = realReplay;
       openBlocks.armed = new Set();
-      core.clock.stop();
     }
 
     expect(replayCount).toBe(1);
   });
 
-  it('a surgical startSilently does NOT eval the armed set', async () => {
-    // The surgical Ctrl+Enter path starts the clock via `startSilently()` and
-    // evaluates ONLY the touched block — it must never trigger an armed-set replay
-    // (no subscriber listens on the clock, so `replayArmed` is simply never called).
+  it('a surgical single-block eval does NOT eval the whole armed set', async () => {
+    // The surgical Ctrl+Enter path evaluates ONLY the touched block — it must never trigger
+    // an armed-set replay. With the host clock gone there is no subscriber at all, so
+    // `replayArmed` is simply never reached by a direct single-block eval.
     const id = workspace.loadFiles(
       [{ path: 'silent.strudel', contents: 'sound("bd")' }],
       'silent.strudel'
@@ -79,17 +79,18 @@ describe('Play-from-stopped — explicit armed-block eval, runs once, no recursi
 
     let replayCount = 0;
     const realReplay = openBlocks.replayArmed.bind(openBlocks);
+    const realEval = openBlocks.evalOne.bind(openBlocks);
     openBlocks.replayArmed = async () => {
       replayCount++;
     };
+    // Stub the actual adapter eval — we only assert that the surgical path doesn't replay.
+    openBlocks.evalOne = async () => {};
     try {
-      core.clock.stop();
-      core.clock.startSilently(); // surgical Ctrl+Enter — no armed-set replay
-      await Promise.resolve();
+      await openBlocks.evalOne(b); // surgical Ctrl+Enter — single block, no armed-set replay
     } finally {
       openBlocks.replayArmed = realReplay;
+      openBlocks.evalOne = realEval;
       openBlocks.armed = new Set();
-      core.clock.stop();
     }
 
     expect(replayCount).toBe(0);
@@ -107,8 +108,9 @@ describe('openBlocks.armLoadedProgram — arms WITHOUT starting the transport', 
     openBlocks.armLoadedProgram(id!);
     // Every block of the loaded file is now armed (a later Play will sound it)…
     for (const b of blocks) expect(openBlocks.isArmed(b.qualifiedName)).toBe(true);
-    // …but loading did not start the transport (no autoplay).
-    expect(core.clock.state.playing).toBe(false);
+    // …but loading did not start the transport (no autoplay): no Kronos handle was built,
+    // so the transport readout PROJECTS 'stopped' (no host clock invents a playing state).
+    expect(playback.mode).toBe('stopped');
     openBlocks.armed = new Set();
   });
 });

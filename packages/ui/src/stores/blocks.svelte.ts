@@ -5,7 +5,7 @@ import type { Runtime } from '../lib/core';
 import { core } from '../lib/core';
 import { getAdapter } from '../lib/runtimes/registry';
 import { onSlotErrorChange, getSlotErrors } from '../lib/runtimes/strudel';
-import { clock } from './clock.svelte';
+import { playback } from './playback.svelte';
 
 /**
  * A block-scoped actor surfaced in the panel:
@@ -57,10 +57,10 @@ class OpenBlocksStore {
     this.errored = next;
   }
 
-  /** Arm + play this block. If the transport was stopped, start it AND eval the
-   * active scene's armed blocks explicitly (arm = play, no disarm/rearm dance —
-   * beta issue 5). The eval is explicit at the Play-from-stopped site now; there
-   * is no clock subscriber doing it implicitly. */
+  /** Arm + play this block. If no scene is live (transport stopped), eval the active
+   * scene's armed blocks explicitly — that eval derives + builds the Kronos handle, which
+   * IS the transport starting (arm = play, no disarm/rearm dance — beta issue 5). There is
+   * no host clock to flip; Kronos becomes the authority via the eval. */
   async arm(q: string) {
     const b = this.list.find((x) => x.qualifiedName === q);
     if (!b) return;
@@ -68,8 +68,7 @@ class OpenBlocksStore {
     const next = new Set(this.armed);
     next.add(q);
     this.armed = next;
-    if (!clock.state.playing) {
-      clock.play();
+    if (playback.mode === 'stopped') {
       await this.replayArmed();
       return;
     }
@@ -161,11 +160,9 @@ class OpenBlocksStore {
     const next = new Set(this.armed);
     for (const b of fileBlocks) next.add(b.qualifiedName);
     this.armed = next;
-    if (!clock.state.playing) {
-      // play() → handleTransport(true) re-evals declared @actors; the explicit
-      // replayArmed() below evals the active scene's armed blocks (the former
-      // clock-subscriber job, now at the Play-from-stopped site).
-      clock.play();
+    if (playback.mode === 'stopped') {
+      // No scene live: the explicit replayArmed() evals the active scene's armed blocks; that
+      // eval derives + builds the Kronos handle, which IS the transport starting. No host clock.
       await this.replayArmed();
       return;
     }
@@ -240,9 +237,10 @@ class OpenBlocksStore {
     const hasBlocks = this.blocksForFile(fileId).length > 0;
     if (hasBlocks) {
       await this.armAndPlayFile(fileId);
-    } else if (!clock.state.playing) {
-      clock.play();
     }
+    // A program with NO blocks has nothing to derive → no Kronos handle, no transport to
+    // start. The host invents no "playing" state for an empty program (the old `clock.play()`
+    // here flipped a host flag with no audio — a fabricated transport state, now gone).
   }
 
   /** Re-eval every armed block of the active scene. Called EXPLICITLY at each

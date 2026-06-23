@@ -17,38 +17,17 @@ export type Runtime =
   | 'js'
   | 'system';
 
+/**
+ * The READOUT shape of the tempo/transport store (`stores/clock.svelte.ts`). It is NOT a
+ * host clock: `bpm`/`beatsPerBar` are persisted SESSION values (bpm superseded by the live
+ * Kronos handle's tempo while a scene plays); `playing`/`paused` are PROJECTED from Kronos's
+ * Transport state. Kanopi holds no clock object — position + transport state belong to Kronos.
+ */
 export interface ClockState {
   bpm: number;
   beatsPerBar: number; // numerator of the current @time signature (default 4)
-  playing: boolean;
-  // True after a `pause()` (transport halted but position kept), false after a
-  // `play()` or a `stop()` (which also zeroes the position). Lets the transport
-  // UI distinguish paused-at-position from stopped-at-zero. Never true while
-  // `playing` is true. Position itself lives in Kronos's Transport (read via the
-  // kronos-cursor store), NOT here — this carries only the tempo + transport flags.
-  paused: boolean;
-}
-
-export interface Clock {
-  readonly state: ClockState;
-  play(): void;
-  /**
-   * Start the transport WITHOUT firing the re-eval hook (onTransport). Used by a
-   * surgical manual Ctrl+Enter: the evaluated block is already sounding, so we
-   * only want the clock ticking + the UI to read "playing" — the rest of the
-   * armed set must NOT be re-triggered. `play()` re-evaluates every armed voice;
-   * this does not.
-   */
-  startSilently(): void;
-  stop(): void;
-  /** Enter STEP mode: clear playing+paused WITHOUT zeroing position or hushing.
-   * A discrete manual advance — never resumes a paused transport. */
-  enterStep(): void;
-  toggle(): void;
-  setBpm(n: number): void;
-  setTimeSignature(beatsPerBar: number): void;
-  tap(): void;
-  subscribe(cb: (s: ClockState) => void): Unsubscribe;
+  playing: boolean; // projected: Kronos transport === 'running'
+  paused: boolean; // projected: Kronos transport === 'paused'
 }
 
 export interface Actor {
@@ -126,7 +105,6 @@ export interface ConsoleBus {
 }
 
 export interface CoreApi {
-  clock: Clock;
   actors: ActorManager;
   scenes: SceneManager;
   maps: MapEngine;

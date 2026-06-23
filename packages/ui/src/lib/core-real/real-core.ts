@@ -1,10 +1,4 @@
-import {
-  MockClock,
-  MockScenes,
-  MockMaps,
-  MockConsole,
-  MockActors
-} from '../core-mock/mock-runtime';
+import { MockScenes, MockMaps, MockConsole, MockActors } from '../core-mock/mock-runtime';
 import type { Actor, CoreApi, LogEntry, Runtime, Scene } from '../core-mock/types';
 import { getAdapter, listRuntimes } from '../runtimes/registry';
 import {
@@ -53,7 +47,6 @@ class RealActors extends MockActors {
 }
 
 class RealCore implements CoreApi {
-  clock = new MockClock();
   actors = new RealActors();
   scenes = new MockScenes();
   maps = new MockMaps();
@@ -66,13 +59,13 @@ class RealCore implements CoreApi {
   private getBpsSceneFile?: (fileName: string) => string | undefined;
 
   constructor() {
-    this.clock.setEventBus(this.events);
     // The per-frame playhead sample + the beat/bar UI events (p5/hydra `onBeat`/`onBar`)
     // are derived by the kronos-cursor store directly off Kronos's Transport position
     // (the single authority) — it owns the rAF that used to live in the clock. Wire it
     // the same event bus the visuals listen on, plus the displayed tempo for the events'
-    // informational `bpm` field (read from the clock so it matches the readout).
-    kronosCursor.setEventBus(this.events, () => this.clock.state.bpm);
+    // informational `bpm` field. The events only fire while running, when a handle exists,
+    // so the live Transport's tempo is the authoritative value (0 when no scene is live).
+    kronosCursor.setEventBus(this.events, () => kronosCursor.active?.transport.tempo ?? 0);
     for (const id of listRuntimes()) {
       const a = getAdapter(id);
       if (a?.events) a.events.onAny((e) => this.events.emit(e));
@@ -85,22 +78,17 @@ class RealCore implements CoreApi {
     this.actors.setOnMute((a, willBeMuted) => {
       void this.handleActorMute(a, willBeMuted);
     });
-    this.clock.setOnTransport((playing) => {
-      void this.handleTransport(playing);
-    });
     this.scenes.setOnActivate((s) => {
       void this.handleSceneActivate(s);
     });
-    this.clock.setOnTempo((bpm) => {
-      for (const id of listRuntimes()) {
-        const adapter = getAdapter(id);
-        adapter?.setBpm?.(bpm, this.log);
-      }
+    // A grammar that declares `@mm` derives at that tempo; route it to the tempo store so the
+    // displayed BPM, the persisted session value, and every runtime (live retune) adopt the
+    // same tempo the derivation used (transport ⇄ derivation coherence). The store's `setBpm`
+    // owns the cross-runtime fan-out (the former `onTempo` hook). Lazy import avoids the
+    // module cycle (store → core → real-core).
+    setTempoSink((bpm) => {
+      void import('../../stores/clock.svelte').then((m) => m.clock.setBpm(bpm));
     });
-    // A grammar that declares `@mm` derives at that tempo; let the bp3/bpscript
-    // adapter drive the CENTRAL clock so the displayed BPM and the STEP grid
-    // adopt the same tempo the derivation used (transport ⇄ derivation coherence).
-    setTempoSink((bpm) => this.clock.setBpm(bpm));
     // An orchestrator `.bps` publishes its `@actor` list here so the Actors panel
     // shows every voice (groove + viz, …). The actors are armed by default (a
     // freshly-evaluated orchestrator sounds every voice); the per-actor arm/disarm
@@ -152,9 +140,9 @@ class RealCore implements CoreApi {
     // Start the clock first so the actor toggles that follow can eval through
     // handleActorToggle (which only evaluates when the clock is running). This
     // site does NOT rely on any clock subscriber: a file-scene evals its child
-    // `.bps` explicitly below, and an actor-set scene evals via the actor toggles
-    // it triggers — so no `replayArmed()` is needed here.
-    if (!this.clock.state.playing) this.clock.play();
+    // `.bps` explicitly below (the eval builds the Kronos handle = transport running), and
+    // an actor-set scene evals via the actor toggles it triggers (each orchestrated toggle
+    // self-starts from stopped). No host clock to flip — Kronos starts via the eval.
 
     // `.bps` file-scene (`@scene calm "calm.bps"`): the scene references a child
     // `.bps` program instead of arming in-session actors. Load its source and
@@ -225,45 +213,13 @@ class RealCore implements CoreApi {
     this.scenes.setScenes(next);
   }
 
-  private async handleTransport(playing: boolean) {
-    const actives = this.actors.list().filter((a) => a.active);
-    if (playing) {
-      // An orchestrated scene plays via its SINGLE scene eval (the active block's
-      // replay), never per-actor — no per-actor eval here.
-      this.log({ runtime: 'system', level: 'info', msg: `play: ${actives.length} actor(s)` });
-    } else {
-      // Model C — a transport STOP (the clock's onTransport(false) edge) must STOP IN PLACE,
-      // not full-discard: the derived timeline PERSISTS in Kronos so the next Play replays it
-      // with zero re-derivation. Route the `__stop_in_place__` sentinel (handle kept, playhead
-      // to 0, sound + code voices cut) to every known runtime — a Ctrl+Enter eval on a file
-      // not bound to an @actor still leaves Strudel playing, so hushing by runtime id is the
-      // only way to be sure the stop actually silences. A FULL discard (scene-swap, dispose,
-      // Ctrl+. panic) is driven separately by `silenceRuntimes()`/`hushAll()` via `__hush__`.
-      const seen = new Set<string>();
-      for (const id of listRuntimes()) {
-        if (seen.has(id)) continue;
-        seen.add(id);
-        const adapter = getAdapter(id);
-        if (!adapter) continue;
-        try {
-          await adapter.stop(
-            { actorId: '__stop_in_place__', fileId: '__stop_in_place__' },
-            this.log
-          );
-        } catch {
-          /* swallow — stop must be best-effort */
-        }
-      }
-      this.log({ runtime: 'system', level: 'info', msg: 'stop in place: all runtimes' });
-    }
-  }
-
   private log = (e: { runtime: Runtime; level: LogEntry['level']; msg: string }) =>
     this.console.push(e);
 
   private async handleActorMute(a: Actor, willBeMuted: boolean) {
-    // Only affects audio if the actor is currently armed and the transport runs.
-    if (!a.active || !this.clock.state.playing) return;
+    // Only affects audio if the actor is currently armed and a scene is live (transport
+    // running, per Kronos — the single authority; no host clock flag).
+    if (!a.active || kronosCursor.state !== 'running') return;
     // Orchestrator `.bps` actor: mute/unmute its live voice (same mechanism as
     // arm/disarm — silence the voice while the rest play, restore on unmute).
     if (isOrchestratedActor(a.name)) {
@@ -280,13 +236,12 @@ class RealCore implements CoreApi {
     // start it so the orchestrator (and this voice) sounds.
     if (isOrchestratedActor(a.name)) {
       if (willBeActive) {
-        if (!this.clock.state.playing) {
-          // Play-from-stopped on an orchestrated voice: start the clock, then eval
-          // the active scene's armed blocks EXPLICITLY (was the clock-subscriber's
-          // job). That single scene eval sounds the orchestrator including this
-          // just-armed voice; no per-voice eval here. The `openBlocks` store is
-          // imported lazily to avoid a module cycle (store → core → real-core).
-          this.clock.play();
+        if (kronosCursor.state !== 'running') {
+          // Play-from-stopped on an orchestrated voice: eval the active scene's armed blocks
+          // EXPLICITLY. That single scene eval derives + builds the Kronos handle (= transport
+          // running) and sounds the orchestrator including this just-armed voice; no per-voice
+          // eval here, no host clock to flip. The `openBlocks` store is imported lazily to
+          // avoid a module cycle (store → core → real-core).
           void import('../../stores/blocks.svelte').then((m) => m.openBlocks.replayArmed());
           return;
         }
@@ -351,27 +306,22 @@ class RealCore implements CoreApi {
     // scene is ready, not playing. Play sounds it later.
     if (produceOnly) return;
 
-    // STEP (a `section` window) is a discrete advance, NOT continuous play: the
-    // dispatcher sounds the single beat on its own clock, and the transport must
-    // stay in STEP mode (not playing) — `bpsScenes.stepActive` already called
-    // `enterStep`. So DON'T startSilently here, or stepping would resume the
-    // transport (and "remove the pause").
+    // STEP (a `section` window) is a discrete advance, NOT continuous play: the dispatcher
+    // sounds the single stepped beat on its own clock and the Kronos handle parks (paused),
+    // so the transport readout stays out of continuous play. Nothing extra to do here.
     if (section) return;
 
-    // Surgical: a manual Ctrl+Enter (re)sounds ONLY this block. If the transport
-    // was stopped we start it so the UI reads "playing" and time-based voices
-    // advance — but via startSilently, which does NOT re-evaluate the rest of
-    // the armed set (that's `play()`, reserved for load / scene / arm). The
-    // block just evaluated above is already live; the others keep playing
-    // untouched.
-    if (!this.clock.state.playing) this.clock.startSilently();
+    // Surgical: a manual Ctrl+Enter (re)sounds ONLY this block — the block just evaluated
+    // above is already live. A bp3/bpscript/.gr eval builds a Kronos handle (transport →
+    // running, so the readout follows the single authority); a pure code voice (Strudel/Hydra)
+    // sounds through its own adapter. No host clock to flip — the transport readout PROJECTS
+    // Kronos, it never invents a "playing" state the engine doesn't have.
   }
 
   async silenceRuntimes(): Promise<void> {
     // Silence every KNOWN runtime (not just the declared actors': a loaded
     // program's blocks sound through a runtime that may have no `@actor`), then
-    // deactivate the actors' LEDs — but leave the clock running. Mirrors the
-    // per-runtime hush `handleTransport(false)` does, without `clock.stop()`.
+    // deactivate the actors' LEDs. Per-runtime hush by id, best-effort.
     const seen = new Set<string>();
     for (const id of listRuntimes()) {
       if (seen.has(id)) continue;
@@ -431,10 +381,10 @@ class RealCore implements CoreApi {
   }
 
   async hushAll(): Promise<void> {
-    // Panic stop: silence every runtime + reset visual state (LEDs off,
-    // transport stopped). Reuses the clock-preserving silencer, then stops.
+    // Panic stop: silence every runtime + reset visual state (LEDs off). The per-runtime
+    // `__hush__` fully discards each Kronos handle (kronosCursor → null), so the transport
+    // readout PROJECTS 'stopped' — no host clock to stop.
     await this.silenceRuntimes();
-    if (this.clock.state.playing) this.clock.stop();
     this.log({ runtime: 'system', level: 'warn', msg: 'hush all' });
   }
 
@@ -462,9 +412,11 @@ class RealCore implements CoreApi {
       this.maps.emitIncoming(m.id, e.value);
       const tgt = m.target;
       if (tgt.kind === 'tempo') {
-        // Map CC 0..127 → BPM 60..180 (live coding common range).
+        // Map CC 0..127 → BPM 60..180 (live coding common range). Route to the tempo store
+        // (persisted value + live retune of every runtime, incl. the Kronos handle); lazy
+        // import avoids the module cycle (store → core → real-core).
         const bpm = 60 + (e.value / 127) * 120;
-        this.clock.setBpm(bpm);
+        void import('../../stores/clock.svelte').then((m) => m.clock.setBpm(bpm));
       } else if (tgt.kind === 'scene') {
         if (e.value > 0) this.scenes.activate(tgt.ref);
       } else if (tgt.kind === 'actor.toggle') {

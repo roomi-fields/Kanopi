@@ -143,7 +143,7 @@ describe('Kronos pause-at-beat-end (B7) + forward resume (B8)', () => {
 
     // B8 — the host re-evaluates and starts a FRESH handle seeked to the frozen
     // boundary (= lastBeat+1 = beat 3 at 3.0 s), emission UNBOUNDED again. This is
-    // exactly what `core.clock.play()` → re-eval → startKronosAudio({startSceneSec})
+    // exactly what `playback.play()` → re-eval → startKronosAudio({startSceneSec})
     // does after a kronos pause. The fresh handle is the same forward-resume as
     // Step→Play: it begins at beat 3, never re-plays 0/1/2 (no backward, no double).
     const now2 = { t: 3.0 };

@@ -1,8 +1,6 @@
 import type {
   Actor,
   ActorManager,
-  Clock,
-  ClockState,
   ConsoleBus,
   CoreApi,
   LogEntry,
@@ -27,148 +25,6 @@ function bus<T>() {
       for (const cb of subs) cb(v);
     }
   };
-}
-
-export class MockClock implements Clock {
-  // The clock holds the TEMPO intent (bpm + time signature) and the transport FLAGS
-  // (playing/paused) — NOT the position. Position is Kronos's Transport, sampled by the
-  // kronos-cursor store (`kronosCursor.beat`); the displays read it there, never here.
-  state: ClockState = {
-    bpm: 128,
-    beatsPerBar: 4,
-    playing: false,
-    paused: false
-  };
-  private tapTimes: number[] = [];
-  private b = bus<ClockState>();
-  private onTransport?: (playing: boolean) => void;
-  private onTempo?: (bpm: number) => void;
-  private eventsBus?: EventBus;
-
-  setOnTransport(fn: (playing: boolean) => void) {
-    this.onTransport = fn;
-  }
-  setOnTempo(fn: (bpm: number) => void) {
-    this.onTempo = fn;
-  }
-  setEventBus(bus: EventBus) {
-    this.eventsBus = bus;
-  }
-
-  play() {
-    const was = this.state.playing;
-    this.state = { ...this.state, playing: true, paused: false };
-    if (was) {
-      this.b.emit(this.state);
-      return;
-    }
-    // FRESH continuous play (from stop or a stepped position): the beat/bar event
-    // baselines live in the kronos-cursor store now (it resets them when a new
-    // dispatcher handle takes over and when the transport isn't running). Resume from
-    // pause does NOT come through here anymore — the playback store resumes IN PLACE on
-    // the live Kronos Transport (`transport.play()` + `refireCodeVoices`), never via the
-    // clock, so the clock never sees a paused→playing edge and needs no resume guard.
-    this.b.emit(this.state);
-    this.onTransport?.(true);
-    this.eventsBus?.emit({
-      schemaVersion: 1,
-      type: 'transport',
-      runtime: 'clock',
-      t: performance.now(),
-      playing: true,
-      bpm: this.state.bpm
-    });
-  }
-  startSilently() {
-    // Same as play() but WITHOUT onTransport(true): no re-eval of the armed set.
-    // The transport event still fires so adapters/visuals that key off the
-    // clock's playing edge stay in sync — only the "re-evaluate every armed
-    // voice" hook is skipped. Used by the surgical Ctrl+Enter path (real-core
-    // evaluateBlock): the block just evaluated is already live, so we only want
-    // the clock ticking + the UI reading "playing", not the whole armed set.
-    if (this.state.playing) return;
-    this.state = { ...this.state, playing: true, paused: false };
-    this.b.emit(this.state);
-    this.eventsBus?.emit({
-      schemaVersion: 1,
-      type: 'transport',
-      runtime: 'clock',
-      t: performance.now(),
-      playing: true,
-      bpm: this.state.bpm
-    });
-  }
-  /**
-   * Enter STEP mode: a discrete manual advance, neither continuous play nor
-   * pause. Clears playing+paused WITHOUT zeroing the position (unlike stop) and
-   * WITHOUT hushing runtimes (unlike pause) — the dispatcher plays the single
-   * stepped beat on its own clock, and the transport simply reads "not playing".
-   * Idempotent + side-effect-free beyond the state emit, so STEP never resumes a
-   * paused transport (it used to go through startSilently → playing=true).
-   */
-  enterStep() {
-    if (!this.state.playing && !this.state.paused) return;
-    this.state = { ...this.state, playing: false, paused: false };
-    this.b.emit(this.state);
-  }
-  stop() {
-    const was = this.state.playing || this.state.paused;
-    // stop() clears playing+paused. The POSITION reset is Kronos's (its Transport.stop()
-    // rewinds the cursor); the kronos-cursor store then reads `null` while stopped, so the
-    // displays fall back to 001·01.00 (B16) — the clock no longer holds a position.
-    this.state = { ...this.state, playing: false, paused: false }; // preserve beatsPerBar on stop
-    this.b.emit(this.state);
-    if (was) {
-      this.onTransport?.(false);
-      this.eventsBus?.emit({
-        schemaVersion: 1,
-        type: 'transport',
-        runtime: 'clock',
-        t: performance.now(),
-        playing: false,
-        bpm: this.state.bpm
-      });
-    }
-  }
-  toggle() {
-    if (this.state.playing) this.stop();
-    else this.play();
-  }
-  setBpm(n: number) {
-    const bpm = Math.max(20, Math.min(300, Math.round(n * 10) / 10));
-    const prev = this.state.bpm;
-    // No-op on an unchanged tempo: don't re-emit or re-fan-out `onTempo`. A
-    // grammar that re-applies its own `@mm` on every replay (Play → replayArmed →
-    // eval → setTempoSink) would otherwise emit a redundant clock update each
-    // time, churning every subscriber for nothing.
-    if (prev === bpm) return;
-    this.state = { ...this.state, bpm };
-    this.b.emit(this.state);
-    this.onTempo?.(bpm);
-  }
-  setTimeSignature(beatsPerBar: number) {
-    const n = Math.max(1, Math.min(32, Math.round(beatsPerBar)));
-    if (this.state.beatsPerBar === n) return;
-    this.state = { ...this.state, beatsPerBar: n };
-    this.b.emit(this.state);
-  }
-  tap() {
-    const now = performance.now();
-    this.tapTimes.push(now);
-    this.tapTimes = this.tapTimes.filter((t) => now - t < 2500);
-    if (this.tapTimes.length >= 2) {
-      const deltas: number[] = [];
-      for (let i = 1; i < this.tapTimes.length; i++) {
-        deltas.push(this.tapTimes[i] - this.tapTimes[i - 1]);
-      }
-      const avg = deltas.reduce((a, b) => a + b, 0) / deltas.length;
-      this.setBpm(60000 / avg);
-    }
-  }
-  subscribe(cb: (s: ClockState) => void) {
-    cb(this.state);
-    return this.b.subscribe(cb);
-  }
 }
 
 export class MockActors implements ActorManager {
@@ -285,7 +141,6 @@ export class MockConsole implements ConsoleBus {
 }
 
 class MockCore implements CoreApi {
-  clock = new MockClock();
   actors = new MockActors();
   scenes = new MockScenes();
   maps = new MockMaps();
@@ -293,7 +148,6 @@ class MockCore implements CoreApi {
   events: EventBus = createEventBus();
 
   constructor() {
-    this.clock.setEventBus(this.events);
     this.console.push({ runtime: 'system', level: 'info', msg: 'kanopi mock runtime online' });
   }
 

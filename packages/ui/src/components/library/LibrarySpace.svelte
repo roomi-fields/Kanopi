@@ -11,18 +11,10 @@
   const LEVELS = ['didactic', 'intermediate', 'advanced'] as const;
 
   async function load(item: LibraryItem) {
-    // Swap scenes WITHOUT stopping the transport clock. Stopping it (`hushAll`)
-    // raced the incoming play: `core.clock.stop()` flips the real clock state
-    // synchronously but the `clock` store flag mirrors it via an async
-    // subscription, so the very next `if (!clock.state.playing)` check still saw
-    // "playing" and skipped the restart — the new scene armed onto a clock that
-    // was actually stopped → silence + a stuck "Playing" indicator. Instead:
-    //   1. silence the outgoing scene's runtimes (audio + backtick) AND disarm
-    //      its blocks, leaving the clock running;
-    //   2. load the new files;
-    //   3. arm + evaluate the new scene on the live clock.
-    // From a rest state nothing is playing, so step 1 is a no-op and
-    // `playLoadedProgram` starts the clock as before (scenario 1 unchanged).
+    // Swap scenes WITHOUT a full `hushAll`: silence the outgoing scene's runtimes (audio +
+    // backtick) AND disarm its blocks, then load + PRODUCE the new scene. A full hush would
+    // tear down the live Kronos handle and churn the reactive graph mid-swap; here we only
+    // cut sound + bookkeeping, and the new scene's produce builds its own (stopped) handle.
     await core.silenceRuntimes();
     openBlocks.disarmAll();
     const focusId = workspace.loadFiles(item.files, item.sessionFile);

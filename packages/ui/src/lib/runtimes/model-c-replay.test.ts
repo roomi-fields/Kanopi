@@ -171,31 +171,29 @@ describe('Model C — persisted timeline replays without re-deriving', () => {
     expect(kronosCursor.active).not.toBe(handle);
   });
 
-  it('a transport Stop via the clock hook (handleTransport(false)) KEEPS the handle', async () => {
-    // THE ROOT-CAUSE GUARD. `playback.stop()` calls `core.clock.stop()`, which fires the
-    // MockClock `onTransport(false)` hook → `real-core.handleTransport(false)`. Before the fix
-    // that hook sent `__hush__` (full discard → kronosCursor null), so a transport Stop threw
-    // the handle and the next Play re-derived. It must now STOP IN PLACE: the handle persists
-    // (kronosCursor.active truthy, transport.state 'stopped'), proven here through the REAL
-    // core clock edge (not the sentinel directly).
+  it('a transport Stop (playback.stop → core.stopInPlace) KEEPS the handle', async () => {
+    // THE ROOT-CAUSE GUARD. A transport Stop must STOP IN PLACE, not full-discard: the
+    // derived timeline PERSISTS in Kronos so the next Play replays it with zero re-derivation.
+    // The host clock is gone — `playback.stop()` routes straight to `core.stopInPlace()`
+    // (the `__stop_in_place__` sentinel), which must leave the handle live (kronosCursor.active
+    // truthy, transport.state 'stopped'). Proven here through the REAL stop command, not the
+    // sentinel directly.
     setActorsSink(() => {});
     const before = __getBpxDeriveCount();
     await bpscriptAdapter.evaluate(SCENE, { actorId: 'hook.bps', fileId: 'hook.bps' }, () => {});
     const handle = kronosCursor.active;
     expect(handle).not.toBeNull();
+    expect(handle!.transport.state).toBe('running'); // the eval auto-played the Kronos transport
     expect(__getBpxDeriveCount() - before).toBe(1);
 
-    // The eval auto-played the Kronos transport, but the MockClock state is independent — set
-    // it playing so `stop()` toggles and fires `onTransport(false)`.
-    if (!core.clock.state.playing) core.clock.play();
-    core.clock.stop();
-    // The hook is fire-and-forget (`void handleTransport`) and stops each runtime serially;
-    // poll until the transport reports stopped (the handle persisting is the point).
+    await core.stopInPlace();
+    // `stopInPlace` stops each runtime serially; poll until the transport reports stopped
+    // (the handle persisting is the point).
     for (let i = 0; i < 50 && handle!.transport.state !== 'stopped'; i++) {
       await new Promise((r) => setTimeout(r, 5));
     }
 
-    // FIX PROVEN: the handle PERSISTS through the clock-stop hook (was null before).
+    // FIX PROVEN: the handle PERSISTS through the stop (was null before Model C).
     expect(kronosCursor.active).toBe(handle);
     expect(handle!.transport.state).toBe('stopped');
     expect(__getBpxDeriveCount() - before).toBe(1); // the stop did not re-derive
