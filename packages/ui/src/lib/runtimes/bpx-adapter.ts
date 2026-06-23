@@ -97,7 +97,7 @@ import type { VoiceOutputType } from './adapter';
 // load it through the Strudel `samples()` path. Consumed AS-IS — the adapter
 // only maps ids → loader.
 import { findBank } from '../library/audio-banks';
-import { loadSampleBank } from './strudel';
+import { loadSampleBank } from 'runtime-codevoices';
 // Head-rule sections read from the BPScript AST (`compileBPS().ast`), the single
 // source of truth — replacing the deprecated regex-on-grammar-text reader for the
 // `.bps` path. The `.gr` path keeps the local text reader (it never compiles

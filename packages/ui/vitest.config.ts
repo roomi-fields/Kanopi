@@ -14,7 +14,13 @@ export default defineConfig({
       '@csound/browser': new URL(
         '../../node_modules/@csound/browser/dist/csound.js',
         import.meta.url
-      ).pathname
+      ).pathname,
+      // `runtime-codevoices`' barrel statically re-exports `strudel-cm`, which
+      // eagerly imports `@strudel/codemirror` (→ `@kabelsalat/web`, broken ESM
+      // interop under jsdom — fine in the browser). Tests never use the CM6
+      // extensions; stub them so the registry import resolves. Dev/build use the
+      // real package. Same rationale as the `@csound/browser` alias above.
+      '@strudel/codemirror': new URL('./test/stubs/strudel-codemirror.ts', import.meta.url).pathname
     }
   },
   test: {

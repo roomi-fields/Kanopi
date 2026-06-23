@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { attachHydraCanvas } from '../../lib/runtimes/hydra';
+  import { attachHydraCanvas } from 'runtime-codevoices';
 
   let canvas: HTMLCanvasElement;
 

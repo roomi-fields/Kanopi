@@ -1,23 +1,15 @@
 import type { Runtime } from '../core-mock';
 import type { RuntimeAdapter } from './adapter';
-import { strudelAdapter, tidalAdapter } from './strudel';
-import { hydraAdapter } from './hydra';
-import { p5Adapter } from './p5';
-import { mercuryAdapter } from './mercury';
-import { csoundAdapter } from './csound';
+// The 7 code voices (strudel/tidal/hydra/p5/mercury/csound/js) live in the
+// `runtime-codevoices` package and are pulled by Kronos at the backtick token
+// onset. The natives bp3/bpscript stay in Kanopi (BPx path).
+import { codeVoiceAdapters } from 'runtime-codevoices';
 import { bp3Adapter, bpscriptAdapter } from './bpx-adapter';
-import { jsAdapter } from './webaudio';
 
 const adapters = new Map<Runtime, RuntimeAdapter>([
-  ['strudel', strudelAdapter],
-  ['tidal', tidalAdapter],
-  ['hydra', hydraAdapter],
-  ['p5', p5Adapter],
-  ['mercury', mercuryAdapter],
-  ['csound', csoundAdapter],
+  ...codeVoiceAdapters.map((a): [Runtime, RuntimeAdapter] => [a.id, a]),
   ['bp3', bp3Adapter],
-  ['bpscript', bpscriptAdapter],
-  ['js', jsAdapter]
+  ['bpscript', bpscriptAdapter]
 ]);
 
 /**

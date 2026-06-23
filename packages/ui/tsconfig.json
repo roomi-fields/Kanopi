@@ -19,7 +19,8 @@
       "bpscript/src/transpiler/index.js": ["./src/lib/runtimes/bp3-deps.d.ts"],
       "bpscript/src/transpiler/orderTokens.js": ["./src/lib/text-order/order-tokens.d.ts"],
       "runtime-midi": ["./src/lib/runtimes/runtime-midi.d.ts"],
-      "runtime-audio": ["./src/lib/runtimes/runtime-audio.d.ts"]
+      "runtime-audio": ["./src/lib/runtimes/runtime-audio.d.ts"],
+      "runtime-codevoices": ["./src/lib/runtimes/runtime-codevoices.d.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.svelte", "src/**/*.svelte.ts", "vite.config.ts"],

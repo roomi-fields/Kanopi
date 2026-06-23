@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { attachP5Container } from '../../lib/runtimes/p5';
+  import { attachP5Container } from 'runtime-codevoices';
 
   let container: HTMLDivElement;
 

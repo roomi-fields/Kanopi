@@ -4,7 +4,7 @@ import type { CodeBlock } from '../lib/blocks/extract-blocks';
 import type { Runtime } from '../lib/core';
 import { core } from '../lib/core';
 import { getAdapter } from '../lib/runtimes/registry';
-import { onSlotErrorChange, getSlotErrors } from '../lib/runtimes/strudel';
+import { onSlotErrorChange, getSlotErrors } from 'runtime-codevoices';
 import { playback } from './playback.svelte';
 
 /**

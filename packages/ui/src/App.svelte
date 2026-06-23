@@ -62,7 +62,7 @@
     // Strudel logs async pattern errors via its own logger (repl's catch,
     // scheduler-tick errorLogger) without rejecting the evaluate() promise.
     // Hook the official callbacks to re-flash the last-evaluated range red.
-    void import('./lib/runtimes/strudel').then(({ onStrudelError }) => {
+    void import('runtime-codevoices').then(({ onStrudelError }) => {
       onStrudelError(() => markLastEvalError());
     });
 

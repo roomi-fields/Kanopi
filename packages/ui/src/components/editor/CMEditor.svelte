@@ -27,11 +27,11 @@
   import { rememberEval } from './eval-tracker';
   import { strudelExtras } from './strudel-extras';
   import { miniOverlay } from './mini-overlay';
-  import { widgetPlugin } from '../../lib/runtimes/strudel-cm';
   import {
+    widgetPlugin,
     registerStrudelEditorView,
     unregisterStrudelEditorView
-  } from '../../lib/runtimes/strudel';
+  } from 'runtime-codevoices';
   import { extractBlocks, qualifyBlock } from '../../lib/blocks/extract-blocks';
   import { openBlocks } from '../../stores/blocks.svelte';
 

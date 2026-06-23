@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { onStrudelStatus, type StrudelStatus } from '../../lib/runtimes/strudel';
+  import { onStrudelStatus, type StrudelStatus } from 'runtime-codevoices';
   import { workspace } from '../../stores/workspace.svelte';
 
   let status = $state<StrudelStatus>('idle');

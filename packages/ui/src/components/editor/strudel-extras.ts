@@ -18,7 +18,7 @@ export function strudelExtras(runtime: Runtime): {
   const install = async (view: EditorView) => {
     if (!needs) return;
     try {
-      const mod = await import('../../lib/runtimes/strudel-cm');
+      const mod = await import('runtime-codevoices');
       // Strudel exposes togglable extensions through a single `extensions` map
       // rather than named exports (names are mangled in the dist bundle).
       const toggles = mod.extensions;

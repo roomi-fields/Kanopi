@@ -28,6 +28,7 @@
     "bpscript": "file:../../../../bp/BPscript",
     "runtime-midi": "file:../../../../bp/runtime-MIDI",
     "runtime-audio": "file:../../../../bp/runtime-audio",
+    "runtime-codevoices": "file:../../../../bp/runtime-codevoices",
     "@codemirror/commands": "^6.6.0",
     "@codemirror/lang-javascript": "^6.2.2",
     "@codemirror/lang-python": "^6.1.6",
