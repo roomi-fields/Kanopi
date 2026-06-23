@@ -89,14 +89,15 @@ class Playback {
     const cur = production.current;
     const n = cur ? beatCount(cur.durationSec, cur.beatDurSec) : 0;
     if (n < 2) return;
-    // The beat to play next is READ from the Transport's current (frozen) position — the
-    // boundary the last step landed on — never a host counter. Stopped (no Transport) →
-    // start at beat 0. Each step advances by one beat → monotone; `play` afterwards
-    // resumes forward from the frozen boundary. The adapter seeks to this beat and plays
-    // one beat window then pauses (a fresh Transport per step; the previous one is torn
-    // down first, so no stacked emitter).
+    // The beat to play next is DERIVED from the Transport's frozen position — never a
+    // host counter. A stepped handle reports the beat it just PLAYED (`beatPosition` =
+    // the stepped second, aligned to the heard note), so the NEXT beat is that + 1.
+    // Stopped (no Transport) → start at beat 0. Each step advances one beat → monotone;
+    // `play` afterwards resumes forward. The adapter seeks to this beat and plays one
+    // beat window then pauses (a fresh Transport per step; the previous one is torn down
+    // first, so no stacked emitter).
     const t = this.transport;
-    const next = (((t ? Math.round(t.beatPosition().beatsTotal) : 0) % n) + n) % n;
+    const next = t ? (((Math.round(t.beatPosition().beatsTotal) + 1) % n) + n) % n : 0;
     await core.evaluateBlock(file.runtime, file.contents, file.name, 0, undefined, undefined, {
       index: next,
       count: n

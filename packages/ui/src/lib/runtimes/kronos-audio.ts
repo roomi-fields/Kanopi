@@ -545,10 +545,21 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       // The TRANSPORT's position: the cursor while running, the FROZEN position when
       // paused/stopped. The host reads this per-frame to draw the playhead — one
       // authority (Kronos), never a host counter.
-      return transport.position();
+      //
+      // STEP exception: Kronos's `step(1)` plays `[fromSec, fromSec+grain)` then lands
+      // (monotone) at the END `fromSec+grain`. Drawing the playhead there would put the
+      // cursor ONE BEAT AHEAD of the note that just sounded. So for a stepped handle the
+      // displayed position is the STEPPED beat itself (`fromSec`) — still the Kronos
+      // cursor (the scene second it played from), aligned to the heard note.
+      return step ? step.fromSec : transport.position();
     },
     beatPosition() {
-      return transport.beatPosition(BEATS_PER_BAR);
+      // Same STEP exception: report the beat AT the stepped second (`fromSec`), via the
+      // cursor's own frozen-position formula (no host beat counter), so bar·beat matches
+      // the heard note instead of the landing boundary.
+      return step
+        ? cursor.beatPositionForScene(step.fromSec, clock.derivedTempo, BEATS_PER_BAR)
+        : transport.beatPosition(BEATS_PER_BAR);
     },
     seek(sceneSec: number) {
       // Re-anchor the time authority and the scheduler to the SAME scene second

@@ -42,7 +42,10 @@ test('an EXPLICIT transport:midi actor routes BPx tokens to runtime-midi (NoteOn
           };
         };
       };
-      w.__kanopi.workspace.loadFiles([{ path: 'midi-explicit.bps', contents }], 'midi-explicit.bps');
+      w.__kanopi.workspace.loadFiles(
+        [{ path: 'midi-explicit.bps', contents }],
+        'midi-explicit.bps'
+      );
     },
     { contents: MIDI_SCENE }
   );
