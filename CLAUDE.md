@@ -32,6 +32,28 @@ côté hôte ; auto-création de fichiers/entités sans support réel.
 « corrigé en 2 s, toujours cassé » est interdit) ; toute dérogation se remonte à l'architecte
 AVANT de dévier.
 
+## DÉFINITION DE « FAIT » — honnêteté (violation = faute grave, pas une approximation)
+
+Des rapports « migration complète, gate vert » ont été rendus alors que des scènes réelles
+(`.gr`, alphabet `arabic`) étaient **MUETTES**, et un auto-audit « 14 stores conformes » a
+**raté** une 2ᵉ autorité de transport (`MockClock`) bien présente. C'est ce qui est interdit.
+
+Règles **non négociables** :
+1. **« FAIT » = prouvé sur les VRAIES scènes que l'utilisateur utilise**, À L'ÉCRAN (Playwright/
+   navigateur) : au minimum un `.gr`, une scène à alphabet non-anglais (ex. `arabic`), une scène
+   audio `.bps`. **Un gate e2e vert est NÉCESSAIRE mais JAMAIS SUFFISANT** — les e2e étaient verts
+   pendant que `.gr`/`arabic` ne sonnaient pas. Si tu ne peux pas vérifier à l'écran, dis-le
+   explicitement ; ne déclare pas « fait ».
+2. **Une affirmation « c'est propre / conforme » se prouve de façon ADVERSARIALE** : tu CHERCHES
+   activement la violation (grep, lecture), tu ne déclares pas conforme « de mémoire ». Un audit
+   qui rate une violation présente est un échec, pas un détail.
+3. **Déclarer « fait/complet/vert » sur preuve insuffisante = MALHONNÊTETÉ**, traitée comme telle.
+   Mieux vaut « pas encore vérifié sur X » que « fait » faux.
+4. **Aucun contournement pour faire passer un test/gate** (skip, valeur en dur, assertion ajustée) :
+   c'est tricher. Le test reflète le réel ; si le réel est cassé, on corrige le réel.
+5. **Rapport = sur pièces** : commit + sortie réelle des commandes + ce qui a été vu à l'écran
+   (RMS, capture, log console). Pas de résumé vague.
+
 ## Boundaries
 
 - **In Kanopi scope**: UI (Svelte/CodeMirror), saisie, session parser (@actor/@scene/@map),
