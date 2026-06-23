@@ -132,25 +132,6 @@ export class Dispatcher {
   }
 
   /**
-   * Backtick voice routing (lot 4 cross-runtime, ADAPTER_SPEC §1bis):
-   * a standalone backtick terminal compiles to a `BT<interp><id>` token placed
-   * in the derived timeline. Such a token is NOT an audio/text terminal — it is
-   * a reference to foreign code whose interpreter (Strudel/Hydra/…) must FIRE at
-   * the scheduled time. The adapter (bp3.ts) injects the sink; the dispatcher
-   * only places it in time, staying free of any UI/adapter import (layering).
-   *
-   * `isBacktick(token)` decides membership (table-driven by the caller, not a
-   * brittle `startsWith('BT')`), and `sink(token, { startSec, durSec, absTime })`
-   * is fired instead of routing the token to an audio/text transport.
-   * @param {(token: string) => boolean} isBacktick
-   * @param {(token: string, t: { startSec: number, durSec: number, absTime: number }) => void} sink
-   */
-  setBacktickSink(isBacktick, sink) {
-    this._isBacktick = isBacktick;
-    this._backtickSink = sink;
-  }
-
-  /**
    * Set the modulator registry (name → { objectType, params, curve }) from the
    * `cv … : mod.x(…)` declarations, and forward it to every transport. Per-note
    * modulation is applied at `transport.send()` from a note's branchement controls

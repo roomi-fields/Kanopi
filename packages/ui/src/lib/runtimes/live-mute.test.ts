@@ -6,7 +6,8 @@ import {
   disarmOrchestratedActor
 } from './bpx-adapter';
 import * as registry from './registry';
-import { Dispatcher } from '../../../../core/src/dispatcher/dispatcher.js';
+import * as kronosAudio from './kronos-audio';
+import type { KronosAudioOptions } from './kronos-audio';
 
 class FakeGain {
   gain = { value: 1, setValueAtTime() {} };
@@ -61,19 +62,17 @@ describe('backtick sink consults the LIVE disarm state', () => {
   it('a re-fire of a disarmed code voice does NOT re-evaluate it; re-arm re-enables it', async () => {
     setActorsSink(() => {});
 
-    // Capture the backtick sink the adapter registers on its dispatcher, so we can
-    // re-fire a BT token exactly as a loop cycle would — and observe the LIVE mute
-    // guard (the regression: the guard read a stale snapshot, so a disarmed voice
-    // kept re-firing each cycle).
+    // Capture the backtick sink the adapter hands to Kronos (the single emitter
+    // that intercepts BT tokens), so we can re-fire a BT token exactly as a loop
+    // cycle would — and observe the LIVE mute guard (the regression: the guard read
+    // a stale snapshot, so a disarmed voice kept re-firing each cycle). The sink now
+    // reaches Kronos via `startKronosAudio({ isBacktick, backtickSink })`; capturing
+    // its options is the live firing path (the dispatcher is never started here).
     let captured: { isBT: IsBT; sink: Sink } | undefined;
-    const orig = (Dispatcher.prototype as unknown as { setBacktickSink: unknown })
-      .setBacktickSink as (this: unknown, isBT: IsBT, sink: Sink) => void;
-    vi.spyOn(
-      Dispatcher.prototype as unknown as { setBacktickSink: (i: IsBT, s: Sink) => void },
-      'setBacktickSink'
-    ).mockImplementation(function (this: unknown, isBT: IsBT, sink: Sink) {
-      captured = { isBT, sink };
-      return orig.call(this, isBT, sink);
+    const orig = kronosAudio.startKronosAudio;
+    vi.spyOn(kronosAudio, 'startKronosAudio').mockImplementation((opts: KronosAudioOptions) => {
+      captured = { isBT: opts.isBacktick as IsBT, sink: opts.backtickSink as Sink };
+      return orig(opts);
     });
 
     const strudel = registry.getAdapter('strudel')!;

@@ -1372,13 +1372,14 @@ async function gateVoiceDevice(
 }
 
 /**
- * Register a backtick sink on a dispatcher (lot 4, ADAPTER_SPEC §1bis). A
- * `BT<interp><id>` token in the derivation is a REFERENCE to foreign code; the
- * dispatcher places it in time and fires this sink at the scheduled moment.
+ * Build a backtick sink (lot 4, ADAPTER_SPEC §1bis). A `BT<interp><id>` token in
+ * the derivation is a REFERENCE to foreign code; Kronos (the single emitter)
+ * places it in time and fires this sink at the scheduled moment — it receives the
+ * returned closures via `startKronosAudio({ isBacktick, backtickSink })`.
  * The sink looks up `backticks[token]` (direct, no parsing), resolves the
  * interpreter adapter, and evaluates the code — the engine then plays, PLACED in
- * time by the dispatcher. Layering: the dispatcher (packages/core) never imports
- * an adapter; bp3.ts injects this closure.
+ * time by Kronos. Layering: the scheduler (packages/core) never imports an
+ * adapter; bp3.ts builds this closure.
  *
  * - unknown interp → clear log error (never silent).
  * - async evaluate → fire-and-forget, errors logged.
@@ -1387,7 +1388,6 @@ async function gateVoiceDevice(
  *   fire time. This sink only PLACES the already-validated voice in time.
  */
 function registerBacktickSink(
-  dispatcher: InstanceType<typeof Dispatcher>,
   backticks: BacktickTable,
   id: Runtime,
   src: EvalSource,
@@ -1446,14 +1446,6 @@ function registerBacktickSink(
         log({ runtime: id, level: 'error', msg: `backtick ${entry.interp}: ${String(err)}` })
       );
   };
-  (
-    dispatcher as unknown as {
-      setBacktickSink(
-        isBacktick: (t: string) => boolean,
-        sink: (t: string, ts: { startSec: number; durSec: number; absTime: number }) => void
-      ): void;
-    }
-  ).setBacktickSink(isBacktick, sink);
   // Return the closures so the orchestrated kronos path can hand them to the Kronos
   // scheduler (it intercepts BT tokens itself; the dispatcher is not started there).
   return { isBacktick, sink };
@@ -1952,7 +1944,6 @@ function makeBpxAdapter(
         | undefined;
       if (backticks && Object.keys(backticks).length > 0) {
         backtickHandles = registerBacktickSink(
-          dispatcher,
           backticks,
           id,
           src,
