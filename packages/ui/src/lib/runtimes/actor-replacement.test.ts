@@ -162,19 +162,4 @@ describe('real-core actors sink: empty publish clears only orchestrator actors',
 
     await bpscriptAdapter.stop({ actorId: '__hush__', fileId: 'o.bps' }, () => {});
   });
-
-  it('does NOT wipe a .kanopi session (flag false) on a non-orchestrated eval', async () => {
-    const core = createRealCore();
-    // A .kanopi session owns its actors via loadSession (sets the flag false).
-    await core.loadSession('@actor melody melody.strudel strudel\n');
-    const sessionActors = core.actors.list().map((a) => a.name);
-    expect(sessionActors).toContain('melody');
-
-    // A non-orchestrated `.bps` actor eval publishes an empty list — it must be a
-    // no-op for the session-owned actors.
-    await bpscriptAdapter.evaluate(PLAIN, { actorId: 'melody', fileId: 'melody' }, () => {});
-    expect(core.actors.list().map((a) => a.name)).toContain('melody');
-
-    await bpscriptAdapter.stop({ actorId: '__hush__', fileId: 'melody' }, () => {});
-  });
 });

@@ -5,7 +5,7 @@ import {
   MockConsole,
   MockActors
 } from '../core-mock/mock-runtime';
-import type { Actor, ActorFileRef, CoreApi, LogEntry, Runtime, Scene } from '../core-mock/types';
+import type { Actor, CoreApi, LogEntry, Runtime, Scene } from '../core-mock/types';
 import { getAdapter, listRuntimes } from '../runtimes/registry';
 import {
   setTempoSink,
@@ -17,9 +17,6 @@ import {
 } from '../runtimes/bpx-adapter';
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 import { installConsoleBridge } from '../runtimes/console-bridge';
-import { parseSession } from '../session';
-import { findBank } from '../library/audio-banks';
-import { loadSampleBank, setDeclaredBanks } from '../runtimes/strudel';
 import { enableMidi, matchMapping, type MidiEvent } from '../midi/midi-input';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
@@ -63,15 +60,10 @@ class RealCore implements CoreApi {
   console = new MockConsole();
   events: EventBus = createEventBus();
 
-  private getActorFile?: (name: string) => ActorFileRef | undefined;
   // Resolve a `.bps` file-scene child by file name → its source text. Fed by the
   // workspace (bindBpsSceneFiles) so activating a `@scene calm "calm.bps"` can
   // load + evaluate the referenced child program.
   private getBpsSceneFile?: (fileName: string) => string | undefined;
-  // True while the Actors panel shows an orchestrator `.bps`'s `@actor` list
-  // (published by the bpscript adapter), so `loadSession('')` — fired by the
-  // workspace when no `.kanopi` session is open — doesn't wipe them.
-  private actorsAreOrchestrated = false;
 
   constructor() {
     this.clock.setEventBus(this.events);
@@ -110,25 +102,17 @@ class RealCore implements CoreApi {
     // adopt the same tempo the derivation used (transport ⇄ derivation coherence).
     setTempoSink((bpm) => this.clock.setBpm(bpm));
     // An orchestrator `.bps` publishes its `@actor` list here so the Actors panel
-    // shows every voice (groove + viz, …), not just the file-bound `.kanopi`
-    // actors. The actors are armed by default (a freshly-evaluated orchestrator
-    // sounds every voice); the per-actor arm/disarm then routes through the
-    // orchestrated path (see handleActorToggle). The active state of an actor
-    // that survives a re-eval is preserved.
+    // shows every voice (groove + viz, …). The actors are armed by default (a
+    // freshly-evaluated orchestrator sounds every voice); the per-actor arm/disarm
+    // then routes through the orchestrated path (see handleActorToggle). The active
+    // state of an actor that survives a re-eval is preserved.
     setActorsSink((published: PublishedActor[]) => {
       // A NON-orchestrated `.bps`/`.gr` publishes an EMPTY list: it replaces the
-      // previous program's orchestrator voices (groove/viz) with nothing. Only act
-      // on it when the panel is CURRENTLY showing orchestrator actors — a `.kanopi`
-      // session owns its actors via `loadSession` (flag false), so a non-orchestrated
-      // actor-bound `.bps` eval must NOT wipe them.
+      // previous program's orchestrator voices (groove/viz) with nothing.
       if (published.length === 0) {
-        if (this.actorsAreOrchestrated) {
-          this.actorsAreOrchestrated = false;
-          this.actors.setActors([]);
-        }
+        this.actors.setActors([]);
         return;
       }
-      this.actorsAreOrchestrated = true;
       // A PRODUCE/scene-load arms EVERY actor (they all sound — Kronos plays the whole
       // scene). The LED reflects "this actor is sounding", so all light up together;
       // a previous Stop set them `active:false`, and the old `before.get(name) ?? true`
@@ -212,14 +196,9 @@ class RealCore implements CoreApi {
    * Feed the Scenes panel from a `.bps`'s `@scene <name> "<file>"` table. Each
    * named scene becomes a file-scene card; activating it loads + plays the
    * referenced child `.bps`. `resolve` reads a child file's source by name (fed
-   * by the workspace).
-   *
-   * COEXISTS with `.kanopi` session scenes (`loadSession`): a `.kanopi` session's
-   * actor-set scenes carry no `file` field, file-scenes do. This method only owns
-   * the FILE-scene cards — it never wipes session scenes. So a non-empty table
-   * installs file-scenes; an empty table (the active file declares none) clears
-   * the panel ONLY when the current scenes are themselves file-scenes, leaving an
-   * active `.kanopi` session's scenes intact.
+   * by the workspace). A non-empty table installs file-scenes; an empty table
+   * (the active file declares none) clears the panel only when the current
+   * scenes are themselves file-scenes.
    */
   loadBpsFileScenes(
     sceneTable: Record<string, { file: string }>,
@@ -230,8 +209,8 @@ class RealCore implements CoreApi {
     const currentAreFileScenes = this.scenes.list().some((s) => s.file !== undefined);
 
     if (entries.length === 0) {
-      // No file-scenes in the active file. Don't touch `.kanopi` session scenes;
-      // only clear if what's shown is a previously-loaded file-scene set.
+      // No file-scenes in the active file. Only clear if what's shown is a
+      // previously-loaded file-scene set.
       if (currentAreFileScenes) this.scenes.setScenes([]);
       return;
     }
@@ -249,27 +228,8 @@ class RealCore implements CoreApi {
   private async handleTransport(playing: boolean) {
     const actives = this.actors.list().filter((a) => a.active);
     if (playing) {
-      // ORCHESTRATED scene (.bps with inline @actor): its actors all map to the SAME
-      // orchestrator file, so a per-actor eval here re-runs the WHOLE scene once per
-      // actor (the double/triple voice + pause leak). An orchestrated scene plays via
-      // its SINGLE scene eval (the active block's replay), never per-actor. Only a
-      // `.kanopi` SESSION (actors = separate real files, `actorsAreOrchestrated`=false)
-      // gets a per-actor eval here. `actorsAreOrchestrated` is set at produce time, so
-      // it is reliable on the play edge (unlike `isOrchestratedActor`, which depends on
-      // the full eval having already registered the live voices).
-      if (!this.actorsAreOrchestrated) {
-        for (const a of actives) {
-          const ref = this.getActorFile?.(a.name);
-          if (!ref) continue;
-          const adapter = getAdapter(ref.runtime);
-          if (!adapter) continue;
-          try {
-            await adapter.evaluate(ref.contents, { actorId: a.name, fileId: a.name }, this.log);
-          } catch {
-            /* error already logged by adapter */
-          }
-        }
-      }
+      // An orchestrated scene plays via its SINGLE scene eval (the active block's
+      // replay), never per-actor — no per-actor eval here.
       this.log({ runtime: 'system', level: 'info', msg: `play: ${actives.length} actor(s)` });
     } else {
       // Model C — a transport STOP (the clock's onTransport(false) edge) must STOP IN PLACE,
@@ -311,25 +271,13 @@ class RealCore implements CoreApi {
       else armOrchestratedActor(a.name);
       return;
     }
-    const ref = this.getActorFile?.(a.name);
-    if (!ref) return;
-    const adapter = getAdapter(ref.runtime);
-    if (!adapter) return;
-    const src = { actorId: a.name, fileId: a.name };
-    if (willBeMuted) {
-      await adapter.stop(src, this.log);
-      this.log({ runtime: ref.runtime, level: 'info', msg: `mute [${a.name}]` });
-    } else {
-      await adapter.evaluate(ref.contents, src, this.log);
-      this.log({ runtime: ref.runtime, level: 'info', msg: `unmute [${a.name}]` });
-    }
   }
 
   private async handleActorToggle(a: Actor, willBeActive: boolean) {
-    // Orchestrator `.bps` actor (no `.kanopi` file binding): arm/disarm its voice
-    // LIVE on the running orchestrator. Disarm silences this voice (code stopped,
-    // notes gated) while the others keep playing; arm restores it. If the
-    // transport was stopped, start it so the orchestrator (and this voice) sounds.
+    // Orchestrator `.bps` actor: arm/disarm its voice LIVE on the running
+    // orchestrator. Disarm silences this voice (code stopped, notes gated) while
+    // the others keep playing; arm restores it. If the transport was stopped,
+    // start it so the orchestrator (and this voice) sounds.
     if (isOrchestratedActor(a.name)) {
       if (willBeActive) {
         if (!this.clock.state.playing) {
@@ -351,111 +299,8 @@ class RealCore implements CoreApi {
       return;
     }
 
-    const ref = this.getActorFile?.(a.name);
-    if (!ref) {
-      this.log({ runtime: a.runtime, level: 'warn', msg: `actor "${a.name}" has no file bound` });
-      return;
-    }
-    const adapter = getAdapter(ref.runtime);
-    if (!adapter) {
-      this.log({
-        runtime: ref.runtime,
-        level: 'warn',
-        msg: `no adapter for runtime "${ref.runtime}" — actor "${a.name}" toggled visually only`
-      });
-      return;
-    }
-    const src = { actorId: a.name, fileId: a.name };
-    if (willBeActive) {
-      // Arming an actor PLAYS it (beta issue 5 — "play/actor est incohérent").
-      // If the transport was stopped, start it: `handleTransport(true)` (fired via
-      // the clock's onTransport hook) then re-evaluates every armed `.kanopi`
-      // actor — including this one — so we don't double-eval here and need no
-      // explicit `replayArmed()`. (This is the SESSION path; orchestrated `.bps`
-      // voices take the explicit-eval branch above.)
-      if (!this.clock.state.playing) {
-        this.clock.play();
-        return;
-      }
-      await adapter.evaluate(ref.contents, src, this.log);
-    } else {
-      await adapter.stop(src, this.log);
-    }
-  }
-
-  async loadSession(text: string) {
-    // No `.kanopi` session open (empty text) while the Actors panel shows an
-    // orchestrator `.bps`'s actors: don't wipe them. The workspace fires
-    // `loadSession('')` when no session tab is active, which would otherwise
-    // clear groove/viz the moment a `.bps` orchestrator is the only open program.
-    if (!text.trim() && this.actorsAreOrchestrated) return;
-
-    const r = parseSession(text);
-    // A real session owns the Actors panel from here on (until an orchestrator
-    // publishes again).
-    this.actorsAreOrchestrated = false;
-
-    // Preserve current active state for actors that survive; arm NEW actors by
-    // default (beta issue 3 — "par défaut les acteurs doivent être armés au
-    // chargement"). A reload keeps whatever the user had toggled; a fresh load
-    // arms every actor so the session sounds on Play without a manual rearm.
-    const before = new Map(this.actors.list().map((a) => [a.name, a.active]));
-    const nextActors = r.actors.map((a) => ({
-      ...a,
-      active: before.get(a.name) ?? true
-    }));
-    this.actors.setActors(nextActors);
-
-    // Preserve active scene by name.
-    const currentActive = this.scenes.list().find((s) => s.active)?.name;
-    const nextScenes = r.scenes.map((s) => ({ ...s, active: s.name === currentActive }));
-    this.scenes.setScenes(nextScenes);
-
-    this.maps.setMappings(r.mappings);
-
-    // Apply @time signature if declared. Default 4/4 if absent so reopening a
-    // session that dropped the directive resets to the standard signature.
-    this.clock.setTimeSignature(r.timeSignature?.num ?? 4);
-
-    // Fire-and-forget: load each @library bank via Strudel's samples().
-    // De-duped inside loadSampleBank, so repeated loadSession calls with the
-    // same libraries don't re-fetch. Errors are logged but non-fatal — the
-    // session still loads even if the sample server is down.
-    const bankSources: string[] = [];
-    for (const id of r.libraries) {
-      const bank = findBank(id);
-      if (!bank) continue;
-      bankSources.push(bank.source);
-      void loadSampleBank(bank.source)
-        .then(() =>
-          this.log({ runtime: 'strudel', level: 'info', msg: `library loaded: ${bank.name}` })
-        )
-        .catch((err) =>
-          this.log({ runtime: 'strudel', level: 'error', msg: `library ${id}: ${String(err)}` })
-        );
-    }
-    // Warn about libraries that were declared earlier and are now removed.
-    // Strudel's `samples()` has no reverse, so they stay in the sound map
-    // until the page is reloaded. Telling the user explicitly prevents the
-    // "I removed @library but `s("bd")` still works" surprise.
-    const { lingering } = setDeclaredBanks(bankSources);
-    for (const src of lingering) {
-      this.log({
-        runtime: 'strudel',
-        level: 'warn',
-        msg: `library ${src} removed from session but its samples are still in memory — reload the page to truly drop them`
-      });
-    }
-
-    for (const e of r.errors) {
-      const where = e.line > 0 ? ` (line ${e.line})` : '';
-      this.log({ runtime: 'kanopi', level: 'error', msg: `session: ${e.msg}${where}` });
-    }
-    this.log({
-      runtime: 'kanopi',
-      level: 'info',
-      msg: `session loaded: ${nextActors.length} actors, ${nextScenes.length} scenes, ${r.mappings.length} maps${r.errors.length ? ` — ${r.errors.length} error(s)` : ''}`
-    });
+    // Non-orchestrated actor: no file binding exists, so a toggle is visual only.
+    this.log({ runtime: a.runtime, level: 'warn', msg: `actor "${a.name}" has no live voice` });
   }
 
   async evaluateBlock(
@@ -486,20 +331,12 @@ class RealCore implements CoreApi {
     // synchronously inside their own `evaluate`.
     if (runtime !== 'bp3' && runtime !== 'bpscript') production.clear();
 
-    // Locate the actor bound to this file (sourceId = file.name) so we can
-    // light up its LED and make the transport reflect that audio is live.
-    const matching = this.actors.list().find((a) => {
-      const ref = this.getActorFile?.(a.name);
-      return ref?.fileName === sourceId;
-    });
-
     // Resolution order for the slot key:
     //   explicit actorId (block-level, e.g. `melody.$0`) >
-    //   declared @actor bound to this file >
     //   raw source id (back-compat: whole-file slot).
     // Multiple blocks in the same file must land in DIFFERENT slots, otherwise
     // Strudel composite overwrites block 1 when block 2 is evaluated.
-    const slotId = actorId ?? matching?.name ?? sourceId;
+    const slotId = actorId ?? sourceId;
 
     // Eval first — if it throws, we leave transport+LED alone so a broken
     // block doesn't falsely mark the scene as playing.
@@ -528,16 +365,6 @@ class RealCore implements CoreApi {
     // block just evaluated above is already live; the others keep playing
     // untouched.
     if (!this.clock.state.playing) this.clock.startSilently();
-    if (matching && !matching.active) {
-      const next = this.actors
-        .list()
-        .map((a) => (a.name === matching.name ? { ...a, active: true } : a));
-      this.actors.setActors(next);
-    }
-  }
-
-  bindActorFiles(get: (name: string) => ActorFileRef | undefined) {
-    this.getActorFile = get;
   }
 
   async silenceRuntimes(): Promise<void> {

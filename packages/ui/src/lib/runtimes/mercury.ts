@@ -57,7 +57,7 @@ function warnOnVisualHook(code: string, log: LogPush) {
   log({
     runtime: 'mercury',
     level: 'info',
-    msg: 'visual() hook ignored — cross-runtime is orchestrated via .kanopi directives (cf KANOPI_PRINCIPLES §3)'
+    msg: 'visual() hook ignored — cross-runtime is orchestrated via `.bps` directives (cf KANOPI_PRINCIPLES §3)'
   });
 }
 

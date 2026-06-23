@@ -138,7 +138,7 @@ const STARTER_AXES: Record<string, Axes> = {
 
 const DEFAULT_AXES: Axes = {
   category: 'other-langs',
-  language: 'kanopi',
+  language: 'bpscript',
   outputs: ['audio'],
   level: 'intermediate',
   tags: []

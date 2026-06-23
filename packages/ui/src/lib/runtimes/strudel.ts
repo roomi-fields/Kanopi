@@ -543,11 +543,10 @@ async function ensure(): Promise<StrudelMod> {
         // reimplementation, same closure, same widgetElements map, same
         // defaults. Phase 2.1 task 1.3bis.
         await bridgeInlineWidgets(mod!);
-        // Sample banks are no longer hardcoded — the session declares them
-        // via `@library <id>`, which `real-core.loadSession` applies through
-        // `loadSampleBank(source)` below. Out-of-the-box the default session
-        // starts with `@library dirt-samples` so `s("bd sd hh cp")` keeps
-        // working without manual setup.
+        // Sample banks are no longer hardcoded — a program declares them via
+        // `@library <id>`, applied through `loadSampleBank(source)` below.
+        // Out-of-the-box the default program starts with `@library dirt-samples`
+        // so `s("bd sd hh cp")` keeps working without manual setup.
         setStatus('ready');
       } catch (err) {
         setStatus('error');
@@ -716,7 +715,7 @@ async function flush(m: StrudelMod): Promise<void> {
 
 /**
  * Load a sample bank via Strudel's `samples(source)`. De-duplicated so the
- * same bank isn't fetched twice on repeated `loadSession` calls. Source is
+ * same bank isn't fetched twice on repeated `@library` declarations. Source is
  * whatever Strudel accepts: `github:user/repo`, full URL to strudel.json, etc.
  */
 const loadedBanks = new Set<string>();
@@ -748,11 +747,11 @@ export async function loadSampleBank(source: string): Promise<void> {
   loadedBanks.add(source);
 }
 
-/** Bank sources that should be in memory per the current session. */
+/** Bank sources that should be in memory per the active program. */
 let declaredBankSources = new Set<string>();
 
 /**
- * Sync library declarations from `loadSession` against what's loaded.
+ * Sync library declarations from a program's `@library` directives against what's loaded.
  * Returns the list of sources that were removed from the declaration but
  * can't be truly unloaded — Strudel's `samples()` has no reverse (see
  * @strudel/webaudio's global soundMap, no `unloadSamples` API). The caller

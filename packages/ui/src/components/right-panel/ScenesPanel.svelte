@@ -4,7 +4,7 @@
   import { actors } from '../../stores/actors.svelte';
 
   function runtimeOf(name: string) {
-    return actors.list.find((a) => a.name === name)?.runtime ?? 'kanopi';
+    return actors.list.find((a) => a.name === name)?.runtime ?? 'bpscript';
   }
 
   function onKey(e: KeyboardEvent) {

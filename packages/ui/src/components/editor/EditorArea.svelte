@@ -13,7 +13,7 @@
   <TabBar />
   <div class="editor-body">
     {#if file}
-      <!-- Props use `file?.` (not `file.`): when the active .kanopi tab is
+      <!-- Props use `file?.` (not `file.`): when the active tab is
            closed, `file` becomes undefined and Svelte tears down CMEditor; one
            of its teardown effects re-reads these prop getters, so a bare
            `file.runtime` throws "Cannot read properties of undefined". The {#if}

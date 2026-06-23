@@ -4,7 +4,7 @@ import { MockActors, MockScenes, MockMaps, MockClock } from './mock-runtime';
 import type { KanopiEvent } from '../events/types';
 
 describe('mock core', () => {
-  it('starts empty (populated via loadSession)', () => {
+  it('starts empty (populated via setActors)', () => {
     const core = createMockCore();
     expect(core.actors.list()).toEqual([]);
     expect(core.scenes.list()).toEqual([]);

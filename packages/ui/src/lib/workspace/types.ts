@@ -30,6 +30,6 @@ export const KNOWN_EXTENSIONS: string[] = knownExtensions();
 
 export function runtimeFromExt(name: string): Runtime {
   const idx = name.lastIndexOf('.');
-  if (idx < 0) return 'kanopi';
+  if (idx < 0) return 'bpscript';
   return runtimeFromExtension(name.slice(idx));
 }

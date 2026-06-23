@@ -2,16 +2,12 @@
 // its `@` directives. Surfaced read-only in the Files panel (FilesView), updated
 // as the active file changes. NOT the demo catalogue.
 //
-// Two sources, depending on the active file's runtime:
-//   - bpscript / bp3 (`.bps`, `.gr`): compileToBPxAST(contents) emits `.directives`
-//     (alphabet, tuning, scale, octaves, sound, transport/devices), `.libraries`
-//     (audio banks per engine) and `.alphabet` — read AS-IS.
-//   - `.kanopi` session: parseSession(contents) emits `@library <id>` audio-bank
-//     nodes.
+// Source: bpscript / bp3 (`.bps`, `.gr`) — compileToBPxAST(contents) emits
+// `.directives` (alphabet, tuning, scale, octaves, sound, transport/devices),
+// `.libraries` (audio banks per engine) and `.alphabet` — read AS-IS.
 // Anything else, parse errors, or compile throws → empty list (graceful).
 
 import { compileBps } from '../runtimes/compile-cache';
-import { parseSession } from '../session';
 import { runtimeFromExt } from '../workspace/types';
 
 export interface ReferencedLib {
@@ -150,21 +146,6 @@ function fromBps(contents: string): ReferencedLib[] {
   return dedupe(out);
 }
 
-function fromSession(contents: string): ReferencedLib[] {
-  const out: ReferencedLib[] = [];
-  let result: ReturnType<typeof parseSession>;
-  try {
-    result = parseSession(contents);
-  } catch {
-    return out;
-  }
-  // The session resolver collects `@library <id>` declarations into `.libraries`.
-  for (const id of result.libraries) {
-    out.push({ type: 'audio-bank', typeLabel: 'audio bank', name: id });
-  }
-  return dedupe(out);
-}
-
 function dedupe(libs: ReferencedLib[]): ReferencedLib[] {
   const seen = new Set<string>();
   const out: ReferencedLib[] = [];
@@ -189,7 +170,6 @@ export function referencedLibraries(
   if (!fileName || contents === undefined) return [];
   const runtime = runtimeFromExt(fileName);
   if (runtime === 'bpscript' || runtime === 'bp3') return fromBps(contents);
-  if (runtime === 'kanopi') return fromSession(contents);
   return [];
 }
 

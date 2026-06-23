@@ -18,7 +18,7 @@
   const litScene = $derived(bpsScenes.activeScene ?? model.defaultScene);
 
   // Alt+1 / Alt+2 … select the first/second/… named scene. Alt-prefixed so it
-  // can't collide with the `.kanopi` Scenes panel (bare 1-9) or text typing.
+  // can't collide with the Scenes panel (bare 1-9) or text typing.
   function onKey(e: KeyboardEvent) {
     if (
       e.target instanceof HTMLElement &&

@@ -24,30 +24,9 @@ class WorkspaceStore {
     return this.files.find((f) => f.id === id);
   }
 
-  /** Name of the open session = the open .kanopi file, extension stripped.
-   * null when no session is loaded (drives the workspace label in the topbar,
-   * which used to show a hardcoded "myset" placeholder). */
-  get sessionName(): string | null {
-    const kanopi = this.files.find((f) => this.openTabIds.includes(f.id) && f.runtime === 'kanopi');
-    return kanopi ? kanopi.name.replace(/\.kanopi$/i, '') : null;
-  }
-
   openFile(id: string) {
     const file = this.fileById(id);
     if (!file) return;
-    // Single-session rule: at most one EDITABLE .kanopi session open at a time.
-    // Read-only files that happen to resolve to the `kanopi` runtime via the
-    // unknown-extension fallback (resource-library `.json` browse files) are NOT
-    // sessions — they must stack as ordinary tabs, not evict one another. So the
-    // rule applies only to editable kanopi files, and only evicts editable ones.
-    if (file.runtime === 'kanopi' && !file.readOnly) {
-      const otherKanopi = this.openTabIds.filter((tid) => {
-        if (tid === id) return false;
-        const f = this.fileById(tid);
-        return f?.runtime === 'kanopi' && !f.readOnly;
-      });
-      for (const tid of otherKanopi) this.closeTab(tid);
-    }
     if (!this.openTabIds.includes(id)) {
       this.openTabIds = [...this.openTabIds, id];
     }

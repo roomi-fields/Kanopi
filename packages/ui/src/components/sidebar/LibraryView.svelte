@@ -78,7 +78,7 @@
 
   <h3 class="section-title">Audio banks</h3>
   <p class="intro">
-    Declared in a <code>.kanopi</code> session with
+    Declared in a <code>.bps</code> program with
     <code>@library &lt;id&gt;</code>. Loaded on the fly by the Strudel adapter.
   </p>
   <ul class="list">

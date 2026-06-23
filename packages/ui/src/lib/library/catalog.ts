@@ -9,7 +9,7 @@ export type LibraryCategory =
   | 'bp3' // BP3 `.gr` grammars that play
   | 'bpscript' // BPScript on its own
   | 'bpscript-backticks' // BPScript with embedded code in backticks
-  | 'orchestrator' // multi-actor sessions (.kanopi cross-runtime, .bps multi-voice)
+  | 'orchestrator' // multi-actor `.bps` (cross-runtime, multi-voice)
   | 'other-langs'; // Tidal, Hydra, Strudel, Mercury, p5, Csound…
 
 // What a scene emits — drives the "output" filter. A scene can have several
@@ -38,7 +38,7 @@ export interface LibraryItem {
   tags: string[];
   /** the "⭐ vitrine / percutante" flag — surfaces in the showcase filter */
   showcase?: boolean;
-  /** the file to open/focus once loaded (a `.kanopi`, `.bps`, `.gr`, …) */
+  /** the file to open/focus once loaded (a `.bps`, `.gr`, …) */
   sessionFile: string;
   /** every file the scene drops into the workspace */
   files: LibraryFile[];

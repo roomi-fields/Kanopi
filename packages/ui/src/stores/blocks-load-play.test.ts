@@ -26,15 +26,6 @@ describe('openBlocks.blocksForFile — deterministic, not derived-list dependent
     expect(blocks.every((b) => b.runtime === 'strudel')).toBe(true);
   });
 
-  it('ignores .kanopi session files (no runnable blocks of their own)', () => {
-    const id = workspace.loadFiles(
-      [{ path: 'scene.kanopi', contents: '@actor lead: melody.strudel' }],
-      'scene.kanopi'
-    );
-    expect(id).not.toBeNull();
-    expect(openBlocks.blocksForFile(id!)).toEqual([]);
-  });
-
   it('returns [] for an unknown file id', () => {
     expect(openBlocks.blocksForFile('does-not-exist')).toEqual([]);
   });

@@ -86,17 +86,7 @@ describe('programCompileStatus', () => {
   });
 
   it('is not applicable to non-program files', () => {
-    expect(programCompileStatus('notes.txt', 'hello').applicable).toBe(false);
-  });
-});
-
-describe('referencedLibraries — .kanopi session', () => {
-  it('reads @library audio banks from a session', () => {
-    const libs = referencedLibraries('set.kanopi', `@library dirt-samples\n@time 4`);
-    expect(libs).toContainEqual({
-      type: 'audio-bank',
-      typeLabel: 'audio bank',
-      name: 'dirt-samples'
-    });
+    // `.py` resolves to the `python` runtime, not `bpscript`, so no compile chip.
+    expect(programCompileStatus('notes.py', 'hello').applicable).toBe(false);
   });
 });

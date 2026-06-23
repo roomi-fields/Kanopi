@@ -7,18 +7,18 @@ const f = (id: string, path: string): VirtualFile => ({
   path,
   name: path.split('/').pop()!,
   contents: '',
-  runtime: 'kanopi'
+  runtime: 'bpscript'
 });
 
 describe('buildTree', () => {
   it('flat files', () => {
-    const t = buildTree([f('1', 'a.kanopi'), f('2', 'b.tidal')]);
-    expect(t.map((n) => n.name)).toEqual(['a.kanopi', 'b.tidal']);
+    const t = buildTree([f('1', 'a.bps'), f('2', 'b.tidal')]);
+    expect(t.map((n) => n.name)).toEqual(['a.bps', 'b.tidal']);
     expect(t.every((n) => n.type === 'file')).toBe(true);
   });
 
   it('nested dirs', () => {
-    const t = buildTree([f('1', 'src/a.kanopi'), f('2', 'src/sub/b.tidal')]);
+    const t = buildTree([f('1', 'src/a.bps'), f('2', 'src/sub/b.tidal')]);
     expect(t.length).toBe(1);
     expect(t[0].type).toBe('dir');
     expect(t[0].name).toBe('src');

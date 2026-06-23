@@ -131,7 +131,7 @@ class OpenBlocksStore {
    */
   blocksForFile(fileId: string): OpenBlock[] {
     const file = workspace.fileById(fileId);
-    if (!file || file.runtime === 'kanopi') return [];
+    if (!file) return [];
     const out: OpenBlock[] = [];
     const seenNames = new Set<string>();
     for (const b of extractBlocks(file.contents, file.runtime)) {
@@ -183,8 +183,7 @@ class OpenBlocksStore {
    * a scene readies it (its blocks/actor light up) but does NOT auto-play — the
    * user presses Play (or Ctrl+Enter) to hear it. Play-from-stopped then evals the
    * armed blocks explicitly (`replayArmed`), so arming first means Play sounds the
-   * scene with no manual rearm. A program with no blocks (a `.kanopi` session) needs no
-   * arming — its actors come armed from `loadSession`.
+   * scene with no manual rearm. A program with no blocks needs no arming.
    */
   armLoadedProgram(fileId: string) {
     const fileBlocks = this.blocksForFile(fileId);
@@ -233,10 +232,9 @@ class OpenBlocksStore {
   /**
    * Play whatever was just loaded — the coherent "load = it sounds" gesture
    * (beta issues 3+5). A program file (`.bps`, `.gr`, a single sketch) arms its
-   * own blocks and starts the transport; a `.kanopi` session (no blocks of its
-   * own — its actors come from `loadSession`, already armed) just starts the
-   * transport so `handleTransport` re-evals the armed actors. Run after a
-   * microtask by the caller so the reactively-derived block list has settled.
+   * own blocks and starts the transport; a program with no blocks of its own just
+   * starts the transport. Run after a microtask by the caller so the
+   * reactively-derived block list has settled.
    */
   async playLoadedProgram(fileId: string) {
     const hasBlocks = this.blocksForFile(fileId).length > 0;
@@ -295,8 +293,6 @@ function computeOpenBlocks(): OpenBlock[] {
     seenTabs.add(tabId);
     const file = workspace.fileById(tabId);
     if (!file) continue;
-    // Skip session files — they're composed of directives, not runnable blocks.
-    if (file.runtime === 'kanopi') continue;
     const blocks = extractBlocks(file.contents, file.runtime);
     for (const b of blocks) {
       const key = `${file.id}:${b.name}`;

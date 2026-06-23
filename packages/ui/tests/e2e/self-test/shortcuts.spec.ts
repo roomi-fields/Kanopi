@@ -34,11 +34,6 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../../hel
 const SOLO_SESSION = `# 01 - Strudel solo (inline fixture).\n\n@actor drums drums.strudel strudel\n@scene main drums\n`;
 const SOLO_DRUMS = `// Drums - the kick of the whole composition.\n// Put the cursor here, Ctrl+Enter.\n//\nnote("c3 e3 g3 c4").s("sine").gain(0.7)\n`;
 
-// Two Strudel actors, two scenes: calm = drums, full = drums + lead.
-const SCENES_SESSION = `# Inline scenes fixture - calm arms drums, full arms drums + lead.\n\n@actor drums drums.strudel strudel\n@actor lead  lead.strudel  strudel\n\n@scene calm drums\n@scene full drums lead\n`;
-const SCENES_DRUMS = `note("c2*4").s("sine").gain(0.6)\n`;
-const SCENES_LEAD = `note("e4 g4 b4 d5").s("triangle").gain(0.5)\n`;
-
 test('Ctrl/Cmd+K opens the command palette; Escape closes it', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
   await page.goto('');
@@ -152,73 +147,6 @@ test('Ctrl/Cmd+. (hush) silences a running Strudel pattern after the lookahead f
   ).toBeLessThan(0.01);
 
   await page.waitForTimeout(300);
-  noErrors();
-});
-
-test('Alt+1 / Alt+2 activate scenes 1 and 2 in a multi-scene session', async ({ page }) => {
-  const noErrors = expectNoConsoleErrors(page);
-
-  await page.goto('');
-  await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
-
-  await page.evaluate(
-    ({ session, drums, lead }) => {
-      const w = window as unknown as {
-        __kanopi?: {
-          workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
-          };
-        };
-      };
-      w.__kanopi!.workspace.loadFiles(
-        [
-          { path: 'scenes.kanopi', contents: session },
-          { path: 'drums.strudel', contents: drums },
-          { path: 'lead.strudel', contents: lead }
-        ],
-        'scenes.kanopi'
-      );
-    },
-    { session: SCENES_SESSION, drums: SCENES_DRUMS, lead: SCENES_LEAD }
-  );
-
-  // Switch the right panel to the Scenes tab so the cards mount
-  // (RightPanel.svelte:34 — ScenesPanel only renders when rightPanelTab ===
-  // 'scenes'). The `.active` class is on the rendered card itself.
-  await page.locator('.rp-tab', { hasText: 'Scenes' }).click();
-  await expect(page.locator('.scenes')).toBeVisible({ timeout: 2_000 });
-
-  const calmCard = page.locator('.scenes .card', {
-    has: page.locator('.name', { hasText: 'calm' })
-  });
-  const fullCard = page.locator('.scenes .card', {
-    has: page.locator('.name', { hasText: 'full' })
-  });
-  await expect(calmCard).toBeVisible();
-  await expect(fullCard).toBeVisible();
-
-  // Click the panel container (not a card, not the editor) so the keyboard
-  // focus is on document.body and the global Alt handler in bindings.ts:58-67
-  // receives the keystroke. The handler runs in capture phase regardless,
-  // but a clean focus state keeps the test deterministic on cross-browser.
-  await page.locator('.scenes').click({ position: { x: 5, y: 5 } });
-
-  // Alt+1 → first scene (calm). bindings.ts maps Alt+digit straight to
-  // `core.scenes.activate(target.name)`; the panel reactively flips its
-  // `.active` class to follow `scenes.list[i].active`.
-  await page.keyboard.press('Alt+Digit1');
-  await expect(calmCard).toHaveClass(/active/, { timeout: 3_000 });
-  await expect(fullCard).not.toHaveClass(/active/);
-
-  // Alt+2 → second scene (full).
-  await page.keyboard.press('Alt+Digit2');
-  await expect(fullCard).toHaveClass(/active/, { timeout: 3_000 });
-  await expect(calmCard).not.toHaveClass(/active/);
-
-  // Strudel may have started scheduling on scene activation (the scene's
-  // first actor's slot is armed). Hush before yielding.
-  await page.keyboard.press('ControlOrMeta+Period');
-  await page.waitForTimeout(500);
   noErrors();
 });
 

@@ -88,8 +88,8 @@ import type {
 import { resolveDevice, isCompatible, type Device } from '../devices/registry';
 import type { VoiceOutputType } from './adapter';
 // `@library.<engine>` bank loading: resolve a declared bank id to its source and
-// load it through the SAME Strudel `samples()` path a `.kanopi` `@library`
-// session used. Consumed AS-IS — the adapter only maps ids → loader.
+// load it through the Strudel `samples()` path. Consumed AS-IS — the adapter
+// only maps ids → loader.
 import { findBank } from '../library/audio-banks';
 import { loadSampleBank } from './strudel';
 // Head-rule sections read from the BPScript AST (`compileBPS().ast`), the single
@@ -926,8 +926,8 @@ interface BP3Voice {
    *  handle map. Undefined for legacy entries (treated as "current file"). */
   file?: string;
   /** True when this dispatcher is an orchestrator (`@actor` voices). Only these
-   *  loop-and-re-fire foreign code; a plain mono grammar / `.kanopi` per-actor
-   *  voice is left alone so a sibling re-eval doesn't cut it. */
+   *  loop-and-re-fire foreign code; a plain mono grammar is left alone so a
+   *  sibling re-eval doesn't cut it. */
   orchestrator?: boolean;
   /** The code interpreters this orchestrator's voices use (`hydra`, `strudel`,
    *  …) + their slot ids. Stopping the dispatcher kills the re-firing, but a
@@ -1284,7 +1284,7 @@ export function disarmOrchestratedActor(name: string): void {
 }
 
 /** True when the named actor is a live orchestrated voice (lets the core pick
- *  the per-actor path over the `.kanopi` file-bound path). */
+ *  the orchestrated arm/disarm path). */
 export function isOrchestratedActor(name: string): boolean {
   return orchestratedVoices.has(name);
 }
@@ -1473,8 +1473,8 @@ function registerBacktickSink(
 
 /**
  * Load the sample/sound banks a `.bps` declares per engine (`@library.strudel
- * "dirt-samples"`). Only the `strudel` engine has a bank loader today (the same
- * `samples()` path the `.kanopi` `@library` directive used); other engines'
+ * "dirt-samples"`). Only the `strudel` engine has a bank loader today (the
+ * `samples()` path); other engines'
  * declarations are recorded but have no loader yet — logged, never silent. A
  * declared id with no catalog entry is an explicit error, not a quiet skip.
  *
@@ -1890,9 +1890,9 @@ function makeBpxAdapter(
       // RE-FIRING, i.e. stop the dispatcher. We read the source `file` straight off
       // each `voices` entry (self-contained — no dependency on the per-actor handle
       // map, which the previous attempt relied on and which can be empty here). Only
-      // orchestrator dispatchers are stopped: a plain mono grammar or a `.kanopi`
-      // per-actor voice from another file is left alone so a sibling re-eval / a
-      // multi-actor session doesn't cut unrelated voices. A re-eval of the SAME
+      // orchestrator dispatchers are stopped: a plain mono grammar from another
+      // file is left alone so a sibling re-eval / a multi-actor `.bps` doesn't cut
+      // unrelated voices. A re-eval of the SAME
       // file keeps its own dispatcher (it was already replaced via `prev` above).
       const outgoingCodeSlots: Array<{ runtime: Runtime; actorId: string }> = [];
       for (const [vKey, v] of voices) {

@@ -76,7 +76,7 @@ export interface Scene {
    * A `.bps` file-scene (`@scene calm "calm.bps"`) references a CHILD `.bps`
    * file instead of arming in-session actors. When set, activating the scene
    * loads + evaluates that child program (see real-core `handleSceneActivate`).
-   * Absent for `.kanopi` actor-set scenes (the `actors` map drives those).
+   * Absent for actor-set scenes (the `actors` map drives those).
    */
   file?: string;
 }
@@ -125,12 +125,6 @@ export interface ConsoleBus {
   subscribe(cb: (entries: LogEntry[]) => void): Unsubscribe;
 }
 
-export interface ActorFileRef {
-  contents: string;
-  runtime: Runtime;
-  fileName?: string;
-}
-
 export interface CoreApi {
   clock: Clock;
   actors: ActorManager;
@@ -138,7 +132,6 @@ export interface CoreApi {
   maps: MapEngine;
   console: ConsoleBus;
   events: EventBus;
-  loadSession(text: string): Promise<void>;
   /**
    * Evaluate a code block in the given runtime. Rejects on eval error.
    * `docOffset` is the position of the block inside the source document,
@@ -155,8 +148,6 @@ export interface CoreApi {
     section?: { index: number; count: number },
     produceOnly?: boolean
   ): Promise<void>;
-  /** Inject a lookup so the core can resolve which file an actor refers to. */
-  bindActorFiles(get: (actorName: string) => ActorFileRef | undefined): void;
   /**
    * Feed the Scenes panel from a `.bps`'s `@scene <name> "<file>"` table.
    * Activating a resulting scene loads + plays the referenced child `.bps`

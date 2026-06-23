@@ -19,7 +19,6 @@
   import { core } from './lib/core';
   import { workspace } from './stores/workspace.svelte';
   import { openBlocks } from './stores/blocks.svelte';
-  import { actors as actorsStore } from './stores/actors.svelte';
   import { markLastEvalError } from './components/editor/eval-tracker';
   import { sceneTableFromFile } from './stores/bpsScenes.svelte';
 
@@ -58,13 +57,6 @@
   }
 
   onMount(() => {
-    core.bindActorFiles((name) => {
-      const actor = actorsStore.list.find((a) => a.name === name);
-      const fileRef = actor?.file;
-      if (!fileRef) return undefined;
-      const f = workspace.files.find((x) => x.name === fileRef || x.path === fileRef);
-      return f ? { contents: f.contents, runtime: f.runtime, fileName: f.name } : undefined;
-    });
     installAutosave();
 
     // Strudel logs async pattern errors via its own logger (repl's catch,
@@ -74,56 +66,7 @@
       onStrudelError(() => markLastEvalError());
     });
 
-    let lastSessionId: string | null = null;
-    let lastSessionText: string | null = null;
-    let lastActorFiles: string[] = []; // file ids opened by the last session
-
     const unsub = $effect.root(() => {
-      // The "current session" = the open .kanopi file (at most one, see workspace.openFile).
-      $effect(() => {
-        const sessionFile = workspace.files.find(
-          (f) => workspace.openTabIds.includes(f.id) && f.runtime === 'kanopi'
-        );
-        const sid = sessionFile?.id ?? null;
-        const text = sessionFile?.contents ?? '';
-
-        if (sid !== lastSessionId || text !== lastSessionText) {
-          lastSessionText = text;
-          void core.loadSession(text);
-        }
-
-        // On session-switch
-        if (sid !== lastSessionId) {
-          // Closing/switching session: close every actor file tab that the previous session had opened.
-          if (lastSessionId && lastActorFiles.length) {
-            for (const fid of lastActorFiles) {
-              if (workspace.openTabIds.includes(fid)) workspace.closeTab(fid);
-            }
-            lastActorFiles = [];
-          }
-
-          lastSessionId = sid;
-
-          if (sid) {
-            queueMicrotask(() => {
-              const opened: string[] = [];
-              for (const a of actorsStore.list) {
-                if (!a.file) continue;
-                const f = workspace.files.find((x) => x.name === a.file || x.path === a.file);
-                if (f) {
-                  if (!workspace.openTabIds.includes(f.id)) {
-                    workspace.openFile(f.id);
-                  }
-                  opened.push(f.id);
-                }
-              }
-              lastActorFiles = opened;
-              if (sid) workspace.setActive(sid);
-            });
-          }
-        }
-      });
-
       // PRODUCE the preloaded scene on startup (Romain's produce/play split): a
       // scene that's already open when the app boots must show its structure and
       // be ready to Play, just like one opened from the library. One-shot — the
@@ -142,20 +85,11 @@
         void openBlocks.produceLoadedProgram(active.id);
       });
 
-      // (Removed) Per-actor file auto-creation. It violated the projection contract
-      // (`contrats/kanopi-architecture.md` §4 + audit-etat-kanopi.md §3): an unguarded
-      // `$effect` minted a real workspace file for every actor whose `a.file` matched
-      // nothing — and `a.file` is unreliable (sometimes an actor name / synthetic id /
-      // `transport.audio`), so it spawned phantom files on every eval and never cleared
-      // them. The file list must project ONLY the real workspace; an inline `@actor`
-      // legitimately has no file (the actor↔file binding goes through `bindActorFiles`).
-
       // `.bps` file-scenes (`@scene calm "calm.bps"`): when the active file is a
       // `.bps` declaring a scene table, feed the right-panel Scenes cards from it.
       // Activating a card loads + plays the referenced child `.bps` (resolved
-      // against the workspace). COEXISTS with `.kanopi` session scenes — an empty
-      // table never wipes session scenes (core.loadBpsFileScenes only owns
-      // file-scene cards); it clears only a previously-loaded file-scene set.
+      // against the workspace). An empty table clears only a previously-loaded
+      // file-scene set (core.loadBpsFileScenes only owns file-scene cards).
       let lastSceneTableKey = '';
       $effect(() => {
         const active = workspace.activeTabId

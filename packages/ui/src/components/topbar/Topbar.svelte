@@ -3,7 +3,6 @@
   import BpsScenesBar from './BpsScenesBar.svelte';
   import StrudelStatusPill from './StrudelStatusPill.svelte';
   import { ui } from '../../stores/ui.svelte';
-  import { workspace } from '../../stores/workspace.svelte';
 </script>
 
 <header class="topbar">
@@ -36,12 +35,6 @@
       <circle cx="12" cy="22" r="1" fill="currentColor" />
     </svg>
     <span class="brand-name">KANOPI</span>
-    <span class="brand-sep">·</span>
-    {#if workspace.sessionName}
-      <span class="workspace-name">{workspace.sessionName}</span>
-    {:else}
-      <span class="workspace-name empty">no session</span>
-    {/if}
   </div>
 
   <div class="topbar-center">
@@ -112,24 +105,6 @@
     font-size: 13px;
     letter-spacing: 0.18em;
     color: var(--text);
-  }
-
-  .brand-sep {
-    color: var(--text-faint);
-    margin: 0 2px;
-  }
-
-  .workspace-name {
-    font-family: var(--font-mono);
-    font-weight: 400;
-    font-size: 12px;
-    color: var(--text-muted);
-    letter-spacing: 0.06em;
-  }
-
-  .workspace-name.empty {
-    color: var(--text-faint);
-    font-style: italic;
   }
 
   .topbar-center {

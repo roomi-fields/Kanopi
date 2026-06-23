@@ -2,49 +2,15 @@ import { test, expect } from '@playwright/test';
 import { setupAudioCapture } from '../../helpers';
 
 // Self-test layer for the error surfaces — these assertions matter when a
-// user makes a mistake mid-session: they need to see a squiggle (kanopi
-// linter), a red flash (failed Strudel eval), and an entry in the Console
-// panel. If any of these regress, live-coding flow stops being honest.
+// user makes a mistake mid-session: they need to see a red flash (failed
+// Strudel eval) and an entry in the Console panel. If any of these regress,
+// live-coding flow stops being honest.
 //
-// All three tests share the dev-only `window.__kanopi.workspace.loadFiles`
-// hatch (see strudel.spec.ts for the canonical example). The kanopiLinter
-// only attaches when the editor's language is `kanopi` (CMEditor.svelte:99),
-// and the Strudel adapter routes `parse:` errors through the console store
-// at strudel.ts:776 / :797 / :813, so the eval-failure paths converge on the
-// same `level: 'error'` entry that ConsolePanel renders with `.level-error`.
-
-test('Malformed @actor directive surfaces a lint diagnostic in CodeMirror', async ({ page }) => {
-  await page.goto('');
-  await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
-
-  // A `.kanopi` file with a single malformed directive — `@actor` with no
-  // arguments. parser.ts:107-115 emits an error diagnostic for this case,
-  // and kanopi-lint.ts:11-21 lifts it into a CM6 Diagnostic, which the
-  // default linter UI renders as `.cm-lintRange-error` underline.
-  await page.evaluate(() => {
-    const w = window as unknown as {
-      __kanopi?: {
-        workspace: {
-          loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
-        };
-      };
-    };
-    w.__kanopi!.workspace.loadFiles(
-      [{ path: 'broken.kanopi', contents: '@actor\n' }],
-      'broken.kanopi'
-    );
-  });
-
-  // Wait for the editor to mount on the broken file. CM6 only inserts
-  // `.cm-content` once the EditorView is constructed.
-  await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
-
-  // The CM6 linter facet defaults to a 750ms debounce
-  // (@codemirror/lint dist/index.cjs:353). Give it 2s of headroom — the
-  // diagnostic is `.cm-lintRange-error` (the inline squiggle decoration
-  // from cm-theme.ts:165-172).
-  await expect(page.locator('.cm-lintRange-error').first()).toBeVisible({ timeout: 2_000 });
-});
+// The tests share the dev-only `window.__kanopi.workspace.loadFiles` hatch
+// (see strudel.spec.ts for the canonical example). The Strudel adapter routes
+// `parse:` errors through the console store at strudel.ts:776 / :797 / :813,
+// so the eval-failure paths converge on the same `level: 'error'` entry that
+// ConsolePanel renders with `.level-error`.
 
 test('Broken Strudel JS triggers a red flash on eval', async ({ page }) => {
   // `setupAudioCapture` is purely defensive here — broken JS shouldn't make

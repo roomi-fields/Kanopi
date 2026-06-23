@@ -297,10 +297,6 @@ class MockCore implements CoreApi {
     this.console.push({ runtime: 'system', level: 'info', msg: 'kanopi mock runtime online' });
   }
 
-  async loadSession(_text: string) {
-    this.console.push({ runtime: 'system', level: 'info', msg: 'loadSession (mock)' });
-  }
-
   async evaluateBlock(
     runtime: Runtime,
     code: string,
@@ -312,10 +308,6 @@ class MockCore implements CoreApi {
     _produceOnly?: boolean
   ): Promise<void> {
     this.console.push({ runtime, level: 'info', msg: `eval mock (${code.length}b @ ${sourceId})` });
-  }
-
-  bindActorFiles(_get: (name: string) => unknown) {
-    /* mock no-op */
   }
 
   loadBpsFileScenes(

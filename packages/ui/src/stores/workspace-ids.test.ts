@@ -29,11 +29,9 @@ describe('workspace file id uniqueness', () => {
   });
 });
 
-// Regression: opening several read-only resource browse files (`.json`, which
-// resolve to the `kanopi` runtime via the unknown-extension fallback) used to
-// evict one another through the single-session rule — opening a 3rd closed the
-// 2nd. Read-only resources are NOT sessions; they must stack as ordinary tabs.
-describe('workspace read-only resource tabs stack (no single-session eviction)', () => {
+// Read-only resource browse files (`.json`) must stack as ordinary tabs —
+// opening several never evicts one another.
+describe('workspace read-only resource tabs stack', () => {
   it('opening multiple resources keeps every tab open', () => {
     workspace.loadFiles([{ path: 'scene.bps', contents: 'S -> a' }], 'scene.bps');
     const a = workspace.addFile('resources/alphabet/arabic.json', '{}', true);
@@ -47,15 +45,5 @@ describe('workspace read-only resource tabs stack (no single-session eviction)',
     expect(workspace.openTabIds).toContain(b);
     expect(workspace.openTabIds).toContain(c);
     expect(workspace.openTabIds.length).toBe(4);
-  });
-
-  it('an editable .kanopi session still evicts a previous one (rule intact)', () => {
-    workspace.loadFiles([{ path: 'one.kanopi', contents: '@actor x: a.strudel' }], 'one.kanopi');
-    const two = workspace.addFile('two.kanopi', '@actor y: b.strudel');
-    workspace.openFile(two);
-    const sessions = workspace.openTabIds.filter(
-      (id) => workspace.fileById(id)?.runtime === 'kanopi' && !workspace.fileById(id)?.readOnly
-    );
-    expect(sessions.length).toBe(1); // only the newest editable session remains open
   });
 });

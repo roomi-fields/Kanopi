@@ -23,11 +23,6 @@ const adapters = new Map<Runtime, RuntimeAdapter>([
 /**
  * Runtimes Kanopi recognizes that don't (yet) have a live browser adapter:
  *  - `.scd` / `.py` → level 3 (osc-bridge → local sclang / python), Tauri v2.
- *  - `.kanopi` → session orchestration, handled by the session parser rather
- *    than a runtime adapter.
- *
- * (`.bps` USED to live here as a session placeholder; it now has a real adapter
- * — BPScript transpiles to a BP3 grammar that BPx derives to sound.)
  *
  * Kept as a tiny fallback table so `runtimeFromExt` still routes files to
  * the right tab header / icon / placeholder, while the adapter list stays
@@ -35,8 +30,7 @@ const adapters = new Map<Runtime, RuntimeAdapter>([
  */
 const PLACEHOLDER_EXTENSIONS: Record<string, Runtime> = {
   '.scd': 'sc',
-  '.py': 'python',
-  '.kanopi': 'kanopi'
+  '.py': 'python'
 };
 
 export function getAdapter(runtime: Runtime): RuntimeAdapter | undefined {
@@ -71,5 +65,5 @@ const extToRuntime: Map<string, Runtime> = (() => {
 })();
 
 export function runtimeFromExtension(ext: string): Runtime {
-  return extToRuntime.get(ext.toLowerCase()) ?? 'kanopi';
+  return extToRuntime.get(ext.toLowerCase()) ?? 'bpscript';
 }

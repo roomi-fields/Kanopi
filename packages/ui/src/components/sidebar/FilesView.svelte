@@ -16,7 +16,7 @@
 
   // Allowed extensions pulled from the single `EXTENSION_TO_RUNTIME`
   // table in lib/workspace/types. Leaving the extension off defaults to
-  // .kanopi (session file) to match the typical "new scratch session" flow.
+  // .bps to match the typical "new scratch program" flow.
   const exts = KNOWN_EXTENSIONS;
 
   let creating = $state(false);
@@ -43,10 +43,10 @@
       errorMsg = 'name is empty';
       return;
     }
-    // Append .kanopi if the user gave no extension, so fileless typing just
+    // Append .bps if the user gave no extension, so fileless typing just
     // works. Anything else must match one of the known extensions.
     const hasExt = /\.[a-z0-9]+$/i.test(raw);
-    const path = hasExt ? raw : raw + '.kanopi';
+    const path = hasExt ? raw : raw + '.bps';
     const ext = '.' + path.split('.').pop()!.toLowerCase();
     if (!exts.includes(ext)) {
       errorMsg = `unknown extension ${ext}. use one of: ${exts.join(', ')}`;

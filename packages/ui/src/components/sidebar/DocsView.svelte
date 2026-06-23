@@ -46,7 +46,7 @@
           Kanopi is a live-coding workbench that runs several engines side by side — Strudel for
           sound, Hydra for visuals, and more — under one shared
           <strong>transport</strong> (play / stop / tempo). A
-          <code>.kanopi</code> session file is the score that wires them together.
+          <code>.bps</code> program is the score that wires them together.
         </p>
 
         <h3>The five-minute loop</h3>
@@ -57,7 +57,7 @@
           </li>
           <li>
             <strong>Read the code.</strong> Each tab is one <em>actor</em> (a Strudel, Hydra, …
-            file). The <code>.kanopi</code> tab is the session itself.
+            file). The <code>.bps</code> tab is the program itself.
           </li>
           <li>
             <strong>Evaluate a block.</strong> Put the cursor in a block and press
@@ -101,7 +101,7 @@
       <section id="docs-language">
         <h3>Kanopi session language</h3>
         <p>
-          A <code>.kanopi</code> file declares <em>actors</em>, <em>scenes</em>, and <em>maps</em>
+          A <code>.bps</code> program declares <em>actors</em>, <em>scenes</em>, and <em>maps</em>
           for a live-coding session. Edit and save: the parser reloads on every change.
         </p>
         <pre><code

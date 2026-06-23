@@ -8,14 +8,13 @@ describe('runtimeFromExt', () => {
     expect(runtimeFromExt('a.hydra')).toBe('hydra');
     expect(runtimeFromExt('a.py')).toBe('python');
     expect(runtimeFromExt('a.js')).toBe('js');
-    expect(runtimeFromExt('a.kanopi')).toBe('kanopi');
     expect(runtimeFromExt('a.gr')).toBe('bp3');
-    // .bps is now a real executable runtime (BPScript → BP3 → BPx), not a
-    // session placeholder that used to resolve to 'kanopi'.
     expect(runtimeFromExt('a.bps')).toBe('bpscript');
+    // No mapping for `.kanopi` anymore — falls back like any unknown extension.
+    expect(runtimeFromExt('a.kanopi')).toBe('bpscript');
   });
-  it('falls back to kanopi for unknown', () => {
-    expect(runtimeFromExt('README.md')).toBe('kanopi');
-    expect(runtimeFromExt('noext')).toBe('kanopi');
+  it('falls back to bpscript for unknown', () => {
+    expect(runtimeFromExt('README.md')).toBe('bpscript');
+    expect(runtimeFromExt('noext')).toBe('bpscript');
   });
 });
