@@ -272,10 +272,13 @@ class RealCore implements CoreApi {
       }
       this.log({ runtime: 'system', level: 'info', msg: `play: ${actives.length} actor(s)` });
     } else {
-      // Stop every known runtime, not just the active actors. A Ctrl+Enter
-      // eval on a file that isn't bound to an @actor still leaves Strudel
-      // playing — hushing by runtime id is the only way to be sure the
-      // transport stop actually stops audio.
+      // Model C — a transport STOP (the clock's onTransport(false) edge) must STOP IN PLACE,
+      // not full-discard: the derived timeline PERSISTS in Kronos so the next Play replays it
+      // with zero re-derivation. Route the `__stop_in_place__` sentinel (handle kept, playhead
+      // to 0, sound + code voices cut) to every known runtime — a Ctrl+Enter eval on a file
+      // not bound to an @actor still leaves Strudel playing, so hushing by runtime id is the
+      // only way to be sure the stop actually silences. A FULL discard (scene-swap, dispose,
+      // Ctrl+. panic) is driven separately by `silenceRuntimes()`/`hushAll()` via `__hush__`.
       const seen = new Set<string>();
       for (const id of listRuntimes()) {
         if (seen.has(id)) continue;
@@ -283,12 +286,15 @@ class RealCore implements CoreApi {
         const adapter = getAdapter(id);
         if (!adapter) continue;
         try {
-          await adapter.stop({ actorId: '__hush__', fileId: '__hush__' }, this.log);
+          await adapter.stop(
+            { actorId: '__stop_in_place__', fileId: '__stop_in_place__' },
+            this.log
+          );
         } catch {
           /* swallow — stop must be best-effort */
         }
       }
-      this.log({ runtime: 'system', level: 'info', msg: 'stop: all runtimes' });
+      this.log({ runtime: 'system', level: 'info', msg: 'stop in place: all runtimes' });
     }
   }
 
@@ -553,6 +559,48 @@ class RealCore implements CoreApi {
     }
     const quieted = this.actors.list().map((a) => ({ ...a, active: false }));
     this.actors.setActors(quieted);
+  }
+
+  async stopInPlace(): Promise<void> {
+    // Model C STOP: route the `__stop_in_place__` sentinel to every runtime so each
+    // bpx adapter returns its live scene's playhead to 0 and cuts its sound WITHOUT
+    // discarding the derived timeline (the handle persists). The actors' LEDs go off
+    // (the scene is stopped) but the handle map / kronos cursor stay live so a Play
+    // replays the same timeline. Best-effort per runtime, like `silenceRuntimes`.
+    const seen = new Set<string>();
+    for (const id of listRuntimes()) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const adapter = getAdapter(id);
+      if (!adapter) continue;
+      try {
+        await adapter.stop({ actorId: '__stop_in_place__', fileId: '__stop_in_place__' }, this.log);
+      } catch {
+        /* swallow — stopping must be best-effort */
+      }
+    }
+    const quieted = this.actors.list().map((a) => ({ ...a, active: false }));
+    this.actors.setActors(quieted);
+  }
+
+  async replayActiveScene(): Promise<void> {
+    // Model C PLAY-from-stopped: route the `__replay__` sentinel so each bpx adapter
+    // restarts its persisted (stopped) handle from 0 with NO re-derivation. Re-activate
+    // the actors' LEDs (the scene is sounding again). Best-effort per runtime.
+    const seen = new Set<string>();
+    for (const id of listRuntimes()) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const adapter = getAdapter(id);
+      if (!adapter) continue;
+      try {
+        await adapter.stop({ actorId: '__replay__', fileId: '__replay__' }, this.log);
+      } catch {
+        /* swallow — replay must be best-effort */
+      }
+    }
+    const woken = this.actors.list().map((a) => ({ ...a, active: true }));
+    this.actors.setActors(woken);
   }
 
   async hushAll(): Promise<void> {

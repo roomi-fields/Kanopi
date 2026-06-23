@@ -55,18 +55,26 @@ class Playback {
   play() {
     const t = this.transport;
     // Resume IN PLACE on the live Transport (no re-eval): one scheduler across the whole
-    // play→pause→play cycle.
+    // play→pause→play cycle. UNCHANGED.
     if (t && t.state === 'paused') {
       t.play();
       // Resume the sustained code voices that PAUSE cut (Strudel/Hydra restart in place).
       kronosCursor.active?.refireCodeVoices();
       return;
     }
-    // From stopped (no live Transport): start the clock (so `handleTransport` re-evals
-    // declared `.kanopi` actors + the UI reads "playing"), then EXPLICITLY eval the active
-    // scene's armed blocks. That eval creates the Kronos Transport and auto-plays it;
-    // position + state then come from that Transport. (Was the clock-subscriber's job;
-    // it is now an explicit call here so the orchestrated `.bps` scene still sounds.)
+    // Model C — Play from STOPPED with a PERSISTED handle: the derived timeline still lives
+    // in Kronos (Stop only moved the playhead to 0). REPLAY it from 0 with ZERO re-derivation
+    // — no new scheduler, no eval. The handle stays the same; its transport flips to
+    // 'running' (the mode mirror follows). reRandom still re-rolls at the loop boundary via
+    // the handle's persisted closure — that is NOT this path.
+    if (t && t.state === 'stopped') {
+      void core.replayActiveScene();
+      return;
+    }
+    // From stopped with NO live handle (scene never derived, or fully torn down): EVAL once.
+    // Start the clock (so `handleTransport` re-evals declared `.kanopi` actors + the UI reads
+    // "playing"), then EXPLICITLY eval the active scene's armed blocks. That eval derives once
+    // and creates the persistent Kronos handle; subsequent Stop/Play replay it without eval.
     setResumeBeat(0);
     core.clock.play();
     void openBlocks.replayArmed();
@@ -81,11 +89,14 @@ class Playback {
   }
 
   stop() {
-    // Hush + teardown: `silenceRuntimes` stops every voice's handle (→ `transport.stop()`,
-    // which closes the sinks + resets the position) and clears `kronosCursor`. The clock
-    // is the eval trigger, turned off here. No position to reset by hand.
+    // Model C — STOP IN PLACE: return the playhead to 0 and cut the sound + code voices, but
+    // KEEP the derived timeline persisted in Kronos (the handle is NOT discarded). A following
+    // Play replays the SAME timeline with no re-derivation. `transport.stop()` (inside the
+    // handle) sets resume=0, so replay restarts from 0. The clock is the eval trigger, turned
+    // off here (state retired in T2). The kronos cursor / handle persist; its transport.state
+    // flips to 'stopped' so `mode` reads 'stopped'.
     core.clock.stop();
-    void core.silenceRuntimes();
+    void core.stopInPlace();
   }
 
   async step(file: PlayableFile) {

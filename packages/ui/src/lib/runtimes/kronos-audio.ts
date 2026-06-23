@@ -103,6 +103,12 @@ export interface KronosAudioOptions {
   stopCodeVoices?: () => void;
   /** Re-déclenche les voix de code dans leurs slots — appelé à la REPRISE après une pause-cut. */
   refireCodeVoices?: () => void;
+  /** BUILD-ONLY (Model C produce/load): construire la machine (clock/scheduler/cursor/driver/
+   *  transport) et la timeline SANS jouer — le transport reste 'stopped', le driver n'est PAS
+   *  démarré, donc AUCUN `send` n'a lieu (zéro son, le contexte audio n'est pas réveillé ici).
+   *  Le handle persistant ainsi obtenu est REJOUABLE : le premier Play appelle `replay()`
+   *  (= 0 dérivation). Ignoré quand `step` est fourni (un STEP joue toujours une fenêtre). */
+  buildOnly?: boolean;
 }
 
 /** Beat/bar readout for the transport display, derived from the SAME playhead as
@@ -120,6 +126,17 @@ export interface KronosAudioHandle {
    *  beatPosition()/onStateChange`). The host projects on it; it holds no FSM/counter. */
   transport: Transport;
   stop(): void;
+  /** STOP-IN-PLACE (Model C): return the playhead to 0 and silence everything, but KEEP the
+   *  handle REPLAYABLE. `transport.stop()` (→ position 0, emission off, state 'stopped') +
+   *  `driver.stop()` + cut the code voices. Unlike `stop()` this poses NO one-shot teardown
+   *  flag — a later `replay()` restarts the SAME scheduler/timeline. Used by the transport
+   *  Stop button (the timeline persists; only the head moves). */
+  stopInPlace(): void;
+  /** REPLAY the persisted scene from 0 after a `stopInPlace` (Model C): `transport.play()`
+   *  (re-anchors clock+scheduler at resume=0, re-arms emission) + `driver.start()` (idempotent)
+   *  + re-fire the code voices. No re-derivation, no new scheduler — the SAME timeline the
+   *  derivation built plays again. No-op after a full-teardown `stop()`. */
+  replay(): void;
   /** Cut the scene's sustained code voices (Strudel/Hydra) — host-managed PAUSE-cut. */
   cutCodeVoices(): void;
   /** Re-fire the scene's code voices in their slots — RESUME after a pause-cut. */
@@ -466,25 +483,35 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // same clock/scheduler/cursor, so there is ZERO duplicated state — the position stays
   // the cursor. The host drives play/pause/stop/step/seek/setTempo/setLoop through this.
   const transport = new Transport({ clock, scheduler, cursor });
-  if (step) {
+  // External pump (Kronos has no internal timer): the driver ticks the scheduler each
+  // ~25 ms within the lookahead window. Transport arms/disarms emission; the driver
+  // just advances it. Declared before the play branch so a BUILD-ONLY construction can
+  // leave it un-started (no pump = no `send` = no sound).
+  const driver = new RealtimeDriver({ clock, scheduler, lookahead: LOOKAHEAD_SEC, intervalMs: 25 });
+  // BUILD-ONLY (Model C produce/load): construct the machine + timeline but DON'T play —
+  // transport stays 'stopped', the driver is NOT started, so nothing is ever emitted (zero
+  // sound, the audio context is not woken here). The host registers this persistent handle
+  // and the first Play calls `replay()` (= 0 re-derivation). A STEP always plays its window.
+  const buildOnly = step ? false : !!opts.buildOnly;
+  if (buildOnly) {
+    // Park the position at the start scene second (frozen, transport 'stopped'); do not arm
+    // the scheduler, do not start the pump. `replay()` will `transport.play()` + `driver.start()`.
+    transport.seek(startScene);
+  } else if (step) {
     // Audition one beat IN PLACE: seek to the beat, grain = the beat window, step once.
     transport.setStepGrain(step.durSec);
     transport.seek(step.fromSec);
     transport.step(1);
+    driver.start();
   } else {
     // Normal play from the start position (re-anchors clock + arms the scheduler).
     transport.seek(startScene);
     transport.play();
+    driver.start();
   }
 
-  // External pump (Kronos has no internal timer): the driver ticks the scheduler each
-  // ~25 ms within the lookahead window. Transport arms/disarms emission; the driver
-  // just advances it.
-  const driver = new RealtimeDriver({ clock, scheduler, lookahead: LOOKAHEAD_SEC, intervalMs: 25 });
-  driver.start();
-
   log(
-    `▶ kronos audio — ${noteCount} notes` +
+    `${buildOnly ? '⏸ kronos built (stopped)' : '▶ kronos audio'} — ${noteCount} notes` +
       (muteCount ? `, ${muteCount} non-sounding skipped` : '') +
       (restCount ? `, ${restCount} rests` : '') +
       (controlCount ? `, ${controlCount} controls skipped` : '') +
@@ -520,6 +547,36 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       } catch {
         /* already torn down */
       }
+    },
+    stopInPlace() {
+      // Model C — STOP that KEEPS the handle. `transport.stop()` resets the position to 0
+      // and disarms emission WITHOUT destroying the timeline/scheduler; `driver.stop()`
+      // parks the external pump; the code voices are cut explicitly (the scheduler's own
+      // stop must NOT, same rule as everywhere). NO `stopped` flag: a later `replay()`
+      // restarts this very scheduler from 0. A full-teardown `stop()` already ran ⇒ no-op.
+      if (stopped) return;
+      try {
+        transport.stop();
+        driver.stop();
+      } catch {
+        /* already torn down */
+      }
+      opts.stopCodeVoices?.();
+    },
+    replay() {
+      // Model C — REPLAY the persisted scene from 0. `transport.stop()` left resume=0, so
+      // `transport.play()` re-anchors clock+scheduler at 0 and re-arms emission; the WebAudio
+      // transport recreates its nodes on the next `send`. `driver.start()` is idempotent.
+      // Re-fire the code voices so Strudel/Hydra restart in their slots. No re-derivation —
+      // the SAME timeline plays again. After a full-teardown `stop()` this is a no-op.
+      if (stopped) return;
+      try {
+        transport.play();
+        driver.start();
+      } catch {
+        /* torn down */
+      }
+      opts.refireCodeVoices?.();
     },
     /** Cut this scene's sustained code voices (Strudel/Hydra) — called on PAUSE (and any
      *  point that must silence them without a full teardown). Host-managed, idempotent. */

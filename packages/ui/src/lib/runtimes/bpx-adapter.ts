@@ -1178,6 +1178,16 @@ export function setResumeBeat(beat: number | null): void {
   resumeBeat = beat;
 }
 
+// INSTRUMENTATION (Model C proof): count every BPx derivation of the EVAL path
+// (eval/edit/arm/produce/play-from-stopped). It does NOT count the per-loop-cycle
+// `reDeriveTreeEvents` re-roll (a deliberate re-random at the loop boundary, not an
+// eval). The PM reads this via a dynamic import to prove that two Play-from-stopped
+// (now `replay`, no eval) leave the count untouched, while an edit bumps it by one.
+let __bpxDeriveCount = 0;
+export function __getBpxDeriveCount(): number {
+  return __bpxDeriveCount;
+}
+
 // LIVE transport-toggle plumbing: each adapter registers an updater that pushes
 // the loop / re-random toggle onto its currently-playing dispatchers, so flipping
 // the 🎲 (or loop) while a scene plays takes effect at the next cycle WITHOUT
@@ -1289,6 +1299,16 @@ let audioCtx: AudioContext | undefined;
 async function getCtx(): Promise<AudioContext> {
   if (!audioCtx) audioCtx = new AudioContext();
   if (audioCtx.state === 'suspended') await audioCtx.resume();
+  return audioCtx;
+}
+
+// BUILD-ONLY context accessor (Model C produce/load): get the shared context WITHOUT
+// resuming it — a produce must not WAKE the audio (the architect rule: building the
+// persistent handle on load stays silent, like a Stop keeps a silent handle). The
+// context's `currentTime` is a valid (frozen, if suspended) clock source for the built-
+// but-not-playing Transport; the first Play resumes it via `getCtx()` on `replay`.
+function peekCtx(): AudioContext {
+  if (!audioCtx) audioCtx = new AudioContext();
   return audioCtx;
 }
 
@@ -1646,6 +1666,10 @@ function makeBpxAdapter(
         // notes, marker payload on controls) the multi-actor dispatcher routes on
         // — the flat `.tokens` carry `actor: null` and fuse simultaneous leaves.
         const derived = bpx.derive({ output: 'complete' });
+        // Model C proof: this is THE eval-path derivation (eval/edit/arm/produce/play-from-
+        // stopped). Count it. The loop-boundary re-roll (`reDeriveTreeEvents`) is NOT counted
+        // here — a Play-from-stopped on a persisted scene replays without reaching this point.
+        __bpxDeriveCount++;
         // The TREE (with control nodes) drives the multi-actor dispatcher. The
         // FLAT tokens keep their prior `'sounding'` shape for every legacy
         // consumer (production readout, STEP slicing, MIDI sink, mono/text
@@ -1809,31 +1833,15 @@ function makeBpxAdapter(
         leafCounts
       );
 
-      // PRODUCE-only (scene opened, not played): the derivation + structure are
-      // now published and the tempo (`@mm`) adopted — but we DON'T create a
-      // dispatcher, schedule anything, or start the transport. Play runs a full
-      // evaluate that sounds the scene. Publish the actor list so the panel
-      // reflects the scene (live arm/disarm handles are registered on the real
-      // play, when the dispatcher exists). A non-orchestrated scene publishes an
-      // empty list, clearing any previous orchestrator's voices — same as a full
-      // eval would. Outgoing code voices (a previous scene's Hydra/Strudel) are
-      // torn down so opening a new scene doesn't leave the old one rendering.
-      if (src.produceOnly) {
-        if (orchestration && orchestration.actors.length > 0) {
-          await tearDownOutgoingVoices(src.fileId);
-          const published: PublishedActor[] = orchestration.actors.map((a) => ({
-            name: a.name,
-            runtime: (a.evalInterp ? runtimeForInterp(a.evalInterp) : undefined) ?? id,
-            file: src.fileId
-          }));
-          onActorsFromGrammar?.(published, src.fileId);
-        } else {
-          await tearDownOutgoingVoices(undefined);
-          onActorsFromGrammar?.([], src.fileId);
-        }
-        emitLifecycle('eval', src.fileId);
-        return;
-      }
+      // PRODUCE-only (scene opened/loaded/armed, not played) — Model C: a LOAD is a content
+      // change, so it must BUILD + PERSIST the Kronos handle (timeline) so the FIRST Play is a
+      // replay (zero re-derivation), exactly as the architect rule demands. We therefore fall
+      // THROUGH the same build path as a real play, but in BUILD-ONLY mode: `startKronosAudio`
+      // constructs the machine + timeline WITHOUT playing (transport 'stopped', driver not
+      // started → no sound, no audio-context wake), and the handle is registered. The publish /
+      // teardown below is the SAME as a full eval's (the synthetic `default` orchestration makes
+      // mono scenes go through this block too). `buildOnly` is consumed at the audio edges only.
+      const buildOnly = !!src.produceOnly;
 
       // STEP: when a beat is requested, audition exactly ONE beat of the REAL
       // production, IN PLACE — NOT a sliced + re-zeroed copy. We keep the FULL
@@ -1908,7 +1916,10 @@ function makeBpxAdapter(
         }
       }
 
-      const ctx = await getCtx();
+      // BUILD-ONLY (produce/load) must NOT wake the audio: take the context WITHOUT resuming
+      // it (`peekCtx`). A real play resumes via `getCtx()`. The built handle stays silent until
+      // the first Play's `replay` resumes the context (the `__replay__` sentinel does so).
+      const ctx = buildOnly ? peekCtx() : await getCtx();
       const dispatcher = new Dispatcher(ctx);
 
       // CV modulation table (CV.md): teach the dispatcher which terminals are CVs
@@ -2124,6 +2135,9 @@ function makeBpxAdapter(
             >[0]['dispatcher'],
             startSceneSec: startOffsetSec,
             soundsFn,
+            // Model C — PRODUCE/LOAD builds + persists the handle WITHOUT playing it (stopped,
+            // silent); the first Play `replay`s it (0 re-derivation). A STEP overrides this.
+            buildOnly,
             // STEP audition + re-derive mirror the mono path; a STEP never re-derives.
             reDerive: section ? null : reDeriveTreeEvents(orchestratedLive),
             reRandom,
@@ -2261,6 +2275,43 @@ function makeBpxAdapter(
     },
     async stop(src: EvalSource, log: LogPush) {
       const key = srcKey(src);
+      // Model C — STOP-IN-PLACE sentinel (transport Stop button). Return every live scene's
+      // playhead to 0 and cut its sound + code voices, but KEEP the handle: the derived
+      // timeline PERSISTS in Kronos, only the head moves. We do NOT clear `voices`,
+      // `kronosCursor`, or `orchestratedVoices` — `kronosCursor.active` stays the same handle
+      // and its `transport.state` flips to 'stopped' (the mirror updates via onStateChange, so
+      // `playback.mode` reads 'stopped' correctly while the handle lives). A later `__replay__`
+      // restarts the SAME scheduler with ZERO re-derivation.
+      if (key === '__stop_in_place__') {
+        for (const voice of voices.values()) {
+          voice.kronosAudio?.stopInPlace();
+          // NOTE: dispatcher.stop() is NOT called — it would `close()` the WebAudio transport
+          // and clear its node map; `stopInPlace` already cut the sounding nodes via
+          // `transport.stop()`, and the dispatcher must stay the inert resolver/transport
+          // structure Kronos reads on replay. The code voices are cut inside `stopInPlace`.
+        }
+        log({ runtime: id, level: 'info', msg: 'stop in place (handle kept)' });
+        emitLifecycle('stop', src.fileId);
+        return;
+      }
+      // Model C — REPLAY sentinel (Play from a STOPPED-in-place scene). Restart the persisted
+      // handle from 0 with no eval. Only replays handles whose transport is 'stopped' (a
+      // running/paused handle is left untouched — Play-from-paused is the resume path, handled
+      // in the store, not here).
+      if (key === '__replay__') {
+        // WAKE the audio context first: a build-only (produce/load) handle left it
+        // suspended (no wake on load, by design), and a Stop-in-place may have parked it
+        // too — the WebAudio transport schedules against `currentTime`, frozen while
+        // suspended, so `replay` would queue notes that never sound. This Play is a user
+        // gesture, so resuming is allowed. `getCtx()` resumes if suspended (no-op if running).
+        await getCtx();
+        for (const voice of voices.values()) {
+          if (voice.kronosAudio?.transport.state === 'stopped') voice.kronosAudio.replay();
+        }
+        log({ runtime: id, level: 'info', msg: 'replay active scene (no derive)' });
+        emitLifecycle('eval', src.fileId);
+        return;
+      }
       // `__hush__` is the core's "stop everything" sentinel (transport stop,
       // Ctrl+. panic): no single voice matches it, so we tear down every live
       // dispatcher. Without this, stopping the transport left playback looping.

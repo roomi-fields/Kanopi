@@ -344,6 +344,14 @@ class MockCore implements CoreApi {
   async silenceRuntimes() {
     /* mock no-op */
   }
+
+  async stopInPlace() {
+    /* mock no-op */
+  }
+
+  async replayActiveScene() {
+    /* mock no-op */
+  }
 }
 
 export function createMockCore(): CoreApi {

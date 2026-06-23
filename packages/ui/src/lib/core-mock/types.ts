@@ -179,4 +179,17 @@ export interface CoreApi {
    * "Playing" with no sound.
    */
   silenceRuntimes(): Promise<void>;
+  /**
+   * STOP-IN-PLACE (Model C transport Stop): return every live scene's playhead to 0 and
+   * cut its sound + sustained code voices, but KEEP the derived timeline persisted in
+   * Kronos (the handle is not discarded). Only the playhead moves; a following
+   * `replayActiveScene()` restarts the SAME scheduler from 0 with no re-derivation.
+   */
+  stopInPlace(): Promise<void>;
+  /**
+   * REPLAY (Model C transport Play from a stopped-in-place scene): restart every persisted
+   * handle whose transport is stopped, from 0, WITHOUT re-deriving. No-op for handles that
+   * are running/paused (Play-from-paused is the resume path).
+   */
+  replayActiveScene(): Promise<void>;
 }
