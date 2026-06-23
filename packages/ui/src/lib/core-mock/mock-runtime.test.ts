@@ -1,13 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { createMockCore } from './mock-runtime';
-import { MockActors, MockScenes, MockMaps } from './mock-runtime';
+import { MockActors, MockScenes } from './mock-runtime';
 
 describe('mock core', () => {
   it('starts empty (populated via setActors)', () => {
     const core = createMockCore();
     expect(core.actors.list()).toEqual([]);
     expect(core.scenes.list()).toEqual([]);
-    expect(core.maps.list()).toEqual([]);
   });
 
   it('emits console entries', () => {
@@ -36,11 +35,5 @@ describe('mock core', () => {
     const actives = s.list().filter((x) => x.active);
     expect(actives.length).toBe(1);
     expect(actives[0].name).toBe('b');
-  });
-
-  it('MockMaps setMappings', () => {
-    const m = new MockMaps();
-    m.setMappings([{ id: 'm1', source: { kind: 'cv', index: 1 }, target: { kind: 'tempo' } }]);
-    expect(m.list()).toHaveLength(1);
   });
 });

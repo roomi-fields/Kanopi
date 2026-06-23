@@ -4,8 +4,6 @@ import type {
   ConsoleBus,
   CoreApi,
   LogEntry,
-  MapEngine,
-  Mapping,
   Runtime,
   Scene,
   SceneManager,
@@ -90,29 +88,6 @@ export class MockScenes implements SceneManager {
   }
 }
 
-export class MockMaps implements MapEngine {
-  private mappings: Mapping[] = [];
-  private b = bus<Mapping[]>();
-
-  list() {
-    return this.mappings;
-  }
-  setMappings(list: Mapping[]) {
-    this.mappings = list;
-    this.b.emit(this.mappings);
-  }
-  emitIncoming(id: string, value: number) {
-    this.mappings = this.mappings.map((m) =>
-      m.id === id ? { ...m, lastValue: value, lastTs: Date.now() } : m
-    );
-    this.b.emit(this.mappings);
-  }
-  subscribe(cb: (m: Mapping[]) => void) {
-    cb(this.mappings);
-    return this.b.subscribe(cb);
-  }
-}
-
 export class MockConsole implements ConsoleBus {
   private log: LogEntry[] = [];
   private b = bus<LogEntry[]>();
@@ -143,7 +118,6 @@ export class MockConsole implements ConsoleBus {
 class MockCore implements CoreApi {
   actors = new MockActors();
   scenes = new MockScenes();
-  maps = new MockMaps();
   console = new MockConsole();
   events: EventBus = createEventBus();
 

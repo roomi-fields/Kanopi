@@ -3,7 +3,6 @@
   import { kronosCursor } from '../../stores/kronos-cursor.svelte';
   import { actors } from '../../stores/actors.svelte';
   import { scenes } from '../../stores/scenes.svelte';
-  import { inspector } from '../../stores/inspector.svelte';
 
   function fmt2(n: number) {
     return n.toString().padStart(2, '0');
@@ -18,30 +17,6 @@
     const bp = kronosCursor.beat ?? { bar: 1, beat: 0, phase: 0 };
     return `${fmt3(bp.bar)}·${fmt2(bp.beat + 1)}.${fmt2(Math.floor(bp.phase * 100))}`;
   });
-
-  function srcLabel(s: (typeof inspector.mappings)[number]['source']) {
-    const ch = s.ch ? '/ch' + s.ch : '';
-    switch (s.kind) {
-      case 'cv':
-        return `cv:${s.index}${ch}`;
-      case 'gate':
-        return `gate:${s.index}${ch}`;
-      case 'trig':
-        return `trig:${s.index}${ch}`;
-    }
-  }
-  function tgtLabel(t: (typeof inspector.mappings)[number]['target']) {
-    switch (t.kind) {
-      case 'tempo':
-        return 'tempo';
-      case 'scene':
-        return `scene:${t.ref}`;
-      case 'actor.toggle':
-        return `${t.ref}.toggle`;
-      case 'actor.param':
-        return `${t.ref}.${t.param}`;
-    }
-  }
 </script>
 
 <div class="inspector">
@@ -64,22 +39,6 @@
     <ul class="bullets">
       {#each actors.list as a (a.name)}
         <li><span class="dot" class:on={a.active}></span>{a.name}</li>
-      {/each}
-    </ul>
-  </section>
-
-  <section>
-    <h4>Mappings ({inspector.mappings.length})</h4>
-    <ul class="maps">
-      {#each inspector.mappings as m (m.id)}
-        <li>
-          <span class="src">{srcLabel(m.source)}</span>
-          <span class="arrow">→</span>
-          <span class="tgt">{tgtLabel(m.target)}</span>
-          {#if m.lastValue !== undefined}
-            <span class="val">{m.lastValue}</span>
-          {/if}
-        </li>
       {/each}
     </ul>
   </section>
@@ -142,37 +101,5 @@
   .dot.on {
     background: var(--green);
     box-shadow: 0 0 4px var(--green-glow);
-  }
-
-  .maps {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: 10px;
-  }
-  .maps li {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--font-code);
-  }
-  .src {
-    color: var(--cyan);
-  }
-  .arrow {
-    color: var(--text-faint);
-  }
-  .tgt {
-    color: var(--text-muted);
-    flex: 1;
-  }
-  .val {
-    color: var(--amber);
-    font-variant-numeric: tabular-nums;
-    min-width: 24px;
-    text-align: right;
   }
 </style>

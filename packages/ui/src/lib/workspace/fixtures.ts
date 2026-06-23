@@ -17,10 +17,6 @@ const raw: { path: string; contents: string }[] = [
 [scene==drop]  S -> { drums, visuals, bass }
 [scene==break] S -> { visuals, bass }
 
-@map cc:1  -> tempo
-@map cc:36 -> [scene]
-@map cc:21 -> drums
-
 drums -> \`stack(s("bd*4").gain(0.9), s("~ cp").room(0.4), s("hh*8").gain(0.5).pan(sine.range(0.2, 0.8).slow(4)))\`
 visuals -> \`osc(60, 0.1, 1.5).modulate(noise(3)).rotate(() => time/10).out()\`
 bass -> \`note("c2 c2 eb2 g2").s("sawtooth").gain(0.4)\`

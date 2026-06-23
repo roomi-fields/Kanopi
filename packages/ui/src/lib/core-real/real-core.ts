@@ -1,4 +1,4 @@
-import { MockScenes, MockMaps, MockConsole, MockActors } from '../core-mock/mock-runtime';
+import { MockScenes, MockConsole, MockActors } from '../core-mock/mock-runtime';
 import type { Actor, CoreApi, LogEntry, Runtime, Scene } from '../core-mock/types';
 import { getAdapter, listRuntimes } from '../runtimes/registry';
 import {
@@ -11,7 +11,7 @@ import {
 } from '../runtimes/bpx-adapter';
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 import { installConsoleBridge } from '../runtimes/console-bridge';
-import { enableMidi, matchMapping, type MidiEvent } from '../midi/midi-input';
+import { enableMidi, type MidiEvent } from '../midi/midi-input';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
 import { production } from '../../stores/production.svelte';
@@ -49,7 +49,6 @@ class RealActors extends MockActors {
 class RealCore implements CoreApi {
   actors = new RealActors();
   scenes = new MockScenes();
-  maps = new MockMaps();
   console = new MockConsole();
   events: EventBus = createEventBus();
 
@@ -402,34 +401,15 @@ class RealCore implements CoreApi {
   }
 
   private handleMidi(e: MidiEvent) {
+    // MIDI input is logged (the input plumbing stays live). The `@map` ROUTING that
+    // used to act on each event was DEAD (no `@map` was ever parsed into a mapping →
+    // the list was always empty) and is removed (RA-6 phase-2 cleanup); the feature
+    // will be rebuilt at the OSC/devices wiring, outside Kanopi (plan).
     this.log({
       runtime: 'system',
       level: 'info',
       msg: `[midi] ${e.kind}:${e.index} val:${e.value} ch:${e.ch}`
     });
-    for (const m of this.maps.list()) {
-      if (!matchMapping(m, e)) continue;
-      this.maps.emitIncoming(m.id, e.value);
-      const tgt = m.target;
-      if (tgt.kind === 'tempo') {
-        // Map CC 0..127 → BPM 60..180 (live coding common range). Route to the tempo store
-        // (persisted value + live retune of every runtime, incl. the Kronos handle); lazy
-        // import avoids the module cycle (store → core → real-core).
-        const bpm = 60 + (e.value / 127) * 120;
-        void import('../../stores/clock.svelte').then((m) => m.clock.setBpm(bpm));
-      } else if (tgt.kind === 'scene') {
-        if (e.value > 0) this.scenes.activate(tgt.ref);
-      } else if (tgt.kind === 'actor.toggle') {
-        if (e.value > 0) this.actors.toggle(tgt.ref);
-      } else if (tgt.kind === 'actor.param') {
-        // Param routing not implemented yet (per-actor API needed).
-        this.log({
-          runtime: 'system',
-          level: 'warn',
-          msg: `actor.param "${tgt.ref}.${tgt.param}" not yet supported`
-        });
-      }
-    }
   }
 }
 

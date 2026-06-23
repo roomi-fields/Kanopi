@@ -1,5 +1,3 @@
-import type { Mapping } from '../core-mock';
-
 export interface MidiEvent {
   kind: 'cv' | 'note'; // protocol-level: CC or note message
   index: number; // CC number, or note number
@@ -64,20 +62,4 @@ export async function enableMidi(
 
 export function listPorts(): string[] {
   return [...portNames];
-}
-
-/**
- * Map source semantics (BPscript convention):
- *   cv   = continuous value (CC)
- *   gate = note on/off (fires on press AND release)
- *   trig = note-on with vel > 0 (fires on press only, ignores release)
- * Channel filter: if mapping has no `ch`, match any channel.
- */
-export function matchMapping(m: Mapping, e: MidiEvent): boolean {
-  if (m.source.ch !== undefined && m.source.ch !== e.ch) return false;
-  if (m.source.index !== e.index) return false;
-  if (m.source.kind === 'cv') return e.kind === 'cv';
-  if (m.source.kind === 'gate') return e.kind === 'note';
-  if (m.source.kind === 'trig') return e.kind === 'note' && e.value > 0;
-  return false;
 }

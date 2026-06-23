@@ -66,30 +66,6 @@ export interface SceneManager {
   subscribe(cb: (scenes: Scene[]) => void): Unsubscribe;
 }
 
-export type MapSource =
-  | { kind: 'cv'; index: number; ch?: number } // continuous (CC)
-  | { kind: 'gate'; index: number; ch?: number } // note on/off
-  | { kind: 'trig'; index: number; ch?: number }; // note-on with vel > 0 only
-
-export type MapTarget =
-  | { kind: 'tempo' }
-  | { kind: 'scene'; ref: string }
-  | { kind: 'actor.toggle'; ref: string }
-  | { kind: 'actor.param'; ref: string; param: string };
-
-export interface Mapping {
-  id: string;
-  source: MapSource;
-  target: MapTarget;
-  lastValue?: number;
-  lastTs?: number;
-}
-
-export interface MapEngine {
-  list(): Mapping[];
-  subscribe(cb: (mappings: Mapping[]) => void): Unsubscribe;
-}
-
 export interface LogEntry {
   ts: number;
   runtime: Runtime;
@@ -107,7 +83,6 @@ export interface ConsoleBus {
 export interface CoreApi {
   actors: ActorManager;
   scenes: SceneManager;
-  maps: MapEngine;
   console: ConsoleBus;
   events: EventBus;
   /**
