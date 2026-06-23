@@ -43,7 +43,6 @@ export class MockClock implements Clock {
   private b = bus<ClockState>();
   private onTransport?: (playing: boolean) => void;
   private onTempo?: (bpm: number) => void;
-  private onPauseResume?: (paused: boolean) => void;
   private eventsBus?: EventBus;
   /** True only during the synchronous subscriber notification of a
    * `startSilently()` — lets the block-replay listener skip a surgical eval. */
@@ -54,11 +53,6 @@ export class MockClock implements Clock {
   }
   setOnTempo(fn: (bpm: number) => void) {
     this.onTempo = fn;
-  }
-  /** Hook the audio pause/resume to the transport: pause suspends audio in place
-   * (no teardown), resume continues it. Wired by the core to the bp3 audio ctx. */
-  setOnPauseResume(fn: (paused: boolean) => void) {
-    this.onPauseResume = fn;
   }
   setEventBus(bus: EventBus) {
     this.eventsBus = bus;
@@ -145,33 +139,6 @@ export class MockClock implements Clock {
         bpm: this.state.bpm
       });
     }
-  }
-  /**
-   * Pause: halt the transport WITHOUT a stop/teardown. Only the flags change here
-   * (playing→false, paused→true); the position is Kronos's and stays frozen at the
-   * paused beat (the kronos-cursor store keeps reading the Transport's frozen-aware
-   * readout, B13). Audio is suspended in place via the onPauseResume hook so resuming
-   * continues mid-phrase instead of restarting.
-   */
-  pause() {
-    if (!this.state.playing) return;
-    this.state = { ...this.state, playing: false, paused: true };
-    this.b.emit(this.state);
-    // True pause: suspend the audio WITHOUT tearing down the dispatchers (unlike
-    // stop, which hushes every runtime via onTransport(false) and forgets the
-    // voices). The scheduled voices stay loaded so resuming continues in place;
-    // their audio context is suspended by the onPauseResume hook (the dispatcher's
-    // lookahead clock then freezes against the frozen `currentTime`). The position is
-    // Kronos's and stays frozen there for the resume.
-    this.onPauseResume?.(true);
-    this.eventsBus?.emit({
-      schemaVersion: 1,
-      type: 'transport',
-      runtime: 'clock',
-      t: performance.now(),
-      playing: false,
-      bpm: this.state.bpm
-    });
   }
   toggle() {
     if (this.state.playing) this.stop();

@@ -44,7 +44,6 @@ export interface Clock {
    */
   startSilently(): void;
   stop(): void;
-  pause(): void;
   /** Enter STEP mode: clear playing+paused WITHOUT zeroing position or hushing.
    * A discrete manual advance — never resumes a paused transport. */
   enterStep(): void;

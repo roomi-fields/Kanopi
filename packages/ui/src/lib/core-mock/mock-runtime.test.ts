@@ -124,25 +124,15 @@ describe('mock core', () => {
     expect(c.silentStart).toBe(false); // cleared after the synchronous emit
   });
 
-  it('clock.pause/stop toggle the transport flags (position lives in Kronos, not here)', () => {
+  it('clock.play/stop toggle the transport flags (position lives in Kronos, not here)', () => {
     // The clock no longer carries bar/beat/phase — position is Kronos's Transport,
-    // sampled by the kronos-cursor store. This only asserts the transport FLAGS the
-    // clock still owns: paused (halt-in-place) vs stopped (teardown), never true while
-    // playing. The frozen-vs-rewound POSITION is proven on the kronos-cursor store /
-    // Kronos suite, not on the clock.
+    // sampled by the kronos-cursor store. Host-side pause is gone: LIVE pause goes
+    // through Kronos's Transport.pause(), not the clock. This only asserts the
+    // transport FLAGS the clock still owns: playing/paused never true while stopped.
     const core = createMockCore();
-    (core.clock as unknown as { state: { playing: boolean } }).state = {
-      ...core.clock.state,
-      playing: true
-    };
-    core.clock.pause();
-    expect(core.clock.state.playing).toBe(false);
-    // Paused ≠ stopped: the paused flag is set so the UI can tell them apart.
-    expect(core.clock.state.paused).toBe(true);
-    // play() clears paused and resumes; stop() clears paused too.
     core.clock.play();
-    expect(core.clock.state.paused).toBe(false);
     expect(core.clock.state.playing).toBe(true);
+    expect(core.clock.state.paused).toBe(false);
     core.clock.stop();
     expect(core.clock.state.paused).toBe(false);
     expect(core.clock.state.playing).toBe(false);

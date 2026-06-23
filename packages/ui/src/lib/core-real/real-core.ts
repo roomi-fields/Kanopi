@@ -13,8 +13,6 @@ import {
   armOrchestratedActor,
   disarmOrchestratedActor,
   isOrchestratedActor,
-  pauseAudioContext,
-  resumeAudioContext,
   type PublishedActor
 } from '../runtimes/bpx-adapter';
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
@@ -97,17 +95,6 @@ class RealCore implements CoreApi {
     });
     this.clock.setOnTransport((playing) => {
       void this.handleTransport(playing);
-    });
-    // PAUSE/RESUME (≠ stop): suspend/resume the WebAudio context in place so the
-    // dispatchers keep their scheduled timeline — resuming continues mid-phrase
-    // instead of restarting. Stop still goes through onTransport(false) and tears
-    // everything down. Strudel/Hydra own their own contexts (not paused here yet).
-    this.clock.setOnPauseResume((paused) => {
-      // Audio only: suspend in place on pause, resume on play. The PLAYHEAD
-      // position is owned by the transport state machine (playback store), which
-      // records the paused beat itself — the core no longer tracks it here.
-      if (paused) void pauseAudioContext();
-      else void resumeAudioContext();
     });
     this.scenes.setOnActivate((s) => {
       void this.handleSceneActivate(s);

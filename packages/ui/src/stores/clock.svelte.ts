@@ -16,9 +16,6 @@ class ClockStore {
   stop() {
     core.clock.stop();
   }
-  pause() {
-    core.clock.pause();
-  }
   toggle() {
     core.clock.toggle();
   }
