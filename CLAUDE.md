@@ -53,6 +53,13 @@ Règles **non négociables** :
    c'est tricher. Le test reflète le réel ; si le réel est cassé, on corrige le réel.
 5. **Rapport = sur pièces** : commit + sortie réelle des commandes + ce qui a été vu à l'écran
    (RMS, capture, log console). Pas de résumé vague.
+6. **JAMAIS de repli hôte / 2e autorité / chemin parallèle — même « en attendant », même comme
+   « défaut si pas de réponse ».** C'est l'anti-pattern que tout ce projet élimine. Si tu te
+   retrouves à PROPOSER un bricolage (clock hôte, fallback, état dupliqué, contournement) comme
+   solution OU comme défaut, c'est DÉJÀ une dérive : ton réflexe doit être l'inverse. Bloqué sur
+   une vraie décision → tu **ESCALADES à l'architecte et tu ATTENDS** ; tu ne bricoles pas un
+   repli. Le « défaut si pas de réponse » d'une question bloquante est **toujours** « j'attends »,
+   jamais « je prends le hack ». Faire le contraire = faute, pas un compromis raisonnable.
 
 ## Boundaries
 
