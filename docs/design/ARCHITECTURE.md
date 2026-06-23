@@ -203,10 +203,14 @@ nécessaire (OSC UDP, SysEx avancés, Ableton Link plus tard).
 
 ### Deux implémentations à distinguer
 
-- **`packages/core/src/bridge/osc-bridge.js`** (~80 lignes) — mini-bridge
-  Node.js de développement. Relai WebSocket → UDP OSC nu, sans logique
-  par device. Fourni pour tests locaux SuperCollider
-  (ws://localhost:9000 → udp://localhost:57120). **Pas la cible prod.**
+- **sortie OSC = paquet `runtime-OSC`** (OSC-5b) — Kanopi NE possède plus de
+  mini-bridge bundlé. L'`OscAdapter` de runtime-OSC (profil osc-bridge +
+  transport WebSocket) est branché sur le chemin unique : un acteur
+  `transport.osc device:<nom> ch:<n>` route ses events vers lui, le profil
+  résout le nom de contrôle en adresse d'appareil, le transport WebSocket émet
+  vers le relais. Endpoint dans `library/routing.json`. _(L'ancien
+  `packages/core/src/bridge/osc-bridge.js`, relai WS→UDP nu de dev, est
+  supprimé — superseded par runtime-OSC + le sidecar `osc-bridge` ci-dessous.)_
 - **[`osc-bridge`](https://github.com/roomi-fields/osc-bridge)** (repo
   Rust séparé, cf §Topologie repos) — **le vrai pont**. Déclaratif JSON
   par device (840+ synths supportés), bidirectionnel, multi-client,
@@ -281,9 +285,10 @@ V1 subset de BPscript exposé à l'utilisateur :
 | `dispatcher/transports/webaudio.js` | synthèse native                        |
 | `dispatcher/evals/sclang.js`        | adapter SuperCollider                  |
 | `dispatcher/evals/python.js`        | adapter Python (Sardine via WebSocket) |
-| `bridge/osc-bridge.js`              | client WebSocket vers osc-bridge       |
 
-Hérités de `BPscript/src/dispatcher/` et `src/bridge/`. À migrer progressivement vers TypeScript.
+Hérités de `BPscript/src/dispatcher/`. À migrer progressivement vers TypeScript.
+(La sortie OSC est passée au paquet `runtime-OSC` ; le `bridge/osc-bridge.js`
+hérité est supprimé.)
 
 ## Principes de design
 

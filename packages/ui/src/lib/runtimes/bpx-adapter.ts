@@ -98,6 +98,9 @@ import type { VoiceOutputType } from './adapter';
 // only maps ids → loader.
 import { findBank } from '../library/audio-banks';
 import { loadSampleBank } from 'runtime-codevoices';
+// OSC output (OSC-5b): the osc-bridge WS→UDP relay endpoint. Kanopi's WebSocket
+// transport (built in startKronosAudio) connects here; the relay forwards UDP.
+import routingJson from '../../../../library/routing.json';
 // Head-rule sections read from the BPScript AST (`compileBPS().ast`), the single
 // source of truth — replacing the deprecated regex-on-grammar-text reader for the
 // `.bps` path. The `.gr` path keeps the local text reader (it never compiles
@@ -247,6 +250,10 @@ interface OrchestratedActor {
   // undefined for a native notes voice. Drives the voice's output type for the
   // device-compatibility gate (DEVICES_SPEC §3 / ADAPTER_SPEC §1bis b).
   evalInterp?: string;
+  // OSC output binding (`device:<name> ch:<n>`). When the actor's transport
+  // resolves to an `osc` device, this is handed up to runtime-OSC's `setBindings`
+  // so its profile resolves the device address + channel. Absent otherwise.
+  binding?: { device?: string; channel?: number } | null;
 }
 interface Orchestration {
   actorTable: Record<string, unknown>;
@@ -453,6 +460,10 @@ interface ActorDirectiveNode {
     transport?: TransportRefNode;
     eval?: string | null;
   };
+  /** OSC output binding (`@actor X device:<name> ch:<n>`, OSC-L1): which osc-bridge
+   *  device + channel this actor's events address. Scene data Kanopi hands up to
+   *  runtime-OSC at setup (`setBindings`); separate from `properties.transport`. */
+  binding?: { device?: string; channel?: number } | null;
 }
 interface SceneAstView {
   directives?: ({ type?: string } & Record<string, unknown>)[];
@@ -752,13 +763,20 @@ const bpsFrontend: Frontend = (code) => {
     // WebAudio transport base, events carrying no `payload.actor`). Shared helper.
     return { ...base, orchestration: syntheticDefaultOrchestration() };
   }
+  // OSC bindings (`@actor X device:<name> ch:<n>`) live on the AST actor node, not
+  // in `properties` — read them straight off `a.actors` and key by name.
+  const bindingByName: Record<string, { device?: string; channel?: number }> = {};
+  for (const act of a?.actors ?? []) {
+    if (act.binding) bindingByName[act.name] = act.binding;
+  }
   const orchestration: Orchestration = {
     actorTable,
     actors: names.map((name) => ({
       name,
       transportKey: actorTable[name]?.transport?.key ?? 'audio',
       alphabet: actorTable[name]?.alphabet ?? 'western',
-      evalInterp: actorTable[name]?.eval
+      evalInterp: actorTable[name]?.eval,
+      binding: bindingByName[name] ?? null
     }))
   };
   return { ...base, orchestration };
@@ -1875,6 +1893,12 @@ function makeBpxAdapter(
         // transport. Here we only NAME each audio actor's transport; MIDI stays a
         // dispatcher transport (no clock needed).
         let midi: InstanceType<typeof MidiTransport> | undefined;
+        // OSC actors (`transport.osc` + `device:<name> ch:<n>`): collect their
+        // bindings to hand up to runtime-OSC's `setBindings` at setup. The 'osc'
+        // transport object itself is built by `startKronosAudio` (it schedules on
+        // the shared `audioCtx` clock, like the AudioRuntime); here we only NAME
+        // each OSC actor's route, exactly as for 'webaudio'.
+        const oscBindings: Record<string, { device?: string; channel?: number }> = {};
         for (const actor of orchestration.actors) {
           const resolver = resolverFor(actor.alphabet);
           // Drive transport selection off the RESOLVED device TYPE, not the raw
@@ -1890,12 +1914,17 @@ function makeBpxAdapter(
             da.setActorTransport(actor.name, 'midi');
           } else if (device.type === 'audio') {
             da.setActorTransport(actor.name, 'webaudio');
+          } else if (device.type === 'osc') {
+            // OSC output (OSC-5b): route to the 'osc' transport (built by
+            // startKronosAudio) and record this actor's device/channel binding.
+            da.setActorTransport(actor.name, 'osc');
+            if (actor.binding) oscBindings[actor.name] = actor.binding;
           } else {
-            // video/dmx/osc: compat passed but the dispatcher transport isn't
-            // wired yet (DEVICES_SPEC §6 — declarable-but-unwired). A code voice
-            // renders ITSELF via its backtick adapter (capture-for-retransport is
-            // backlog B4), so there is nothing to route here. Documented, not
-            // hidden: log the limitation rather than crashing.
+            // video/dmx: compat passed but the dispatcher transport isn't wired
+            // yet (DEVICES_SPEC §6 — declarable-but-unwired). A code voice renders
+            // ITSELF via its backtick adapter (capture-for-retransport is backlog
+            // B4), so there is nothing to route here. Documented, not hidden: log
+            // the limitation rather than crashing.
             log({
               runtime: id,
               level: 'info',
@@ -1983,6 +2012,11 @@ function makeBpxAdapter(
             // builds as the AUDIO output (token→Hz + CV render). Per-actor alphabets share the
             // scene resolver for V1 (mono/single-alphabet); MIDI keeps its own per-actor resolver.
             pitch: sceneResolver,
+            // OSC output (OSC-5b): per-actor `{device, channel}` bindings + the relay WS URL.
+            // startKronosAudio builds the OscAdapter (it needs the shared clock) when bindings
+            // are present and registers it as the 'osc' transport.
+            oscBindings: Object.keys(oscBindings).length > 0 ? oscBindings : undefined,
+            oscWsUrl: (routingJson as { osc?: { ws?: string } })?.osc?.ws,
             // Model C — PRODUCE/LOAD builds + persists the handle WITHOUT playing it (stopped,
             // silent); the first Play `replay`s it (0 re-derivation). A STEP overrides this.
             buildOnly,

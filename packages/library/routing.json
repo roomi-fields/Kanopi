@@ -1,0 +1,6 @@
+{
+  "osc": {
+    "ws": "ws://127.0.0.1:9000",
+    "comment": "WebSocket endpoint of the osc-bridge WS→UDP relay (sidecar). runtime-OSC's WebSocketTransport connects here; the relay forwards OSC over UDP to the hardware/SuperCollider. Default matches osc-bridge's default ws-port."
+  }
+}

@@ -37,6 +37,18 @@ import type { DispatchEvent } from './tree-dispatch';
 // the shared PitchResolver + the shared clock, and routes Kronos's ScheduledEvents
 // to it (the AudioRuntime resolves token→Hz and renders `content.modulations`).
 import { createAudioRuntime } from 'runtime-audio';
+// OSC OUTPUT — runtime-OSC's adapter (output profile + WebSocket transport to the
+// osc-bridge relay), consumed AS-IS. Kanopi resolves no address: it builds the
+// adapter on the shared clock, hands it the actor→device bindings, and routes
+// OSC actors' ScheduledEvents to it. The profile maps controls → device addresses.
+//
+// Imported from the package's SPECIFIC browser-safe modules, NOT its barrel: the
+// barrel re-exports `DeviceLibrary` (`node:os`/`node:fs`, `os.homedir()` at module
+// init) and `UdpTransport` (`node:dgram`), which crash in the browser. These three
+// classes + their deps (osc/encode, profiles/generic, pitch) are browser-safe.
+import { OscAdapter } from 'runtime-osc/src/adapter.js';
+import { OscBridgeProfile } from 'runtime-osc/src/profiles/osc-bridge.js';
+import { WebSocketTransport } from 'runtime-osc/src/transports/websocket.js';
 // Reused AS-IS from the core dispatcher: coerces numeric-string controls to
 // numbers (vel/filterQ/…) while leaving strings (wave) untouched.
 import { coerceControlValues } from '../../../../core/src/dispatcher/dispatcher.js';
@@ -73,6 +85,13 @@ export interface KronosAudioOptions {
   /** Scene pitch resolver (shared `@kronos/core/pitch`). When given, this module builds
    *  the runtime-audio AudioRuntime with it as the AUDIO output (token→Hz + CV render). */
   pitch?: PitchResolver;
+  /** OSC output (OSC-5b): per-actor `{device, channel}` bindings (`@actor X device:…
+   *  ch:…`). When present, this module builds runtime-OSC's OscAdapter as the 'osc'
+   *  transport and pre-resolves these bindings via `setBindings`. Absent ⇒ no OSC. */
+  oscBindings?: Record<string, { device?: string; channel?: number }>;
+  /** OSC output: the osc-bridge WS→UDP relay endpoint the OscAdapter's WebSocket
+   *  transport connects to (from `library/routing.json`). */
+  oscWsUrl?: string;
   /** Scene-second offset to start from (STEP / resume). Default 0. */
   startSceneSec?: number;
   /** Mono play-vs-skip predicate (note OR sounding symbol). A token it rejects
@@ -336,6 +355,28 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     transports['webaudio'] = audioRuntime as unknown as TransportLike;
     transports['audio'] = audioRuntime as unknown as TransportLike;
   }
+  // OSC OUTPUT (OSC-5b): when the scene has OSC bindings, build runtime-OSC's adapter
+  // HERE (it schedules on the shared `audioCtx` clock — `now` must be the SAME scale
+  // as the event onset). WebSocket transport → osc-bridge relay; osc-bridge output
+  // profile resolves opaque control names to device addresses (literal fallback when
+  // no device surface library, e.g. `device:bridge1` → `/bridge1/<param>`). Kronos
+  // routes each OSC actor's RAW ScheduledEvent to it (3rd branch in `adapter.send`).
+  let oscAdapter: InstanceType<typeof OscAdapter> | null = null;
+  if (opts.oscBindings && Object.keys(opts.oscBindings).length > 0 && opts.oscWsUrl) {
+    try {
+      const transport = new WebSocketTransport({ url: opts.oscWsUrl });
+      oscAdapter = new OscAdapter({
+        transport,
+        profile: new OscBridgeProfile({ log: (m: string) => log(m) }),
+        now: () => audioCtx.currentTime
+      });
+      void oscAdapter.setBindings(opts.oscBindings);
+      transports['osc'] = oscAdapter as unknown as TransportLike;
+    } catch (err) {
+      log(`⚠ OSC indisponible (${String(err)}) — voix OSC muettes`);
+      oscAdapter = null;
+    }
+  }
   const warned = new Set<string>();
   const pickTransport = (actor?: string): TransportLike | null => {
     if (actor) {
@@ -402,6 +443,20 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
           actor: ev.actor,
           kind: ev.kind,
           content: { token: c.token, controls, modulations: c.modulations ?? [] }
+        });
+        return;
+      }
+
+      // OSC: hand the OscAdapter the RAW ScheduledEvent (like audio, NOT the flat
+      // MIDI shape). Its profile maps `content.controls` (e.g. `cutoff`) to the bound
+      // device's address and `content.token` (Hz) to note/on-off, on the right channel.
+      if (oscAdapter && transport === (oscAdapter as unknown as TransportLike)) {
+        oscAdapter.send({
+          onset: ev.onset,
+          duration: ev.duration,
+          actor: ev.actor,
+          kind: ev.kind,
+          content: { token: c.token, controls: coerced, modulations: c.modulations ?? [] }
         });
         return;
       }
@@ -543,6 +598,9 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       try {
         transport.stop();
         driver.stop();
+        // OSC: full teardown — cancel pending emissions AND close the relay socket
+        // (a same-file re-eval builds a fresh adapter + connection).
+        oscAdapter?.close();
       } catch {
         /* already torn down */
       }
@@ -557,6 +615,9 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       try {
         transport.stop();
         driver.stop();
+        // OSC: cancel scheduled-but-unsent emissions, but KEEP the socket open — a
+        // later `replay()` reuses this same adapter (Model C; no reconnect churn).
+        oscAdapter?.stop();
       } catch {
         /* already torn down */
       }
