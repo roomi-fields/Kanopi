@@ -14,7 +14,6 @@ import { core } from '../lib/core';
 import { production, beatCount } from './production.svelte';
 import { setResumeBeat } from '../lib/runtimes/bpx-adapter';
 import { kronosCursor } from './kronos-cursor.svelte';
-import { clock } from './clock.svelte';
 
 type Mode = 'stopped' | 'playing' | 'paused';
 
@@ -28,12 +27,12 @@ class Playback {
   /** PROJECTION of Kronos's Transport state (reactive via `kronosCursor.state`). Kanopi
    *  keeps no FSM. `running`→`playing`; `step` lands on `paused` (no separate `stepped`). */
   get mode(): Mode {
-    // A live scene → PROJECT the Kronos Transport's state (the authority). No live scene
-    // (empty/idle workspace, or a code-only scene that produced no Kronos timeline) →
-    // reflect the central clock's play/stop INTENT so the transport buttons still respond.
-    // Read the REACTIVE `clock.state` mirror (a `$state`), NOT `core.clock.state` (a plain
-    // object whose mutations Svelte can't track) — otherwise the button never re-renders on
-    // an empty-scene Play (it used to be saved only by the rAF integrator's per-frame emits).
+    // PURE projection on Kronos: a live scene → PROJECT the Transport's state (the single
+    // authority). EVERY playable scene routes through bpx-adapter → startKronosAudio →
+    // kronosCursor.set(handle), so `kronosCursor.active` is non-null the instant any scene
+    // plays — code-only Strudel/Hydra backticks included (their backticks are BT tokens
+    // scheduled by Kronos). No live scene (empty/idle workspace) → 'stopped'. The old host
+    // fallback `clock.state.playing` is GONE: the host invents no transport state.
     if (kronosCursor.active) {
       switch (kronosCursor.state) {
         case 'running':
@@ -44,7 +43,7 @@ class Playback {
           return 'stopped';
       }
     }
-    return clock.state.playing ? 'playing' : 'stopped';
+    return 'stopped';
   }
 
   /** The live Kronos Transport, or null when no scene is loaded/playing. */

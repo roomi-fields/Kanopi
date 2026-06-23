@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { openBlocks } from './blocks.svelte';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { openBlocks, installBlockReplay } from './blocks.svelte';
 import { workspace } from './workspace.svelte';
 import { core } from '../lib/core';
 
@@ -39,14 +39,18 @@ describe('openBlocks.blocksForFile — deterministic, not derived-list dependent
   });
 });
 
-// Re-entrance guard regression: a `.bps` block with `@mm` re-applies its tempo
-// to the central clock INSIDE its eval (clock.setBpm → re-emit), which a
-// clock-state subscriber turns back into a replay request. Before the guard,
-// that re-entered `replayArmed` mid-flight and recursed → stack overflow. The
-// guard short-circuits a nested replay while one is already running, then clears
-// the flag so a later legitimate replay still runs.
-describe('openBlocks.replayArmed — re-entrance guard', () => {
-  it('a replay triggered DURING replayArmed (e.g. tempo re-emit) does not recurse', async () => {
+// Re-entrance is broken AT THE ROOT (no more `_replaying` guard): a `.bps` block
+// with `@mm` re-applies its tempo to the central clock INSIDE its eval
+// (clock.setBpm → re-emit), but that re-emit never changes `playing`, so the
+// installBlockReplay subscriber — which flips its play-edge flag (`wasPlaying`)
+// BEFORE replaying — sees no fresh play edge and does NOT replay again. The
+// guarantee is now proven on the REAL subscriber, not a removed flag.
+describe('installBlockReplay — a tempo re-emit during the play-edge replay does not recurse', () => {
+  // Install the real clock subscriber ONCE (production wires it once in main.ts).
+  // Stacking it per-test would double-count the play edge.
+  beforeAll(() => installBlockReplay());
+
+  it('@mm-style clock.setBpm fired inside the replay triggers no second replay', async () => {
     const id = workspace.loadFiles(
       [{ path: 'reenter.strudel', contents: 'sound("bd hh")' }],
       'reenter.strudel'
@@ -54,51 +58,54 @@ describe('openBlocks.replayArmed — re-entrance guard', () => {
     const [b] = openBlocks.blocksForFile(id!);
     openBlocks.armed = new Set([b.qualifiedName]);
 
-    let evalCalls = 0;
-    const realEvalOne = openBlocks.evalOne.bind(openBlocks);
-    // Simulate the `@mm` re-emit: each eval synchronously re-enters replayArmed,
-    // exactly as a tempo change during playback would. The guard must absorb it.
-    openBlocks.evalOne = async () => {
-      evalCalls++;
-      await openBlocks.replayArmed(); // re-entrant call — must be a no-op here
+    let replayCount = 0;
+    const realReplay = openBlocks.replayArmed.bind(openBlocks);
+    // Simulate the `@mm` re-emit from inside the replay: a genuine tempo change
+    // re-emits the clock state synchronously, exactly as a `.bps` `@mm` eval would.
+    // If the play-edge guard failed, this re-emit would re-enter installBlockReplay
+    // and replay again (the old stack-overflow the `_replaying` flag papered over).
+    openBlocks.replayArmed = async () => {
+      replayCount++;
+      core.clock.setBpm(replayCount % 2 === 0 ? 137 : 143); // genuine change → re-emit
     };
     try {
-      await openBlocks.replayArmed();
+      core.clock.stop(); // clean stopped→playing edge
+      core.clock.play(); // the ONE play edge → exactly one replay
+      await Promise.resolve();
     } finally {
-      openBlocks.evalOne = realEvalOne;
+      openBlocks.replayArmed = realReplay;
       openBlocks.armed = new Set();
+      core.clock.stop();
     }
 
-    // The armed block evaluated exactly once; the nested replay was short-circuited
-    // (no stack overflow, no repeated eval).
-    expect(evalCalls).toBe(1);
-    // Flag is cleared so a subsequent legitimate replay can run again.
-    expect((openBlocks as unknown as { _replaying: boolean })._replaying).toBe(false);
+    // The play edge replayed exactly once; the tempo re-emit raised no second edge.
+    expect(replayCount).toBe(1);
   });
 
-  it('a legitimate replay AFTER a prior one completes still runs', async () => {
+  it('a surgical startSilently does NOT replay the armed set', async () => {
     const id = workspace.loadFiles(
-      [{ path: 'again.strudel', contents: 'sound("bd")' }],
-      'again.strudel'
+      [{ path: 'silent.strudel', contents: 'sound("bd")' }],
+      'silent.strudel'
     );
     const [b] = openBlocks.blocksForFile(id!);
     openBlocks.armed = new Set([b.qualifiedName]);
 
-    let evalCalls = 0;
-    const realEvalOne = openBlocks.evalOne.bind(openBlocks);
-    openBlocks.evalOne = async () => {
-      evalCalls++;
+    let replayCount = 0;
+    const realReplay = openBlocks.replayArmed.bind(openBlocks);
+    openBlocks.replayArmed = async () => {
+      replayCount++;
     };
     try {
-      await openBlocks.replayArmed();
-      await openBlocks.replayArmed();
+      core.clock.stop();
+      core.clock.startSilently(); // surgical Ctrl+Enter — must NOT replay
+      await Promise.resolve();
     } finally {
-      openBlocks.evalOne = realEvalOne;
+      openBlocks.replayArmed = realReplay;
       openBlocks.armed = new Set();
+      core.clock.stop();
     }
 
-    // Two separate, sequential replays each evaluated the armed block.
-    expect(evalCalls).toBe(2);
+    expect(replayCount).toBe(0);
   });
 });
 

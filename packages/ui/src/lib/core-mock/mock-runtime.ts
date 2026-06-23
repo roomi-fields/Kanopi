@@ -48,9 +48,6 @@ export class MockClock implements Clock {
   /** True only during the synchronous subscriber notification of a
    * `startSilently()` — lets the block-replay listener skip a surgical eval. */
   silentStart = false;
-  /** True only during the synchronous emit of a pause→play RESUME, so the
-   * block-replay listener skips re-evaluating (the voices are still scheduled). */
-  resuming = false;
 
   setOnTransport(fn: (playing: boolean) => void) {
     this.onTransport = fn;
@@ -69,33 +66,19 @@ export class MockClock implements Clock {
 
   play() {
     const was = this.state.playing;
-    const wasPaused = this.state.paused;
     this.state = { ...this.state, playing: true, paused: false };
     if (was) {
       this.b.emit(this.state);
       return;
     }
-    if (wasPaused) {
-      // RESUME from pause: the dispatchers were never torn down (pause only
-      // suspended their audio), so DON'T re-evaluate the armed voices — that would
-      // restart them from the top. `resuming` is raised for the synchronous emit
-      // so the block-replay listener skips its play-edge re-eval (the same guard
-      // `silentStart` provides for a surgical manual eval). Then resume the audio.
-      // The beat integrator is NOT reset — playback continues where it paused.
-      this.resuming = true;
-      try {
-        this.b.emit(this.state);
-      } finally {
-        this.resuming = false;
-      }
-      this.onPauseResume?.(false);
-    } else {
-      // FRESH continuous play (from stop or a stepped position): the beat/bar event
-      // baselines live in the kronos-cursor store now (it resets them when a new
-      // dispatcher handle takes over and when the transport isn't running).
-      this.b.emit(this.state);
-      this.onTransport?.(true);
-    }
+    // FRESH continuous play (from stop or a stepped position): the beat/bar event
+    // baselines live in the kronos-cursor store now (it resets them when a new
+    // dispatcher handle takes over and when the transport isn't running). Resume from
+    // pause does NOT come through here anymore — the playback store resumes IN PLACE on
+    // the live Kronos Transport (`transport.play()` + `refireCodeVoices`), never via the
+    // clock, so the clock never sees a paused→playing edge and needs no `resuming` guard.
+    this.b.emit(this.state);
+    this.onTransport?.(true);
     this.eventsBus?.emit({
       schemaVersion: 1,
       type: 'transport',

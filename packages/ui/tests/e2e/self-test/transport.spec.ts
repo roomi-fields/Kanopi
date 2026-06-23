@@ -5,9 +5,11 @@ import { expectNoConsoleErrors } from '../../helpers';
 // (TransportCluster.svelte) and the bar.beat readout in the statusbar
 // (Statusbar.svelte). bar.beat is a PROJECTION of Kronos's Transport position
 // (contract kronos-transport.md): there is NO free-running idle metronome any
-// more, so it only advances while a real scene plays — the position-advance and
-// Stop-freeze tests load + arm a minimal `.bps` (loadAndArm) before Play. The
-// empty Play case only checks the buttons respond (play/stop intent).
+// more, so it only advances while a real scene plays — the transport tests load
+// + arm a minimal `.bps` (loadAndArm) before Play. Kronos is the SOLE transport
+// authority: with no live scene there is no Transport, so the `playing` state is
+// projected ONLY from Kronos (no host clock fallback) — Play on an empty
+// workspace stays stopped. Every Play-activation test therefore arms a scene first.
 //
 // Stable DOM selectors come from TransportCluster.svelte:
 //   - `.tbtn[title="Play"]` / `.tbtn[title="Stop"]` — two icon buttons; the
@@ -82,6 +84,11 @@ test('Play button click activates transport', async ({ page }) => {
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
+  // Kronos is the sole transport authority: the `playing` state comes from a live
+  // Transport, which only exists once a scene is armed + played. Arm a minimal scene
+  // first (no host clock fallback fabricates `playing` on an empty workspace).
+  await loadAndArm(page);
+
   // Sanity: Play button starts WITHOUT the `.playing` class.
   const playBtn = page.locator('.tbtn[title="Play"]');
   await expect(playBtn).toBeVisible();
@@ -89,7 +96,8 @@ test('Play button click activates transport', async ({ page }) => {
 
   await playBtn.click();
 
-  // Once clock.play() commits, the button picks up `.playing` and its title
+  // Once the armed scene evaluates into a live Kronos Transport, the button picks
+  // up `.playing` and its title
   // flips to "Playing" (TransportCluster.svelte:31). Either signal is fine;
   // we check both for belt-and-braces.
   await expect(page.locator('.tbtn.playing')).toBeVisible({ timeout: 3_000 });

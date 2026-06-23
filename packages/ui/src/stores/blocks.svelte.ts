@@ -42,19 +42,6 @@ class OpenBlocksStore {
    */
   errored = $state<Set<string>>(new Set());
 
-  /**
-   * Re-entrance guard for `replayArmed`. A `.bps` block carrying `@mm` re-applies
-   * its tempo to the central clock synchronously inside `evalOne` (setTempoSink →
-   * clock.setBpm), which re-emits the clock state. Any clock-state subscriber that
-   * triggers a replay (installBlockReplay, OpenBlocksStore replay listeners) would
-   * then re-enter `replayArmed` mid-flight and recurse → stack overflow. The
-   * play-edge flag in installBlockReplay covers the clean Play edge, but NOT a real
-   * BPM change during playback (TAP / fast BPM edit while a block is armed). This
-   * flag breaks the cycle for EVERY trigger: a replay already running short-circuits
-   * a nested replay request. Cleared in a finally, so a later legitimate replay runs.
-   */
-  _replaying = false;
-
   isArmed(q: string): boolean {
     return this.armed.has(q);
   }
@@ -261,32 +248,30 @@ class OpenBlocksStore {
    * just-loaded program, the derived snapshot can lag a tick behind the armed set
    * (the load→play regression), so a freshly-armed block would be missed. */
   async replayArmed() {
-    // Re-entrance guard: a tempo re-emit (e.g. `@mm` → clock.setBpm) fired by an
-    // `evalOne` below must not re-trigger a replay while this one is still running.
-    if (this._replaying) return;
-    this._replaying = true;
-    try {
-      // Replay ONLY the ACTIVE scene's armed blocks — NOT every open tab. Replaying
-      // all open tabs made other tabs' armed scenes sound on Play (the « voix open
-      // blocks en plus » / phantom voices, not cut by Pause because only the last
-      // Kronos handle is transport-tracked). Contract `kanopi-architecture.md` §3 +
-      // audit §2: what plays = the active compiled scene, never every open tab.
-      const armedList: OpenBlock[] = [];
-      const activeTab = workspace.activeTabId;
-      if (activeTab) {
-        for (const b of this.blocksForFile(activeTab)) {
-          if (this.armed.has(b.qualifiedName)) armedList.push(b);
-        }
+    // Single-entry in production: the ONLY trigger is installBlockReplay's clock
+    // subscriber, and it flips its play-edge flag (`wasPlaying = true`) BEFORE calling
+    // here. A `@mm` re-emit fired by an `evalOne` below (setTempoSink → clock.setBpm)
+    // never changes `playing`, so that re-emit sees `wasPlaying === true` → no play edge
+    // → no nested replay. The old `_replaying` re-entrance guard is therefore moot.
+    //
+    // Replay ONLY the ACTIVE scene's armed blocks — NOT every open tab. Replaying
+    // all open tabs made other tabs' armed scenes sound on Play (the « voix open
+    // blocks en plus » / phantom voices, not cut by Pause because only the last
+    // Kronos handle is transport-tracked). Contract `kanopi-architecture.md` §3 +
+    // audit §2: what plays = the active compiled scene, never every open tab.
+    const armedList: OpenBlock[] = [];
+    const activeTab = workspace.activeTabId;
+    if (activeTab) {
+      for (const b of this.blocksForFile(activeTab)) {
+        if (this.armed.has(b.qualifiedName)) armedList.push(b);
       }
-      for (const b of armedList) {
-        try {
-          await this.evalOne(b);
-        } catch {
-          /* per-block failures logged by adapter */
-        }
+    }
+    for (const b of armedList) {
+      try {
+        await this.evalOne(b);
+      } catch {
+        /* per-block failures logged by adapter */
       }
-    } finally {
-      this._replaying = false;
     }
   }
 }
@@ -341,11 +326,12 @@ export function installBlockReplay() {
     // which re-emits the clock state and re-enters THIS subscriber. Updating the
     // edge flag first means the re-entrant emit sees `wasPlaying === true` and
     // does NOT replay again — otherwise the eval recurses into itself (stack
-    // overflow on Play). Skip the surgical-manual-eval edge (startSilently).
-    // Skip a pause→play RESUME edge too (`resuming`): the armed voices are still
-    // scheduled (pause only suspended their audio), so re-evaluating would restart
-    // them from the top instead of continuing in place.
-    const playEdge = s.playing && !wasPlaying && !core.clock.silentStart && !core.clock.resuming;
+    // overflow on Play). This is the SOLE re-entrance guard now: a tempo re-emit
+    // never raises a fresh play edge. Skip the surgical-manual-eval edge
+    // (startSilently) so a Ctrl+Enter doesn't re-eval the whole armed set. A
+    // pause→play RESUME no longer reaches the clock (the playback store resumes in
+    // place on the Kronos Transport), so there is no resume edge to skip.
+    const playEdge = s.playing && !wasPlaying && !core.clock.silentStart;
     wasPlaying = s.playing;
     if (playEdge) {
       void openBlocks.replayArmed();
