@@ -1,13 +1,12 @@
 /**
- * BPscript Dispatcher
+ * BPscript Dispatcher — INERT STRUCTURE ONLY (post-RA-6).
  *
- * Loads timed tokens from BP3 WASM (symbolic labels with timing),
- * maintains control state, and distributes to transports
- * via a lookahead clock for sample-accurate scheduling.
- *
- * Loop mode: when enabled, the dispatcher calls a re-derive function
- * at the end of each cycle to get a new sequence (potentially different
- * in random mode). The live coder can swap the grammar between cycles.
+ * Kronos is the single emitter: it reads this object's per-actor map (`_actors`)
+ * and its `transports` to route + fire. The dispatcher NO LONGER schedules or emits
+ * anything — its old lookahead clock / scheduler / FSM / position + the live
+ * tempo/loop/re-random/mute knobs that fed them are GONE (dead emitter, never called).
+ * What survives is the STRUCTURE Kronos consumes (transports + actor routing) plus
+ * `loadEvents`/`duration` (Kronos reads `duration` as a fallback) and `coerceControlValues`.
  */
 
 /**
@@ -34,18 +33,8 @@ export class Dispatcher {
    */
   constructor(audioCtx) {
     this.audioCtx = audioCtx;
-    this.transports = {};     // name → Transport instance
-    this.events = [];         // sorted by startSec
-    this._cursor = 0;
-    this._onEnd = null;
-    this._running = false;
-    this._loopOffset = 0;     // accumulated time offset from previous cycles
-    this._derivedTempo = 0;   // tempo BPx derived the loaded events at (live retune)
-
-    // Loop mode
-    this.loop = false;
-    this._reDerive = null;    // function that returns new timed tokens
-    this._reRandom = false;   // live flag: re-roll the grammar each loop cycle
+    this.transports = {};     // name → Transport instance (read by Kronos for routing)
+    this.events = [];         // sorted by startSec — feeds `duration` (Kronos's fallback)
 
     // Actor system: per-actor resolver and transport. Routing keys on each
     // event's OWN `payload.actor` (carried off the BPx tree) — there is no flat
@@ -53,14 +42,8 @@ export class Dispatcher {
     // never collapsed. A note WITHOUT an actor routes to the 'default' transport.
     this._actors = {};              // actorName → { resolver, transportName, transport }
 
-    // Live arm/disarm: a disarmed actor's sounding notes are NOT routed to its
-    // transport (skipped at fire time) without re-deriving or stopping the other
-    // actors. The UI's Actors panel toggles this per actor while the transport
-    // keeps running. Empty by default → every declared actor sounds.
-    this._mutedActors = new Set(); // actorName(s) whose notes are currently silenced
-
     // Modulator registry (name → { objectType, params, curve }), forwarded to
-    // transports for per-note CV. Stored so a transport added AFTER setModulators
+    // transports that consume it. Stored so a transport added AFTER setModulators
     // still gets it (order-independent).
     this._modulators = {};
   }
@@ -115,20 +98,6 @@ export class Dispatcher {
     if (this._actors[actorName]) {
       this._actors[actorName].transportName = transportName;
     }
-  }
-
-  /**
-   * Arm/disarm an actor LIVE: a disarmed actor's notes are skipped at fire time
-   * (`_sendActorNote`) while the transport and the other actors keep playing. No
-   * re-derivation, no stop — the running dispatcher simply stops routing this
-   * actor's sounding notes until it is re-armed. Code voices (Strudel/Hydra) are
-   * not note-routed; the adapter handles those separately (stop / re-eval).
-   * @param {string} actorName
-   * @param {boolean} muted
-   */
-  setActorMuted(actorName, muted) {
-    if (muted) this._mutedActors.add(actorName);
-    else this._mutedActors.delete(actorName);
   }
 
   /**
@@ -188,8 +157,6 @@ export class Dispatcher {
       return pri(a) - pri(b);
     });
 
-    this._cursor = 0;
-    this._loopOffset = 0;
   }
 
   /**
@@ -201,47 +168,12 @@ export class Dispatcher {
     return last.startSec + last.durSec;
   }
 
+  /** Teardown: close every transport (the host calls this on a same-file re-eval /
+   *  scene swap). The dispatcher holds no running state to reset — Kronos owns the
+   *  transport/clock; closing the transports releases their voices. */
   stop() {
-    this._running = false;
-    this.loop = false;
     for (const transport of Object.values(this.transports)) {
       transport.close();
     }
   }
-
-  /**
-   * Record the tempo BPx derived the loaded events at (requirement A). The loaded
-   * events carry seconds computed at THIS tempo; the clock's anchored map uses it
-   * as the reference for live rescaling. Call before start().
-   * @param {number} bpm
-   */
-  setDerivedTempo(bpm) {
-    if (bpm > 0) this._derivedTempo = bpm;
-  }
-
-  /**
-   * Live tempo change WITHOUT re-derivation (requirement A). Rescales future
-   * scheduled notes (and their durations) in place, anchored so the currently
-   * playing position does not jump. The next derivation still uses the new
-   * tempo (the adapter updates its own derive tempo separately).
-   * @param {number} bpm
-   */
-  setLiveTempo(bpm) {
-    if (!(bpm > 0)) return;
-    this._tempo = bpm;
-  }
-
-  /** LIVE toggle: whether each loop cycle re-rolls the grammar (re-random). Takes
-   *  effect at the next cycle without re-evaluating. The re-derive function stays
-   *  available; this flag just decides whether it runs. */
-  setReRandom(on) {
-    this._reRandom = !!on;
-  }
-
-  /** LIVE toggle: whether playback loops at the end of the cycle. Turning it off
-   *  while playing lets the current cycle finish, then stops. */
-  setLoop(on) {
-    this.loop = !!on;
-  }
-
 }

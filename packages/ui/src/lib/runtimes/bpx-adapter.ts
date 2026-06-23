@@ -1948,21 +1948,15 @@ function makeBpxAdapter(
           rawTree as Parameters<typeof treeToDispatchEvents>[0],
           symbolNames
         ).filter(orchestratedLive);
+        // Load the events into the dispatcher STRUCTURE — Kronos reads its `duration`
+        // (fallback) off them. The dispatcher never emits; it carries no tempo (Kronos
+        // owns the clock), so no `setDerivedTempo`/`setLiveTempo` here any more.
         (dispatcher as unknown as { loadEvents(ev: unknown[]): void }).loadEvents(treeEvents);
-        // The events' seconds encode `currentBpm` at derive time — tell the
-        // dispatcher so its anchored tempo map can live-rescale (requirement A).
-        (dispatcher as unknown as { setDerivedTempo(bpm: number): void }).setDerivedTempo(
-          currentBpm
-        );
         // Orchestrated path: Kronos drives the REAL note+CV audio for EVERY actor
         // (routed per-actor through `pickTransport`), exactly as on the mono path, AND
         // the CODE voices (Strudel/Hydra backticks) via the Kronos adapter's backtick
         // sink. The dispatcher is NEVER started as an emitter (no `.start()`); it stays
         // the inert transport/resolver/`_actors` structure Kronos reads.
-        // The per-actor mute set below is SHARED with the Kronos scheduler (it reads the
-        // same `_mutedActors` to skip an actor), so it backs live arm/disarm — not a
-        // dispatcher emission guard.
-        const da2 = dispatcher as unknown as { setActorMuted(actor: string, muted: boolean): void };
         let kronosAudio: KronosAudioHandle | undefined;
         // Kronos is the ONLY engine (legacy removed): it drives notes + CV + the code
         // voices. The dispatcher is NEVER started as an emitter — it remains purely the
@@ -2031,9 +2025,9 @@ function makeBpxAdapter(
         // Publish the actor list to the Actors panel (groove + viz, …) and
         // register a live arm/disarm handle per actor. A code voice (Strudel/
         // Hydra) is stopped/re-evaluated through its own adapter + slot; a native
-        // notes voice is muted on this dispatcher's per-actor note gate. The
-        // handle map is keyed by actor name and replaced on each re-eval (`da2`
-        // — the dispatcher's per-actor note mute — was declared above).
+        // notes voice is muted via Kronos's scheduler (`kronosAudio.setActorMuted`)
+        // + the shared `mutedActors` set. The handle map is keyed by actor name and
+        // replaced on each re-eval.
         // Tear down the OUTGOING program's code voices (a previous orchestrator's
         // Hydra canvas + its rAF loop, Strudel audio) before registering this one's
         // — loading a new program must not leave the old scene's voices rendering
@@ -2053,19 +2047,11 @@ function makeBpxAdapter(
             file: src.fileId,
             setNoteMuted: (muted: boolean) => {
               // The live mute set is the single source of truth per re-derive cycle
-              // (consulted by `orchestratedLive` + the backtick sink), in BOTH engines.
+              // (consulted by `orchestratedLive` + the backtick sink).
               if (muted) mutedActors.add(actor.name);
               else mutedActors.delete(actor.name);
-              if (kronosAudio) {
-                // Kronos mode: it drives the notes, so the note mute must reach ITS
-                // scheduler. The dispatcher's note-actors are PERMANENTLY muted here
-                // (no double audio), so we must NOT toggle `da2` — re-arming it would
-                // make the dispatcher start routing this actor's notes too.
-                kronosAudio.setActorMuted(actor.name, muted);
-              } else {
-                // Legacy mode: the dispatcher drives the notes; mute it directly.
-                da2.setActorMuted(actor.name, muted);
-              }
+              // Kronos drives the notes, so the live mute must reach ITS scheduler.
+              kronosAudio?.setActorMuted(actor.name, muted);
             },
             stopCode: codeRuntime
               ? () =>
@@ -2109,16 +2095,11 @@ function makeBpxAdapter(
     },
     setBpm(bpm: number, _log: LogPush) {
       currentBpm = bpm;
-      // Live retune every running voice WITHOUT re-deriving (requirement A): the
-      // dispatcher's anchored tempo map rescales its already-loaded events in
-      // place — slower BPM spreads notes out, faster compresses — anchored so the
-      // currently playing position does not jump. `currentBpm` still updates so
-      // the NEXT derivation uses the new tempo.
+      // Live retune every running voice WITHOUT re-deriving (requirement A): Kronos
+      // drives the audio, so the retune reaches ITS clock (same warp, no re-derivation;
+      // mirrors the re-random / loop live-toggle wiring). `currentBpm` still updates so
+      // the NEXT derivation uses the new tempo. The dispatcher carries no tempo any more.
       for (const voice of voices.values()) {
-        (voice.dispatcher as unknown as { setLiveTempo(bpm: number): void }).setLiveTempo(bpm);
-        // In kronos mode the Kronos handle (not the legacy dispatcher) drives the
-        // audio, so the live retune must reach its clock too — same warp, no
-        // re-derivation. Mirrors the re-random / loop live-toggle wiring.
         voice.kronosAudio?.retune(bpm);
       }
       // The MIDI sink owns its own internal dispatcher (runtime-midi private); we
