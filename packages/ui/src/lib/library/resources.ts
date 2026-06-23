@@ -12,7 +12,6 @@ import tuningsJson from 'bpscript/lib/tunings.json';
 import temperamentsJson from 'bpscript/lib/temperaments.json';
 import scalesJson from 'bpscript/lib/scales.json';
 import octavesJson from 'bpscript/lib/octaves.json';
-import tablaPercJson from 'bpscript/lib/sounds/tabla_perc.json';
 // BPScript language modules (`@core`/`@controls` + the `mod` CV lib): real library
 // files with browsable content (core symbols/settings, control terminals, CV
 // objects + their declarative curves). Imported AS-IS so opening one shows it.
@@ -62,14 +61,12 @@ function entriesFromNamedCatalog(catalog: NamedCatalog): ResourceEntry[] {
     });
 }
 
-// `sounds/` holds one JSON file per synthesis family (today only tabla_perc).
-// Each file is one entry; its `description` is the label. Bundled as a static
-// list — Vite can't glob across the dep boundary, and the set is tiny.
+// Percussion SOUND is no longer in Kanopi (RA-6 / décision Romain): the synthesis
+// (`tabla_perc.json` + the synth) moved out with the deleted audio output. The tabla
+// ALPHABET (bols) + grammars stay as language content — bols are writable but MUTE
+// until the alphabet→sound-backtick model is rebuilt. So no sound resources here.
 function soundEntries(): ResourceEntry[] {
-  const files: { id: string; json: { description?: string } }[] = [
-    { id: 'tabla_perc', json: tablaPercJson as { description?: string } }
-  ];
-  return files.map((f) => ({ id: f.id, label: f.json.description, data: f.json }));
+  return [];
 }
 
 // A bpscript library module (`core`/`controls`/`filter`) → a browsable entry.

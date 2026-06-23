@@ -24,18 +24,21 @@ import {
   RealtimeDriver,
   Cursor,
   Transport,
-  PeriodicModulation,
-  renderToBreakpoints,
   type RuntimeAdapter,
   type ScheduledEvent,
   type TimelineEvent,
   type Timeline,
-  type ModulationBinding
+  type ModulationBinding,
+  type PitchResolver
 } from '@kronos/core';
 import type { DispatchEvent } from './tree-dispatch';
+// Audio OUTPUT — the runtime-audio package's RuntimeAdapter (Web Audio synthesis +
+// CV rendering), consumed AS-IS. Kanopi renders NOTHING: it hands the AudioRuntime
+// the shared PitchResolver + the shared clock, and routes Kronos's ScheduledEvents
+// to it (the AudioRuntime resolves token→Hz and renders `content.modulations`).
+import { createAudioRuntime } from 'runtime-audio';
 // Reused AS-IS from the core dispatcher: coerces numeric-string controls to
-// numbers (vel/filterQ/…) while leaving strings (wave) and CV descriptor objects
-// (`{__cv:true,…}`) untouched — exactly what the WebAudio transport reads.
+// numbers (vel/filterQ/…) while leaving strings (wave) untouched.
 import { coerceControlValues } from '../../../../core/src/dispatcher/dispatcher.js';
 
 /** The WebAudio transport surface this module drives (configured by the host
@@ -65,8 +68,11 @@ export interface KronosAudioOptions {
   derivedTempo: number;
   /** Whether to loop the scene. */
   loop: boolean;
-  /** The host dispatcher — its configured transports are the audio output. */
+  /** The host dispatcher — its configured transports (MIDI, …) carry per-actor output. */
   dispatcher: DispatcherLike;
+  /** Scene pitch resolver (shared `@kronos/core/pitch`). When given, this module builds
+   *  the runtime-audio AudioRuntime with it as the AUDIO output (token→Hz + CV render). */
+  pitch?: PitchResolver;
   /** Scene-second offset to start from (STEP / resume). Default 0. */
   startSceneSec?: number;
   /** Mono play-vs-skip predicate (note OR sounding symbol). A token it rejects
@@ -312,9 +318,24 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   clock.setDerivedTempo(derivedTempo);
   clock.start(startScene);
 
-  // 3. The REAL adapter: bridge each scheduled event to the configured WebAudio
-  //    transport. Routing — an event's actor → its transport, else 'default'.
-  const transports = dispatcher.transports ?? {};
+  // 2b. AUDIO OUTPUT = the runtime-audio AudioRuntime, built HERE (where the shared
+  //     clock lives — it needs `musicalNow`/`audioTimeFor` to map t_scene↔t_audio for
+  //     CV). It IS the 'audio'/'webaudio' transport: a token resolves to Hz via the
+  //     shared `pitch`, CV renders from `content.modulations`, `sounds` is empty (no
+  //     percussion in Kanopi — recreated later via alphabet-sound-backtick). The host
+  //     adds only MIDI to the dispatcher; we overlay audio here.
+  const audioRuntime = opts.pitch
+    ? createAudioRuntime(audioCtx, { pitch: opts.pitch, clock, sounds: undefined })
+    : null;
+
+  // 3. The REAL adapter: route each scheduled event to its actor's transport.
+  //    Audio actors → the AudioRuntime (raw ScheduledEvent, it renders pitch + CV);
+  //    MIDI actors → the dispatcher's MidiTransport (flat event). Else 'default'.
+  const transports: Record<string, TransportLike> = { ...(dispatcher.transports ?? {}) };
+  if (audioRuntime) {
+    transports['webaudio'] = audioRuntime as unknown as TransportLike;
+    transports['audio'] = audioRuntime as unknown as TransportLike;
+  }
   const warned = new Set<string>();
   const pickTransport = (actor?: string): TransportLike | null => {
     if (actor) {
@@ -322,7 +343,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       const t = def?.transport ?? (def?.transportName ? transports[def.transportName] : undefined);
       if (t) return t;
     }
-    return transports['default'] ?? Object.values(transports)[0] ?? null;
+    return transports['default'] ?? audioRuntime ?? Object.values(transports)[0] ?? null;
   };
   const adapter: RuntimeAdapter = {
     send(ev: ScheduledEvent) {
@@ -355,66 +376,44 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
         }
         return;
       }
-      // Resolved non-temporal controls (wave/vel/pan/filterQ + CV descriptors)
-      // ride on `content.controls`; coerce numeric strings (fresh object).
+      // Coerce numeric-string controls (vel/filterQ/…) to numbers, then drop any
+      // leftover CV descriptor OBJECTS — modulation is driven by `content.modulations`
+      // (composed by Kronos), never a literal control value.
       const coerced = coerceControlValues(c.controls);
-
-      // CV (A): Kronos composed a binding per modulated input (cutoff/pan/…). Render
-      // each source over THIS note's scene window → a normalized 0..1 curve the
-      // transport applies to the matching AudioParam (MOD_SCALE). This drives BOTH
-      // clocks correctly — the binding's source already encodes which (signal
-      // unrolls across the phrase, per-note retriggers, sibling-voice follows
-      // env1→env2→env3). Kronos owns these inputs, so they're stripped from the
-      // literal controls below.
-      const bindings = c.modulations ?? [];
-      const modCurves: Record<string, number[]> = {};
-      const onsetScene = c.startSec ?? 0;
-      const durScene = c.durSec ?? 0;
-      if (bindings.length > 0 && durScene > 0) {
-        for (const b of bindings) {
-          // Render the source over THIS note's scene window so a SIGNAL unrolls its
-          // phrase slice at the note's position and a per-note envelope retriggers at
-          // the note's onset. STEP uses the SAME (full-production) windows: the host
-          // seeks the whole timeline to the beat, so a stepped note keeps its real
-          // scene onset and its CV is sampled exactly as in full Play (no re-window).
-          const renderStart = onsetScene;
-          // ~2 ms resolution → a smooth value curve for setValueCurveAtTime
-          // (Kronos guidance: finer than 10 ms avoids stair-stepping the envelope).
-          const pts = renderToBreakpoints(b.source, renderStart, renderStart + durScene, 0.002);
-          if (pts.length === 0) continue;
-          // ADSR/breakpoint sources are unipolar 0..1; a periodic LFO is bipolar
-          // (±amp centred on 0) → recentre to 0.5 with half-depth so the transport's
-          // MOD_SCALE reproduces the legacy centre±depth sweep.
-          const bipolar = b.source instanceof PeriodicModulation;
-          modCurves[b.input] = pts.map((p) => (bipolar ? 0.5 + p.value / 2 : p.value));
-          delete coerced[b.input];
-        }
-      }
-      // Any leftover CV descriptor objects (legacy `{__cv}` stamped by
-      // resolveCvControls, or an unresolved ref) must not reach the transport as a
-      // literal — Kronos drives modulation here, so drop object-valued controls.
       for (const k of Object.keys(coerced)) {
         if (coerced[k] && typeof coerced[k] === 'object') delete coerced[k];
       }
-
       const velRaw =
         typeof coerced.vel === 'number'
           ? coerced.vel
           : typeof c.rq?.vel === 'number'
             ? c.rq.vel
             : undefined;
+
+      // AUDIO: hand the AudioRuntime the ScheduledEvent AS-IS — it resolves token→Hz
+      // (shared `pitch`) and RENDERS `content.modulations` itself (no host pre-render).
+      // Map controls to its shape: MIDI 0..127 `vel` → 0..1 `velocity`.
+      if (audioRuntime && transport === (audioRuntime as unknown as TransportLike)) {
+        const controls: Record<string, unknown> = { ...coerced };
+        if (velRaw != null) controls.velocity = velRaw / 127;
+        audioRuntime.send({
+          onset: ev.onset,
+          duration: ev.duration,
+          actor: ev.actor,
+          kind: ev.kind,
+          content: { token: c.token, controls, modulations: c.modulations ?? [] }
+        });
+        return;
+      }
+
+      // MIDI: the dispatcher's MidiTransport reads a flat event (token + controls).
       const event: Record<string, unknown> = {
         token: c.token,
         startSec: c.startSec ?? 0,
         durSec: ev.duration,
         ...coerced
       };
-      // MIDI 0..127 velocity → the synth's 0..1 gain. Absent ⇒ the transport's
-      // own 0.5 default applies (don't force a value).
       if (velRaw != null) event.velocity = velRaw / 127;
-      // Pre-rendered Kronos modulation curves (normalized 0..1) the transport
-      // applies to the note's AudioParams via setValueCurveAtTime.
-      if (Object.keys(modCurves).length > 0) event.__modCurves = modCurves;
       transport.send(event, ev.onset);
     }
     // NOTE: no `stop()` here. The scheduler's stop must NOT cut the code voices, or a

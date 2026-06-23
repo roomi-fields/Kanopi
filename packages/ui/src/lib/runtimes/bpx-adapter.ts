@@ -26,23 +26,28 @@ import scalesJson from 'bpscript/lib/scales.json';
 import modLibJson from 'bpscript/lib/mod.json';
 import { createBPx } from 'bpx';
 import { BUNDLED_SE, BUNDLED_SOUND, BUNDLED_AL } from './bp3-aux';
-// Core runtime, reused AS-IS (no port): the dispatcher schedules timed tokens
-// on the WebAudio transport; the resolver turns pitch names into frequencies.
+// Core runtime, reused AS-IS (no port): the dispatcher carries the per-actor
+// transport/resolver structure Kronos reads (it never emits sound itself).
 import { Dispatcher } from '../../../../core/src/dispatcher/dispatcher.js';
-import { WebAudioTransport } from '../../../../core/src/dispatcher/transports/webaudio.js';
+// Audio output lives in runtime-audio: it provides the CV-curve factory `exprSource`
+// (compiles a backtick curve → ModulationSource), injected into Kronos's composition
+// so Kanopi NEVER compiles/renders CV. The AudioRuntime itself is built in kronos-audio.
+import { exprSource } from 'runtime-audio';
 // Per-actor MIDI transport for a voice routed `transport:midi`. Consumed AS-IS from
 // the canonical runtime-MIDI package (conformité MIDI : zéro copie dans Kanopi/core —
 // la copie core `dispatcher/transports/midi.js` est supprimée). runtime-MIDI OWNS the
 // MIDI path; Kanopi only routes Kronos's per-actor events to it.
 import { MidiTransport } from 'runtime-midi';
-import { Resolver } from '../../../../core/src/dispatcher/resolver.js';
-// Scale engine (core): turns a `ratios`/`compose`+`junction` scale name into a
-// concrete ratio list (the only pitch maths — see PITCH.md 6-layer model).
-import { resolveScaleRatios } from '../../../../core/src/dispatcher/scale.js';
+// Pitch resolution (token → Hz) lives in the SHARED module `@kronos/core/pitch`
+// (convergence hauteurs, RA-6). Kanopi passes only DATA: the scene declarations
+// (alphabet/@tuning + tokens for the western/solfège sniff) and the `bpscript/lib`
+// catalogs. Kanopi RESOLVES NOTHING — it consumes the `PitchResolver` makeResolver
+// builds. The host's former 6 resolver functions are GONE (one of the «3 copies»).
+import { makeResolver, type SceneContext, type PitchLib, type PitchResolver } from '@kronos/core';
 // Tree-derived dispatch events (M5+ multi-actor refacto): flatten BPx's
 // `derive({ output: 'complete' }).tree` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
-import { treeToDispatchEvents, resolveCvControls, type DispatchEvent } from './tree-dispatch';
+import { treeToDispatchEvents, type DispatchEvent } from './tree-dispatch';
 // Kronos owns CV COMPOSITION (frontier R2 / migration #8): `buildModulators` fuses
 // the scene's `cv … : mod.x(…)` declarations with the `mod` library into the modulator
 // registry, and `composeTreeModulations` walks the realized tree to produce one
@@ -122,189 +127,29 @@ import { headSectionNamesFromAst, sectionLeafCounts } from './head-sections-ast'
  * The slice scopes to ONE engine instance + ONE transport per file.
  */
 
-// Western 12-TET resolver config. BP3 grammars in the slice use pitch names
-// like `C4 D4 E4`; the resolver needs an alphabet + tuning + temperament to
-// turn them into frequencies. This is a fixed default for the slice (the
-// language's own alphabet/scale system is a SECONDARY concern).
-const TWELVE_TET = Array.from({ length: 12 }, (_, i) => Math.pow(2, i / 12));
-function makeWesternResolver(): Resolver {
-  return new Resolver({
-    alphabet: { notes: ['C', 'D', 'E', 'F', 'G', 'A', 'B'], alterations: { '#': 1, b: -1 } },
-    octaves: {
-      position: 'suffix',
-      separator: '',
-      registers: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
-      default: 4
-    },
-    tuning: { degrees: [0, 2, 4, 5, 7, 9, 11], baseHz: 440, baseNote: 'A', baseRegister: 4 },
-    temperament: { divisions: 12, period_ratio: 2, ratios: TWELVE_TET }
-  });
-}
-
-// Solfège 12-TET resolver — same grid, do/re/mi note names. Many BP3 grammars
-// (Bol Processor heritage) emit French solfège terminals (`do3`, `fa#3`,
-// `sol4`); the western resolver leaves those untouched, so a sealed transpose
-// would never reach their pitch. Same degrees as western (do=la-relative C),
-// la = A440. This is a BP3-naming concern kept in the BP3 adapter, NOT woven
-// into the clean core resolver (guardrail: ISO-BP3 stays isolated).
-const SOLFEGE_NOTES = ['do', 're', 'mi', 'fa', 'sol', 'la', 'si'];
-function makeSolfegeResolver(): Resolver {
-  return new Resolver({
-    alphabet: { notes: SOLFEGE_NOTES, alterations: { '#': 1, b: -1 } },
-    octaves: {
-      position: 'suffix',
-      separator: '',
-      registers: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
-      default: 4
-    },
-    tuning: { degrees: [0, 2, 4, 5, 7, 9, 11], baseHz: 440, baseNote: 'la', baseRegister: 4 },
-    temperament: { divisions: 12, period_ratio: 2, ratios: TWELVE_TET }
-  });
-}
-
-// Pick the resolver matching the grammar's note naming. BP3 grammars are either
-// western (`C4`) or solfège (`do4`); a derivation is homogeneous, so the first
-// pitched terminal decides. Solfège names are checked longest-first so `sol`
-// isn't shadowed by `so`/`s`. Falls back to western (the slice default).
-function pickResolver(tokens: { token: string }[]): Resolver {
-  const solfegeHead = /^(do|re|mi|fa|sol|la|si)([#b]|\d|$)/;
-  for (const t of tokens) {
-    if (solfegeHead.test(t.token)) return makeSolfegeResolver();
-    if (/^[A-G]([#b]|\d|$)/.test(t.token)) return makeWesternResolver();
-  }
-  return makeWesternResolver();
-}
-
-// Minimal shapes of the bpscript catalogs this adapter reads (they carry more
-// fields; only what the Resolver / scale engine needs is typed). The 6-layer
-// model (PITCH.md): alphabets, octaves, temperaments, scales, tunings (bindings).
-//
-// A tuning binding carries the `temperament` it pairs with, the `alphabet` it
-// belongs to, and either `degrees`/`ascending` (western mode) or a `scale`
-// reference. A scales entry carries `ratios`, `compose`+`junction`, OR
-// `degrees` — never two at once (PITCH.md «une représentation»).
-type TuningEntry = {
-  temperament?: string;
-  alphabet?: string;
-  scale?: string;
-  degrees?: number[];
-  ascending?: number[];
-  baseHz?: number;
-  baseNote?: string;
-  baseRegister?: number;
+// The 5 shared pitch catalogs (`bpscript/lib`), passed AS DATA to `makeResolver`
+// (`@kronos/core/pitch`). Kanopi embeds no resolution logic — it hands these +
+// the scene declarations to the shared builder and consumes the `PitchResolver`.
+// The catalogs carry doc-only `_comment` keys, so cast through `unknown`.
+const PITCH_LIB: PitchLib = {
+  alphabets: alphabetsJson as unknown as PitchLib['alphabets'],
+  tunings: tuningsJson as unknown as PitchLib['tunings'],
+  temperaments: temperamentsJson as unknown as PitchLib['temperaments'],
+  scales: scalesJson as unknown as PitchLib['scales'],
+  octaves: octavesJson as unknown as PitchLib['octaves']
 };
-type AlphabetEntry = { notes?: string[]; octaves?: string };
-// The catalogs carry doc-only `_comment` keys (arrays), so a direct cast to the
-// typed record doesn't structurally overlap — go through `unknown` (the catalogs
-// are read-only data, validated at use).
-const ALPHABETS = alphabetsJson as unknown as Record<string, AlphabetEntry | undefined>;
-const TUNINGS = tuningsJson as unknown as Record<string, TuningEntry | undefined>;
-const TEMPERAMENTS = temperamentsJson as unknown as Record<string, unknown>;
-const SCALES = scalesJson as unknown as Record<string, unknown>;
-const OCTAVES = octavesJson as unknown as Record<string, unknown>;
 
-// When a scene declares an alphabet but NO `@tuning`, pick the binding whose
-// `alphabet` field matches (each alphabet has one in tunings.json). Used for
-// bohlen-pierce.bps (→ bohlen_pierce_just) and gamelan.bps (→ gamelan_slendro).
-function defaultBindingKey(alphabetKey: string): string | undefined {
-  for (const [key, t] of Object.entries(TUNINGS)) {
-    if (key.startsWith('_') || !t) continue;
-    if (t.alphabet === alphabetKey) return key;
-  }
-  return undefined;
-}
-
-// Build the Resolver from a tuning BINDING (degrees + temperament grid). This is
-// the classic western/indian/gamelan path — the binding indexes a temperament's
-// fixed ratio grid via its `degrees`. Returns null if the temperament is absent.
-function resolverFromBinding(
-  alphabet: AlphabetEntry,
-  octaves: unknown,
-  tuning: TuningEntry
-): Resolver | null {
-  const temperament = tuning.temperament ? TEMPERAMENTS[tuning.temperament] : undefined;
-  if (!temperament) return null;
-  return new Resolver({ alphabet, tuning, temperament, octaves });
-}
-
-// Build the Resolver from a SCALE that carries intrinsic intonation (`ratios`)
-// or is a composed maqam (`compose`+`junction`). The core scale engine computes
-// the concrete ratios; the resolver then runs in table mode over them, with the
-// alphabet's notes laid on consecutive degrees [0..N-1] and the scale's period
-// (last ratio, octave by default) as `period_ratio`. `binding` is the optional
-// tunings.json entry that supplies baseHz/baseNote/baseRegister; sensible
-// defaults (440 / first note / register 4) apply when none is given.
-function resolverFromScale(
-  alphabet: AlphabetEntry,
-  octaves: unknown,
-  scaleName: string,
-  binding: TuningEntry | undefined
-): Resolver | null {
-  const ratios = resolveScaleRatios(scaleName, SCALES);
-  if (!ratios || ratios.length === 0) return null;
-  const notes = alphabet.notes ?? [];
-  const period = ratios[ratios.length - 1] || 2;
-  const degrees = notes.map((_, i) => i);
-  const tuning = {
-    degrees,
-    baseHz: binding?.baseHz ?? 440,
-    baseNote: binding?.baseNote ?? notes[0],
-    baseRegister: binding?.baseRegister ?? 4
-  };
-  const temperament = { divisions: ratios.length, period_ratio: period, ratios };
-  return new Resolver({ alphabet, tuning, temperament, octaves });
-}
-
-// Build a Resolver from the bpscript catalogs for a scene's declared
-// `@alphabet`/`@tuning` (PITCH.md 6-layer model). Resolution of the `@tuning`
-// reference Y:
-//   1. Y is a BINDING (tunings.json) → degrees+temperament path (western, gamelan…),
-//      OR a binding referencing a `scale` → scale-ratio path with that binding's base.
-//   2. Y is a GAMME (scales.json) with `ratios`/`compose` → scale-ratio path with
-//      the scale-ratio defaults (440 / first note of the alphabet / register 4).
-//   3. No `@tuning` declared → the alphabet's default binding (bohlen-pierce, gamelan).
-// The catalogs are consumed AS-IS; the only maths (compose+junction) lives in the
-// core scale engine. Returns the resolver + the alphabet's sounding note set, or
-// null when the alphabet is absent or the scale isn't resolvable (caller then
-// keeps the western/solfège sniffing fallback).
-export function catalogResolver(
-  alphabetKey: string | undefined,
-  declaredTuning: string | undefined
-): { resolver: Resolver; notes: Set<string> } | null {
-  if (!alphabetKey) return null;
-  const alphabet = ALPHABETS[alphabetKey];
-  if (!alphabet?.notes?.length) return null;
-  const octaves = OCTAVES[alphabet.octaves ?? 'western'] ?? OCTAVES.western;
-
-  let resolver: Resolver | null = null;
-  if (declaredTuning) {
-    const binding = TUNINGS[declaredTuning];
-    if (binding) {
-      // A binding either references a scale (scale-ratio path with its base) or
-      // carries degrees directly (degrees+temperament path).
-      resolver = binding.scale
-        ? resolverFromScale(alphabet, octaves, binding.scale, binding)
-        : resolverFromBinding(alphabet, octaves, binding);
-    } else if (SCALES[declaredTuning]) {
-      // Not a binding → a scale referenced directly (`@tuning:maqam_rast`). No
-      // binding supplies the reference pitch, so the scale-ratio defaults apply
-      // (440 / first note of the alphabet / register 4) — exactly the PITCH.md
-      // oracle for maqam_rast on the arabic alphabet (do4 = 440).
-      resolver = resolverFromScale(alphabet, octaves, declaredTuning, undefined);
-    }
-  } else {
-    // No tuning declared → the alphabet's default binding (bohlen-pierce, gamelan).
-    const defKey = defaultBindingKey(alphabetKey);
-    const binding = defKey ? TUNINGS[defKey] : undefined;
-    if (binding) {
-      resolver = binding.scale
-        ? resolverFromScale(alphabet, octaves, binding.scale, binding)
-        : resolverFromBinding(alphabet, octaves, binding);
-    }
-  }
-
-  if (!resolver) return null;
-  return { resolver, notes: new Set(alphabet.notes) };
+// Build the scene's pitch resolver from its declarations (DATA only). `tokens`
+// feeds the western/solfège sniff when no catalog alphabet is declared. The whole
+// 6-layer resolution (western/solfège/binding/scale/catalog) is the shared
+// builder's — Kanopi just supplies the context.
+function sceneResolverFor(
+  alphabet: string | undefined,
+  tuning: string | undefined,
+  tokens: readonly { token: string }[]
+): PitchResolver {
+  const ctx: SceneContext = { alphabet, tuning, tokens };
+  return makeResolver(ctx, PITCH_LIB);
 }
 
 // A front-end turns language source into a derivable BP3 SceneAST + parse
@@ -1229,6 +1074,9 @@ let onExprSource: ExprSource | undefined;
 export function setExprSource(fn: ExprSource | undefined): void {
   onExprSource = fn;
 }
+// Wire runtime-audio's factory at module load: from now on Kronos composes `expr`
+// curves through it (Kanopi still never compiles/renders — it only passes it on).
+setExprSource(exprSource as unknown as ExprSource);
 
 // Live arm/disarm handle for ONE orchestrated actor's voice. Registered per
 // (file, actor) when an orchestrator evaluates; the core reaches it by actor
@@ -1712,11 +1560,10 @@ function makeBpxAdapter(
         )) {
           (leaf as { __cvBindings?: ModulationBinding[] }).__cvBindings = bindings;
         }
-        // Resolve each subject-driven value into the uniform `{__cv:true, …}` descriptor
-        // the WebAudio transport reads — mutates leaf.controls in place, reading the SAME
-        // facets as the Kronos CV bindings above. Runs unconditionally (the WebAudio synth
-        // Kronos drives consumes these descriptors).
-        resolveCvControls(derived.tree, nameOf, new Set(Object.keys(modulatorsFromAst(ast))));
+        // CV is composed by Kronos (the bindings above, carried on `content.modulations`)
+        // and RENDERED by the runtime-audio AudioRuntime. The legacy `resolveCvControls`
+        // (which stamped `{__cv}` descriptors for the now-removed internal WebAudio synth)
+        // is GONE — Kanopi neither resolves nor renders CV.
         rawTree = derived.tree;
         tokens = derived.tokens.filter((t) => t.type !== 'control');
         tree = derived.tree as unknown as ProductionTree;
@@ -1774,7 +1621,6 @@ function makeBpxAdapter(
           )) {
             (leaf as { __cvBindings?: ModulationBinding[] }).__cvBindings = bindings;
           }
-          resolveCvControls(rderived.tree, rNameOf, new Set(Object.keys(modulatorsFromAst(ast))));
           const rnames = buildSymbolNames(rbpx, rderived.tree);
           // Refresh the STRUCTURE view so it shows THIS cycle's variation — the
           // re-derive otherwise only reloads the dispatcher (audio re-rolls) and
@@ -2002,7 +1848,7 @@ function makeBpxAdapter(
         const da = dispatcher as unknown as {
           setActors(t: unknown): void;
           setActorTransport(actor: string, transport: string): void;
-          setActorResolver(actor: string, resolver: Resolver): void;
+          setActorResolver(actor: string, resolver: PitchResolver): void;
         };
         da.setActors(orchestration.actorTable);
         // Scene-level resolver + sound predicate (the mono concerns, now universal so
@@ -2012,27 +1858,22 @@ function makeBpxAdapter(
         // sniff stays. `soundsFn` decides play-vs-skip per symbol — a note OR a
         // front-end sound assignment sounds, everything else is skipped (it still
         // shows in the Text panel's tree view).
-        const sceneCatalog = catalogResolver(declaredAlphabet, declaredTuning);
+        // `soundsFn` decides play-vs-skip per symbol: a note OR a front-end sound
+        // assignment sounds. The non-western catalog note-set is GONE with the host
+        // resolvers (non-western sounding is PARKED — it resolves when `sounds` moves
+        // out of Kanopi); western/front-end symbols are unaffected (`isNoteName`).
         const sounding = new Set(soundingSymbols ?? []);
-        if (sceneCatalog) for (const n of sceneCatalog.notes) sounding.add(n);
-        // Each actor's own alphabet contributes its catalog notes too, so a non-western
-        // actor (gamelan/bohlen) sounds (its tokens aren't western note names — without
-        // this `soundsFn` would mark them non-sounding rests).
-        for (const actor of orchestration.actors) {
-          const c = catalogResolver(actor.alphabet, declaredTuning);
-          if (c) for (const n of c.notes) sounding.add(n);
-        }
         const soundsFn = (token: string) => isNoteName(token) || sounding.has(token);
-        const sceneResolver = sceneCatalog ? sceneCatalog.resolver : pickResolver(tokens);
-        // Per-actor resolver: an actor's own alphabet wins (catalog for bohlen/gamelan,
-        // else western/solfège); the `default` actor (no `@actor`) inherits the scene
-        // resolver. The shared WebAudio transport's BASE resolver is the scene one, so
-        // an event with NO `payload.actor` (the mono/default case) still resolves right.
-        const resolverFor = (alphabet: string): Resolver =>
-          catalogResolver(alphabet, declaredTuning)?.resolver ??
-          (alphabet === 'solfège' ? makeSolfegeResolver() : makeWesternResolver());
-        const webaudio = new WebAudioTransport(ctx, { resolver: sceneResolver });
-        let webaudioAdded = false;
+        // Scene pitch resolver from the SHARED builder (`@kronos/core/pitch`) — DATA in,
+        // `PitchResolver` out. The `default` actor (no `@actor`) inherits this; each real
+        // actor gets one for its own alphabet. Kanopi resolves nothing itself.
+        const sceneResolver = sceneResolverFor(declaredAlphabet, declaredTuning, tokens);
+        const resolverFor = (alphabet: string): PitchResolver =>
+          sceneResolverFor(alphabet, declaredTuning, tokens);
+        // AUDIO output is the runtime-audio AudioRuntime, built by `startKronosAudio`
+        // (it needs the shared clock for CV) and registered there as the 'webaudio'
+        // transport. Here we only NAME each audio actor's transport; MIDI stays a
+        // dispatcher transport (no clock needed).
         let midi: InstanceType<typeof MidiTransport> | undefined;
         for (const actor of orchestration.actors) {
           const resolver = resolverFor(actor.alphabet);
@@ -2048,10 +1889,6 @@ function makeBpxAdapter(
             }
             da.setActorTransport(actor.name, 'midi');
           } else if (device.type === 'audio') {
-            if (!webaudioAdded) {
-              dispatcher.addTransport('webaudio', webaudio);
-              webaudioAdded = true;
-            }
             da.setActorTransport(actor.name, 'webaudio');
           } else {
             // video/dmx/osc: compat passed but the dispatcher transport isn't
@@ -2148,6 +1985,10 @@ function makeBpxAdapter(
             >[0]['dispatcher'],
             startSceneSec: startOffsetSec,
             soundsFn,
+            // The shared scene pitch resolver → the runtime-audio AudioRuntime startKronosAudio
+            // builds as the AUDIO output (token→Hz + CV render). Per-actor alphabets share the
+            // scene resolver for V1 (mono/single-alphabet); MIDI keeps its own per-actor resolver.
+            pitch: sceneResolver,
             // Model C — PRODUCE/LOAD builds + persists the handle WITHOUT playing it (stopped,
             // silent); the first Play `replay`s it (0 re-derivation). A STEP overrides this.
             buildOnly,

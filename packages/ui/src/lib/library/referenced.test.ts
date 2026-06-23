@@ -14,19 +14,17 @@ a -> do re mi`;
     expect(libs).toContainEqual({ type: 'tuning', typeLabel: 'tuning', name: 'maqam_rast' });
   });
 
-  it('reads scale, octaves, sound and the audio-bank library table', () => {
+  it('reads scale, octaves and the audio-bank library table', () => {
     const code = `@core
 @library.strudel "dirt-samples"
 @scale:bilaval
 @octaves.western
-@sound.tabla_perc
 
 S -> a
 a -> \`strudel: s("bd sd")\``;
     const libs = referencedLibraries('mix.bps', code);
     expect(libs).toContainEqual({ type: 'scale', typeLabel: 'scale', name: 'bilaval' });
     expect(libs).toContainEqual({ type: 'octaves', typeLabel: 'octaves', name: 'western' });
-    expect(libs).toContainEqual({ type: 'sound', typeLabel: 'sound', name: 'tabla_perc' });
     expect(libs).toContainEqual({
       type: 'audio-bank',
       typeLabel: 'audio bank',
