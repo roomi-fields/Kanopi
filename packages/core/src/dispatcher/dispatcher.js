@@ -10,9 +10,6 @@
  * in random mode). The live coder can swap the grammar between cycles.
  */
 
-import { Clock } from './clock.js';
-import { MapEngine } from './map-engine.js';
-
 /**
  * Coerce a leaf's resolved controls to runtime types. BPx delivers control values
  * VERBATIM (`vel:'80'` as a string, `wave:'sawtooth'` as a string) — type
@@ -37,7 +34,6 @@ export class Dispatcher {
    */
   constructor(audioCtx) {
     this.audioCtx = audioCtx;
-    this.clock = new Clock(audioCtx);
     this.transports = {};     // name → Transport instance
     this.events = [];         // sorted by startSec
     this._cursor = 0;
@@ -56,10 +52,6 @@ export class Dispatcher {
     this.controlState = {};
     this._controlStack = []; // for scoped () controls with start/end pairs
 
-    // Flag state — BP3 K-parameters (separate from runtime controlState)
-    this.flagState = {};       // { flagName: value } — synced from BP3 after produce
-    this._flagNames = [];      // ordered flag names from BP3
-
     // Actor system: per-actor resolver and transport. Routing keys on each
     // event's OWN `payload.actor` (carried off the BPx tree) — there is no flat
     // symbol→actor map: a terminal shared by two actors routes by occurrence,
@@ -77,19 +69,6 @@ export class Dispatcher {
     // actors. The UI's Actors panel toggles this per actor while the transport
     // keeps running. Empty by default → every declared actor sounds.
     this._mutedActors = new Set(); // actorName(s) whose notes are currently silenced
-
-    // I/O mapping via MapEngine
-    this._mapEngine = new MapEngine({
-      getFlagState: () => this.flagState,
-      setFlag: (name, value) => this._setFlag(name, value),
-      execSys: (scene, cmd, value) => this.execSysCommand(scene, cmd, value),
-      emitTrigger: (name, value) => this._emitTrigger(name, value),
-      emitCC: (cc, value, ch) => this._emitCC(cc, value),
-      emitOSC: (addr, value) => this._emitOSC(addr, value),
-    });
-
-    // Scene management (set externally by SceneManager)
-    this._sceneInstances = {};  // sceneName → { dispatcher, flagState, ... }
 
     // Modulator registry (name → { objectType, params, curve }), forwarded to
     // transports for per-note CV. Stored so a transport added AFTER setModulators
@@ -161,40 +140,6 @@ export class Dispatcher {
   setActorMuted(actorName, muted) {
     if (muted) this._mutedActors.add(actorName);
     else this._mutedActors.delete(actorName);
-  }
-
-  /**
-   * Resolve the destination transport for a terminal, UNIFORMLY for every
-   * grammar. The play-vs-skip split is BP3-specific (note-name OR sound
-   * assignment), supplied by the adapter as `_soundsFn`; the dispatcher just
-   * honours it. A token that does NOT sound is MUTE: it is NOT routed anywhere
-   * (return null → the caller skips it). Text is no longer a routed output —
-   * the symbolic readout is a VIEW of the production tree, not a transport. A
-   * sounding token → its actor transport (`_transportForActor`); no actor (mono
-   * / `.gr` / legacy) → 'default'.
-   * @param {string} token
-   * @param {string|undefined|null} actorName
-   * @returns {Transport|null}
-   */
-  _transportForTerminal(token, actorName) {
-    if (this._soundsFn && !this._soundsFn(token)) return null;
-    return this._transportForActor(actorName);
-  }
-
-  /**
-   * Resolve the destination transport for a SOUNDING note, by its actor: an
-   * actor's declared transport, else 'default', else the first registered one. A
-   * note WITHOUT an actor (mono / `.gr` / legacy) routes to 'default' — there is
-   * no flat symbol→actor map to consult.
-   * @param {string|undefined|null} actorName
-   * @returns {Transport|null}
-   */
-  _transportForActor(actorName) {
-    if (actorName && this._actors[actorName]?.transportName) {
-      const t = this.transports[this._actors[actorName].transportName];
-      if (t) return t;
-    }
-    return this.transports['default'] || Object.values(this.transports)[0] || null;
   }
 
   /**
@@ -398,63 +343,9 @@ export class Dispatcher {
     return last.startSec + last.durSec;
   }
 
-  /**
-   * Start playback.
-   * @param {Function} [onEnd] - called when playback ends (non-loop) or on error
-   * @param {Object} [options]
-   * @param {boolean} [options.loop=false] - loop the sequence
-   * @param {Function} [options.reDerive] - called at end of each cycle, must return timed tokens array
-   */
-  start(onEnd, { loop = false, reDerive = null, startOffsetSec = 0, reRandom = false } = {}) {
-    if (this.events.length === 0) return;
-    this._onEnd = onEnd;
-    this._cursor = 0;
-    this._running = true;
-    this._loopOffset = 0;
-    this.loop = loop;
-    // `_reDerive` is the re-derivation function (built whenever looping); `_reRandom`
-    // is a LIVE flag that decides whether each cycle actually re-rolls. Both are
-    // settable while playing (setLoop/setReRandom) so toggling re-random/loop takes
-    // effect at the next cycle without re-evaluating the scene.
-    this._reDerive = reDerive;
-    this._reRandom = reRandom;
-    this.controlState = { ...this._controlDefaults };
-    this._fluxByActor = {};
-
-    // Resume from a musical offset (STEP → Play continues from the stepped beat,
-    // not from the top): skip the events BEFORE the offset on this first cycle so
-    // they don't all fire at once, and anchor the musical clock there so the first
-    // kept event lands ~now and the beat display starts at that position. The loop
-    // still replays the FULL cycle afterwards (`_nextCycle` resets the cursor).
-    if (startOffsetSec > 0) {
-      while (
-        this._cursor < this.events.length &&
-        this.events[this._cursor].startSec < startOffsetSec
-      ) {
-        this._cursor++;
-      }
-    }
-
-    // Wire beat/bar events → MapEngine
-    this.clock.setOnBeat((beat, bar) => {
-      this._mapEngine.routeFromSysEvent('beat', beat);
-      this._mapEngine.routeFromSysEvent('bar', bar);
-    });
-    if (this._tempo) this.clock.retune(this._tempo);
-
-    if (this.audioCtx.state === 'suspended') {
-      this.audioCtx.resume();
-    }
-
-    this.clock.start((scheduleUntil) => {
-      this._schedule(scheduleUntil);
-    }, startOffsetSec);
-  }
-
   stop() {
     this._running = false;
     this.loop = false;
-    this.clock.stop();
     for (const transport of Object.values(this.transports)) {
       transport.close();
     }
@@ -467,10 +358,7 @@ export class Dispatcher {
    * @param {number} bpm
    */
   setDerivedTempo(bpm) {
-    if (bpm > 0) {
-      this._derivedTempo = bpm;
-      this.clock.setDerivedTempo(bpm);
-    }
+    if (bpm > 0) this._derivedTempo = bpm;
   }
 
   /**
@@ -483,7 +371,6 @@ export class Dispatcher {
   setLiveTempo(bpm) {
     if (!(bpm > 0)) return;
     this._tempo = bpm;
-    this.clock.retune(bpm);
   }
 
   /** LIVE toggle: whether each loop cycle re-rolls the grammar (re-random). Takes
@@ -497,241 +384,6 @@ export class Dispatcher {
    *  while playing lets the current cycle finish, then stops. */
   setLoop(on) {
     this.loop = !!on;
-  }
-
-  /**
-   * The dispatcher's CURRENT musical position as transport beats (requirement B),
-   * for the display clock. Beats advance at the LIVE tempo and stay phase-locked
-   * to the heard audio (same anchor as scheduling), including after a live
-   * retune. Returns null when not running or no derive tempo is known.
-   * @param {number} [beatsPerBar]
-   * @returns {{ beatsTotal: number, bar: number, beat: number, phase: number }|null}
-   */
-  musicalBeatPosition(beatsPerBar = this.clock.beatsPerBar) {
-    if (!this._running) return null;
-    const derivedTempo = this.clock._derivedTempo || this.clock.tempo;
-    if (!(derivedTempo > 0)) return null;
-    const musicalSec = this.clock.musicalNow(this.audioCtx.currentTime);
-    const beatsTotal = Math.max(0, musicalSec * derivedTempo / 60);
-    const bpb = beatsPerBar || 4;
-    const beatAbs = Math.floor(beatsTotal);
-    return {
-      beatsTotal,
-      bar: 1 + Math.floor(beatAbs / bpb),
-      beat: beatAbs % bpb,
-      phase: beatsTotal - beatAbs,
-    };
-  }
-
-  /**
-   * Hot-swap: replace the grammar for the next loop cycle.
-   * In loop mode, the new reDerive function will be called at the next cycle boundary.
-   * Outside loop mode, restarts with new tokens immediately.
-   */
-  hotSwap(timedTokens, reDerive) {
-    if (this.loop && reDerive) {
-      // Just swap the re-derive function — next cycle will use it
-      this._reDerive = reDerive;
-    } else {
-      // Immediate swap: reload and reset cursor
-      const currentTime = this.clock.now;
-      this.load(timedTokens);
-      this._loopOffset = currentTime;
-    }
-  }
-
-  /** Internal: schedule events up to the given absolute audio time */
-  _schedule(scheduleUntil) {
-    while (this._cursor < this.events.length) {
-      const evt = this.events[this._cursor];
-      // Anchored tempo map: a musical event time → its audio time at the live
-      // rate (requirement A). Durations sent to transports scale by the same
-      // rate so a note's audible length tracks the tempo.
-      const absTime = this.clock.audioTimeFor(this._loopOffset + evt.startSec);
-      const rate = this.clock.rate;
-
-      if (absTime > scheduleUntil) break;
-
-      if (evt.isControl) {
-        // A tree-derived control carries its own marker payload / nature → route
-        // it per-actor (`_applyControlNode`). A flat `load()` control token (no
-        // payload) is the legacy `_xxx(value)` string form → `_applyControl`.
-        if (evt.payload || evt.nature) {
-          this._applyControlNode(evt, absTime);
-        } else {
-          this._applyControl(evt.token);
-        }
-      } else if (!evt.isSilence && !evt.isProlongation && evt.durSec > 0) {
-        // Backtick voice (lot 4): a `BT<interp><id>` terminal references foreign
-        // code. Fire its interpreter sink at the scheduled time and DO NOT route
-        // it to an audio/text transport (it isn't a note or a symbol). The sink
-        // (injected by bp3.ts) looks up the code and evals it on the matching
-        // adapter. NOTE: in loop mode a BT token re-fires every cycle, so the
-        // engine is re-eval'd each loop — acceptable for the base increment.
-        if (this._backtickSink && this._isBacktick && this._isBacktick(evt.token)) {
-          this._backtickSink(evt.token, {
-            startSec: this._loopOffset + evt.startSec,
-            durSec: evt.durSec,
-            absTime,
-          });
-          this._cursor++;
-          continue;
-        }
-
-        // Scene terminal — launch child scene instead of routing to transport
-        // Rule: parent always controls the envelope. Child @duration is ignored when nested.
-        if (this._sceneManager && this._sceneManager.isSceneTerminal(evt.token)) {
-          this._sceneManager.startScene(evt.token, absTime, evt.durSec, this.flagState);
-          this._cursor++;
-          continue;
-        }
-
-        // Unified payload routing: a note carrying its OWN `payload.actor` (off
-        // the tree) routes by actor — distinct transports for a shared terminal,
-        // per-actor flux + occurrence override (`_sendActorNote`). Checked FIRST
-        // and routed UNCONDITIONALLY: the play-vs-skip predicate (`_soundsFn`) is
-        // a MONO-actor BP3 concern (note-name OR sound assignment) and must NOT
-        // gate a declared actor's notes — they sound through their actor's output.
-        const actor = evt.payload?.actor ?? null;
-        if (actor) {
-          this._sendActorNote(evt, absTime);
-          this._cursor++;
-          continue;
-        }
-
-        // No-actor terminal (mono BP3): play-vs-skip. A token the predicate marks
-        // MUTE is simply NOT PLAYED (no audio, no text transport — the symbolic
-        // readout is a view of the production tree, not a routed output). Decided
-        // per token, so a mixed grammar voices its sounding symbols and skips the rest.
-        if (this._soundsFn && !this._soundsFn(evt.token)) {
-          this._cursor++;
-          continue;
-        }
-
-        // No-actor terminal: resolve the transport (null when muted → skipped).
-        const transport = this._transportForTerminal(evt.token, null);
-
-        if (transport) {
-          // Fold the per-token runtime payload over the running controlState
-          // (transpose stacks, vel/chan override). A sealed vel:0 mutes the
-          // terminal — native silences it, so we emit nothing for this token.
-          const eff = this._effectiveControls(evt.rq);
-          if (eff.muted) {
-            this._cursor++;
-            continue;
-          }
-
-          // Symbolic pitch operations: keyxpand → rotate (degree) → transpose
-          // (grid). A no-actor note uses the global resolver.
-          let token = evt.token;
-          const resolver = this._resolver || null;
-          if (resolver) {
-            if (this.controlState.keyxpand && this.controlState.keyxpand !== '0,1') {
-              const parts = String(this.controlState.keyxpand).split(',');
-              const pivot = parts[0]?.trim();
-              const factor = parseFloat(parts[1]);
-              if (pivot && !isNaN(factor)) {
-                token = resolver.keyxpandToken(token, pivot, factor);
-              }
-            }
-            if (this.controlState.rotate) {
-              token = resolver.rotateToken(token, this.controlState.rotate);
-            }
-            if (eff.transpose) {
-              token = resolver.transposeToken(token, eff.transpose);
-            }
-          }
-
-          // Resolved non-temporal controls (wave/vel/pan/…) ride on the leaf's
-          // CANONICAL `controls` channel (BPx's resolveControls). Spread them over
-          // controlState so a mono terminal voices its own waveform/velocity — the
-          // actor path (`_sendActorNote`) does the same. Verbatim values → coerce
-          // numeric strings; an override `vel` wins over the E-016 sealed vel.
-          const override = coerceControlValues(evt.controls);
-          const velRaw = typeof override.vel === 'number' ? override.vel : eff.vel;
-
-          transport.send({
-            token,
-            startSec: this._loopOffset + evt.startSec,
-            durSec: evt.durSec * rate,
-            ...this.controlState,
-            ...override,
-            ...(eff.chan !== undefined ? { chan: eff.chan } : {}),
-            velocity: velRaw / 127,
-          }, absTime);
-        }
-      }
-
-      this._cursor++;
-    }
-
-    // End of sequence
-    if (this._cursor >= this.events.length && this._running) {
-      const cycleEnd = this.clock.audioTimeFor(this._loopOffset + this.duration);
-      const remaining = (cycleEnd - this.audioCtx.currentTime) * 1000; // ms
-
-      if (remaining <= this.clock.lookahead * 1000) {
-        if (this.loop) {
-          this._nextCycle();
-        } else {
-          // Schedule end callback after remaining time
-          this.stop();
-          const onEnd = this._onEnd;
-          if (onEnd) {
-            setTimeout(() => onEnd(), Math.max(0, remaining));
-          }
-        }
-      }
-    }
-  }
-
-  /** Start the next loop cycle */
-  _nextCycle() {
-    this._loopOffset += this.duration;
-    this.controlState = { ...this._controlDefaults };
-    this._fluxByActor = {};
-
-    // Re-derive: call the grammar again for a NEW sequence (re-random per cycle).
-    // The re-derive function may return EITHER the tree-derived dispatch events
-    // (the `loadEvents` shape: each carries its own `payload.actor`/`rq`/`nature`,
-    // used by every grammar since the M5+ refacto) OR the legacy flat timed-token
-    // shape (`{ token, start, end }`). We detect by the presence of `startSec`:
-    // tree events are already in seconds and must reload through `loadEvents` so
-    // actor routing survives the re-derivation; flat tokens reload through the
-    // legacy in-place map below. Either way `_loopOffset` is preserved so the new
-    // cycle starts exactly where this one ended.
-    if (this._reDerive && this._reRandom) {
-      const next = this._reDerive();
-      if (next && next.length > 0 && next[0] && next[0].startSec !== undefined) {
-        const offset = this._loopOffset;
-        this.loadEvents(next);
-        this._loopOffset = offset; // loadEvents zeroes it — restore the cycle offset
-        return;
-      }
-      const newTokens = next;
-      if (newTokens && newTokens.length > 0) {
-        // Reload events without resetting loopOffset
-        this.events = newTokens.map(t => {
-          const evt = {
-            token: t.token,
-            startSec: t.start / 1000,
-            durSec: Math.max(0, (t.end - t.start)) / 1000,
-            isControl: t.token.startsWith('_'),
-            isSilence: t.token === '-',
-            isProlongation: t.token === '_',
-          };
-          if (t.label) evt.label = t.label;
-          if (t.runtimeQualifiers) evt.rq = t.runtimeQualifiers;
-          return evt;
-        }).sort((a, b) => {
-          if (a.startSec !== b.startSec) return a.startSec - b.startSec;
-          const pri = (e) => (e.isControl ? 0 : 1);
-          return pri(a) - pri(b);
-        });
-      }
-    }
-
-    this._cursor = 0;
   }
 
   /** Apply a control token — _script(CTN) → look up table, or _xxx(value) */
@@ -777,142 +429,6 @@ export class Dispatcher {
     this._setControl(name, value);
   }
 
-  /**
-   * Resolve the effective controls for a terminal, folding a per-token
-   * `runtimeQualifiers` payload over the running controlState. Mirrors BPx's
-   * own MIDI emitter (`emit/midiEvents.ts`): a sealed payload overrides the
-   * running state for that one token (velocity, channel) and stacks on the
-   * grid transpose. A sealed `vel:0` means "muted" (native silences the note).
-   *
-   * @param {Object|null} rq - token.runtimeQualifiers (plain object or null)
-   * @returns {{ transpose: number, vel: number, chan: number|undefined, muted: boolean }}
-   */
-  _effectiveControls(rq) {
-    const cs = this.controlState;
-    let transpose = cs.transpose || 0;
-    let vel = cs.vel;
-    let chan = cs.chan;
-    if (rq) {
-      if (typeof rq.transpose === 'number') transpose += rq.transpose;
-      const pv = rq.vel ?? rq.velocity;
-      if (typeof pv === 'number') vel = pv;
-      if (typeof rq.chan === 'number') chan = rq.chan;
-    }
-    return { transpose, vel, chan, muted: vel === 0 };
-  }
-
-  /**
-   * Apply a tree-derived control node (M5+ payload routing). The marker payload
-   * is `{ role:'control-marker', payload:{ kind, nature, pairs:[{key,value}], flux? } }`
-   * with a typed `evt.nature` ('transport-control' | 'instant' | 'engine-control').
-   *
-   * Routing rule (per the BPx contract):
-   *  - 'engine-control': already applied by BPx on the notes → IGNORE (no double-apply).
-   *  - 'instant': zero-duration, apply ONCE to the actor's flux (a one-shot tweak).
-   *  - 'transport-control' / `flux === true`: update the actor's running flux,
-   *    applied to that actor's SUBSEQUENT notes; also emit it to the actor's
-   *    transport if it accepts control messages.
-   * The flux state is PER ACTOR (`_fluxByActor[actor]`) — never global, so actor
-   * A's vel change never bleeds onto actor B.
-   *
-   * @param {Object} evt - dispatch event (carries `.payload`, `.nature`, `.payload.actor`)
-   * @param {number} absTime - absolute audio time
-   */
-  _applyControlNode(evt, absTime) {
-    const nature = evt.nature ?? evt.payload?.payload?.nature;
-    // BPx already applied engine controls onto the notes; re-applying would
-    // double them. Drop silently.
-    if (nature === 'engine-control') return;
-
-    const actor = evt.payload?.actor;
-    const inner = evt.payload?.payload;
-    const pairs = Array.isArray(inner?.pairs) ? inner.pairs : null;
-    if (!pairs || pairs.length === 0) return;
-
-    // Per-actor flux: a control with no actor falls back to a shared bucket keyed
-    // by the empty string (mono/legacy), so it still applies to actor-less notes.
-    const key = actor ?? '';
-    const flux = this._fluxByActor[key] || (this._fluxByActor[key] = {});
-    for (const { key: k, value } of pairs) {
-      const v = typeof value === 'string' ? parseFloat(value) : value;
-      flux[k] = (typeof v === 'number' && !isNaN(v)) ? v : value;
-    }
-
-    // Emit the transport-control to the actor's transport when it can take a
-    // control message (e.g. a MIDI CC channel pressure). 'instant' tweaks the
-    // actor's flux only — there is nothing standing to emit.
-    if (nature === 'transport-control') {
-      const transport = this._transportForActor(actor);
-      if (transport && typeof transport.sendControl === 'function') {
-        transport.sendControl({ actor, pairs, ...flux }, absTime);
-      }
-    }
-  }
-
-  /**
-   * Send a tree-derived note for a specific actor (M5+ payload routing). The
-   * resolved params are: actor declaration defaults ⊕ the actor's running flux
-   * ⊕ the occurrence override (`payload.params`) ⊕ the sealed per-token E-016
-   * `runtimeQualifiers` (`evt.rq`, unchanged — left intact for note rendering).
-   *
-   * @param {Object} evt - dispatch event with `.payload.actor`
-   * @param {number} absTime
-   */
-  _sendActorNote(evt, absTime) {
-    const actor = evt.payload.actor;
-    // Disarmed actor: skip its notes (live arm/disarm) — the transport and the
-    // other actors keep playing untouched.
-    if (this._mutedActors.has(actor)) return;
-    const transport = this._transportForActor(actor);
-    if (!transport) return;
-
-    const actorDef = this._actors[actor]?.def || {};
-    const declDefaults = actorDef.params || {};
-    const transportParams = actorDef.transportParams || {};
-    const flux = this._fluxByActor[actor] || {};
-    // Resolved non-temporal controls off the leaf's CANONICAL `controls` channel
-    // (BPx resolveControls: containment ⊕ flux ⊕ note-override, precedence applied).
-    // Verbatim values → coerce numeric strings here (R2 interpretation is ours).
-    const override = coerceControlValues(evt.controls);
-
-    // actor declaration ⊕ flux ⊕ resolved controls (last wins)
-    const params = { ...declDefaults, ...flux, ...override };
-
-    // E-016 (unchanged): the sealed per-token runtimeQualifiers still fold over
-    // controlState for vel/transpose/chan. We keep that exact path for notes.
-    const eff = this._effectiveControls(evt.rq);
-    if (eff.muted) return;
-
-    // Symbolic pitch ops via the actor's resolver: keyxpand → rotate → transpose.
-    let token = evt.token;
-    const resolver = this._actors[actor]?.resolver || this._resolver || null;
-    if (resolver) {
-      if (this.controlState.keyxpand && this.controlState.keyxpand !== '0,1') {
-        const kp = String(this.controlState.keyxpand).split(',');
-        const pivot = kp[0]?.trim();
-        const factor = parseFloat(kp[1]);
-        if (pivot && !isNaN(factor)) token = resolver.keyxpandToken(token, pivot, factor);
-      }
-      if (this.controlState.rotate) token = resolver.rotateToken(token, this.controlState.rotate);
-      if (eff.transpose) token = resolver.transposeToken(token, eff.transpose);
-    }
-
-    // velocity: occurrence/flux vel wins, else the E-016 sealed vel.
-    const velRaw = (typeof params.vel === 'number') ? params.vel : eff.vel;
-
-    transport.send({
-      token,
-      startSec: this._loopOffset + evt.startSec,
-      // Live tempo map: audible length tracks the current rate (requirement A).
-      durSec: evt.durSec * this.clock.rate,
-      ...this.controlState,
-      ...params,
-      ...(eff.chan !== undefined ? { chan: eff.chan } : {}),
-      ...transportParams,  // actor transport params (e.g. ch:10) override
-      velocity: (transportParams.vel ?? velRaw) / 127,
-    }, absTime);
-  }
-
   _setControl(name, value) {
     // String values (e.g. wave type) stored as-is, numeric values parsed
     const v = parseFloat(value);
@@ -932,9 +448,6 @@ export class Dispatcher {
     if (name === 'scale') {
       this._applyScale(String(value));
     }
-
-    // Route control changes through MapEngine (flag → CC/OSC/sys)
-    this._mapEngine.routeFromFlag(name, isNaN(v) ? 0 : v);
 
     // Notify UI callback
     if (this.onControlChange) this.onControlChange(name, this.controlState[name]);
@@ -1033,223 +546,5 @@ export class Dispatcher {
     }
 
     return resolved;
-  }
-
-  // ============ I/O Mapping (@map) ============
-
-  /**
-   * Set the I/O mapping table from @map directives.
-   * @param {Array} mapTable - [{ source, arrow, target }]
-   */
-  setMapTable(mapTable) {
-    this._mapEngine.load(mapTable);
-  }
-
-  /**
-   * Set the MIDI input port for receiving CC messages.
-   * @param {MIDIInput} midiInput
-   */
-  setMidiInput(midiInput) {
-    this._mapEngine.setMidiInput(midiInput);
-  }
-
-  /**
-   * Route an incoming OSC message through the map engine.
-   * Called by an external WebSocket/OSC bridge.
-   * @param {string} address - OSC address
-   * @param {number} value
-   */
-  routeOSC(address, value) {
-    this._mapEngine.routeFromOSC(address, value);
-  }
-
-  // ============ Flag State (BP3 K-parameters) ============
-
-  /**
-   * Sync flag state from BP3 after a produce() call.
-   * Reads bp3_get_flag_state() JSON and updates this.flagState.
-   * @param {string} flagStateJSON - JSON from bp3_get_flag_state()
-   */
-  syncFlagState(flagStateJSON) {
-    try {
-      const data = typeof flagStateJSON === 'string'
-        ? JSON.parse(flagStateJSON)
-        : flagStateJSON;
-
-      if (data.names && data.flags) {
-        const prev = { ...this.flagState };
-        this._flagNames = data.names;
-        this.flagState = {};
-        for (let i = 0; i < data.names.length; i++) {
-          const name = data.names[i];
-          const value = data.flags[i] ?? 0;
-          this.flagState[name] = value;
-
-          // Route changed flags through MapEngine
-          if (prev[name] !== value) {
-            this._mapEngine.routeFromFlag(name, value);
-          }
-        }
-      }
-    } catch (e) {
-      console.warn('[dispatcher] syncFlagState parse error:', e.message);
-    }
-  }
-
-  /**
-   * Set a flag value (from MapEngine or external source).
-   * Updates flagState and routes through map entries.
-   * @param {string} name - flag name
-   * @param {number} value
-   */
-  _setFlag(name, value) {
-    const prev = this.flagState[name];
-    this.flagState[name] = value;
-    // Write to BP3 engine so next derivation sees the change
-    if (this._bp3SetFlag) {
-      this._bp3SetFlag(name, value);
-    }
-    if (prev !== value) {
-      this._mapEngine.routeFromFlag(name, value);
-    }
-  }
-
-  /**
-   * Emit a trigger event (fire-and-forget, traverses hierarchy).
-   * Triggers propagate: parent ↔ children, but NOT between siblings.
-   * @param {string} name - trigger name
-   * @param {number} [value=127]
-   */
-  _emitTrigger(name, value = 127) {
-    // Dispatch globally (external listeners, UI)
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('bpscript-trigger', {
-        detail: { name, value }
-      }));
-    }
-    // Route through MapEngine (trigger → CC/OSC/sys)
-    this._mapEngine.routeFromTrigger(name, value);
-
-    // Propagate to child scenes (parent → children)
-    for (const scene of Object.values(this._sceneInstances)) {
-      if (scene.dispatcher) {
-        scene.dispatcher._emitTrigger(name, value);
-      }
-    }
-  }
-
-  /**
-   * Poll exposed flags from child scenes.
-   * Called periodically or after child produce to sync parent's view of child state.
-   * Maps exposed child flags through parent's mapTable.
-   */
-  pollExposedFlags() {
-    if (!this._sceneManager) return;
-
-    for (const name of this._sceneManager.getSceneNames()) {
-      const exposed = this._sceneManager.getExposedFlags(name);
-      for (const [flagName, value] of Object.entries(exposed)) {
-        // Route as scoped flag: sceneName.flagName
-        this._mapEngine.routeFromFlag(`${name}.${flagName}`, value);
-      }
-    }
-  }
-
-  // ============ sys commands ============
-
-  /**
-   * Execute a sys command (play, stop, tempo, etc.).
-   * @param {string|null} scene - target scene name, null = this dispatcher
-   * @param {string} command - sys command name
-   * @param {*} [value] - optional value (e.g. tempo BPM)
-   */
-  execSysCommand(scene, command, value) {
-    // Scoped to a child scene
-    if (scene && this._sceneInstances[scene]) {
-      const child = this._sceneInstances[scene];
-      if (child.dispatcher) {
-        child.dispatcher.execSysCommand(null, command, value);
-      }
-      return;
-    }
-
-    switch (command) {
-      case 'play':
-        if (!this._running) this.start(this._onEnd, { loop: this.loop, reDerive: this._reDerive });
-        break;
-      case 'stop':
-        this.stop();
-        break;
-      case 'pause':
-        if (this._running) this.stop();
-        else this.start(this._onEnd, { loop: this.loop, reDerive: this._reDerive });
-        break;
-      case 'loop':
-        this.loop = !this.loop;
-        break;
-      case 'tempo':
-        // Value is BPM — live-retune in place (no re-derivation) and store, so a
-        // `@map tempo` knob rescales playback like the central BPM does.
-        if (value > 0) this.setLiveTempo(value);
-        break;
-      case 'produce':
-        if (this._reDerive) {
-          const newTokens = this._reDerive();
-          if (newTokens) this.load(newTokens);
-        }
-        break;
-      case 'panic':
-        this.stop();
-        for (const transport of Object.values(this.transports)) {
-          transport.close();
-        }
-        break;
-      default:
-        console.warn(`[dispatcher] unknown sys command: ${command}`);
-    }
-  }
-
-  /**
-   * Register a child scene instance (called by SceneManager).
-   * @param {string} name - scene terminal name
-   * @param {Object} instance - { dispatcher, flagState, exposeTable }
-   */
-  registerScene(name, instance) {
-    this._sceneInstances[name] = instance;
-  }
-
-  /**
-   * Set the scene manager for multi-scene support.
-   * @param {SceneManager} sceneManager
-   */
-  setSceneManager(sceneManager) {
-    this._sceneManager = sceneManager;
-  }
-
-  // ============ Output helpers ============
-
-  /**
-   * Emit a CC message via the MIDI output.
-   * @param {number} cc - CC number
-   * @param {number} value - 0-127
-   */
-  _emitCC(cc, value) {
-    const midi = this.transports['midi'];
-    if (midi?.sendCC) {
-      const channel = (this.controlState.chan || 1) - 1;
-      midi.sendCC(cc, Math.max(0, Math.min(127, Math.round(value))), channel);
-    }
-  }
-
-  /**
-   * Emit an OSC message via CustomEvent.
-   * A future WebSocket bridge can listen for these.
-   */
-  _emitOSC(address, value) {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('bpscript-osc', {
-        detail: { address, value }
-      }));
-    }
   }
 }
