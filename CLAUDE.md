@@ -134,10 +134,16 @@ fini les éditions markdown du courrier à la main. Non optionnel.
 
 - **Réveil = courrier d'abord.** À CHAQUE réveil (début de session ou ping), la **première
   action** est `~/dev/bp/hub/tour inbox`. Rien d'autre avant d'avoir lu mon courrier.
-- **Rapport avant idle.** Ne JAMAIS m'arrêter en silence. La **dernière action** avant de rendre
-  la main est un `~/dev/bp/hub/tour send architecte` qui dit soit `FINI: <quoi> + commit`, soit
-  `BLOQUÉ: <sur quoi>`. Pas de stop-hook : l'architecte pilote les réveils, l'utilisateur monitore
-  en central via la tour.
+- **Rapport avant idle — RÈGLE DURE, NON NÉGOCIABLE (violée 2×, recadrage architecte [208]).**
+  Ne JAMAIS rendre la main en silence. La **TOUTE DERNIÈRE action** de chaque tour, AVANT de
+  m'endormir, est **TOUJOURS** : `~/dev/bp/hub/tour send architecte` (`FINI: <quoi> + commit/preuve`
+  ou `BLOQUÉ: <sur quoi>`) **PUIS** `~/dev/bp/hub/tour inbox --ack` de tout courrier traité.
+  - **Committer/pousser N'EST PAS un rapport.** Un commit/push sans `tour send` derrière =
+    « endormi en silence » = VIOLATION. Le push est l'avant-dernière action, le `tour send` la dernière.
+  - Vaut même quand le `tour wake` est « sauté (architecte busy) » : le message déposé suffit, mais
+    il DOIT être déposé. « FINI mais pas reporté » n'existe pas.
+  - Pas de stop-hook : l'architecte pilote les réveils, l'utilisateur monitore via la tour. C'est à
+    MOI de ne jamais terminer un tour sans le `tour send` final.
 
 1. **Identité (1× par session)** : `export BP_AGENT=kanopi` (ou `--from kanopi` sur chaque appel ;
    l'env ne persiste pas entre commandes shell d'une session Claude).
