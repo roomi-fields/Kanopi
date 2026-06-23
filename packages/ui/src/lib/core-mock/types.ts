@@ -31,9 +31,6 @@ export interface ClockState {
 
 export interface Clock {
   readonly state: ClockState;
-  /** True only while a `startSilently()` is notifying subscribers — consumers
-   * that re-evaluate on the play edge skip the surgical manual eval. */
-  readonly silentStart: boolean;
   play(): void;
   /**
    * Start the transport WITHOUT firing the re-eval hook (onTransport). Used by a

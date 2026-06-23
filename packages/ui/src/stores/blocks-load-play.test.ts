@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { openBlocks, installBlockReplay } from './blocks.svelte';
+import { describe, it, expect } from 'vitest';
+import { openBlocks } from './blocks.svelte';
+import { playback } from './playback.svelte';
 import { workspace } from './workspace.svelte';
 import { core } from '../lib/core';
 
@@ -39,18 +40,12 @@ describe('openBlocks.blocksForFile — deterministic, not derived-list dependent
   });
 });
 
-// Re-entrance is broken AT THE ROOT (no more `_replaying` guard): a `.bps` block
-// with `@mm` re-applies its tempo to the central clock INSIDE its eval
-// (clock.setBpm → re-emit), but that re-emit never changes `playing`, so the
-// installBlockReplay subscriber — which flips its play-edge flag (`wasPlaying`)
-// BEFORE replaying — sees no fresh play edge and does NOT replay again. The
-// guarantee is now proven on the REAL subscriber, not a removed flag.
-describe('installBlockReplay — a tempo re-emit during the play-edge replay does not recurse', () => {
-  // Install the real clock subscriber ONCE (production wires it once in main.ts).
-  // Stacking it per-test would double-count the play edge.
-  beforeAll(() => installBlockReplay());
-
-  it('@mm-style clock.setBpm fired inside the replay triggers no second replay', async () => {
+// Play-from-stopped now evals the armed blocks via an EXPLICIT call
+// (`playback.play()` → `openBlocks.replayArmed()`), not a clock subscriber. The
+// living behavior (Play sounds the armed scene) must hold, and — with no
+// subscriber — a `@mm` re-emit fired inside the eval cannot re-enter the replay.
+describe('Play-from-stopped — explicit armed-block eval, runs once, no recursion', () => {
+  it('Play sounds the active scene armed blocks exactly once', async () => {
     const id = workspace.loadFiles(
       [{ path: 'reenter.strudel', contents: 'sound("bd hh")' }],
       'reenter.strudel'
@@ -60,17 +55,16 @@ describe('installBlockReplay — a tempo re-emit during the play-edge replay doe
 
     let replayCount = 0;
     const realReplay = openBlocks.replayArmed.bind(openBlocks);
-    // Simulate the `@mm` re-emit from inside the replay: a genuine tempo change
-    // re-emits the clock state synchronously, exactly as a `.bps` `@mm` eval would.
-    // If the play-edge guard failed, this re-emit would re-enter installBlockReplay
-    // and replay again (the old stack-overflow the `_replaying` flag papered over).
+    // Simulate a `.bps` `@mm` re-emit from inside the eval: a genuine tempo change
+    // re-emits the clock state synchronously. With the subscriber gone, nothing
+    // listens on that emit, so the replay cannot re-enter itself.
     openBlocks.replayArmed = async () => {
       replayCount++;
       core.clock.setBpm(replayCount % 2 === 0 ? 137 : 143); // genuine change → re-emit
     };
     try {
-      core.clock.stop(); // clean stopped→playing edge
-      core.clock.play(); // the ONE play edge → exactly one replay
+      core.clock.stop(); // ensure stopped → Play takes the from-stopped branch
+      playback.play(); // the ONE Play → exactly one explicit replay
       await Promise.resolve();
     } finally {
       openBlocks.replayArmed = realReplay;
@@ -78,11 +72,13 @@ describe('installBlockReplay — a tempo re-emit during the play-edge replay doe
       core.clock.stop();
     }
 
-    // The play edge replayed exactly once; the tempo re-emit raised no second edge.
     expect(replayCount).toBe(1);
   });
 
-  it('a surgical startSilently does NOT replay the armed set', async () => {
+  it('a surgical startSilently does NOT eval the armed set', async () => {
+    // The surgical Ctrl+Enter path starts the clock via `startSilently()` and
+    // evaluates ONLY the touched block — it must never trigger an armed-set replay
+    // (no subscriber listens on the clock, so `replayArmed` is simply never called).
     const id = workspace.loadFiles(
       [{ path: 'silent.strudel', contents: 'sound("bd")' }],
       'silent.strudel'
@@ -97,7 +93,7 @@ describe('installBlockReplay — a tempo re-emit during the play-edge replay doe
     };
     try {
       core.clock.stop();
-      core.clock.startSilently(); // surgical Ctrl+Enter — must NOT replay
+      core.clock.startSilently(); // surgical Ctrl+Enter — no armed-set replay
       await Promise.resolve();
     } finally {
       openBlocks.replayArmed = realReplay;

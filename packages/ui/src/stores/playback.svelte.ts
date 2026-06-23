@@ -14,6 +14,7 @@ import { core } from '../lib/core';
 import { production, beatCount } from './production.svelte';
 import { setResumeBeat } from '../lib/runtimes/bpx-adapter';
 import { kronosCursor } from './kronos-cursor.svelte';
+import { openBlocks } from './blocks.svelte';
 
 type Mode = 'stopped' | 'playing' | 'paused';
 
@@ -61,11 +62,14 @@ class Playback {
       kronosCursor.active?.refireCodeVoices();
       return;
     }
-    // From stopped (no live Transport): evaluate the active scene — the clock's play edge
-    // triggers the scene eval (`replayArmed`), which creates the Transport and auto-plays
-    // it. Position + state then come from that Transport.
+    // From stopped (no live Transport): start the clock (so `handleTransport` re-evals
+    // declared `.kanopi` actors + the UI reads "playing"), then EXPLICITLY eval the active
+    // scene's armed blocks. That eval creates the Kronos Transport and auto-plays it;
+    // position + state then come from that Transport. (Was the clock-subscriber's job;
+    // it is now an explicit call here so the orchestrated `.bps` scene still sounds.)
     setResumeBeat(0);
     core.clock.play();
+    void openBlocks.replayArmed();
   }
 
   pause() {

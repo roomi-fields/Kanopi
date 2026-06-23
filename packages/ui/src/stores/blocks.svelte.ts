@@ -57,10 +57,10 @@ class OpenBlocksStore {
     this.errored = next;
   }
 
-  /** Arm + play this block. If the transport was stopped, start it: the block
-   * replay listener (installBlockReplay) then re-evals every armed block on the
-   * play edge, so arming a block makes it sound (beta issue 5 — arm = play, no
-   * disarm/rearm dance). */
+  /** Arm + play this block. If the transport was stopped, start it AND eval the
+   * active scene's armed blocks explicitly (arm = play, no disarm/rearm dance —
+   * beta issue 5). The eval is explicit at the Play-from-stopped site now; there
+   * is no clock subscriber doing it implicitly. */
   async arm(q: string) {
     const b = this.list.find((x) => x.qualifiedName === q);
     if (!b) return;
@@ -70,6 +70,7 @@ class OpenBlocksStore {
     this.armed = next;
     if (!clock.state.playing) {
       clock.play();
+      await this.replayArmed();
       return;
     }
     await this.evalOne(b);
@@ -151,9 +152,8 @@ class OpenBlocksStore {
    * Arm every block of a freshly-loaded program AND make it sound, mirroring
    * `handleSceneActivate`'s "arm + start transport + eval" — a loaded demo plays
    * on load without the disarm/rearm dance (beta issues 3+5). Starting the clock
-   * first lets the per-block eval fire (the clock-transport replay also covers
-   * blocks armed before play). Only arms blocks belonging to `fileId`, so loading
-   * a single program doesn't sound the other open tabs' blocks.
+   * first lets the per-block eval fire. Only arms blocks belonging to `fileId`,
+   * so loading a single program doesn't sound the other open tabs' blocks.
    */
   async armAndPlayFile(fileId: string) {
     const fileBlocks = this.blocksForFile(fileId);
@@ -162,9 +162,11 @@ class OpenBlocksStore {
     for (const b of fileBlocks) next.add(b.qualifiedName);
     this.armed = next;
     if (!clock.state.playing) {
-      // play() → handleTransport(true) re-evals declared @actors; the block
-      // replay listener (installBlockReplay) re-evals armed blocks. Both fire.
+      // play() → handleTransport(true) re-evals declared @actors; the explicit
+      // replayArmed() below evals the active scene's armed blocks (the former
+      // clock-subscriber job, now at the Play-from-stopped site).
       clock.play();
+      await this.replayArmed();
       return;
     }
     for (const b of fileBlocks) {
@@ -179,9 +181,9 @@ class OpenBlocksStore {
   /**
    * Arm a freshly-loaded program's blocks WITHOUT starting the transport. Loading
    * a scene readies it (its blocks/actor light up) but does NOT auto-play — the
-   * user presses Play (or Ctrl+Enter) to hear it. The play edge then re-evals the
-   * armed blocks (installBlockReplay), so arming first means Play sounds the scene
-   * with no manual rearm. A program with no blocks (a `.kanopi` session) needs no
+   * user presses Play (or Ctrl+Enter) to hear it. Play-from-stopped then evals the
+   * armed blocks explicitly (`replayArmed`), so arming first means Play sounds the
+   * scene with no manual rearm. A program with no blocks (a `.kanopi` session) needs no
    * arming — its actors come armed from `loadSession`.
    */
   armLoadedProgram(fileId: string) {
@@ -242,17 +244,16 @@ class OpenBlocksStore {
     }
   }
 
-  /** Called by the clock transport listener — re-eval every armed block on play.
-   * Resolves the armed blocks by re-extracting from each open file rather than
-   * filtering the reactively-`$derived` `this.list`: on the play edge fired by a
+  /** Re-eval every armed block of the active scene. Called EXPLICITLY at each
+   * Play-from-stopped site (the transport stores / arm / load paths), never via a
+   * clock subscriber. Resolves the armed blocks by re-extracting from each open
+   * file rather than filtering the reactively-`$derived` `this.list`: right after a
    * just-loaded program, the derived snapshot can lag a tick behind the armed set
    * (the load→play regression), so a freshly-armed block would be missed. */
   async replayArmed() {
-    // Single-entry in production: the ONLY trigger is installBlockReplay's clock
-    // subscriber, and it flips its play-edge flag (`wasPlaying = true`) BEFORE calling
-    // here. A `@mm` re-emit fired by an `evalOne` below (setTempoSink → clock.setBpm)
-    // never changes `playing`, so that re-emit sees `wasPlaying === true` → no play edge
-    // → no nested replay. The old `_replaying` re-entrance guard is therefore moot.
+    // No clock subscriber drives this anymore, so it cannot recurse: a `.bps`
+    // `@mm` re-applies its tempo inside an `evalOne` below (setTempoSink →
+    // clock.setBpm → re-emit), but nothing listens on that emit to re-enter here.
     //
     // Replay ONLY the ACTIVE scene's armed blocks — NOT every open tab. Replaying
     // all open tabs made other tabs' armed scenes sound on Play (the « voix open
@@ -313,31 +314,12 @@ function computeOpenBlocks(): OpenBlock[] {
 export const openBlocks = new OpenBlocksStore();
 
 /**
- * Install a clock-transport listener that re-evaluates every armed block on
- * play. Transport stop is handled by `real-core.handleTransport(false)` which
- * already hushes every runtime — per-block stop isn't needed there.
+ * Mirror Strudel per-slot errors into the panel's reactive `errored` set so the
+ * block LED can paint red. This is NOT a transport listener — armed-block eval on
+ * Play is now an EXPLICIT call to `replayArmed()` at each Play-from-stopped site
+ * (transport stores / arm / load), with no clock subscription.
  */
-export function installBlockReplay() {
-  let wasPlaying = clock.state.playing;
-  core.clock.subscribe((s) => {
-    // Detect the play edge, then update `wasPlaying` BEFORE replaying. The replay
-    // re-evaluates armed blocks, and a `.bps` with `@mm` re-applies its tempo to
-    // the clock synchronously inside that eval (setTempoSink → clock.setBpm),
-    // which re-emits the clock state and re-enters THIS subscriber. Updating the
-    // edge flag first means the re-entrant emit sees `wasPlaying === true` and
-    // does NOT replay again — otherwise the eval recurses into itself (stack
-    // overflow on Play). This is the SOLE re-entrance guard now: a tempo re-emit
-    // never raises a fresh play edge. Skip the surgical-manual-eval edge
-    // (startSilently) so a Ctrl+Enter doesn't re-eval the whole armed set. A
-    // pause→play RESUME no longer reaches the clock (the playback store resumes in
-    // place on the Kronos Transport), so there is no resume edge to skip.
-    const playEdge = s.playing && !wasPlaying && !core.clock.silentStart;
-    wasPlaying = s.playing;
-    if (playEdge) {
-      void openBlocks.replayArmed();
-    }
-  });
-  // Mirror Strudel slot errors into the panel's reactive errored set.
+export function installSlotErrorBridge() {
   onSlotErrorChange(() => openBlocks._refreshErrored());
 }
 

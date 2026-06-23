@@ -44,9 +44,6 @@ export class MockClock implements Clock {
   private onTransport?: (playing: boolean) => void;
   private onTempo?: (bpm: number) => void;
   private eventsBus?: EventBus;
-  /** True only during the synchronous subscriber notification of a
-   * `startSilently()` — lets the block-replay listener skip a surgical eval. */
-  silentStart = false;
 
   setOnTransport(fn: (playing: boolean) => void) {
     this.onTransport = fn;
@@ -70,7 +67,7 @@ export class MockClock implements Clock {
     // dispatcher handle takes over and when the transport isn't running). Resume from
     // pause does NOT come through here anymore — the playback store resumes IN PLACE on
     // the live Kronos Transport (`transport.play()` + `refireCodeVoices`), never via the
-    // clock, so the clock never sees a paused→playing edge and needs no `resuming` guard.
+    // clock, so the clock never sees a paused→playing edge and needs no resume guard.
     this.b.emit(this.state);
     this.onTransport?.(true);
     this.eventsBus?.emit({
@@ -86,19 +83,12 @@ export class MockClock implements Clock {
     // Same as play() but WITHOUT onTransport(true): no re-eval of the armed set.
     // The transport event still fires so adapters/visuals that key off the
     // clock's playing edge stay in sync — only the "re-evaluate every armed
-    // voice" hook is skipped.
-    //
-    // `silentStart` is raised for the duration of the synchronous subscriber
-    // notification so the block-replay listener (installBlockReplay) can tell a
-    // surgical manual eval from a real Play and skip re-evaluating armed blocks.
+    // voice" hook is skipped. Used by the surgical Ctrl+Enter path (real-core
+    // evaluateBlock): the block just evaluated is already live, so we only want
+    // the clock ticking + the UI reading "playing", not the whole armed set.
     if (this.state.playing) return;
     this.state = { ...this.state, playing: true, paused: false };
-    this.silentStart = true;
-    try {
-      this.b.emit(this.state);
-    } finally {
-      this.silentStart = false;
-    }
+    this.b.emit(this.state);
     this.eventsBus?.emit({
       schemaVersion: 1,
       type: 'transport',

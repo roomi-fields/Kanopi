@@ -166,7 +166,10 @@ class RealCore implements CoreApi {
     // Activating a scene arms its actors AND starts the transport if it was
     // stopped — the intent is "play this scene," not just "arm these LEDs."
     // Start the clock first so the actor toggles that follow can eval through
-    // handleActorToggle (which only evaluates when the clock is running).
+    // handleActorToggle (which only evaluates when the clock is running). This
+    // site does NOT rely on any clock subscriber: a file-scene evals its child
+    // `.bps` explicitly below, and an actor-set scene evals via the actor toggles
+    // it triggers — so no `replayArmed()` is needed here.
     if (!this.clock.state.playing) this.clock.play();
 
     // `.bps` file-scene (`@scene calm "calm.bps"`): the scene references a child
@@ -324,7 +327,13 @@ class RealCore implements CoreApi {
     if (isOrchestratedActor(a.name)) {
       if (willBeActive) {
         if (!this.clock.state.playing) {
+          // Play-from-stopped on an orchestrated voice: start the clock, then eval
+          // the active scene's armed blocks EXPLICITLY (was the clock-subscriber's
+          // job). That single scene eval sounds the orchestrator including this
+          // just-armed voice; no per-voice eval here. The `openBlocks` store is
+          // imported lazily to avoid a module cycle (store → core → real-core).
           this.clock.play();
+          void import('../../stores/blocks.svelte').then((m) => m.openBlocks.replayArmed());
           return;
         }
         armOrchestratedActor(a.name);
@@ -353,9 +362,11 @@ class RealCore implements CoreApi {
     const src = { actorId: a.name, fileId: a.name };
     if (willBeActive) {
       // Arming an actor PLAYS it (beta issue 5 — "play/actor est incohérent").
-      // If the transport was stopped, start it: handleTransport(true) then
-      // re-evaluates every armed actor (including this one), so we don't double-
-      // eval here. Mirrors handleSceneActivate's "arm + start + eval".
+      // If the transport was stopped, start it: `handleTransport(true)` (fired via
+      // the clock's onTransport hook) then re-evaluates every armed `.kanopi`
+      // actor — including this one — so we don't double-eval here and need no
+      // explicit `replayArmed()`. (This is the SESSION path; orchestrated `.bps`
+      // voices take the explicit-eval branch above.)
       if (!this.clock.state.playing) {
         this.clock.play();
         return;

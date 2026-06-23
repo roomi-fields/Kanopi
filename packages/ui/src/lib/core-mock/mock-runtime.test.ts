@@ -112,18 +112,6 @@ describe('mock core', () => {
     expect(onTransport).toHaveBeenCalledWith(true);
   });
 
-  it('clock.startSilently raises silentStart only during subscriber notification', () => {
-    const c = new MockClock();
-    let seenDuring: boolean | undefined;
-    c.subscribe((s) => {
-      if (s.playing) seenDuring = c.silentStart;
-    });
-    expect(c.silentStart).toBe(false);
-    c.startSilently();
-    expect(seenDuring).toBe(true); // the block-replay listener can detect it
-    expect(c.silentStart).toBe(false); // cleared after the synchronous emit
-  });
-
   it('clock.play/stop toggle the transport flags (position lives in Kronos, not here)', () => {
     // The clock no longer carries bar/beat/phase — position is Kronos's Transport,
     // sampled by the kronos-cursor store. Host-side pause is gone: LIVE pause goes

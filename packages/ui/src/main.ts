@@ -9,14 +9,14 @@ import { workspace } from './stores/workspace.svelte';
 import { clock } from './stores/clock.svelte';
 import { actors } from './stores/actors.svelte';
 import { scenes } from './stores/scenes.svelte';
-import { openBlocks, installBlockReplay } from './stores/blocks.svelte';
+import { openBlocks, installSlotErrorBridge } from './stores/blocks.svelte';
 import { ui } from './stores/ui.svelte';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('#app root not found');
 
 restoreWorkspace();
-installBlockReplay();
+installSlotErrorBridge();
 const app = mount(App, { target });
 
 // Dev-only: expose stores on window for Playwright-based verification.

@@ -1,5 +1,5 @@
 import { ui } from '../../stores/ui.svelte';
-import { clock } from '../../stores/clock.svelte';
+import { playback } from '../../stores/playback.svelte';
 import { core } from '../core';
 import { flushPersist } from '../persistence/snapshot.svelte';
 
@@ -65,10 +65,13 @@ export function handleGlobalKey(e: KeyboardEvent) {
     }
     return;
   }
-  // Space toggles play/stop only if not editing
+  // Space toggles play/stop only if not editing. Route through `playback` (not the
+  // raw clock) so a Play-from-stopped runs the explicit armed-block eval — same
+  // entry as the Play button and the `clock.toggle` command.
   if (e.code === 'Space' && !inEditableTarget(e) && !isMod(e) && !e.altKey) {
     e.preventDefault();
-    clock.toggle();
+    if (playback.mode === 'stopped') playback.play();
+    else playback.stop();
   }
 }
 

@@ -44,10 +44,9 @@ let P5Class: P5Ctor | undefined;
 let instance: P5Instance | undefined;
 let containerEl: HTMLElement | undefined;
 /**
- * Timestamp of the most recent successful evaluate(). Kanopi's transport
- * emits a synthetic re-eval of every armed block right after a Ctrl+Enter
- * that starts the clock (real-core.evaluateBlock line 301 → clock.play()
- * → installBlockReplay subscribe → openBlocks.replayArmed()). Hydra and
+ * Timestamp of the most recent successful evaluate(). A Play-from-stopped
+ * runs an explicit re-eval of every armed block (`openBlocks.replayArmed()`),
+ * which can land right after a Ctrl+Enter on the same block. Hydra and
  * Strudel both replace their existing state on re-eval, so the duplicate
  * is harmless there; p5 constructs a brand-new instance each call, which
  * spawns a second canvas until the first `remove()` catches up. A user
