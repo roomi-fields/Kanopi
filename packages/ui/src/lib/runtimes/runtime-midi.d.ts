@@ -24,3 +24,19 @@ export declare class MidiSink {
   start(onEnd?: () => void): void;
   stop(): void;
 }
+
+export interface MidiTransportOptions {
+  outputIndex?: number;
+  resolver?: unknown;
+  /** Constant semitone offset (BP `c4key` convention): keyOffset = 60 - c4key. */
+  keyOffset?: number;
+}
+
+/** Per-actor MIDI transport — the canonical Kronos `TransportLike` for MIDI. Kronos
+ *  routes each scheduled note through `send(event, absTime)`; `init()` requests the
+ *  Web MIDI port (no hardware → no-op, never throws). */
+export declare class MidiTransport {
+  constructor(opts?: MidiTransportOptions);
+  init(): Promise<void>;
+  send(event: Record<string, unknown>, absTime: number): void;
+}

@@ -27,13 +27,6 @@ declare module '*/core/src/dispatcher/transports/webaudio.js' {
   }
 }
 
-declare module '*/core/src/dispatcher/transports/midi.js' {
-  export class MidiTransport {
-    constructor(options?: { outputIndex?: number; resolver?: unknown });
-    init(): Promise<void>;
-  }
-}
-
 declare module '*/core/src/dispatcher/resolver.js' {
   export class Resolver {
     constructor(config?: unknown);
