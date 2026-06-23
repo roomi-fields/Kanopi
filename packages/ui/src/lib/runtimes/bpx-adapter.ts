@@ -1191,30 +1191,6 @@ export function setLoopLive(on: boolean): void {
   for (const u of transportLiveUpdaters) u(null, on);
 }
 
-interface DispatcherBeat {
-  beatsTotal: number;
-  bar: number;
-  beat: number;
-  phase: number;
-}
-
-/**
- * The musical beat position driving the transport display, read from the KRONOS
- * TRANSPORT's cursor (the single position authority) — or null when no scene is
- * live. The central clock's render loop consumes this each frame to project
- * `clock.state` and derive the beat/bar UI events; null → nothing to advance.
- */
-export function getDispatcherBeat(): DispatcherBeat | null {
-  // The beat source is the KRONOS TRANSPORT's position (the single authority). The central
-  // clock's render loop reads this each frame to project `clock.state` + derive the beat/bar
-  // UI events (p5/hydra onBeat/onBar) — no rAF position integrator. `beatPosition()` is
-  // frozen-aware (advances running, frozen when paused).
-  const kc = kronosCursor.active;
-  if (!kc) return null;
-  const bp = kc.beatPosition();
-  return { beatsTotal: bp.beatsTotal, bar: bp.bar, beat: bp.beat, phase: bp.phase };
-}
-
 /** One orchestrated actor as published to the Actors panel. */
 export interface PublishedActor {
   name: string;
@@ -2308,8 +2284,8 @@ function makeBpxAdapter(
           voice.dispatcher.stop();
         }
         voices.clear();
-        // Stop everything → the timeline cursor + transport beat display fall back
-        // to the idle clock (getDispatcherBeat returns null with no live cursor).
+        // Stop everything → no live handle, so the kronos-cursor store reads `null`
+        // and the timeline cursor + bar·beat display fall back to rest (001·01.00).
         kronosCursor.set(null);
         // "Stop everything" also FORGETS the live orchestrated-voice handles: every
         // dispatcher is down and the core hushes every code runtime alongside this

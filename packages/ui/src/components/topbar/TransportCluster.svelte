@@ -49,25 +49,11 @@
   const bpmDec = $derived(((clock.state.bpm - bpmInt) * 10).toFixed(0));
   const bpb = $derived(clock.state.beatsPerBar || 4);
 
-  // Position shown by the meter + the 4 LEDs, taken from the SINGLE transport
-  // state machine (playback), so the beat counter and the LEDs always agree with
-  // what's actually happening: live audio beat while playing, the committed beat
-  // while paused/stepped, nothing when stopped.
-  const pos = $derived.by(() => {
-    // The VALUE comes from Kronos's Transport (frozen-aware: advances while running,
-    // frozen when paused) — the single position authority. `clock.state` is read only
-    // as the per-frame reactivity TICK (it emits each rAF frame), NOT as the position:
-    // that keeps the readout updating live while reading the Transport's frozen position
-    // during pause (the old `clock.state` value kept advancing through pause = the bug).
-    void clock.state;
-    void kronosCursor.state; // recompute on transport transitions (step/pause land here)
-    const kc = kronosCursor.active;
-    if (kc) {
-      const bp = kc.beatPosition();
-      return { bar: bp.bar, beat: bp.beat, phase: bp.phase };
-    }
-    return { bar: clock.state.bar, beat: clock.state.beat, phase: clock.state.phase };
-  });
+  // Position shown by the meter + the 4 LEDs, taken from Kronos's Transport (the single
+  // position authority), sampled per-frame into `kronosCursor.beat` (frozen-aware: the
+  // live audio beat while playing, the committed beat while paused/stepped). `null` =
+  // stopped / no scene → rest readout (bar 1, beat 0, phase 0 → "001·01.00", B16).
+  const pos = $derived(kronosCursor.beat ?? { bar: 1, beat: 0, phase: 0 });
   const barStr = $derived(fmt3(pos.bar));
   const beatStr = $derived(fmt2(pos.beat + 1));
   const phaseStr = $derived('.' + fmt2(Math.floor(pos.phase * 100)));

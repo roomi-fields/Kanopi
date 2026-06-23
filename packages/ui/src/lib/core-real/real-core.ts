@@ -15,9 +15,9 @@ import {
   isOrchestratedActor,
   pauseAudioContext,
   resumeAudioContext,
-  getDispatcherBeat,
   type PublishedActor
 } from '../runtimes/bpx-adapter';
+import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 import { installConsoleBridge } from '../runtimes/console-bridge';
 import { parseSession } from '../session';
 import { findBank } from '../library/audio-banks';
@@ -77,6 +77,12 @@ class RealCore implements CoreApi {
 
   constructor() {
     this.clock.setEventBus(this.events);
+    // The per-frame playhead sample + the beat/bar UI events (p5/hydra `onBeat`/`onBar`)
+    // are derived by the kronos-cursor store directly off Kronos's Transport position
+    // (the single authority) — it owns the rAF that used to live in the clock. Wire it
+    // the same event bus the visuals listen on, plus the displayed tempo for the events'
+    // informational `bpm` field (read from the clock so it matches the readout).
+    kronosCursor.setEventBus(this.events, () => this.clock.state.bpm);
     for (const id of listRuntimes()) {
       const a = getAdapter(id);
       if (a?.events) a.events.onAny((e) => this.events.emit(e));
@@ -116,11 +122,6 @@ class RealCore implements CoreApi {
     // adapter drive the CENTRAL clock so the displayed BPM and the STEP grid
     // adopt the same tempo the derivation used (transport ⇄ derivation coherence).
     setTempoSink((bpm) => this.clock.setBpm(bpm));
-    // Real beat display (requirement B): while a bp3/bpscript dispatcher plays,
-    // the transport beat dots + bar·beat·phase counter phase-lock to its actual
-    // musical position (the heard audio) instead of the free rAF clock. Returns
-    // null when no dispatcher plays → the clock keeps its rAF behaviour.
-    this.clock.setBeatSource(() => getDispatcherBeat());
     // An orchestrator `.bps` publishes its `@actor` list here so the Actors panel
     // shows every voice (groove + viz, …), not just the file-bound `.kanopi`
     // actors. The actors are armed by default (a freshly-evaluated orchestrator

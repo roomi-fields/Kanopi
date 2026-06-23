@@ -11,15 +11,11 @@
   function fmt3(n: number) {
     return n.toString().padStart(3, '0');
   }
-  // Position from Kronos's Transport (frozen-aware); `clock.state` is only the per-frame
-  // tick (it kept advancing through pause = the old bug).
+  // Position from Kronos's Transport, sampled per-frame into `kronosCursor.beat` (the
+  // single position authority, frozen-aware). `null` = stopped / no scene → rest readout
+  // (001·01.00). The clock holds only tempo + transport flags, never the position.
   const beatStr = $derived.by(() => {
-    void clock.state;
-    void kronosCursor.state;
-    const kc = kronosCursor.active;
-    const bp = kc
-      ? kc.beatPosition()
-      : { bar: clock.state.bar, beat: clock.state.beat, phase: clock.state.phase };
+    const bp = kronosCursor.beat ?? { bar: 1, beat: 0, phase: 0 };
     return `${fmt3(bp.bar)}·${fmt2(bp.beat + 1)}.${fmt2(Math.floor(bp.phase * 100))}`;
   });
 

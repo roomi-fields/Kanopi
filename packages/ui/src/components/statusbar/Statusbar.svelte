@@ -17,17 +17,12 @@
   // holds (first beat is 1, not 0). Absolute beat count stays available in the
   // event overlay (`?events=1`) for debugging.
   const bpmStr = $derived(clock.state.bpm.toFixed(1));
-  // Position from Kronos's Transport (frozen-aware); `clock.state` is only the per-frame
-  // reactivity tick, not the position (it kept advancing through pause = the old bug).
+  // Position from Kronos's Transport, sampled per-frame into `kronosCursor.beat` (the
+  // single position authority, frozen-aware). `null` = stopped / no scene → rest readout
+  // (bar 1, beat 0). The clock holds only tempo + transport flags, never the position.
   const posStr = $derived.by(() => {
-    void clock.state;
-    void kronosCursor.state;
-    const kc = kronosCursor.active;
-    if (kc) {
-      const bp = kc.beatPosition();
-      return fmt3(bp.bar) + '.' + fmt2(bp.beat + 1);
-    }
-    return fmt3(clock.state.bar) + '.' + fmt2(clock.state.beat + 1);
+    const bp = kronosCursor.beat;
+    return bp ? fmt3(bp.bar) + '.' + fmt2(bp.beat + 1) : '001.01';
   });
   const sceneName = $derived(scenes.active?.name ?? '—');
   const activeRuntimes = $derived(

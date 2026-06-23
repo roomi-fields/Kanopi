@@ -19,15 +19,13 @@ export type Runtime =
 
 export interface ClockState {
   bpm: number;
-  bar: number;
-  beat: number; // 0..(beatsPerBar-1)
   beatsPerBar: number; // numerator of the current @time signature (default 4)
-  phase: number; // 0..1 within current beat
   playing: boolean;
   // True after a `pause()` (transport halted but position kept), false after a
   // `play()` or a `stop()` (which also zeroes the position). Lets the transport
   // UI distinguish paused-at-position from stopped-at-zero. Never true while
-  // `playing` is true.
+  // `playing` is true. Position itself lives in Kronos's Transport (read via the
+  // kronos-cursor store), NOT here — this carries only the tempo + transport flags.
   paused: boolean;
 }
 

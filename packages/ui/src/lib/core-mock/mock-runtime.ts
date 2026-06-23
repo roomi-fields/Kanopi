@@ -30,41 +30,20 @@ function bus<T>() {
 }
 
 export class MockClock implements Clock {
+  // The clock holds the TEMPO intent (bpm + time signature) and the transport FLAGS
+  // (playing/paused) — NOT the position. Position is Kronos's Transport, sampled by the
+  // kronos-cursor store (`kronosCursor.beat`); the displays read it there, never here.
   state: ClockState = {
     bpm: 128,
-    bar: 1,
-    beat: 0,
     beatsPerBar: 4,
-    phase: 0,
     playing: false,
     paused: false
   };
   private tapTimes: number[] = [];
   private b = bus<ClockState>();
-  private rafId = 0;
   private onTransport?: (playing: boolean) => void;
   private onTempo?: (bpm: number) => void;
   private onPauseResume?: (paused: boolean) => void;
-  /** Optional audio beat source (requirement B). When it returns a position, the
-   * transport beat dots + bar·beat·phase counter phase-lock to the HEARD audio
-   * (a playing dispatcher) instead of the free rAF integrator. Null → rAF clock. */
-  private beatSource?: () => {
-    beatsTotal: number;
-    bar: number;
-    beat: number;
-    phase: number;
-    gen?: number;
-  } | null;
-  /** Last beat-source generation seen — a change means a NEW dispatcher took over
-   *  (fresh Play / Ctrl+Enter restart); used to allow the cursor to jump back to
-   *  the top on a genuine restart while clamping the harmless launch hand-off. */
-  private absBeat = 0;
-  private absBar = 0;
-  // Last integer beat/bar the render loop saw, for crossing detection (−1 = no baseline
-  // yet). Replaces the old `absPhase` rAF position integrator — position now comes from
-  // the Transport's beatPosition; this only marks where the last beat/bar event fired.
-  private lastBeatFloor = -1;
-  private lastBarFloor = -1;
   private eventsBus?: EventBus;
   /** True only during the synchronous subscriber notification of a
    * `startSilently()` — lets the block-replay listener skip a surgical eval. */
@@ -84,82 +63,8 @@ export class MockClock implements Clock {
   setOnPauseResume(fn: (paused: boolean) => void) {
     this.onPauseResume = fn;
   }
-  /** Wire the audio beat source (requirement B). Returns the current musical
-   * position of a playing dispatcher, or null when none plays (rAF fallback). */
-  setBeatSource(
-    fn: () => { beatsTotal: number; bar: number; beat: number; phase: number; gen?: number } | null
-  ) {
-    this.beatSource = fn;
-  }
   setEventBus(bus: EventBus) {
     this.eventsBus = bus;
-  }
-
-  constructor() {
-    this.loop = this.loop.bind(this);
-    this.rafId = requestAnimationFrame(this.loop);
-  }
-
-  private loop(now: number) {
-    if (this.state.playing) {
-      const ext = this.beatSource?.();
-      if (ext) {
-        // POSITION = the Transport's (Kronos cursor), DERIVED here — never integrated.
-        // The old free rAF position integrator (and its monotonic clamp, the "15-25
-        // réajustements de barre") is GONE: Kronos's Transport is the single position
-        // authority (contract kanopi-architecture.md). This loop only PROJECTS it onto
-        // `clock.state` (the per-frame tick readers consult) and DERIVES the beat/bar UI
-        // events (p5/hydra `onBeat`/`onBar`) from beat crossings of that position.
-        const bpb = this.state.beatsPerBar || 4;
-        const totalBeats = Math.max(0, ext.beatsTotal);
-        const beatAbs = Math.floor(totalBeats);
-        const barAbs = Math.floor(beatAbs / bpb);
-        this.state = {
-          ...this.state,
-          beat: beatAbs % bpb,
-          phase: totalBeats - beatAbs,
-          bar: 1 + barAbs
-        };
-        this.b.emit(this.state);
-        // Beat/bar EVENTS on each crossing of the integer beat — INCLUDING the loop wrap
-        // (n-1 → 0), so the monotone `count` keeps climbing across loops. At musical
-        // tempi a beat is ≫16 ms, so 60 fps sees one crossing per frame (a dropped frame
-        // at most skips one purely-visual event). The first frame sets the baseline only
-        // (so the downbeat isn't counted, matching the previous while-loop semantics).
-        if (this.lastBeatFloor === -1) {
-          this.lastBeatFloor = beatAbs;
-          this.lastBarFloor = barAbs;
-        } else {
-          if (beatAbs !== this.lastBeatFloor) {
-            this.lastBeatFloor = beatAbs;
-            this.absBeat += 1;
-            this.eventsBus?.emit({
-              schemaVersion: 1,
-              type: 'beat',
-              runtime: 'clock',
-              t: now,
-              count: this.absBeat,
-              bpm: this.state.bpm,
-              phase: this.state.phase
-            });
-          }
-          if (barAbs !== this.lastBarFloor) {
-            this.lastBarFloor = barAbs;
-            this.absBar += 1;
-            this.eventsBus?.emit({
-              schemaVersion: 1,
-              type: 'bar',
-              runtime: 'clock',
-              t: now,
-              count: this.absBar
-            });
-          }
-        }
-      }
-      // No beatSource (no live Transport) → nothing to advance: the rAF position
-      // integrator was removed. An idle/empty transport has no position to derive.
-    }
-    this.rafId = requestAnimationFrame(this.loop);
   }
 
   play() {
@@ -185,13 +90,9 @@ export class MockClock implements Clock {
       }
       this.onPauseResume?.(false);
     } else {
-      // FRESH continuous play (from stop or a stepped position): reset the beat
-      // integrator so the monotonic clamp above has a clean baseline and the
-      // dispatcher handoff can't appear to rewind the cursor.
-      this.absBeat = 0;
-      this.absBar = 0;
-      this.lastBeatFloor = -1;
-      this.lastBarFloor = -1;
+      // FRESH continuous play (from stop or a stepped position): the beat/bar event
+      // baselines live in the kronos-cursor store now (it resets them when a new
+      // dispatcher handle takes over and when the transport isn't running).
       this.b.emit(this.state);
       this.onTransport?.(true);
     }
@@ -245,14 +146,12 @@ export class MockClock implements Clock {
   }
   stop() {
     const was = this.state.playing || this.state.paused;
-    // stop() zeroes the position (pause() doesn't) and clears the paused flag.
-    this.state = { ...this.state, playing: false, paused: false, bar: 1, beat: 0, phase: 0 }; // preserve beatsPerBar on stop
+    // stop() clears playing+paused. The POSITION reset is Kronos's (its Transport.stop()
+    // rewinds the cursor); the kronos-cursor store then reads `null` while stopped, so the
+    // displays fall back to 001·01.00 (B16) — the clock no longer holds a position.
+    this.state = { ...this.state, playing: false, paused: false }; // preserve beatsPerBar on stop
     this.b.emit(this.state);
     if (was) {
-      this.absBeat = 0;
-      this.absBar = 0;
-      this.lastBeatFloor = -1;
-      this.lastBarFloor = -1;
       this.onTransport?.(false);
       this.eventsBus?.emit({
         schemaVersion: 1,
@@ -265,11 +164,11 @@ export class MockClock implements Clock {
     }
   }
   /**
-   * Pause: halt the transport WITHOUT resetting position. The bar/beat/phase
-   * and the absolute counters are left intact, so the next play() resumes from
-   * where it stopped (stop() zeroes them; pause() doesn't). Audio is suspended
-   * the same way stop does — onTransport(false) hushes every runtime — but the
-   * clock keeps its place so resuming re-evaluates the armed voices in time.
+   * Pause: halt the transport WITHOUT a stop/teardown. Only the flags change here
+   * (playing→false, paused→true); the position is Kronos's and stays frozen at the
+   * paused beat (the kronos-cursor store keeps reading the Transport's frozen-aware
+   * readout, B13). Audio is suspended in place via the onPauseResume hook so resuming
+   * continues mid-phrase instead of restarting.
    */
   pause() {
     if (!this.state.playing) return;
@@ -279,8 +178,8 @@ export class MockClock implements Clock {
     // stop, which hushes every runtime via onTransport(false) and forgets the
     // voices). The scheduled voices stay loaded so resuming continues in place;
     // their audio context is suspended by the onPauseResume hook (the dispatcher's
-    // lookahead clock then freezes against the frozen `currentTime`). Position and
-    // the absolute counters are preserved for the resume.
+    // lookahead clock then freezes against the frozen `currentTime`). The position is
+    // Kronos's and stays frozen there for the resume.
     this.onPauseResume?.(true);
     this.eventsBus?.emit({
       schemaVersion: 1,
@@ -329,9 +228,6 @@ export class MockClock implements Clock {
   subscribe(cb: (s: ClockState) => void) {
     cb(this.state);
     return this.b.subscribe(cb);
-  }
-  dispose() {
-    cancelAnimationFrame(this.rafId);
   }
 }
 
