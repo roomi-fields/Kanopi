@@ -568,18 +568,19 @@ function backticksFromAst(ast: unknown): BacktickTable {
 export function btTokenByActor(ast: unknown): Record<string, string> {
   const out: Record<string, string> = {};
   const seen = new Set<unknown>();
-  const findBt = (n: unknown): string | undefined => {
-    if (!n || typeof n !== 'object') return undefined;
+  const findBt = (n: unknown, fbSeen: Set<unknown>): string | undefined => {
+    if (!n || typeof n !== 'object' || fbSeen.has(n)) return undefined;
+    fbSeen.add(n); // cycle guard: a shared/back-referenced node must not re-recurse
     const node = n as Record<string, unknown>;
     if (node.type === 'BacktickInline' && typeof node._btName === 'string') return node._btName;
     for (const v of Object.values(node)) {
       if (Array.isArray(v)) {
         for (const x of v) {
-          const r = findBt(x);
+          const r = findBt(x, fbSeen);
           if (r) return r;
         }
       } else if (v && typeof v === 'object') {
-        const r = findBt(v);
+        const r = findBt(v, fbSeen);
         if (r) return r;
       }
     }
@@ -593,7 +594,7 @@ export function btTokenByActor(ast: unknown): Record<string, string> {
       const lhs = node.lhs as Array<{ name?: string }> | undefined;
       const name = lhs?.[0]?.name;
       if (typeof name === 'string') {
-        const bt = findBt(node.rhs);
+        const bt = findBt(node.rhs, new Set());
         if (bt) out[name] = bt;
       }
     }
@@ -867,43 +868,10 @@ type Tok = {
   actor?: string | null;
 };
 
-/**
- * STEP windowing: keep only the tokens of ONE beat of the derivation, re-zeroed
- * in time. The STEP unit is the clock beat (`60/bpm` seconds, here `beatMs` in
- * ms). A token belongs to the beat its onset is CLOSEST to (`round(start/beat)`),
- * NOT a half-open window `[k·beat, (k+1)·beat)`. The window form floored, and the
- * engine emits note onsets at a slightly different grid than the theoretical
- * `60000/bpm` (rounding: a note at k·857.0 ms vs a beat at k·857.14 ms), so the
- * window's upper edge swept the NEXT note into the current beat — beat 0 then held
- * two notes and the error accumulated. Nearest-beat assignment is robust to that
- * sub-millisecond drift: each onset lands in exactly one beat. Shifted back to ~0
- * so the beat plays immediately.
- */
-export function sliceBeat<T extends Tok>(tokens: T[], index: number, beatMs: number): T[] {
-  if (!(beatMs > 0)) return tokens;
-  const from = index * beatMs;
-  return tokens
-    .filter((t) => Math.round(t.start / beatMs) === index)
-    .map((t) => ({ ...t, start: t.start - from, end: t.end - from }));
-}
-
-/**
- * STEP windowing for tree-derived dispatch events — the `sliceBeat` twin on the
- * SECONDS timeline the dispatcher loads (`treeToDispatchEvents`). Same
- * nearest-beat assignment (`round(startSec/beatSec)`) as the flat `sliceBeat`, for
- * the same reason (onset/beat-grid rounding drift), re-zeroed to ~0.
- */
-export function sliceBeatEvents(
-  events: DispatchEvent[],
-  index: number,
-  beatSec: number
-): DispatchEvent[] {
-  if (!(beatSec > 0)) return events;
-  const from = index * beatSec;
-  return events
-    .filter((e) => Math.round(e.startSec / beatSec) === index)
-    .map((e) => ({ ...e, startSec: e.startSec - from }));
-}
+// (STEP windowing is no longer sliced/re-zeroed here: STEP auditions the FULL
+// persisted timeline via a Kronos seek + `playWindow` bound, so the former
+// `sliceBeat`/`sliceBeatEvents` helpers — nearest-beat re-zeroing — were dead and
+// were removed.)
 
 // Build the FULL-production view from a derivation and publish it to the
 // production store (the source of truth the Text panel + Structure visualizer
@@ -961,7 +929,9 @@ function publishProduction(
   symbolNames?: Record<number, string>,
   sectionLeafCounts?: number[]
 ): void {
-  const durationMs = Math.max(...tokens.map((t) => t.end), 0);
+  // Reduce, not `Math.max(...tokens.map(...))`: spreading a large derivation
+  // (tens of thousands of leaves) overflows the argument limit → RangeError.
+  const durationMs = tokens.reduce((m, t) => (t.end > m ? t.end : m), 0);
   const prodTokens: ProductionToken[] = tokens.map((t) => ({
     token: t.token,
     startSec: t.start / 1000,
@@ -1407,25 +1377,13 @@ function makeBpxAdapter(
   // stops its previous dispatcher before scheduling the new derivation.
   const voices = new Map<string, BP3Voice>();
 
-  // Live loop/re-random updates reach THIS adapter's currently-playing voices.
-  // Both audio paths are updated: the LEGACY dispatcher (its own re-derive gate) and
-  // the ACTIVE Kronos handle (kronos mode — it, not the dispatcher, drives the audio,
-  // so the toggle must reach its scheduler too). A voice with no kronos handle
-  // (orchestrated/legacy scene) just skips the optional call.
+  // Live loop/re-random updates reach THIS adapter's currently-playing voices via
+  // the ACTIVE Kronos handle (it, not the inert dispatcher, drives the audio + owns
+  // the scheduler). A voice with no kronos handle just skips the optional call.
   transportLiveUpdaters.push((reRandom, loop) => {
     for (const v of voices.values()) {
-      const d = v.dispatcher as unknown as {
-        setReRandom(on: boolean): void;
-        setLoop(on: boolean): void;
-      };
-      if (reRandom !== null) {
-        d.setReRandom(reRandom);
-        v.kronosAudio?.setReRandom(reRandom);
-      }
-      if (loop !== null) {
-        d.setLoop(loop);
-        v.kronosAudio?.setLoop(loop);
-      }
+      if (reRandom !== null) v.kronosAudio?.setReRandom(reRandom);
+      if (loop !== null) v.kronosAudio?.setLoop(loop);
     }
   });
 
@@ -1608,6 +1566,15 @@ function makeBpxAdapter(
       // Returns null on any error (the dispatcher then replays the existing
       // events rather than going silent). Built once; passed to `start()` only
       // when the transport's re-random toggle is on AND looping.
+      // The modulator registry is built from CONSTANT inputs (ast.cvInstances +
+      // modLibJson) — identical on every re-random cycle (only the derivation's
+      // random draw differs). Build it ONCE here, not inside the per-cycle closure.
+      const reDeriveRegistry = buildModulators(
+        ((ast as { cvInstances?: unknown[] } | null)?.cvInstances ?? []) as Parameters<
+          typeof buildModulators
+        >[0],
+        modLibJson as unknown as ModLib
+      );
       const reDeriveTreeEvents = (filterEvents: (e: DispatchEvent) => boolean) => () => {
         try {
           const rbpx = createBPx({
@@ -1622,19 +1589,13 @@ function makeBpxAdapter(
             (rbpx as { grammar?: { symbols?: Partial<SymbolTable> } }).grammar?.symbols?.getName?.(
               sid
             );
-          // Same CV composition + legacy resolution as the main path — each re-roll
-          // re-samples the phrase spans and which env sounds under each leaf, so the
-          // Kronos audio path keeps its env variety on every re-randomised cycle.
-          const rRegistry = buildModulators(
-            ((ast as { cvInstances?: unknown[] } | null)?.cvInstances ?? []) as Parameters<
-              typeof buildModulators
-            >[0],
-            modLibJson as unknown as ModLib
-          );
+          // Same CV composition as the main path — each re-roll re-samples the
+          // phrase spans + which env sounds under each leaf (the registry itself is
+          // the hoisted, cycle-invariant `reDeriveRegistry`).
           for (const { leaf, bindings } of composeTreeModulations(
             rderived.tree,
             rNameOf,
-            rRegistry,
+            reDeriveRegistry,
             { exprSource: onExprSource }
           )) {
             (leaf as { __cvBindings?: ModulationBinding[] }).__cvBindings = bindings;
@@ -1866,7 +1827,6 @@ function makeBpxAdapter(
         const da = dispatcher as unknown as {
           setActors(t: unknown): void;
           setActorTransport(actor: string, transport: string): void;
-          setActorResolver(actor: string, resolver: PitchResolver): void;
         };
         da.setActors(orchestration.actorTable);
         // Scene-level resolver + sound predicate (the mono concerns, now universal so
@@ -1931,7 +1891,6 @@ function makeBpxAdapter(
               msg: `voix ${actor.name} → appareil ${actor.transportKey} (${device.type}) : transport non câblé (le moteur se rend lui-même)`
             });
           }
-          da.setActorResolver(actor.name, resolver);
         }
         // Multi-actor routing (M5+ refacto): build dispatch events FROM THE TREE
         // so each note carries its OWN `payload.actor` — a terminal shared by two

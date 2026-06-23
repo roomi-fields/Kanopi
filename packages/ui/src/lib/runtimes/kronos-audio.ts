@@ -42,13 +42,12 @@ import { createAudioRuntime } from 'runtime-audio';
 // adapter on the shared clock, hands it the actor→device bindings, and routes
 // OSC actors' ScheduledEvents to it. The profile maps controls → device addresses.
 //
-// Imported from the package's SPECIFIC browser-safe modules, NOT its barrel: the
-// barrel re-exports `DeviceLibrary` (`node:os`/`node:fs`, `os.homedir()` at module
-// init) and `UdpTransport` (`node:dgram`), which crash in the browser. These three
-// classes + their deps (osc/encode, profiles/generic, pitch) are browser-safe.
-import { OscAdapter } from 'runtime-osc/src/adapter.js';
-import { OscBridgeProfile } from 'runtime-osc/src/profiles/osc-bridge.js';
-import { WebSocketTransport } from 'runtime-osc/src/transports/websocket.js';
+// Imported from the package's BROWSER entry (`runtime-osc/browser`): the default
+// barrel re-exports `DeviceLibrary` (`node:os`/`node:fs`) and `UdpTransport`
+// (`node:dgram`), Node-only modules that crash in the browser. The `/browser`
+// subpath exposes only the browser-safe surface (OscAdapter/OscBridgeProfile/
+// WebSocketTransport) — deterministic under both Vite and vitest.
+import { OscAdapter, OscBridgeProfile, WebSocketTransport } from 'runtime-osc/browser';
 // Reused AS-IS from the core dispatcher: coerces numeric-string controls to
 // numbers (vel/filterQ/…) while leaving strings (wave) untouched.
 import { coerceControlValues } from '../../../../core/src/dispatcher/dispatcher.js';
@@ -364,13 +363,34 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   let oscAdapter: InstanceType<typeof OscAdapter> | null = null;
   if (opts.oscBindings && Object.keys(opts.oscBindings).length > 0 && opts.oscWsUrl) {
     try {
-      const transport = new WebSocketTransport({ url: opts.oscWsUrl });
+      // Build the socket ourselves so a relay that is down (connection refused)
+      // is LOGGED once rather than silently queueing frames forever: the
+      // WebSocketTransport ctor returns synchronously, before the async connection
+      // result, so a dead relay never surfaces through the try/catch otherwise.
+      const url = opts.oscWsUrl;
+      const ws = new WebSocket(url);
+      let oscErrLogged = false;
+      const onOscUnreachable = () => {
+        if (oscErrLogged) return;
+        oscErrLogged = true;
+        log(`⚠ relais OSC injoignable (${url}) — voix OSC en attente, non émises`);
+      };
+      ws.addEventListener('error', onOscUnreachable);
+      ws.addEventListener('close', (e) => {
+        if (!(e as CloseEvent).wasClean) onOscUnreachable();
+      });
+      const transport = new WebSocketTransport({ socket: ws });
       oscAdapter = new OscAdapter({
         transport,
         profile: new OscBridgeProfile({ log: (m: string) => log(m) }),
         now: () => audioCtx.currentTime
       });
-      void oscAdapter.setBindings(opts.oscBindings);
+      // setBindings pre-resolves device surfaces (async). Catch a rejection so it
+      // never becomes an unhandled rejection; the literal-fallback path resolves on
+      // a microtask, before the driver's setTimeout-scheduled first emission.
+      void oscAdapter.setBindings(opts.oscBindings).catch((err: unknown) => {
+        log(`⚠ OSC setBindings a échoué (${String(err)})`);
+      });
       transports['osc'] = oscAdapter as unknown as TransportLike;
     } catch (err) {
       log(`⚠ OSC indisponible (${String(err)}) — voix OSC muettes`);

@@ -49,6 +49,12 @@ class KronosCursorStore {
    *  when stopped or no scene is live. The bar·beat displays read THIS — never a host
    *  counter, never `clock.state` (the old mirror that kept advancing through pause). */
   beat = $state<KronosCursorBeat | null>(null);
+  /** REACTIVE mirror of the live Transport's tempo (BPM). `transport` is a Kronos class
+   *  instance Svelte does not deep-proxy, so a live in-place tempo warp (`retune` →
+   *  `transport.setTempo`) would never re-render a `$derived` reading `transport.tempo`.
+   *  The rAF loop guard-samples it here (write only on change → no per-frame churn) so the
+   *  BPM readout (`clock.state.bpm`) tracks a live warp. 0 when no scene is live. */
+  tempo = $state(0);
   #unsub: (() => void) | null = null;
 
   // Beat/bar UI EVENT derivation (p5/hydra `onBeat`/`onBar`). Monotone counters +
@@ -89,17 +95,25 @@ class KronosCursorStore {
       // Capture the current state (the init `transport.play()` already fired before this
       // subscription), then mirror every later transition.
       this.state = handle.transport.state;
+      this.tempo = handle.transport.tempo;
       this.#unsub = handle.transport.onStateChange((s) => {
         this.state = s;
       });
     } else {
       this.state = 'stopped';
       this.beat = null;
+      this.tempo = 0;
     }
   }
 
   #loop = (now: number) => {
     const kc = this.active;
+    // Guard-sample the live tempo (write only when it actually changed → no per-frame
+    // churn) so a live in-place warp re-renders the BPM readout. Cheap: one compare/frame.
+    if (kc) {
+      const t = kc.transport.tempo;
+      if (t !== this.tempo) this.tempo = t;
+    }
     if (kc && this.state === 'running') {
       // POSITION = Kronos's Transport (the single authority), READ each frame — never
       // integrated. Expose it (`beat`) for the displays AND derive the beat/bar UI

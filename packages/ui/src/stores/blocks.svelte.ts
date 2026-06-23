@@ -276,6 +276,19 @@ class OpenBlocksStore {
   }
 }
 
+// Per-file memo of `extractBlocks` (regex split + a Lezer parse for Csound).
+// `computeOpenBlocks` re-runs whenever ANY open file's contents change; without
+// this, every keystroke in one tab re-extracts ALL open tabs. Keyed by file id;
+// recompute only when THAT file's contents/runtime actually changed.
+const extractMemo = new Map<string, { contents: string; runtime: Runtime; blocks: CodeBlock[] }>();
+function extractBlocksMemo(id: string, contents: string, runtime: Runtime): CodeBlock[] {
+  const hit = extractMemo.get(id);
+  if (hit && hit.contents === contents && hit.runtime === runtime) return hit.blocks;
+  const blocks = extractBlocks(contents, runtime);
+  extractMemo.set(id, { contents, runtime, blocks });
+  return blocks;
+}
+
 function computeOpenBlocks(): OpenBlock[] {
   const out: OpenBlock[] = [];
   // Dedupe tab ids defensively. `workspace.openFile` dedupes on insert, but
@@ -291,7 +304,7 @@ function computeOpenBlocks(): OpenBlock[] {
     seenTabs.add(tabId);
     const file = workspace.fileById(tabId);
     if (!file) continue;
-    const blocks = extractBlocks(file.contents, file.runtime);
+    const blocks = extractBlocksMemo(file.id, file.contents, file.runtime);
     for (const b of blocks) {
       const key = `${file.id}:${b.name}`;
       if (seenKeys.has(key)) continue;

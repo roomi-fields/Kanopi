@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-// Deep imports of the browser-safe modules (NOT the barrel, which pulls Node-only
-// `DeviceLibrary`/`UdpTransport`) — same as `kronos-audio` consumes them.
-import { OscAdapter } from 'runtime-osc/src/adapter.js';
-import { OscBridgeProfile } from 'runtime-osc/src/profiles/osc-bridge.js';
+// Browser entry (browser-safe surface), same as `kronos-audio` consumes it —
+// avoids the default barrel's Node-only `DeviceLibrary`/`UdpTransport`.
+import { OscAdapter, OscBridgeProfile } from 'runtime-osc/browser';
+import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 
 /**
  * OSC-5b — proves Kanopi's OSC branchement emits the resolved address on the right
@@ -88,5 +88,20 @@ describe('OSC branchement (OSC-5b)', () => {
       content: { token: '', controls: { cutoff: 100 } }
     });
     expect(transport.frames.length).toBe(0);
+  });
+});
+
+describe('OSC binding parse (consumed bpscript copy — stale-dep guard)', () => {
+  // The whole OSC path is dead if the consumed `bpscript` copy lacks the OSC-L1
+  // `device:`/`ch:` → `binding` parse (the stale `file:`-dep trap that left OSC-5b
+  // inert until the copy was rsynced). This compiles a real OSC scene and asserts
+  // the binding reaches the AST — so a future stale copy fails the gate here, loudly.
+  it('compiles `@actor … transport.osc device:<n> ch:<n>` to an actor binding', () => {
+    const r = compileToBPxAST('@actor bass transport.osc device:bridge1 ch:5\nS -> C4 E4') as {
+      ast?: { actors?: Array<{ name: string; binding?: unknown }> };
+    };
+    const bass = r.ast?.actors?.find((a) => a.name === 'bass');
+    expect(bass, 'actor "bass" in the compiled AST').toBeTruthy();
+    expect(bass!.binding).toEqual({ device: 'bridge1', channel: 5 });
   });
 });

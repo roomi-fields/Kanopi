@@ -40,7 +40,7 @@ class ClockStore {
    *  loaded (the authority), else the persisted session value. playing/paused: PROJECTED from
    *  Kronos's Transport state (`kronosCursor.state`). */
   state = $derived<ClockState>({
-    bpm: kronosCursor.active ? kronosCursor.active.transport.tempo : this.#tempo,
+    bpm: kronosCursor.active ? kronosCursor.tempo : this.#tempo,
     beatsPerBar: this.#beatsPerBar,
     playing: kronosCursor.active != null && kronosCursor.state === 'running',
     paused: kronosCursor.active != null && kronosCursor.state === 'paused'

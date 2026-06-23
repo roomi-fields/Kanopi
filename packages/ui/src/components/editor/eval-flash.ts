@@ -50,6 +50,13 @@ export function flash(
 ) {
   view.dispatch({ effects: setFlashEffect.of({ from, to, kind }) });
   setTimeout(() => {
-    if (view.state) view.dispatch({ effects: setFlashEffect.of(null) });
+    // The tab may have been closed within `durationMs`. `view.state` survives
+    // `destroy()`, so it's not a usable liveness check — dispatch and swallow the
+    // "EditorView.dispatch after destroy" throw instead.
+    try {
+      view.dispatch({ effects: setFlashEffect.of(null) });
+    } catch {
+      /* view destroyed — nothing left to clear */
+    }
   }, durationMs);
 }

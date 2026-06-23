@@ -22,7 +22,12 @@ export function coerceControlValues(controls) {
   if (!controls) return {};
   const out = {};
   for (const [k, v] of Object.entries(controls)) {
-    out[k] = typeof v === 'string' && v.trim() !== '' && !Number.isNaN(Number(v)) ? Number(v) : v;
+    // Only PLAIN decimals coerce (so `vel:'80'` / `filterQ:'2.5'` apply); reject
+    // hex (`'0x10'`), scientific (`'1e3'`), `'Infinity'`/`'NaN'`, and non-numeric
+    // strings (`wave:'sawtooth'`) — a control name that merely happens to be
+    // JS-parseable as a number must NOT be silently retyped before routing.
+    const s = typeof v === 'string' ? v.trim() : null;
+    out[k] = s !== null && /^[+-]?(\d+\.?\d*|\.\d+)$/.test(s) ? Number(s) : v;
   }
   return out;
 }
@@ -69,23 +74,11 @@ export class Dispatcher {
     if (actorTable) {
       for (const [name, def] of Object.entries(actorTable)) {
         this._actors[name] = {
-          resolver: null,
           transportName: null,
           transport: null,
           def,
         };
       }
-    }
-  }
-
-  /**
-   * Set the resolver for a specific actor.
-   * @param {string} actorName
-   * @param {Resolver} resolver
-   */
-  setActorResolver(actorName, resolver) {
-    if (this._actors[actorName]) {
-      this._actors[actorName].resolver = resolver;
     }
   }
 
@@ -128,44 +121,28 @@ export class Dispatcher {
    * @param {Array<{token:string,startSec:number,durSec:number,type:'note'|'control'|'rest',payload?:object,nature?:string,rq?:object}>} events
    */
   loadEvents(events) {
-    if (!events || events.length === 0) {
-      this.events = [];
-      return;
-    }
-
-    this.events = events.map(e => {
-      const isControl = e.type === 'control';
-      const isRest = e.type === 'rest' || e.token === '-' || e.token === '_';
-      return {
-        token: e.token,
-        startSec: e.startSec,
-        durSec: Math.max(0, e.durSec || 0),
-        isControl,
-        isSilence: isRest && e.token === '-',
-        isProlongation: isRest && e.token === '_',
-        payload: e.payload ?? null,
-        nature: e.nature,
-        // E-016 sealed per-leaf runtime state, folded over controlState at send.
-        rq: e.rq ?? null,
-        // Resolved non-temporal controls (canonical `leaf.controls` channel),
-        // spread over controlState at send so the terminal voices wave/vel/etc.
-        controls: e.controls ?? null,
-      };
-    }).sort((a, b) => {
-      if (a.startSec !== b.startSec) return a.startSec - b.startSec;
-      const pri = (e) => (e.isControl ? 0 : 1);
-      return pri(a) - pri(b);
-    });
-
+    // `this.events` feeds ONLY `duration` (Kronos's fallback); the rich per-leaf
+    // shape (isControl/payload/nature/rq/controls) + the control-priority sort the
+    // removed emitter needed are gone. Keep just the timing fields.
+    this.events =
+      events && events.length
+        ? events.map((e) => ({
+            token: e.token,
+            startSec: e.startSec,
+            durSec: Math.max(0, e.durSec || 0),
+          }))
+        : [];
   }
 
   /**
-   * Total duration of loaded sequence in seconds.
+   * Total duration of loaded sequence in seconds = the latest event END
+   * (max startSec+durSec) — not the last-by-start (a long earlier note can end last).
    */
   get duration() {
-    if (this.events.length === 0) return 0;
-    const last = this.events[this.events.length - 1];
-    return last.startSec + last.durSec;
+    return this.events.reduce((m, e) => {
+      const end = e.startSec + e.durSec;
+      return end > m ? end : m;
+    }, 0);
   }
 
   /** Teardown: close every transport (the host calls this on a same-file re-eval /

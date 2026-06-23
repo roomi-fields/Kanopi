@@ -21,9 +21,7 @@
       "runtime-midi": ["./src/lib/runtimes/runtime-midi.d.ts"],
       "runtime-audio": ["./src/lib/runtimes/runtime-audio.d.ts"],
       "runtime-codevoices": ["./src/lib/runtimes/runtime-codevoices.d.ts"],
-      "runtime-osc/src/adapter.js": ["./src/lib/runtimes/runtime-osc.d.ts"],
-      "runtime-osc/src/profiles/osc-bridge.js": ["./src/lib/runtimes/runtime-osc.d.ts"],
-      "runtime-osc/src/transports/websocket.js": ["./src/lib/runtimes/runtime-osc.d.ts"]
+      "runtime-osc/browser": ["./src/lib/runtimes/runtime-osc.d.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.svelte", "src/**/*.svelte.ts", "vite.config.ts"],

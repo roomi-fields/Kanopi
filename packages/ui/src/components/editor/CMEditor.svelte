@@ -50,6 +50,10 @@
   let canvas: HTMLCanvasElement | undefined = $state();
   let view: EditorView | undefined;
   let currentDocId: string | undefined;
+  // The fileName currently registered as the Strudel inline-widget target, so a
+  // doc swap can unregister the PREVIOUS file before registering the new one
+  // (else the old fileName→view mapping leaks and dispatches onto a replaced view).
+  let registeredFileName: string | undefined;
   let strudelInstall: ((view: EditorView) => Promise<void>) | undefined;
 
   const isStrudelLike = $derived(runtime === 'strudel' || runtime === 'tidal');
@@ -213,12 +217,14 @@
     // lands on the right editor when several Strudel files are open.
     if (runtime === 'strudel' || runtime === 'tidal') {
       registerStrudelEditorView(fileName, view);
+      registeredFileName = fileName;
     }
   });
 
   onDestroy(() => {
-    if (runtime === 'strudel' || runtime === 'tidal') {
-      unregisterStrudelEditorView(fileName);
+    if (registeredFileName !== undefined) {
+      unregisterStrudelEditorView(registeredFileName);
+      registeredFileName = undefined;
     }
     view?.destroy();
     view = undefined;
@@ -232,8 +238,15 @@
       currentDocId = docId;
       view.setState(makeState(doc, runtime));
       if (view && strudelInstall) void strudelInstall(view);
+      // Unregister the PREVIOUS file's view before (re)registering, so a doc swap
+      // doesn't leak a stale fileName→view mapping in the widget dispatch registry.
+      if (registeredFileName !== undefined && registeredFileName !== fileName) {
+        unregisterStrudelEditorView(registeredFileName);
+        registeredFileName = undefined;
+      }
       if (runtime === 'strudel' || runtime === 'tidal') {
         registerStrudelEditorView(fileName, view);
+        registeredFileName = fileName;
       }
       return;
     }

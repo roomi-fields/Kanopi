@@ -14,9 +14,11 @@ const portNames: string[] = [];
 function parse(msg: Uint8Array, ch: number): MidiEvent | null {
   const status = msg[0] & 0xf0;
   if (status === 0xb0) {
+    if (msg.length < 3) return null; // malformed CC (no value byte) → drop, not NaN
     return { kind: 'cv', index: msg[1], value: msg[2], ch };
   }
   if (status === 0x90) {
+    if (msg.length < 3) return null; // malformed note-on (no velocity byte) → drop
     // Note-on with velocity 0 is treated as note-off by convention.
     return { kind: 'note', index: msg[1], value: msg[2], ch };
   }

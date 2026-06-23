@@ -215,7 +215,8 @@ export class Timeline {
       }
     }
 
-    this.totalMs = Math.max(...tokens.map(t => t.end), 1);
+    // Reduce, not spread: a large derivation would overflow Math.max's arg limit.
+    this.totalMs = tokens.reduce((m, t) => (t.end > m ? t.end : m), 1);
     this.range.totalMs = this.totalMs;
     this.silences = silences;
     this._controlTable = controlTable;
