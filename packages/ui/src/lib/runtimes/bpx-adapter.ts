@@ -1457,6 +1457,12 @@ function makeBpxAdapter(
       // The raw BPx `DerivationTree` (control nodes included) for the multi-actor
       // dispatcher path; `tree` above is the visualizer-shaped cast.
       let rawTree: unknown;
+      // The BPx-COMPILED scene length, in beats, read off the derivation metadata
+      // (`derived.tree.metadata.totalDurationBeats` — BPx authority). Carried out of
+      // the try block so the Kronos-audio call site can project it into the loop bound
+      // (× `beatDurSec`), instead of the host's reduce(max) of the last sounding leaf.
+      // Undefined when the engine omits it → the call site falls back to the reduce.
+      let totalDurationBeats: number | undefined;
       // DETERMINISTIC leaf-name table (`symbolId → name`) read off the grammar's
       // own symbol table — the authoritative resolver the tree-view adapters use,
       // replacing the fragile temporal correlation. Empty when the engine doesn't
@@ -1535,6 +1541,9 @@ function makeBpxAdapter(
         // (which stamped `{__cv}` descriptors for the now-removed internal WebAudio synth)
         // is GONE — Kanopi neither resolves nor renders CV.
         rawTree = derived.tree;
+        // BPx authority for the scene's compiled length (includes any trailing rest);
+        // projected into the Kronos loop bound below.
+        totalDurationBeats = derived.tree?.metadata?.totalDurationBeats;
         tokens = derived.tokens.filter((t) => t.type !== 'control');
         tree = derived.tree as unknown as ProductionTree;
         // Resolve every leaf's name now, while `bpx` (and its grammar symbol
@@ -1950,6 +1959,16 @@ function makeBpxAdapter(
             events: treeEvents,
             audioCtx: ctx,
             derivedTempo: currentBpm,
+            // LOOP BOUND = BPx authority. The compiled scene length in beats
+            // (`totalDurationBeats`, includes any trailing rest) × the effective
+            // beat duration (`beatDurSec = 60/currentBpm`, the same projected tempo)
+            // gives the scene-seconds loop length. This PROJECTS the engine's
+            // compiled length; the timeline's reduce(max)-of-last-event becomes a
+            // pure repli for paths where the engine omits `totalDurationBeats`.
+            durationSec:
+              totalDurationBeats != null && beatDurSec > 0
+                ? totalDurationBeats * beatDurSec
+                : undefined,
             loop: looping,
             dispatcher: dispatcher as unknown as Parameters<
               typeof startKronosAudio
