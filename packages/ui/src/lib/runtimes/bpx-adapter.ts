@@ -97,7 +97,7 @@ import type { VoiceOutputType } from './adapter';
 // load it through the Strudel `samples()` path. Consumed AS-IS — the adapter
 // only maps ids → loader.
 import { findBank } from '../library/audio-banks';
-import { loadSampleBank } from 'runtime-codevoices';
+import { loadSampleBank, codeVoiceAdapters } from 'runtime-codevoices';
 // OSC output (OSC-5b): the osc-bridge WS→UDP relay endpoint. Kanopi's WebSocket
 // transport (built in startKronosAudio) connects here; the relay forwards UDP.
 import routingJson from '../../../../library/routing.json';
@@ -1147,21 +1147,21 @@ function srcKey(s: EvalSource): string {
 }
 
 // Map a backtick interpreter tag (`strudel`, `hydra`, `tidal`, `js`, …) to a
+// The set of code-voice runtimes the registry is built from (`registry.ts` keys
+// its adapter map off this same `codeVoiceAdapters` list). Derived here — NOT a
+// second hand-maintained table — so adding a code voice to `codeVoiceAdapters`
+// exposes it for free. Imported from `runtime-codevoices` (already a dependency),
+// which avoids the bp3 ↔ registry module-eval cycle a static `./registry` import
+// would create.
+const codeVoiceRuntimes = new Set<Runtime>(codeVoiceAdapters.map((a) => a.id));
+
 // Kanopi Runtime. The tag is the eval tag from the .bps backtick (`strudel: …`);
-// most map 1:1 to a registered adapter. `auto` has no interpreter — it's an
-// error (the user must tag the code). `sc`/`py` are level-3 (osc-bridge), no
-// browser adapter yet → unknown-interp error, surfaced clearly (never silent).
+// each code-voice tag IS its registered adapter's id, so an interp resolves iff
+// the registry has an adapter for it. `auto` has no interpreter (the user must
+// tag the code). `sc`/`py` are level-3 (osc-bridge), absent from the registry →
+// unknown-interp (surfaced clearly, never silent).
 function runtimeForInterp(interp: string): Runtime | undefined {
-  const known: Record<string, Runtime> = {
-    strudel: 'strudel',
-    tidal: 'tidal',
-    hydra: 'hydra',
-    p5: 'p5',
-    mercury: 'mercury',
-    csound: 'csound',
-    js: 'js'
-  };
-  return known[interp];
+  return codeVoiceRuntimes.has(interp as Runtime) ? (interp as Runtime) : undefined;
 }
 
 // What a voice PRODUCES (ADAPTER_SPEC §1bis b). A code voice's output type is
