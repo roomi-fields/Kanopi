@@ -245,7 +245,11 @@ function withDefaultScene(
 interface OrchestratedActor {
   name: string;
   transportKey: string; // device name referenced by `transport.<key>` (free identifier)
-  alphabet: string; // 'western' | 'solfège' | …
+  /** Declared `@actor … alphabet:<key>` (`western` | `solfège` | catalog key, …), or
+   *  `undefined` when the actor declares none. Passed THROUGH to the shared resolver
+   *  builder: an absent alphabet makes it SNIFF western/solfège from the tokens, instead
+   *  of a host-invented `'western'` lock (KAN-B04 — Kanopi invents no musical default). */
+  alphabet?: string;
   // Interpreter tag of a code voice (`eval.strudel`, `eval.hydra`, …), or
   // undefined for a native notes voice. Drives the voice's output type for the
   // device-compatibility gate (DEVICES_SPEC §3 / ADAPTER_SPEC §1bis b).
@@ -269,9 +273,14 @@ interface Orchestration {
  *  (audio transport; pitch resolution falls to the scene resolver since events carry no
  *  `payload.actor`). Shared by both frontends so there is ONE code path, never a mono one. */
 function syntheticDefaultOrchestration(): Orchestration {
+  // No declared alphabet: the implicit `default` actor resolves through the scene
+  // resolver, which SNIFFS western/solfège from the tokens. We invent no `'western'`
+  // lock here (KAN-B04) — a `.gr` in `do/re/mi` must sniff solfège, not be forced
+  // western. (The `default` actor's pitch path is `sceneResolver`, but we keep the
+  // table/actor alphabet absent for honesty and to mirror the real-actor path.)
   return {
-    actorTable: { default: { transport: { key: 'audio' }, alphabet: 'western' } },
-    actors: [{ name: 'default', transportKey: 'audio', alphabet: 'western' }],
+    actorTable: { default: { transport: { key: 'audio' } } },
+    actors: [{ name: 'default', transportKey: 'audio' }],
     synthetic: true
   };
 }
@@ -775,7 +784,10 @@ const bpsFrontend: Frontend = (code) => {
     actors: names.map((name) => ({
       name,
       transportKey: actorTable[name]?.transport?.key ?? 'audio',
-      alphabet: actorTable[name]?.alphabet ?? 'western',
+      // Pass the DECLARED alphabet through, or `undefined` when the actor declares
+      // none — the shared resolver builder then SNIFFS western/solfège from the
+      // tokens. No host-invented `'western'` lock (KAN-B04).
+      alphabet: actorTable[name]?.alphabet,
       evalInterp: actorTable[name]?.eval,
       binding: bindingByName[name] ?? null
     }))
@@ -1847,7 +1859,7 @@ function makeBpxAdapter(
         // `PitchResolver` out. The `default` actor (no `@actor`) inherits this; each real
         // actor gets one for its own alphabet. Kanopi resolves nothing itself.
         const sceneResolver = sceneResolverFor(declaredAlphabet, declaredTuning, tokens);
-        const resolverFor = (alphabet: string): PitchResolver =>
+        const resolverFor = (alphabet: string | undefined): PitchResolver =>
           sceneResolverFor(alphabet, declaredTuning, tokens);
         // AUDIO output is the runtime-audio AudioRuntime, built by `startKronosAudio`
         // (it needs the shared clock for CV) and registered there as the 'webaudio'
