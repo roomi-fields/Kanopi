@@ -49,11 +49,6 @@ export class Dispatcher {
     // flat symbol→actor map: a terminal shared by two actors routes by
     // occurrence, never collapsed. A note WITHOUT an actor routes to 'default'.
     this._actors = {};              // actorName → { transportName, transport, def }
-
-    // Modulator registry (name → { objectType, params, curve }), forwarded to
-    // transports that consume it. Stored so a transport added AFTER setModulators
-    // still gets it (order-independent).
-    this._modulators = {};
   }
 
   /**
@@ -61,9 +56,6 @@ export class Dispatcher {
    */
   addTransport(name, transport) {
     this.transports[name] = transport;
-    if (transport && typeof transport.setModulators === 'function') {
-      transport.setModulators(this._modulators);
-    }
   }
 
   /**
@@ -94,19 +86,6 @@ export class Dispatcher {
   setActorTransport(actorName, transportName) {
     if (this._actors[actorName]) {
       this._actors[actorName].transportName = transportName;
-    }
-  }
-
-  /**
-   * Set the modulator registry (name → { objectType, params, curve }) from the
-   * `cv … : mod.x(…)` declarations, and forward it to every transport. Per-note
-   * modulation is applied at `transport.send()` from a note's branchement controls
-   * (e.g. `cutoff: 'env1'` in `leaf.controls`) — no CV tokens in the stream.
-   */
-  setModulators(registry) {
-    this._modulators = registry || {};
-    for (const t of Object.values(this.transports)) {
-      if (t && typeof t.setModulators === 'function') t.setModulators(this._modulators);
     }
   }
 

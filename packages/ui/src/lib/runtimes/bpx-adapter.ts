@@ -642,62 +642,6 @@ function actorTableFromAst(a: SceneAstView | null): AdapterActorTable {
   return out;
 }
 
-// CV modulation libraries Kanopi can resolve (by lib name). Each declares its
-// objects' param signatures + curve shape. The modulators live in `mod` (mod.json).
-interface CVLib {
-  objects?: Record<string, { parameters?: Record<string, { default?: unknown }>; curve?: unknown }>;
-}
-const CV_LIBS: Record<string, CVLib> = { mod: modLibJson as unknown as CVLib };
-
-// A CV modulator DECLARATION in the AST (`cv env1 : mod.adsr(…)`). It defines the
-// modulator only — its target/input is set at the BRANCHEMENT point on a note
-// (`Bass -> C2 (cutoff: env1)`), surfaced via `leaf.controls`, not here.
-interface CVInstanceNode {
-  name: string;
-  lib?: string;
-  objectType?: string;
-  args?: unknown[];
-  namedArgs?: Record<string, unknown>;
-  code?: string;
-}
-
-/** A resolved modulator: its named params + its curve (from the library). Keyed by
- *  NAME in the registry. The destination input is decided at the note branchement. */
-export interface Modulator {
-  objectType?: string;
-  params: Record<string, unknown>;
-  curve: unknown;
-}
-
-// Build the MODULATOR REGISTRY (name → resolved modulator) from the AST's
-// `cvInstances` (the `cv name : mod.obj(…)` declarations). Resolves each
-// modulator's params (library defaults < positional args by the library's
-// parameter order < named args) and attaches the library's `curve` (declarative
-// segments/periodic) so the transport renders it generically per note. A backtick
-// modulator (code) becomes an `expr` curve. The note branchement `(cutoff: name)`
-// (in `leaf.controls`) selects WHICH modulator drives WHICH input on that note.
-export function modulatorsFromAst(ast: unknown): Record<string, Modulator> {
-  const instances = (ast as { cvInstances?: CVInstanceNode[] } | null)?.cvInstances;
-  const registry: Record<string, Modulator> = {};
-  if (!Array.isArray(instances)) return registry;
-  for (const cv of instances) {
-    const objDef = cv.lib ? CV_LIBS[cv.lib]?.objects?.[cv.objectType ?? ''] : undefined;
-    const paramDefs = objDef?.parameters ?? {};
-    const order = Object.keys(paramDefs);
-    const params: Record<string, unknown> = {};
-    for (const k of order) {
-      if (paramDefs[k]?.default !== undefined) params[k] = paramDefs[k].default;
-    }
-    (cv.args ?? []).forEach((v, idx) => {
-      if (order[idx]) params[order[idx]] = v;
-    });
-    Object.assign(params, cv.namedArgs ?? {});
-    const curve = cv.code ? { kind: 'expr', code: cv.code } : objDef?.curve;
-    registry[cv.name] = { objectType: cv.objectType, params, curve };
-  }
-  return registry;
-}
-
 // `.bps` — BPScript compiles to a SceneAST (`compileBPS().ast`) that BPx derives
 // directly. The front-end view (tempo, flagStates, libraries, actorTable,
 // sections) is read from THAT AST — the single source of truth — not the
@@ -1797,17 +1741,6 @@ function makeBpxAdapter(
       // the first Play's `replay` resumes the context (the `__replay__` sentinel does so).
       const ctx = buildOnly ? peekCtx() : await getCtx();
       const dispatcher = new Dispatcher(ctx);
-
-      // CV modulation table (CV.md): teach the dispatcher which terminals are CVs
-      // (env1…) and their resolved params + curve, so each CV occurrence routes to
-      // `transport.sendCV` (→ the generic curve renderer on the chosen CV input)
-      // Modulator registry (name → resolved curve/params) from the `cv … : mod.x(…)`
-      // declarations. The dispatcher forwards it to its transports; per-note
-      // modulation is applied at `send()` from a note's branchement controls
-      // (`leaf.controls` carrying e.g. `cutoff: 'env1'`). No `cvInstances` → {}.
-      (dispatcher as unknown as { setModulators(r: Record<string, unknown>): void }).setModulators(
-        modulatorsFromAst(ast)
-      );
 
       // Orchestrator-only: BT token → owning actor (rule LHS), and the live set
       // of disarmed actors (consulted by the backtick sink + the per-actor note
