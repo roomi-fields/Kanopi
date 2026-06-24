@@ -1482,6 +1482,11 @@ function makeBpxAdapter(
       // replacing the fragile temporal correlation. Empty when the engine doesn't
       // expose it (adapters then fall back).
       let symbolNames: Record<number, string> = {};
+      // Modulator registry, built ONCE from CONSTANT inputs (ast.cvInstances +
+      // modLibJson). Identical for the eval-path composition AND the per-cycle
+      // re-random re-derivation (only the derivation's random draw differs), so
+      // it is hoisted above the try and reused by both (no duplicate build).
+      let kronosRegistry: ReturnType<typeof buildModulators>;
       try {
         // `effectiveFlags` (e.g. `{ scene: 2 }`) is applied as the BPx engine's
         // initial flag state, so a flag-guarded rule (`/scene=2/`) derives
@@ -1520,7 +1525,7 @@ function makeBpxAdapter(
           (bpx as { grammar?: { symbols?: Partial<SymbolTable> } }).grammar?.symbols?.getName?.(
             sid
           );
-        const kronosRegistry = buildModulators(
+        kronosRegistry = buildModulators(
           ((ast as { cvInstances?: unknown[] } | null)?.cvInstances ?? []) as Parameters<
             typeof buildModulators
           >[0],
@@ -1568,13 +1573,9 @@ function makeBpxAdapter(
       // when the transport's re-random toggle is on AND looping.
       // The modulator registry is built from CONSTANT inputs (ast.cvInstances +
       // modLibJson) — identical on every re-random cycle (only the derivation's
-      // random draw differs). Build it ONCE here, not inside the per-cycle closure.
-      const reDeriveRegistry = buildModulators(
-        ((ast as { cvInstances?: unknown[] } | null)?.cvInstances ?? []) as Parameters<
-          typeof buildModulators
-        >[0],
-        modLibJson as unknown as ModLib
-      );
+      // random draw differs) AND identical to the eval-path build above. Reuse
+      // the single `kronosRegistry` instance rather than rebuilding it.
+      const reDeriveRegistry = kronosRegistry;
       const reDeriveTreeEvents = (filterEvents: (e: DispatchEvent) => boolean) => () => {
         try {
           const rbpx = createBPx({

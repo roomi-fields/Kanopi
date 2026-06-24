@@ -283,10 +283,28 @@ class OpenBlocksStore {
 const extractMemo = new Map<string, { contents: string; runtime: Runtime; blocks: CodeBlock[] }>();
 function extractBlocksMemo(id: string, contents: string, runtime: Runtime): CodeBlock[] {
   const hit = extractMemo.get(id);
-  if (hit && hit.contents === contents && hit.runtime === runtime) return hit.blocks;
+  // Return a shallow copy: the cached `blocks` array is held across calls, so
+  // handing out the live reference would let a downstream mutation corrupt the
+  // memo for every later consumer. (Block objects themselves are treated as
+  // immutable; only the array identity needs defending.)
+  if (hit && hit.contents === contents && hit.runtime === runtime) return [...hit.blocks];
   const blocks = extractBlocks(contents, runtime);
   extractMemo.set(id, { contents, runtime, blocks });
-  return blocks;
+  return [...blocks];
+}
+
+/**
+ * Drop a file's memoized block extraction. Called when a tab/file is closed or
+ * the whole workspace is replaced, so the per-file memo can't accumulate one
+ * stale entry per never-reopened file. No-op if the id was never memoized.
+ */
+export function forgetFile(id: string): void {
+  extractMemo.delete(id);
+}
+
+/** Drop every memoized extraction (workspace-wide replace, e.g. loadFiles). */
+export function forgetAllFiles(): void {
+  extractMemo.clear();
 }
 
 function computeOpenBlocks(): OpenBlock[] {

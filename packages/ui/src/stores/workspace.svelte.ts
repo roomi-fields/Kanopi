@@ -2,6 +2,7 @@ import { starterFiles } from '../lib/workspace/fixtures';
 import type { TreeNode, VirtualFile } from '../lib/workspace/types';
 import { runtimeFromExt } from '../lib/workspace/types';
 import { buildTree } from '../lib/workspace/build-tree';
+import { forgetFile, forgetAllFiles } from './blocks.svelte';
 
 // Monotonic counter so every minted file id is unique for the lifetime of the
 // page — `Date.now()` alone collides when two `loadFiles`/`addFile` calls land in
@@ -41,6 +42,9 @@ class WorkspaceStore {
     if (this.activeTabId === id) {
       this.activeTabId = next[Math.min(idx, next.length - 1)] ?? null;
     }
+    // Release the closed file's memoized block extraction (bounded leak: one
+    // stale entry per never-reopened file otherwise).
+    forgetFile(id);
   }
 
   setActive(id: string) {
@@ -96,6 +100,8 @@ class WorkspaceStore {
     this.files = next;
     this.openTabIds = [];
     this.activeTabId = null;
+    // Every prior file id is gone — drop their memoized extractions wholesale.
+    forgetAllFiles();
     if (focusPath) {
       const target = next.find((f) => f.path === focusPath);
       if (target) {

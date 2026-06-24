@@ -16,8 +16,9 @@ import { headSectionsFromAst } from '../lib/runtimes/head-sections-ast';
 //     different flag-guarded rule derive (different armed actors).
 //   - SECTIONS: the head rule's RHS sequence (`S -> calm full`) → passive visual
 //     landmarks in the Structure panel. STEP itself advances BEAT by beat over
-//     the produced timeline (see `stepActive` + bp3.ts `sliceBeat`), not section
-//     by section.
+//     the produced timeline by asking Kronos to seek the beat then play a bounded
+//     one-beat window (`transport.seek` + `scheduler.playWindow(from, from+dur)`
+//     in kronos-audio.ts), not section by section.
 //
 // The compile itself is run reactively in BpsScenesBar.svelte (a real component
 // reactive context); this store holds the resulting view model + the selection

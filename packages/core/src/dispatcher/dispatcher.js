@@ -22,12 +22,15 @@ export function coerceControlValues(controls) {
   if (!controls) return {};
   const out = {};
   for (const [k, v] of Object.entries(controls)) {
-    // Only PLAIN decimals coerce (so `vel:'80'` / `filterQ:'2.5'` apply); reject
-    // hex (`'0x10'`), scientific (`'1e3'`), `'Infinity'`/`'NaN'`, and non-numeric
-    // strings (`wave:'sawtooth'`) — a control name that merely happens to be
-    // JS-parseable as a number must NOT be silently retyped before routing.
+    // Decimal AND scientific-notation numbers coerce (so `vel:'80'`,
+    // `filterQ:'2.5'`, and exponent CV like `'1e3'` / `'2.5e-1'` apply); reject
+    // hex (`'0x10'`), the special words `'Infinity'`/`'NaN'`, empty/whitespace,
+    // and non-numeric strings (`wave:'sawtooth'`) — a control name that merely
+    // happens to be JS-parseable as a number must NOT be silently retyped. The
+    // regex only matches finite numeric literals, so `Number(s)` is always finite.
     const s = typeof v === 'string' ? v.trim() : null;
-    out[k] = s !== null && /^[+-]?(\d+\.?\d*|\.\d+)$/.test(s) ? Number(s) : v;
+    out[k] =
+      s !== null && /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(s) ? Number(s) : v;
   }
   return out;
 }
@@ -39,13 +42,13 @@ export class Dispatcher {
   constructor(audioCtx) {
     this.audioCtx = audioCtx;
     this.transports = {};     // name → Transport instance (read by Kronos for routing)
-    this.events = [];         // sorted by startSec — feeds `duration` (Kronos's fallback)
+    this.events = [];         // timing-only events — feeds `duration` (Kronos's fallback)
 
-    // Actor system: per-actor resolver and transport. Routing keys on each
-    // event's OWN `payload.actor` (carried off the BPx tree) — there is no flat
-    // symbol→actor map: a terminal shared by two actors routes by occurrence,
-    // never collapsed. A note WITHOUT an actor routes to the 'default' transport.
-    this._actors = {};              // actorName → { resolver, transportName, transport }
+    // Actor system: per-actor definition + transport binding. Routing keys on
+    // each event's OWN `payload.actor` (carried off the BPx tree) — there is no
+    // flat symbol→actor map: a terminal shared by two actors routes by
+    // occurrence, never collapsed. A note WITHOUT an actor routes to 'default'.
+    this._actors = {};              // actorName → { transportName, transport, def }
 
     // Modulator registry (name → { objectType, params, curve }), forwarded to
     // transports that consume it. Stored so a transport added AFTER setModulators
@@ -64,9 +67,10 @@ export class Dispatcher {
   }
 
   /**
-   * Set actor system: per-actor definitions (resolver + transport). Routing is
-   * by each event's own `payload.actor` (off the tree), so NO flat symbol→actor
-   * map is needed — a terminal shared by two actors routes by occurrence.
+   * Set actor system: per-actor definitions, each bound to a transport. Routing
+   * is by each event's own `payload.actor` (off the tree), so NO flat
+   * symbol→actor map is needed — a terminal shared by two actors routes by
+   * occurrence. Each entry holds `{ transportName, transport, def }`.
    * @param {Object} actorTable - { actorName → { alphabet, transport, ... } }
    */
   setActors(actorTable) {
