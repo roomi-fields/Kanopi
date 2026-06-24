@@ -57,14 +57,13 @@ class KronosCursorStore {
   tempo = $state(0);
   #unsub: (() => void) | null = null;
 
-  // Beat/bar UI EVENT derivation (p5/hydra `onBeat`/`onBar`). Monotone counters +
-  // last-seen integer floors for crossing detection (−1 = no baseline yet, set on the
-  // first running frame so the downbeat isn't counted, reset to −1 when a new dispatcher
-  // takes over or the transport leaves `running`). This is the EXACT semantics the old
-  // MockClock render loop carried; only the position SOURCE moved (it now reads Kronos
-  // directly instead of the relayed `beatSource`).
-  #absBeat = 0;
-  #absBar = 0;
+  // Beat/bar UI EVENT derivation (p5/hydra `onBeat`/`onBar`). Last-seen ABSOLUTE integer
+  // indices for crossing detection (−1 = no baseline yet, set on the first running frame
+  // so the downbeat isn't counted, reset to −1 when a new dispatcher takes over or the
+  // transport leaves `running`). The emitted `count` is NOT a host recount: it IS the
+  // absolute beat/bar index read from Kronos's `transport.absoluteBeatPosition` primitive
+  // (the unfolded position authority). So a dropped frame that skips 2 beats jumps the
+  // count to the primitive's value instead of under-counting by +1.
   #lastBeatFloor = -1;
   #lastBarFloor = -1;
   #eventsBus?: EventBus;
@@ -115,45 +114,47 @@ class KronosCursorStore {
       if (t !== this.tempo) this.tempo = t;
     }
     if (kc && this.state === 'running') {
-      // POSITION = Kronos's Transport (the single authority), READ each frame — never
-      // integrated. Expose it (`beat`) for the displays AND derive the beat/bar UI
-      // events from its integer crossings.
-      const bp = kc.beatPosition();
-      this.beat = bp;
-      const totalBeats = Math.max(0, bp.beatsTotal);
+      // DISPLAY position = Kronos's Transport (the single authority), READ each frame —
+      // never integrated. The folded readout drives the bar·beat displays.
+      this.beat = kc.beatPosition();
+      // BEAT/BAR EVENTS count = the ABSOLUTE (unfolded) beat/bar index, READ from Kronos's
+      // `absoluteBeatPosition` primitive (the upstream authority that replaces the old
+      // host `absBeat`/`absBar` recount). `beatAbs` is the unfolded beat index (monotone
+      // across loops); the bar count is its 0-based bar-crossing index (NOT `abs.bar`,
+      // which is 1-indexed — using it directly would shift every bar count by one). The
+      // count is thus the primitive's value, not a +1 tally, so a dropped frame that skips
+      // 2 beats jumps the count correctly instead of under-counting.
+      const abs = kc.transport.absoluteBeatPosition(BEATS_PER_BAR);
+      const totalBeats = Math.max(0, abs.beatsTotal);
       const beatAbs = Math.floor(totalBeats);
       const barAbs = Math.floor(beatAbs / BEATS_PER_BAR);
-      // Beat/bar EVENTS on each crossing of the integer beat — INCLUDING the loop wrap
-      // (n-1 → 0), so the monotone `count` keeps climbing across loops. At musical tempi
-      // a beat is ≫16 ms, so 60 fps sees one crossing per frame (a dropped frame at most
-      // skips one purely-visual event). The first frame sets the baseline only (so the
-      // downbeat isn't counted), matching the previous semantics.
+      // Emit on each crossing of the integer beat — INCLUDING the loop wrap, since the
+      // absolute index keeps climbing through it. The first running frame sets the
+      // baseline only (so the downbeat isn't counted).
       if (this.#lastBeatFloor === -1) {
         this.#lastBeatFloor = beatAbs;
         this.#lastBarFloor = barAbs;
       } else {
         if (beatAbs !== this.#lastBeatFloor) {
           this.#lastBeatFloor = beatAbs;
-          this.#absBeat += 1;
           this.#eventsBus?.emit({
             schemaVersion: 1,
             type: 'beat',
             runtime: 'clock',
             t: now,
-            count: this.#absBeat,
+            count: beatAbs,
             bpm: this.#bpm(),
             phase: totalBeats - beatAbs
           });
         }
         if (barAbs !== this.#lastBarFloor) {
           this.#lastBarFloor = barAbs;
-          this.#absBar += 1;
           this.#eventsBus?.emit({
             schemaVersion: 1,
             type: 'bar',
             runtime: 'clock',
             t: now,
-            count: this.#absBar
+            count: barAbs
           });
         }
       }
