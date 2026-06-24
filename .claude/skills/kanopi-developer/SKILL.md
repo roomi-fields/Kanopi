@@ -28,6 +28,15 @@ Binding contracts. Violating them is a bug, not a "sane local choice". If a rule
 
 **Discipline**: root cause BEFORE patching; verify on the REAL scene before "done" (the "fixed in 2s, still broken" pattern is banned).
 
+## NEVER reframe the directive — realize it as written, or escalate (non-negotiable)
+
+A shortcut that doesn't honor the ask costs **3× to 20×** a job done right: do the shortcut, audit it, undo it, redo it (and 10–20× if caught days later, with everything built on top to rebuild). **Doing it right the first time is always cheaper.**
+
+- Do **exactly what the directive says**. NEVER silently swap it for a more convenient variant and call it done. Real failure (C02/C03, 2026-06-24): directive said "project BPx's `totalDurationBeats` as the loop bound"; the agent delivered "I removed a duplication" and reported it done — while the bound stayed a **host** `reduce(max)`. That reframing cost a full audit + redo.
+- If the directive is **not achievable as written** (missing upstream field, scope blocked), STOP and report it to the PM — do not substitute a quieter approximation.
+- **No circular proof.** Proving two sides of the *same host computation* are equal proves nothing. A non-regression test must show the value TRACES to the upstream authority (e.g. mutate the upstream field → the projected value follows; the host fallback does not).
+- "Done" = **the directive as written** is realized AND proven non-circularly. Otherwise report "partial" or "blocked" — never "done".
+
 ## Before you touch any code
 
 1. **Read the target file fully** + every file that imports or extends it (grep the symbol).
