@@ -22,13 +22,9 @@
 
 import { tokenizeOrder } from 'bpscript/src/transpiler/orderTokens.js';
 import type { ProductionTreeNode, ProductionTree } from '../../stores/production.svelte';
+import { makeNameResolver, type FlatToken } from './bpx-tree-names';
 
-/** The flat tokens from `derive().tokens` we correlate leaf names against (ms). */
-export interface FlatToken {
-  token: string;
-  start: number;
-  end: number;
-}
+export type { FlatToken };
 
 type TreeRoot = ProductionTree | { root: ProductionTreeNode } | ProductionTreeNode;
 
@@ -97,42 +93,4 @@ function resolveRoot(tree: TreeRoot | null | undefined): ProductionTreeNode | nu
   if ('root' in tree && tree.root) return tree.root as ProductionTreeNode;
   if ('type' in tree) return tree as ProductionTreeNode;
   return null;
-}
-
-/**
- * Build a closure mapping a leaf (symbolId + ms span) to its terminal NAME.
- * PRIMARY: the deterministic `symbolNames` table (`symbolId → name`) from the
- * grammar's symbol table — no collision on simultaneous polymetric voices.
- * FALLBACK: temporal correlation with the flat token list (same technique as
- * `bpx-tree-stream.ts`: bucket by rounded (start,end), consume each once). Falls
- * back to `#<symbolId>` if neither resolves.
- */
-function makeNameResolver(
-  flatTokens: FlatToken[],
-  symbolNames?: Record<number, string>
-): (symbolId: number, startMs: number, endMs: number) => string {
-  const buckets = new Map<string, FlatToken[]>();
-  for (const t of flatTokens) {
-    const key = `${Math.round(t.start)}:${Math.round(t.end)}`;
-    const arr = buckets.get(key);
-    if (arr) arr.push(t);
-    else buckets.set(key, [t]);
-  }
-  const cursors = new Map<string, number>();
-
-  return (symbolId, startMs, endMs) => {
-    // PRIMARY: deterministic name from the grammar symbol table.
-    const named = symbolNames?.[symbolId];
-    if (named !== undefined) return named;
-    const key = `${Math.round(startMs)}:${Math.round(endMs)}`;
-    const arr = buckets.get(key);
-    if (arr) {
-      const i = cursors.get(key) ?? 0;
-      if (i < arr.length) {
-        cursors.set(key, i + 1);
-        return arr[i].token;
-      }
-    }
-    return `#${symbolId}`;
-  };
 }

@@ -21,16 +21,12 @@
 // resort. `rest` leaves emit `-` (no name).
 
 import type { ProductionTreeNode, ProductionTree } from '../../stores/production.svelte';
+import { makeNameResolver, type FlatToken } from '../text-order/bpx-tree-names';
+
+export type { FlatToken };
 
 /** One entry of the flat stream `timeline.js` consumes (ms, as `Timeline.load` expects). */
 export interface StreamToken {
-  token: string;
-  start: number;
-  end: number;
-}
-
-/** The flat tokens from `derive().tokens` we correlate leaf names against. */
-export interface FlatToken {
   token: string;
   start: number;
   end: number;
@@ -110,45 +106,4 @@ function resolveRoot(tree: TreeRoot | null | undefined): ProductionTreeNode | nu
   if ('root' in tree && tree.root) return tree.root as ProductionTreeNode;
   if ('type' in tree) return tree as ProductionTreeNode;
   return null;
-}
-
-/**
- * Build a closure mapping a leaf (symbolId + ms span) to its terminal NAME.
- * PRIMARY: the deterministic `symbolNames` table (`symbolId → name`) read off the
- * grammar's own symbol table — no collision on simultaneous polymetric voices.
- * FALLBACK (no table / id missing): TEMPORAL CORRELATION with the flat token list
- * (matched by rounded (start,end), each consumed once so ties resolve in stream
- * order). LAST RESORT: `#<symbolId>`.
- */
-function makeNameResolver(
-  flatTokens: FlatToken[],
-  symbolNames?: Record<number, string>
-): (symbolId: number, startMs: number, endMs: number) => string {
-  // Bucket flat tokens by rounded (start,end); keep insertion order within a bucket.
-  const buckets = new Map<string, FlatToken[]>();
-  for (const t of flatTokens) {
-    const key = `${Math.round(t.start)}:${Math.round(t.end)}`;
-    const arr = buckets.get(key);
-    if (arr) arr.push(t);
-    else buckets.set(key, [t]);
-  }
-  const cursors = new Map<string, number>();
-
-  return (symbolId, startMs, endMs) => {
-    // PRIMARY: deterministic name from the grammar symbol table.
-    const named = symbolNames?.[symbolId];
-    if (named !== undefined) return named;
-    const key = `${Math.round(startMs)}:${Math.round(endMs)}`;
-    const arr = buckets.get(key);
-    if (arr) {
-      const i = cursors.get(key) ?? 0;
-      if (i < arr.length) {
-        cursors.set(key, i + 1);
-        return arr[i].token;
-      }
-    }
-    // No temporal match (shouldn't happen for sounding leaves) — fall back to a
-    // stable placeholder so the block still renders rather than silently dropping.
-    return `#${symbolId}`;
-  };
 }
