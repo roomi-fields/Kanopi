@@ -618,9 +618,9 @@ export function btTokenByActor(ast: unknown): Record<string, string> {
 
 // Orchestrated actors from the AST: each `ActorDirective` → the `{ transport:
 // {key, params}, alphabet, eval }` entry the adapter routes on. The dispatcher's
-// `setActors` keeps only the actor KEYS + reads `def.params`/`def.transportParams`
-// (absent here, as in the old sidecar → empty), so reconstructing from the AST
-// nodes is behavior-identical to compileBPS's `actorTable`.
+// `setActors` keeps only the actor KEYS (the per-actor transport is bound later
+// via `setActorTransport`), so reconstructing from the AST nodes is
+// behavior-identical to compileBPS's `actorTable`.
 type AdapterActorTable = Record<
   string,
   {

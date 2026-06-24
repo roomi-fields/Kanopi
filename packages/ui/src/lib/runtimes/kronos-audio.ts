@@ -62,10 +62,7 @@ interface TransportLike {
 interface DispatcherLike {
   duration?: number;
   transports?: Record<string, TransportLike>;
-  _actors?: Record<
-    string,
-    { transportName?: string | null; transport?: TransportLike | null } | undefined
-  >;
+  _actors?: Record<string, { transportName?: string | null } | undefined>;
 }
 
 export interface KronosAudioOptions {
@@ -384,7 +381,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   const pickTransport = (actor?: string): TransportLike | null => {
     if (actor) {
       const def = dispatcher._actors?.[actor];
-      const t = def?.transport ?? (def?.transportName ? transports[def.transportName] : undefined);
+      const t = def?.transportName ? transports[def.transportName] : undefined;
       if (t) return t;
     }
     return transports['default'] ?? audioRuntime ?? Object.values(transports)[0] ?? null;

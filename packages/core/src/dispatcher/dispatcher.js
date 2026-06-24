@@ -44,11 +44,11 @@ export class Dispatcher {
     this.transports = {};     // name → Transport instance (read by Kronos for routing)
     this.events = [];         // timing-only events — feeds `duration` (Kronos's fallback)
 
-    // Actor system: per-actor definition + transport binding. Routing keys on
-    // each event's OWN `payload.actor` (carried off the BPx tree) — there is no
-    // flat symbol→actor map: a terminal shared by two actors routes by
-    // occurrence, never collapsed. A note WITHOUT an actor routes to 'default'.
-    this._actors = {};              // actorName → { transportName, transport, def }
+    // Actor system: per-actor transport binding. Routing keys on each event's OWN
+    // `payload.actor` (carried off the BPx tree) — there is no flat symbol→actor
+    // map: a terminal shared by two actors routes by occurrence, never collapsed.
+    // A note WITHOUT an actor routes to 'default'.
+    this._actors = {};              // actorName → { transportName }
   }
 
   /**
@@ -59,21 +59,17 @@ export class Dispatcher {
   }
 
   /**
-   * Set actor system: per-actor definitions, each bound to a transport. Routing
-   * is by each event's own `payload.actor` (off the tree), so NO flat
-   * symbol→actor map is needed — a terminal shared by two actors routes by
-   * occurrence. Each entry holds `{ transportName, transport, def }`.
+   * Set actor system: keeps only the actor KEYS, each later bound to a transport
+   * via `setActorTransport`. Routing is by each event's own `payload.actor` (off
+   * the tree), so NO flat symbol→actor map is needed — a terminal shared by two
+   * actors routes by occurrence. Each entry holds `{ transportName }`.
    * @param {Object} actorTable - { actorName → { alphabet, transport, ... } }
    */
   setActors(actorTable) {
     this._actors = {};
     if (actorTable) {
-      for (const [name, def] of Object.entries(actorTable)) {
-        this._actors[name] = {
-          transportName: null,
-          transport: null,
-          def,
-        };
+      for (const name of Object.keys(actorTable)) {
+        this._actors[name] = { transportName: null };
       }
     }
   }
