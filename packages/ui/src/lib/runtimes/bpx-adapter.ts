@@ -1829,18 +1829,6 @@ function makeBpxAdapter(
         const sceneResolver = sceneResolverFor(declaredAlphabet, declaredTuning, tokens);
         const resolverFor = (alphabet: string | undefined): PitchResolver =>
           sceneResolverFor(alphabet, declaredTuning, tokens);
-        // Scene-level sound predicate (the mono concerns, now universal so the single
-        // path covers a plain grammar = an orchestration with 1 `default` actor).
-        // `soundsFn` decides play-vs-skip per symbol — a token that resolves to a PITCH
-        // in the scene's alphabet OR a front-end sound assignment sounds, everything
-        // else is skipped (it still shows in the Text panel's tree view). The pitched
-        // branch is the upstream ALPHABET-AWARE primitive `sceneResolver.sounds`: it is
-        // true for a maqâm token (`rast4`) under an arabic scene and false under western
-        // — the determination the host used to re-invent with the western `isNoteName`
-        // heuristic, which muted every non-western alphabet. The `sounding.has` branch
-        // stays for sound assignments / non-pitched symbols (out of `sounds`' scope).
-        const sounding = new Set(soundingSymbols ?? []);
-        const soundsFn = (token: string) => sceneResolver.sounds(token) || sounding.has(token);
         // AUDIO output is the runtime-audio AudioRuntime, built by `startKronosAudio`
         // (it needs the shared clock for CV) and registered there as the 'webaudio'
         // transport. Here we only NAME each audio actor's transport; MIDI stays a
@@ -1891,17 +1879,13 @@ function makeBpxAdapter(
         // dispatcher keys on `payload.actor`; there is NO flat symbol→actor map).
         // Control nodes carry their marker payload + `nature` for per-actor flux.
         //
-        // Defense-in-depth (twin of the default-scene fix above): never hand a
-        // structural non-terminal to a transport. Keep an event when it is a
-        // control, an actor-bound note, a backtick reference, or a token that
-        // SOUNDS (resolves to a pitch in the scene's alphabet, or a front-end
-        // sound assignment); drop an unexpanded start symbol (e.g. `S` when no
-        // guarded rule matched). The no-actor branch covers the mono / synthetic
-        // `default` actor (any scene without `@actor`, e.g. `arabic.bps`): it MUST
-        // use the same ALPHABET-AWARE `sceneResolver.sounds` predicate as the audio
-        // gate, not the western `isNoteName` heuristic — otherwise every maqâm leaf
-        // (`rast`, `dukah`…) is dropped here BEFORE reaching Kronos and the scene
-        // goes silent. Actor-bound terminals already carry their `payload.actor`.
+        // ROUTING/structure filter (NOT a "does it sound" judgement — that belongs to
+        // the resolution). Keep control markers and every terminal; drop only rests.
+        // Branches: control → true, rest → false, actor-bound note → true, backtick
+        // reference → true. The no-actor branch (mono / synthetic `default` actor, e.g.
+        // `arabic.bps`) returns true unconditionally: the host no longer pre-filters
+        // non-sounding tokens — a token that resolves to no pitch is silent at the sink
+        // (runtime-audio warns + emits nothing, runtime-midi skips the null frequency).
         const isBacktick = backticks ?? {};
         const orchestratedFilter = (e: DispatchEvent) => {
           if (e.type === 'control') return true;
@@ -1909,7 +1893,7 @@ function makeBpxAdapter(
           const actor = (e.payload as { actor?: string | null } | null)?.actor;
           if (actor) return true;
           if (Object.prototype.hasOwnProperty.call(isBacktick, e.token)) return true;
-          return sceneResolver.sounds(e.token) || sounding.has(e.token);
+          return true;
         };
         // Drop events that belong to a CURRENTLY-disarmed actor, read LIVE from
         // the shared `mutedActors` set at the moment the filter runs (initial load
@@ -1948,11 +1932,11 @@ function makeBpxAdapter(
         // voices. The dispatcher is NEVER started as an emitter — it remains purely the
         // transport/resolver/`_actors` structure Kronos reads through `pickTransport`.
         {
-          // Kronos drives notes + per-note CV for the scene. `soundsFn` does play-vs-skip
-          // (universal: notes + sound-assigned symbols + every actor alphabet's catalog
-          // notes sound; backticks are always dispatched, handled in the adapter). The
-          // ORCHESTRATED re-derive/live filter (`orchestratedLive`, honours the live mute
-          // set) lets re-random/loop re-roll the derivation. Routing is per-actor via the
+          // Kronos drives notes + per-note CV for the scene. The host no longer judges
+          // "does this sound" — every terminal is dispatched as a note and the RESOLUTION
+          // decides (an unresolved token is silent at the sink). The ORCHESTRATED
+          // re-derive/live filter (`orchestratedLive`, honours the live mute set) lets
+          // re-random/loop re-roll the derivation. Routing is per-actor via the
           // dispatcher's `_actors` map (wired above) + its transports; an event with no
           // actor (the `default`/mono case) falls back to the WebAudio transport's scene resolver.
           kronosAudio = startKronosAudio({
@@ -1974,7 +1958,6 @@ function makeBpxAdapter(
               typeof startKronosAudio
             >[0]['dispatcher'],
             startSceneSec: startOffsetSec,
-            soundsFn,
             // The shared scene pitch resolver → the runtime-audio AudioRuntime startKronosAudio
             // builds as the AUDIO output (token→Hz + CV render). Per-actor alphabets share the
             // scene resolver for V1 (mono/single-alphabet); MIDI keeps its own per-actor resolver.

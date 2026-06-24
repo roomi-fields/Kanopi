@@ -93,10 +93,6 @@ export interface KronosAudioOptions {
   oscWsUrl?: string;
   /** Scene-second offset to start from (STEP / resume). Default 0. */
   startSceneSec?: number;
-  /** Mono play-vs-skip predicate (note OR sounding symbol). A token it rejects
-   *  is a non-sounding terminal (e.g. a CV modulator name) → marked rest so
-   *  Kronos never emits it. Absent ⇒ every note sounds (actor path). */
-  soundsFn?: (token: string) => boolean;
   /** Re-random per loop cycle: when set AND `loop`, Kronos calls this at each loop
    *  boundary; it must re-run the BPx derivation (fresh random draw) and return the
    *  fresh dispatch events for the next cycle. Kronos NEVER derives — the host does.
@@ -225,14 +221,15 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   const loop = step ? false : opts.loop;
   const startScene = step ? step.fromSec : (opts.startSceneSec ?? 0);
   const log = opts.log ?? (() => {});
-  const sounds = opts.soundsFn ?? (() => true);
   const isBacktick = opts.isBacktick;
   const backtickSink = opts.backtickSink;
 
-  // 1. Map DispatchEvents → Kronos TimelineEvents. Non-sounding terminals and
-  //    control/rest markers are flagged so Kronos's note-only dispatch skips
-  //    them (it emits `kind:'note'` only). Counts surface what we cover vs skip.
-  //    Factored so the re-random loop boundary can rebuild a fresh timeline.
+  // 1. Map DispatchEvents → Kronos TimelineEvents. Control/rest markers are flagged
+  //    so Kronos's note-only dispatch skips them (it emits `kind:'note'` only). Every
+  //    other terminal is a NOTE: the host no longer judges "does this sound" — the
+  //    RESOLUTION decides (a token that resolves to no pitch is silent at the sink,
+  //    runtime-audio logs a warn, runtime-midi skips a null frequency). Counts surface
+  //    what we cover. Factored so the re-random loop boundary rebuilds a fresh timeline.
   const buildTimeline = (
     evs: DispatchEvent[]
   ): {
@@ -240,13 +237,11 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     noteCount: number;
     restCount: number;
     controlCount: number;
-    muteCount: number;
     transposeWarned: boolean;
   } => {
     let notes = 0;
     let rests = 0;
     let controls = 0;
-    let mutes = 0;
     let transpose = false;
     const tEvents: TimelineEvent[] = evs.map((e) => {
       let kind: 'note' | 'rest' | 'control';
@@ -256,16 +251,10 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       } else if (e.type === 'control') {
         kind = 'control';
         controls++;
-      } else if (isBacktick?.(e.token)) {
-        // Code voice (backtick): ALWAYS dispatched as a note so `send` can intercept
-        // it and fire the interpreter — independent of `soundsFn` (which would mark
-        // an unknown `BT…` token a non-sounding rest and silence the code voice).
-        kind = 'note';
-        notes++;
-      } else if (!sounds(e.token)) {
-        kind = 'rest'; // non-sounding terminal (CV name, mute symbol)
-        mutes++;
       } else {
+        // Note OR code voice (backtick): ALWAYS dispatched as a note. The resolution
+        // (not the host) decides whether it sounds; a backtick's `send` intercepts it
+        // to fire its interpreter.
         kind = 'note';
         notes++;
       }
@@ -308,14 +297,13 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       noteCount: notes,
       restCount: rests,
       controlCount: controls,
-      muteCount: mutes,
       transposeWarned: transpose
     };
   };
 
   const built = buildTimeline(events);
   const { timeline } = built;
-  const { noteCount, restCount, controlCount, muteCount, transposeWarned } = built;
+  const { noteCount, restCount, controlCount, transposeWarned } = built;
   const duration = timeline.duration;
 
   // 2. Clock on the shared AudioContext; anchor at the current instant (the host
@@ -574,7 +562,6 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
 
   log(
     `${buildOnly ? '⏸ kronos built (stopped)' : '▶ kronos audio'} — ${noteCount} notes` +
-      (muteCount ? `, ${muteCount} non-sounding skipped` : '') +
       (restCount ? `, ${restCount} rests` : '') +
       (controlCount ? `, ${controlCount} controls skipped` : '') +
       `, ${duration.toFixed(3)}s, ${derivedTempo} bpm, loop ${loop}` +
