@@ -171,7 +171,7 @@ export class Timeline {
 
   // ============ Data loading ============
 
-  load(tokens, { cvTable = null, controlTable = null, source = '' } = {}) {
+  load(tokens, { cvTable = null, controlTable = null } = {}) {
     if (!tokens || tokens.length === 0) {
       this.voices = [];
       this.silences = [];
@@ -328,90 +328,6 @@ export class Timeline {
       }
       return { ...pg, voiceIndices: [...voiceIndices], depth: pgr.depth };
     });
-
-    // Extract structural names from BPscript source
-    this._structNames = { groupLabels: {}, ruleElements: [] };
-    if (source) {
-      // 1. Find explicit labels: "name:{" → label for each { by openOrder
-      const groupLabels = {};
-      let braceCount = 0;
-      for (let i = 0; i < source.length; i++) {
-        if (source[i] === '/' && source[i + 1] === '/') {
-          i = source.indexOf('\n', i); if (i < 0) break; continue;
-        }
-        if (source[i] === '{') {
-          const before = source.substring(Math.max(0, i - 40), i);
-          const match = before.match(/(\w+)\s*:\s*$/);
-          if (match) groupLabels[braceCount] = match[1];
-          braceCount++;
-        }
-      }
-      for (const pg of this.polyGroups) {
-        if (pg.openOrder != null && groupLabels[pg.openOrder]) {
-          pg.label = groupLabels[pg.openOrder];
-        }
-      }
-
-      // 2. Parse rule RHS elements to name segments and groups at depth 0.
-      // Find the top-level rule (first rule whose RHS contains {})
-      // Format: "LHS -> elem1 {voices} elem2 {voices} elem3"
-      const ruleElements = []; // [{type:'sym'|'group', name, openOrder}] in order
-      const lines = source.split('\n');
-      for (const line of lines) {
-        const ruleMatch = line.match(/^\s*(\w+)\s*->\s*(.+)$/);
-        if (!ruleMatch) continue;
-        const rhs = ruleMatch[2].trim();
-        // Check if this rule contains top-level braces
-        let hasTopBrace = false;
-        let d = 0;
-        for (const ch of rhs) {
-          if (ch === '{') { if (d === 0) hasTopBrace = true; d++; }
-          else if (ch === '}') d--;
-        }
-        if (!hasTopBrace) continue;
-
-        // Parse elements: symbols and {…} groups in order
-        let oi = 0, pos = 0;
-        while (pos < rhs.length) {
-          // Skip whitespace
-          while (pos < rhs.length && rhs[pos] === ' ') pos++;
-          if (pos >= rhs.length) break;
-
-          if (rhs[pos] === '{') {
-            // Find matching }
-            let depth = 0, start = pos;
-            while (pos < rhs.length) {
-              if (rhs[pos] === '{') depth++;
-              else if (rhs[pos] === '}') { depth--; if (depth === 0) { pos++; break; } }
-              pos++;
-            }
-            // Skip qualifiers after }
-            while (pos < rhs.length && (rhs[pos] === '[' || rhs[pos] === '(')) {
-              const close = rhs[pos] === '[' ? ']' : ')';
-              while (pos < rhs.length && rhs[pos] !== close) pos++;
-              if (pos < rhs.length) pos++;
-            }
-            ruleElements.push({ type: 'group', name: null, openOrder: oi++ });
-          } else if (rhs[pos] === '/' && rhs[pos + 1] === '/') {
-            break; // comment
-          } else {
-            // Symbol name (possibly with label: prefix before next {)
-            let name = '';
-            while (pos < rhs.length && rhs[pos] !== ' ' && rhs[pos] !== '{') {
-              name += rhs[pos]; pos++;
-            }
-            // Check if it's a label for the next group (name:)
-            if (name.endsWith(':') && pos < rhs.length && rhs[pos] === '{') {
-              // label for next group — skip, already handled above
-              continue;
-            }
-            if (name) ruleElements.push({ type: 'sym', name });
-          }
-        }
-        if (ruleElements.length > 0) break; // use first rule with braces
-      }
-      this._structNames.ruleElements = ruleElements;
-    }
 
     // Build structSegments: siblings at each depth level.
     // At depth 0: [gap, group, gap, group, gap, ...] spanning the full timeline.
@@ -842,12 +758,6 @@ export class Timeline {
         .map(gi => ({ gi, g: this.polyGroups[gi] }))
         .sort((a, b) => a.g.start - b.g.start);
 
-      // Build name list for gaps from parsed rule elements
-      const gapNames = (this._structNames?.ruleElements || [])
-        .filter(e => e.type === 'sym')
-        .map(e => e.name);
-      let gapIdx = 0;
-
       // Build gaps between groups
       let cursor = parentStart;
       for (const { gi, g } of sorted) {
@@ -864,10 +774,9 @@ export class Timeline {
             end: g.start,
             depth,
             type: 'gap',
-            label: gapNames[gapIdx] || '...',
+            label: '...',
             voiceIndices: [...vis],
           });
-          gapIdx++;
         }
         cursor = g.end;
       }
@@ -887,7 +796,7 @@ export class Timeline {
             end: parentEnd,
             depth,
             type: 'gap',
-            label: gapNames[gapIdx] || '...',
+            label: '...',
             voiceIndices: [...vis],
           });
         }
