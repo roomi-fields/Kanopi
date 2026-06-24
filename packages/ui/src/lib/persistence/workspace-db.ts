@@ -6,7 +6,9 @@ export interface PersistedWorkspace {
   files: VirtualFile[];
   openTabIds: string[];
   activeTabId: string | null;
-  bpm: number;
+  /** @deprecated KAN-C17 — plus écrit (le tempo n'a pas de source amont à
+   *  restaurer) ; gardé optionnel pour tolérer la lecture d'anciens snapshots. */
+  bpm?: number;
   activeScene: string | null;
   activeActors: string[];
   sidebarWidth?: number;

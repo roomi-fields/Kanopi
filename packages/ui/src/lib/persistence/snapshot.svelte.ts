@@ -1,5 +1,4 @@
 import { workspace } from '../../stores/workspace.svelte';
-import { clock } from '../../stores/clock.svelte';
 import { scenes } from '../../stores/scenes.svelte';
 import { actors } from '../../stores/actors.svelte';
 import { ui } from '../../stores/ui.svelte';
@@ -10,7 +9,11 @@ function snapshot(): PersistedWorkspace {
     files: workspace.files,
     openTabIds: workspace.openTabIds,
     activeTabId: workspace.activeTabId,
-    bpm: clock.state.bpm,
+    // KAN-C17 — le tempo n'est PAS snapshotté. Il n'a aucune source amont à
+    // restaurer (Kronos n'a pas de tempo de session, BPx dérive le sien via
+    // `@mm`/tree.metadata.tempo) : le persister puis le ré-injecter ressusciterait
+    // une autorité tempo depuis le localStorage. Le tempo redécoule de la
+    // ré-évaluation de la scène.
     activeScene: scenes.active?.name ?? null,
     activeActors: actors.list.filter((a) => a.active).map((a) => a.name),
     sidebarWidth: ui.sidebarWidth,
@@ -36,7 +39,9 @@ export function restoreWorkspace(): boolean {
   );
   workspace.activeTabId = w.activeTabId && workspace.fileById(w.activeTabId) ? w.activeTabId : null;
 
-  if (typeof w.bpm === 'number') clock.setBpm(w.bpm);
+  // KAN-C17 — on ne restaure PAS le tempo depuis le snapshot : pas de source
+  // amont, le tempo redécoule de la ré-évaluation de la scène (`@mm`). Un ancien
+  // snapshot peut encore porter `w.bpm` ; on l'ignore.
   if (typeof w.sidebarWidth === 'number') ui.setSidebarWidth(w.sidebarWidth);
   if (typeof w.rightPanelWidth === 'number') ui.setRightPanelWidth(w.rightPanelWidth);
   if (typeof w.bottomPanelHeight === 'number') ui.setBottomPanelHeight(w.bottomPanelHeight);
@@ -84,7 +89,6 @@ export function installAutosave() {
       void workspace.files.map((f) => f.contents).join('|').length;
       void workspace.openTabIds.length;
       void workspace.activeTabId;
-      void clock.state.bpm;
       void scenes.active?.name;
       void actors.list.map((a) => `${a.name}:${a.active}`).join(',');
       void ui.sidebarWidth;
