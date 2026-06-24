@@ -989,6 +989,21 @@ function publishProduction(
   });
 }
 
+// SINGLE SOURCE OF TRUTH for the tempo. The derivation reports the EFFECTIVE
+// tempo it ran at on `tree.metadata.tempo`; that ONE value reconciles the two
+// host copies (`currentBpm` → the STEP/`beatDurSec` grid, and the central clock
+// → display/transport), so they can never diverge (the « derived at 70, stepped
+// at 128 » bug). Repli: a derivation that reports no usable tempo (absent / ≤0,
+// e.g. a `.gr` that carries none) keeps the caller's `fallbackBpm` — the tempo
+// that was fed INTO the derivation — so nothing regresses. Pure → unit-tested.
+export function effectiveTempoBpm(
+  derived: { tree?: { metadata?: { tempo?: number } } } | null | undefined,
+  fallbackBpm: number
+): number {
+  const t = derived?.tree?.metadata?.tempo;
+  return typeof t === 'number' && t > 0 ? t : fallbackBpm;
+}
+
 // Current global tempo, kept in sync with the central clock via `setBpm`.
 // A grammar derives at this tempo and live voices retune to it. Shared: both
 // languages play under the one central transport tempo. Defaults to the clock's
@@ -1452,15 +1467,16 @@ function makeBpxAdapter(
       }
 
       // `@mm` tempo: a grammar that declares its own metronome derives at THAT
-      // tempo (BPx's loadGrammar reads `@mm`), so adopt it as the global tempo
-      // BEFORE deriving — otherwise the STEP grid (`beatDurSec = 60/currentBpm`)
-      // and the displayed BPM use a stale tempo and disagree with the produced
-      // timeline (a 70 bpm derivation stepped at 128 bpm yields phantom beats).
-      // Push it to the central clock too (display + transport) when the core has
-      // wired the sink. No `@mm` → keep the current tempo untouched.
+      // tempo, so seed the global tempo with the DECLARED value BEFORE deriving
+      // — `createBPx({ tempo })` reads it (BPx does not re-read `@mm` to set its
+      // own tempo). No `@mm` → keep the current tempo untouched. This is only the
+      // INPUT to the derivation; the SINGLE SOURCE OF TRUTH is the EFFECTIVE tempo
+      // the derivation reports back (`derived.tree.metadata.tempo`), reconciled
+      // below once `derived` exists — that value drives `currentBpm` (STEP grid)
+      // AND the central clock fan-out, so there are no two divergent host copies
+      // of the tempo (the « derived at 70, stepped at 128 » bug).
       if (declaredMm && declaredMm > 0) {
         currentBpm = declaredMm;
-        onTempoFromGrammar?.(declaredMm);
       }
 
       // A5 named scenes: a `.bps` whose rules are ALL guarded by a named scene
@@ -1522,6 +1538,15 @@ function makeBpxAdapter(
         // stopped). Count it. The loop-boundary re-roll (`reDeriveTreeEvents`) is NOT counted
         // here — a Play-from-stopped on a persisted scene replays without reaching this point.
         __bpxDeriveCount++;
+        // SINGLE SOURCE OF TRUTH: project the EFFECTIVE tempo the derivation ran
+        // at onto BOTH ex-copies — `currentBpm` (the STEP/`beatDurSec` grid below)
+        // AND the central clock (display + transport, via the grammar sink) — so
+        // they can never diverge. We fan out the effective value HERE, after
+        // derive (not the declared `@mm` before it). `clock.setBpm` is a no-op on
+        // an unchanged tempo and never re-enters this path, so the fan-out cannot
+        // loop. (`effectiveTempoBpm` keeps the pre-derive `currentBpm` as repli.)
+        currentBpm = effectiveTempoBpm(derived, currentBpm);
+        if (currentBpm > 0) onTempoFromGrammar?.(currentBpm);
         // The TREE (with control nodes) drives the multi-actor dispatcher. The
         // FLAT tokens keep their prior `'sounding'` shape for every legacy
         // consumer (production readout, STEP slicing, MIDI sink, mono/text

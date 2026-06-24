@@ -46,9 +46,28 @@ export interface BPxConfig {
 export interface DeriveOptions {
   output?: 'sounding' | 'complete';
 }
+/** The derivation tree's metadata block (subset). `tempo` is the EFFECTIVE tempo
+ *  the derivation ran at — the SINGLE SOURCE of truth the host projects onto its
+ *  STEP grid and the central clock (matches `DerivationTree.metadata` in bpx's
+ *  `dist/types/node.d.ts`, which the hand-maintained `dist/index.d.ts` exposes). */
+export interface DerivationTreeMeta {
+  tempo: number;
+  totalDurationBeats: number;
+  generation: number;
+  seed: number;
+  [k: string]: unknown;
+}
+/** The derived tree. `root`/node shape stays opaque (cast to `ProductionTree` at
+ *  the consumers); only `metadata` is surfaced, the one host-projected facet. */
+export interface DerivationTree {
+  /** Tree root — opaque here; consumers cast the tree to `ProductionTree`. */
+  root?: unknown;
+  metadata: DerivationTreeMeta;
+  [k: string]: unknown;
+}
 export interface BPxInstance {
   loadGrammar(ast: unknown): void;
-  derive(options?: DeriveOptions): { tree: unknown; tokens: TimedToken[] };
+  derive(options?: DeriveOptions): { tree: DerivationTree; tokens: TimedToken[] };
   getTokens(): TimedToken[];
   destroy(): void;
 }
