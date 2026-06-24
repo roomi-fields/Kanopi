@@ -1,18 +1,11 @@
 <script lang="ts">
   import { ui, type BottomPanelTab } from '../../stores/ui.svelte';
   import ConsolePanel from '../right-panel/ConsolePanel.svelte';
-  import TextStreamPanel from '../right-panel/TextStreamPanel.svelte';
-  import TimelinePanel from '../right-panel/TimelinePanel.svelte';
 
-  // Outputs of a running session live here, below the editor: the produced
-  // musical structure (Structure — a piano-roll of the derived production), the
-  // symbol stream (Text), and the runtime log (Console). The right column stays
-  // reserved for control surfaces (Actors/Scenes/Inspector).
-  const tabs: { id: BottomPanelTab; label: string }[] = [
-    { id: 'structure', label: 'Structure' },
-    { id: 'text', label: 'Text' },
-    { id: 'console', label: 'Console' }
-  ];
+  // The runtime log (Console) lives here, below the editor. The right column
+  // stays reserved for control surfaces (Actors/Scenes/Inspector). Production
+  // views (Structure/Text) now live in a separate runtime, not in Kanopi.
+  const tabs: { id: BottomPanelTab; label: string }[] = [{ id: 'console', label: 'Console' }];
 </script>
 
 <section class="bottom-panel" class:collapsed={ui.bottomPanelCollapsed}>
@@ -39,11 +32,7 @@
   </header>
   {#if !ui.bottomPanelCollapsed}
     <div class="bp-body">
-      {#if ui.bottomPanelTab === 'structure'}
-        <TimelinePanel />
-      {:else if ui.bottomPanelTab === 'text'}
-        <TextStreamPanel />
-      {:else if ui.bottomPanelTab === 'console'}
+      {#if ui.bottomPanelTab === 'console'}
         <ConsolePanel />
       {/if}
     </div>

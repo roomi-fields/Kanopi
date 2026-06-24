@@ -46,7 +46,11 @@ export function restoreWorkspace(): boolean {
   if (typeof w.rightPanelWidth === 'number') ui.setRightPanelWidth(w.rightPanelWidth);
   if (typeof w.bottomPanelHeight === 'number') ui.setBottomPanelHeight(w.bottomPanelHeight);
   if (typeof w.bottomPanelCollapsed === 'boolean') ui.bottomPanelCollapsed = w.bottomPanelCollapsed;
-  if (w.bottomPanelTab) ui.bottomPanelTab = w.bottomPanelTab;
+  // Old snapshots may carry 'structure'/'text' (production views now live in a
+  // separate runtime, no longer rendered here): coerce them to 'console' so the
+  // restored panel is never empty.
+  if (w.bottomPanelTab)
+    ui.bottomPanelTab = w.bottomPanelTab === 'console' ? w.bottomPanelTab : 'console';
 
   if (w.activeScene) scenes.activate(w.activeScene);
 

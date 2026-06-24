@@ -14,7 +14,7 @@ class UiStore {
   activeActivityView = $state<ActivityView>('files');
   sidebarCollapsed = $state(false);
   rightPanelTab = $state<RightPanelTab>('actors');
-  bottomPanelTab = $state<BottomPanelTab>('structure');
+  bottomPanelTab = $state<BottomPanelTab>('console');
   bottomPanelHeight = $state(200);
   bottomPanelCollapsed = $state(false);
   paletteOpen = $state(false);
