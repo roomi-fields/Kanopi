@@ -24,7 +24,7 @@
     <h4>Clock</h4>
     <dl>
       <dt>state</dt>
-      <dd>{clock.state.playing ? 'playing' : 'stopped'}</dd>
+      <dd>{clock.state.playing ? 'playing' : clock.state.paused ? 'paused' : 'stopped'}</dd>
       <dt>bpm</dt>
       <dd>{clock.state.bpm.toFixed(1)}</dd>
       <dt>position</dt>
