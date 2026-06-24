@@ -55,7 +55,7 @@ describe('Kronos audio handle — playing cursor forwarding', () => {
       audioCtx: fakeCtx(now),
       derivedTempo: 120,
       loop: true,
-      dispatcher: { duration: 1.0, transports: {} },
+      dispatcher: { transports: {} },
       startSceneSec: 0
     });
     try {
@@ -88,7 +88,7 @@ describe('Kronos audio handle — playing cursor forwarding', () => {
       audioCtx: fakeCtx(now),
       derivedTempo: 120,
       loop: true,
-      dispatcher: { duration: 1.0, transports: {} },
+      dispatcher: { transports: {} },
       startSceneSec: 0
     });
     try {
@@ -116,7 +116,7 @@ describe('Kronos audio handle — playing cursor forwarding', () => {
       audioCtx: fakeCtx(now),
       derivedTempo: 120,
       loop: true,
-      dispatcher: { duration: 1.0, transports: {} },
+      dispatcher: { transports: {} },
       startSceneSec: 0
     });
     try {

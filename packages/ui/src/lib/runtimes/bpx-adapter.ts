@@ -117,7 +117,7 @@ import { headSectionNamesFromAst, sectionLeafCounts } from './head-sections-ast'
  *   .bps : source → compileToBPxAST ────────┤  (SceneAST direct, voie AST propre)
  *                                           ▼
  *     → SceneAST → createBPx().loadGrammar → derive({output:'complete'})
- *     → tree (+ payload par nœud) → treeToDispatchEvents → Dispatcher.loadEvents
+ *     → tree (+ payload par nœud) → treeToDispatchEvents → Kronos timeline
  *     → routage PAR ACTEUR (payload.actor) → WebAudioTransport (+ MIDI sink)
  *
  * Glue only. Les frontaux (bp3-frontend, bpscript), le moteur (bpx) et le
@@ -885,9 +885,17 @@ function publishProduction(
   symbolNames?: Record<number, string>,
   sectionLeafCounts?: number[]
 ): void {
-  // Reduce, not `Math.max(...tokens.map(...))`: spreading a large derivation
-  // (tens of thousands of leaves) overflows the argument limit → RangeError.
-  const durationMs = tokens.reduce((m, t) => (t.end > m ? t.end : m), 0);
+  // Scene length (display: beat count + piano-roll extent). PROJECT the BPx-compiled
+  // authority — the derivation tree root's span ENCLOSES every leaf (trailing rests
+  // included), so `root.span.endMs` IS the compiled scene end. Repli (token reduce)
+  // only when no tree is carried (token-only path). Reduce, not
+  // `Math.max(...tokens.map(...))`: spreading a large derivation (tens of thousands of
+  // leaves) overflows the argument limit → RangeError.
+  const rootSpanEndMs = tree?.root?.span?.endMs;
+  const durationMs =
+    typeof rootSpanEndMs === 'number' && rootSpanEndMs > 0
+      ? rootSpanEndMs
+      : tokens.reduce((m, t) => (t.end > m ? t.end : m), 0);
   const prodTokens: ProductionToken[] = tokens.map((t) => ({
     token: t.token,
     startSec: t.start / 1000,
@@ -1917,10 +1925,10 @@ function makeBpxAdapter(
           rawTree as Parameters<typeof treeToDispatchEvents>[0],
           symbolNames
         ).filter(orchestratedLive);
-        // Load the events into the dispatcher STRUCTURE — Kronos reads its `duration`
-        // (fallback) off them. The dispatcher never emits; it carries no tempo (Kronos
-        // owns the clock), so no `setDerivedTempo`/`setLiveTempo` here any more.
-        (dispatcher as unknown as { loadEvents(ev: unknown[]): void }).loadEvents(treeEvents);
+        // The dispatcher is the inert routing/transport STRUCTURE Kronos reads; it no
+        // longer carries the events or a loop-length reduce — Kronos owns the timeline
+        // (built from `treeEvents` below) and exposes the loop length via
+        // `loopDurationScene()`. It never emits and carries no tempo (Kronos owns the clock).
         // Orchestrated path: Kronos drives the REAL note+CV audio for EVERY actor
         // (routed per-actor through `pickTransport`), exactly as on the mono path, AND
         // the CODE voices (Strudel/Hydra backticks) via the Kronos adapter's backtick

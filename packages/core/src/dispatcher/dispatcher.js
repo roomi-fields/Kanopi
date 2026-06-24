@@ -6,7 +6,9 @@
  * anything — its old lookahead clock / scheduler / FSM / position + the live
  * tempo/loop/re-random/mute knobs that fed them are GONE (dead emitter, never called).
  * What survives is the STRUCTURE Kronos consumes (transports + actor routing) plus
- * `loadEvents`/`duration` (Kronos reads `duration` as a fallback) and `coerceControlValues`.
+ * `coerceControlValues`. The old `loadEvents`/`duration` pair is GONE: the loop length
+ * is the timeline's own duration, read back via Kronos's `loopDurationScene()` primitive
+ * — the dispatcher never held a second reduce(max) of it (that was a duplicate authority).
  */
 
 /**
@@ -42,7 +44,6 @@ export class Dispatcher {
   constructor(audioCtx) {
     this.audioCtx = audioCtx;
     this.transports = {};     // name → Transport instance (read by Kronos for routing)
-    this.events = [];         // timing-only events — feeds `duration` (Kronos's fallback)
 
     // Actor system: per-actor transport binding. Routing keys on each event's OWN
     // `payload.actor` (carried off the BPx tree) — there is no flat symbol→actor
@@ -83,45 +84,6 @@ export class Dispatcher {
     if (this._actors[actorName]) {
       this._actors[actorName].transportName = transportName;
     }
-  }
-
-  /**
-   * Load tree-derived dispatch events — the SINGLE load path for ALL grammars
-   * (orchestrated AND mono / `.gr` / text). Each event CARRIES its own payload
-   * off the BPx tree: a note's `payload.actor`/`payload.params` and the sealed
-   * E-016 `rq` (`runtimeQualifiers`), a control's marker payload + `nature`.
-   * Times are already in SECONDS.
-   *
-   * Routing keys on `payload.actor` per event: a terminal shared by two actors
-   * routes to two transports. A note WITHOUT an actor routes to the 'default'
-   * transport. A MUTE token (`soundsFn` false in `_schedule`) is skipped, not
-   * routed — uniformly for every grammar. There is NO flat symbol→actor map.
-   *
-   * @param {Array<{token:string,startSec:number,durSec:number,type:'note'|'control'|'rest',payload?:object,nature?:string,rq?:object}>} events
-   */
-  loadEvents(events) {
-    // `this.events` feeds ONLY `duration` (Kronos's fallback); the rich per-leaf
-    // shape (isControl/payload/nature/rq/controls) + the control-priority sort the
-    // removed emitter needed are gone. Keep just the timing fields.
-    this.events =
-      events && events.length
-        ? events.map((e) => ({
-            token: e.token,
-            startSec: e.startSec,
-            durSec: Math.max(0, e.durSec || 0),
-          }))
-        : [];
-  }
-
-  /**
-   * Total duration of loaded sequence in seconds = the latest event END
-   * (max startSec+durSec) — not the last-by-start (a long earlier note can end last).
-   */
-  get duration() {
-    return this.events.reduce((m, e) => {
-      const end = e.startSec + e.durSec;
-      return end > m ? end : m;
-    }, 0);
   }
 
   /** Teardown: close every transport (the host calls this on a same-file re-eval /

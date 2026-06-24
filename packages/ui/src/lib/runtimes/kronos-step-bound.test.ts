@@ -70,7 +70,7 @@ function captureTokens(opts: {
     audioCtx: ctx,
     derivedTempo: 60,
     loop: false,
-    dispatcher: { duration: totalDur, transports: { default: transport } },
+    dispatcher: { transports: { default: transport } },
     step: opts.step
   });
   handle.stop();

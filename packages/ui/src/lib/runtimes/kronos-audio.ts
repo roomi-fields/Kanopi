@@ -58,9 +58,10 @@ interface TransportLike {
   send(event: Record<string, unknown>, absTime: number): void;
 }
 /** Minimal view of the live dispatcher: its per-actor transport map (built by
- *  the host) and its loop length, read for routing + cycle alignment. */
+ *  the host), read for routing. The loop length is NOT read here — it is the
+ *  timeline's own `duration` (set from the events / `opts.durationSec`), read back
+ *  via the Transport `loopDurationScene()` primitive, not a dispatcher reduce(max). */
 interface DispatcherLike {
-  duration?: number;
   transports?: Record<string, TransportLike>;
   _actors?: Record<string, { transportName?: string | null } | undefined>;
 }
@@ -68,7 +69,9 @@ interface DispatcherLike {
 export interface KronosAudioOptions {
   /** The SAME DispatchEvents the host built for this scene. */
   events: DispatchEvent[];
-  /** Loop length in scene seconds; falls back to dispatcher.duration / max. */
+  /** Compiled loop length in scene seconds (BPx-compiled scene end). When absent,
+   *  the timeline length is the last event end (repli). This is the timeline's
+   *  materializing input; the loop bound is read back via `loopDurationScene()`. */
   durationSec?: number;
   /** Shared AudioContext (the transports' time source). */
   audioCtx: AudioContext;
@@ -289,12 +292,17 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
         }
       };
     });
-    const computedDuration =
-      opts.durationSec ?? evs.reduce((m, e) => Math.max(m, e.startSec + e.durSec), 0);
-    const dur =
-      typeof dispatcher.duration === 'number' && dispatcher.duration > 0
-        ? dispatcher.duration
-        : computedDuration;
+    // The scene-seconds loop length that MATERIALIZES this timeline. A
+    // `MaterializedTimeline` is a passive container: it stores whatever duration the
+    // host hands it, and the loop bound is then READ BACK from it (the scheduler's
+    // `loopDurationScene` / Transport `loopDurationScene()`, the upstream primitive).
+    // So this is the single INPUT that defines the bound, not a parallel authority.
+    // The events carry BPx-compiled spans (including any trailing rest), so their last
+    // end IS the compiled scene length; `opts.durationSec` (a caller-supplied compiled
+    // length) wins when present, else this reduce is the documented repli. The old
+    // `dispatcher.duration` override (a SECOND host reduce(max) of the same value) is
+    // gone — one source for the timeline length.
+    const dur = opts.durationSec ?? evs.reduce((m, e) => Math.max(m, e.startSec + e.durSec), 0);
     return {
       timeline: new MaterializedTimeline(tEvents, dur),
       noteCount: notes,

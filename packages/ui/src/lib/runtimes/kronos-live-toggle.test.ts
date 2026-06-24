@@ -61,7 +61,7 @@ describe('Kronos audio handle — live re-random / loop toggle', () => {
       audioCtx: fakeCtx(now),
       derivedTempo: 60,
       loop: true,
-      dispatcher: { duration: 1.0, transports: {} },
+      dispatcher: { transports: {} },
       startSceneSec: 0,
       reDerive, // host re-derivation supplied unconditionally now
       reRandom: false // OFF at start
@@ -98,7 +98,7 @@ describe('Kronos audio handle — live re-random / loop toggle', () => {
       audioCtx: fakeCtx(now),
       derivedTempo: 60,
       loop: true,
-      dispatcher: { duration: 1.0, transports: {} },
+      dispatcher: { transports: {} },
       startSceneSec: 0,
       reDerive,
       reRandom: true // ON at start
