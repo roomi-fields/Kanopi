@@ -23,7 +23,7 @@ function deriveOrchestrated(src: string): DispatchEvent[] {
   const ast = c.ast;
   const bpx = createBPx({ tempo: 120 });
   bpx.loadGrammar(ast);
-  const derived = bpx.derive({ output: 'complete' });
+  const derived = bpx.derive();
   const symbols = (bpx as { grammar?: { symbols?: { getName?(id: number): string } } }).grammar
     ?.symbols;
   const symbolNames: Record<number, string> = {};

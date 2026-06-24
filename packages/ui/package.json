@@ -22,6 +22,7 @@
     "verify": "npm run check && npm run lint && npm run test && npm run e2e"
   },
   "dependencies": {
+    "@kairos/core": "link:../../../../bp/kairos",
     "@kronos/core": "link:../../../../bp/kronos",
     "bp3-frontend": "file:../../../../bp/bp3-frontend",
     "bpx": "file:../../../../bp/BPx",

@@ -40,7 +40,7 @@ describe('effectiveTempoBpm — single tempo source from the derivation', () => 
     // projection follows the derivation, never the stale 128.
     const bpx = createBPx({ tempo: 70 });
     bpx.loadGrammar(ast);
-    const derived = bpx.derive({ output: 'complete' });
+    const derived = bpx.derive();
 
     // The derivation's effective tempo is the single source.
     expect((derived.tree as { metadata?: { tempo?: number } }).metadata?.tempo).toBe(70);

@@ -23,10 +23,11 @@ function deriveTree(src: string): { tree: ProductionTree; ast: unknown } {
   const c = compileToBPxAST(src) as { ast: unknown; errors?: unknown[] };
   const bpx = createBPx({ tempo: 70 }) as {
     loadGrammar(a: unknown): void;
-    derive(o: { output: string }): { tree: ProductionTree };
+    derive(): { tree: ProductionTree };
   };
   bpx.loadGrammar(c.ast);
-  const d = bpx.derive({ output: 'complete' });
+  // 'complete' migrated to Kairos (now throws); default 'sounding' tree.
+  const d = bpx.derive();
   return { tree: d.tree, ast: c.ast };
 }
 

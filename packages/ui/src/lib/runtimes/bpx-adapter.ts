@@ -24,7 +24,12 @@ import scalesJson from 'bpscript/lib/scales.json';
 // shape live here (declarative segments), consumed AS-IS — Kanopi's transport
 // renders the curve generically, no built-in modulator. See CV.md.
 import modLibJson from 'bpscript/lib/mod.json';
-import { createBPx } from 'bpx';
+import { createSession, type Session, type TimedToken as BpxTimedToken } from 'bpx';
+// KAN-orchestration P1 — Kairos is the SOURCE of the played timeline (projects the BPx
+// tree into a Kronos Timeline, exposes a StructureSource the Transport PULLs). Consumed
+// AS-IS: the host `charger`s it with the tree + BPx projection context, then hands it to
+// `startKronosAudio`. The OLD tree-dispatch → MaterializedTimeline source stays present-dormant.
+import { Kairos } from '@kairos/core';
 import { BUNDLED_SE, BUNDLED_SOUND, BUNDLED_AL } from './bp3-aux';
 // Core runtime, reused AS-IS (no port): the dispatcher carries the per-actor
 // transport/resolver structure Kronos reads (it never emits sound itself).
@@ -1493,28 +1498,40 @@ function makeBpxAdapter(
       // re-random re-derivation (only the derivation's random draw differs), so
       // it is hoisted above the try and reused by both (no duplicate build).
       let kronosRegistry: ReturnType<typeof buildModulators>;
+      // KAN-orchestration P1 — Kairos handle: `charger`ed with the derived tree + the
+      // BPx projection context (resolvers + emit options). It becomes the SOURCE of the
+      // played timeline (its `sourceStructure()` is bound on the Transport in
+      // `startKronosAudio`). Built inside the try (needs `bpx`/`rawTree` in scope).
+      let kairos: Kairos | undefined;
       try {
         // `effectiveFlags` (e.g. `{ scene: 2 }`) is applied as the BPx engine's
         // initial flag state, so a flag-guarded rule (`/scene=2/`) derives
         // instead of leaving `S` unexpanded. Absent named scenes → unchanged.
-        const bpx = createBPx({
+        // KAN-orchestration P1 (option A) — the host's BPx entry is the upstream
+        // `createSession(ast, opts)` (it CARRIES `buildProjectionContext`, which the
+        // Kairos projection path needs). `loadGrammar` is folded into the factory.
+        // Config → SessionOptions: tempo→tempo, settings→settings, flags→initialFlags,
+        // seed→seed (BPxInstance applied the same mapping). Proven derivation-identical
+        // to the former `createBPx + loadGrammar` by `createsession-parity.test.ts`.
+        const bpx: Session = createSession(ast, {
           // `undefined` when no `@mm` and no user tempo → BPx applies ITS OWN
           // default (60) and surfaces it on `tree.metadata.tempo`; we never
           // overwrite that default with a host-fabricated value.
-          tempo: deriveTempo,
-          settings,
-          flags: effectiveFlags,
-          seed: currentSeed
+          ...(deriveTempo !== undefined ? { tempo: deriveTempo } : {}),
+          ...(settings !== undefined ? { settings } : {}),
+          ...(effectiveFlags !== undefined ? { initialFlags: effectiveFlags } : {}),
+          ...(currentSeed !== undefined ? { seed: currentSeed } : {})
         });
-        bpx.loadGrammar(ast);
-        // Keep BOTH halves of the derivation: `.tokens` is the flat timed
-        // sequence (audio/MIDI/text), `.tree` carries the polymetric structure
-        // (groups + voices + nesting) the piano-roll's struct band needs.
-        // `output: 'complete'` restores the control markers EN ORDRE as tree
-        // nodes / zero-duration tokens, and the per-node payload (actor/params on
-        // notes, marker payload on controls) the multi-actor dispatcher routes on
-        // — the flat `.tokens` carry `actor: null` and fuse simultaneous leaves.
-        const derived = bpx.derive({ output: 'complete' });
+        // Keep BOTH halves of the derivation: `.tree` (from `derive()`) carries the
+        // polymetric structure (groups + voices + nesting) the piano-roll's struct band
+        // needs; `tokens` (from `emit('timed-tokens')`) is the flat timed sequence
+        // (audio/MIDI/text). The `output:'complete'` mode (control markers as tree
+        // nodes / zero-duration tokens) has MIGRATED to Kairos and now THROWS in BPx —
+        // the default ('sounding') is the host's path: notes + rests, no control nodes.
+        const derived = {
+          tree: bpx.derive().tree,
+          tokens: bpx.emit<BpxTimedToken[]>('timed-tokens')
+        };
         // Model C proof: this is THE eval-path derivation (eval/edit/arm/produce/play-from-
         // stopped). Count it. The loop-boundary re-roll (`reDeriveTreeEvents`) is NOT counted
         // here — a Play-from-stopped on a persisted scene replays without reaching this point.
@@ -1575,6 +1592,27 @@ function makeBpxAdapter(
         // (which stamped `{__cv}` descriptors for the now-removed internal WebAudio synth)
         // is GONE — Kanopi neither resolves nor renders CV.
         rawTree = derived.tree;
+        // KAN-orchestration P1 — hand the derived tree + projection context to Kairos.
+        // `charger` projects the tree into a Kronos Timeline (modulations composed inside)
+        // and bumps its generation; `startKronosAudio` binds `sourceStructure()` on the
+        // Transport so Kronos PULLs that timeline. The context (symbol resolvers, kpress
+        // offset, runtime state, emission order) is built by BPx — Kanopi never assembles
+        // it. `output:'voice-major'` is `buildProjectionContext`'s default (the parity
+        // corpus' voice-major order); see Open notes on the order choice.
+        kairos = new Kairos();
+        kairos.charger(
+          derived.tree as unknown as Parameters<Kairos['charger']>[0],
+          {
+            ...(bpx.buildProjectionContext() as object),
+            // KRO-24 — hand Kairos the CV registry (hoisted, cycle-invariant) + the
+            // `exprSource` factory so `projeter` COMPOSES the modulations AT FLATTEN and
+            // carries them on `content.modulations` (+ scene span) for the audio runtime
+            // to sample. Empty registry (no CV) ⇒ no bindings ⇒ notes without automation,
+            // unchanged (normal/maqâm parity preserved). The host `composeTreeModulations`
+            // + `__cvBindings` stamping stays for the dormant legacy path (removed Phase 2).
+            modulation: { registry: kronosRegistry, exprSource: onExprSource }
+          } as unknown as Parameters<Kairos['charger']>[1]
+        );
         // BPx authority for the scene's compiled length (includes any trailing rest);
         // projected into the Kronos loop bound below.
         totalDurationBeats = derived.tree?.metadata?.totalDurationBeats;
@@ -1610,17 +1648,22 @@ function makeBpxAdapter(
       const reDeriveRegistry = kronosRegistry;
       const reDeriveTreeEvents = (filterEvents: (e: DispatchEvent) => boolean) => () => {
         try {
-          const rbpx = createBPx({
+          // Same upstream entry as the eval path (option A): `createSession` carries
+          // `buildProjectionContext`. `loadGrammar` folded into the factory.
+          const rbpx: Session = createSession(ast, {
             // `currentBpm` here is the EFFECTIVE tempo already reconciled from the
             // first derivation (the engine default when no `@mm`), so the re-rolled
             // cycle keeps the same tempo — not a fabricated host value.
-            tempo: currentBpm,
-            settings,
-            flags: effectiveFlags,
+            ...(currentBpm !== undefined ? { tempo: currentBpm } : {}),
+            ...(settings !== undefined ? { settings } : {}),
+            ...(effectiveFlags !== undefined ? { initialFlags: effectiveFlags } : {}),
             seed: freshSeed()
           });
-          rbpx.loadGrammar(ast);
-          const rderived = rbpx.derive({ output: 'complete' });
+          // 'complete' migrated to Kairos (throws); default 'sounding' tree + emit.
+          const rderived = {
+            tree: rbpx.derive().tree,
+            tokens: rbpx.emit<BpxTimedToken[]>('timed-tokens')
+          };
           const rNameOf = (sid: number) =>
             (rbpx as { grammar?: { symbols?: Partial<SymbolTable> } }).grammar?.symbols?.getName?.(
               sid
@@ -2007,6 +2050,11 @@ function makeBpxAdapter(
             // Model C — PRODUCE/LOAD builds + persists the handle WITHOUT playing it (stopped,
             // silent); the first Play `replay`s it (0 re-derivation). A STEP overrides this.
             buildOnly,
+            // KAN-orchestration P1 — Kairos is the SOURCE of the played timeline: its
+            // `sourceStructure()` is bound on the Transport (PULL), the driver ticks the
+            // Transport, tempo/mute route via `kairos.demande`. The legacy
+            // tree-dispatch → MaterializedTimeline(events) input stays present-dormant.
+            kairos,
             // STEP audition + re-derive mirror the mono path; a STEP never re-derives.
             reDerive: section ? null : reDeriveTreeEvents(orchestratedLive),
             reRandom,

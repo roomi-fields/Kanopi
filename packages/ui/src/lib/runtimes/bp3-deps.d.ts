@@ -73,6 +73,37 @@ export interface BPxInstance {
 }
 export function createBPx(config?: BPxConfig): BPxInstance;
 
+/** Session-level options (the upstream `SessionOptions`; subset the host passes).
+ *  `createBPx`'s `flags` maps to `initialFlags` here. */
+export interface SessionOptions {
+  seed?: number;
+  tempo?: number;
+  initialFlags?: Record<string, number>;
+  settings?: SeEngineSettings;
+}
+/** Projection context the EXTERNAL flattener (Kairos `charger`) consumes — the
+ *  symbol resolvers + emission options bundled by `Session.buildProjectionContext`
+ *  (KAI-8). Opaque to Kanopi: built by BPx, handed straight to Kairos. */
+export interface ProjectionContext {
+  resolveName: (symbolId: number) => string;
+  resolveKind?: (symbolId: number) => string;
+  transformMs?: (ms: number) => number;
+  kpressOffset?: number;
+  order?: 'chronological' | 'voice-major';
+  resolveRuntimeState?: (nodeId: number) => Record<string, number> | null;
+}
+/** The upstream `Session` (carries `buildProjectionContext`, unlike `BPxInstance`).
+ *  `derive()` returns the tree only; the flat tokens come from `emit('timed-tokens')`.
+ *  `output:'complete'` has migrated to Kairos and now THROWS — the host uses the
+ *  default 'sounding' path. */
+export interface Session {
+  readonly grammar: { symbols?: { getName?(id: number): string }; [k: string]: unknown };
+  derive(options?: DeriveOptions): { tree: DerivationTree; [k: string]: unknown };
+  emit<T>(format: string, options?: unknown): T;
+  buildProjectionContext(order?: 'chronological' | 'voice-major'): ProjectionContext;
+}
+export function createSession(ast: unknown, options?: SessionOptions): Session;
+
 // --- bp3-frontend ----------------------------------------------------------
 export interface ParseError {
   code: string;

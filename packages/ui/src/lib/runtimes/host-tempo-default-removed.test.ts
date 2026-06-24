@@ -20,7 +20,7 @@ function deriveMetaTempo(tempo: number | undefined): number | undefined {
   const ast = (compileToBPxAST(SCENE_NO_MM) as { ast: unknown; errors: unknown[] }).ast;
   const bpx = createBPx(tempo === undefined ? {} : { tempo });
   bpx.loadGrammar(ast as never);
-  const derived = bpx.derive({ output: 'complete' });
+  const derived = bpx.derive();
   return (derived.tree as { metadata?: { tempo?: number } }).metadata?.tempo;
 }
 
@@ -46,7 +46,7 @@ describe('KAN-C20 — host « 128 » default removed from the derivation seed', 
     // Reproduce the adapter's no-@mm / no-user-tempo path: createBPx WITHOUT a tempo.
     const bpx = createBPx({});
     bpx.loadGrammar(ast as never);
-    const derived = bpx.derive({ output: 'complete' });
+    const derived = bpx.derive();
     // The adapter reconciles `currentBpm = effectiveTempoBpm(derived, deriveTempo ?? 60)`.
     // With no @mm and no user tempo, `deriveTempo` is undefined → fallback 60, AND the
     // derivation itself reports 60 — both engine-sourced, neither a host 128.

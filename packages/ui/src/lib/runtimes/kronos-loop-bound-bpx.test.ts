@@ -164,7 +164,7 @@ describe('KAN-C02/C03 (SUITE) — end-to-end: bound is read from the BPx metadat
     const ast = (compileToBPxAST(SCENE_TRAILING_RESTS) as { ast: unknown }).ast;
     const bpx = createBPx({ tempo: 120 });
     bpx.loadGrammar(ast);
-    const derived = bpx.derive({ output: 'complete' });
+    const derived = bpx.derive();
 
     const meta = (derived.tree as { metadata: { totalDurationBeats: number; tempo: number } })
       .metadata;
@@ -187,7 +187,7 @@ describe('KAN-C02/C03 (SUITE) — end-to-end: bound is read from the BPx metadat
     const ast = (compileToBPxAST(SCENE_TRAILING_RESTS) as { ast: unknown }).ast;
     const bpx = createBPx({ tempo: 120 });
     bpx.loadGrammar(ast);
-    const derived = bpx.derive({ output: 'complete' });
+    const derived = bpx.derive();
     const meta = (derived.tree as { metadata: { totalDurationBeats: number; tempo: number } })
       .metadata;
     const beatDurSec = 60 / meta.tempo;
