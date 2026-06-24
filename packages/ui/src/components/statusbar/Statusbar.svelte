@@ -16,7 +16,8 @@
   // `state.beat` is 0..(N-1) internally; display adds 1 so Ableton convention
   // holds (first beat is 1, not 0). Absolute beat count stays available in the
   // event overlay (`?events=1`) for debugging.
-  const bpmStr = $derived(clock.state.bpm.toFixed(1));
+  // « — » when nothing is live and the user has typed no tempo (no host-invented default).
+  const bpmStr = $derived(clock.state.bpm != null ? clock.state.bpm.toFixed(1) : '—');
   // Position from Kronos's Transport, sampled per-frame into `kronosCursor.beat` (the
   // single position authority, frozen-aware). `null` = stopped / no scene → rest readout
   // (bar 1, beat 0). The clock holds only tempo + transport flags, never the position.

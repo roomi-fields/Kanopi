@@ -26,7 +26,7 @@
       <dt>state</dt>
       <dd>{clock.state.playing ? 'playing' : clock.state.paused ? 'paused' : 'stopped'}</dd>
       <dt>bpm</dt>
-      <dd>{clock.state.bpm.toFixed(1)}</dd>
+      <dd>{clock.state.bpm != null ? clock.state.bpm.toFixed(1) : '—'}</dd>
       <dt>position</dt>
       <dd>{beatStr}</dd>
       <dt>scene</dt>

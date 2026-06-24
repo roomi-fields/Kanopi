@@ -4,11 +4,11 @@
 // the public shape the UI + snapshot already use (`state.{bpm,beatsPerBar,playing,paused}`,
 // `setBpm`/`setTimeSignature`/`tap`/`play`/`stop`/`toggle`) but owns NO transport state
 // machine and NO clock object:
-//   • bpm = a persisted SESSION VALUE (`#tempo`, $state) — display falls back to it when no
-//     scene is live; when a Kronos handle exists, the LIVE tempo (`transport.tempo`) is the
-//     authority and is shown instead. `setBpm` updates the session value AND fans out to the
-//     runtimes (which retune the live handle), so the shown value and the heard tempo never
-//     drift.
+//   • bpm = the live tempo when a Kronos handle exists (`transport.tempo`, the authority),
+//     else the user's LOCAL typed/tapped tempo if any, else `null` (nothing live + no input
+//     → no tempo to show; the readout displays « — », it does NOT invent a host default like
+//     the former 128). `setBpm` records the user's local value AND fans out to the runtimes
+//     (which retune the live handle), so the shown value and the heard tempo never drift.
 //   • beatsPerBar = a persisted SESSION VALUE (Kronos has no time signature).
 //   • playing/paused = DERIVED from Kronos's Transport state (`kronosCursor.state`). No host
 //     flag, no second FSM.
@@ -21,24 +21,28 @@ import { getAdapter, listRuntimes } from '../lib/runtimes/registry';
 import { core } from '../lib/core';
 import { playback } from './playback.svelte';
 
-const DEFAULT_BPM = 128;
 const DEFAULT_BEATS_PER_BAR = 4;
 
+// Garde-fou de SAISIE utilisateur (D10) — borne le tempo qu'on TAPE/RÈGLE à la main à une
+// plage musicalement sensée. Ce n'est PAS une autorité de scène ni une valeur sourcée amont :
+// le tempo d'une scène vient de BPx (`@mm` déclaré ou défaut moteur, projeté sur `tree.metadata.tempo`).
+// Ce clamp ne s'applique QU'à l'entrée locale (`setBpm`/`tap`), jamais au tempo projeté d'une scène.
 function clampBpm(n: number): number {
   return Math.max(20, Math.min(300, Math.round(n * 10) / 10));
 }
 
 class ClockStore {
-  /** Persisted SESSION tempo (workspace value, like content/settings). Shown when no scene
-   *  is live; superseded by the live handle's `transport.tempo` while a scene is loaded. */
-  #tempo = $state(DEFAULT_BPM);
+  /** User's LOCAL typed/tapped tempo (D10 — the only legitimate host-owned tempo: input
+   *  before/without a scene). `null` until the user sets one; a live scene's tempo always
+   *  supersedes it in the readout. Never a fabricated default — no host « 128 ». */
+  #tempo = $state<number | null>(null);
   /** Persisted SESSION time signature numerator (Kronos has no signature → kept here). */
   #beatsPerBar = $state(DEFAULT_BEATS_PER_BAR);
   #tapTimes: number[] = [];
 
   /** READOUT, derived — never a host authority. bpm: the live handle's tempo when a scene is
-   *  loaded (the authority), else the persisted session value. playing/paused: PROJECTED from
-   *  Kronos's Transport state (`kronosCursor.state`). */
+   *  loaded (the authority), else the user's local typed/tapped value, else `null` (nothing to
+   *  show — the UI renders « — »). playing/paused: PROJECTED from Kronos's Transport state. */
   state = $derived<ClockState>({
     bpm: kronosCursor.active ? kronosCursor.tempo : this.#tempo,
     beatsPerBar: this.#beatsPerBar,

@@ -149,4 +149,7 @@ export interface CompileToBPxASTResult {
   errors: CompileBPSError[];
   warnings: unknown[];
 }
-export function compileToBPxAST(source: string): CompileToBPxASTResult;
+export function compileToBPxAST(
+  source: string,
+  environnement?: { tempo?: number }
+): CompileToBPxASTResult;

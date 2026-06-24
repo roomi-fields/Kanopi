@@ -647,7 +647,13 @@ function actorTableFromAst(a: SceneAstView | null): AdapterActorTable {
 // sections) is read from THAT AST — the single source of truth — not the
 // deprecated grammar text nor compileBPS's redundant sidecar tables.
 const bpsFrontend: Frontend = (code) => {
-  const c = compileToBPxAST(code);
+  // M5: the SESSION default tempo enters the AST at transpile time. When the
+  // user has set a session tempo (`userTempo`) AND the scene declares no `@mm`,
+  // BPScript writes that tempo as the AST's `@mm` default; the host never
+  // invents a constant. Omitted when no session tempo is set → BPScript/BPx
+  // applies ITS OWN default (60). A declared `@mm` always wins (BPScript skips
+  // the default when a tempo directive is present).
+  const c = compileToBPxAST(code, userTempo != null ? { tempo: userTempo } : undefined);
   if (c.errors.length > 0) {
     return { ast: null, errors: c.errors.map((e) => ({ line: e.line, message: e.message })) };
   }
@@ -956,11 +962,25 @@ export function effectiveTempoBpm(
   return typeof t === 'number' && t > 0 ? t : fallbackBpm;
 }
 
-// Current global tempo, kept in sync with the central clock via `setBpm`.
-// A grammar derives at this tempo and live voices retune to it. Shared: both
-// languages play under the one central transport tempo. Defaults to the clock's
-// own default so a fresh page already matches the transport.
-let currentBpm = 128;
+// The EFFECTIVE tempo of the CURRENT derivation, READ BACK from the engine
+// (`tree.metadata.tempo`) — the host does NOT seed it with a fabricated default.
+// It drives the STEP `beatDurSec` grid, the Kronos loop bound (× beatDurSec) and
+// the live retune; the central clock display is fanned the SAME value. 0 until a
+// scene has derived (no scene → no tempo; the readout shows « — », not a host « 128 »).
+let currentBpm = 0;
+
+// The user's LOCAL typed/tapped tempo (D10 — the only legitimate host-owned tempo:
+// input made before/without a live scene). `null` until the user sets one. It is
+// the pre-derive tempo INPUT only when a scene declares NO `@mm`; a declared `@mm`
+// (an upstream source) always wins, and an undeclared, un-typed tempo passes
+// `undefined` to BPx so the ENGINE's own default applies (and surfaces on
+// `tree.metadata.tempo`). Never a fabricated host default — no « 128 ».
+let userTempo: number | null = null;
+
+// True WHILE the adapter fans the derivation's effective tempo to the central clock
+// (which re-enters this adapter's `setBpm`). It tells that re-entrant `setBpm` NOT to
+// record the projected SCENE tempo as `userTempo` — only a real type/tap is user input.
+let projectingGrammarTempo = false;
 
 // The random seed of the CURRENT production. A PRODUCE re-rolls it (a new
 // variation); a Play/Step reuses it so the heard audio matches the produced
@@ -1418,18 +1438,18 @@ function makeBpxAdapter(
         loadDeclaredLibraries(libraries, id, log);
       }
 
-      // `@mm` tempo: a grammar that declares its own metronome derives at THAT
-      // tempo, so seed the global tempo with the DECLARED value BEFORE deriving
-      // — `createBPx({ tempo })` reads it (BPx does not re-read `@mm` to set its
-      // own tempo). No `@mm` → keep the current tempo untouched. This is only the
-      // INPUT to the derivation; the SINGLE SOURCE OF TRUTH is the EFFECTIVE tempo
-      // the derivation reports back (`derived.tree.metadata.tempo`), reconciled
-      // below once `derived` exists — that value drives `currentBpm` (STEP grid)
-      // AND the central clock fan-out, so there are no two divergent host copies
-      // of the tempo (the « derived at 70, stepped at 128 » bug).
-      if (declaredMm && declaredMm > 0) {
-        currentBpm = declaredMm;
-      }
+      // Pre-derive tempo INPUT to `createBPx({ tempo })`. The default tempo now
+      // lives IN the AST: BPScript writes the session tempo as `@mm` when the
+      // scene declares none (M5), so `declaredMm` (= `mmFromAst`) already reads
+      // either the DECLARED `@mm` (it wins) OR the injected session default —
+      // the `?? userTempo` reconciliation became redundant. `undefined` when the
+      // AST carries no tempo at all → BPx applies ITS OWN default (60), surfaced
+      // on `tree.metadata.tempo`; never a fabricated host « 128 ». (BPx does NOT
+      // re-read `@mm` itself to set `metadata.tempo`; the adapter routes the
+      // value in. The SINGLE SOURCE OF TRUTH stays the EFFECTIVE tempo the
+      // derivation reports back, reconciled below — that one value drives
+      // `currentBpm` (STEP grid) AND the central clock fan-out.)
+      const deriveTempo: number | undefined = declaredMm && declaredMm > 0 ? declaredMm : undefined;
 
       // A5 named scenes: a `.bps` whose rules are ALL guarded by a named scene
       // flag (`[scene==calm] S -> …`) has no rule that derives without a scene
@@ -1478,7 +1498,10 @@ function makeBpxAdapter(
         // initial flag state, so a flag-guarded rule (`/scene=2/`) derives
         // instead of leaving `S` unexpanded. Absent named scenes → unchanged.
         const bpx = createBPx({
-          tempo: currentBpm,
+          // `undefined` when no `@mm` and no user tempo → BPx applies ITS OWN
+          // default (60) and surfaces it on `tree.metadata.tempo`; we never
+          // overwrite that default with a host-fabricated value.
+          tempo: deriveTempo,
           settings,
           flags: effectiveFlags,
           seed: currentSeed
@@ -1499,12 +1522,23 @@ function makeBpxAdapter(
         // SINGLE SOURCE OF TRUTH: project the EFFECTIVE tempo the derivation ran
         // at onto BOTH ex-copies — `currentBpm` (the STEP/`beatDurSec` grid below)
         // AND the central clock (display + transport, via the grammar sink) — so
-        // they can never diverge. We fan out the effective value HERE, after
-        // derive (not the declared `@mm` before it). `clock.setBpm` is a no-op on
-        // an unchanged tempo and never re-enters this path, so the fan-out cannot
-        // loop. (`effectiveTempoBpm` keeps the pre-derive `currentBpm` as repli.)
-        currentBpm = effectiveTempoBpm(derived, currentBpm);
-        if (currentBpm > 0) onTempoFromGrammar?.(currentBpm);
+        // they can never diverge. The repli (`effectiveTempoBpm`'s fallback) is the
+        // tempo fed INTO the derivation — `@mm`, else the user's tempo, else BPx's
+        // own default (60) — NEVER a host « 128 ». `clock.setBpm` is a no-op on an
+        // unchanged tempo and never re-enters this path, so the fan-out cannot loop.
+        currentBpm = effectiveTempoBpm(derived, deriveTempo ?? 60);
+        // Fan the EFFECTIVE tempo to the central clock (display). This re-enters the
+        // adapter's own `setBpm` via the clock fan-out, so guard against the projected
+        // SCENE tempo being mistaken for fresh USER input (which would wrongly seed the
+        // next no-`@mm` scene). Only a genuine type/tap should set `userTempo`.
+        if (currentBpm > 0) {
+          projectingGrammarTempo = true;
+          try {
+            onTempoFromGrammar?.(currentBpm);
+          } finally {
+            projectingGrammarTempo = false;
+          }
+        }
         // The TREE (with control nodes) drives the multi-actor dispatcher. The
         // FLAT tokens keep their prior `'sounding'` shape for every legacy
         // consumer (production readout, STEP slicing, MIDI sink, mono/text
@@ -1577,6 +1611,9 @@ function makeBpxAdapter(
       const reDeriveTreeEvents = (filterEvents: (e: DispatchEvent) => boolean) => () => {
         try {
           const rbpx = createBPx({
+            // `currentBpm` here is the EFFECTIVE tempo already reconciled from the
+            // first derivation (the engine default when no `@mm`), so the re-rolled
+            // cycle keeps the same tempo — not a fabricated host value.
             tempo: currentBpm,
             settings,
             flags: effectiveFlags,
@@ -2079,6 +2116,13 @@ function makeBpxAdapter(
     },
     setBpm(bpm: number, _log: LogPush) {
       currentBpm = bpm;
+      // Record the user's LOCAL tempo (D10): it becomes the pre-derive INPUT for the
+      // NEXT eval of a scene that declares no `@mm` (a declared `@mm` still wins). This
+      // is the only legitimate host-owned tempo — user input — never a fabricated default.
+      // Skip when this `setBpm` is the re-entrant fan-out of a derivation's OWN effective
+      // tempo (`projectingGrammarTempo`): a scene's projected tempo is not user input and
+      // must not seed the next no-`@mm` scene.
+      if (!projectingGrammarTempo) userTempo = bpm;
       // Live retune every running voice WITHOUT re-deriving (requirement A): Kronos
       // drives the audio, so the retune reaches ITS clock (same warp, no re-derivation;
       // mirrors the re-random / loop live-toggle wiring). `currentBpm` still updates so

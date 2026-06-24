@@ -110,7 +110,7 @@ test('Play button click activates transport', async ({ page }) => {
   noErrors();
 });
 
-test('bar.beat counter advances within 3 seconds after Play at default BPM (128)', async ({
+test('bar.beat counter advances within 3 seconds after Play at the effective tempo', async ({
   page
 }) => {
   const noErrors = expectNoConsoleErrors(page);
@@ -129,8 +129,11 @@ test('bar.beat counter advances within 3 seconds after Play at default BPM (128)
   await page.locator('.tbtn[title="Play"]').click();
   await expect(page.locator('.tbtn.playing')).toBeVisible({ timeout: 3_000 });
 
-  // At 128 BPM a beat is ~469ms, so within 3s the bar.beat string must have
-  // moved from its frozen initial value (DERIVED from transport.beatPosition()).
+  // Whatever the effective tempo is (the scene's `@mm`, else the session tempo
+  // injected into the AST, else BPx's own default), a beat is well under 3s, so
+  // the bar.beat string must move from its frozen initial value (DERIVED from
+  // transport.beatPosition()). We assert the BEHAVIOUR (the counter advances),
+  // not a magic BPM number.
   // `expect.poll` re-reads the DOM until the predicate holds or the timeout fires.
   await expect
     .poll(async () => (await page.locator(POS_LOCATOR).innerText()).trim(), {
@@ -153,13 +156,15 @@ test('bar.beat counter advances within 3 seconds after Play at default BPM (128)
 // renders bpm as a <dd> too, also read-only. Until an editable BPM widget
 // exists, this item cannot be automated without modifying app source (which
 // is outside this self-test layer's read-only scope).
-test.fixme('BPM widget shows 128 by default; clicking it and typing a new value updates the displayed tempo', async ({
+test.fixme('BPM widget reflects the effective tempo; clicking it and typing a new value updates the displayed tempo', async ({
   page
 }) => {
   await page.goto('');
   // No editable BPM widget exists yet — see comment above. When one lands,
-  // this test should: assert ".bpm-value" reads "128", click into it,
-  // type "100", press Enter, and assert ".bpm-value" reads "100".
+  // this test should: assert ".bpm-value" reflects the EFFECTIVE tempo (the
+  // scene's `@mm`, else the session tempo, else BPx's engine default — NOT a
+  // hardcoded host 128, which was removed), click into it, type "100", press
+  // Enter, and assert ".bpm-value" reads "100".
 });
 
 test('TAP tempo: derived BPM matches the real click cadence', async ({ page }) => {

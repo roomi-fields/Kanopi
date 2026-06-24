@@ -45,8 +45,13 @@
     return n.toString().padStart(3, '0');
   }
 
-  const bpmInt = $derived(Math.floor(clock.state.bpm));
-  const bpmDec = $derived(((clock.state.bpm - bpmInt) * 10).toFixed(0));
+  // `null` when nothing is live and the user has typed no tempo (no host-invented default):
+  // the readout shows « — » rather than a fabricated number.
+  const hasBpm = $derived(clock.state.bpm != null);
+  const bpmInt = $derived(clock.state.bpm != null ? Math.floor(clock.state.bpm) : 0);
+  const bpmDec = $derived(
+    clock.state.bpm != null ? ((clock.state.bpm - bpmInt) * 10).toFixed(0) : '0'
+  );
   const bpb = $derived(clock.state.beatsPerBar || 4);
 
   // Position shown by the meter + the 4 LEDs, taken from Kronos's Transport (the single
@@ -68,7 +73,8 @@
   let draft = $state('');
 
   function startEdit() {
-    draft = clock.state.bpm.toFixed(1);
+    // Empty draft when there's no tempo yet (the user is about to type the first one).
+    draft = clock.state.bpm != null ? clock.state.bpm.toFixed(1) : '';
     editing = true;
   }
   // Mirror the transport BPM into the active scene's `@mm` directive (Romain:
@@ -79,7 +85,9 @@
   function writeTempoToScene() {
     const f = activeFile;
     if (!f || (f.runtime !== 'bpscript' && f.runtime !== 'bp3')) return;
-    const next = writeMmDirective(f.contents, clock.state.bpm);
+    const bpm = clock.state.bpm;
+    if (bpm == null) return; // no tempo to mirror into @mm
+    const next = writeMmDirective(f.contents, bpm);
     if (next !== f.contents) workspace.updateContents(f.id, next);
   }
 
@@ -214,7 +222,11 @@
         title="Cliquer pour saisir le BPM"
         onclick={startEdit}
       >
-        <span class="bpm-value">{bpmInt}<span class="decimal">.{bpmDec}</span></span>
+        {#if hasBpm}
+          <span class="bpm-value">{bpmInt}<span class="decimal">.{bpmDec}</span></span>
+        {:else}
+          <span class="bpm-value bpm-empty">—</span>
+        {/if}
       </button>
     {/if}
     <span class="bpm-label">BPM</span>

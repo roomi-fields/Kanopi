@@ -19,12 +19,14 @@ export type Runtime =
 
 /**
  * The READOUT shape of the tempo/transport store (`stores/clock.svelte.ts`). It is NOT a
- * host clock: `bpm`/`beatsPerBar` are persisted SESSION values (bpm superseded by the live
- * Kronos handle's tempo while a scene plays); `playing`/`paused` are PROJECTED from Kronos's
- * Transport state. Kanopi holds no clock object — position + transport state belong to Kronos.
+ * host clock: `beatsPerBar` is a persisted SESSION value; `bpm` is the live Kronos handle's
+ * tempo while a scene plays, else the user's local typed/tapped tempo, else `null` (nothing
+ * live + no input → no tempo to show, the readout renders « — »; never a host-invented
+ * default). `playing`/`paused` are PROJECTED from Kronos's Transport state. Kanopi holds no
+ * clock object — position + transport state belong to Kronos.
  */
 export interface ClockState {
-  bpm: number;
+  bpm: number | null;
   beatsPerBar: number; // numerator of the current @time signature (default 4)
   playing: boolean; // projected: Kronos transport === 'running'
   paused: boolean; // projected: Kronos transport === 'paused'
