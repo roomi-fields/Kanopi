@@ -1503,6 +1503,11 @@ function makeBpxAdapter(
       // played timeline (its `sourceStructure()` is bound on the Transport in
       // `startKronosAudio`). Built inside the try (needs `bpx`/`rawTree` in scope).
       let kairos: Kairos | undefined;
+      // Scene pitch resolver (`@kronos/core/pitch`) — HOISTED above the Kairos charger so
+      // its `transposeToken` (B03) can be handed to the projection context. Built once
+      // from the scene's declared alphabet/tuning + derived tokens; the same instance is
+      // reused below (audio output) so there is no duplicate resolver per eval.
+      let sceneResolver: PitchResolver | undefined;
       try {
         // `effectiveFlags` (e.g. `{ scene: 2 }`) is applied as the BPx engine's
         // initial flag state, so a flag-guarded rule (`/scene=2/`) derives
@@ -1592,6 +1597,11 @@ function makeBpxAdapter(
         // (which stamped `{__cv}` descriptors for the now-removed internal WebAudio synth)
         // is GONE — Kanopi neither resolves nor renders CV.
         rawTree = derived.tree;
+        // Flat tokens (control markers dropped) — the resolver context + downstream consumers.
+        tokens = derived.tokens.filter((t) => t.type !== 'control');
+        // Build the scene pitch resolver NOW (before the charger) so its `transposeToken`
+        // can feed the projection context (B03). DATA in, `PitchResolver` out; reused below.
+        sceneResolver = sceneResolverFor(declaredAlphabet, declaredTuning, tokens);
         // KAN-orchestration P1 — hand the derived tree + projection context to Kairos.
         // `charger` projects the tree into a Kronos Timeline (modulations composed inside)
         // and bumps its generation; `startKronosAudio` binds `sourceStructure()` on the
@@ -1610,13 +1620,18 @@ function makeBpxAdapter(
             // to sample. Empty registry (no CV) ⇒ no bindings ⇒ notes without automation,
             // unchanged (normal/maqâm parity preserved). The host `composeTreeModulations`
             // + `__cvBindings` stamping stays for the dormant legacy path (removed Phase 2).
-            modulation: { registry: kronosRegistry, exprSource: onExprSource }
+            modulation: { registry: kronosRegistry, exprSource: onExprSource },
+            // B03 — transpose the token on leaves whose `qualificateurs.transpose ≠ 0`,
+            // via the scene resolver's `transposeToken` (temperament grid). Kairos leaves
+            // the token nu when transpose=0, so a scene without transpose is unchanged
+            // (normal/maqâm/CV parity preserved). Kanopi resolves nothing — it just lends
+            // the resolver's transpose function.
+            transposeToken: (t: string, n: number) => sceneResolver!.transposeToken(t, n)
           } as unknown as Parameters<Kairos['charger']>[1]
         );
         // BPx authority for the scene's compiled length (includes any trailing rest);
         // projected into the Kronos loop bound below.
         totalDurationBeats = derived.tree?.metadata?.totalDurationBeats;
-        tokens = derived.tokens.filter((t) => t.type !== 'control');
         tree = derived.tree as unknown as ProductionTree;
         // Resolve every leaf's name now, while `bpx` (and its grammar symbol
         // table) is in scope. Guarded inside the helper — never throws here.
@@ -1903,10 +1918,12 @@ function makeBpxAdapter(
           setActorTransport(actor: string, transport: string): void;
         };
         da.setActors(orchestration.actorTable);
-        // Scene pitch resolver from the SHARED builder (`@kronos/core/pitch`) — DATA in,
-        // `PitchResolver` out. The `default` actor (no `@actor`) inherits this; each real
-        // actor gets one for its own alphabet. Kanopi resolves nothing itself.
-        const sceneResolver = sceneResolverFor(declaredAlphabet, declaredTuning, tokens);
+        // Scene pitch resolver — REUSE the instance hoisted above the Kairos charger (B03
+        // `transposeToken`), built from the SHARED `@kronos/core/pitch` builder. The
+        // `default` actor (no `@actor`) inherits it; each real actor gets one for its own
+        // alphabet. Kanopi resolves nothing itself. Defined by here — the derive succeeded
+        // (an empty derivation already threw above), so narrow the hoisted `| undefined`.
+        if (!sceneResolver) throw new Error(`${id}: scene resolver unavailable after derive`);
         const resolverFor = (alphabet: string | undefined): PitchResolver =>
           sceneResolverFor(alphabet, declaredTuning, tokens);
         // AUDIO output is the runtime-audio AudioRuntime, built by `startKronosAudio`
@@ -2012,6 +2029,64 @@ function makeBpxAdapter(
         // voices. The dispatcher is NEVER started as an emitter — it remains purely the
         // transport/resolver/`_actors` structure Kronos reads through `pickTransport`.
         {
+          // KAN-orchestration P1 — RE-RANDOM re-derive on the Kairos path. This closure is
+          // what Kronos fires at each loop edge (`StructureSource.auBord` → `cb`): it
+          // re-derives the grammar with a FRESH seed (re-rolling `@mode:random` / weighted
+          // rules) and `charger`s the new tree → Kairos bumps its generation → Kronos
+          // re-pulls + swaps the new flat at that same edge (quantized).
+          //
+          // Built UNCONDITIONALLY (not gated by `reRandom` here) and handed to
+          // `startKronosAudio` as `reDeriveKairos`: that centralizes the arming —
+          // `startKronosAudio` installs it via `kairos.setReDerive(reRandom && loop ? cb : null)`
+          // at construction AND re-arms it on every live `setReRandom`/`setLoop` toggle, so
+          // flipping re-random mid-play now takes effect (the old direct `setReDerive` here
+          // armed only at load). The legacy `reDeriveTreeEvents` (→ DispatchEvents) stays dormant.
+          const reDeriveKairos = (): void => {
+            try {
+              // Fresh-seed re-derivation — identical opts to the eval path + the dormant
+              // `reDeriveTreeEvents`, only the random draw differs.
+              const rbpx: Session = createSession(ast, {
+                ...(currentBpm !== undefined ? { tempo: currentBpm } : {}),
+                ...(settings !== undefined ? { settings } : {}),
+                ...(effectiveFlags !== undefined ? { initialFlags: effectiveFlags } : {}),
+                seed: freshSeed()
+              });
+              const rtree = rbpx.derive().tree;
+              // Re-charge Kairos with the NEW tree + a context rebuilt from the NEW session
+              // (resolvers/kpress/order) + the cycle-invariant CV registry (KRO-24 — Kairos
+              // composes the modulations at flatten) + B03 transpose (same scene resolver;
+              // alphabet/tuning are identical across cycles). The generation bump makes
+              // Kronos re-pull this fresh flat at the edge.
+              kairos!.charger(
+                rtree as unknown as Parameters<Kairos['charger']>[0],
+                {
+                  ...(rbpx.buildProjectionContext() as object),
+                  modulation: { registry: kronosRegistry, exprSource: onExprSource },
+                  transposeToken: (t: string, n: number) => sceneResolver!.transposeToken(t, n)
+                } as unknown as Parameters<Kairos['charger']>[1]
+              );
+              // Refresh the Structure/Text view so it shows THIS cycle's variation
+              // (display only — mirrors what the dormant `reDeriveTreeEvents` publishes).
+              const rnames = buildSymbolNames(rbpx, rtree);
+              const rtokens = rbpx
+                .emit<BpxTimedToken[]>('timed-tokens')
+                .filter((t) => t.type !== 'control');
+              publishProduction(
+                id,
+                rtokens,
+                productionSounds,
+                headSections ?? [],
+                beatDurSec,
+                rtree as unknown as ProductionTree,
+                rnames,
+                sectionLeafCounts(ast)
+              );
+            } catch (err) {
+              // On any failure, do NOT charger — Kairos keeps the current flat and Kronos
+              // replays it (no silent gap, no crash at the loop edge).
+              log({ runtime: id, level: 'warn', msg: `re-random derive failed: ${String(err)}` });
+            }
+          };
           // Kronos drives notes + per-note CV for the scene. The host no longer judges
           // "does this sound" — every terminal is dispatched as a note and the RESOLUTION
           // decides (an unresolved token is silent at the sink). The ORCHESTRATED
@@ -2055,6 +2130,11 @@ function makeBpxAdapter(
             // Transport, tempo/mute route via `kairos.demande`. The legacy
             // tree-dispatch → MaterializedTimeline(events) input stays present-dormant.
             kairos,
+            // RE-RANDOM re-derive for the Kairos path. `startKronosAudio` installs it on
+            // Kairos (`setReDerive`) gated by `reRandom && loop`, AND re-arms it on every
+            // live `setReRandom`/`setLoop` toggle — so flipping re-random mid-play works.
+            // A STEP never re-derives (no loop), so omit it there.
+            reDeriveKairos: section || stepWindow ? undefined : reDeriveKairos,
             // STEP audition + re-derive mirror the mono path; a STEP never re-derives.
             reDerive: section ? null : reDeriveTreeEvents(orchestratedLive),
             reRandom,

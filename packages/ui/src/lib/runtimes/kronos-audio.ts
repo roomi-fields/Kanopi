@@ -141,6 +141,13 @@ export interface KronosAudioOptions {
    *  `transport.setTempo` / `scheduler.setActorMuted` (kept present-but-dormant). Absent
    *  ⇒ the legacy `MaterializedTimeline`(events) path drives, unchanged. */
   kairos?: Kairos;
+  /** KAN-orchestration P1 — RE-RANDOM re-derive on the Kairos path. The host builds this
+   *  closure (re-derive grammar with a fresh seed → `kairos.charger` the new tree → Kronos
+   *  re-pulls + swaps at the loop edge). `startKronosAudio` installs it via
+   *  `kairos.setReDerive(reRandom && loop ? cb : null)` at construction AND re-arms it on
+   *  every live `setReRandom`/`setLoop` toggle — so flipping re-random mid-play takes effect.
+   *  Absent / no Kairos ⇒ the legacy `scheduler.setReDerive` path is used instead. */
+  reDeriveKairos?: () => void;
 }
 
 /** Beat/bar readout for the transport display, derived from the SAME playhead as
@@ -526,11 +533,20 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   let loopActive = loop;
   let reRandomActive = !!opts.reRandom;
   const applyReDerive = (): void => {
-    // When Kairos is the SOURCE (P1), `bindStructureSource` OWNS the scheduler's
-    // `setReDerive` hook (re-random becomes a Kairos generation bump). The legacy
-    // re-derive closure stays present-but-DORMANT — it must never co-install on the
-    // same hook (last-write-wins would clobber Kairos's loop-edge pull). So skip it.
-    if (opts.kairos) return;
+    // KAN-orchestration P1 — when Kairos is the SOURCE, re-random is a Kairos generation
+    // bump: arm/disarm the host re-derive on KAIROS (`setReDerive`), NOT the scheduler.
+    // `bindStructureSource` already owns the scheduler's loop-edge hook (it fires
+    // `kairos.auBord` → this callback), so the legacy `scheduler.setReDerive` must stay
+    // untouched here. Centralized so the INITIAL arming AND every live `setReRandom`/
+    // `setLoop` toggle go through the SAME gate (`reRandom && loop`) — fixing the
+    // mid-play toggle that the old `if (opts.kairos) return` left inert.
+    if (opts.kairos) {
+      opts.kairos.setReDerive(
+        reRandomActive && loopActive && opts.reDeriveKairos ? opts.reDeriveKairos : null
+      );
+      return;
+    }
+    // Legacy path: the scheduler owns the re-derive hook.
     scheduler.setReDerive(reRandomActive && loopActive && reDeriveClosure ? reDeriveClosure : null);
   };
   applyReDerive();

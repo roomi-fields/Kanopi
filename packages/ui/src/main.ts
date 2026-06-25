@@ -11,6 +11,8 @@ import { actors } from './stores/actors.svelte';
 import { scenes } from './stores/scenes.svelte';
 import { openBlocks, installSlotErrorBridge } from './stores/blocks.svelte';
 import { ui } from './stores/ui.svelte';
+import { production } from './stores/production.svelte';
+import { transport } from './stores/transport.svelte';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('#app root not found');
@@ -30,7 +32,14 @@ if (import.meta.env.DEV) {
     actors,
     scenes,
     openBlocks,
-    ui
+    ui,
+    // The most recent derived production (PROJECTION of BPx `derive()`), re-published
+    // each loop cycle when re-random re-rolls — read by the re-random e2e to compare
+    // consecutive cycles. DEV-only hatch, dropped from the prod bundle.
+    production,
+    // Loop / re-random session toggles (default loop ON, re-random OFF). The re-random
+    // e2e flips `reRandom` ON before evaluating so the Kairos re-derive arms at load.
+    transport
   };
 }
 
