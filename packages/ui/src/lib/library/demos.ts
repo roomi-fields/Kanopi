@@ -144,6 +144,17 @@ const DEMO_META: Record<string, DemoMeta> = {
     level: 'intermediate',
     tags: ['orchestration', 'multi-actor'],
     showcase: true
+  },
+  'midi-channel-override': {
+    name: 'MIDI channel override',
+    tagline: 'address in the language, per-note override',
+    description:
+      'Two MIDI actors declare their channel in BPScript (transport.midi(ch:N)); one note carries an inline (ch:5) override. The output address travels in the scene, not via any host routing map (KAI-9 test scene).',
+    category: 'orchestrator',
+    outputs: ['midi'],
+    level: 'advanced',
+    tags: ['orchestration', 'multi-actor', 'midi', 'routing'],
+    showcase: false
   }
 };
 
