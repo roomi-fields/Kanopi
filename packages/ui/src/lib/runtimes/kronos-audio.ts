@@ -271,9 +271,14 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   //     the 'audio'/'webaudio' SINK: a token resolves to Hz via the shared `pitch`, CV
   //     renders from `content.modulations`. A host-provided `sinks.webaudio`/`sinks.audio`
   //     (tests inject capture) OVERRIDES it.
-  const audioRuntime = opts.pitch
-    ? createAudioRuntime(audioCtx, { pitch: opts.pitch, clock, sounds: undefined })
-    : null;
+  // KAI-10 — built UNCONDITIONALLY: the AudioRuntime reads `content.pitch.hz` off each
+  // event (graven by Kairos), so it no longer needs a host token→Hz resolver. `opts.pitch`
+  // is forwarded only as a vestigial fallback when present (retired in the final cleanup).
+  const audioRuntime = createAudioRuntime(audioCtx, {
+    ...(opts.pitch ? { pitch: opts.pitch } : {}),
+    clock,
+    sounds: undefined
+  });
   const audioSink: TransportLike | null =
     opts.sinks?.webaudio ?? opts.sinks?.audio ?? (audioRuntime as unknown as TransportLike | null);
 
@@ -348,6 +353,9 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       rq?: Record<string, number> | null;
       startSec?: number;
       modulations?: ModulationBinding[] | null;
+      // KAI-10 — the pitch facet graven by Kairos (`{hz, noteName, …}`); forwarded
+      // verbatim to every output so it reads the canonical Hz off the event.
+      pitch?: unknown;
     };
     const coerced = coerceControlValues(c.controls);
     for (const k of Object.keys(coerced)) {
@@ -375,7 +383,10 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
         duration: ev.duration,
         actor: ev.actor,
         kind: ev.kind,
-        content: { token: c.token, controls, modulations: c.modulations ?? [] }
+        // KAI-10: forward the graven pitch facet (Kairos `content.pitch.hz`); the
+        // AudioRuntime reads `c.pitch.hz` directly (its token→Hz resolver is now only a
+        // fallback, retired in the final pitch-module cleanup).
+        content: { token: c.token, controls, pitch: c.pitch, modulations: c.modulations ?? [] }
       });
     }
   };
@@ -393,6 +404,9 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
         ...coerced
       };
       if (velRaw != null) event.velocity = velRaw / 127;
+      // KAI-10: forward the graven pitch facet; the MIDI sink reads `event.pitch.hz`
+      // and derives note+bend from it (its token→Hz resolver is now a stand-in only).
+      if (c.pitch != null) event.pitch = c.pitch;
       const ch = ev.output?.channel;
       if (typeof ch === 'number') event.chan = ch;
       midiSink.send(event, ev.onset);
@@ -412,7 +426,14 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
         actor: ev.actor,
         kind: ev.kind,
         output: ev.output,
-        content: { token: c.token, controls: coerced, modulations: c.modulations ?? [] }
+        // KAI-10: forward the graven pitch facet; the OSC profile reads `content.pitch.hz`
+        // (→ note/Hz address) instead of resolving the token host-side.
+        content: {
+          token: c.token,
+          controls: coerced,
+          pitch: c.pitch,
+          modulations: c.modulations ?? []
+        }
       });
     }
   };

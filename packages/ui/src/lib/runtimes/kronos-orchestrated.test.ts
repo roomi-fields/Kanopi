@@ -62,8 +62,11 @@ describe('orchestrated scene — events carry their OUTPUT address (KAI-9)', () 
   it('melody → {runtime:midi, channel:1}, bass → {runtime:webaudio}', () => {
     const { events, actors } = deriveArbre(bps);
     // The AST authority the host hands down (for OSC enumeration) — proven on pieces.
-    expect(actors.melody).toEqual({ runtime: 'midi', params: { ch: 1 } });
-    expect(actors.bass).toEqual({ runtime: 'webaudio', params: {} });
+    // KAI-10: BPx now also carries the per-actor `alphabet` on `metadata.actors` (the
+    // SceneContext that rides the tree, read by Kairos' pitch cascade) — both actors
+    // declare `alphabet:western`, so it appears here alongside the KAI-9 output address.
+    expect(actors.melody).toEqual({ runtime: 'midi', params: { ch: 1 }, alphabet: 'western' });
+    expect(actors.bass).toEqual({ runtime: 'webaudio', params: {}, alphabet: 'western' });
 
     const out = (actor: string): OutputRef[] =>
       events.filter((e) => isNote(e) && e.actor === actor).map((e) => e.output as OutputRef);

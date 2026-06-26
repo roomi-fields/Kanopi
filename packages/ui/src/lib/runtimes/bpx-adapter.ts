@@ -1499,11 +1499,11 @@ function makeBpxAdapter(
       // played timeline (its `sourceStructure()` is bound on the Transport in
       // `startKronosAudio`). Built inside the try (needs `bpx`/`rawTree` in scope).
       let kairos: Kairos | undefined;
-      // Scene pitch resolver (`@kronos/core/pitch`) — HOISTED above the Kairos charger so
-      // its `transposeToken` (B03) can be handed to the projection context. Built once
-      // from the scene's declared alphabet/tuning + derived tokens; the same instance is
-      // reused below (audio output) so there is no duplicate resolver per eval.
-      let sceneResolver: PitchResolver | undefined;
+      // KAI-10 — the host no longer builds a pitch resolver for OUTPUT. Kairos graves
+      // `content.pitch.hz` per actor (from `ctx.pitchLib` + the tree) and every runtime
+      // reads that off the event; the sound transpose lives in Kairos too. The only
+      // resolver left here is `productionResolver` (built lazily below) for the DISPLAY
+      // sounding-predicate `.sounds()` — no Hz, no transpose feeds the outputs.
       try {
         // `effectiveFlags` (e.g. `{ scene: 2 }`) is applied as the BPx engine's
         // initial flag state, so a flag-guarded rule (`/scene=2/`) derives
@@ -1580,9 +1580,6 @@ function makeBpxAdapter(
         // is GONE — Kanopi neither resolves nor renders CV.
         // Flat tokens (control markers dropped) — the resolver context + downstream consumers.
         tokens = derived.tokens.filter((t) => t.type !== 'control');
-        // Build the scene pitch resolver NOW (before the charger) so its `transposeToken`
-        // can feed the projection context (B03). DATA in, `PitchResolver` out; reused below.
-        sceneResolver = sceneResolverFor(declaredAlphabet, declaredTuning, tokens);
         // KAN-orchestration P1 — hand the derived tree + projection context to Kairos.
         // `charger` projects the tree into a Kronos Timeline (modulations composed inside)
         // and bumps its generation; `startKronosAudio` binds `sourceStructure()` on the
@@ -1610,13 +1607,11 @@ function makeBpxAdapter(
             // to sample. Empty registry (no CV) ⇒ no bindings ⇒ notes without automation,
             // unchanged (normal/maqâm parity preserved). Kanopi composes no CV bindings itself
             // — the Kairos projection is the single owner of CV composition.
-            modulation: { registry: kronosRegistry, exprSource: onExprSource },
-            // B03 — transpose the token on leaves whose `qualificateurs.transpose ≠ 0`,
-            // via the scene resolver's `transposeToken` (temperament grid). Kairos leaves
-            // the token nu when transpose=0, so a scene without transpose is unchanged
-            // (normal/maqâm/CV parity preserved). Kanopi resolves nothing — it just lends
-            // the resolver's transpose function.
-            transposeToken: (t: string, n: number) => sceneResolver!.transposeToken(t, n)
+            // KAI-10 — the SOUND transpose now lives in Kairos (`resolvePitch` = resolve ∘
+            // transpose per actor, off `ctx.pitchLib` + the tree). The host lends no
+            // `transposeToken` (the old host path was a prod no-op, FLAG3); a display-only
+            // token transpose, if ever needed, comes from the Kairos views (KAN-18).
+            modulation: { registry: kronosRegistry, exprSource: onExprSource }
           } as unknown as Parameters<Kairos['charger']>[1]
         );
         // BPx authority for the scene's compiled length (includes any trailing rest);
@@ -1839,25 +1834,18 @@ function makeBpxAdapter(
           );
         }
 
-        // Scene pitch resolver — REUSE the instance hoisted above the Kairos charger (B03
-        // `transposeToken`), built from the SHARED `@kronos/core/pitch` builder. The
-        // `default` actor (no `@actor`) inherits it; each real actor gets one for its own
-        // alphabet. Kanopi resolves nothing itself. Defined by here — the derive succeeded
-        // (an empty derivation already threw above), so narrow the hoisted `| undefined`.
-        if (!sceneResolver) throw new Error(`${id}: scene resolver unavailable after derive`);
-        const resolverFor = (alphabet: string | undefined): PitchResolver =>
-          sceneResolverFor(alphabet, declaredTuning, tokens);
-        // MIDI SINK — built ONCE (the first MIDI actor's per-actor resolver) and handed to
-        // Kronos as the 'midi' sink. The host NAMES no route and chooses no sink: each event
-        // carries its `output.runtime` (graven by Kairos from `metadata.actors`), and Kronos
-        // routes on it. The MidiTransport stays registered on the dispatcher for LIFECYCLE
-        // only (`dispatcher.stop()` closes it) — never read for routing. AUDIO + OSC sinks
-        // are built inside `startKronosAudio` (they need the shared clock); the OSC device
-        // enumeration is derived there from `metadata.actors`. video/dmx render themselves.
+        // MIDI SINK — built ONCE and handed to Kronos as the 'midi' sink. The host NAMES no
+        // route and chooses no sink: each event carries its `output.runtime` (graven by Kairos
+        // from `metadata.actors`), and Kronos routes on it. The MidiTransport stays registered
+        // on the dispatcher for LIFECYCLE only (`dispatcher.stop()` closes it) — never read for
+        // routing. AUDIO + OSC sinks are built inside `startKronosAudio` (they need the shared
+        // clock); the OSC device enumeration is derived there from `metadata.actors`.
+        // KAI-10 — no host resolver: the MIDI sink reads `event.pitch.hz` (graven by Kairos)
+        // and derives note+bend from it; its own token→Hz resolver is now only a stand-in.
         let midi: InstanceType<typeof MidiTransport> | undefined;
         for (const actor of orchestration.actors) {
           if (devices.get(actor.name)!.type === 'midi' && !midi) {
-            midi = new MidiTransport({ resolver: resolverFor(actor.alphabet) });
+            midi = new MidiTransport({});
             await midi.init().catch(() => {}); // no hardware → silent, never throws
             dispatcher.addTransport('midi', midi); // lifecycle: dispatcher.stop() closes it
           }
@@ -1915,8 +1903,8 @@ function makeBpxAdapter(
                   ...(rbpx.buildProjectionContext() as object),
                   // KAI-10 — same read-only catalogs on every re-derive (cycle-invariant).
                   pitchLib: PITCH_LIB,
-                  modulation: { registry: kronosRegistry, exprSource: onExprSource },
-                  transposeToken: (t: string, n: number) => sceneResolver!.transposeToken(t, n)
+                  // KAI-10 — sound transpose in Kairos; host lends no transposeToken.
+                  modulation: { registry: kronosRegistry, exprSource: onExprSource }
                 } as unknown as Parameters<Kairos['charger']>[1]
               );
               // Same instance re-charger'd → bump generation so the views re-render.
@@ -1974,10 +1962,10 @@ function makeBpxAdapter(
             // at setup. Per-event device/channel/runtime rides `event.output`.
             actors: actorOutputs,
             startSceneSec: startOffsetSec,
-            // The shared scene pitch resolver → the runtime-audio AudioRuntime startKronosAudio
-            // builds as the AUDIO output (token→Hz + CV render). Per-actor alphabets share the
-            // scene resolver for V1 (mono/single-alphabet); MIDI keeps its own per-actor resolver.
-            pitch: sceneResolver,
+            // KAI-10 — no host pitch resolver fed to the outputs. The AudioRuntime reads
+            // `content.pitch.hz` (graven by Kairos) off each event; MIDI/OSC likewise. The
+            // host stopped resolving token→Hz (the audio fallback is retired in the final
+            // pitch-module cleanup).
             // OSC output (OSC-5b): the relay WS URL. startKronosAudio builds the OscAdapter
             // (it needs the shared clock) when the scene has OSC actors (from `metadata.actors`).
             oscWsUrl: (routingJson as { osc?: { ws?: string } })?.osc?.ws,
