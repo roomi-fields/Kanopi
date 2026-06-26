@@ -2,8 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 import { createBPx } from 'bpx';
 import { startKronosAudio } from './kronos-audio';
-import { treeToDispatchEvents } from './tree-dispatch';
-import type { DispatchEvent } from './tree-dispatch';
+import { kairosFromEvents, type DispatchEvent } from './kairos-test-helpers';
 
 // KAN-C02/C03 (SUITE) — the loop bound is a PROJECTION of the BPx authority
 // `derived.tree.metadata.totalDurationBeats`, NOT the host's reduce(max) over the
@@ -70,7 +69,6 @@ function fakeCtx(): AudioContext {
 // timeline materializes from the events (the repli).
 function loopBound(events: DispatchEvent[], durationSec?: number): number {
   const handle = startKronosAudio({
-    events,
     audioCtx: fakeCtx(),
     derivedTempo: 120,
     loop: true,
@@ -78,7 +76,8 @@ function loopBound(events: DispatchEvent[], durationSec?: number): number {
       typeof startKronosAudio
     >[0]['dispatcher'],
     startSceneSec: 0,
-    durationSec
+    durationSec,
+    kairos: kairosFromEvents(events, durationSec)
   });
   const d = handle.transport.loopDurationScene();
   handle.stop();
@@ -174,9 +173,9 @@ describe('KAN-C02/C03 (SUITE) — end-to-end: bound is read from the BPx metadat
     const projected = meta.totalDurationBeats * beatDurSec;
     expect(projected).toBeCloseTo(3.5, 9); // 7 * 0.5
 
-    const events = treeToDispatchEvents(
-      derived.tree as Parameters<typeof treeToDispatchEvents>[0]
-    ).filter((e) => e.type !== 'rest');
+    // The bound depends ONLY on the supplied `durationSec` (the BPx-projected length), not on
+    // the events' content — so a hand-built fixture is sufficient here.
+    const events = [note('C4', 0, 0.5), note('D4', 0.5, 0.5), note('E4', 1, 0.5)];
 
     // The bound the adapter would pass equals the projected BPx length, and the
     // materialized timeline reads it back unchanged.
@@ -192,9 +191,8 @@ describe('KAN-C02/C03 (SUITE) — end-to-end: bound is read from the BPx metadat
       .metadata;
     const beatDurSec = 60 / meta.tempo;
 
-    const events = treeToDispatchEvents(
-      derived.tree as Parameters<typeof treeToDispatchEvents>[0]
-    ).filter((e) => e.type !== 'rest');
+    // Hand-built fixture: the bound tracks the supplied `durationSec`, not these events.
+    const events = [note('C4', 0, 0.5), note('D4', 0.5, 0.5), note('E4', 1, 0.5)];
     const eventsReduce = reduceMax(events); // FIXED — does not depend on the metadata
 
     // Real value → bound A.

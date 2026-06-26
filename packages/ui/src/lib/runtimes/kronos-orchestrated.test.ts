@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
-import { createBPx } from 'bpx';
+import { createSession } from 'bpx';
 import { InternalClock, MaterializedTimeline, Scheduler } from '@kronos/core';
 import type { RuntimeAdapter, ScheduledEvent, TimelineEvent } from '@kronos/core';
-import { treeToDispatchEvents, type DispatchEvent } from './tree-dispatch';
 import { startKronosAudio } from './kronos-audio';
+import { kairosFromEvents, eventsFromKairosTree, type DispatchEvent } from './kairos-test-helpers';
 
 // EX4 — orchestrated scenes driven BY Kronos (not the legacy fallback).
 //
@@ -17,33 +17,13 @@ import { startKronosAudio } from './kronos-audio';
 //      (`setActorMuted`) while the other actor keeps sounding — the same gate the
 //      `KronosAudioHandle.setActorMuted` delegates to one-line.
 
-// ── The real BPx pipeline the host uses (compileToBPxAST → derive → tree events) ──
+// ── The real BPx pipeline the host uses (compileToBPxAST → derive → Kairos projection) ──
 function deriveOrchestrated(src: string): DispatchEvent[] {
-  const c = compileToBPxAST(src);
-  const ast = c.ast;
-  const bpx = createBPx({ tempo: 120 });
-  bpx.loadGrammar(ast);
-  const derived = bpx.derive();
-  const symbols = (bpx as { grammar?: { symbols?: { getName?(id: number): string } } }).grammar
-    ?.symbols;
-  const symbolNames: Record<number, string> = {};
-  // Name every leaf while the grammar symbol table is in scope (rests carry -1).
-  const walk = (n: { symbolId?: number; children?: unknown[] }): void => {
-    if (typeof n.symbolId === 'number' && n.symbolId >= 0 && symbols?.getName) {
-      try {
-        symbolNames[n.symbolId] = symbols.getName(n.symbolId);
-      } catch {
-        /* unnamed */
-      }
-    }
-    for (const ch of (n.children ?? []) as Array<{ symbolId?: number; children?: unknown[] }>)
-      walk(ch);
-  };
-  walk(derived.tree as { symbolId?: number; children?: unknown[] });
-  return treeToDispatchEvents(
-    derived.tree as Parameters<typeof treeToDispatchEvents>[0],
-    symbolNames
-  );
+  const ast = compileToBPxAST(src, { tempo: 120 }).ast;
+  const session = createSession(ast, { seed: 1, tempo: 120 });
+  const tree = session.derive().tree;
+  const ctx = session.buildProjectionContext();
+  return eventsFromKairosTree(tree, ctx);
 }
 
 // Mirrors `packages/library/bundled/demos/midi-actors.bps` (melody on MIDI ch1,
@@ -97,12 +77,12 @@ describe('orchestrated scene — Kronos drives notes + per-actor routing', () =>
       }
     };
     const handle = startKronosAudio({
-      events,
       audioCtx: captureCtx(),
       derivedTempo: 120,
       loop: false,
       // No soundsFn: an actor's declared notes always sound (orchestrated path).
-      dispatcher: dispatcher as unknown as Parameters<typeof startKronosAudio>[0]['dispatcher']
+      dispatcher: dispatcher as unknown as Parameters<typeof startKronosAudio>[0]['dispatcher'],
+      kairos: kairosFromEvents(events)
     });
     handle.stop();
     // The synchronous RealtimeDriver pump fires the events at scene 0 (+ lookahead).

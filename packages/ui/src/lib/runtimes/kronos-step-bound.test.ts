@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Scheduler } from '@kronos/core';
 import { startKronosAudio } from './kronos-audio';
-import type { DispatchEvent } from './tree-dispatch';
+import { kairosFromEvents } from './kairos-test-helpers';
+import type { DispatchEvent } from './kairos-test-helpers';
 
 // THE BUG: in kronos mode a STEP played TWO beats instead of one. The old STEP path
 // did `scheduler.start(fromSec)` + a WALL-CLOCK `setTimeout(driver.stop, durSec)`.
@@ -65,13 +66,13 @@ function captureTokens(opts: {
   } as unknown as AudioContext;
 
   const handle = startKronosAudio({
-    events: opts.events,
     durationSec: totalDur,
     audioCtx: ctx,
     derivedTempo: 60,
     loop: false,
     dispatcher: { transports: { default: transport } },
-    step: opts.step
+    step: opts.step,
+    kairos: kairosFromEvents(opts.events, totalDur)
   });
   handle.stop();
   return tokens;

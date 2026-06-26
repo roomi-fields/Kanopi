@@ -65,7 +65,7 @@ function toSessionOptions(cfg: HostConfig): SessionOptions {
   return o;
 }
 
-// Compact, structural view of a tree node (recurses) — what tree-dispatch reads:
+// Compact, structural view of a tree node (recurses) — what the Kairos projection reads:
 // node identity (nodeId/symbolId/type), the timed span, and children in order. We
 // intentionally avoid comparing the whole opaque object (payloads carry closures).
 interface NodeView {

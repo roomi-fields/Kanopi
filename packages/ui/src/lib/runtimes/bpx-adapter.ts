@@ -28,7 +28,7 @@ import { createSession, type Session, type TimedToken as BpxTimedToken } from 'b
 // KAN-orchestration P1 — Kairos is the SOURCE of the played timeline (projects the BPx
 // tree into a Kronos Timeline, exposes a StructureSource the Transport PULLs). Consumed
 // AS-IS: the host `charger`s it with the tree + BPx projection context, then hands it to
-// `startKronosAudio`. The OLD tree-dispatch → MaterializedTimeline source stays present-dormant.
+// `startKronosAudio`. Kairos is the SOLE projection source — no parallel host-side flattener.
 import { Kairos } from '@kairos/core';
 import { BUNDLED_SE, BUNDLED_SOUND, BUNDLED_AL } from './bp3-aux';
 // Core runtime, reused AS-IS (no port): the dispatcher carries the per-actor
@@ -52,20 +52,11 @@ import { makeResolver, type SceneContext, type PitchLib, type PitchResolver } fr
 // Tree-derived dispatch events (M5+ multi-actor refacto): flatten BPx's
 // `derive({ output: 'complete' }).tree` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
-import { treeToDispatchEvents, type DispatchEvent } from './tree-dispatch';
-// Kronos owns CV COMPOSITION (frontier R2 / migration #8): `buildModulators` fuses
-// the scene's `cv … : mod.x(…)` declarations with the `mod` library into the modulator
-// registry, and `composeTreeModulations` walks the realized tree to produce one
-// `{leaf, bindings}` pair per modulated leaf (PURE — does NOT mutate the tree). The
-// host only stamps each binding set onto its leaf so the flatten carries it to the
-// Kronos audio path. Both consumed AS-IS.
-import {
-  buildModulators,
-  composeTreeModulations,
-  type ModLib,
-  type ModulationBinding,
-  type ExprSource
-} from '@kronos/core';
+// Kronos owns CV COMPOSITION (frontier R2 / migration #8): `buildModulators` fuses the
+// scene's `cv … : mod.x(…)` declarations with the `mod` library into the modulator registry.
+// The host builds it once and hands it to Kairos (`charger`'s `modulation:{registry,…}`);
+// Kairos's projection composes the bindings at flatten (KRO-24). Consumed AS-IS.
+import { buildModulators, type ModLib, type ExprSource } from '@kronos/core';
 // Kronos drives the REAL audio (the only engine; legacy removed). The Kronos
 // scheduler produces the timed events; a thin adapter bridges each to the existing
 // WebAudio synth. The old dispatcher is NEVER started for sound — it survives only
@@ -122,7 +113,7 @@ import { headSectionNamesFromAst, sectionLeafCounts } from './head-sections-ast'
  *   .bps : source → compileToBPxAST ────────┤  (SceneAST direct, voie AST propre)
  *                                           ▼
  *     → SceneAST → createBPx().loadGrammar → derive({output:'complete'})
- *     → tree (+ payload par nœud) → treeToDispatchEvents → Kronos timeline
+ *     → tree (+ payload par nœud) → Kairos (projection) → Kronos timeline
  *     → routage PAR ACTEUR (payload.actor) → WebAudioTransport (+ MIDI sink)
  *
  * Glue only. Les frontaux (bp3-frontend, bpscript), le moteur (bpx) et le
@@ -1479,9 +1470,6 @@ function makeBpxAdapter(
 
       let tokens;
       let tree: ProductionTree | undefined;
-      // The raw BPx `DerivationTree` (control nodes included) for the multi-actor
-      // dispatcher path; `tree` above is the visualizer-shaped cast.
-      let rawTree: unknown;
       // The BPx-COMPILED scene length, in beats, read off the derivation metadata
       // (`derived.tree.metadata.totalDurationBeats` — BPx authority). Carried out of
       // the try block so the Kronos-audio call site can project it into the loop bound
@@ -1567,36 +1555,21 @@ function makeBpxAdapter(
         // dispatcher.load): `'complete'` ALSO injects zero-duration `type:
         // 'control'` tokens into the flat stream, which those paths never saw —
         // drop them here so nothing downstream regresses.
-        // CV (A) — Kronos audio path: compose a modulation BINDING per modulated
-        // input off the NEW BPx facets (`controls` ⊕ `controlSubjects` ⊕
-        // `controlScopes`) and stamp it on each leaf, BEFORE `resolveCvControls`
-        // rewrites `controls` for the legacy path. The sibling-voice resolver lets
-        // `*:cutoff:Env` follow env1→env2→env3 as the Env voice drew them.
-        const nameOf = (sid: number) =>
-          (bpx as { grammar?: { symbols?: Partial<SymbolTable> } }).grammar?.symbols?.getName?.(
-            sid
-          );
+        // CV — the modulator registry is built ONCE from CONSTANT inputs (ast.cvInstances +
+        // modLibJson) and handed to Kairos in the charger's `modulation:{registry,...}`:
+        // Kairos's projection COMPOSES the bindings at flatten (KRO-24) and carries them on
+        // `content.modulations` for the runtime-audio AudioRuntime to render. The host no
+        // longer composes/stamps CV bindings itself — the Kairos projection owns CV composition.
         kronosRegistry = buildModulators(
           ((ast as { cvInstances?: unknown[] } | null)?.cvInstances ?? []) as Parameters<
             typeof buildModulators
           >[0],
           modLibJson as unknown as ModLib
         );
-        // Stamp Kronos's composed bindings onto each modulated leaf (the flatten reads
-        // `leaf.__cvBindings`); `composeTreeModulations` itself leaves the tree untouched.
-        for (const { leaf, bindings } of composeTreeModulations(
-          derived.tree,
-          nameOf,
-          kronosRegistry,
-          { exprSource: onExprSource }
-        )) {
-          (leaf as { __cvBindings?: ModulationBinding[] }).__cvBindings = bindings;
-        }
-        // CV is composed by Kronos (the bindings above, carried on `content.modulations`)
-        // and RENDERED by the runtime-audio AudioRuntime. The legacy `resolveCvControls`
+        // CV is composed by Kronos (Kairos projection) and RENDERED by the runtime-audio
+        // AudioRuntime. The legacy `resolveCvControls`
         // (which stamped `{__cv}` descriptors for the now-removed internal WebAudio synth)
         // is GONE — Kanopi neither resolves nor renders CV.
-        rawTree = derived.tree;
         // Flat tokens (control markers dropped) — the resolver context + downstream consumers.
         tokens = derived.tokens.filter((t) => t.type !== 'control');
         // Build the scene pitch resolver NOW (before the charger) so its `transposeToken`
@@ -1618,8 +1591,8 @@ function makeBpxAdapter(
             // `exprSource` factory so `projeter` COMPOSES the modulations AT FLATTEN and
             // carries them on `content.modulations` (+ scene span) for the audio runtime
             // to sample. Empty registry (no CV) ⇒ no bindings ⇒ notes without automation,
-            // unchanged (normal/maqâm parity preserved). The host `composeTreeModulations`
-            // + `__cvBindings` stamping stays for the dormant legacy path (removed Phase 2).
+            // unchanged (normal/maqâm parity preserved). Kanopi composes no CV bindings itself
+            // — the Kairos projection is the single owner of CV composition.
             modulation: { registry: kronosRegistry, exprSource: onExprSource },
             // B03 — transpose the token on leaves whose `qualificateurs.transpose ≠ 0`,
             // via the scene resolver's `transposeToken` (temperament grid). Kairos leaves
@@ -1647,78 +1620,6 @@ function makeBpxAdapter(
         throw new Error(`${id}: ${msg}`);
       }
 
-      // RE-RANDOM per cycle (old dispatcher's `_reDerive`): re-run the grammar
-      // from scratch so weighted/random rules re-roll, returning a FRESH set of
-      // tree dispatch events for the next loop cycle. Same derive path as above
-      // (`createBPx` → `loadGrammar` → `derive('complete')`), then the SAME
-      // event filter the caller applies to the first cycle (`filterEvents`), so a
-      // re-derived cycle routes identically — only the random choices differ.
-      // Returns null on any error (the dispatcher then replays the existing
-      // events rather than going silent). Built once; passed to `start()` only
-      // when the transport's re-random toggle is on AND looping.
-      // The modulator registry is built from CONSTANT inputs (ast.cvInstances +
-      // modLibJson) — identical on every re-random cycle (only the derivation's
-      // random draw differs) AND identical to the eval-path build above. Reuse
-      // the single `kronosRegistry` instance rather than rebuilding it.
-      const reDeriveRegistry = kronosRegistry;
-      const reDeriveTreeEvents = (filterEvents: (e: DispatchEvent) => boolean) => () => {
-        try {
-          // Same upstream entry as the eval path (option A): `createSession` carries
-          // `buildProjectionContext`. `loadGrammar` folded into the factory.
-          const rbpx: Session = createSession(ast, {
-            // `currentBpm` here is the EFFECTIVE tempo already reconciled from the
-            // first derivation (the engine default when no `@mm`), so the re-rolled
-            // cycle keeps the same tempo — not a fabricated host value.
-            ...(currentBpm !== undefined ? { tempo: currentBpm } : {}),
-            ...(settings !== undefined ? { settings } : {}),
-            ...(effectiveFlags !== undefined ? { initialFlags: effectiveFlags } : {}),
-            seed: freshSeed()
-          });
-          // 'complete' migrated to Kairos (throws); default 'sounding' tree + emit.
-          const rderived = {
-            tree: rbpx.derive().tree,
-            tokens: rbpx.emit<BpxTimedToken[]>('timed-tokens')
-          };
-          const rNameOf = (sid: number) =>
-            (rbpx as { grammar?: { symbols?: Partial<SymbolTable> } }).grammar?.symbols?.getName?.(
-              sid
-            );
-          // Same CV composition as the main path — each re-roll re-samples the
-          // phrase spans + which env sounds under each leaf (the registry itself is
-          // the hoisted, cycle-invariant `reDeriveRegistry`).
-          for (const { leaf, bindings } of composeTreeModulations(
-            rderived.tree,
-            rNameOf,
-            reDeriveRegistry,
-            { exprSource: onExprSource }
-          )) {
-            (leaf as { __cvBindings?: ModulationBinding[] }).__cvBindings = bindings;
-          }
-          const rnames = buildSymbolNames(rbpx, rderived.tree);
-          // Refresh the STRUCTURE view so it shows THIS cycle's variation — the
-          // re-derive otherwise only reloads the dispatcher (audio re-rolls) and
-          // the struct stays frozen on the first cycle. Same publish as the eval.
-          const rtokens = rderived.tokens.filter((t) => t.type !== 'control');
-          publishProduction(
-            id,
-            rtokens,
-            productionSounds,
-            headSections ?? [],
-            beatDurSec,
-            rderived.tree as unknown as ProductionTree,
-            rnames,
-            sectionLeafCounts(ast)
-          );
-          return treeToDispatchEvents(
-            rderived.tree as Parameters<typeof treeToDispatchEvents>[0],
-            rnames
-          ).filter(filterEvents);
-        } catch (err) {
-          log({ runtime: id, level: 'warn', msg: `re-random derive failed: ${String(err)}` });
-          return null;
-        }
-      };
-
       // FULL production readout (Romain's request): publish the WHOLE derived
       // sequence now, BEFORE any STEP slicing or time-scheduled playback, so the
       // Text panel + Structure visualizer see the entire production at once. The
@@ -1733,18 +1634,24 @@ function makeBpxAdapter(
       // false under western) — the upstream primitive that replaces the western
       // `isNoteName` heuristic, which muted every non-western alphabet.
       const productionResolver = sceneResolverFor(declaredAlphabet, declaredTuning, tokens);
-      // Orchestrated actor terminals are "sounding" too. With the flat
-      // symbol→actor map gone, membership is read off the tree itself: any
-      // terminal that appears as an actor-bound note (`payload.actor`) sounds.
+      // Orchestrated actor terminals are "sounding" too. Membership is read off the
+      // KAIROS timeline (the single projection of the tree): every NOTE event the
+      // projection carries an `actor` (event-level routing
+      // layer, `TimelineEvent.actor` in @kronos/core) contributes its `content.token`.
+      // The timeline has ONE event per occurrence, so a terminal shared by two actors
+      // appears as ≥2 events (each with its actor) → it lands in the set, exactly as the
+      // former tree walk did. `kind` absent ⇒ note (rests/controls carry no sounding
+      // terminal). `kairos` is defined here (the derive above succeeded, else it threw).
       const actorTerminals = new Set<string>();
-      if (orchestration && orchestration.actors.length > 0) {
-        for (const e of treeToDispatchEvents(
-          rawTree as Parameters<typeof treeToDispatchEvents>[0],
-          symbolNames
-        )) {
-          if (e.type === 'note' && (e.payload as { actor?: string | null } | null)?.actor) {
-            actorTerminals.add(e.token);
-          }
+      if (orchestration && orchestration.actors.length > 0 && kairos) {
+        const tl = kairos.arbreCourant();
+        // Whole-timeline window. `query` is half-open `[from, to)`; bump the upper bound
+        // past the loop length so an event onset at exactly `duration` is never excluded.
+        for (const e of tl.query(0, tl.duration + 1)) {
+          if ((e.kind ?? 'note') !== 'note') continue;
+          if (e.actor === undefined || e.actor === null) continue;
+          const token = (e.content as { token?: unknown }).token;
+          if (typeof token === 'string' && token.length > 0) actorTerminals.add(token);
         }
       }
       const productionSounds = (token: string) =>
@@ -1976,54 +1883,12 @@ function makeBpxAdapter(
         // dispatcher keys on `payload.actor`; there is NO flat symbol→actor map).
         // Control nodes carry their marker payload + `nature` for per-actor flux.
         //
-        // ROUTING/structure filter (NOT a "does it sound" judgement — that belongs to
-        // the resolution). Keep control markers and every terminal; drop only rests.
-        // Branches: control → true, rest → false, actor-bound note → true, backtick
-        // reference → true. The no-actor branch (mono / synthetic `default` actor, e.g.
-        // `arabic.bps`) returns true unconditionally: the host no longer pre-filters
-        // non-sounding tokens — a token that resolves to no pitch is silent at the sink
-        // (runtime-audio warns + emits nothing, runtime-midi skips the null frequency).
-        const isBacktick = backticks ?? {};
-        const orchestratedFilter = (e: DispatchEvent) => {
-          if (e.type === 'control') return true;
-          if (e.type === 'rest') return false;
-          const actor = (e.payload as { actor?: string | null } | null)?.actor;
-          if (actor) return true;
-          if (Object.prototype.hasOwnProperty.call(isBacktick, e.token)) return true;
-          return true;
-        };
-        // Drop events that belong to a CURRENTLY-disarmed actor, read LIVE from
-        // the shared `mutedActors` set at the moment the filter runs (initial load
-        // AND every re-derived cycle). A note carries its owning actor on
-        // `payload.actor`; a code voice (backtick) carries only its BT token, whose
-        // owner we resolve through `btToActor`. Without this, re-random re-derives
-        // a disarmed voice's events each cycle and re-fires it (the regression):
-        // the sink's own live guard then has to catch the BT case, but a native
-        // note voice would still re-sound — filtering here keeps BOTH silent and
-        // makes the live mute the single source of truth per cycle. Re-arming
-        // clears the set, so the next cycle's filter lets the voice back through.
-        const notMutedActor = (e: DispatchEvent) => {
-          if (mutedActors.size === 0) return true;
-          const noteActor = (e.payload as { actor?: string | null } | null)?.actor;
-          if (noteActor && mutedActors.has(noteActor)) return false;
-          const btActor = btToActor[e.token];
-          if (btActor && mutedActors.has(btActor)) return false;
-          return true;
-        };
-        const orchestratedLive = (e: DispatchEvent) => orchestratedFilter(e) && notMutedActor(e);
-        const treeEvents = treeToDispatchEvents(
-          rawTree as Parameters<typeof treeToDispatchEvents>[0],
-          symbolNames
-        ).filter(orchestratedLive);
-        // The dispatcher is the inert routing/transport STRUCTURE Kronos reads; it no
-        // longer carries the events or a loop-length reduce — Kronos owns the timeline
-        // (built from `treeEvents` below) and exposes the loop length via
-        // `loopDurationScene()`. It never emits and carries no tempo (Kronos owns the clock).
-        // Orchestrated path: Kronos drives the REAL note+CV audio for EVERY actor
-        // (routed per-actor through `pickTransport`), exactly as on the mono path, AND
-        // the CODE voices (Strudel/Hydra backticks) via the Kronos adapter's backtick
-        // sink. The dispatcher is NEVER started as an emitter (no `.start()`); it stays
-        // the inert transport/resolver/`_actors` structure Kronos reads.
+        // The dispatcher is the inert routing/transport STRUCTURE Kronos reads (its
+        // `_actors`/`transports` map, consumed by `pickTransport`); it NEVER emits and
+        // carries no timeline. The PLAYED timeline is the Kairos projection (bound on the
+        // Transport). Live mute is the shared `mutedActors` set (consulted by the backtick
+        // sink) + `kairos.demande` for the note voices — no host event pre-filtering.
+        // Code voices (Strudel/Hydra backticks) fire via the Kronos adapter's backtick sink.
         let kronosAudio: KronosAudioHandle | undefined;
         // Kronos is the ONLY engine (legacy removed): it drives notes + CV + the code
         // voices. The dispatcher is NEVER started as an emitter — it remains purely the
@@ -2095,7 +1960,6 @@ function makeBpxAdapter(
           // dispatcher's `_actors` map (wired above) + its transports; an event with no
           // actor (the `default`/mono case) falls back to the WebAudio transport's scene resolver.
           kronosAudio = startKronosAudio({
-            events: treeEvents,
             audioCtx: ctx,
             derivedTempo: currentBpm,
             // LOOP BOUND = BPx authority. The compiled scene length in beats
@@ -2125,18 +1989,15 @@ function makeBpxAdapter(
             // Model C — PRODUCE/LOAD builds + persists the handle WITHOUT playing it (stopped,
             // silent); the first Play `replay`s it (0 re-derivation). A STEP overrides this.
             buildOnly,
-            // KAN-orchestration P1 — Kairos is the SOURCE of the played timeline: its
-            // `sourceStructure()` is bound on the Transport (PULL), the driver ticks the
-            // Transport, tempo/mute route via `kairos.demande`. The legacy
-            // tree-dispatch → MaterializedTimeline(events) input stays present-dormant.
+            // Kairos is the SOURCE of the played timeline: its `sourceStructure()` is bound
+            // on the Transport (PULL), the driver ticks the Transport, tempo/mute route via
+            // `kairos.demande`. Kanopi builds NO timeline from events — the single read path
+            // is the tree → Kairos projection.
             kairos,
-            // RE-RANDOM re-derive for the Kairos path. `startKronosAudio` installs it on
-            // Kairos (`setReDerive`) gated by `reRandom && loop`, AND re-arms it on every
-            // live `setReRandom`/`setLoop` toggle — so flipping re-random mid-play works.
-            // A STEP never re-derives (no loop), so omit it there.
+            // RE-RANDOM re-derive: `startKronosAudio` installs it on Kairos (`setReDerive`)
+            // gated by `reRandom && loop`, AND re-arms it on every live `setReRandom`/`setLoop`
+            // toggle. A STEP never re-derives (no loop), so omit it there.
             reDeriveKairos: section || stepWindow ? undefined : reDeriveKairos,
-            // STEP audition + re-derive mirror the mono path; a STEP never re-derives.
-            reDerive: section ? null : reDeriveTreeEvents(orchestratedLive),
             reRandom,
             step: stepWindow,
             // Kronos is the single emitter: it intercepts BT (code-voice) tokens and

@@ -12,10 +12,10 @@
 // LOGS what it skips (never a silent drop), it does not fall back anywhere.
 //
 // Integration rule: `@kronos/core` and the WebAudio transport are consumed
-// AS-IS. This file is glue — it maps `DispatchEvent[]` → `MaterializedTimeline`
-// and `ScheduledEvent` → the event shape `WebAudioTransport.send(event, absTime)`
-// expects, reusing the dispatcher's own `coerceControlValues` and the
-// transport already configured with the scene's resolver + modulator registry.
+// AS-IS. This file is glue — the PLAYED timeline is the Kairos projection (bound on the
+// Transport via `bindStructureSource`); this maps each Kronos `ScheduledEvent` → the event
+// shape `WebAudioTransport.send(event, absTime)` expects, reusing the dispatcher's own
+// `coerceControlValues` and the transport already configured with the scene's resolver.
 
 import {
   MaterializedTimeline,
@@ -26,12 +26,9 @@ import {
   Transport,
   type RuntimeAdapter,
   type ScheduledEvent,
-  type TimelineEvent,
-  type Timeline,
   type ModulationBinding,
   type PitchResolver
 } from '@kronos/core';
-import type { DispatchEvent } from './tree-dispatch';
 // KAN-orchestration P1 — Kairos is the SOURCE of the played timeline (it projects the
 // BPx tree into a Kronos Timeline and exposes a StructureSource the Transport PULLs).
 // Consumed AS-IS: the host builds it, `charger`s the tree+context, and hands it here.
@@ -71,11 +68,9 @@ interface DispatcherLike {
 }
 
 export interface KronosAudioOptions {
-  /** The SAME DispatchEvents the host built for this scene. */
-  events: DispatchEvent[];
-  /** Compiled loop length in scene seconds (BPx-compiled scene end). When absent,
-   *  the timeline length is the last event end (repli). This is the timeline's
-   *  materializing input; the loop bound is read back via `loopDurationScene()`. */
+  /** Compiled loop length in scene seconds (BPx-compiled scene end). Seeds the placeholder
+   *  timeline; the REAL loop bound comes from the Kairos timeline `bindStructureSource`
+   *  swaps in (it sets the scheduler timeline AND the cursor loop length at bind). */
   durationSec?: number;
   /** Shared AudioContext (the transports' time source). */
   audioCtx: AudioContext;
@@ -97,12 +92,7 @@ export interface KronosAudioOptions {
   oscWsUrl?: string;
   /** Scene-second offset to start from (STEP / resume). Default 0. */
   startSceneSec?: number;
-  /** Re-random per loop cycle: when set AND `loop`, Kronos calls this at each loop
-   *  boundary; it must re-run the BPx derivation (fresh random draw) and return the
-   *  fresh dispatch events for the next cycle. Kronos NEVER derives — the host does.
-   *  Returns null to replay the current derivation. */
-  reDerive?: (() => DispatchEvent[] | null) | null;
-  /** Whether re-random is active (gates `reDerive`). */
+  /** Whether re-random is active (gates the Kairos `reDeriveKairos` re-derive). */
   reRandom?: boolean;
   /** STEP audition (one beat of the REAL production, in place). The host builds the
    *  SAME full timeline as normal Play (real scene times, full CV windows) and asks
@@ -133,20 +123,18 @@ export interface KronosAudioOptions {
    *  Le handle persistant ainsi obtenu est REJOUABLE : le premier Play appelle `replay()`
    *  (= 0 dérivation). Ignoré quand `step` est fourni (un STEP joue toujours une fenêtre). */
   buildOnly?: boolean;
-  /** KAN-orchestration P1 — the Kairos handle the host already `charger`ed with the
-   *  derived tree + projection context. When present, it becomes the SOURCE of the
-   *  played timeline: its `sourceStructure()` is bound on the Transport (PULL), the
-   *  RealtimeDriver ticks the TRANSPORT (drains Kairos ops, then the scheduler), and
-   *  live tempo/mute route through `kairos.demande(...)` instead of the direct
-   *  `transport.setTempo` / `scheduler.setActorMuted` (kept present-but-dormant). Absent
-   *  ⇒ the legacy `MaterializedTimeline`(events) path drives, unchanged. */
-  kairos?: Kairos;
-  /** KAN-orchestration P1 — RE-RANDOM re-derive on the Kairos path. The host builds this
-   *  closure (re-derive grammar with a fresh seed → `kairos.charger` the new tree → Kronos
-   *  re-pulls + swaps at the loop edge). `startKronosAudio` installs it via
-   *  `kairos.setReDerive(reRandom && loop ? cb : null)` at construction AND re-arms it on
-   *  every live `setReRandom`/`setLoop` toggle — so flipping re-random mid-play takes effect.
-   *  Absent / no Kairos ⇒ the legacy `scheduler.setReDerive` path is used instead. */
+  /** The Kairos handle the host already `charger`ed with the derived tree + projection
+   *  context. It is the SOURCE of the played timeline: its `sourceStructure()` is bound on
+   *  the Transport (PULL — Kronos swaps in its projected Timeline at bind AND sets the cursor
+   *  loop length), the RealtimeDriver ticks the TRANSPORT (drains Kairos ops, then the
+   *  scheduler), and live tempo/mute route through `kairos.demande(...)`. REQUIRED — Kanopi
+   *  has a single read path (Kronos via Kairos); there is no legacy events-timeline path. */
+  kairos: Kairos;
+  /** RE-RANDOM re-derive. The host builds this closure (re-derive grammar with a fresh seed
+   *  → `kairos.charger` the new tree → Kronos re-pulls + swaps at the loop edge).
+   *  `startKronosAudio` installs it via `kairos.setReDerive(reRandom && loop ? cb : null)` at
+   *  construction AND re-arms it on every live `setReRandom`/`setLoop` toggle — so flipping
+   *  re-random mid-play takes effect. */
   reDeriveKairos?: () => void;
 }
 
@@ -233,7 +221,7 @@ const LOOKAHEAD_SEC = 0.12;
  * transports (cuts the scheduled audio) as usual.
  */
 export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
-  const { events, audioCtx, derivedTempo, dispatcher } = opts;
+  const { audioCtx, derivedTempo, dispatcher } = opts;
   // STEP auditions ONE beat in place: never loop, and seek to the beat's scene
   // second (the timeline + CV windows are the full production's, untouched).
   const step = opts.step;
@@ -243,87 +231,14 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   const isBacktick = opts.isBacktick;
   const backtickSink = opts.backtickSink;
 
-  // 1. Map DispatchEvents → Kronos TimelineEvents. Control/rest markers are flagged
-  //    so Kronos's note-only dispatch skips them (it emits `kind:'note'` only). Every
-  //    other terminal is a NOTE: the host no longer judges "does this sound" — the
-  //    RESOLUTION decides (a token that resolves to no pitch is silent at the sink,
-  //    runtime-audio logs a warn, runtime-midi skips a null frequency). Counts surface
-  //    what we cover. Factored so the re-random loop boundary rebuilds a fresh timeline.
-  const buildTimeline = (
-    evs: DispatchEvent[]
-  ): {
-    timeline: MaterializedTimeline;
-    noteCount: number;
-    restCount: number;
-    controlCount: number;
-    transposeWarned: boolean;
-  } => {
-    let notes = 0;
-    let rests = 0;
-    let controls = 0;
-    let transpose = false;
-    const tEvents: TimelineEvent[] = evs.map((e) => {
-      let kind: 'note' | 'rest' | 'control';
-      if (e.type === 'rest') {
-        kind = 'rest';
-        rests++;
-      } else if (e.type === 'control') {
-        kind = 'control';
-        controls++;
-      } else {
-        // Note OR code voice (backtick): ALWAYS dispatched as a note. The resolution
-        // (not the host) decides whether it sounds; a backtick's `send` intercepts it
-        // to fire its interpreter.
-        kind = 'note';
-        notes++;
-      }
-      if (!transpose && e.rq && typeof e.rq.transpose === 'number' && e.rq.transpose !== 0) {
-        transpose = true;
-      }
-      return {
-        sceneOnset: e.startSec,
-        sceneDuration: e.durSec,
-        kind,
-        actor: (e.payload as { actor?: string } | null | undefined)?.actor,
-        content: {
-          token: e.token,
-          controls: e.controls,
-          payload: e.payload,
-          rq: e.rq,
-          nature: e.nature,
-          // Kronos CV bindings (one per modulated input) composed off the tree.
-          modulations: e.modulations,
-          // Scene onset + duration carried through: the adapter renders each
-          // modulation source over the note's scene window and maps it to t_audio.
-          startSec: e.startSec,
-          durSec: e.durSec
-        }
-      };
-    });
-    // The scene-seconds loop length that MATERIALIZES this timeline. A
-    // `MaterializedTimeline` is a passive container: it stores whatever duration the
-    // host hands it, and the loop bound is then READ BACK from it (the scheduler's
-    // `loopDurationScene` / Transport `loopDurationScene()`, the upstream primitive).
-    // So this is the single INPUT that defines the bound, not a parallel authority.
-    // The events carry BPx-compiled spans (including any trailing rest), so their last
-    // end IS the compiled scene length; `opts.durationSec` (a caller-supplied compiled
-    // length) wins when present, else this reduce is the documented repli. The old
-    // `dispatcher.duration` override (a SECOND host reduce(max) of the same value) is
-    // gone — one source for the timeline length.
-    const dur = opts.durationSec ?? evs.reduce((m, e) => Math.max(m, e.startSec + e.durSec), 0);
-    return {
-      timeline: new MaterializedTimeline(tEvents, dur),
-      noteCount: notes,
-      restCount: rests,
-      controlCount: controls,
-      transposeWarned: transpose
-    };
-  };
-
-  const built = buildTimeline(events);
-  const { timeline } = built;
-  const { noteCount, restCount, controlCount, transposeWarned } = built;
-  const duration = timeline.duration;
+  // 1. Placeholder timeline — Kronos's `Scheduler`/`Cursor` need an initial Timeline, but
+  //    the REAL played timeline is the Kairos projection that `bindStructureSource` swaps in
+  //    at bind (it ALSO sets the cursor loop length from the swapped view — Kronos 4aea362).
+  //    So this empty placeholder is transient; its only seed is `opts.durationSec` (the
+  //    BPx-compiled length) for the brief window before the swap. Kanopi builds NO timeline
+  //    from events — the single read path is the tree → Kairos projection.
+  const duration = opts.durationSec ?? 0;
+  const timeline = new MaterializedTimeline([], duration);
 
   // 2. Clock on the shared AudioContext; anchor at the current instant (the host
   //    calls us right where it would have started the dispatcher).
@@ -504,50 +419,22 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // monotone from `startScene` (no backward jump at launch; the only return-to-0
   // is the legitimate loop crossing). This is the timeline's single cursor source.
   const cursor = new Cursor(clock, { loopDuration: duration, loop });
-  const actors = new Set<string>();
-  for (const e of events) {
-    const a = (e.payload as { actor?: string } | null | undefined)?.actor;
-    if (a) actors.add(a);
-  }
-  for (const a of actors) scheduler.addAdapter(a, adapter);
+  // No per-actor adapter registration: every actor's event falls to the DEFAULT adapter
+  // (the same `adapter` object), which routes by `pickTransport(ev.actor)` internally — so
+  // a per-actor `addAdapter(a, adapter)` was functionally redundant. The actor set lives on
+  // the Kairos timeline (`Timeline.actors()`), which the scheduler reads for its own routing.
 
-  // RE-RANDOM (B): Kronos calls `setReDerive` ONCE at each loop boundary. The host
-  // re-runs the BPx derivation (fresh random draw) and hands back a fresh timeline
-  // for the next cycle — Kronos never derives. Off ⇒ replay the same derivation.
-  //
-  // The closure is built UNCONDITIONALLY (whenever the host gave a `reDerive`), so a
-  // LIVE re-random/loop toggle can install it on the active scheduler mid-play. Which
-  // of the two states is live is tracked here; `applyReDerive` installs the closure
-  // only when re-random AND loop are both on (else removes it → replay/stop at bord).
-  const reDeriveClosure: (() => Timeline | null) | null = opts.reDerive
-    ? (): Timeline | null => {
-        const fresh = opts.reDerive!();
-        if (!fresh || fresh.length === 0) return null;
-        const rebuilt = buildTimeline(fresh).timeline;
-        // Keep the cursor's loop length in step with the fresh derivation so the
-        // playhead folds at the right boundary if re-random changed the length.
-        cursor.setLoopDuration(rebuilt.duration);
-        return rebuilt;
-      }
-    : null;
+  // RE-RANDOM: Kairos owns the loop-edge pull. `applyReDerive` arms/disarms the host
+  // re-derive on KAIROS (`setReDerive`) — gated by `reRandom && loop` — at construction AND
+  // on every live `setReRandom`/`setLoop` toggle. The callback (`reDeriveKairos`) re-derives
+  // the grammar with a fresh seed and `charger`s Kairos → generation bump → Kronos swaps the
+  // new flat at the edge (and resyncs the cursor loop length itself, Kronos 4aea362).
   let loopActive = loop;
   let reRandomActive = !!opts.reRandom;
   const applyReDerive = (): void => {
-    // KAN-orchestration P1 — when Kairos is the SOURCE, re-random is a Kairos generation
-    // bump: arm/disarm the host re-derive on KAIROS (`setReDerive`), NOT the scheduler.
-    // `bindStructureSource` already owns the scheduler's loop-edge hook (it fires
-    // `kairos.auBord` → this callback), so the legacy `scheduler.setReDerive` must stay
-    // untouched here. Centralized so the INITIAL arming AND every live `setReRandom`/
-    // `setLoop` toggle go through the SAME gate (`reRandom && loop`) — fixing the
-    // mid-play toggle that the old `if (opts.kairos) return` left inert.
-    if (opts.kairos) {
-      opts.kairos.setReDerive(
-        reRandomActive && loopActive && opts.reDeriveKairos ? opts.reDeriveKairos : null
-      );
-      return;
-    }
-    // Legacy path: the scheduler owns the re-derive hook.
-    scheduler.setReDerive(reRandomActive && loopActive && reDeriveClosure ? reDeriveClosure : null);
+    opts.kairos.setReDerive(
+      reRandomActive && loopActive && opts.reDeriveKairos ? opts.reDeriveKairos : null
+    );
   };
   applyReDerive();
 
@@ -566,24 +453,20 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // same clock/scheduler/cursor, so there is ZERO duplicated state — the position stays
   // the cursor. The host drives play/pause/stop/step/seek/setTempo/setLoop through this.
   const transport = new Transport({ clock, scheduler, cursor });
-  // KAN-orchestration P1 — Kairos drives the SOURCE of the played timeline. Bind its
-  // `StructureSource` on the Transport (PULL channel): at bind the Transport swaps in
-  // Kairos's projected Timeline (replacing the placeholder `MaterializedTimeline(events)`
-  // built above, which stays the dormant legacy input), then re-pulls at each loop edge
-  // only when Kairos bumps its generation (re-random / re-derive = a generation bump).
-  // `bindStructureSource` installs the scheduler's loop-edge hook itself — that is why
-  // the legacy `applyReDerive` is skipped above when Kairos is present (no double-install).
-  if (opts.kairos) {
-    transport.bindStructureSource(opts.kairos.sourceStructure());
-  }
-  // External pump (Kronos has no internal timer): the driver wakes every ~25 ms within
-  // the lookahead window. With Kairos it ticks the TRANSPORT (which drains Kairos's
-  // control ops — tempo/mute — THEN ticks the scheduler); without Kairos it ticks the
-  // scheduler directly (legacy). Declared before the play branch so a BUILD-ONLY
+  // Kairos drives the SOURCE of the played timeline. Bind its `StructureSource` on the
+  // Transport (PULL channel): at bind the Transport swaps Kairos's projected Timeline into
+  // the scheduler (replacing the empty placeholder) AND sets the cursor loop length from it
+  // (Kronos 4aea362), then re-pulls at each loop edge when Kairos bumps its generation
+  // (re-random = a generation bump). `bindStructureSource` installs the scheduler's
+  // loop-edge hook itself (which fires `kairos.auBord` → the host `reDeriveKairos`).
+  transport.bindStructureSource(opts.kairos.sourceStructure());
+  // External pump (Kronos has no internal timer): the driver wakes every ~25 ms within the
+  // lookahead window and ticks the TRANSPORT (which drains Kairos's control ops — tempo/mute
+  // — THEN ticks the scheduler). Declared before the play branch so a BUILD-ONLY
   // construction can leave it un-started (no pump = no `send` = no sound).
   const driver = new RealtimeDriver({
     clock,
-    scheduler: opts.kairos ? transport : scheduler,
+    scheduler: transport,
     lookahead: LOOKAHEAD_SEC,
     intervalMs: 25
   });
@@ -610,20 +493,10 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   }
 
   log(
-    `${buildOnly ? '⏸ kronos built (stopped)' : '▶ kronos audio'} — ${noteCount} notes` +
-      (restCount ? `, ${restCount} rests` : '') +
-      (controlCount ? `, ${controlCount} controls skipped` : '') +
-      `, ${duration.toFixed(3)}s, ${derivedTempo} bpm, loop ${loop}` +
-      (loop && opts.reRandom && opts.reDerive ? ', re-random ON' : '')
+    `${buildOnly ? '⏸ kronos built (stopped)' : '▶ kronos audio'} — ` +
+      `${duration.toFixed(3)}s, ${derivedTempo} bpm, loop ${loop}` +
+      (loop && opts.reRandom ? ', re-random ON' : '')
   );
-  if (controlCount > 0) {
-    log(`⚠ ${controlCount} control event(s) not applied (kronos phase 1 = notes + CV).`);
-  }
-  if (transposeWarned) {
-    log(
-      `⚠ a note carries a transpose qualifier — not folded in kronos phase 1 (plays untransposed).`
-    );
-  }
 
   let stopped = false;
   return {
@@ -741,29 +614,16 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       driver.start(); // idempotent: no-op if still running, restarts if pause stopped it
     },
     retune(bpm: number) {
-      // KAN-orchestration P1 — live tempo goes through Kairos's single write-door
-      // (`demande`), quantified `immediat` (v1: applied at the next driver tick, before
-      // scheduling). The Transport drains it and re-anchors the clock. The direct
-      // `transport.setTempo` is kept present-but-DORMANT (legacy path, no Kairos).
-      if (opts.kairos) {
-        opts.kairos.demande({ type: 'tempo', bpm, quand: 'immediat' });
-        return;
-      }
-      // Legacy: live tempo via the Transport (re-anchor, position continuous).
-      transport.setTempo(bpm);
+      // Live tempo goes through Kairos's single write-door (`demande`), quantified
+      // `immediat` (applied at the next driver tick, before scheduling). The Transport
+      // drains it and re-anchors the clock — Kanopi never re-anchors the clock itself.
+      opts.kairos.demande({ type: 'tempo', bpm, quand: 'immediat' });
     },
     setActorMuted(actor: string, muted: boolean) {
-      // KAN-orchestration P1 — actor arm/disarm goes through Kairos's write-door
-      // (`demande`), quantified `immediat`. The Transport drains it and applies it on
-      // the scheduler's emission filter (Kronos's persistent mute state survives a
-      // re-derivation — KAI-7). The direct `scheduler.setActorMuted` is kept
-      // present-but-DORMANT (legacy path, no Kairos).
-      if (opts.kairos) {
-        opts.kairos.demande({ type: 'mute', acteur: actor, muet: muted, quand: 'immediat' });
-        return;
-      }
-      // Legacy: gate this actor's notes at the scheduler's own emission filter.
-      scheduler.setActorMuted(actor, muted);
+      // Actor arm/disarm goes through Kairos's write-door (`demande`), quantified
+      // `immediat`. The Transport drains it and applies it on the scheduler's emission
+      // filter (Kronos's persistent mute state survives a re-derivation — KAI-7).
+      opts.kairos.demande({ type: 'mute', acteur: actor, muet: muted, quand: 'immediat' });
     }
   };
 }

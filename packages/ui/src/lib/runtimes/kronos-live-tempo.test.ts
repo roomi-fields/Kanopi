@@ -1,18 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { startKronosAudio } from './kronos-audio';
-import type { DispatchEvent } from './tree-dispatch';
+import { kairosFromEvents } from './kairos-test-helpers';
+import type { DispatchEvent } from './kairos-test-helpers';
 
 // #5 — live tempo warp must reach the Kronos engine.
 // In kronos mode the Kronos handle (not the legacy dispatcher) drives the audio,
-// so a live BPM/TAP change must call `handle.retune(bpm)`, which retunes the same
-// InternalClock the scheduler + cursor read. This proves the warp on the PURE
-// clock mapping (no audio): after retune the scene→audio rate changes, so the
-// playhead advances faster/slower per audio second — WITHOUT re-deriving.
+// so a live BPM/TAP change must call `handle.retune(bpm)`. On the Kairos path that
+// routes through `kairos.demande({type:'tempo', quand:'immediat'})`: the Transport
+// drains the op on its next `tick` (while running) and re-anchors the SAME
+// InternalClock the scheduler + cursor read. This proves the warp on the PURE clock
+// mapping (no audio): after retune + one transport tick the scene→audio rate changes,
+// so the playhead advances faster/slower per audio second — WITHOUT re-deriving.
 //
 // We drive the hardware clock by hand (`now.t`) and read `handle.position()`
 // (scene seconds = `musicalNow(now)`), measuring the scene advance per audio
-// second before vs after the retune. No fake timers needed: we never need the
-// driver to tick — the clock mapping is what warps.
+// second before vs after the retune. We pump ONE `transport.tick(now.t)` after each
+// retune — the exact thing the RealtimeDriver does — so the queued tempo op applies.
 
 function fakeCtx(now: { t: number }): AudioContext {
   const param = () => ({
@@ -52,13 +55,13 @@ describe('Kronos audio handle — live tempo retune warps the heard tempo', () =
   it('retune(bpm) changes the scene→audio rate so the playhead advances at the new tempo', () => {
     const now = { t: 0 };
     const handle = startKronosAudio({
-      events: EVENTS,
       durationSec: 100,
       audioCtx: fakeCtx(now),
       derivedTempo: 60, // events derived at 60 bpm → rate 1 at 60 bpm live
       loop: false,
       dispatcher: { transports: {} },
-      startSceneSec: 0
+      startSceneSec: 0,
+      kairos: kairosFromEvents(EVENTS, 100)
     });
     try {
       // Phase 1: at the derived tempo (60 bpm live), 1 audio second === 1 scene
@@ -72,6 +75,7 @@ describe('Kronos audio handle — live tempo retune warps the heard tempo', () =
       // (scene 1.0, no jump) then doubles the heard tempo → rate 0.5, i.e. 2 scene
       // seconds per audio second. Position must be continuous at the retune instant.
       handle.retune(120);
+      handle.transport.tick(now.t); // driver pump drains the queued tempo op
       expect(handle.position()).toBeCloseTo(sceneAt1, 6); // no jump at the retune
 
       // Advance another audio second: at 120 bpm the scene now advances TWICE as
@@ -84,6 +88,7 @@ describe('Kronos audio handle — live tempo retune warps the heard tempo', () =
       // scene seconds per audio second. Continuity preserved, slope halved.
       const sceneAt2 = handle.position();
       handle.retune(30);
+      handle.transport.tick(now.t); // driver pump drains the queued tempo op
       expect(handle.position()).toBeCloseTo(sceneAt2, 6); // continuous
       now.t = 4.0; // +2 audio seconds
       const sceneSlow = handle.position();

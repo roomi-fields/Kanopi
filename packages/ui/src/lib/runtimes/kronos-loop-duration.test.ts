@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { startKronosAudio } from './kronos-audio';
-import type { DispatchEvent } from './tree-dispatch';
+import { kairosFromEvents } from './kairos-test-helpers';
+import type { DispatchEvent } from './kairos-test-helpers';
 
 // KAN-C02/C03 — the loop length is no longer a HOST reduce(max). It is the timeline's
 // own `duration` (materialized from the events / `opts.durationSec`), READ BACK via the
@@ -64,12 +65,12 @@ function fakeCtx(): AudioContext {
 // repli path. Then read the bound back through the upstream primitive.
 function loopDurationViaPrimitive(events: DispatchEvent[]): number {
   const handle = startKronosAudio({
-    events,
     audioCtx: fakeCtx(),
     derivedTempo: 120,
     loop: true,
     dispatcher: { transports: {} },
-    startSceneSec: 0
+    startSceneSec: 0,
+    kairos: kairosFromEvents(events)
   });
   const d = handle.transport.loopDurationScene();
   handle.stop();

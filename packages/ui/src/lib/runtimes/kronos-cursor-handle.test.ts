@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { startKronosAudio } from './kronos-audio';
-import type { DispatchEvent } from './tree-dispatch';
+import { kairosFromEvents } from './kairos-test-helpers';
+import type { DispatchEvent } from './kairos-test-helpers';
 
 // EX4 phase 2 — the Kronos AUDIO handle exposes the PLAYING cursor (position /
 // beatPosition), forwarded straight from the Cursor built on the scheduler's own
@@ -50,13 +51,13 @@ describe('Kronos audio handle — playing cursor forwarding', () => {
   it('position() advances monotonically from 0 and folds on the loop', () => {
     const now = { t: 0 };
     const handle = startKronosAudio({
-      events: EVENTS,
       durationSec: 1.0,
       audioCtx: fakeCtx(now),
       derivedTempo: 120,
       loop: true,
       dispatcher: { transports: {} },
-      startSceneSec: 0
+      startSceneSec: 0,
+      kairos: kairosFromEvents(EVENTS, 1.0)
     });
     try {
       // Sample across the first loop and just past the fold.
@@ -83,13 +84,13 @@ describe('Kronos audio handle — playing cursor forwarding', () => {
   it('beatPosition() reports bar 1-indexed / beat 0-indexed, aligned to position', () => {
     const now = { t: 0 };
     const handle = startKronosAudio({
-      events: EVENTS,
       durationSec: 1.0,
       audioCtx: fakeCtx(now),
       derivedTempo: 120,
       loop: true,
       dispatcher: { transports: {} },
-      startSceneSec: 0
+      startSceneSec: 0,
+      kairos: kairosFromEvents(EVENTS, 1.0)
     });
     try {
       // At 120 bpm a beat is 0.5 s. At t=0 → beat 0; at t=0.5 → beat 1.
@@ -111,13 +112,13 @@ describe('Kronos audio handle — playing cursor forwarding', () => {
   it('seek() repositions the playhead to the requested scene second', () => {
     const now = { t: 0 };
     const handle = startKronosAudio({
-      events: EVENTS,
       durationSec: 1.0,
       audioCtx: fakeCtx(now),
       derivedTempo: 120,
       loop: true,
       dispatcher: { transports: {} },
-      startSceneSec: 0
+      startSceneSec: 0,
+      kairos: kairosFromEvents(EVENTS, 1.0)
     });
     try {
       now.t = 0.2; // advance the hardware clock
