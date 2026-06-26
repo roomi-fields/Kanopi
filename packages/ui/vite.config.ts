@@ -2,6 +2,21 @@ import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// runtime-ui (display runtime, linked via `link:`) imports bpscript's SHARED order
+// tokenizer with a deep specifier (`bpscript/src/transpiler/orderTokens.js`). runtime-ui
+// declares `bpscript` as an OPTIONAL peer and carries no copy, so Vite — resolving that
+// import from runtime-ui's own location — substitutes a `__vite-optional-peer-dep` stub
+// that exports nothing → `tokenizeOrder` is undefined and the whole graph throws (blank
+// screen). bpscript IS present in Kanopi's tree (hoisted to the repo-root node_modules);
+// this alias pins the deep specifier to Kanopi's real copy. Resolved off `import.meta.url`
+// (no `node:` import — the type-checker has no @types/node) against the repo-root
+// node_modules where the shared `file:` dep hoists. Host-side wiring glue (same spirit as
+// the @strudel dedupe below) — not a contract change.
+const BPSCRIPT_ORDER_TOKENS = new URL(
+  '../../node_modules/bpscript/src/transpiler/orderTokens.js',
+  import.meta.url
+).pathname;
+
 // Subpath deployment support: GitHub Actions exports VITE_BASE_PATH=/kanopi/
 // before `npm run build` so assets and the service-worker scope resolve under
 // https://roomi-fields.com/kanopi/. Dev and tests keep the default `/`.
@@ -72,6 +87,10 @@ export default defineConfig({
   // chunks resolve the same module graph, so only one scheduler runs and
   // haps aren't duplicated. Verified via a per-hap counter run on 2026-04-19.
   resolve: {
+    alias: {
+      // Pin runtime-ui's deep bpscript import to Kanopi's real copy (see note above).
+      'bpscript/src/transpiler/orderTokens.js': BPSCRIPT_ORDER_TOKENS
+    },
     dedupe: [
       '@strudel/core',
       '@strudel/mini',

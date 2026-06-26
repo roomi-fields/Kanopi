@@ -15,7 +15,7 @@ export interface PersistedWorkspace {
   rightPanelWidth?: number;
   bottomPanelHeight?: number;
   bottomPanelCollapsed?: boolean;
-  bottomPanelTab?: 'structure' | 'text' | 'console';
+  bottomPanelTab?: 'console' | 'text' | 'timeline';
 }
 
 export function loadWorkspace(): PersistedWorkspace | undefined {

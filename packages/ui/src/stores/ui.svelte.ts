@@ -8,7 +8,7 @@ export type ActivityView =
   | 'docs'
   | 'account';
 export type RightPanelTab = 'actors' | 'scenes' | 'inspector';
-export type BottomPanelTab = 'structure' | 'text' | 'console';
+export type BottomPanelTab = 'console' | 'text' | 'timeline';
 
 class UiStore {
   activeActivityView = $state<ActivityView>('files');

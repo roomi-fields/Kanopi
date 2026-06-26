@@ -66,6 +66,10 @@ import { startKronosAudio, type KronosAudioHandle, type KronosAudioOptions } fro
 // the playhead off the SAME clock as the audio (aligned + monotone-from-0),
 // instead of the central rAF clock (which lags ~1 note and jumps back at launch).
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
+// The LIVE Kairos instance, surfaced to the production views (text/timeline). Paired
+// to EVERY kronosCursor.set: set(kairos) where a handle is published, set(null) on
+// teardown. swapped() on every re-random re-charger so the views re-render.
+import { productionFeed } from '../../stores/production-feed.svelte';
 // The FULL derived production, set ONCE per eval (the complete TimedToken[] BPx
 // produced at derive time, BEFORE playback). This is the whole sequence, the
 // source of truth the Text panel (read by order via the tree) and the Structure
@@ -1930,6 +1934,8 @@ function makeBpxAdapter(
                   transposeToken: (t: string, n: number) => sceneResolver!.transposeToken(t, n)
                 } as unknown as Parameters<Kairos['charger']>[1]
               );
+              // Same instance re-charger'd → bump generation so the views re-render.
+              productionFeed.swapped();
               // Refresh the Structure/Text view so it shows THIS cycle's variation
               // (display only — mirrors what the dormant `reDeriveTreeEvents` publishes).
               const rnames = buildSymbolNames(rbpx, rtree);
@@ -2019,6 +2025,8 @@ function makeBpxAdapter(
           });
           // The timeline reads ITS playhead (aligned to the heard audio), as on mono.
           kronosCursor.set(kronosAudio);
+          // The production views read the LIVE Kairos tree/flat off this same eval.
+          productionFeed.set(kairos ?? null);
         }
         // Code-voice slots of THIS orchestrator (hydra/strudel + their per-actor
         // slot id), recorded on the dispatcher entry so a LATER program can hush
@@ -2181,6 +2189,7 @@ function makeBpxAdapter(
         // Stop everything → no live handle, so the kronos-cursor store reads `null`
         // and the timeline cursor + bar·beat display fall back to rest (001·01.00).
         kronosCursor.set(null);
+        productionFeed.set(null);
         // "Stop everything" also FORGETS the live orchestrated-voice handles: every
         // dispatcher is down and the core hushes every code runtime alongside this
         // call, so a lingering handle would only let a stale voice be torn down /
@@ -2193,7 +2202,10 @@ function makeBpxAdapter(
       }
       const voice = voices.get(key);
       if (voice) {
-        if (voice.kronosAudio) kronosCursor.set(null);
+        if (voice.kronosAudio) {
+          kronosCursor.set(null);
+          productionFeed.set(null);
+        }
         voice.kronosAudio?.stop();
         voice.dispatcher.stop();
         voices.delete(key);
@@ -2212,6 +2224,7 @@ function makeBpxAdapter(
       }
       voices.clear();
       kronosCursor.set(null);
+      productionFeed.set(null);
     }
   };
 }

@@ -46,11 +46,18 @@ export function restoreWorkspace(): boolean {
   if (typeof w.rightPanelWidth === 'number') ui.setRightPanelWidth(w.rightPanelWidth);
   if (typeof w.bottomPanelHeight === 'number') ui.setBottomPanelHeight(w.bottomPanelHeight);
   if (typeof w.bottomPanelCollapsed === 'boolean') ui.bottomPanelCollapsed = w.bottomPanelCollapsed;
-  // Old snapshots may carry 'structure'/'text' (production views now live in a
-  // separate runtime, no longer rendered here): coerce them to 'console' so the
-  // restored panel is never empty.
-  if (w.bottomPanelTab)
-    ui.bottomPanelTab = w.bottomPanelTab === 'console' ? w.bottomPanelTab : 'console';
+  // Bottom-panel tab restore. The former 'structure' tab IS today's 'timeline' view
+  // (the structure/timeline view), so map it across. Any other out-of-set legacy
+  // value falls back to 'console' so the restored panel is never empty.
+  if (w.bottomPanelTab) {
+    const raw = w.bottomPanelTab as string;
+    ui.bottomPanelTab =
+      raw === 'structure'
+        ? 'timeline'
+        : raw === 'console' || raw === 'text' || raw === 'timeline'
+          ? raw
+          : 'console';
+  }
 
   if (w.activeScene) scenes.activate(w.activeScene);
 

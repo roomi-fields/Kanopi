@@ -31,6 +31,7 @@
     "runtime-audio": "file:../../../../bp/runtime-audio",
     "runtime-codevoices": "file:../../../../bp/runtime-codevoices",
     "runtime-osc": "file:../../../../bp/runtime-OSC",
+    "runtime-ui": "link:../../../../bp/runtime-ui",
     "@codemirror/commands": "^6.6.0",
     "@codemirror/lang-javascript": "^6.2.2",
     "@codemirror/lang-python": "^6.1.6",

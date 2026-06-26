@@ -1,11 +1,19 @@
 <script lang="ts">
   import { ui, type BottomPanelTab } from '../../stores/ui.svelte';
   import ConsolePanel from '../right-panel/ConsolePanel.svelte';
+  import { productionViews } from 'runtime-ui';
+  import ProductionViewHost from './ProductionViewHost.svelte';
 
   // The runtime log (Console) lives here, below the editor. The right column
-  // stays reserved for control surfaces (Actors/Scenes/Inspector). Production
-  // views (Structure/Text) now live in a separate runtime, not in Kanopi.
-  const tabs: { id: BottomPanelTab; label: string }[] = [{ id: 'console', label: 'Console' }];
+  // stays reserved for control surfaces (Actors/Scenes/Inspector). The production
+  // views (Text/Timeline) are rendered by the runtime-ui runtime — Kanopi CABLES
+  // them in as tabs, it does not own their rendering.
+  const tabs: { id: BottomPanelTab; label: string }[] = [
+    { id: 'console', label: 'Console' },
+    ...productionViews.map((v) => ({ id: v.id as BottomPanelTab, label: v.title }))
+  ];
+
+  const activeView = $derived(productionViews.find((v) => v.id === ui.bottomPanelTab) ?? null);
 </script>
 
 <section class="bottom-panel" class:collapsed={ui.bottomPanelCollapsed}>
@@ -34,6 +42,10 @@
     <div class="bp-body">
       {#if ui.bottomPanelTab === 'console'}
         <ConsolePanel />
+      {:else if activeView}
+        {#key ui.bottomPanelTab}
+          <ProductionViewHost view={activeView} />
+        {/key}
       {/if}
     </div>
   {/if}
