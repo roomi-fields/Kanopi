@@ -6,6 +6,11 @@
 // nude note, bpscript msg [293]): that single note jumps to channel 5, the rest of
 // `lead` stays on its declared channel 1.
 //
+// FLAT sequence (`S -> Lead Low`), NOT braces `{ }`: the inline `(ch:N)` override is
+// rejected inside `{ }` by the current parser (bug, routed to bpscript — architecte
+// msg [297]); a flat sequence is the canon form until the fix. The simultaneous
+// `{ Lead, Low }` form (without override) is the separate 2-actor→2-output routing case.
+//
 // Purpose: exercise the KAI-9 big-bang — once Kairos materializes the output layer
 // from the tree (and the host drops pickTransport / the actor→transport map), this
 // scene proves the per-actor address AND the per-note override travel in the tree,
@@ -17,7 +22,7 @@
 @actor lead  alphabet.western  transport.midi(ch:1)
 @actor bass  alphabet.western  transport.midi(ch:2)
 
-S -> {Lead, Low}
+S -> Lead Low
 
 Lead -> lead.C4 E4(ch:5) lead.G4 lead.C4
 Low  -> bass.C2 bass.G2 bass.C2 bass.E2
