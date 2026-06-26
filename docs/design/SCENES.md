@@ -1,5 +1,12 @@
 # Scenes — Hierarchie, scoping et communication inter-scenes
 
+> ⚠️ **STATUT : PROPOSITION DE DESIGN — non encore implementee dans le parser BPScript.**
+> Le feature scenes-hierarchiques decrit ici (`@map`, `@scene`, `@expose [x]`, l'heritage
+> de contexte `[mood]`/`[mood==dark]`, les canaux `sys.*`) **n'est PAS reconnu par le
+> compilateur actuel** (verifie via l'oracle atlas, 2026-06-26). Ce document fixe l'intention
+> de design ; il ne documente pas du canon en vigueur. Les declarations de base (acteur,
+> `@tempo`, `transport.*`, `alphabet.*`) sont en revanche a jour en syntaxe v0.8.
+
 > Voir aussi : [ARCHITECTURE.md](ARCHITECTURE.md) pour le pipeline dispatcher,
 > [SOUNDS.md](SOUNDS.md) pour le modele acteur.
 
@@ -249,10 +256,10 @@ tout est en durees relatives (proportions polymetriques, speed, nombre de tokens
 
 ```bpscript
 // concert.bps — scene racine
-@mm:120
+@tempo:120
 @duration:32b
 
-@scene verse "verse.bps"     // verse a son propre @duration:8b et @mm:120
+@scene verse "verse.bps"     // verse a son propre @duration:8b et @tempo:120
 @scene chorus "chorus.bps"   // chorus a @duration:16b
 
 S -> verse chorus            // 2 terminaux-scenes
@@ -265,7 +272,7 @@ S -> verse chorus            // 2 terminaux-scenes
 ### @duration et @mm de l'enfant : proprietes par defaut
 
 Quand `verse.bps` est jouee seule (dev, test, performance autonome),
-son `@duration:8b` et son `@mm:120` sont effectifs — elle dure 4 secondes.
+son `@duration:8b` et son `@tempo:120` sont effectifs — elle dure 4 secondes.
 
 Quand elle est imbiquee dans un parent via `@scene`, le parent decide
 de son enveloppe. Le `@duration` et le `@mm` de l'enfant sont ignores.
@@ -395,7 +402,7 @@ S -> { verse, lumieres }
 // === verse.bps (enfant) ===
 
 @expose [energy]                     // flag visible au parent
-@actor sitar  alphabet:sargam  transport:webaudio
+@actor sitar  alphabet.sargam  transport.webaudio
 
 // Heritage : voit [mood] du parent
 [mood==dark] S -> Sa Re Ga Pa [energy+1]
@@ -407,7 +414,7 @@ S -> { verse, lumieres }
 
 // === lumieres.bps (enfant) ===
 
-@actor spots  alphabet:dmx_cues  transport:dmx
+@actor spots  alphabet.dmx_cues  transport.dmx
 
 // Heritage : voit [mood] et [tension] du parent
 [mood==dark] [tension<3] S -> dim_blue slow_pulse

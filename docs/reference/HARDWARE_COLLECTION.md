@@ -40,9 +40,9 @@ Repo dédié, bien ficelé, nouvelle version en cours avec intégration Lua pour
 **Candidats suivants:** Osmose, Subharmonicon, DFAM.
 
 **Intégration Kanopi:**
-- `@actor xxx transport:osc(/namespace)` consomme/produit de l'OSC nommé
+- `@actor xxx transport.osc(/namespace)` consomme/produit de l'OSC nommé
 - La logique synthé-spécifique (SysEx, scaling, mirroring bidi) vit dans osc-bridge (Lua), pas dans Kanopi
 - Kanopi reste agnostique du hardware
 
 **Why:** Séparation claire langage/framework ↔ driver hardware. osc-bridge est réutilisable hors Kanopi.
-**How to apply:** Pour ajouter un synthé à Kanopi, écrire le driver dans osc-bridge d'abord, puis `@actor transport:osc` côté BPscript.
+**How to apply:** Pour ajouter un synthé à Kanopi, écrire le driver dans osc-bridge d'abord, puis `@actor transport.osc` côté BPscript.
