@@ -37,22 +37,24 @@ function addressOf(frame: Uint8Array): string {
 }
 
 describe('OSC branchement (OSC-5b)', () => {
-  it('OscBridgeProfile resolves a named control to /<device>/<param> on the bound channel', async () => {
+  it('OscBridgeProfile resolves a named control to /<device>/<param> on the channel from event.output', async () => {
     const profile = new OscBridgeProfile();
-    await profile.setBindings({ bass: { device: 'bridge1', channel: 5 } });
+    // KAI-9 contract: device surfaces are pre-loaded at setup (`prepareSurfaces`,
+    // here the literal fallback — no device library), and the per-event address
+    // (device + channel) rides `event.output`, NOT a host actor binding.
+    await profile.prepareSurfaces(['bridge1']);
 
-    // The RAW ScheduledEvent shape `kronos-audio` feeds the OSC transport.
     const emissions = profile.map({
       onset: 0,
       duration: 0.5,
-      actor: 'bass',
+      output: { runtime: 'osc', device: 'bridge1', channel: 5 },
       kind: 'control',
       content: { token: '', controls: { cutoff: 64 } }
     });
 
     const cutoff = emissions.find((e) => e.address === '/bridge1/cutoff');
     expect(cutoff, 'a /bridge1/cutoff emission').toBeTruthy();
-    expect(cutoff!.args).toEqual([64, 5]);
+    expect(cutoff!.args).toEqual([64, 5]); // value + channel from event.output
   });
 
   it('OscAdapter emits the resolved address through its transport at the onset', async () => {
@@ -62,15 +64,14 @@ describe('OSC branchement (OSC-5b)', () => {
       profile: new OscBridgeProfile(),
       now: () => 0
     });
-    // setBindings pre-resolves device surfaces (async); await it before sending —
-    // in the live flow it resolves on a microtask, well before the driver's
-    // setTimeout-scheduled emission fires.
-    await adapter.setBindings({ lead: { device: 'sh_4d', channel: 2 } });
+    // setBindings pre-loads the enumerated device surfaces (async, setup path);
+    // the per-event device/channel come from `event.output` (KAI-9 routing).
+    await adapter.setBindings({ sh_4d: { device: 'sh_4d' } });
 
     adapter.send({
       onset: 0,
       duration: 0.25,
-      actor: 'lead',
+      output: { runtime: 'osc', device: 'sh_4d', channel: 2 },
       kind: 'control',
       content: { token: '', controls: { cutoff: 100 } }
     });
@@ -80,13 +81,14 @@ describe('OSC branchement (OSC-5b)', () => {
     expect(addresses.some((a) => a === '/sh_4d/cutoff')).toBe(true);
   });
 
-  it('an unbound actor emits nothing (no spurious OSC)', () => {
+  it('an event addressed to another runtime emits nothing (KAI-9 runtime guard)', () => {
     const transport = captureTransport();
     const adapter = new OscAdapter({ transport, profile: new OscBridgeProfile(), now: () => 0 });
+    // The graven address designates MIDI, not OSC → the OSC adapter does nothing.
     adapter.send({
       onset: 0,
       duration: 0.25,
-      actor: 'ghost',
+      output: { runtime: 'midi', device: 'x', channel: 0 },
       kind: 'control',
       content: { token: '', controls: { cutoff: 100 } }
     });

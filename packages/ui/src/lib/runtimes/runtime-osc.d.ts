@@ -17,12 +17,22 @@ export interface OscBinding {
   channel?: number;
 }
 
+/** The graven output address (KAI-9): Kairos stamps it per event; the runtime ROUTES
+ *  on `runtime` and reads `device`/`channel` here — never a host actor binding. */
+export interface OscOutputRef {
+  runtime: string;
+  device?: string;
+  channel?: number;
+}
+
 /** A scheduled event handed to the adapter (already timed in t_audio). */
 export interface OscScheduledEvent {
   onset: number;
   duration: number;
   actor?: string | null;
   kind?: string;
+  /** KAI-9 routing layer: device/channel ride here, graven by Kairos from the tree. */
+  output?: OscOutputRef;
   content: {
     token: string;
     controls?: Record<string, unknown> | null;
@@ -46,6 +56,8 @@ export declare class WebSocketTransport implements OscTransport {
 /** Output profile: maps a ScheduledEvent → addressed OSC emissions. */
 export interface OscOutputProfile {
   map(event: OscScheduledEvent): Array<{ offsetSec: number; address: string; args: unknown[] }>;
+  /** Pre-load the enumerated device surfaces at setup (sync hot path after). */
+  prepareSurfaces?(deviceNames?: string[]): Promise<void>;
   setBindings?(bindings: Record<string, OscBinding>): Promise<void>;
 }
 
@@ -61,6 +73,8 @@ export declare class OscBridgeProfile implements OscOutputProfile {
     log?: (msg: string) => void;
   });
   map(event: OscScheduledEvent): Array<{ offsetSec: number; address: string; args: unknown[] }>;
+  /** Pre-load the enumerated device surfaces at setup (the sync hot path follows). */
+  prepareSurfaces(deviceNames?: string[]): Promise<void>;
   setBindings(bindings: Record<string, OscBinding>): Promise<void>;
 }
 
