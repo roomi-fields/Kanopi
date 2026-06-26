@@ -279,7 +279,6 @@ V1 subset de BPscript exposé à l'utilisateur :
 | `dispatcher/dispatcher.js`          | scheduler central                      |
 | `dispatcher/scene-manager.js`       | gestion scènes                         |
 | `dispatcher/map-engine.js`          | routage CC/OSC/note                    |
-| `dispatcher/resolver.js`            | résolution note names → fréquence      |
 | `dispatcher/transports/midi.js`     | WebMIDI in/out                         |
 | `dispatcher/transports/osc.js`      | OSC via WebSocket                      |
 | `dispatcher/transports/webaudio.js` | synthèse native                        |
@@ -288,7 +287,9 @@ V1 subset de BPscript exposé à l'utilisateur :
 
 Hérités de `BPscript/src/dispatcher/`. À migrer progressivement vers TypeScript.
 (La sortie OSC est passée au paquet `runtime-OSC` ; le `bridge/osc-bridge.js`
-hérité est supprimé.)
+hérité est supprimé. La **résolution de hauteur** `dispatcher/resolver.js` est
+**supprimée** : depuis KAI-10, Kairos grave `content.pitch.hz` et l'hôte ne résout plus
+rien — cf. `docs/design/TONALITY.md`.)
 
 ## Principes de design
 
