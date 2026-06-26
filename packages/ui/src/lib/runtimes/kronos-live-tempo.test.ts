@@ -59,7 +59,6 @@ describe('Kronos audio handle — live tempo retune warps the heard tempo', () =
       audioCtx: fakeCtx(now),
       derivedTempo: 60, // events derived at 60 bpm → rate 1 at 60 bpm live
       loop: false,
-      dispatcher: { transports: {} },
       startSceneSec: 0,
       kairos: kairosFromEvents(EVENTS, 100)
     });

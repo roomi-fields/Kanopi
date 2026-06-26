@@ -2,33 +2,22 @@ import { describe, it, expect } from 'vitest';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 import { createSession } from 'bpx';
 import { InternalClock, MaterializedTimeline, Scheduler } from '@kronos/core';
-import type { RuntimeAdapter, ScheduledEvent, TimelineEvent } from '@kronos/core';
+import type { RuntimeAdapter, ScheduledEvent, TimelineEvent, OutputRef } from '@kronos/core';
+import { Kairos } from '@kairos/core';
 import { startKronosAudio } from './kronos-audio';
-import { kairosFromEvents, eventsFromKairosTree, type DispatchEvent } from './kairos-test-helpers';
 
-// EX4 — orchestrated scenes driven BY Kronos (not the legacy fallback).
-//
-// This proves, WITHOUT a browser (cv-verify-node), the two load-bearing claims of
-// the orchestrated kronos flip:
-//   1. the orchestrated events carry ≥2 DISTINCT `payload.actor` (so per-actor
-//      routing is even possible), and Kronos's adapter routes each actor's notes to
-//      its OWN transport (audio vs midi) via `pickTransport(ev.actor)`;
-//   2. disarming an actor silences ITS notes at the Kronos scheduler's emission gate
-//      (`setActorMuted`) while the other actor keeps sounding — the same gate the
-//      `KronosAudioHandle.setActorMuted` delegates to one-line.
+// KAI-9 — orchestrated scenes route BY OUTPUT (not by a host actor→transport map). The
+// address travels IN THE TREE: Kairos graves `event.output` per event (from the AST's
+// `metadata.actors`), and Kronos selects the adapter on `output.runtime`. This proves,
+// WITHOUT a browser (cv-verify-node), the two load-bearing claims of the big-bang:
+//   1. the derived events carry their OWN output address — melody → {runtime:'midi',
+//      channel:1}, bass → {runtime:'webaudio'} — straight off the real BPx→Kairos pipeline;
+//   2. Kronos routes each event to the sink REGISTERED FOR ITS RUNTIME (midi vs webaudio):
+//      melody reaches the 'midi' sink, bass the 'webaudio' sink, 2 DISTINCT sinks, 0 leak.
+// (The arm/disarm gate is proven separately on the upstream Scheduler, below.)
 
-// ── The real BPx pipeline the host uses (compileToBPxAST → derive → Kairos projection) ──
-function deriveOrchestrated(src: string): DispatchEvent[] {
-  const ast = compileToBPxAST(src, { tempo: 120 }).ast;
-  const session = createSession(ast, { seed: 1, tempo: 120 });
-  const tree = session.derive().tree;
-  const ctx = session.buildProjectionContext();
-  return eventsFromKairosTree(tree, ctx);
-}
-
-// Mirrors `packages/library/bundled/demos/midi-actors.bps` (melody on MIDI ch1,
-// bass on WebAudio) — inlined so the test needs no node:fs (the UI tsconfig has no
-// node types). Two actors, two transport kinds: the audio-vs-midi routing case.
+// Mirrors `packages/library/bundled/demos/midi-actors.bps` (melody on MIDI ch1, bass on
+// WebAudio) — inlined so the test needs no node:fs (the UI tsconfig has no node types).
 const bps = `@core
 @controls
 
@@ -41,58 +30,100 @@ Mel -> melody.C4 melody.E4 melody.G4 melody.C5 melody.B4 melody.G4 melody.E4 mel
 Low -> bass.C2(wave:sawtooth)(vel:80) - bass.G2 - bass.C2 - bass.E2 -
 `;
 
-function actorOf(e: DispatchEvent): string | undefined {
-  return (e.payload as { actor?: string } | null | undefined)?.actor;
+// The REAL pipeline the host uses: compileToBPxAST → createSession → derive → Kairos.charger.
+// Returns the LIVE Kairos (its `sourceStructure()` is what `startKronosAudio` binds), the
+// materialized events WITH their graven `output`, and the actor→output table (`metadata.actors`).
+function deriveArbre(src: string): {
+  kairos: Kairos;
+  events: TimelineEvent[];
+  actors: Record<string, { runtime: string; params?: Record<string, unknown> }>;
+} {
+  const ast = compileToBPxAST(src, { tempo: 120 }).ast;
+  const session = createSession(ast, { seed: 1, tempo: 120 });
+  const tree = session.derive().tree;
+  const kairos = new Kairos();
+  kairos.charger(
+    tree as unknown as Parameters<Kairos['charger']>[0],
+    session.buildProjectionContext() as unknown as Parameters<Kairos['charger']>[1]
+  );
+  const tl = kairos.arbreCourant();
+  const events = [...tl.query(0, tl.duration + 1)];
+  const actors = ((tree as { metadata?: { actors?: unknown } }).metadata?.actors ?? {}) as Record<
+    string,
+    { runtime: string; params?: Record<string, unknown> }
+  >;
+  return { kairos, events, actors };
 }
 
-describe('orchestrated scene — Kronos drives notes + per-actor routing', () => {
-  it('the orchestrated events carry ≥2 distinct payload.actor (melody, bass)', () => {
-    const events = deriveOrchestrated(bps);
-    const actors = new Set(events.map(actorOf).filter((a): a is string => !!a));
-    expect(actors.size).toBeGreaterThanOrEqual(2);
-    expect(actors.has('melody')).toBe(true);
-    expect(actors.has('bass')).toBe(true);
-    // melody: 8 notes, bass: 4 (the rest are rests `-` carrying no actor).
-    const byActor = (name: string) => events.filter((e) => actorOf(e) === name).length;
-    expect(byActor('melody')).toBe(8);
-    expect(byActor('bass')).toBe(4);
+const tokenOf = (e: TimelineEvent) => String((e.content as { token?: string }).token ?? '');
+const isNote = (e: TimelineEvent) => (e.kind ?? 'note') === 'note';
+
+describe('orchestrated scene — events carry their OUTPUT address (KAI-9)', () => {
+  it('melody → {runtime:midi, channel:1}, bass → {runtime:webaudio}', () => {
+    const { events, actors } = deriveArbre(bps);
+    // The AST authority the host hands down (for OSC enumeration) — proven on pieces.
+    expect(actors.melody).toEqual({ runtime: 'midi', params: { ch: 1 } });
+    expect(actors.bass).toEqual({ runtime: 'webaudio', params: {} });
+
+    const out = (actor: string): OutputRef[] =>
+      events.filter((e) => isNote(e) && e.actor === actor).map((e) => e.output as OutputRef);
+    const melody = out('melody');
+    const bass = out('bass');
+    expect(melody.length).toBe(8);
+    expect(bass.length).toBe(4);
+    // EVERY melody note routes to MIDI channel 1; EVERY bass note to WebAudio. No host choice.
+    expect(melody.every((o) => o?.runtime === 'midi' && o?.channel === 1)).toBe(true);
+    expect(bass.every((o) => o?.runtime === 'webaudio')).toBe(true);
   });
 
-  it("Kronos's adapter routes each actor's notes to its OWN transport (midi vs audio)", () => {
-    const events = deriveOrchestrated(bps);
-    // The host wires the dispatcher: melody → 'midi', bass → 'webaudio'. Kronos's
-    // `pickTransport(ev.actor)` reads exactly this `_actors`/`transports` shape.
-    const hits: Record<string, string[]> = { midi: [], webaudio: [], default: [] };
-    const mk = (name: string) => ({
-      send(ev: Record<string, unknown>) {
-        hits[name].push(String(ev.token));
-      }
-    });
-    const dispatcher = {
-      duration: Math.max(...events.map((e) => e.startSec + e.durSec), 0),
-      transports: { midi: mk('midi'), webaudio: mk('webaudio'), default: mk('default') },
-      _actors: {
-        melody: { transportName: 'midi' },
-        bass: { transportName: 'webaudio' }
+  it('Kronos routes each event to its RUNTIME sink (midi vs webaudio), 2 sinks, 0 leak', () => {
+    const { kairos, events, actors } = deriveArbre(bps);
+    // Expected token sets per runtime, READ from the events' own output (not hardcoded).
+    const tokensFor = (rt: string) =>
+      new Set(events.filter((e) => isNote(e) && e.output?.runtime === rt).map(tokenOf));
+    const midiTokens = tokensFor('midi');
+    const webaudioTokens = tokensFor('webaudio');
+
+    // Two DISTINCT capture sinks, registered BY RUNTIME NAME via `startKronosAudio` (the
+    // 'webaudio' sink overrides the built-in AudioRuntime; the 'midi' sink stands in for
+    // the MidiTransport). The host registers them by name and chooses NO route.
+    const midiHits: { token: string; chan?: number }[] = [];
+    const audioHits: string[] = [];
+    const midiSink = {
+      send(e: Record<string, unknown>) {
+        midiHits.push({ token: String(e.token), chan: e.chan as number | undefined });
       }
     };
+    const webaudioSink = {
+      send(e: Record<string, unknown>) {
+        audioHits.push(String((e.content as { token?: string }).token));
+      }
+    };
+
     const handle = startKronosAudio({
       audioCtx: captureCtx(),
       derivedTempo: 120,
       loop: false,
-      // No soundsFn: an actor's declared notes always sound (orchestrated path).
-      dispatcher: dispatcher as unknown as Parameters<typeof startKronosAudio>[0]['dispatcher'],
-      kairos: kairosFromEvents(events)
+      sinks: { midi: midiSink, webaudio: webaudioSink } as unknown as Parameters<
+        typeof startKronosAudio
+      >[0]['sinks'],
+      actors,
+      kairos
     });
     handle.stop();
-    // The synchronous RealtimeDriver pump fires the events at scene 0 (+ lookahead).
-    // melody notes (C4…) → midi only; bass notes (C2…) → webaudio only; never crossed.
-    expect(hits.midi.length).toBeGreaterThan(0);
-    expect(hits.webaudio.length).toBeGreaterThan(0);
-    expect(hits.midi.every((t) => /melody|C4|E4|G4|C5|B4/.test(t) || true)).toBe(true);
-    // No leakage to 'default' (every emitted note had a routed actor transport).
-    expect(hits.default.length).toBe(0);
-    // The mute method is wired on the handle (orchestrated arm/disarm path).
+
+    // The synchronous RealtimeDriver pump fires the events at scene 0 (+ lookahead): the
+    // onset-0 note of each actor. Whatever fired MUST have gone to ITS runtime's sink only.
+    expect(midiHits.length).toBeGreaterThan(0);
+    expect(audioHits.length).toBeGreaterThan(0);
+    // 0 LEAK: every MIDI hit is a melody (midi) token, never a bass (webaudio) one — and v.v.
+    expect(midiHits.every((h) => midiTokens.has(h.token))).toBe(true);
+    expect(midiHits.some((h) => webaudioTokens.has(h.token))).toBe(false);
+    expect(audioHits.every((t) => webaudioTokens.has(t))).toBe(true);
+    expect(audioHits.some((t) => midiTokens.has(t))).toBe(false);
+    // The MIDI channel comes from the OUTPUT layer (ev.output.channel = 1), not the host.
+    expect(midiHits.every((h) => h.chan === 1)).toBe(true);
+    // The arm/disarm method is wired on the handle (orchestrated path).
     expect(typeof handle.setActorMuted).toBe('function');
   });
 });

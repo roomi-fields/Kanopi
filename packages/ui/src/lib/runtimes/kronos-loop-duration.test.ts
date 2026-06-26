@@ -68,7 +68,6 @@ function loopDurationViaPrimitive(events: DispatchEvent[]): number {
     audioCtx: fakeCtx(),
     derivedTempo: 120,
     loop: true,
-    dispatcher: { transports: {} },
     startSceneSec: 0,
     kairos: kairosFromEvents(events)
   });

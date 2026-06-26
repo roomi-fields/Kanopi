@@ -72,9 +72,6 @@ function loopBound(events: DispatchEvent[], durationSec?: number): number {
     audioCtx: fakeCtx(),
     derivedTempo: 120,
     loop: true,
-    dispatcher: { transports: {} } as unknown as Parameters<
-      typeof startKronosAudio
-    >[0]['dispatcher'],
     startSceneSec: 0,
     durationSec,
     kairos: kairosFromEvents(events, durationSec)

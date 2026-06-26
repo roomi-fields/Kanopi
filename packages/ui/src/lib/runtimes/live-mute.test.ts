@@ -55,23 +55,26 @@ groove -> \`stack(note("c2*4"))\`
 viz -> \`osc(60).out()\`
 `;
 
-type Sink = (t: string, ts: { startSec: number; durSec: number; absTime: number }) => void;
-type IsBT = (t: string) => boolean;
+type Sink = (
+  t: string,
+  ts: { startSec: number; durSec: number; absTime: number },
+  interp?: string
+) => void;
 
 describe('backtick sink consults the LIVE disarm state', () => {
   it('a re-fire of a disarmed code voice does NOT re-evaluate it; re-arm re-enables it', async () => {
     setActorsSink(() => {});
 
-    // Capture the backtick sink the adapter hands to Kronos (the single emitter
-    // that intercepts BT tokens), so we can re-fire a BT token exactly as a loop
-    // cycle would — and observe the LIVE mute guard (the regression: the guard read
-    // a stale snapshot, so a disarmed voice kept re-firing each cycle). The sink now
-    // reaches Kronos via `startKronosAudio({ isBacktick, backtickSink })`; capturing
-    // its options is the live firing path (the dispatcher is never started here).
-    let captured: { isBT: IsBT; sink: Sink } | undefined;
+    // Capture the backtick sink the adapter hands to Kronos (the single emitter that fires
+    // a code voice when an `output.runtime==='code'` event lands), so we can re-fire a BT
+    // token exactly as a loop cycle would — and observe the LIVE mute guard (the regression:
+    // the guard read a stale snapshot, so a disarmed voice kept re-firing each cycle). The
+    // sink reaches Kronos via `startKronosAudio({ backtickSink })`; capturing its option is
+    // the live firing path (the dispatcher is never started here).
+    let captured: { sink: Sink } | undefined;
     const orig = kronosAudio.startKronosAudio;
     vi.spyOn(kronosAudio, 'startKronosAudio').mockImplementation((opts: KronosAudioOptions) => {
-      captured = { isBT: opts.isBacktick as IsBT, sink: opts.backtickSink as Sink };
+      captured = { sink: opts.backtickSink as Sink };
       return orig(opts);
     });
 
@@ -91,15 +94,18 @@ describe('backtick sink consults the LIVE disarm state', () => {
     const grooveSlot = evalSlots.find((s) => s.endsWith('::groove'));
     expect(grooveSlot).toBe('m.bps::groove');
 
-    // The BT token groove fired on — re-derive it from the sink's predicate. We
-    // know the BT tokens are the ones isBT() accepts; fire the one that lands in
-    // the groove slot by re-firing every BT and reading the slot.
+    // Re-fire the BT tokens through the sink, exactly as the 'code' adapter does on a loop
+    // cycle: token + its interpreter (KAI-9 carries it on `output.device`). The sink ignores
+    // a non-BT token, so firing both is safe — each known token routes to its actor's slot,
+    // honouring the LIVE mute guard.
     const fireAll = () => {
       evalSlots.length = 0;
-      // BT tokens for this grammar: BTauto0 (groove) / BTauto1 (viz) per the
-      // annotator. Re-fire both; the sink routes each to its actor's slot.
-      for (const tok of ['BTauto0', 'BTauto1']) {
-        if (captured!.isBT(tok)) captured!.sink(tok, { startSec: 0, durSec: 1, absTime: 0 });
+      // BT tokens + their interpreter: BTauto0 → groove (strudel), BTauto1 → viz (hydra).
+      for (const [tok, interp] of [
+        ['BTauto0', 'strudel'],
+        ['BTauto1', 'hydra']
+      ] as const) {
+        captured!.sink(tok, { startSec: 0, durSec: 1, absTime: 0 }, interp);
       }
     };
 

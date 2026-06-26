@@ -65,7 +65,6 @@ describe('Kronos audio handle — live re-random / loop toggle', () => {
       audioCtx: fakeCtx(now),
       derivedTempo: 60,
       loop: true,
-      dispatcher: { transports: {} },
       startSceneSec: 0,
       kairos: fakeKairos,
       reDeriveKairos,

@@ -55,7 +55,6 @@ describe('Kronos audio handle — playing cursor forwarding', () => {
       audioCtx: fakeCtx(now),
       derivedTempo: 120,
       loop: true,
-      dispatcher: { transports: {} },
       startSceneSec: 0,
       kairos: kairosFromEvents(EVENTS, 1.0)
     });
@@ -88,7 +87,6 @@ describe('Kronos audio handle — playing cursor forwarding', () => {
       audioCtx: fakeCtx(now),
       derivedTempo: 120,
       loop: true,
-      dispatcher: { transports: {} },
       startSceneSec: 0,
       kairos: kairosFromEvents(EVENTS, 1.0)
     });
@@ -116,7 +114,6 @@ describe('Kronos audio handle — playing cursor forwarding', () => {
       audioCtx: fakeCtx(now),
       derivedTempo: 120,
       loop: true,
-      dispatcher: { transports: {} },
       startSceneSec: 0,
       kairos: kairosFromEvents(EVENTS, 1.0)
     });

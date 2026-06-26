@@ -3,6 +3,9 @@ import { describe, it, expect } from 'vitest';
 // avoids the default barrel's Node-only `DeviceLibrary`/`UdpTransport`.
 import { OscAdapter, OscBridgeProfile } from 'runtime-osc/browser';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { createSession } from 'bpx';
+import { Kairos } from '@kairos/core';
+import type { TimelineEvent } from '@kronos/core';
 
 /**
  * OSC-5b — proves Kanopi's OSC branchement emits the resolved address on the right
@@ -91,17 +94,42 @@ describe('OSC branchement (OSC-5b)', () => {
   });
 });
 
-describe('OSC binding parse (consumed bpscript copy — stale-dep guard)', () => {
-  // The whole OSC path is dead if the consumed `bpscript` copy lacks the OSC-L1
-  // `device:`/`ch:` → `binding` parse (the stale `file:`-dep trap that left OSC-5b
-  // inert until the copy was rsynced). This compiles a real OSC scene and asserts
-  // the binding reaches the AST — so a future stale copy fails the gate here, loudly.
-  it('compiles `@actor … transport.osc device:<n> ch:<n>` to an actor binding', () => {
-    const r = compileToBPxAST('@actor bass transport.osc device:bridge1 ch:5\nS -> C4 E4') as {
-      ast?: { actors?: Array<{ name: string; binding?: unknown }> };
+describe('OSC address-in-the-tree (consumed bpscript/bpx copies — stale-dep guard)', () => {
+  // The whole OSC path is dead if the consumed `bpscript`/`bpx` copies lack the KAI-9
+  // address-in-the-tree (the stale `file:`-dep trap that left OSC inert until the copy was
+  // rsynced). The address now travels via `transport:osc(device:…, ch:…)` →
+  // `metadata.actors` → per-event `event.output`, NOT via the old host-read `.binding`. This
+  // derives a real OSC scene and asserts BOTH layers — so a future stale copy fails loudly.
+  const osc = `@actor bass transport:osc(device:bridge1, ch:5)\nS -> bass.C4 bass.E4`;
+
+  it('the actor→output table carries `{runtime:osc, params:{device, ch}}` (OSC enumeration)', () => {
+    const ast = compileToBPxAST(osc, { tempo: 120 }).ast;
+    const tree = createSession(ast, { seed: 1, tempo: 120 }).derive().tree as {
+      metadata?: { actors?: Record<string, unknown> };
     };
-    const bass = r.ast?.actors?.find((a) => a.name === 'bass');
-    expect(bass, 'actor "bass" in the compiled AST').toBeTruthy();
-    expect(bass!.binding).toEqual({ device: 'bridge1', channel: 5 });
+    expect(tree.metadata?.actors?.bass).toEqual({
+      runtime: 'osc',
+      params: { device: 'bridge1', ch: 5 }
+    });
+  });
+
+  it('every OSC event carries `output={runtime:osc, device, channel}` (per-event routing)', () => {
+    const ast = compileToBPxAST(osc, { tempo: 120 }).ast;
+    const session = createSession(ast, { seed: 1, tempo: 120 });
+    const tree = session.derive().tree;
+    const kairos = new Kairos();
+    kairos.charger(
+      tree as unknown as Parameters<Kairos['charger']>[0],
+      session.buildProjectionContext() as unknown as Parameters<Kairos['charger']>[1]
+    );
+    const tl = kairos.arbreCourant();
+    const notes = [...tl.query(0, tl.duration + 1)].filter(
+      (e: TimelineEvent) => (e.kind ?? 'note') === 'note'
+    );
+    expect(notes.length).toBeGreaterThan(0);
+    expect(notes.every((e) => e.output?.runtime === 'osc')).toBe(true);
+    expect(notes.every((e) => e.output?.device === 'bridge1' && e.output?.channel === 5)).toBe(
+      true
+    );
   });
 });

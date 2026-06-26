@@ -8,7 +8,12 @@
 // per-actor routing) without a full BPx `charger`.
 
 import { MaterializedTimeline } from '@kronos/core';
-import type { TimelineEvent, ControlModification, ModulationBinding } from '@kronos/core';
+import type {
+  TimelineEvent,
+  ControlModification,
+  ModulationBinding,
+  OutputRef
+} from '@kronos/core';
 import { Kairos } from '@kairos/core';
 
 // `DispatchEvent` (and the two payload shapes it references) used to live in the now-removed
@@ -56,6 +61,9 @@ export interface DispatchEvent {
   controls?: Record<string, unknown> | null;
   /** Kronos modulation bindings composed for this leaf (one per modulated input). */
   modulations?: ModulationBinding[] | null;
+  /** Routing label (KAI-9): the runtime sink + fine address. Real events carry it (graven
+   *  by Kairos); a fixture sets it to route to a registered sink. Absent ⇒ routed by actor. */
+  output?: OutputRef;
 }
 
 // Mirror of the events→TimelineEvent mapping the production module carried before the
@@ -69,6 +77,7 @@ function toTimelineEvent(e: DispatchEvent): TimelineEvent {
     sceneDuration: e.durSec,
     kind,
     actor: (e.payload as { actor?: string } | null | undefined)?.actor,
+    ...(e.output ? { output: e.output } : {}),
     content: {
       token: e.token,
       controls: e.controls,

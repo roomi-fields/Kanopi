@@ -254,35 +254,16 @@ interface OrchestratedActor {
   // undefined for a native notes voice. Drives the voice's output type for the
   // device-compatibility gate (DEVICES_SPEC §3 / ADAPTER_SPEC §1bis b).
   evalInterp?: string;
-  // OSC output binding (`device:<name> ch:<n>`). When the actor's transport
-  // resolves to an `osc` device, this is handed up to runtime-OSC's `setBindings`
-  // so its profile resolves the device address + channel. Absent otherwise.
-  binding?: { device?: string; channel?: number } | null;
 }
 interface Orchestration {
   actorTable: Record<string, unknown>;
   actors: OrchestratedActor[];
-  /** True when there is NO `@actor` in the scene: a single implicit `default` actor
-   *  was synthesized so a plain grammar travels the SAME path as an orchestrated one
-   *  (mono = orchestration with one actor). The Actors panel stays empty for these. */
+  /** True when the scene declares NO `@actor`: the AST carries a single IMPLICIT `default`
+   *  actor (audio transport, materialized upstream — bpscript for `.bps`, bp3-frontend for
+   *  `.gr`), so a plain grammar travels the SAME path as an orchestrated one. The Actors
+   *  panel stays empty for these. Read from the AST actor's `synthetic` flag — never
+   *  host-fabricated. */
   synthetic?: boolean;
-}
-
-/** A scene with no `@actor` (plain `.bps` OR any `.gr`) routes through the SAME single
- *  orchestrated path as a multi-actor one — it just owns one implicit `default` actor
- *  (audio transport; pitch resolution falls to the scene resolver since events carry no
- *  `payload.actor`). Shared by both frontends so there is ONE code path, never a mono one. */
-function syntheticDefaultOrchestration(): Orchestration {
-  // No declared alphabet: the implicit `default` actor resolves through the scene
-  // resolver, which SNIFFS western/solfège from the tokens. We invent no `'western'`
-  // lock here (KAN-B04) — a `.gr` in `do/re/mi` must sniff solfège, not be forced
-  // western. (The `default` actor's pitch path is `sceneResolver`, but we keep the
-  // table/actor alphabet absent for honesty and to mirror the real-actor path.)
-  return {
-    actorTable: { default: { transport: { key: 'audio' } } },
-    actors: [{ name: 'default', transportKey: 'audio' }],
-    synthetic: true
-  };
 }
 
 // Sounding alphabet symbols, loaded from the `-so`/`-mi`/`-cs` aux files the
@@ -393,10 +374,12 @@ const grFrontend: Frontend = (code) => {
   const parsed = parseWithSound(code, WESTERN_NOTES);
   const sections = headSectionNames(code);
   const base = sections.length > 0 ? { ...parsed, sections } : parsed;
-  // `.gr` (BP3) has no `@actor` → one implicit `default` actor, SAME path as `.bps`.
-  // Pitch resolution falls to the scene resolver (`pickResolver(tokens)` — no declared
-  // alphabet), exactly as the old mono branch did for `.gr`.
-  return { ...base, orchestration: syntheticDefaultOrchestration() };
+  // `.gr` (BP3) has no `@actor`, but bp3-frontend materializes one IMPLICIT `default`
+  // actor (audio transport, `synthetic:true`) in the AST — so its events carry
+  // `output.runtime='audio'` and it travels the SAME orchestrated path as `.bps`. Read
+  // the orchestration straight off that AST; no host-synthesized default.
+  const orchestration = buildOrchestration(parsed.ast as SceneAstView | null);
+  return orchestration ? { ...base, orchestration } : base;
 };
 
 // Head-rule top-level sections of a `.gr` grammar TEXT — the macro structure STEP
@@ -469,10 +452,10 @@ interface ActorDirectiveNode {
     transport?: TransportRefNode;
     eval?: string | null;
   };
-  /** OSC output binding (`@actor X device:<name> ch:<n>`, OSC-L1): which osc-bridge
-   *  device + channel this actor's events address. Scene data Kanopi hands up to
-   *  runtime-OSC at setup (`setBindings`); separate from `properties.transport`. */
-  binding?: { device?: string; channel?: number } | null;
+  /** True for the IMPLICIT `default` actor the upstream front-end materializes when the
+   *  scene declares no `@actor` (bpscript for `.bps`, bp3-frontend for `.gr`). Read so the
+   *  Actors panel hides it — never host-fabricated. */
+  synthetic?: boolean;
 }
 interface SceneAstView {
   directives?: ({ type?: string } & Record<string, unknown>)[];
@@ -617,10 +600,9 @@ export function btTokenByActor(ast: unknown): Record<string, string> {
 }
 
 // Orchestrated actors from the AST: each `ActorDirective` → the `{ transport:
-// {key, params}, alphabet, eval }` entry the adapter routes on. The dispatcher's
-// `setActors` keeps only the actor KEYS (the per-actor transport is bound later
-// via `setActorTransport`), so reconstructing from the AST nodes is
-// behavior-identical to compileBPS's `actorTable`.
+// {key, params}, alphabet, eval }` entry the adapter routes on. Read straight from
+// the AST nodes (single source of truth) — including the IMPLICIT `default` actor the
+// upstream front-end materializes for a no-`@actor` scene (audio transport).
 type AdapterActorTable = Record<
   string,
   {
@@ -640,6 +622,30 @@ function actorTableFromAst(a: SceneAstView | null): AdapterActorTable {
     };
   }
   return out;
+}
+
+// Build the orchestration view from the AST actors — shared by BOTH frontends. The AST
+// ALWAYS carries the actors (a no-`@actor` scene gets an implicit `default` audio actor
+// materialized upstream: bpscript for `.bps`, bp3-frontend for `.gr`). `synthetic` is read
+// from that default actor's own flag, never host-fabricated. No host-invented `'default'`
+// nor a `'western'` alphabet lock (an absent alphabet makes the resolver sniff). Returns
+// `undefined` only if the AST somehow carries no actor at all (defensive; never expected).
+function buildOrchestration(a: SceneAstView | null): Orchestration | undefined {
+  const actorTable = actorTableFromAst(a);
+  const names = Object.keys(actorTable);
+  if (names.length === 0) return undefined;
+  const synthetic = names.length === 1 && a?.actors?.[0]?.synthetic === true;
+  return {
+    actorTable,
+    actors: names.map((name) => ({
+      name,
+      // Free identifier `transport.<key>`; the implicit default carries `'audio'`.
+      transportKey: actorTable[name]?.transport?.key ?? 'audio',
+      alphabet: actorTable[name]?.alphabet,
+      evalInterp: actorTable[name]?.eval
+    })),
+    synthetic
+  };
 }
 
 // `.bps` — BPScript compiles to a SceneAST (`compileBPS().ast`) that BPx derives
@@ -712,37 +718,13 @@ const bpsFrontend: Frontend = (code) => {
   const sections = headSectionNamesFromAst(c.ast);
   const base = sections.length > 0 ? { ...withBt, sections } : withBt;
 
-  // Orchestrator `.bps`: `@actor` declarations are AST `ActorDirective` nodes (each
-  // actor owns an alphabet + a transport device). When present, carry the table so
-  // the adapter routes each voice to its own transport (midi / webaudio).
-  const actorTable = actorTableFromAst(a);
-  const names = Object.keys(actorTable);
-  if (names.length === 0) {
-    // No `@actor`: one implicit `default` actor so a plain grammar travels the SAME
-    // orchestrated path (its pitch resolution comes from the scene resolver via the
-    // WebAudio transport base, events carrying no `payload.actor`). Shared helper.
-    return { ...base, orchestration: syntheticDefaultOrchestration() };
-  }
-  // OSC bindings (`@actor X device:<name> ch:<n>`) live on the AST actor node, not
-  // in `properties` — read them straight off `a.actors` and key by name.
-  const bindingByName: Record<string, { device?: string; channel?: number }> = {};
-  for (const act of a?.actors ?? []) {
-    if (act.binding) bindingByName[act.name] = act.binding;
-  }
-  const orchestration: Orchestration = {
-    actorTable,
-    actors: names.map((name) => ({
-      name,
-      transportKey: actorTable[name]?.transport?.key ?? 'audio',
-      // Pass the DECLARED alphabet through, or `undefined` when the actor declares
-      // none — the shared resolver builder then SNIFFS western/solfège from the
-      // tokens. No host-invented `'western'` lock (KAN-B04).
-      alphabet: actorTable[name]?.alphabet,
-      evalInterp: actorTable[name]?.eval,
-      binding: bindingByName[name] ?? null
-    }))
-  };
-  return { ...base, orchestration };
+  // Orchestrator `.bps`: `@actor` declarations are AST `ActorDirective` nodes (each actor
+  // owns an alphabet + a transport device). A no-`@actor` scene carries an implicit
+  // `default` audio actor (bpscript, `synthetic:true`). Read the orchestration off the AST
+  // (single source of truth) — the OSC address travels in the tree (`metadata.actors` →
+  // `event.output`), not via a host-read `.binding`.
+  const orchestration = buildOrchestration(a);
+  return orchestration ? { ...base, orchestration } : base;
 };
 
 interface BP3Voice {
@@ -1268,9 +1250,23 @@ function registerBacktickSink(
     mutedActors: Set<string>;
     slotForActor: (actor: string) => string;
   }
-): { isBacktick: (t: string) => boolean; sink: (t: string) => void } {
+): {
+  isBacktick: (t: string) => boolean;
+  sink: (
+    t: string,
+    info?: { startSec: number; durSec: number; absTime: number },
+    interp?: string
+  ) => void;
+} {
   const isBacktick = (token: string) => Object.prototype.hasOwnProperty.call(backticks, token);
-  const sink = (token: string) => {
+  // `interp` (KAI-9): the code voice's interpreter now travels on `event.output.device`
+  // (graven by Kairos), not on the AST backtick node — Kronos's 'code' adapter passes it
+  // here. Fall back to the table's own `interp` for any path that still carries it.
+  const sink = (
+    token: string,
+    _info?: { startSec: number; durSec: number; absTime: number },
+    interp?: string
+  ) => {
     const entry = backticks[token];
     if (!entry) return;
     const actor = orchestration?.btToActor[token];
@@ -1281,12 +1277,13 @@ function registerBacktickSink(
     // arm/disarm can stop just that voice. A plain backtick file keeps the
     // whole-file slot.
     const actorId = actor && orchestration ? orchestration.slotForActor(actor) : src.actorId;
-    const runtime = runtimeForInterp(entry.interp);
+    const interpName = interp ?? entry.interp;
+    const runtime = runtimeForInterp(interpName);
     if (!runtime) {
       log({
         runtime: id,
         level: 'error',
-        msg: `backtick: unknown interpreter "${entry.interp}" (token ${token}) — tag the code with a known runtime`
+        msg: `backtick: unknown interpreter "${interpName}" (token ${token}) — tag the code with a known runtime`
       });
       return;
     }
@@ -1302,14 +1299,14 @@ function registerBacktickSink(
           log({
             runtime: id,
             level: 'error',
-            msg: `backtick: no adapter for "${entry.interp}" (token ${token})`
+            msg: `backtick: no adapter for "${interpName}" (token ${token})`
           });
           return;
         }
         return adapter.evaluate(entry.code, { actorId, fileId: src.fileId }, log);
       })
       .catch((err) =>
-        log({ runtime: id, level: 'error', msg: `backtick ${entry.interp}: ${String(err)}` })
+        log({ runtime: id, level: 'error', msg: `backtick ${interpName}: ${String(err)}` })
       );
   };
   // Return the closures so the orchestrated kronos path can hand them to the Kronos
@@ -1480,6 +1477,13 @@ function makeBpxAdapter(
       // (× `beatDurSec`), instead of the host's reduce(max) of the last sounding leaf.
       // Undefined when the engine omits it → the call site falls back to the reduce.
       let totalDurationBeats: number | undefined;
+      // The derived scene's actor→output table (`tree.metadata.actors`, BPx authority).
+      // Carried out of the try so the Kronos-audio call site hands it down to ENUMERATE
+      // the OSC devices at setup (actors whose `runtime==='osc'`). Per-event routing is by
+      // `event.output`, not this table. Undefined for a scene with no transport actors.
+      let actorOutputs:
+        | Record<string, { runtime: string; params?: Record<string, unknown> }>
+        | undefined;
       // DETERMINISTIC leaf-name table (`symbolId → name`) read off the grammar's
       // own symbol table — the authoritative resolver the tree-view adapters use,
       // replacing the fragile temporal correlation. Empty when the engine doesn't
@@ -1609,6 +1613,8 @@ function makeBpxAdapter(
         // BPx authority for the scene's compiled length (includes any trailing rest);
         // projected into the Kronos loop bound below.
         totalDurationBeats = derived.tree?.metadata?.totalDurationBeats;
+        // BPx authority for the actor→output table (used only to enumerate OSC devices).
+        actorOutputs = derived.tree?.metadata?.actors as typeof actorOutputs;
         tree = derived.tree as unknown as ProductionTree;
         // Resolve every leaf's name now, while `bpx` (and its grammar symbol
         // table) is in scope. Guarded inside the helper — never throws here.
@@ -1824,11 +1830,6 @@ function makeBpxAdapter(
           );
         }
 
-        const da = dispatcher as unknown as {
-          setActors(t: unknown): void;
-          setActorTransport(actor: string, transport: string): void;
-        };
-        da.setActors(orchestration.actorTable);
         // Scene pitch resolver — REUSE the instance hoisted above the Kairos charger (B03
         // `transposeToken`), built from the SHARED `@kronos/core/pitch` builder. The
         // `default` actor (no `@actor`) inherits it; each real actor gets one for its own
@@ -1837,66 +1838,39 @@ function makeBpxAdapter(
         if (!sceneResolver) throw new Error(`${id}: scene resolver unavailable after derive`);
         const resolverFor = (alphabet: string | undefined): PitchResolver =>
           sceneResolverFor(alphabet, declaredTuning, tokens);
-        // AUDIO output is the runtime-audio AudioRuntime, built by `startKronosAudio`
-        // (it needs the shared clock for CV) and registered there as the 'webaudio'
-        // transport. Here we only NAME each audio actor's transport; MIDI stays a
-        // dispatcher transport (no clock needed).
+        // MIDI SINK — built ONCE (the first MIDI actor's per-actor resolver) and handed to
+        // Kronos as the 'midi' sink. The host NAMES no route and chooses no sink: each event
+        // carries its `output.runtime` (graven by Kairos from `metadata.actors`), and Kronos
+        // routes on it. The MidiTransport stays registered on the dispatcher for LIFECYCLE
+        // only (`dispatcher.stop()` closes it) — never read for routing. AUDIO + OSC sinks
+        // are built inside `startKronosAudio` (they need the shared clock); the OSC device
+        // enumeration is derived there from `metadata.actors`. video/dmx render themselves.
         let midi: InstanceType<typeof MidiTransport> | undefined;
-        // OSC actors (`transport.osc` + `device:<name> ch:<n>`): collect their
-        // bindings to hand up to runtime-OSC's `setBindings` at setup. The 'osc'
-        // transport object itself is built by `startKronosAudio` (it schedules on
-        // the shared `audioCtx` clock, like the AudioRuntime); here we only NAME
-        // each OSC actor's route, exactly as for 'webaudio'.
-        const oscBindings: Record<string, { device?: string; channel?: number }> = {};
         for (const actor of orchestration.actors) {
-          const resolver = resolverFor(actor.alphabet);
-          // Drive transport selection off the RESOLVED device TYPE, not the raw
-          // key string: `transport.audio` and `transport.webaudio` (alias) both
-          // map to WebAudio, `transport.midi` to MIDI.
-          const device = devices.get(actor.name)!;
-          if (device.type === 'midi') {
-            if (!midi) {
-              midi = new MidiTransport({ resolver });
-              await midi.init().catch(() => {}); // no hardware → silent, never throws
-              dispatcher.addTransport('midi', midi);
-            }
-            da.setActorTransport(actor.name, 'midi');
-          } else if (device.type === 'audio') {
-            da.setActorTransport(actor.name, 'webaudio');
-          } else if (device.type === 'osc') {
-            // OSC output (OSC-5b): route to the 'osc' transport (built by
-            // startKronosAudio) and record this actor's device/channel binding.
-            da.setActorTransport(actor.name, 'osc');
-            if (actor.binding) oscBindings[actor.name] = actor.binding;
-          } else {
-            // video/dmx: compat passed but the dispatcher transport isn't wired
-            // yet (DEVICES_SPEC §6 — declarable-but-unwired). A code voice renders
-            // ITSELF via its backtick adapter (capture-for-retransport is backlog
-            // B4), so there is nothing to route here. Documented, not hidden: log
-            // the limitation rather than crashing.
-            log({
-              runtime: id,
-              level: 'info',
-              msg: `voix ${actor.name} → appareil ${actor.transportKey} (${device.type}) : transport non câblé (le moteur se rend lui-même)`
-            });
+          if (devices.get(actor.name)!.type === 'midi' && !midi) {
+            midi = new MidiTransport({ resolver: resolverFor(actor.alphabet) });
+            await midi.init().catch(() => {}); // no hardware → silent, never throws
+            dispatcher.addTransport('midi', midi); // lifecycle: dispatcher.stop() closes it
           }
         }
-        // Multi-actor routing (M5+ refacto): build dispatch events FROM THE TREE
-        // so each note carries its OWN `payload.actor` — a terminal shared by two
-        // actors ('sitar.Sa' vs 'tabla.Sa') routes to DISTINCT transports (the
-        // dispatcher keys on `payload.actor`; there is NO flat symbol→actor map).
-        // Control nodes carry their marker payload + `nature` for per-actor flux.
+        // Per-actor routing (KAI-9): each note carries its OWN output layer — Kairos
+        // graves `event.output` ({runtime, channel?, device?}) from the tree's
+        // `metadata.actors`, and Kronos routes each event to the sink registered under
+        // `output.runtime`. A terminal shared by two actors ('sitar.Sa' vs 'tabla.Sa')
+        // routes to DISTINCT sinks via its own `output`; Kanopi reads no actor→transport
+        // map and chooses no sink.
         //
-        // The dispatcher is the inert routing/transport STRUCTURE Kronos reads (its
-        // `_actors`/`transports` map, consumed by `pickTransport`); it NEVER emits and
-        // carries no timeline. The PLAYED timeline is the Kairos projection (bound on the
-        // Transport). Live mute is the shared `mutedActors` set (consulted by the backtick
-        // sink) + `kairos.demande` for the note voices — no host event pre-filtering.
-        // Code voices (Strudel/Hydra backticks) fire via the Kronos adapter's backtick sink.
+        // The dispatcher is now ONLY the inert resolver structure (per-actor pitch
+        // resolvers) + the MIDI transport's lifecycle owner; it NEVER emits, carries no
+        // timeline, and is NOT read for routing. The PLAYED timeline is the Kairos
+        // projection (bound on the Transport). Live mute is the shared `mutedActors` set
+        // (consulted by the backtick sink) + `kairos.demande` for the note voices — no
+        // host event pre-filtering. Code voices (Strudel/Hydra backticks) fire via the
+        // Kronos adapter's `'code'` sink (interpreter from `output.device`).
         let kronosAudio: KronosAudioHandle | undefined;
         // Kronos is the ONLY engine (legacy removed): it drives notes + CV + the code
-        // voices. The dispatcher is NEVER started as an emitter — it remains purely the
-        // transport/resolver/`_actors` structure Kronos reads through `pickTransport`.
+        // voices, routing each event on its own `output.runtime`. The dispatcher is NEVER
+        // started as an emitter — it remains purely the inert resolver structure.
         {
           // KAN-orchestration P1 — RE-RANDOM re-derive on the Kairos path. This closure is
           // what Kronos fires at each loop edge (`StructureSource.auBord` → `cb`): it
@@ -1960,11 +1934,11 @@ function makeBpxAdapter(
           };
           // Kronos drives notes + per-note CV for the scene. The host no longer judges
           // "does this sound" — every terminal is dispatched as a note and the RESOLUTION
-          // decides (an unresolved token is silent at the sink). The ORCHESTRATED
-          // re-derive/live filter (`orchestratedLive`, honours the live mute set) lets
-          // re-random/loop re-roll the derivation. Routing is per-actor via the
-          // dispatcher's `_actors` map (wired above) + its transports; an event with no
-          // actor (the `default`/mono case) falls back to the WebAudio transport's scene resolver.
+          // decides (an unresolved token is silent at the sink). Routing is by each event's
+          // OWN `output.runtime` (graven by Kairos from `metadata.actors`): Kanopi only
+          // REGISTERS the per-runtime sinks ('midi' here, 'audio'/'webaudio'/'osc'/'code'
+          // built inside startKronosAudio) — it chooses no route and keeps no actor→transport
+          // map. The `default`/mono case carries `output.runtime='audio'` from the AST.
           kronosAudio = startKronosAudio({
             audioCtx: ctx,
             derivedTempo: currentBpm,
@@ -1979,18 +1953,22 @@ function makeBpxAdapter(
                 ? totalDurationBeats * beatDurSec
                 : undefined,
             loop: looping,
-            dispatcher: dispatcher as unknown as Parameters<
-              typeof startKronosAudio
-            >[0]['dispatcher'],
+            // Per-runtime OUTPUT SINKS the host builds: only MIDI (per-actor resolver). The
+            // 'audio'/'webaudio' (AudioRuntime) and 'osc' (OscAdapter) sinks are built inside
+            // startKronosAudio (they need the shared clock).
+            sinks: midi
+              ? ({ midi } as unknown as Parameters<typeof startKronosAudio>[0]['sinks'])
+              : undefined,
+            // The actor→output table (BPx authority) — used ONLY to enumerate the OSC devices
+            // at setup. Per-event device/channel/runtime rides `event.output`.
+            actors: actorOutputs,
             startSceneSec: startOffsetSec,
             // The shared scene pitch resolver → the runtime-audio AudioRuntime startKronosAudio
             // builds as the AUDIO output (token→Hz + CV render). Per-actor alphabets share the
             // scene resolver for V1 (mono/single-alphabet); MIDI keeps its own per-actor resolver.
             pitch: sceneResolver,
-            // OSC output (OSC-5b): per-actor `{device, channel}` bindings + the relay WS URL.
-            // startKronosAudio builds the OscAdapter (it needs the shared clock) when bindings
-            // are present and registers it as the 'osc' transport.
-            oscBindings: Object.keys(oscBindings).length > 0 ? oscBindings : undefined,
+            // OSC output (OSC-5b): the relay WS URL. startKronosAudio builds the OscAdapter
+            // (it needs the shared clock) when the scene has OSC actors (from `metadata.actors`).
             oscWsUrl: (routingJson as { osc?: { ws?: string } })?.osc?.ws,
             // Model C — PRODUCE/LOAD builds + persists the handle WITHOUT playing it (stopped,
             // silent); the first Play `replay`s it (0 re-derivation). A STEP overrides this.
@@ -2006,10 +1984,9 @@ function makeBpxAdapter(
             reDeriveKairos: section || stepWindow ? undefined : reDeriveKairos,
             reRandom,
             step: stepWindow,
-            // Kronos is the single emitter: it intercepts BT (code-voice) tokens and
-            // fires them through the SAME sink the legacy dispatcher used, and cuts the
-            // sustained code voices when the scheduler stops.
-            isBacktick: backtickHandles?.isBacktick,
+            // Kronos is the single emitter: a code voice is routed by `output.runtime==='code'`
+            // (graven by Kairos) to the 'code' sink — the SAME backtick sink the legacy
+            // dispatcher used. No host-side `isBacktick` token sniff anymore.
             backtickSink: backtickHandles?.sink as KronosAudioOptions['backtickSink'],
             stopCodeVoices: () => {
               for (const a of orchestration.actors) {

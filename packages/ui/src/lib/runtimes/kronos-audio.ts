@@ -53,18 +53,12 @@ import { OscAdapter, OscBridgeProfile, WebSocketTransport } from 'runtime-osc/br
 // numbers (vel/filterQ/…) while leaving strings (wave) untouched.
 import { coerceControlValues } from '../../../../core/src/dispatcher/dispatcher.js';
 
-/** The WebAudio transport surface this module drives (configured by the host
- *  with the scene's resolver + modulator registry before we touch it). */
+/** A per-runtime OUTPUT SINK this module drives. The host registers sinks BY RUNTIME
+ *  NAME (the key Kairos emits in `event.output.runtime`); Kanopi chooses no sink itself —
+ *  each ScheduledEvent already carries its route. `absTime` is optional: the AudioRuntime
+ *  sink reads the onset off the event, a MIDI sink takes the absolute time. */
 interface TransportLike {
-  send(event: Record<string, unknown>, absTime: number): void;
-}
-/** Minimal view of the live dispatcher: its per-actor transport map (built by
- *  the host), read for routing. The loop length is NOT read here — it is the
- *  timeline's own `duration` (set from the events / `opts.durationSec`), read back
- *  via the Transport `loopDurationScene()` primitive, not a dispatcher reduce(max). */
-interface DispatcherLike {
-  transports?: Record<string, TransportLike>;
-  _actors?: Record<string, { transportName?: string | null } | undefined>;
+  send(event: Record<string, unknown>, absTime?: number): void;
 }
 
 export interface KronosAudioOptions {
@@ -78,15 +72,19 @@ export interface KronosAudioOptions {
   derivedTempo: number;
   /** Whether to loop the scene. */
   loop: boolean;
-  /** The host dispatcher — its configured transports (MIDI, …) carry per-actor output. */
-  dispatcher: DispatcherLike;
+  /** Per-runtime OUTPUT SINKS built by the host (e.g. the per-actor MIDI transport), keyed
+   *  by the runtime name Kairos emits in `event.output.runtime` ('midi', …). The AUDIO
+   *  ('audio'/'webaudio') and OSC sinks are built HERE (they need the shared clock); a key
+   *  present here OVERRIDES the built-in (tests inject capture sinks this way). */
+  sinks?: Record<string, TransportLike>;
+  /** The derived scene's actor→output table (`tree.metadata.actors`, BPx authority). Used
+   *  ONLY to ENUMERATE the OSC devices at setup (actors whose `runtime==='osc'`) so
+   *  runtime-OSC can pre-fetch their surfaces (`setBindings`, sync hot path). The per-event
+   *  device/channel still travels on `event.output`. Absent ⇒ no OSC. */
+  actors?: Record<string, { runtime: string; params?: Record<string, unknown> }>;
   /** Scene pitch resolver (shared `@kronos/core/pitch`). When given, this module builds
    *  the runtime-audio AudioRuntime with it as the AUDIO output (token→Hz + CV render). */
   pitch?: PitchResolver;
-  /** OSC output (OSC-5b): per-actor `{device, channel}` bindings (`@actor X device:…
-   *  ch:…`). When present, this module builds runtime-OSC's OscAdapter as the 'osc'
-   *  transport and pre-resolves these bindings via `setBindings`. Absent ⇒ no OSC. */
-  oscBindings?: Record<string, { device?: string; channel?: number }>;
   /** OSC output: the osc-bridge WS→UDP relay endpoint the OscAdapter's WebSocket
    *  transport connects to (from `library/routing.json`). */
   oscWsUrl?: string;
@@ -106,12 +104,12 @@ export interface KronosAudioOptions {
   step?: { fromSec: number; durSec: number };
   /** Host logger (routed to the Console panel). */
   log?: (msg: string) => void;
-  /** True si ce token est une voix de code (backtick BT<interp><id>), pas une note. */
-  isBacktick?: (token: string) => boolean;
-  /** Déclenche la voix de code à son moment ordonnancé. Le même sink que le dispatcher legacy. */
+  /** Déclenche la voix de code à son moment ordonnancé (routée par `output.runtime==='code'`).
+   *  `interp` = l'interpréteur, porté par `event.output.device` (strudel/hydra/…). */
   backtickSink?: (
     token: string,
-    info: { startSec: number; durSec: number; absTime: number }
+    info: { startSec: number; durSec: number; absTime: number },
+    interp?: string
   ) => void;
   /** Coupe les voix de code orchestrées (Strudel/Hydra) — appelé explicitement à la PAUSE. */
   stopCodeVoices?: () => void;
@@ -214,6 +212,29 @@ const BEATS_PER_BAR = 4;
 const LOOKAHEAD_SEC = 0.12;
 
 /**
+ * ENUMERATE the scene's OSC devices for runtime-OSC's setup (`setBindings`, whose hot
+ * `map()` is sync and pre-fetches device surfaces). The list is DERIVED from the scene's
+ * actor→output table (`metadata.actors`) — the OSC actors (`runtime==='osc'`) and their
+ * transport `params` (device + ch/channel). Kanopi chooses no binding; the per-event
+ * device/channel still rides `event.output`. Keyed by ACTOR (the key runtime-OSC's profile
+ * resolves on `event.actor`). `{ ... }` empty ⇒ no OSC.
+ */
+function deriveOscBindings(
+  actors: Record<string, { runtime: string; params?: Record<string, unknown> }> | undefined
+): Record<string, { device?: string; channel?: number }> {
+  const out: Record<string, { device?: string; channel?: number }> = {};
+  for (const [name, ref] of Object.entries(actors ?? {})) {
+    if (ref.runtime !== 'osc') continue;
+    const p = ref.params ?? {};
+    const device = typeof p.device === 'string' ? p.device : undefined;
+    const channel =
+      typeof p.channel === 'number' ? p.channel : typeof p.ch === 'number' ? p.ch : undefined;
+    out[name] = { device, channel };
+  }
+  return out;
+}
+
+/**
  * Start Kronos driving the real audio for one scene. Call JUST BEFORE the host
  * would have started the old dispatcher (the transports are already configured);
  * in kronos mode the host then SKIPS `dispatcher.start` so only Kronos sounds.
@@ -221,14 +242,13 @@ const LOOKAHEAD_SEC = 0.12;
  * transports (cuts the scheduled audio) as usual.
  */
 export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
-  const { audioCtx, derivedTempo, dispatcher } = opts;
+  const { audioCtx, derivedTempo } = opts;
   // STEP auditions ONE beat in place: never loop, and seek to the beat's scene
   // second (the timeline + CV windows are the full production's, untouched).
   const step = opts.step;
   const loop = step ? false : opts.loop;
   const startScene = step ? step.fromSec : (opts.startSceneSec ?? 0);
   const log = opts.log ?? (() => {});
-  const isBacktick = opts.isBacktick;
   const backtickSink = opts.backtickSink;
 
   // 1. Placeholder timeline — Kronos's `Scheduler`/`Cursor` need an initial Timeline, but
@@ -246,37 +266,33 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   clock.setDerivedTempo(derivedTempo);
   clock.start(startScene);
 
-  // 2b. AUDIO OUTPUT = the runtime-audio AudioRuntime, built HERE (where the shared
-  //     clock lives — it needs `musicalNow`/`audioTimeFor` to map t_scene↔t_audio for
-  //     CV). It IS the 'audio'/'webaudio' transport: a token resolves to Hz via the
-  //     shared `pitch`, CV renders from `content.modulations`, `sounds` is empty (no
-  //     percussion in Kanopi — recreated later via alphabet-sound-backtick). The host
-  //     adds only MIDI to the dispatcher; we overlay audio here.
+  // 2b. AUDIO OUTPUT = the runtime-audio AudioRuntime, built HERE (where the shared clock
+  //     lives — it needs `musicalNow`/`audioTimeFor` to map t_scene↔t_audio for CV). It is
+  //     the 'audio'/'webaudio' SINK: a token resolves to Hz via the shared `pitch`, CV
+  //     renders from `content.modulations`. A host-provided `sinks.webaudio`/`sinks.audio`
+  //     (tests inject capture) OVERRIDES it.
   const audioRuntime = opts.pitch
     ? createAudioRuntime(audioCtx, { pitch: opts.pitch, clock, sounds: undefined })
     : null;
+  const audioSink: TransportLike | null =
+    opts.sinks?.webaudio ?? opts.sinks?.audio ?? (audioRuntime as unknown as TransportLike | null);
 
-  // 3. The REAL adapter: route each scheduled event to its actor's transport.
-  //    Audio actors → the AudioRuntime (raw ScheduledEvent, it renders pitch + CV);
-  //    MIDI actors → the dispatcher's MidiTransport (flat event). Else 'default'.
-  const transports: Record<string, TransportLike> = { ...(dispatcher.transports ?? {}) };
-  if (audioRuntime) {
-    transports['webaudio'] = audioRuntime as unknown as TransportLike;
-    transports['audio'] = audioRuntime as unknown as TransportLike;
-  }
-  // OSC OUTPUT (OSC-5b): when the scene has OSC bindings, build runtime-OSC's adapter
-  // HERE (it schedules on the shared `audioCtx` clock — `now` must be the SAME scale
-  // as the event onset). WebSocket transport → osc-bridge relay; osc-bridge output
-  // profile resolves opaque control names to device addresses (literal fallback when
-  // no device surface library, e.g. `device:bridge1` → `/bridge1/<param>`). Kronos
-  // routes each OSC actor's RAW ScheduledEvent to it (3rd branch in `adapter.send`).
+  // MIDI OUTPUT = the host-built per-actor MidiTransport, handed in as `sinks.midi`.
+  const midiSink: TransportLike | null = opts.sinks?.midi ?? null;
+
+  // OSC OUTPUT (OSC-5b): runtime-OSC's adapter, built HERE (it schedules on the shared
+  // `audioCtx` clock — `now` must be the SAME scale as the event onset). The device
+  // ENUMERATION for setup (`setBindings`, sync hot path) is DERIVED from the scene's OSC
+  // actors in `metadata.actors`; the per-event device/channel rides `ev.output`. A
+  // host-provided `sinks.osc` overrides the built-in (tests).
+  const oscBindings = deriveOscBindings(opts.actors);
   let oscAdapter: InstanceType<typeof OscAdapter> | null = null;
-  if (opts.oscBindings && Object.keys(opts.oscBindings).length > 0 && opts.oscWsUrl) {
+  if (Object.keys(oscBindings).length > 0 && opts.oscWsUrl) {
     try {
-      // Build the socket ourselves so a relay that is down (connection refused)
-      // is LOGGED once rather than silently queueing frames forever: the
-      // WebSocketTransport ctor returns synchronously, before the async connection
-      // result, so a dead relay never surfaces through the try/catch otherwise.
+      // Build the socket ourselves so a relay that is down (connection refused) is LOGGED
+      // once rather than silently queueing frames forever: the WebSocketTransport ctor
+      // returns synchronously, before the async connection result, so a dead relay never
+      // surfaces through the try/catch otherwise.
       const url = opts.oscWsUrl;
       const ws = new WebSocket(url);
       let oscErrLogged = false;
@@ -295,103 +311,81 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
         profile: new OscBridgeProfile({ log: (m: string) => log(m) }),
         now: () => audioCtx.currentTime
       });
-      // setBindings pre-resolves device surfaces (async). Catch a rejection so it
-      // never becomes an unhandled rejection; the literal-fallback path resolves on
-      // a microtask, before the driver's setTimeout-scheduled first emission.
-      void oscAdapter.setBindings(opts.oscBindings).catch((err: unknown) => {
+      // setBindings pre-resolves device surfaces (async). Catch a rejection so it never
+      // becomes an unhandled rejection; the literal-fallback path resolves on a microtask,
+      // before the driver's setTimeout-scheduled first emission.
+      void oscAdapter.setBindings(oscBindings).catch((err: unknown) => {
         log(`⚠ OSC setBindings a échoué (${String(err)})`);
       });
-      transports['osc'] = oscAdapter as unknown as TransportLike;
     } catch (err) {
       log(`⚠ OSC indisponible (${String(err)}) — voix OSC muettes`);
       oscAdapter = null;
     }
   }
+  const oscSink: TransportLike | null =
+    opts.sinks?.osc ?? (oscAdapter as unknown as TransportLike | null);
+
+  // 3. PER-RUNTIME adapters. Each ScheduledEvent already carries its `output.runtime` route
+  //    key (graven by Kairos); the scheduler selects the adapter on that key alone
+  //    (`addAdapter(runtime, …)`). Kanopi reads NO actor→transport map and chooses no sink:
+  //    'midi' → MidiTransport (channel = ev.output.channel), 'audio'/'webaudio' →
+  //    AudioRuntime, 'osc' → OscAdapter (device/channel ride ev.output), 'code' → the
+  //    backtick sink (interpreter = ev.output.device). There is NO default adapter — an
+  //    event whose runtime has no sink is surfaced by Kronos's `unknown-output-runtime`
+  //    diagnostic, never silently rerouted.
   const warned = new Set<string>();
-  const pickTransport = (actor?: string): TransportLike | null => {
-    if (actor) {
-      const def = dispatcher._actors?.[actor];
-      const t = def?.transportName ? transports[def.transportName] : undefined;
-      if (t) return t;
-    }
-    return transports['default'] ?? audioRuntime ?? Object.values(transports)[0] ?? null;
+  const warnMissing = (runtime: string): void => {
+    if (warned.has(runtime)) return;
+    warned.add(runtime);
+    log(`⚠ no '${runtime}' sink registered — event(s) dropped`);
   };
-  const adapter: RuntimeAdapter = {
+  // Coerce numeric-string controls (vel/filterQ/…) to numbers, then drop any leftover CV
+  // descriptor OBJECTS — modulation is driven by `content.modulations`, never a literal.
+  const prep = (content: unknown) => {
+    const c = content as {
+      token: string;
+      controls?: Record<string, unknown> | null;
+      rq?: Record<string, number> | null;
+      startSec?: number;
+      modulations?: ModulationBinding[] | null;
+    };
+    const coerced = coerceControlValues(c.controls);
+    for (const k of Object.keys(coerced)) {
+      if (coerced[k] && typeof coerced[k] === 'object') delete coerced[k];
+    }
+    const velRaw =
+      typeof coerced.vel === 'number'
+        ? coerced.vel
+        : typeof c.rq?.vel === 'number'
+          ? c.rq.vel
+          : undefined;
+    return { c, coerced, velRaw };
+  };
+
+  // AUDIO: the AudioRuntime resolves token→Hz (shared `pitch`) and RENDERS
+  // `content.modulations`. MIDI 0..127 `vel` → 0..1 `velocity`.
+  const audioAdapter: RuntimeAdapter = {
     send(ev: ScheduledEvent) {
-      // Voix de code (backtick BT<interp><id>) : Kronos l'ordonnance comme un event
-      // `kind:'note'`, mais ce n'est PAS une note — la déclencher via le même sink que
-      // le dispatcher legacy et NE PAS la router vers le synthé.
-      const tok = (ev.content as { token?: string }).token;
-      if (tok && isBacktick?.(tok)) {
-        backtickSink?.(tok, {
-          startSec: (ev.content as { startSec?: number }).startSec ?? 0,
-          durSec: ev.duration,
-          absTime: ev.onset
-        });
-        return;
-      }
-      const c = ev.content as {
-        token: string;
-        controls?: Record<string, unknown> | null;
-        rq?: Record<string, number> | null;
-        startSec?: number;
-        durSec?: number;
-        modulations?: ModulationBinding[] | null;
-      };
-      const transport = pickTransport(ev.actor);
-      if (!transport || typeof transport.send !== 'function') {
-        const k = ev.actor ?? '∅';
-        if (!warned.has(k)) {
-          warned.add(k);
-          log(`⚠ no audio transport for actor "${k}" — note(s) dropped`);
-        }
-        return;
-      }
-      // Coerce numeric-string controls (vel/filterQ/…) to numbers, then drop any
-      // leftover CV descriptor OBJECTS — modulation is driven by `content.modulations`
-      // (composed by Kronos), never a literal control value.
-      const coerced = coerceControlValues(c.controls);
-      for (const k of Object.keys(coerced)) {
-        if (coerced[k] && typeof coerced[k] === 'object') delete coerced[k];
-      }
-      const velRaw =
-        typeof coerced.vel === 'number'
-          ? coerced.vel
-          : typeof c.rq?.vel === 'number'
-            ? c.rq.vel
-            : undefined;
+      if (!audioSink) return warnMissing('audio');
+      const { c, coerced, velRaw } = prep(ev.content);
+      const controls: Record<string, unknown> = { ...coerced };
+      if (velRaw != null) controls.velocity = velRaw / 127;
+      (audioSink as { send(e: unknown): void }).send({
+        onset: ev.onset,
+        duration: ev.duration,
+        actor: ev.actor,
+        kind: ev.kind,
+        content: { token: c.token, controls, modulations: c.modulations ?? [] }
+      });
+    }
+  };
 
-      // AUDIO: hand the AudioRuntime the ScheduledEvent AS-IS — it resolves token→Hz
-      // (shared `pitch`) and RENDERS `content.modulations` itself (no host pre-render).
-      // Map controls to its shape: MIDI 0..127 `vel` → 0..1 `velocity`.
-      if (audioRuntime && transport === (audioRuntime as unknown as TransportLike)) {
-        const controls: Record<string, unknown> = { ...coerced };
-        if (velRaw != null) controls.velocity = velRaw / 127;
-        audioRuntime.send({
-          onset: ev.onset,
-          duration: ev.duration,
-          actor: ev.actor,
-          kind: ev.kind,
-          content: { token: c.token, controls, modulations: c.modulations ?? [] }
-        });
-        return;
-      }
-
-      // OSC: hand the OscAdapter the RAW ScheduledEvent (like audio, NOT the flat
-      // MIDI shape). Its profile maps `content.controls` (e.g. `cutoff`) to the bound
-      // device's address and `content.token` (Hz) to note/on-off, on the right channel.
-      if (oscAdapter && transport === (oscAdapter as unknown as TransportLike)) {
-        oscAdapter.send({
-          onset: ev.onset,
-          duration: ev.duration,
-          actor: ev.actor,
-          kind: ev.kind,
-          content: { token: c.token, controls: coerced, modulations: c.modulations ?? [] }
-        });
-        return;
-      }
-
-      // MIDI: the dispatcher's MidiTransport reads a flat event (token + controls).
+  // MIDI: the MidiTransport reads a flat event (token + controls). The CHANNEL comes from
+  // the OUTPUT layer (`ev.output.channel`, graven by Kairos) — never the host.
+  const midiAdapter: RuntimeAdapter = {
+    send(ev: ScheduledEvent) {
+      if (!midiSink) return warnMissing('midi');
+      const { c, coerced, velRaw } = prep(ev.content);
       const event: Record<string, unknown> = {
         token: c.token,
         startSec: c.startSec ?? 0,
@@ -399,30 +393,71 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
         ...coerced
       };
       if (velRaw != null) event.velocity = velRaw / 127;
-      transport.send(event, ev.onset);
+      const ch = ev.output?.channel;
+      if (typeof ch === 'number') event.chan = ch;
+      midiSink.send(event, ev.onset);
     }
-    // NOTE: no `stop()` here. The scheduler's stop must NOT cut the code voices, or a
-    // SAME-FILE re-eval (which calls `transport.stop()` on the previous handle to drop
-    // its note timeline) would tear down the still-wanted Hydra/Strudel voice (canvas
-    // flicker). Code voices are host-managed: cut explicitly on Pause/Stop, preserved on
-    // a same-file re-eval (the new eval re-fires them in their slot).
   };
 
-  // 4. Scheduler + driver. Default adapter handles mono; per-actor adapters are
-  //    registered so a routed event reaches its actor's transport explicitly.
-  const scheduler = new Scheduler({ clock, timeline, loop });
-  scheduler.setDefaultAdapter(adapter);
+  // OSC: hand the OscAdapter the RAW ScheduledEvent (its profile maps `content.controls` to
+  // device addresses + `content.token` to note on/off). `output` rides through so the sink
+  // reads device/channel from it.
+  const oscRuntimeAdapter: RuntimeAdapter = {
+    send(ev: ScheduledEvent) {
+      if (!oscSink) return warnMissing('osc');
+      const { c, coerced } = prep(ev.content);
+      (oscSink as { send(e: unknown): void }).send({
+        onset: ev.onset,
+        duration: ev.duration,
+        actor: ev.actor,
+        kind: ev.kind,
+        output: ev.output,
+        content: { token: c.token, controls: coerced, modulations: c.modulations ?? [] }
+      });
+    }
+  };
 
-  // The playing cursor (EX4 phase 2): the INVERSE of the time authority, not a
-  // separate counter — it reads the same `clock` the scheduler does, so the drawn
-  // playhead is rigorously aligned to the heard audio (no ~1-note lag) and
-  // monotone from `startScene` (no backward jump at launch; the only return-to-0
-  // is the legitimate loop crossing). This is the timeline's single cursor source.
+  // CODE: a code voice (`output.runtime==='code'`) is NOT a note — fire it through the
+  // backtick sink (the same sink the legacy dispatcher used). Its interpreter rides
+  // `ev.output.device` (strudel/hydra/…), already encoded in the BT token's table, so the
+  // sink resolves it itself.
+  const codeAdapter: RuntimeAdapter = {
+    send(ev: ScheduledEvent) {
+      const tok = (ev.content as { token?: string }).token;
+      if (!tok || !backtickSink) return;
+      backtickSink(
+        tok,
+        {
+          startSec: (ev.content as { startSec?: number }).startSec ?? 0,
+          durSec: ev.duration,
+          absTime: ev.onset
+        },
+        typeof ev.output?.device === 'string' ? ev.output.device : undefined
+      );
+    }
+    // NOTE: no `stop()` on any adapter. The scheduler's stop must NOT cut the code voices,
+    // or a SAME-FILE re-eval (which calls `transport.stop()` on the previous handle to drop
+    // its note timeline) would tear down the still-wanted Hydra/Strudel voice. Code voices
+    // are host-managed: cut explicitly on Pause/Stop, preserved on a same-file re-eval.
+  };
+
+  // 4. Scheduler + per-runtime adapter registration (NO default adapter — the host selects
+  //    no sink; every event routes on its own `output.runtime`). A `.gr`/mono scene's
+  //    default actor carries `output.runtime='audio'` from the AST, so it lands on 'audio'.
+  const scheduler = new Scheduler({ clock, timeline, loop });
+  if (audioSink) {
+    scheduler.addAdapter('audio', audioAdapter);
+    scheduler.addAdapter('webaudio', audioAdapter);
+  }
+  if (midiSink) scheduler.addAdapter('midi', midiAdapter);
+  if (oscSink) scheduler.addAdapter('osc', oscRuntimeAdapter);
+  if (backtickSink) scheduler.addAdapter('code', codeAdapter);
+
+  // The playing cursor (EX4 phase 2): the INVERSE of the time authority, not a separate
+  // counter — it reads the same `clock` the scheduler does, so the drawn playhead is
+  // rigorously aligned to the heard audio (no ~1-note lag) and monotone from `startScene`
+  // (the only return-to-0 is the legitimate loop crossing). The timeline's single cursor.
   const cursor = new Cursor(clock, { loopDuration: duration, loop });
-  // No per-actor adapter registration: every actor's event falls to the DEFAULT adapter
-  // (the same `adapter` object), which routes by `pickTransport(ev.actor)` internally — so
-  // a per-actor `addAdapter(a, adapter)` was functionally redundant. The actor set lives on
-  // the Kairos timeline (`Timeline.actors()`), which the scheduler reads for its own routing.
 
   // RE-RANDOM: Kairos owns the loop-edge pull. `applyReDerive` arms/disarms the host
   // re-derive on KAIROS (`setReDerive`) — gated by `reRandom && loop` — at construction AND

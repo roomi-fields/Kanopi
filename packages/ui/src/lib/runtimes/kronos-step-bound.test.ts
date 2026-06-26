@@ -23,7 +23,10 @@ function note(token: string, onset: number, dur: number): DispatchEvent {
     startSec: onset,
     durSec: dur,
     type: 'note',
-    payload: null
+    payload: null,
+    // Route to the 'midi' sink so the capture transport receives the FLAT event shape and
+    // reads `event.token` — incidental here; the test probes STEP windowing, not routing.
+    output: { runtime: 'midi' }
   } as unknown as DispatchEvent;
 }
 
@@ -70,7 +73,7 @@ function captureTokens(opts: {
     audioCtx: ctx,
     derivedTempo: 60,
     loop: false,
-    dispatcher: { transports: { default: transport } },
+    sinks: { midi: transport },
     step: opts.step,
     kairos: kairosFromEvents(opts.events, totalDur)
   });
