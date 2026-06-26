@@ -1595,6 +1595,15 @@ function makeBpxAdapter(
           derived.tree as unknown as Parameters<Kairos['charger']>[0],
           {
             ...(bpx.buildProjectionContext() as object),
+            // KAI-10 — hand Kairos the shared pitch CATALOGS (read-only library DATA,
+            // the 5 `bpscript/lib` JSONs bundled at `PITCH_LIB`), the exact sibling of
+            // `modulation.registry`: host-composed data on the projection context, NOT a
+            // Kairos-side import (the host is the single freshness gatekeeper, LAN-14).
+            // The declared identity (alphabet/tuning per actor) rides the TREE
+            // (`metadata.actors`, written by BPx) — Kanopi poses ONLY the catalogs. Carry-
+            // only for now: Kairos consumes this to build the resolver at the switchover
+            // (separate GO), when the host stops calling `makeResolver` itself.
+            pitchLib: PITCH_LIB,
             // KRO-24 — hand Kairos the CV registry (hoisted, cycle-invariant) + the
             // `exprSource` factory so `projeter` COMPOSES the modulations AT FLATTEN and
             // carries them on `content.modulations` (+ scene span) for the audio runtime
@@ -1904,6 +1913,8 @@ function makeBpxAdapter(
                 rtree as unknown as Parameters<Kairos['charger']>[0],
                 {
                   ...(rbpx.buildProjectionContext() as object),
+                  // KAI-10 — same read-only catalogs on every re-derive (cycle-invariant).
+                  pitchLib: PITCH_LIB,
                   modulation: { registry: kronosRegistry, exprSource: onExprSource },
                   transposeToken: (t: string, n: number) => sceneResolver!.transposeToken(t, n)
                 } as unknown as Parameters<Kairos['charger']>[1]
