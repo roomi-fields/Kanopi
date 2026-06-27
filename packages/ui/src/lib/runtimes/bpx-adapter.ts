@@ -43,12 +43,13 @@ import { exprSource } from 'runtime-audio';
 // la copie core `dispatcher/transports/midi.js` est supprimée). runtime-MIDI OWNS the
 // MIDI path; Kanopi only routes Kronos's per-actor events to it.
 import { MidiTransport } from 'runtime-midi';
-// Pitch resolution (token → Hz) lives in the SHARED module `@kronos/core/pitch`
-// (convergence hauteurs, RA-6). Kanopi passes only DATA: the scene declarations
-// (alphabet/@tuning + tokens for the western/solfège sniff) and the `bpscript/lib`
-// catalogs. Kanopi RESOLVES NOTHING — it consumes the `PitchResolver` makeResolver
-// builds. The host's former 6 resolver functions are GONE (one of the «3 copies»).
-import { makeResolver, type SceneContext, type PitchLib, type PitchResolver } from '@kronos/core';
+// Pitch resolution (token → Hz) AND the alphabet-aware "sounds" classification both live
+// upstream now: Kairos GRAVES `content.pitch.hz` + `content.sounds` per note (KAI-10), from
+// the catalogs the host supplies as `ctx.pitchLib`. Kanopi RESOLVES NOTHING and runs NO
+// resolver — it only hands the `PitchLib` DATA down and READS the graven facets. The host
+// no longer imports the runtime pitch builder (`@kronos/core/pitch`); only the `PitchLib`
+// type survives, for the read-only catalog constant.
+import { type PitchLib } from '@kronos/core';
 // Tree-derived dispatch events (M5+ multi-actor refacto): flatten BPx's
 // `derive({ output: 'complete' }).tree` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
@@ -130,9 +131,9 @@ import { headSectionNamesFromAst, sectionLeafCounts } from './head-sections-ast'
  * The slice scopes to ONE engine instance + ONE transport per file.
  */
 
-// The 5 shared pitch catalogs (`bpscript/lib`), passed AS DATA to `makeResolver`
-// (`@kronos/core/pitch`). Kanopi embeds no resolution logic — it hands these +
-// the scene declarations to the shared builder and consumes the `PitchResolver`.
+// The 5 shared pitch catalogs (`bpscript/lib`), handed to Kairos as the read-only
+// `ctx.pitchLib` so IT builds the resolver and graves `content.pitch.hz`/`content.sounds`.
+// Kanopi embeds no resolution logic and runs no resolver — it only supplies this DATA.
 // The catalogs carry doc-only `_comment` keys, so cast through `unknown`.
 const PITCH_LIB: PitchLib = {
   alphabets: alphabetsJson as unknown as PitchLib['alphabets'],
@@ -141,19 +142,6 @@ const PITCH_LIB: PitchLib = {
   scales: scalesJson as unknown as PitchLib['scales'],
   octaves: octavesJson as unknown as PitchLib['octaves']
 };
-
-// Build the scene's pitch resolver from its declarations (DATA only). `tokens`
-// feeds the western/solfège sniff when no catalog alphabet is declared. The whole
-// 6-layer resolution (western/solfège/binding/scale/catalog) is the shared
-// builder's — Kanopi just supplies the context.
-function sceneResolverFor(
-  alphabet: string | undefined,
-  tuning: string | undefined,
-  tokens: readonly { token: string }[]
-): PitchResolver {
-  const ctx: SceneContext = { alphabet, tuning, tokens };
-  return makeResolver(ctx, PITCH_LIB);
-}
 
 // A front-end turns language source into a derivable BP3 SceneAST + parse
 // errors. Both languages produce the SAME `ast` shape (BPScript compiles down
@@ -1413,8 +1401,6 @@ function makeBpxAdapter(
         flagStates,
         libraries,
         sections: headSections,
-        alphabet: declaredAlphabet,
-        tuning: declaredTuning,
         mm: declaredMm
       } = frontend(code);
       if (errors.length > 0) {
@@ -1499,11 +1485,10 @@ function makeBpxAdapter(
       // played timeline (its `sourceStructure()` is bound on the Transport in
       // `startKronosAudio`). Built inside the try (needs `bpx`/`rawTree` in scope).
       let kairos: Kairos | undefined;
-      // KAI-10 — the host no longer builds a pitch resolver for OUTPUT. Kairos graves
-      // `content.pitch.hz` per actor (from `ctx.pitchLib` + the tree) and every runtime
-      // reads that off the event; the sound transpose lives in Kairos too. The only
-      // resolver left here is `productionResolver` (built lazily below) for the DISPLAY
-      // sounding-predicate `.sounds()` — no Hz, no transpose feeds the outputs.
+      // KAI-10 — the host builds NO pitch resolver at all. Kairos graves `content.pitch.hz`
+      // (read by every output) AND `content.sounds` (the DISPLAY note-vs-text predicate, read
+      // below off the timeline), both from `ctx.pitchLib` + the tree; the sound transpose
+      // lives in Kairos too. The host imports no runtime pitch builder anymore.
       try {
         // `effectiveFlags` (e.g. `{ scene: 2 }`) is applied as the BPx engine's
         // initial flag state, so a flag-guarded rule (`/scene=2/`) derives
@@ -1597,9 +1582,9 @@ function makeBpxAdapter(
             // `modulation.registry`: host-composed data on the projection context, NOT a
             // Kairos-side import (the host is the single freshness gatekeeper, LAN-14).
             // The declared identity (alphabet/tuning per actor) rides the TREE
-            // (`metadata.actors`, written by BPx) — Kanopi poses ONLY the catalogs. Carry-
-            // only for now: Kairos consumes this to build the resolver at the switchover
-            // (separate GO), when the host stops calling `makeResolver` itself.
+            // (`metadata.actors` + `metadata.scenePitch`, written by BPx) — Kanopi poses ONLY
+            // the catalogs. Kairos consumes this to build the resolver and grave
+            // `content.pitch.hz` + `content.sounds`; the host calls no resolver itself.
             pitchLib: PITCH_LIB,
             // KRO-24 — hand Kairos the CV registry (hoisted, cycle-invariant) + the
             // `exprSource` factory so `projeter` COMPOSES the modulations AT FLATTEN and
@@ -1643,33 +1628,36 @@ function makeBpxAdapter(
       // all "sound"; everything else is text.
       const soundingSet = new Set(soundingSymbols ?? []);
       const btTable = backticks ?? {};
-      // Scene pitch resolver from the SHARED builder (`@kronos/core/pitch`): its
-      // `sounds(token)` is ALPHABET-AWARE (true for `rast4` under a maqâm scene,
-      // false under western) — the upstream primitive that replaces the western
-      // `isNoteName` heuristic, which muted every non-western alphabet.
-      const productionResolver = sceneResolverFor(declaredAlphabet, declaredTuning, tokens);
-      // Orchestrated actor terminals are "sounding" too. Membership is read off the
-      // KAIROS timeline (the single projection of the tree): every NOTE event the
-      // projection carries an `actor` (event-level routing
-      // layer, `TimelineEvent.actor` in @kronos/core) contributes its `content.token`.
-      // The timeline has ONE event per occurrence, so a terminal shared by two actors
-      // appears as ≥2 events (each with its actor) → it lands in the set, exactly as the
-      // former tree walk did. `kind` absent ⇒ note (rests/controls carry no sounding
-      // terminal). `kairos` is defined here (the derive above succeeded, else it threw).
+      // KAI-10: the ALPHABET-AWARE "pitched sounding" classification is GRAVEN by Kairos
+      // (`content.sounds` — true for `rast4` under a maqâm scene, false under western), the
+      // upstream primitive that replaced the western `isNoteName` heuristic. The host runs
+      // NO resolver; it READS the facet off the KAIROS timeline (the single projection of
+      // the tree), in the SAME pass that collects orchestrated actor terminals. Every NOTE
+      // event carries its `content.token`; `content.sounds===true` marks a pitched-sounding
+      // token, and an event-level `actor` (`TimelineEvent.actor`) marks an actor terminal (a
+      // terminal shared by two actors appears as ≥2 events → it lands in the set). `kind`
+      // absent ⇒ note. `kairos` is defined here (the derive above succeeded, else it threw).
+      // The other 3 union terms stay LOCAL (no resolver): `soundingSet` (front-end non-pitched
+      // sounding symbols, e.g. percussion — `content.sounds` covers only the PITCHED term),
+      // `actorTerminals`, `btTable` (backticks).
+      const pitchSounding = new Set<string>();
       const actorTerminals = new Set<string>();
-      if (orchestration && orchestration.actors.length > 0 && kairos) {
+      if (kairos) {
+        const orchestrated = !!(orchestration && orchestration.actors.length > 0);
         const tl = kairos.arbreCourant();
         // Whole-timeline window. `query` is half-open `[from, to)`; bump the upper bound
         // past the loop length so an event onset at exactly `duration` is never excluded.
         for (const e of tl.query(0, tl.duration + 1)) {
           if ((e.kind ?? 'note') !== 'note') continue;
-          if (e.actor === undefined || e.actor === null) continue;
-          const token = (e.content as { token?: unknown }).token;
-          if (typeof token === 'string' && token.length > 0) actorTerminals.add(token);
+          const c = e.content as { token?: unknown; sounds?: unknown };
+          const token = c.token;
+          if (typeof token !== 'string' || token.length === 0) continue;
+          if (c.sounds === true) pitchSounding.add(token);
+          if (orchestrated && e.actor !== undefined && e.actor !== null) actorTerminals.add(token);
         }
       }
       const productionSounds = (token: string) =>
-        productionResolver.sounds(token) ||
+        pitchSounding.has(token) ||
         soundingSet.has(token) ||
         actorTerminals.has(token) ||
         Object.prototype.hasOwnProperty.call(btTable, token);
