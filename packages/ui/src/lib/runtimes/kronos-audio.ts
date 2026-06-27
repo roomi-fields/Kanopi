@@ -51,6 +51,7 @@ import { OscAdapter, OscBridgeProfile, WebSocketTransport } from 'runtime-osc/br
 // Reused AS-IS from the core dispatcher: coerces numeric-string controls to
 // numbers (vel/filterQ/…) while leaving strings (wave) untouched.
 import { coerceControlValues } from '../../../../core/src/dispatcher/dispatcher.js';
+import { DEFAULT_BEATS_PER_BAR } from './meter';
 
 /** A per-runtime OUTPUT SINK this module drives. The host registers sinks BY RUNTIME
  *  NAME (the key Kairos emits in `event.output.runtime`); Kanopi chooses no sink itself —
@@ -69,6 +70,9 @@ export interface KronosAudioOptions {
   audioCtx: AudioContext;
   /** Tempo (BPM) the events' seconds were derived at. */
   derivedTempo: number;
+  /** Beats-per-bar PROJECTED from the derived meter (`DeriveResult.meter`, BPx authority)
+   *  for the bar/beat fold. Absent (tests/headless) → `DEFAULT_BEATS_PER_BAR` (4/4). */
+  beatsPerBar?: number;
   /** Whether to loop the scene. */
   loop: boolean;
   /** Per-runtime OUTPUT SINKS built by the host (e.g. the per-actor MIDI transport), keyed
@@ -146,6 +150,9 @@ export interface KronosAudioHandle {
    *  (`play/pause/stop/step/seek/setTempo/setLoop`, observable `state/position()/
    *  beatPosition()/onStateChange`). The host projects on it; it holds no FSM/counter. */
   transport: Transport;
+  /** Beats-per-bar this handle folds bar/beat with (projected from the derived meter).
+   *  Read by the cursor store for the onBar/onBeat event derivation. */
+  beatsPerBar: number;
   stop(): void;
   /** STOP-IN-PLACE (Model C): return the playhead to 0 and silence everything, but KEEP the
    *  handle REPLAYABLE. `transport.stop()` (→ position 0, emission off, state 'stopped') +
@@ -200,10 +207,6 @@ export interface KronosAudioHandle {
   setActorMuted(actor: string, muted: boolean): void;
 }
 
-// Transport beats-per-bar for the Kronos beat readout. Matches the central
-// clock's default (4); the cursor folds beats to the scene loop regardless.
-const BEATS_PER_BAR = 4;
-
 // Scheduler look-ahead window (seconds).
 const LOOKAHEAD_SEC = 0.12;
 
@@ -239,6 +242,8 @@ function deriveOscBindings(
  */
 export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   const { audioCtx, derivedTempo } = opts;
+  // Bar fold width = the derived meter's beats-per-bar (BPx authority), default 4.
+  const beatsPerBar = opts.beatsPerBar ?? DEFAULT_BEATS_PER_BAR;
   // STEP auditions ONE beat in place: never loop, and seek to the beat's scene
   // second (the timeline + CV windows are the full production's, untouched).
   const step = opts.step;
@@ -554,6 +559,8 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     // (playback store + transport UI) projects on it: calls its commands and reads
     // state/position. Kanopi keeps no FSM and no position counter.
     transport,
+    // The projected meter's beats-per-bar (the cursor store reads it for onBar events).
+    beatsPerBar,
     stop() {
       if (stopped) return;
       stopped = true;
@@ -642,8 +649,8 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       // cursor's own frozen-position formula (no host beat counter), so bar·beat matches
       // the heard note instead of the landing boundary.
       return step
-        ? cursor.beatPositionForScene(step.fromSec, clock.derivedTempo, BEATS_PER_BAR)
-        : transport.beatPosition(BEATS_PER_BAR);
+        ? cursor.beatPositionForScene(step.fromSec, clock.derivedTempo, beatsPerBar)
+        : transport.beatPosition(beatsPerBar);
     },
     seek(sceneSec: number) {
       // Re-anchor the time authority and the scheduler to the SAME scene second

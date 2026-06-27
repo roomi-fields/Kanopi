@@ -63,6 +63,7 @@ import { buildModulators, type ModLib, type ExprSource } from '@kronos/core';
 // WebAudio synth. The old dispatcher is NEVER started for sound — it survives only
 // as the inert structure of transports/resolvers that Kronos reads.
 import { startKronosAudio, type KronosAudioHandle, type KronosAudioOptions } from './kronos-audio';
+import { beatsPerBarFromMeter, DEFAULT_BEATS_PER_BAR, type MeterLike } from './meter';
 // EX4 phase 2: surface the ACTIVE Kronos cursor to the UI so the timeline draws
 // the playhead off the SAME clock as the audio (aligned + monotone-from-0),
 // instead of the central rAF clock (which lags ~1 note and jumps back at launch).
@@ -910,6 +911,11 @@ export function effectiveTempoBpm(
 // scene has derived (no scene → no tempo; the readout shows « — », not a host « 128 »).
 let currentBpm = 0;
 
+// The CURRENT derivation's beats-per-bar, PROJECTED from `DeriveResult.meter` (BPx
+// authority). Re-read each eval (it can change on hot-swap); fed to the Kronos handle's
+// bar fold + the clock's time signature. `DEFAULT_BEATS_PER_BAR` until a meter is seen.
+let sceneBeatsPerBar = DEFAULT_BEATS_PER_BAR;
+
 // The user's LOCAL typed/tapped tempo (D10 — the only legitimate host-owned tempo:
 // input made before/without a live scene). `null` until the user sets one. It is
 // the pre-derive tempo INPUT only when a scene declares NO `@mm`; a declared `@mm`
@@ -940,6 +946,15 @@ function freshSeed(): number {
 let onTempoFromGrammar: ((bpm: number) => void) | undefined;
 export function setTempoSink(fn: (bpm: number) => void): void {
   onTempoFromGrammar = fn;
+}
+
+// Sink to project the DERIVED scene's beats-per-bar (from `DeriveResult.meter`, BPx
+// authority) onto the central clock's time signature, so the beat LEDs reflect the
+// declared meter. The core sets this to `clock.setTimeSignature`; left unset
+// (tests, headless) the adapter still folds bars at the derived value via the handle.
+let onMeterFromGrammar: ((beatsPerBar: number) => void) | undefined;
+export function setMeterSink(fn: (beatsPerBar: number) => void): void {
+  onMeterFromGrammar = fn;
 }
 
 // Resume offset (in beats) for the NEXT looping play, set by the transport state
@@ -1484,10 +1499,15 @@ function makeBpxAdapter(
         // (audio/MIDI/text). The `output:'complete'` mode (control markers as tree
         // nodes / zero-duration tokens) has MIGRATED to Kairos and now THROWS in BPx —
         // the default ('sounding') is the host's path: notes + rests, no control nodes.
+        const deriveResult = bpx.derive();
         const derived = {
-          tree: bpx.derive().tree,
+          tree: deriveResult.tree,
           tokens: bpx.emit<BpxTimedToken[]>('timed-tokens')
         };
+        // METER (BPx authority): the resolved `[meter:…]` graven on the derivation
+        // root. Re-read EVERY derive (it can change on hot-swap). Absent → the host
+        // projects no bar of its own (the documented default 4 stands downstream).
+        sceneBeatsPerBar = beatsPerBarFromMeter((deriveResult as { meter?: MeterLike }).meter);
         // Model C proof: this is THE eval-path derivation (eval/edit/arm/produce/play-from-
         // stopped). Count it. The loop-boundary re-roll (`reDeriveTreeEvents`) is NOT counted
         // here — a Play-from-stopped on a persisted scene replays without reaching this point.
@@ -1512,6 +1532,10 @@ function makeBpxAdapter(
             projectingGrammarTempo = false;
           }
         }
+        // Project the DERIVED meter onto the clock's time signature (beat LEDs). A no-op
+        // on an unchanged value (`setTimeSignature` guards), so a no-meter / 4/4 scene
+        // never churns. Pure local state — no cross-runtime fan-out, no re-entry guard.
+        onMeterFromGrammar?.(sceneBeatsPerBar);
         // The TREE (with control nodes) drives the multi-actor dispatcher. The
         // FLAT tokens keep their prior `'sounding'` shape for every legacy
         // consumer (production readout, STEP slicing, MIDI sink, mono/text
@@ -1853,6 +1877,9 @@ function makeBpxAdapter(
           kronosAudio = startKronosAudio({
             audioCtx: ctx,
             derivedTempo: currentBpm,
+            // Beats-per-bar PROJECTED from the derived meter (BPx authority). The handle
+            // folds bar/beat with it and surfaces it to the cursor store (onBar events).
+            beatsPerBar: sceneBeatsPerBar,
             // LOOP BOUND = BPx authority. The compiled scene length in beats
             // (`totalDurationBeats`, includes any trailing rest) × the effective
             // beat duration (`beatDurSec = 60/currentBpm`, the same projected tempo)

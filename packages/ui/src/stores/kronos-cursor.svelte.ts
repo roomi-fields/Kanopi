@@ -22,6 +22,10 @@ import type { EventBus } from '../lib/events/types';
 export interface KronosCursorView {
   /** The live Transport — commands (play/pause/stop/step/seek/…) + observable state. */
   transport: Transport;
+  /** Beats-per-bar this handle folds with — projected from the derived meter
+   *  (`DeriveResult.meter`, BPx authority). Read here for the onBar/onBeat derivation
+   *  so a non-4 / additive scene's bars don't fall on a fabricated 4-beat grid. */
+  beatsPerBar: number;
   /** Scene seconds of the playhead (frozen-aware): the cursor in running, the frozen
    *  position when paused. Read per-frame by the timeline. */
   position(): number;
@@ -32,10 +36,6 @@ export interface KronosCursorView {
   /** Re-fire the scene's code voices in their slots — RESUME after a pause-cut. */
   refireCodeVoices(): void;
 }
-
-// Transport beats-per-bar for the beat/bar UI events. Matches the central clock's
-// default (4); `beatPosition()` already folds beats to the scene loop regardless.
-const BEATS_PER_BAR = 4;
 
 class KronosCursorStore {
   /** The currently-active Kronos handle, or null when no kronos scene is live. */
@@ -124,10 +124,11 @@ class KronosCursorStore {
       // which is 1-indexed — using it directly would shift every bar count by one). The
       // count is thus the primitive's value, not a +1 tally, so a dropped frame that skips
       // 2 beats jumps the count correctly instead of under-counting.
-      const abs = kc.transport.absoluteBeatPosition(BEATS_PER_BAR);
+      const beatsPerBar = kc.beatsPerBar;
+      const abs = kc.transport.absoluteBeatPosition(beatsPerBar);
       const totalBeats = Math.max(0, abs.beatsTotal);
       const beatAbs = Math.floor(totalBeats);
-      const barAbs = Math.floor(beatAbs / BEATS_PER_BAR);
+      const barAbs = Math.floor(beatAbs / beatsPerBar);
       // Emit on each crossing of the integer beat — INCLUDING the loop wrap, since the
       // absolute index keeps climbing through it. The first running frame sets the
       // baseline only (so the downbeat isn't counted).

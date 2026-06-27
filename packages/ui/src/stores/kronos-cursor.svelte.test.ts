@@ -70,6 +70,7 @@ function fakeView(opts: {
   };
   return {
     transport: transport as unknown as import('@kronos/core').Transport,
+    beatsPerBar: 4,
     position: () => 0,
     beatPosition: () => bp(opts.folded()),
     cutCodeVoices: () => {},
