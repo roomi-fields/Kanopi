@@ -158,13 +158,6 @@ type Frontend = (code: string) => {
   // derived token sounds if it's a note OR its symbol is in this set; everything
   // else renders as text. Empty for all-note grammars (they sound by default).
   soundingSymbols?: string[];
-  // Declared scale system from the `.bps` directives: `@alphabet.<key>` →
-  // `alphabet`, `@tuning:<key>` → `tuning`. The non-orchestrated WebAudio path
-  // builds its pitch resolver from the bpscript catalogs when these are present
-  // (bohlen-pierce, gamelan), instead of sniffing western/solfège note names.
-  // Absent for `.gr` and for `.bps` that declare no alphabet.
-  alphabet?: string;
-  tuning?: string;
   // Multi-voice orchestration (BPScript `@actor`): each actor owns an alphabet
   // and a transport (midi / webaudio). Present only for orchestrator `.bps`.
   orchestration?: Orchestration;
@@ -466,22 +459,6 @@ function flagStatesFromAst(a: SceneAstView | null): FlagStates {
   return out;
 }
 
-// Declared scale system from the AST directives. `@alphabet.<key>:browser`
-// parses to `{ name:'alphabet', subkey:<key> }` (the alphabet key is the
-// subkey); `@tuning:<key>` to `{ name:'tuning', runtime:<key> }` (the tuning key
-// is in `runtime`). Both optional — a `.bps` may declare an alphabet with no
-// explicit tuning (the catalog default for that alphabet then applies).
-function scaleSystemFromAst(a: SceneAstView | null): { alphabet?: string; tuning?: string } {
-  let alphabet: string | undefined;
-  let tuning: string | undefined;
-  for (const d of a?.directives ?? []) {
-    const node = d as { name?: string; subkey?: string | null; runtime?: string | null };
-    if (node.name === 'alphabet' && node.subkey) alphabet = node.subkey;
-    else if (node.name === 'tuning' && node.runtime) tuning = node.runtime;
-  }
-  return { alphabet, tuning };
-}
-
 // Declared metronome from the AST directives: `@mm:70` parses to a `Directive`
 // with `name:'mm'`, `value:70`. This is the tempo the BPx engine derives note
 // durations at (loadGrammar reads `@mm` straight from the AST), so the central
@@ -680,11 +657,7 @@ const bpsFrontend: Frontend = (code) => {
     soundingSymbols: soundAssignments.map((s) => s.subject),
     // Declared `@mm` metronome so the central clock + STEP grid adopt the tempo
     // the engine actually derives at (absent → current tempo kept).
-    mm: mmFromAst(a),
-    // Declared `@alphabet`/`@tuning` so the WebAudio path resolves pitches from
-    // the bpscript catalogs (bohlen-pierce, gamelan) rather than sniffing note
-    // names. Absent keys leave the western/solfège fallback in place.
-    ...scaleSystemFromAst(a)
+    mm: mmFromAst(a)
   };
   // Backtick voices: compileBPS keys foreign code by the EXACT BT token emitted
   // in the timeline (direct lookup, no parsing). Carry it through so the adapter
