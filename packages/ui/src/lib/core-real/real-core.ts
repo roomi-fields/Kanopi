@@ -317,66 +317,42 @@ class RealCore implements CoreApi {
     // Kronos, it never invents a "playing" state the engine doesn't have.
   }
 
-  async silenceRuntimes(): Promise<void> {
-    // Silence every KNOWN runtime (not just the declared actors': a loaded
-    // program's blocks sound through a runtime that may have no `@actor`), then
-    // deactivate the actors' LEDs. Per-runtime hush by id, best-effort.
-    const seen = new Set<string>();
+  /** Broadcast one transport SENTINEL to every KNOWN runtime (not just the declared
+   *  actors': a loaded program's blocks sound through a runtime that may have no
+   *  `@actor`), then set the actors' LEDs. Per-runtime by id, best-effort —
+   *  `listRuntimes()` returns unique Map keys, so no dedup is needed. The sentinel
+   *  rides `stop()`'s `{actorId, fileId}` and each adapter interprets it
+   *  (`__hush__`/`__stop_in_place__`/`__replay__`); `ledsActive` is the final LED state. */
+  async #broadcast(sentinel: string, ledsActive: boolean): Promise<void> {
     for (const id of listRuntimes()) {
-      if (seen.has(id)) continue;
-      seen.add(id);
       const adapter = getAdapter(id);
       if (!adapter) continue;
       try {
-        await adapter.stop({ actorId: '__hush__', fileId: '__hush__' }, this.log);
+        await adapter.stop({ actorId: sentinel, fileId: sentinel }, this.log);
       } catch {
-        /* swallow — silencing must be best-effort */
+        /* swallow — transport broadcast must be best-effort */
       }
     }
-    const quieted = this.actors.list().map((a) => ({ ...a, active: false }));
-    this.actors.setActors(quieted);
+    const next = this.actors.list().map((a) => ({ ...a, active: ledsActive }));
+    this.actors.setActors(next);
+  }
+
+  async silenceRuntimes(): Promise<void> {
+    // Full hush: silence every runtime + LEDs off.
+    await this.#broadcast('__hush__', false);
   }
 
   async stopInPlace(): Promise<void> {
-    // Model C STOP: route the `__stop_in_place__` sentinel to every runtime so each
-    // bpx adapter returns its live scene's playhead to 0 and cuts its sound WITHOUT
-    // discarding the derived timeline (the handle persists). The actors' LEDs go off
-    // (the scene is stopped) but the handle map / kronos cursor stay live so a Play
-    // replays the same timeline. Best-effort per runtime, like `silenceRuntimes`.
-    const seen = new Set<string>();
-    for (const id of listRuntimes()) {
-      if (seen.has(id)) continue;
-      seen.add(id);
-      const adapter = getAdapter(id);
-      if (!adapter) continue;
-      try {
-        await adapter.stop({ actorId: '__stop_in_place__', fileId: '__stop_in_place__' }, this.log);
-      } catch {
-        /* swallow — stopping must be best-effort */
-      }
-    }
-    const quieted = this.actors.list().map((a) => ({ ...a, active: false }));
-    this.actors.setActors(quieted);
+    // Model C STOP: each bpx adapter returns its live scene's playhead to 0 and cuts
+    // its sound WITHOUT discarding the derived timeline (the handle / kronos cursor stay
+    // live so a Play replays the same timeline). LEDs off (the scene is stopped).
+    await this.#broadcast('__stop_in_place__', false);
   }
 
   async replayActiveScene(): Promise<void> {
-    // Model C PLAY-from-stopped: route the `__replay__` sentinel so each bpx adapter
-    // restarts its persisted (stopped) handle from 0 with NO re-derivation. Re-activate
-    // the actors' LEDs (the scene is sounding again). Best-effort per runtime.
-    const seen = new Set<string>();
-    for (const id of listRuntimes()) {
-      if (seen.has(id)) continue;
-      seen.add(id);
-      const adapter = getAdapter(id);
-      if (!adapter) continue;
-      try {
-        await adapter.stop({ actorId: '__replay__', fileId: '__replay__' }, this.log);
-      } catch {
-        /* swallow — replay must be best-effort */
-      }
-    }
-    const woken = this.actors.list().map((a) => ({ ...a, active: true }));
-    this.actors.setActors(woken);
+    // Model C PLAY-from-stopped: each bpx adapter restarts its persisted (stopped)
+    // handle from 0 with NO re-derivation. LEDs back on (the scene is sounding again).
+    await this.#broadcast('__replay__', true);
   }
 
   async hushAll(): Promise<void> {
