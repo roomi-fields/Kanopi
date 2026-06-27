@@ -92,7 +92,10 @@
     editing = false;
     const n = parseFloat(draft.replace(',', '.'));
     if (!Number.isNaN(n)) {
-      clock.setBpm(Math.min(400, Math.max(20, n)));
+      // `setBpm` is the SOLE owner of the input bound ([20,300], `clampBpm`); the
+      // component never re-bounds (a local [20,400] clamp let 350 look accepted then
+      // be silently dropped to 300 by the store).
+      clock.setBpm(n);
       writeTempoToScene();
     }
   }
