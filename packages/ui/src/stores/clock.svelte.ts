@@ -2,8 +2,7 @@
 //
 // Kanopi holds NO authoritative clock (contract `kronos-transport.md`). This store keeps
 // the public shape the UI + snapshot already use (`state.{bpm,beatsPerBar,playing,paused}`,
-// `setBpm`/`setTimeSignature`/`tap`/`play`/`stop`/`toggle`) but owns NO transport state
-// machine and NO clock object:
+// `setBpm`/`setTimeSignature`/`tap`) but owns NO transport state machine and NO clock object:
 //   • bpm = the live tempo when a Kronos handle exists (`transport.tempo`, the authority),
 //     else the user's LOCAL typed/tapped tempo if any, else `null` (nothing live + no input
 //     → no tempo to show; the readout displays « — », it does NOT invent a host default like
@@ -12,14 +11,13 @@
 //   • beatsPerBar = a persisted SESSION VALUE (Kronos has no time signature).
 //   • playing/paused = DERIVED from Kronos's Transport state (`kronosCursor.state`). No host
 //     flag, no second FSM.
-//   • play/stop/toggle = ROUTE to `playback` (the transport projection on Kronos). No host
-//     clock is started/stopped here.
+// Transport COMMANDS (play/stop/toggle) are NOT relayed here — the palette + keybindings
+// route straight to `playback` (the transport projection on Kronos).
 
 import type { ClockState } from '../lib/core';
 import { kronosCursor } from './kronos-cursor.svelte';
 import { getAdapter, listRuntimes } from '../lib/runtimes/registry';
 import { core } from '../lib/core';
-import { playback } from './playback.svelte';
 
 const DEFAULT_BEATS_PER_BAR = 4;
 
@@ -49,17 +47,6 @@ class ClockStore {
     playing: kronosCursor.active != null && kronosCursor.state === 'running',
     paused: kronosCursor.active != null && kronosCursor.state === 'paused'
   });
-
-  play() {
-    playback.play();
-  }
-  stop() {
-    playback.stop();
-  }
-  toggle() {
-    if (this.state.playing) playback.stop();
-    else playback.play();
-  }
 
   /** Set the tempo: persist the session value AND retune every runtime live (the live Kronos
    *  handle warps in place via its adapter's `setBpm`, so display + heard tempo stay coherent).
