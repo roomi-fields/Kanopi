@@ -133,7 +133,7 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 - **REV-F08** `fait` [P1] — Socket OSC ouverte en phase produce, contrat buildOnly violé — kronos-audio.ts:289 ; WebSocket ouverte sans Play sur scène OSC  _(fait: b8ec113 — montage OSC gardé !buildOnly (kronos-audio.ts:303))_
 - **REV-F09** `fait` [P1] — Notation scientifique non bornée vers Infinity vers RangeError AudioParam — dispatcher.js:35 ; (cutoff:1e400) coercé Infinity, note muette au lieu de dégradation propre  _(fait: 6a1663f — Number.isFinite garde, non-fini reste string, plus d'Infinity)_
 - **REV-F10** `fait` [P1] — AUTORITE INVENTEE: BEATS_PER_BAR=4 codé en dur au lieu de result.meter — kronos-cursor.svelte.ts:38/127/130, clock.svelte.ts, kronos-audio.ts:205/646 ; casse mesures additives/maqâm. Principe dur. [GO host en cours]  _(fait: 8634ec1 — lit result.meter, défaut 4/4, meter.test.ts vert)_
-- **REV-F11** `ouvert` [P2] — .gr re-parsé depuis le TEXTE (anti-pattern) — bpx-adapter.ts:392/382 ; deux lecteurs de section divergents .gr (texte) vs .bps (AST)
+- **REV-F11** `fait` [P2] — .gr re-parsé depuis le TEXTE (anti-pattern) — bpx-adapter.ts:392/382 ; deux lecteurs de section divergents .gr (texte) vs .bps (AST)  _(fait: b9ce746 — lecteur AST unifié .gr/.bps, scan-texte buggé supprimé, test verrou gr-head-sections (6 verts))_
 - **REV-F12** `ouvert` [P2] — mmFromAst ne reconnaît que mm, pas @tempo — bpx-adapter.ts:494 ; cause racine partiellement AMONT (BPx ne route pas @tempo). A coordonner BPx
 - **REV-F13** `fait` [P2] — writeMmDirective ne réécrit que @mm, pas @tempo — mm-directive.ts:16 ; 100 pourcent hôte, changement BPM non réécrit sur scène v0.8  _(fait: b66f0c7 — MM_RE reconnaît @mm ET @tempo, mot-clé préservé, test vert)_
 - **REV-F14** `fait` [P2] — Code mort post-KAI-10: scaleSystemFromAst + champs alphabet/tuning scène + commentaires invitant à recâbler une résolution hauteur hôte — bpx-adapter.ts:474 (risque anti-pattern)  _(fait: f939d8f — scaleSystemFromAst + champs morts + commentaires corrigés)_
@@ -150,7 +150,7 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 - **REV-F25** `fait` [P4] — fmt2/fmt3 triplicés — Statusbar.svelte:8, TransportCluster.svelte:41, InspectorPanel.svelte:7. [GO host en cours]  _(fait: ee0fa0c — fmt2/fmt3 extraits, sortie octet-identique)_
 - **REV-F26** `fait` [P4] — Octet NUL dans compile-cache.ts:23, git classe le fichier binaire, invisible en diff/grep. [GO host en cours]  _(fait: 29f17ac — octet NUL remplacé, fichier redevenu texte)_
 - **REV-F27** `ouvert` [P4] — PLAUSIBLE tap-tempo division par zéro vers saut à 300 BPM — clock.svelte.ts:93 ; à confirmer
-- **REV-F28** `ouvert` [P4] — PLAUSIBLE isControlTerminal copié octet-pour-octet — bpx-adapter.ts:382 ; à confirmer
+- **REV-F28** `fait` [P4] — PLAUSIBLE isControlTerminal copié octet-pour-octet — bpx-adapter.ts:382 ; à confirmer  _(fait: b9ce746 — copie isControlTerminal supprimée avec le scan-texte (bundlé F11))_
 - **REV-F29** `ouvert` [P4] — PLAUSIBLE state.playing/paused = 2e projection de kronosCursor.state — clock.svelte.ts:49 ; à confirmer
 - **REV-F30** `ouvert` [P4] — PLAUSIBLE teardown des voix de code sortantes séquentiel — bpx-adapter.ts:1711 ; await en série au lieu de Promise.all
 - **REV-F31** `ouvert` [P4] — PLAUSIBLE scrub défensif CV peut masquer une fuite amont — kronos-audio.ts:355 ; confirmer contrat avec Kairos avant suppression
