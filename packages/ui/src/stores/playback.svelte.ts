@@ -104,12 +104,13 @@ class Playback {
     // The beat to play next is DERIVED from the Transport's frozen position — never a
     // host counter. A stepped handle reports the beat it just PLAYED (`beatPosition` =
     // the stepped second, aligned to the heard note), so the NEXT beat is that + 1.
-    // Stopped (no Transport) → start at beat 0. Each step advances one beat → monotone;
-    // `play` afterwards resumes forward. The adapter seeks to this beat and plays one
-    // beat window then pauses (a fresh Transport per step; the previous one is torn down
-    // first, so no stacked emitter).
-    const t = this.transport;
-    const next = t ? (((Math.round(t.beatPosition().beatsTotal) + 1) % n) + n) % n : 0;
+    // Read the HANDLE's `beatPosition()` (the kronos-cursor view), NOT the raw Transport:
+    // for a stepped handle the view compensates Kronos's `step(1)` landing-at-grain-end
+    // (returns the played beat K, not K+1). Reading the raw transport would yield K+1 → the
+    // next step would be K+2, skipping every other beat. Stopped (no handle) → start at 0.
+    // Each step advances one beat → monotone; `play` afterwards resumes forward.
+    const handle = kronosCursor.active;
+    const next = handle ? (((Math.round(handle.beatPosition().beatsTotal) + 1) % n) + n) % n : 0;
     await core.evaluateBlock(file.runtime, file.contents, file.name, 0, undefined, undefined, {
       index: next,
       count: n
