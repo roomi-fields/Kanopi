@@ -30,6 +30,14 @@ describe('coerceControlValues', () => {
     expect(coerceControlValues({ x: '1e' })).toEqual({ x: '1e' });
   });
 
+  it('does NOT coerce an unbounded exponent to Infinity (keeps the string)', () => {
+    // `Number('1e400')` overflows to Infinity; a non-finite AudioParam value would
+    // throw a RangeError. The control must degrade cleanly to its original string.
+    const out = coerceControlValues({ cutoff: '1e400', q: '1e309' });
+    expect(out).toEqual({ cutoff: '1e400', q: '1e309' });
+    expect(Number.isFinite(out.cutoff as number)).toBe(false);
+  });
+
   it('passes through non-string values and handles null/undefined', () => {
     expect(coerceControlValues({ n: 42 })).toEqual({ n: 42 });
     expect(coerceControlValues(null)).toEqual({});

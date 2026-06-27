@@ -29,10 +29,17 @@ export function coerceControlValues(controls) {
     // hex (`'0x10'`), the special words `'Infinity'`/`'NaN'`, empty/whitespace,
     // and non-numeric strings (`wave:'sawtooth'`) — a control name that merely
     // happens to be JS-parseable as a number must NOT be silently retyped. The
-    // regex only matches finite numeric literals, so `Number(s)` is always finite.
+    // exponent is UNBOUNDED in the source, so `'1e400'` passes the regex yet
+    // `Number(s)` overflows to ±Infinity; a non-finite value handed to a Web Audio
+    // AudioParam throws a RangeError (silent muted note). So when `Number(s)` is not
+    // finite we keep the original STRING — clean degradation, never Infinity.
     const s = typeof v === 'string' ? v.trim() : null;
-    out[k] =
-      s !== null && /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(s) ? Number(s) : v;
+    if (s !== null && /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(s)) {
+      const num = Number(s);
+      out[k] = Number.isFinite(num) ? num : v;
+    } else {
+      out[k] = v;
+    }
   }
   return out;
 }
