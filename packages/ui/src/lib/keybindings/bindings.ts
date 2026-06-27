@@ -70,8 +70,11 @@ export function handleGlobalKey(e: KeyboardEvent) {
   // entry as the Play button and the `clock.toggle` command.
   if (e.code === 'Space' && !inEditableTarget(e) && !isMod(e) && !e.altKey) {
     e.preventDefault();
-    if (playback.mode === 'stopped') playback.play();
-    else playback.stop();
+    // 'playing' → stop; 'stopped' OR 'paused' → play(). play() resumes a paused
+    // transport in place (position kept), starts a stopped one — so Space resumes
+    // from pause instead of dropping to stop and losing the playhead.
+    if (playback.mode === 'playing') playback.stop();
+    else playback.play();
   }
 }
 

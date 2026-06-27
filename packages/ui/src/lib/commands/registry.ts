@@ -26,7 +26,9 @@ function staticCommands(): Command[] {
       id: 'clock.toggle',
       title: 'Toggle play/stop',
       category: 'Clock',
-      run: () => (playback.mode === 'stopped' ? playback.play() : playback.stop())
+      // 'playing' → stop; 'stopped' OR 'paused' → play() (play resumes a paused
+      // transport in place, so 'paused' no longer falls through to stop).
+      run: () => (playback.mode === 'playing' ? playback.stop() : playback.play())
     },
     { id: 'clock.tap', title: 'Tap tempo', category: 'Clock', run: () => clock.tap() },
     {
