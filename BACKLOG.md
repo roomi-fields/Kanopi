@@ -122,3 +122,35 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 - **KAN-Abis** `ouvert` — Predicat audio utilise le resolveur de SCENE (pas per-acteur) ; passer per-feuille via resolverFor(actor.alphabet) quand A* composera activeActors x sounds (escalade)
 - **KAN-purete** `ouvert` — PURETE (Romain, radical, MAINTENANT) : devenir HOTE PUR — extraire le rendu de production vers runtime-ui (vue Texte = text-order+TextStreamPanel ; vue Timeline = timeline+TimelinePanel ; UN runtime, 2 vues) + aplatissement tree-dispatch -> Kairos, SUPPRIMER ces rendus de Kanopi, ROUTER la donnee, rendre ZERO production. Kanopi = surface + gestes + cablage des runtimes. Perte d affichage temporaire acceptee
 - **KAN-kro24** `ouvert` — Migration KRO-24 : retirer l appel HOTE a composeTreeModulations (composition CV) -> il MIGRE chez Kairos (qui detient l arbre, appelle la Couche-1 Kronos a l aplatissement). GO quand Kairos l a integre
+- **KAN-18** `ouvert` [P2] — M2/M3 — bugs d'AFFICHAGE des vues Texte/Timeline repérés au test Romain ; liste à fournir ; passe de correction (rendu→runtime-ui / données→feed Kanopi+Kairos / transport→Kronos). Architecture OK, c'est de la qualité d'affichage.
+- **REV-F01** `ouvert` [P1] — Stop/Pause inertes sur voix de code autonomes (.strudel/.hydra/.tidal/.p5) — playback.svelte.ts:97 ; regression __hush__ vers __stop_in_place__ non honoré (b61531e) ; le son continue sur Stop
+- **REV-F02** `ouvert` [P1] — Eval voix-code = transport affiché STOPPED — real-core.ts:313 ; invariant 'eval qui sonne donc playing' non rétabli ; UI contredit l'audio (784fa44)
+- **REV-F03** `ouvert` [P1] — STEP saute un temps sur deux — playback.svelte.ts:112 ; lit beatPosition brut (K+1) au lieu du compensé, moitié de la prod inaudible au pas-à-pas
+- **REV-F04** `ouvert` [P1] — Espace traite pause comme stop — bindings.ts:73 ; pause + Espace donne stop + playhead remis à 0, position de pause perdue
+- **REV-F05** `ouvert` [P1] — Unmute-all (Ctrl+0) laisse une voix orchestrée muette — mock-runtime.ts:48 ; court-circuite setMuted/onMute, voix reste silencieuse
+- **REV-F06** `ouvert` [P1] — Fuite de tempo inter-scène — bpx-adapter.ts:1537 ; garde réentrance défait par microtâche, scène sans @mm dérive au tempo de la scène précédente
+- **REV-F07** `ouvert` [P1] — Tempo de scène projeté écrêté [20,300] — clock.svelte.ts:69 ; @tempo 16 ou 400 forcé à 20/300, grille STEP désaccordée du tempo dérivé
+- **REV-F08** `ouvert` [P1] — Socket OSC ouverte en phase produce, contrat buildOnly violé — kronos-audio.ts:289 ; WebSocket ouverte sans Play sur scène OSC
+- **REV-F09** `ouvert` [P1] — Notation scientifique non bornée vers Infinity vers RangeError AudioParam — dispatcher.js:35 ; (cutoff:1e400) coercé Infinity, note muette au lieu de dégradation propre
+- **REV-F10** `ouvert` [P1] — AUTORITE INVENTEE: BEATS_PER_BAR=4 codé en dur au lieu de result.meter — kronos-cursor.svelte.ts:38/127/130, clock.svelte.ts, kronos-audio.ts:205/646 ; casse mesures additives/maqâm. Principe dur. [GO host en cours]
+- **REV-F11** `ouvert` [P2] — .gr re-parsé depuis le TEXTE (anti-pattern) — bpx-adapter.ts:392/382 ; deux lecteurs de section divergents .gr (texte) vs .bps (AST)
+- **REV-F12** `ouvert` [P2] — mmFromAst ne reconnaît que mm, pas @tempo — bpx-adapter.ts:494 ; cause racine partiellement AMONT (BPx ne route pas @tempo). A coordonner BPx
+- **REV-F13** `ouvert` [P2] — writeMmDirective ne réécrit que @mm, pas @tempo — mm-directive.ts:16 ; 100 pourcent hôte, changement BPM non réécrit sur scène v0.8
+- **REV-F14** `ouvert` [P2] — Code mort post-KAI-10: scaleSystemFromAst + champs alphabet/tuning scène + commentaires invitant à recâbler une résolution hauteur hôte — bpx-adapter.ts:474 (risque anti-pattern)
+- **REV-F17** `ouvert` [P2] — Démo dual-actors-audio.bps en forme v0.7 (alphabet:western au lieu de alphabet.western) — :8/:9 ; migrer deux-points vers point
+- **REV-F18** `ouvert` [P2] — Démo cv-adsr.bps en @mm:138 périmé — :4 ; migrer @mm vers @tempo ; couplage pervers avec REV-F12
+- **REV-F15** `ouvert` [P3] — Carte acteur vers transport du Dispatcher morte + commentaires trompeurs — dispatcher.js:69 (post-KAI-9) ; ~30 lignes mortes
+- **REV-F16** `ouvert` [P3] — Relais play/stop/toggle morts du store clock — clock.svelte.ts:53 ; zéro appelant, piège de double-indirection
+- **REV-F19** `ouvert` [P3] — Boucle rAF du curseur jamais annulée (~60fps à vide à vie) — kronos-cursor.svelte.ts:75 ; CPU/batterie sur éditeur au repos
+- **REV-F20** `ouvert` [P3] — rAF réassigne beat à chaque frame même à l'arrêt — kronos-cursor.svelte.ts:166 ; nouvel objet à chaque appel, churn réactif ~60x/s scène arrêtée
+- **REV-F21** `ouvert` [P3] — $effect re-projette toute la production à chaque geste transport — ProductionViewHost.svelte:13 ; à-coup visible sur grande scène
+- **REV-F22** `ouvert` [P3] — publishProduction mappe la liste de tokens 2x par éval — bpx-adapter.ts:874 ; deux passes O(n) et deux allocations
+- **REV-F23** `ouvert` [P4] — Trois méthodes broadcast quasi identiques — real-core.ts:320 ; silenceRuntimes/stopInPlace/replayActiveScene à fusionner. [GO host en cours]
+- **REV-F24** `ouvert` [P4] — Double bornage du BPM (400 puis 300) — TransportCluster.svelte:101 ; 350 paraît accepté puis ramené à 300. [GO host en cours]
+- **REV-F25** `ouvert` [P4] — fmt2/fmt3 triplicés — Statusbar.svelte:8, TransportCluster.svelte:41, InspectorPanel.svelte:7. [GO host en cours]
+- **REV-F26** `ouvert` [P4] — Octet NUL dans compile-cache.ts:23, git classe le fichier binaire, invisible en diff/grep. [GO host en cours]
+- **REV-F27** `ouvert` [P4] — PLAUSIBLE tap-tempo division par zéro vers saut à 300 BPM — clock.svelte.ts:93 ; à confirmer
+- **REV-F28** `ouvert` [P4] — PLAUSIBLE isControlTerminal copié octet-pour-octet — bpx-adapter.ts:382 ; à confirmer
+- **REV-F29** `ouvert` [P4] — PLAUSIBLE state.playing/paused = 2e projection de kronosCursor.state — clock.svelte.ts:49 ; à confirmer
+- **REV-F30** `ouvert` [P4] — PLAUSIBLE teardown des voix de code sortantes séquentiel — bpx-adapter.ts:1711 ; await en série au lieu de Promise.all
+- **REV-F31** `ouvert` [P4] — PLAUSIBLE scrub défensif CV peut masquer une fuite amont — kronos-audio.ts:355 ; confirmer contrat avec Kairos avant suppression
