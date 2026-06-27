@@ -4,13 +4,7 @@
   import { scenes } from '../../stores/scenes.svelte';
   import { actors } from '../../stores/actors.svelte';
   import { consoleLog } from '../../stores/console.svelte';
-
-  function fmt2(n: number) {
-    return n.toString().padStart(2, '0');
-  }
-  function fmt3(n: number) {
-    return n.toString().padStart(3, '0');
-  }
+  import { fmt2, fmt3 } from '../../lib/format/bar-beat';
 
   // Ableton-style Bar.Beat — both 1-indexed, beats per bar from time signature.
   // `state.beat` is 0..(N-1) internally; display adds 1 so Ableton convention

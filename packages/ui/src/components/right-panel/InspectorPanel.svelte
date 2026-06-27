@@ -3,13 +3,8 @@
   import { kronosCursor } from '../../stores/kronos-cursor.svelte';
   import { actors } from '../../stores/actors.svelte';
   import { scenes } from '../../stores/scenes.svelte';
+  import { fmt2, fmt3 } from '../../lib/format/bar-beat';
 
-  function fmt2(n: number) {
-    return n.toString().padStart(2, '0');
-  }
-  function fmt3(n: number) {
-    return n.toString().padStart(3, '0');
-  }
   // Position from Kronos's Transport, sampled per-frame into `kronosCursor.beat` (the
   // single position authority, frozen-aware). `null` = stopped / no scene → rest readout
   // (001·01.00). The clock holds only tempo + transport flags, never the position.

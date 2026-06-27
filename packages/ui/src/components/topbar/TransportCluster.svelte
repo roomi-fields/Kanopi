@@ -7,6 +7,7 @@
   import { openBlocks } from '../../stores/blocks.svelte';
   import { writeMmDirective } from '../../lib/runtimes/mm-directive';
   import { kronosCursor } from '../../stores/kronos-cursor.svelte';
+  import { fmt2, fmt3 } from '../../lib/format/bar-beat';
 
   // STEP lives in the transport cluster (beta issue 4 — transport buttons
   // grouped). It's driven off the PRODUCED timeline, not the `.bps` head rule, so
@@ -36,13 +37,6 @@
     if (!activeFile) return;
     playback.stop();
     await openBlocks.produceLoadedProgram(activeFile.id);
-  }
-
-  function fmt2(n: number) {
-    return n.toString().padStart(2, '0');
-  }
-  function fmt3(n: number) {
-    return n.toString().padStart(3, '0');
   }
 
   // `null` when nothing is live and the user has typed no tempo (no host-invented default):
