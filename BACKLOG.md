@@ -132,23 +132,23 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 - **REV-F07** `ouvert` [P1] — Tempo de scène projeté écrêté [20,300] — clock.svelte.ts:69 ; @tempo 16 ou 400 forcé à 20/300, grille STEP désaccordée du tempo dérivé
 - **REV-F08** `ouvert` [P1] — Socket OSC ouverte en phase produce, contrat buildOnly violé — kronos-audio.ts:289 ; WebSocket ouverte sans Play sur scène OSC
 - **REV-F09** `ouvert` [P1] — Notation scientifique non bornée vers Infinity vers RangeError AudioParam — dispatcher.js:35 ; (cutoff:1e400) coercé Infinity, note muette au lieu de dégradation propre
-- **REV-F10** `ouvert` [P1] — AUTORITE INVENTEE: BEATS_PER_BAR=4 codé en dur au lieu de result.meter — kronos-cursor.svelte.ts:38/127/130, clock.svelte.ts, kronos-audio.ts:205/646 ; casse mesures additives/maqâm. Principe dur. [GO host en cours]
+- **REV-F10** `fait` [P1] — AUTORITE INVENTEE: BEATS_PER_BAR=4 codé en dur au lieu de result.meter — kronos-cursor.svelte.ts:38/127/130, clock.svelte.ts, kronos-audio.ts:205/646 ; casse mesures additives/maqâm. Principe dur. [GO host en cours]  _(fait: 8634ec1 — lit result.meter, défaut 4/4, meter.test.ts vert)_
 - **REV-F11** `ouvert` [P2] — .gr re-parsé depuis le TEXTE (anti-pattern) — bpx-adapter.ts:392/382 ; deux lecteurs de section divergents .gr (texte) vs .bps (AST)
 - **REV-F12** `ouvert` [P2] — mmFromAst ne reconnaît que mm, pas @tempo — bpx-adapter.ts:494 ; cause racine partiellement AMONT (BPx ne route pas @tempo). A coordonner BPx
 - **REV-F13** `ouvert` [P2] — writeMmDirective ne réécrit que @mm, pas @tempo — mm-directive.ts:16 ; 100 pourcent hôte, changement BPM non réécrit sur scène v0.8
-- **REV-F14** `ouvert` [P2] — Code mort post-KAI-10: scaleSystemFromAst + champs alphabet/tuning scène + commentaires invitant à recâbler une résolution hauteur hôte — bpx-adapter.ts:474 (risque anti-pattern)
+- **REV-F14** `fait` [P2] — Code mort post-KAI-10: scaleSystemFromAst + champs alphabet/tuning scène + commentaires invitant à recâbler une résolution hauteur hôte — bpx-adapter.ts:474 (risque anti-pattern)  _(fait: f939d8f — scaleSystemFromAst + champs morts + commentaires corrigés)_
 - **REV-F17** `ouvert` [P2] — Démo dual-actors-audio.bps en forme v0.7 (alphabet:western au lieu de alphabet.western) — :8/:9 ; migrer deux-points vers point
 - **REV-F18** `ouvert` [P2] — Démo cv-adsr.bps en @mm:138 périmé — :4 ; migrer @mm vers @tempo ; couplage pervers avec REV-F12
-- **REV-F15** `ouvert` [P3] — Carte acteur vers transport du Dispatcher morte + commentaires trompeurs — dispatcher.js:69 (post-KAI-9) ; ~30 lignes mortes
-- **REV-F16** `ouvert` [P3] — Relais play/stop/toggle morts du store clock — clock.svelte.ts:53 ; zéro appelant, piège de double-indirection
+- **REV-F15** `fait` [P3] — Carte acteur vers transport du Dispatcher morte + commentaires trompeurs — dispatcher.js:69 (post-KAI-9) ; ~30 lignes mortes  _(fait: 4e499da — carte acteur->transport morte supprimée + en-têtes)_
+- **REV-F16** `fait` [P3] — Relais play/stop/toggle morts du store clock — clock.svelte.ts:53 ; zéro appelant, piège de double-indirection  _(fait: 0809935 — relais play/stop/toggle morts supprimés)_
 - **REV-F19** `ouvert` [P3] — Boucle rAF du curseur jamais annulée (~60fps à vide à vie) — kronos-cursor.svelte.ts:75 ; CPU/batterie sur éditeur au repos
 - **REV-F20** `ouvert` [P3] — rAF réassigne beat à chaque frame même à l'arrêt — kronos-cursor.svelte.ts:166 ; nouvel objet à chaque appel, churn réactif ~60x/s scène arrêtée
 - **REV-F21** `ouvert` [P3] — $effect re-projette toute la production à chaque geste transport — ProductionViewHost.svelte:13 ; à-coup visible sur grande scène
 - **REV-F22** `ouvert` [P3] — publishProduction mappe la liste de tokens 2x par éval — bpx-adapter.ts:874 ; deux passes O(n) et deux allocations
-- **REV-F23** `ouvert` [P4] — Trois méthodes broadcast quasi identiques — real-core.ts:320 ; silenceRuntimes/stopInPlace/replayActiveScene à fusionner. [GO host en cours]
-- **REV-F24** `ouvert` [P4] — Double bornage du BPM (400 puis 300) — TransportCluster.svelte:101 ; 350 paraît accepté puis ramené à 300. [GO host en cours]
-- **REV-F25** `ouvert` [P4] — fmt2/fmt3 triplicés — Statusbar.svelte:8, TransportCluster.svelte:41, InspectorPanel.svelte:7. [GO host en cours]
-- **REV-F26** `ouvert` [P4] — Octet NUL dans compile-cache.ts:23, git classe le fichier binaire, invisible en diff/grep. [GO host en cours]
+- **REV-F23** `fait` [P4] — Trois méthodes broadcast quasi identiques — real-core.ts:320 ; silenceRuntimes/stopInPlace/replayActiveScene à fusionner. [GO host en cours]  _(fait: 04cfdea — broadcast() refactor PUR, sentinelles+LED inchangées)_
+- **REV-F24** `fait` [P4] — Double bornage du BPM (400 puis 300) — TransportCluster.svelte:101 ; 350 paraît accepté puis ramené à 300. [GO host en cours]  _(fait: 1a8ee9d — double bornage retiré, setBpm seul propriétaire)_
+- **REV-F25** `fait` [P4] — fmt2/fmt3 triplicés — Statusbar.svelte:8, TransportCluster.svelte:41, InspectorPanel.svelte:7. [GO host en cours]  _(fait: ee0fa0c — fmt2/fmt3 extraits, sortie octet-identique)_
+- **REV-F26** `fait` [P4] — Octet NUL dans compile-cache.ts:23, git classe le fichier binaire, invisible en diff/grep. [GO host en cours]  _(fait: 29f17ac — octet NUL remplacé, fichier redevenu texte)_
 - **REV-F27** `ouvert` [P4] — PLAUSIBLE tap-tempo division par zéro vers saut à 300 BPM — clock.svelte.ts:93 ; à confirmer
 - **REV-F28** `ouvert` [P4] — PLAUSIBLE isControlTerminal copié octet-pour-octet — bpx-adapter.ts:382 ; à confirmer
 - **REV-F29** `ouvert` [P4] — PLAUSIBLE state.playing/paused = 2e projection de kronosCursor.state — clock.svelte.ts:49 ; à confirmer
