@@ -125,13 +125,13 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 - **KAN-18** `ouvert` [P2] — M2/M3 — bugs d'AFFICHAGE des vues Texte/Timeline repérés au test Romain ; liste à fournir ; passe de correction (rendu→runtime-ui / données→feed Kanopi+Kairos / transport→Kronos). Architecture OK, c'est de la qualité d'affichage.
 - **REV-F01** `ouvert` [P1] — Stop/Pause inertes sur voix de code autonomes (.strudel/.hydra/.tidal/.p5) — playback.svelte.ts:97 ; regression __hush__ vers __stop_in_place__ non honoré (b61531e) ; le son continue sur Stop
 - **REV-F02** `ouvert` [P1] — Eval voix-code = transport affiché STOPPED — real-core.ts:313 ; invariant 'eval qui sonne donc playing' non rétabli ; UI contredit l'audio (784fa44)
-- **REV-F03** `ouvert` [P1] — STEP saute un temps sur deux — playback.svelte.ts:112 ; lit beatPosition brut (K+1) au lieu du compensé, moitié de la prod inaudible au pas-à-pas
-- **REV-F04** `ouvert` [P1] — Espace traite pause comme stop — bindings.ts:73 ; pause + Espace donne stop + playhead remis à 0, position de pause perdue
-- **REV-F05** `ouvert` [P1] — Unmute-all (Ctrl+0) laisse une voix orchestrée muette — mock-runtime.ts:48 ; court-circuite setMuted/onMute, voix reste silencieuse
+- **REV-F03** `fait` [P1] — STEP saute un temps sur deux — playback.svelte.ts:112 ; lit beatPosition brut (K+1) au lieu du compensé, moitié de la prod inaudible au pas-à-pas  _(fait: 6aeea6e — STEP lit kronosCursor.active.beatPosition() compensé)_
+- **REV-F04** `fait` [P1] — Espace traite pause comme stop — bindings.ts:73 ; pause + Espace donne stop + playhead remis à 0, position de pause perdue  _(fait: a07789b — ternaire playing?stop:play, paused+stopped reprennent)_
+- **REV-F05** `fait` [P1] — Unmute-all (Ctrl+0) laisse une voix orchestrée muette — mock-runtime.ts:48 ; court-circuite setMuted/onMute, voix reste silencieuse  _(fait: d1997d1 — unmuteAll route via setMuted, onMute réarme la voix)_
 - **REV-F06** `ouvert` [P1] — Fuite de tempo inter-scène — bpx-adapter.ts:1537 ; garde réentrance défait par microtâche, scène sans @mm dérive au tempo de la scène précédente
 - **REV-F07** `ouvert` [P1] — Tempo de scène projeté écrêté [20,300] — clock.svelte.ts:69 ; @tempo 16 ou 400 forcé à 20/300, grille STEP désaccordée du tempo dérivé
-- **REV-F08** `ouvert` [P1] — Socket OSC ouverte en phase produce, contrat buildOnly violé — kronos-audio.ts:289 ; WebSocket ouverte sans Play sur scène OSC
-- **REV-F09** `ouvert` [P1] — Notation scientifique non bornée vers Infinity vers RangeError AudioParam — dispatcher.js:35 ; (cutoff:1e400) coercé Infinity, note muette au lieu de dégradation propre
+- **REV-F08** `fait` [P1] — Socket OSC ouverte en phase produce, contrat buildOnly violé — kronos-audio.ts:289 ; WebSocket ouverte sans Play sur scène OSC  _(fait: b8ec113 — montage OSC gardé !buildOnly (kronos-audio.ts:303))_
+- **REV-F09** `fait` [P1] — Notation scientifique non bornée vers Infinity vers RangeError AudioParam — dispatcher.js:35 ; (cutoff:1e400) coercé Infinity, note muette au lieu de dégradation propre  _(fait: 6a1663f — Number.isFinite garde, non-fini reste string, plus d'Infinity)_
 - **REV-F10** `fait` [P1] — AUTORITE INVENTEE: BEATS_PER_BAR=4 codé en dur au lieu de result.meter — kronos-cursor.svelte.ts:38/127/130, clock.svelte.ts, kronos-audio.ts:205/646 ; casse mesures additives/maqâm. Principe dur. [GO host en cours]  _(fait: 8634ec1 — lit result.meter, défaut 4/4, meter.test.ts vert)_
 - **REV-F11** `ouvert` [P2] — .gr re-parsé depuis le TEXTE (anti-pattern) — bpx-adapter.ts:392/382 ; deux lecteurs de section divergents .gr (texte) vs .bps (AST)
 - **REV-F12** `ouvert` [P2] — mmFromAst ne reconnaît que mm, pas @tempo — bpx-adapter.ts:494 ; cause racine partiellement AMONT (BPx ne route pas @tempo). A coordonner BPx
@@ -154,3 +154,4 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 - **REV-F29** `ouvert` [P4] — PLAUSIBLE state.playing/paused = 2e projection de kronosCursor.state — clock.svelte.ts:49 ; à confirmer
 - **REV-F30** `ouvert` [P4] — PLAUSIBLE teardown des voix de code sortantes séquentiel — bpx-adapter.ts:1711 ; await en série au lieu de Promise.all
 - **REV-F31** `ouvert` [P4] — PLAUSIBLE scrub défensif CV peut masquer une fuite amont — kronos-audio.ts:355 ; confirmer contrat avec Kairos avant suppression
+- **REV-F03b** `ouvert` [P4] — LED en pas-à-pas PAUSÉ lit K+1 — activeBeat()/kronos-audio.ts:647-654 ; cas-bord d'affichage LED distinct de REV-F03 (lecture continue OK), signalé honnêtement par Kanopi
