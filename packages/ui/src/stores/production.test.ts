@@ -14,7 +14,7 @@ describe('production store — rawTokens', () => {
 
     production.set({
       source: 'bp3',
-      tokens: [{ token: 'C4', startSec: 0, durSec: 0.5, sounding: true }],
+      tokens: [{ token: 'C4', startSec: 0, durSec: 0.5 }],
       durationSec: 0.75,
       beatDurSec: 0.5,
       sections: [],

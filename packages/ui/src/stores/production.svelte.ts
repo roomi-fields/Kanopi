@@ -18,8 +18,6 @@ export interface ProductionToken {
   startSec: number;
   /** duration in seconds */
   durSec: number;
-  /** whether this token reaches audio/MIDI (true) or only the symbolic readout (false) */
-  sounding: boolean;
 }
 
 // A top-level section of the derivation (head-rule RHS element). Boundaries are

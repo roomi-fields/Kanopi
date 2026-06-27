@@ -44,12 +44,12 @@ import { exprSource } from 'runtime-audio';
 // MIDI path; Kanopi only routes Kronos's per-actor events to it.
 import { MidiTransport } from 'runtime-midi';
 // Pitch resolution (token → Hz) AND the alphabet-aware "sounds" classification both live
-// upstream now: Kairos GRAVES `content.pitch.hz` + `content.sounds` per note (KAI-10), from
-// the catalogs the host supplies as `ctx.pitchLib`. Kanopi RESOLVES NOTHING and runs NO
-// resolver — it only hands the `PitchLib` DATA down and READS the graven facets. The host
-// no longer imports the runtime pitch builder (`@kronos/core/pitch`); only the `PitchLib`
-// type survives, for the read-only catalog constant.
-import { type PitchLib } from '@kronos/core';
+// in KAIROS now: it OWNS the pitch module and GRAVES `content.pitch.hz` + `content.sounds`
+// per note (KAI-10), from the catalogs the host supplies as `ctx.pitchLib`. Kanopi RESOLVES
+// NOTHING and runs NO resolver — it only hands the `PitchLib` DATA down and READS the graven
+// facets. The host imports ZERO of `@kronos/core/pitch` (logic AND type); only the `PitchLib`
+// type survives, sourced from `@kairos/core` (the module's new owner), for the catalog constant.
+import { type PitchLib } from '@kairos/core';
 // Tree-derived dispatch events (M5+ multi-actor refacto): flatten BPx's
 // `derive({ output: 'complete' }).tree` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
@@ -854,7 +854,6 @@ export function sectionBoundsFromTree(
 function publishProduction(
   id: Runtime,
   tokens: Tok[],
-  sounds: (token: string) => boolean,
   sectionNames: string[],
   beatDurSec: number,
   tree?: ProductionTree,
@@ -875,8 +874,7 @@ function publishProduction(
   const prodTokens: ProductionToken[] = tokens.map((t) => ({
     token: t.token,
     startSec: t.start / 1000,
-    durSec: (t.end - t.start) / 1000,
-    sounding: sounds(t.token)
+    durSec: (t.end - t.start) / 1000
   }));
   const durationSec = durationMs / 1000;
   const count = sectionNames.length;
@@ -1395,7 +1393,6 @@ function makeBpxAdapter(
         ast,
         errors,
         settings,
-        soundingSymbols,
         orchestration,
         backticks,
         flagStates,
@@ -1621,46 +1618,10 @@ function makeBpxAdapter(
 
       // FULL production readout (Romain's request): publish the WHOLE derived
       // sequence now, BEFORE any STEP slicing or time-scheduled playback, so the
-      // Text panel + Structure visualizer see the entire production at once. The
-      // sound predicate marks which tokens reach audio/MIDI vs the symbolic
-      // readout: a pitched token (resolves in the scene's alphabet), a front-end
-      // sounding symbol, an orchestrated actor terminal, or a backtick reference
-      // all "sound"; everything else is text.
-      const soundingSet = new Set(soundingSymbols ?? []);
-      const btTable = backticks ?? {};
-      // KAI-10: the ALPHABET-AWARE "pitched sounding" classification is GRAVEN by Kairos
-      // (`content.sounds` — true for `rast4` under a maqâm scene, false under western), the
-      // upstream primitive that replaced the western `isNoteName` heuristic. The host runs
-      // NO resolver; it READS the facet off the KAIROS timeline (the single projection of
-      // the tree), in the SAME pass that collects orchestrated actor terminals. Every NOTE
-      // event carries its `content.token`; `content.sounds===true` marks a pitched-sounding
-      // token, and an event-level `actor` (`TimelineEvent.actor`) marks an actor terminal (a
-      // terminal shared by two actors appears as ≥2 events → it lands in the set). `kind`
-      // absent ⇒ note. `kairos` is defined here (the derive above succeeded, else it threw).
-      // The other 3 union terms stay LOCAL (no resolver): `soundingSet` (front-end non-pitched
-      // sounding symbols, e.g. percussion — `content.sounds` covers only the PITCHED term),
-      // `actorTerminals`, `btTable` (backticks).
-      const pitchSounding = new Set<string>();
-      const actorTerminals = new Set<string>();
-      if (kairos) {
-        const orchestrated = !!(orchestration && orchestration.actors.length > 0);
-        const tl = kairos.arbreCourant();
-        // Whole-timeline window. `query` is half-open `[from, to)`; bump the upper bound
-        // past the loop length so an event onset at exactly `duration` is never excluded.
-        for (const e of tl.query(0, tl.duration + 1)) {
-          if ((e.kind ?? 'note') !== 'note') continue;
-          const c = e.content as { token?: unknown; sounds?: unknown };
-          const token = c.token;
-          if (typeof token !== 'string' || token.length === 0) continue;
-          if (c.sounds === true) pitchSounding.add(token);
-          if (orchestrated && e.actor !== undefined && e.actor !== null) actorTerminals.add(token);
-        }
-      }
-      const productionSounds = (token: string) =>
-        pitchSounding.has(token) ||
-        soundingSet.has(token) ||
-        actorTerminals.has(token) ||
-        Object.prototype.hasOwnProperty.call(btTable, token);
+      // production views (Text/Timeline, now runtime-ui reading the Kairos tree)
+      // see the entire production at once. KAI-10: the host computes no note-vs-text
+      // "sounding" flag anymore — that classification is runtime-ui's, off `content.sounds`
+      // graven by Kairos; the host only hands down the raw tokens + tree.
       // `beatDurSec` (`60/bpm`) is the STEP unit. The grammar derived at
       // `currentBpm`, so every beat boundary on the produced timeline is one
       // beat of the clock — STEP advances one of those at a time.
@@ -1669,16 +1630,7 @@ function makeBpxAdapter(
       // the REAL section boundaries off the tree's leaf spans, not an equal split.
       // Empty for `.gr` (no AST) or an unmappable macro shape → equal-split fallback.
       const leafCounts = sectionLeafCounts(ast);
-      publishProduction(
-        id,
-        tokens,
-        productionSounds,
-        headSections ?? [],
-        beatDurSec,
-        tree,
-        symbolNames,
-        leafCounts
-      );
+      publishProduction(id, tokens, headSections ?? [], beatDurSec, tree, symbolNames, leafCounts);
 
       // PRODUCE-only (scene opened/loaded/armed, not played) — Model C: a LOAD is a content
       // change, so it must BUILD + PERSIST the Kronos handle (timeline) so the FIRST Play is a
@@ -1906,7 +1858,6 @@ function makeBpxAdapter(
               publishProduction(
                 id,
                 rtokens,
-                productionSounds,
                 headSections ?? [],
                 beatDurSec,
                 rtree as unknown as ProductionTree,

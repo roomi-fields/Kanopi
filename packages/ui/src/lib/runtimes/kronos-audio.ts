@@ -26,8 +26,7 @@ import {
   Transport,
   type RuntimeAdapter,
   type ScheduledEvent,
-  type ModulationBinding,
-  type PitchResolver
+  type ModulationBinding
 } from '@kronos/core';
 // KAN-orchestration P1 — Kairos is the SOURCE of the played timeline (it projects the
 // BPx tree into a Kronos Timeline and exposes a StructureSource the Transport PULLs).
@@ -35,8 +34,8 @@ import {
 import type { Kairos } from '@kairos/core';
 // Audio OUTPUT — the runtime-audio package's RuntimeAdapter (Web Audio synthesis +
 // CV rendering), consumed AS-IS. Kanopi renders NOTHING: it hands the AudioRuntime
-// the shared PitchResolver + the shared clock, and routes Kronos's ScheduledEvents
-// to it (the AudioRuntime resolves token→Hz and renders `content.modulations`).
+// the shared clock and routes Kronos's ScheduledEvents to it (the AudioRuntime reads
+// `content.pitch.hz` graven by Kairos — KAI-10 — and renders `content.modulations`).
 import { createAudioRuntime } from 'runtime-audio';
 // OSC OUTPUT — runtime-OSC's adapter (output profile + WebSocket transport to the
 // osc-bridge relay), consumed AS-IS. Kanopi resolves no address: it builds the
@@ -82,9 +81,6 @@ export interface KronosAudioOptions {
    *  runtime-OSC can pre-fetch their surfaces (`setBindings`, sync hot path). The per-event
    *  device/channel still travels on `event.output`. Absent ⇒ no OSC. */
   actors?: Record<string, { runtime: string; params?: Record<string, unknown> }>;
-  /** Scene pitch resolver (shared `@kronos/core/pitch`). When given, this module builds
-   *  the runtime-audio AudioRuntime with it as the AUDIO output (token→Hz + CV render). */
-  pitch?: PitchResolver;
   /** OSC output: the osc-bridge WS→UDP relay endpoint the OscAdapter's WebSocket
    *  transport connects to (from `library/routing.json`). */
   oscWsUrl?: string;
@@ -271,11 +267,9 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   //     the 'audio'/'webaudio' SINK: a token resolves to Hz via the shared `pitch`, CV
   //     renders from `content.modulations`. A host-provided `sinks.webaudio`/`sinks.audio`
   //     (tests inject capture) OVERRIDES it.
-  // KAI-10 — built UNCONDITIONALLY: the AudioRuntime reads `content.pitch.hz` off each
-  // event (graven by Kairos), so it no longer needs a host token→Hz resolver. `opts.pitch`
-  // is forwarded only as a vestigial fallback when present (retired in the final cleanup).
+  // KAI-10 — the AudioRuntime reads `content.pitch.hz` off each event (graven by Kairos);
+  // the host injects NO pitch resolver (the `pitch` option is gone — Kanopi resolves nothing).
   const audioRuntime = createAudioRuntime(audioCtx, {
-    ...(opts.pitch ? { pitch: opts.pitch } : {}),
     clock,
     sounds: undefined
   });

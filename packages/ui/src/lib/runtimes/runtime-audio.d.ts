@@ -4,10 +4,11 @@
  * Only the exports Kanopi consumes are declared.
  *
  * runtime-audio OWNS Web Audio synthesis + CV rendering. Kanopi hands it the shared
- * `PitchResolver` + clock and routes Kronos `ScheduledEvent`s to it; the AudioRuntime
- * resolves token→Hz and renders `content.modulations`. Kanopi renders nothing.
+ * clock and routes Kronos `ScheduledEvent`s to it; the AudioRuntime reads the pitch off
+ * each event (`content.pitch.hz`, graven by Kairos — KAI-10) and renders
+ * `content.modulations`. Kanopi resolves no pitch and renders nothing.
  */
-import type { PitchResolver, ModulationSource } from '@kronos/core';
+import type { ModulationSource } from '@kronos/core';
 
 /** Shared clock provider: maps t_scene ↔ t_audio for CV windows. */
 export interface AudioClock {
@@ -16,8 +17,6 @@ export interface AudioClock {
 }
 
 export interface AudioRuntimeOptions {
-  /** Shared pitch resolver (`@kronos/core/pitch`): token → { frequency }. */
-  pitch?: PitchResolver;
   /** Percussion/sound resolver — EMPTY in Kanopi (no sound resolution here). */
   sounds?: { resolve(token: string): unknown } | undefined;
   /** Shared clock for t_scene↔t_audio mapping (CV). */
