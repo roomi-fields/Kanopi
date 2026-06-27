@@ -36,8 +36,18 @@ const SNAPSHOT_OPTS = { maxDiffPixels: 600 } as const;
 // Selector for the live bar.beat readout in Statusbar.svelte:35. Mask wraps
 // the entire `.sb-item` so both the dim label and the changing digits are
 // hidden by the screenshot comparison.
+//
+// The Console panel (ConsolePanel.svelte) is masked too: its rows carry
+// wall-clock HH:MM:SS timestamps and Strudel's `%c[...]` eval logs, whose
+// content and count vary every run — a genuinely non-deterministic region
+// (it drove a ~3450-px flake on starter 03, dominated by this panel). Masking
+// it hides ONLY that noise; the transport cluster, LEDs and structural chrome
+// stay asserted.
 function maskTargets(page: import('@playwright/test').Page) {
-  return [page.locator('[title="bar.beat (Ableton-style, 1-indexed)"]')];
+  return [
+    page.locator('[title="bar.beat (Ableton-style, 1-indexed)"]'),
+    page.locator('[data-testid="console-panel"]')
+  ];
 }
 
 // Wait long enough for adapter-deferred work (Strudel core import, p5 boot,

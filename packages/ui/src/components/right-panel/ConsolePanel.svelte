@@ -45,7 +45,7 @@
   }
 </script>
 
-<div class="console">
+<div class="console" data-testid="console-panel">
   <header class="hdr">
     <span class="count">{consoleLog.entries.length} entries</span>
     <div class="actions">
