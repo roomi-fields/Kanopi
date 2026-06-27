@@ -46,8 +46,13 @@ export class MockActors implements ActorManager {
     this.setMuted(name, !a.muted);
   }
   unmuteAll() {
-    this.actors = this.actors.map((a) => (a.muted ? { ...a, muted: false } : a));
-    this.b.emit(this.actors);
+    // Route through `setMuted` (NOT a direct field write) so a subclass override —
+    // RealActors.setMuted fires `onMute → armOrchestratedActor`, re-arming an
+    // orchestrated voice in Kronos — actually runs. A direct write here would clear
+    // the LED but leave the voice silent (Ctrl+0 then needs two toggles to recover).
+    for (const a of this.actors) {
+      if (a.muted) this.setMuted(a.name, false);
+    }
   }
   setActors(list: Actor[]) {
     this.actors = list;
