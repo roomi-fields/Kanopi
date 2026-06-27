@@ -17,6 +17,7 @@
 import type { ClockState } from '../lib/core';
 import { kronosCursor } from './kronos-cursor.svelte';
 import { getAdapter, listRuntimes } from '../lib/runtimes/registry';
+import { setUserTempo } from '../lib/runtimes/bpx-adapter';
 import { core } from '../lib/core';
 
 const DEFAULT_BEATS_PER_BAR = 4;
@@ -56,6 +57,23 @@ class ClockStore {
     const bpm = clampBpm(n);
     if (this.#tempo === bpm) return;
     this.#tempo = bpm;
+    // USER input is the only legitimate host-owned tempo (D10): record it as the
+    // adapter's pre-derive INPUT for the NEXT eval of a no-`@mm` scene. The clamped
+    // value is what we persist, so display and seed agree. The SCENE tempo channel
+    // (`setSceneTempo`) NEVER routes here → `userTempo` is set on real type/tap ONLY.
+    setUserTempo(bpm);
+    for (const id of listRuntimes()) {
+      getAdapter(id)?.setBpm?.(bpm, (e) => core.console.push(e));
+    }
+  }
+
+  /** SCENE tempo channel — the EFFECTIVE tempo the derivation ran at (BPx authority),
+   *  routed here at eval. Distinct from user input: NO clamp (a scene may declare any
+   *  tempo — the [20,300] guard is for typed/tapped input only), NO write to `#tempo`
+   *  (the readout already reads the live Kronos handle's tempo while a scene plays), and
+   *  it must NEVER seed `userTempo` (that would leak this scene's tempo into the next
+   *  no-`@mm` scene). It only fans the live retune out to the runtimes, like `setBpm`. */
+  setSceneTempo(bpm: number) {
     for (const id of listRuntimes()) {
       getAdapter(id)?.setBpm?.(bpm, (e) => core.console.push(e));
     }

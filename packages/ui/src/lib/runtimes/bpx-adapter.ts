@@ -924,10 +924,12 @@ let sceneBeatsPerBar = DEFAULT_BEATS_PER_BAR;
 // `tree.metadata.tempo`). Never a fabricated host default — no « 128 ».
 let userTempo: number | null = null;
 
-// True WHILE the adapter fans the derivation's effective tempo to the central clock
-// (which re-enters this adapter's `setBpm`). It tells that re-entrant `setBpm` NOT to
-// record the projected SCENE tempo as `userTempo` — only a real type/tap is user input.
-let projectingGrammarTempo = false;
+// Set `userTempo` from a GENUINE user type/tap only — the clock store calls this from
+// its `setBpm` (user input). The SCENE tempo channel (`setSceneTempo`) never reaches
+// here, so a scene's projected tempo can no longer leak into the next no-`@mm` scene.
+export function setUserTempo(bpm: number): void {
+  userTempo = bpm;
+}
 
 // The random seed of the CURRENT production. A PRODUCE re-rolls it (a new
 // variation); a Play/Step reuses it so the heard audio matches the produced
@@ -975,6 +977,16 @@ export function setResumeBeat(beat: number | null): void {
 let __bpxDeriveCount = 0;
 export function __getBpxDeriveCount(): number {
   return __bpxDeriveCount;
+}
+
+// INSTRUMENTATION (F06/F07 proof): read the module's tempo state so a test can prove
+// the SCENE tempo channel never seeds `userTempo` (F06) and never clamps `currentBpm`
+// (F07). Not part of the runtime API.
+export function __getUserTempo(): number | null {
+  return userTempo;
+}
+export function __getCurrentBpm(): number {
+  return currentBpm;
 }
 
 // LIVE transport-toggle plumbing: each adapter registers an updater that pushes
@@ -1520,17 +1532,12 @@ function makeBpxAdapter(
         // own default (60) — NEVER a host « 128 ». `clock.setBpm` is a no-op on an
         // unchanged tempo and never re-enters this path, so the fan-out cannot loop.
         currentBpm = effectiveTempoBpm(derived, deriveTempo ?? 60);
-        // Fan the EFFECTIVE tempo to the central clock (display). This re-enters the
-        // adapter's own `setBpm` via the clock fan-out, so guard against the projected
-        // SCENE tempo being mistaken for fresh USER input (which would wrongly seed the
-        // next no-`@mm` scene). Only a genuine type/tap should set `userTempo`.
+        // Fan the EFFECTIVE tempo to the central clock (display) via the SCENE tempo
+        // channel (`clock.setSceneTempo`): it re-enters this adapter's `setBpm` for the
+        // live retune but is NOT clamped and NEVER recorded as `userTempo`, so a scene's
+        // projected tempo can no longer leak into the next no-`@mm` scene.
         if (currentBpm > 0) {
-          projectingGrammarTempo = true;
-          try {
-            onTempoFromGrammar?.(currentBpm);
-          } finally {
-            projectingGrammarTempo = false;
-          }
+          onTempoFromGrammar?.(currentBpm);
         }
         // Project the DERIVED meter onto the clock's time signature (beat LEDs). A no-op
         // on an unchanged value (`setTimeSignature` guards), so a no-meter / 4/4 scene
@@ -2027,14 +2034,11 @@ function makeBpxAdapter(
       }
     },
     setBpm(bpm: number, _log: LogPush) {
+      // Reached by BOTH tempo fan-outs (user input AND scene projection). It NEVER
+      // records `userTempo` any more — that is set only by `setUserTempo` on a genuine
+      // type/tap (clock store). Here we just keep `currentBpm` (the STEP/`beatDurSec`
+      // grid, used by the NEXT derivation) and retune the live voices in place.
       currentBpm = bpm;
-      // Record the user's LOCAL tempo (D10): it becomes the pre-derive INPUT for the
-      // NEXT eval of a scene that declares no `@mm` (a declared `@mm` still wins). This
-      // is the only legitimate host-owned tempo — user input — never a fabricated default.
-      // Skip when this `setBpm` is the re-entrant fan-out of a derivation's OWN effective
-      // tempo (`projectingGrammarTempo`): a scene's projected tempo is not user input and
-      // must not seed the next no-`@mm` scene.
-      if (!projectingGrammarTempo) userTempo = bpm;
       // Live retune every running voice WITHOUT re-deriving (requirement A): Kronos
       // drives the audio, so the retune reaches ITS clock (same warp, no re-derivation;
       // mirrors the re-random / loop live-toggle wiring). `currentBpm` still updates so

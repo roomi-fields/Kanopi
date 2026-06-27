@@ -82,12 +82,13 @@ class RealCore implements CoreApi {
       void this.handleSceneActivate(s);
     });
     // A grammar that declares `@mm` derives at that tempo; route it to the tempo store so the
-    // displayed BPM, the persisted session value, and every runtime (live retune) adopt the
-    // same tempo the derivation used (transport ⇄ derivation coherence). The store's `setBpm`
-    // owns the cross-runtime fan-out (the former `onTempo` hook). Lazy import avoids the
-    // module cycle (store → core → real-core).
+    // displayed BPM and every runtime (live retune) adopt the same tempo the derivation used
+    // (transport ⇄ derivation coherence). This is the SCENE tempo channel — `setSceneTempo`
+    // fans the live retune out WITHOUT clamping it or recording it as user input (a scene's
+    // projected tempo must never seed the next no-`@mm` scene). Lazy import avoids the module
+    // cycle (store → core → real-core).
     setTempoSink((bpm) => {
-      void import('../../stores/clock.svelte').then((m) => m.clock.setBpm(bpm));
+      void import('../../stores/clock.svelte').then((m) => m.clock.setSceneTempo(bpm));
     });
     // A scene's RESOLVED meter (`DeriveResult.meter`, BPx authority) projects onto the
     // clock's time signature so the beat LEDs reflect the declared meter (absent → the
