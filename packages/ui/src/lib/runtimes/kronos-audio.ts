@@ -247,6 +247,11 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // STEP auditions ONE beat in place: never loop, and seek to the beat's scene
   // second (the timeline + CV windows are the full production's, untouched).
   const step = opts.step;
+  // BUILD-ONLY (Model C produce/load): construct the machine + timeline but DON'T play.
+  // A STEP always plays its window, so it is never build-only. Determined HERE (not just
+  // before the play branch) so every "would actually sound" side-effect — including the
+  // OSC relay socket below — can stay gated behind it.
+  const buildOnly = step ? false : !!opts.buildOnly;
   const loop = step ? false : opts.loop;
   const startScene = step ? step.fromSec : (opts.startSceneSec ?? 0);
   const log = opts.log ?? (() => {});
@@ -289,9 +294,13 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // ENUMERATION for setup (`setBindings`, sync hot path) is DERIVED from the scene's OSC
   // actors in `metadata.actors`; the per-event device/channel rides `ev.output`. A
   // host-provided `sinks.osc` overrides the built-in (tests).
+  // Gated by `!buildOnly`: a produce/load opens NO real WebSocket to the relay (the
+  // transport stays muted — opening a live connection during a silent build violates
+  // the buildOnly contract, exactly as `driver.start()` is gated below). The socket
+  // mounts only when the scene will actually play.
   const oscBindings = deriveOscBindings(opts.actors);
   let oscAdapter: InstanceType<typeof OscAdapter> | null = null;
-  if (Object.keys(oscBindings).length > 0 && opts.oscWsUrl) {
+  if (!buildOnly && Object.keys(oscBindings).length > 0 && opts.oscWsUrl) {
     try {
       // Build the socket ourselves so a relay that is down (connection refused) is LOGGED
       // once rather than silently queueing frames forever: the WebSocketTransport ctor
@@ -529,7 +538,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // transport stays 'stopped', the driver is NOT started, so nothing is ever emitted (zero
   // sound, the audio context is not woken here). The host registers this persistent handle
   // and the first Play calls `replay()` (= 0 re-derivation). A STEP always plays its window.
-  const buildOnly = step ? false : !!opts.buildOnly;
+  // (`buildOnly` is computed up top so the OSC socket mount is gated by it too.)
   if (buildOnly) {
     // Park the position at the start scene second (frozen, transport 'stopped'); do not arm
     // the scheduler, do not start the pump. `replay()` will `transport.play()` + `driver.start()`.
