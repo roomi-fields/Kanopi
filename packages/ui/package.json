@@ -10,6 +10,7 @@
     "build:prod": "VITE_BASE_PATH=/kanopi/ npm run build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
+    "arch": "depcruise 'src/**/*.ts' --config .dependency-cruiser.cjs --output-type err",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "test": "vitest run -c vitest.config.ts",
