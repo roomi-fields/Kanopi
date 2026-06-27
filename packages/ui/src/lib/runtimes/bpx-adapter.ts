@@ -7,8 +7,7 @@ import {
   parseSeFile,
   parseSoundObjects,
   parseAlFile,
-  alphabetSoundRef,
-  isNoteName
+  alphabetSoundRef
 } from 'bp3-frontend';
 import type { FileRef, SeEngineSettings, SceneActor } from 'bp3-frontend';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
@@ -103,10 +102,9 @@ import { loadSampleBank, codeVoiceAdapters } from 'runtime-codevoices';
 // OSC output (OSC-5b): the osc-bridge WS→UDP relay endpoint. Kanopi's WebSocket
 // transport (built in startKronosAudio) connects here; the relay forwards UDP.
 import routingJson from '../../../../library/routing.json';
-// Head-rule sections read from the BPScript AST (`compileBPS().ast`), the single
-// source of truth — replacing the deprecated regex-on-grammar-text reader for the
-// `.bps` path. The `.gr` path keeps the local text reader (it never compiles
-// through BPScript, so it has no AST — see `headSectionNames` below).
+// Head-rule sections read from the parsed scene AST (`compileBPS().ast` for `.bps`,
+// `parseBP3().ast` for `.gr`), the single source of truth — replacing the deprecated
+// regex-on-grammar-text reader on BOTH paths.
 import { headSectionNamesFromAst, sectionLeafCounts } from './head-sections-ast';
 
 /**
@@ -345,16 +343,16 @@ function parseWithSound(code: string, fallbackAlphabet: string[]) {
 }
 
 // `.gr` — native BP3 grammar text straight into the BP3 front-end. The head
-// rule's top-level non-terminals (`S --> … A' B' C'`) are the macro structure;
-// parseBP3 expands them away in the derivation, so we read the section names off
-// the SOURCE head line. This is what lets STEP advance a `.gr` section by section
-// (Part B). A `.gr` IS raw text — it never compiles through BPScript, so it has
-// no AST to read sections from; the text reader (`headSectionNames`) stays for it.
-// The `.bps` path reads its sections from the AST instead (`headSectionNamesFromAst`).
+// rule's top-level non-terminals (`S --> … A' B' C'`) are the macro structure
+// STEP advances through (Part B). `parseBP3` returns the parsed scene AST, so the
+// sections are read off that AST with the SAME reader as `.bps`
+// (`headSectionNamesFromAst`) — no separate grammar-text path. (The former text
+// scanner was buggy: it mis-read multi-line / fraction-directive head rules; see
+// the regression lock in `gr-head-sections.test.ts`.)
 const WESTERN_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const grFrontend: Frontend = (code) => {
   const parsed = parseWithSound(code, WESTERN_NOTES);
-  const sections = headSectionNames(code);
+  const sections = headSectionNamesFromAst(parsed.ast);
   const base = sections.length > 0 ? { ...parsed, sections } : parsed;
   // `.gr` (BP3) has no `@actor`, but bp3-frontend materializes one IMPLICIT `default`
   // actor (audio transport, `synthetic:true`) in the AST — so its events carry
@@ -363,49 +361,6 @@ const grFrontend: Frontend = (code) => {
   const orchestration = buildOrchestration(parsed.ast as SceneAstView | null);
   return orchestration ? { ...base, orchestration } : base;
 };
-
-// Head-rule top-level sections of a `.gr` grammar TEXT — the macro structure STEP
-// advances through. The first `S --> …` line lists them as a flat sequence of
-// symbols (or `{a,b}` simultaneous group = one section). We keep the STRUCTURAL
-// elements: a head sequence typically opens with inline control terminals
-// (`_chan(1) _vel(50) _volume(80)`) and may inline a raw note before the section
-// non-terminals (`A' B' C'`) — those are performance directives, not sections, so
-// they're filtered out. The `gram#N[i]` rule tag, when present (`.gr` source), is
-// stripped first. `.gr`-ONLY now: the `.bps` path reads sections from the AST
-// (`headSectionNamesFromAst`), which reproduces this exact filtering on the AST.
-function isControlTerminal(sym: string): boolean {
-  // BP3 control/command terminals are underscore-prefixed (`_vel(50)`, `_striated`).
-  if (sym.startsWith('_')) return true;
-  // A bare note inlined in the head is a played event, not a section.
-  if (isNoteName(sym)) return true;
-  // A rest / silence placeholder.
-  if (sym === '-' || sym === '_') return true;
-  return false;
-}
-
-function headSectionNames(grammar: string): string[] {
-  const line = grammar.split('\n').find((l) => /\bS\s*-->/.test(l));
-  if (!line) return [];
-  const rhs = line.slice(line.indexOf('-->') + 3).trim();
-  // `.gr` head lines are tagged `gram#1[1] S --> …`; the tag precedes `S` so the
-  // slice already dropped it. (Compiled `.bps` grammar has no tag.)
-  const sections: string[] = [];
-  let depth = 0;
-  let buf = '';
-  const flush = () => {
-    const sym = buf.trim().replace(/[|{}]/g, '');
-    if (sym && !isControlTerminal(sym)) sections.push(sym);
-    buf = '';
-  };
-  for (const ch of rhs) {
-    if (ch === '{') depth++;
-    if (ch === '}') depth--;
-    if (/\s/.test(ch) && depth === 0) flush();
-    else buf += ch;
-  }
-  flush();
-  return sections;
-}
 
 // Minimal view of the BPScript AST (`compileBPS().ast`) this adapter reads. Only
 // the nodes we derive the front-end view from are typed; bpscript carries more.
