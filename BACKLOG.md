@@ -135,7 +135,7 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 - **REV-F10** `fait` [P1] — AUTORITE INVENTEE: BEATS_PER_BAR=4 codé en dur au lieu de result.meter — kronos-cursor.svelte.ts:38/127/130, clock.svelte.ts, kronos-audio.ts:205/646 ; casse mesures additives/maqâm. Principe dur. [GO host en cours]  _(fait: 8634ec1 — lit result.meter, défaut 4/4, meter.test.ts vert)_
 - **REV-F11** `ouvert` [P2] — .gr re-parsé depuis le TEXTE (anti-pattern) — bpx-adapter.ts:392/382 ; deux lecteurs de section divergents .gr (texte) vs .bps (AST)
 - **REV-F12** `ouvert` [P2] — mmFromAst ne reconnaît que mm, pas @tempo — bpx-adapter.ts:494 ; cause racine partiellement AMONT (BPx ne route pas @tempo). A coordonner BPx
-- **REV-F13** `ouvert` [P2] — writeMmDirective ne réécrit que @mm, pas @tempo — mm-directive.ts:16 ; 100 pourcent hôte, changement BPM non réécrit sur scène v0.8
+- **REV-F13** `fait` [P2] — writeMmDirective ne réécrit que @mm, pas @tempo — mm-directive.ts:16 ; 100 pourcent hôte, changement BPM non réécrit sur scène v0.8  _(fait: b66f0c7 — MM_RE reconnaît @mm ET @tempo, mot-clé préservé, test vert)_
 - **REV-F14** `fait` [P2] — Code mort post-KAI-10: scaleSystemFromAst + champs alphabet/tuning scène + commentaires invitant à recâbler une résolution hauteur hôte — bpx-adapter.ts:474 (risque anti-pattern)  _(fait: f939d8f — scaleSystemFromAst + champs morts + commentaires corrigés)_
 - **REV-F17** `ouvert` [P2] — Démo dual-actors-audio.bps en forme v0.7 (alphabet:western au lieu de alphabet.western) — :8/:9 ; migrer deux-points vers point
 - **REV-F18** `ouvert` [P2] — Démo cv-adsr.bps en @mm:138 périmé — :4 ; migrer @mm vers @tempo ; couplage pervers avec REV-F12
