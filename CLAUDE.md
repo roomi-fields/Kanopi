@@ -169,3 +169,11 @@ This project has been indexed with RTFM.
 For any **exploratory search** (finding which files/modules/classes are relevant
 to a topic), use `rtfm_search` instead of Glob, find, ls, or broad Grep.
 Then use `rtfm_expand` to read easily most relevant files/sections.
+
+## CodeGraph — graphe de code indexé
+
+Ce dépôt est indexé avec CodeGraph (`.codegraph/`). Pour **comprendre ou localiser du code**
+(symboles, appelants/appelés, rayon d'impact d'un changement), utilise
+`codegraph explore "<question | symbole>"` (ou l'outil MCP `codegraph_explore`) **avant** grep/find ou
+la lecture de fichiers. Complémentaire de RTFM : **RTFM** pour le quoi/où documentaire (texte + PDF),
+**CodeGraph** pour la structure d'appel du code. (Index local, non versionné ; cloisonné à ce dépôt.)
