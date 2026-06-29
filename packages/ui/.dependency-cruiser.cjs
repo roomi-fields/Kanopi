@@ -8,8 +8,8 @@ module.exports = {
       severity: 'error',
       comment: 'Pas de dépendance circulaire (signe de couplage / couches mal séparées).',
       from: {},
-      to: { circular: true },
-    },
+      to: { circular: true }
+    }
     // NB : no-orphans désactivé tant que les .svelte ne sont pas parsés (sinon faux positifs :
     // un module importé seulement par un .svelte paraît orphelin). À réactiver avec le support svelte.
   ],
@@ -17,6 +17,6 @@ module.exports = {
     tsConfig: { fileName: 'tsconfig.json' },
     doNotFollow: { path: 'node_modules' },
     tsPreCompilationDeps: true,
-    exclude: { path: 'node_modules' },
-  },
+    exclude: { path: 'node_modules' }
+  }
 };
