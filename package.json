@@ -7,7 +7,8 @@
     "packages/*"
   ],
   "scripts": {
-    "postinstall": "simple-git-hooks"
+    "postinstall": "simple-git-hooks",
+    "arch": "depcruise \"packages/ui/src/**/*.{ts,svelte}\" \"packages/core/src/**/*.js\" --config .dependency-cruiser.cjs --output-type err"
   },
   "simple-git-hooks": {
     "pre-push": "cd packages/ui && npm run verify"
