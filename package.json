@@ -8,10 +8,11 @@
   ],
   "scripts": {
     "postinstall": "simple-git-hooks",
-    "arch": "depcruise \"packages/ui/src/**/*.{ts,svelte}\" \"packages/core/src/**/*.js\" --config .dependency-cruiser.cjs --output-type err"
+    "arch": "depcruise \"packages/ui/src/**/*.{ts,svelte}\" \"packages/core/src/**/*.js\" --config .dependency-cruiser.cjs --output-type err",
+    "verify": "cd packages/ui && npm run verify"
   },
   "simple-git-hooks": {
-    "pre-push": "cd packages/ui && npm run verify"
+    "pre-push": "npm run arch && npm run verify"
   },
   "author": "roomi-fields",
   "license": "AGPL-3.0-or-later"
