@@ -9,7 +9,7 @@
 //
 // NOTATION: native saptak — sargam's canonical register convention (the alphabet
 // carries "octaves":"saptak", nothing to declare). Registers are word-prefixes:
-// madhya (middle) is the DEFAULT (bare svara), taar one octave up ("taar sa").
+// madhya (middle) is the DEFAULT (bare svara), taar one octave up ("taar_sa").
 // Renders in a comfortable register (madhya sa ≈ 240 Hz, taar ≈ 480 Hz); pitches
 // stay sargam-microtonal (@tuning:sargam_22shruti unchanged).
 
@@ -158,7 +158,7 @@ P31 -> ga pa dha
 P31 -> sa re ga [weight:0]
 P32 -> sa ga re
 P33 -> Str ga re sa
-P34 -> Str taar sa dha pa
+P34 -> Str taar_sa dha pa
 P34 -> ga re sa [weight:0]
 
 P21 -> ga pa
@@ -176,7 +176,7 @@ Q44 -> Str sa re _ ga
 Q31 -> pa _ dha [weight:0]
 Q31 -> sa _ re
 Q32 -> sa _ ga
-Q33 -> Str taar sa dha
+Q33 -> Str taar_sa dha
 Q33 -> sa re _ [weight:0]
 Q34 -> ga _ _
 Q34 -> re _ sa [weight:0]
