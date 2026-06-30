@@ -93,6 +93,17 @@ const DEMO_META: Record<string, DemoMeta> = {
     tags: ['cv', 'bass', 'modulation'],
     showcase: true
   },
+  'superp-cutoff': {
+    name: 'Superposition — group + per-note cutoff',
+    tagline: 'two filters in series on one param',
+    description:
+      'SUPERP-1 test scene: a slow GROUP cutoff envelope (a shared bus over the whole phrase) and a fast PER-NOTE cutoff envelope superpose in series on the same parameter. Each note re-triggers its own filter, then passes through the group bus.',
+    category: 'bpscript',
+    outputs: ['audio'],
+    level: 'advanced',
+    tags: ['cv', 'modulation', 'superposition', 'test'],
+    showcase: false
+  },
   'cv-lfo': {
     name: 'Spatial Arp — LFO',
     tagline: 'panning modulation',

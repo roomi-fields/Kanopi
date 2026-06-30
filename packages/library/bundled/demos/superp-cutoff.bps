@@ -1,0 +1,17 @@
+// SUPERP-1 test scene — a GROUP cutoff filter and a PER-NOTE cutoff filter on the
+// SAME parameter, superposed in SERIES. The {…} GROUP carries the slow group cutoff
+// envelope (a shared bus over the whole sequential group); each note inside also
+// re-triggers a fast PER-NOTE cutoff envelope (*:cutoff). Note → per-note filter →
+// group bus → output. Proof: the two superpose, the group filter's phase varies with
+// the note's position in the group, and a fresh bus is keyed per loop occurrence.
+
+@core
+@controls
+@alphabet.western:browser
+@tempo:96
+
+cv envGroup : mod.adsr(attack:600, decay:500, sustain:0.5, release:700)
+cv envNote  : mod.adsr(attack:5, decay:110, sustain:0.2, release:160)
+
+S -> { Phrase }(cutoff:envGroup)
+Phrase -> C2 C3 C2 C3 (*:cutoff:envNote, wave:sawtooth, vel:100, filterQ:8)

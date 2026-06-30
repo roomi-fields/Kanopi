@@ -391,6 +391,12 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
         duration: ev.duration,
         actor: ev.actor,
         kind: ev.kind,
+        // SUPERP-1: forward the OCCURRENCE discriminant Kronos posed at emission
+        // (scheduler.ts, the loop-tour scene base). runtime-audio keys its persistent
+        // group-filter buses by `(busRef, occurrence)` (adapter.js _wireBuses) — a new
+        // tour = a new occurrence = a fresh bus, never a faulty cross-tour share. It rides
+        // at the EVENT level (like onset), outside the opaque `content`.
+        occurrence: ev.occurrence,
         // KAI-10: forward the graven pitch facet (Kairos `content.pitch.hz`); the
         // AudioRuntime reads `c.pitch.hz` directly (its token→Hz resolver is now only a
         // fallback, retired in the final pitch-module cleanup).
