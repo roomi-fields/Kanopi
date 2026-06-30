@@ -20,7 +20,7 @@
 // sur src pour la prod ») appartient au portillon de CET amont (il possède son
 // build), pas à celui de Kanopi. La garde jumelle y est définie séparément.
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, lstatSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
 
@@ -76,6 +76,25 @@ if (!existsSync(viteConfig)) {
     if (!excluded.includes(`'${dep}'`) && !excluded.includes(`"${dep}"`)) {
       errors.push(
         `vite.config.ts : optimizeDeps.exclude doit lister "${dep}" (consommation en source hors pré-bundling).`
+      );
+    }
+  }
+}
+
+// 3) Anti-rechute COPIE MANUELLE : un dep consommé en source ne doit JAMAIS exister en `node_modules`
+//    sous forme de DOSSIER RÉEL (copie). npm le pose en SYMLINK (lockfile `link:true`) ; une copie
+//    manuelle (rsync de debug) le SHADOW et PÉRIME en silence — c'est exactement le bug bpscript
+//    2026-06-30. Règle d'or : JAMAIS de rsync dans node_modules. Le dep doit être ABSENT du root ou un
+//    symlink (jamais un dossier réel). On vérifie aux 2 niveaux (root hoisté + packages/ui non hoisté).
+for (const dep of ['bpscript', ...SOURCE_DEPS]) {
+  for (const base of ['node_modules', 'packages/ui/node_modules']) {
+    const p = join(repoRoot, base, dep);
+    if (!existsSync(p)) continue;
+    const st = lstatSync(p);
+    if (st.isDirectory() && !st.isSymbolicLink()) {
+      errors.push(
+        `${base}/${dep} est un DOSSIER RÉEL (copie) — doit être un SYMLINK (npm) ou absent. Une copie ` +
+          `manuelle shadow le symlink npm et périme. Règle : jamais de rsync dans node_modules → \`rm -rf ${base}/${dep}\`.`
       );
     }
   }
