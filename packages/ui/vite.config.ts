@@ -117,7 +117,16 @@ export default defineConfig({
       // this, the first `import('mercury-engine')` pays a 20-25s on-demand
       // transform on a cold dev server under load — long enough for the
       // Ctrl+Enter user activation to expire before Tone.start() runs.
-      'mercury-engine'
+      'mercury-engine',
+      // The remaining code-voice OPTIONAL peers of `runtime-codevoices` (a symlinked
+      // source dep). Vite resolves a symlinked dep's imports from its REAL upstream
+      // path, NOT Kanopi's node_modules — so on a fresh optimize (`--force`) it can't
+      // find these host-installed peers and substitutes a `__vite-optional-peer-dep`
+      // STUB → Hydra/p5/Csound load nothing (black canvas, 0 pixels). Pre-bundling them
+      // here (exactly like @strudel/* + mercury-engine above) pins them to Kanopi's copy.
+      'hydra-synth',
+      'p5',
+      '@csound/browser'
     ],
     // DEPS-FRAÎCHES (décision 2026-06-30) : les amonts BPx/kairos/kronos sont des
     // liens (symlinks) vers leur dépôt source. On les CONSOMME EN SOURCE pour la
