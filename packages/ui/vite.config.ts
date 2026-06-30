@@ -116,7 +116,15 @@ export default defineConfig({
       // transform on a cold dev server under load — long enough for the
       // Ctrl+Enter user activation to expire before Tone.start() runs.
       'mercury-engine'
-    ]
+    ],
+    // DEPS-FRAÎCHES (décision 2026-06-30) : les amonts BPx/kairos/kronos sont des
+    // liens (symlinks) vers leur dépôt source. On les CONSOMME EN SOURCE pour la
+    // boucle de dev — leur package.json expose une condition d'export `development`
+    // → `./src/index.ts`, que Vite choisit en dev. Les EXCLURE du pré-bundling fait
+    // que Vite sert/compile leur `src` à la volée : éditer leur source se reflète sur
+    // 5173 sans rebuild ni rsync (zéro `dist` dans la boucle → impossible de périmer).
+    // Le `dist` ne sert plus QU'À la prod (condition d'export `import`).
+    exclude: ['@kairos/core', '@kronos/core', 'bpx']
   },
   server: {
     port: 5173,
