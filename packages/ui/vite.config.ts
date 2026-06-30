@@ -8,12 +8,14 @@ import { VitePWA } from 'vite-plugin-pwa';
 // import from runtime-ui's own location — substitutes a `__vite-optional-peer-dep` stub
 // that exports nothing → `tokenizeOrder` is undefined and the whole graph throws (blank
 // screen). bpscript IS present in Kanopi's tree (hoisted to the repo-root node_modules);
-// this alias pins the deep specifier to Kanopi's real copy. Resolved off `import.meta.url`
-// (no `node:` import — the type-checker has no @types/node) against the repo-root
-// node_modules where the shared `file:` dep hoists. Host-side wiring glue (same spirit as
-// the @strudel dedupe below) — not a contract change.
+// this alias pins the deep specifier to Kanopi's real bpscript. Resolved off `import.meta.url`
+// (no `node:` import — the type-checker has no @types/node) against THIS package's node_modules,
+// where npm symlinks the `file:` bpscript dep (`packages/ui/node_modules/bpscript -> .../BPscript`,
+// lockfile `link:true`). NB: bpscript is NOT hoisted to the repo root (the others are) — pointing
+// this alias at the root used to rely on a STALE MANUAL COPY there (removed 2026-06-30, deps-fraîches);
+// the npm-managed per-package symlink is the durable source. Host-side wiring glue — not a contract change.
 const BPSCRIPT_ORDER_TOKENS = new URL(
-  '../../node_modules/bpscript/src/transpiler/orderTokens.js',
+  './node_modules/bpscript/src/transpiler/orderTokens.js',
   import.meta.url
 ).pathname;
 
