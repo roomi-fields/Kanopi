@@ -587,7 +587,16 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     const a = clock.now();
     const lagScene = clock.musicalNow(a) - clock.musicalNow(a - L);
     let p = raw - lagScene;
-    if (loopActive && duration > 0) p = ((p % duration) + duration) % duration;
+    // Fold modulo the LIVE loop length read FROM Kronos (`cursor.loopDuration`, which
+    // Kronos resyncs at every timeline swap AND tempo warp — structure-source, cursor
+    // 4aea362), NOT the construction-time `duration` constant. A live tempo change or a
+    // re-derive changes the scene-second loop length (e.g. 13.9 s → 21.3 s on a decel,
+    // → 9.6 s on an accel); folding the DISPLAY modulo the frozen `duration` wrapped the
+    // playhead at the OLD second — the loop appeared to restart at the wrong place and
+    // rests/notes drew shifted (CVA-L3, facette boucle, déclenchée par un changement de
+    // BPM en cours de boucle). The host READS Kronos's bound; it never holds its own.
+    const loopLen = cursor.loopDuration;
+    if (loopActive && loopLen > 0) p = ((p % loopLen) + loopLen) % loopLen;
     else if (p < 0) p = 0;
     return p;
   };
