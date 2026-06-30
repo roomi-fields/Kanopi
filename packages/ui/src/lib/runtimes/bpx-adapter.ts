@@ -23,6 +23,13 @@ import scalesJson from 'bpscript/lib/scales.json';
 // shape live here (declarative segments), consumed AS-IS — Kanopi's transport
 // renders the curve generically, no built-in modulator. See CV.md.
 import modLibJson from 'bpscript/lib/mod.json';
+// Lib de FONCTIONS DIGITALES fournie (KAI-B03) — jumelle de `mod.json` (CV) : Kairos applique
+// ces fonctions TS déterministes (ex. `transpose`) à la projection. Donnée read-only fournie par
+// l'hôte (3 provenances, comme PITCH_LIB) ; sans elle Kairos retombe sur un repli hérité hardcodé.
+// SOURCE : le `body` (code TS de chaque fonction) n'est PAS dans `lib/digital.json` (signature seule) —
+// il est CAPTÉ depuis `lib/digital/<fn>.ts` dans le BUNDLE navigateur `libs-data.js` (libs-bundle.js:52,
+// commentaire de digital.json). On consomme donc `LIBS.digital` (avec body), pas le JSON nu.
+import { LIBS as BPSCRIPT_LIBS } from 'bpscript/src/transpiler/libs-data.js';
 import { createSession, type Session, type TimedToken as BpxTimedToken } from 'bpx';
 // KAN-orchestration P1 — Kairos is the SOURCE of the played timeline (projects the BPx
 // tree into a Kronos Timeline, exposes a StructureSource the Transport PULLs). Consumed
@@ -48,7 +55,7 @@ import { MidiTransport } from 'runtime-midi';
 // NOTHING and runs NO resolver — it only hands the `PitchLib` DATA down and READS the graven
 // facets. The host imports ZERO of `@kronos/core/pitch` (logic AND type); only the `PitchLib`
 // type survives, sourced from `@kairos/core` (the module's new owner), for the catalog constant.
-import { type PitchLib } from '@kairos/core';
+import { type PitchLib, type DigitalLib } from '@kairos/core';
 // Tree-derived dispatch events (M5+ multi-actor refacto): flatten BPx's
 // `derive({ output: 'complete' }).tree` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
@@ -141,6 +148,13 @@ const PITCH_LIB: PitchLib = {
   scales: scalesJson as unknown as PitchLib['scales'],
   octaves: octavesJson as unknown as PitchLib['octaves']
 };
+
+// The provided DIGITAL function library (`bpscript/lib/digital.json`), handed to Kairos as the
+// read-only `ctx.digitalLib` — the exact sibling of `PITCH_LIB`. Kairos applies these deterministic
+// TS functions (e.g. `transpose`) AT PROJECTION (KAI-B03); the host supplies the DATA and runs no
+// function itself. Without it Kairos falls back to its legacy hardcoded transpose. `_comment` doc
+// keys → cast through `unknown`. Personal/community digital libs overlay here later (3 provenances).
+const DIGITAL_LIB: DigitalLib = BPSCRIPT_LIBS.digital as unknown as DigitalLib;
 
 // A front-end turns language source into a derivable BP3 SceneAST + parse
 // errors. Both languages produce the SAME `ast` shape (BPScript compiles down
@@ -1542,6 +1556,10 @@ function makeBpxAdapter(
             // the catalogs. Kairos consumes this to build the resolver and grave
             // `content.pitch.hz` + `content.sounds`; the host calls no resolver itself.
             pitchLib: PITCH_LIB,
+            // KAI-B03 — hand Kairos the provided DIGITAL function lib (transpose &c.), exact
+            // sibling of `pitchLib`. Kairos applies it at projection; without it the sound transpose
+            // falls back to Kairos's legacy hardcode (decision tout-par-librairies, 2026-06-29).
+            digitalLib: DIGITAL_LIB,
             // KRO-24 — hand Kairos the CV registry (hoisted, cycle-invariant) + the
             // `exprSource` factory so `projeter` COMPOSES the modulations AT FLATTEN and
             // carries them on `content.modulations` (+ scene span) for the audio runtime
@@ -1802,6 +1820,8 @@ function makeBpxAdapter(
                   ...(rbpx.buildProjectionContext() as object),
                   // KAI-10 — same read-only catalogs on every re-derive (cycle-invariant).
                   pitchLib: PITCH_LIB,
+                  // KAI-B03 — same provided digital lib on every re-derive (transpose &c.).
+                  digitalLib: DIGITAL_LIB,
                   // KAI-10 — sound transpose in Kairos; host lends no transposeToken.
                   modulation: { registry: kronosRegistry, exprSource: onExprSource }
                 } as unknown as Parameters<Kairos['charger']>[1]
