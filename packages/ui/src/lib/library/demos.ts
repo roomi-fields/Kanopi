@@ -50,6 +50,17 @@ const DEMO_META: Record<string, DemoMeta> = {
     tags: ['microtonal', 'melody'],
     showcase: true
   },
+  mohanam: {
+    name: 'Mohanam — Carnatic raga',
+    tagline: 'generative sargam melody',
+    description:
+      'Raga Mohanam (pentatonic: sa re ga pa dha), a generative Carnatic grammar by Kumar S. Subramanian. The sargam alphabet is routed to the in-browser synth; the generative structure is the original fixture, only the output is adapted for audio.',
+    category: 'bpscript',
+    outputs: ['audio'],
+    level: 'advanced',
+    tags: ['microtonal', 'raga', 'sargam', 'generative', 'india'],
+    showcase: true
+  },
   gamelan: {
     name: 'Gamelan — slendro',
     tagline: 'Javanese pentatonic',
