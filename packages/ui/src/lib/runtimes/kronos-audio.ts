@@ -564,6 +564,28 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   );
 
   let stopped = false;
+
+  // CVA-2 — playhead aligned to the SPEAKER, not to the audio being processed.
+  // The injected clock (l.271) reads raw `audioCtx.currentTime`, so `transport.position()`
+  // tracks the frame being PROCESSED; the speaker trails it by `audioCtx.outputLatency`
+  // (~32 ms measured here). Kronos's core position is exact (CVA-2 handoff) — the missing
+  // term is the host's `outputLatency`, ours to apply since we own the injected clock.
+  // We shift only the DISPLAY read (scheduling/anchoring keep raw currentTime): subtract
+  // the SCENE-second duration of `outputLatency`, computed via the clock's own `musicalNow`
+  // map (rate-exact, tempo-warp aware), then fold into the loop so the wrap shows the
+  // previous iteration's tail that is still sounding at the boundary. No host counter —
+  // every term is a Kronos read.
+  const alignToSpeaker = (raw: number): number => {
+    const L = audioCtx.outputLatency || 0;
+    if (L <= 0) return raw;
+    const a = clock.now();
+    const lagScene = clock.musicalNow(a) - clock.musicalNow(a - L);
+    let p = raw - lagScene;
+    if (loopActive && duration > 0) p = ((p % duration) + duration) % duration;
+    else if (p < 0) p = 0;
+    return p;
+  };
+
   return {
     // The Kronos Transport — the SINGLE state machine + position authority. The host
     // (playback store + transport UI) projects on it: calls its commands and reads
@@ -652,14 +674,27 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       // cursor ONE BEAT AHEAD of the note that just sounded. So for a stepped handle the
       // displayed position is the STEPPED beat itself (`fromSec`) — still the Kronos
       // cursor (the scene second it played from), aligned to the heard note.
-      return step ? step.fromSec : transport.position();
+      if (step) return step.fromSec;
+      // CVA-2 latency alignment: align the DISPLAY to the speaker (see alignToSpeaker).
+      // Running only — paused/stopped is frozen (no sound), so the raw frozen position is
+      // exactly right and must not be shifted.
+      return transport.state === 'running'
+        ? alignToSpeaker(transport.position())
+        : transport.position();
     },
     beatPosition() {
       // Same STEP exception: report the beat AT the stepped second (`fromSec`), via the
       // cursor's own frozen-position formula (no host beat counter), so bar·beat matches
       // the heard note instead of the landing boundary.
-      return step
-        ? cursor.beatPositionForScene(step.fromSec, clock.derivedTempo, beatsPerBar)
+      if (step) return cursor.beatPositionForScene(step.fromSec, clock.derivedTempo, beatsPerBar);
+      // CVA-2: the bar·beat readout reads the same speaker-aligned second while running,
+      // so the numeric display and the playhead pixel agree.
+      return transport.state === 'running'
+        ? cursor.beatPositionForScene(
+            alignToSpeaker(transport.position()),
+            clock.derivedTempo,
+            beatsPerBar
+          )
         : transport.beatPosition(beatsPerBar);
     },
     seek(sceneSec: number) {
