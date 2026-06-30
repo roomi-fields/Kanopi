@@ -6,11 +6,18 @@
 
   // The runtime log (Console) lives here, below the editor. The right column
   // stays reserved for control surfaces (Actors/Scenes/Inspector). The production
-  // views (Text/Timeline) are rendered by the runtime-ui runtime — Kanopi CABLES
-  // them in as tabs, it does not own their rendering.
+  // views (Structure=timeline, Texte=text) are rendered by the runtime-ui runtime
+  // — Kanopi CABLES them in as tabs and fixes their ORDER here; it does not own
+  // their rendering.
+  // Tab order (KAN-21): Structure (the default tab) · Texte · Console.
+  const pvTab = (id: BottomPanelTab): { id: BottomPanelTab; label: string }[] => {
+    const v = productionViews.find((v) => v.id === id);
+    return v ? [{ id, label: v.title }] : [];
+  };
   const tabs: { id: BottomPanelTab; label: string }[] = [
-    { id: 'console', label: 'Console' },
-    ...productionViews.map((v) => ({ id: v.id as BottomPanelTab, label: v.title }))
+    ...pvTab('structure'),
+    ...pvTab('text'),
+    { id: 'console', label: 'Console' }
   ];
 
   const activeView = $derived(productionViews.find((v) => v.id === ui.bottomPanelTab) ?? null);

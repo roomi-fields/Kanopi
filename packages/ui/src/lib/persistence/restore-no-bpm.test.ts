@@ -37,7 +37,7 @@ vi.mock('../../stores/ui.svelte', () => ({
     setRightPanelWidth: vi.fn(),
     setBottomPanelHeight: vi.fn(),
     bottomPanelCollapsed: false,
-    bottomPanelTab: 'timeline'
+    bottomPanelTab: 'structure'
   }
 }));
 

@@ -46,15 +46,15 @@ export function restoreWorkspace(): boolean {
   if (typeof w.rightPanelWidth === 'number') ui.setRightPanelWidth(w.rightPanelWidth);
   if (typeof w.bottomPanelHeight === 'number') ui.setBottomPanelHeight(w.bottomPanelHeight);
   if (typeof w.bottomPanelCollapsed === 'boolean') ui.bottomPanelCollapsed = w.bottomPanelCollapsed;
-  // Bottom-panel tab restore. The former 'structure' tab IS today's 'timeline' view
-  // (the structure/timeline view), so map it across. Any other out-of-set legacy
-  // value falls back to 'console' so the restored panel is never empty.
+  // Bottom-panel tab restore. The legacy 'timeline' id IS today's 'structure' view,
+  // so map it across. Any other out-of-set legacy value falls back to 'console' so
+  // the restored panel is never empty.
   if (w.bottomPanelTab) {
     const raw = w.bottomPanelTab as string;
     ui.bottomPanelTab =
-      raw === 'structure'
-        ? 'timeline'
-        : raw === 'console' || raw === 'text' || raw === 'timeline'
+      raw === 'timeline'
+        ? 'structure'
+        : raw === 'console' || raw === 'text' || raw === 'structure'
           ? raw
           : 'console';
   }

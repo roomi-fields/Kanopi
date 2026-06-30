@@ -8,13 +8,14 @@ export type ActivityView =
   | 'docs'
   | 'account';
 export type RightPanelTab = 'actors' | 'scenes' | 'inspector';
-export type BottomPanelTab = 'console' | 'text' | 'timeline';
+export type BottomPanelTab = 'console' | 'text' | 'structure';
 
 class UiStore {
   activeActivityView = $state<ActivityView>('files');
   sidebarCollapsed = $state(false);
   rightPanelTab = $state<RightPanelTab>('actors');
-  bottomPanelTab = $state<BottomPanelTab>('console');
+  // KAN-21: Structure is the default bottom tab (the 'structure' production view).
+  bottomPanelTab = $state<BottomPanelTab>('structure');
   bottomPanelHeight = $state(200);
   bottomPanelCollapsed = $state(false);
   paletteOpen = $state(false);
