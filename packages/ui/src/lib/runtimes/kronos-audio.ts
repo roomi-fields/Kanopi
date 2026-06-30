@@ -544,8 +544,9 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     // the scheduler, do not start the pump. `replay()` will `transport.play()` + `driver.start()`.
     transport.seek(startScene);
   } else if (step) {
-    // Audition one beat IN PLACE: seek to the beat, grain = the beat window, step once.
-    transport.setStepGrain(step.durSec);
+    // Audition one tree unit IN PLACE: seek to the unit, step once. The step grain is
+    // now the STRUCTURE's own unit (Kronos decision 2026-06-30, CVA-7) — `step(1)` lands
+    // on the next tree position, so the host no longer hands Kronos a time grain.
     transport.seek(step.fromSec);
     transport.step(1);
     driver.start();
