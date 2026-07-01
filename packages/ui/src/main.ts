@@ -13,6 +13,7 @@ import { openBlocks, installSlotErrorBridge } from './stores/blocks.svelte';
 import { ui } from './stores/ui.svelte';
 import { production } from './stores/production.svelte';
 import { transport } from './stores/transport.svelte';
+import { installKanopiApi } from './lib/pilot/kanopi-api';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('#app root not found');
@@ -41,6 +42,10 @@ if (import.meta.env.DEV) {
     // e2e flips `reRandom` ON before evaluating so the Kairos re-derive arms at load.
     transport
   };
+  // `window.kanopi` — façade de pilotage (« second front ») : commandes + inspection qui
+  // DÉLÈGUENT aux mêmes points d'entrée que l'UI (voir lib/pilot/kanopi-api.ts). Remplace
+  // progressivement les bidouilles de test ad-hoc. DEV-only (comme `__kanopi`).
+  installKanopiApi();
 }
 
 export default app;
