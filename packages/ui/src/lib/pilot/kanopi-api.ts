@@ -25,7 +25,7 @@ import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 import { setAudioForwardObserver, pilotAudioMeter } from '../runtimes/kronos-audio';
 import { core } from '../core';
 
-const API_VERSION = 5;
+const API_VERSION = 6;
 
 // Tampon d'OBSERVATION (tooling de test, PAS de l'état d'app) : les derniers events audio
 // FORWARDÉS au sink, capturés VERBATIM par l'observateur lecture-seule de kronos-audio. Remplace
@@ -43,6 +43,8 @@ interface ObservedBinding {
   busRef: unknown;
   windowStartScene: unknown;
   windowEndScene: unknown;
+  ringId: unknown;
+  seam: unknown;
 }
 
 /** Installe `window.kanopi`. Appelée UNIQUEMENT en DEV depuis main.ts. */
@@ -140,7 +142,9 @@ export function installKanopiApi(): void {
               clock,
               busRef: b.busRef ?? null,
               windowStartScene: b.windowStartScene ?? null,
-              windowEndScene: b.windowEndScene ?? null
+              windowEndScene: b.windowEndScene ?? null,
+              ringId: b.ringId ?? null,
+              seam: b.seam ?? null
             });
           }
         }
