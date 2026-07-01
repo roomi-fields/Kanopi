@@ -615,13 +615,12 @@ function buildOrchestration(a: SceneAstView | null): Orchestration | undefined {
 // sections) is read from THAT AST — the single source of truth — not the
 // deprecated grammar text nor compileBPS's redundant sidecar tables.
 const bpsFrontend: Frontend = (code) => {
-  // M5: the SESSION default tempo enters the AST at transpile time. When the
-  // user has set a session tempo (`userTempo`) AND the scene declares no `@mm`,
-  // BPScript writes that tempo as the AST's `@mm` default; the host never
-  // invents a constant. Omitted when no session tempo is set → BPScript/BPx
-  // applies ITS OWN default (60). A declared `@mm` always wins (BPScript skips
-  // the default when a tempo directive is present).
-  const c = compileToBPxAST(code, userTempo != null ? { tempo: userTempo } : undefined);
+  // FERMER LA PORTE (Romain 2026-07-01) : l'hôte n'injecte PLUS AUCUN tempo dans BPx — ni le
+  // @tempo de scène (BPx le lit), ni la saisie utilisateur. La saisie utilisateur (tempo de
+  // session) atteint le son par WARP Kronos (retune), jamais par une graine dans l'AST. On ne
+  // seed donc plus `userTempo` : une scène sans directive dérive au défaut moteur BPx (60), et
+  // on la WARPE au tempo de session à la construction du handle (voir plus bas).
+  const c = compileToBPxAST(code);
   if (c.errors.length > 0) {
     return { ast: null, errors: c.errors.map((e) => ({ line: e.line, message: e.message })) };
   }
@@ -1393,7 +1392,11 @@ function makeBpxAdapter(
         backticks,
         flagStates,
         libraries,
-        sections: headSections
+        sections: headSections,
+        // LECTURE (pas injection) : la directive @tempo/@mm déclarée par la scène, pour SAVOIR
+        // si le tempo de session (userTempo) doit s'appliquer par warp. Directive présente →
+        // la scène joue à SON tempo (BPx le lit) ; absente → on warpe au tempo de session.
+        mm: declaredMm
       } = frontend(code);
       if (errors.length > 0) {
         const msg = errors.map((e) => `line ${e.line ?? '?'}: ${e.message}`).join('; ');
@@ -1487,11 +1490,9 @@ function makeBpxAdapter(
         // seed→seed (BPxInstance applied the same mapping). Proven derivation-identical
         // to the former `createBPx + loadGrammar` by `createsession-parity.test.ts`.
         const bpx: Session = createSession(ast, {
-          // NO-INJECT-TEMPO : on ne passe QUE la SAISIE UTILISATEUR (`userTempo`, D10) en
-          // `options.tempo` — l'override PRÉCÉDENCE 1. Le `@tempo`/`@mm` de scène n'est plus
-          // routé ici : BPx le LIT lui-même. `null` (pas de saisie) → BPx lit la directive,
-          // sinon son défaut moteur 60 ; jamais un host « 128 ».
-          ...(userTempo != null ? { tempo: userTempo } : {}),
+          // FERMER LA PORTE : AUCUNE injection de tempo. BPx lit le @tempo/@mm de l'AST et pose
+          // metadata.tempo (défaut moteur 60 sans directive). La saisie utilisateur (session)
+          // atteint le son par WARP Kronos à la construction du handle (plus bas), pas ici.
           ...(settings !== undefined ? { settings } : {}),
           ...(effectiveFlags !== undefined ? { initialFlags: effectiveFlags } : {}),
           ...(currentSeed !== undefined ? { seed: currentSeed } : {})
@@ -1528,12 +1529,20 @@ function makeBpxAdapter(
         // (jamais atteint puisque metadata.tempo est toujours là). `clock.setBpm` est un
         // no-op sur tempo inchangé et ne ré-entre pas ici, donc la diffusion ne boucle pas.
         currentBpm = effectiveTempoBpm(derived, currentBpm);
-        // Fan the EFFECTIVE tempo to the central clock (display) via the SCENE tempo
-        // channel (`clock.setSceneTempo`): it re-enters this adapter's `setBpm` for the
-        // live retune but is NOT clamped and NEVER recorded as `userTempo`, so a scene's
-        // projected tempo can no longer leak into the next no-`@mm` scene.
-        if (currentBpm > 0) {
-          onTempoFromGrammar?.(currentBpm);
+        // FERMER LA PORTE : `currentBpm` = le tempo DÉRIVÉ (BPx, t_scène) — pilote le handle
+        // (`derivedTempo`), la borne de boucle et la grille STEP (tous en t_scène). Le tempo
+        // ENTENDU est le tempo de SESSION utilisateur (`userTempo`, D10) s'il existe, sinon le
+        // dérivé ; on l'obtient par WARP Kronos (retune), jamais par injection. `heardBpm` fane
+        // vers l'affichage + les autres runtimes ; le handle audio est warpé après sa construction.
+        // Le tempo de session ne s'applique QU'aux scènes SANS directive (`declaredMm == null`) :
+        // une scène qui DÉCLARE son tempo joue à son tempo (BPx le lit), pas au tempo de session.
+        const heardBpm =
+          declaredMm == null && userTempo != null && userTempo > 0 ? userTempo : currentBpm;
+        // Fan the HEARD tempo to the central clock (display) + runtimes via the SCENE tempo
+        // channel (`clock.setSceneTempo`): NOT clamped and NEVER recorded as `userTempo`, so a
+        // scene's projected tempo can no longer leak into the next scene.
+        if (heardBpm > 0) {
+          onTempoFromGrammar?.(heardBpm);
         }
         // Project the DERIVED meter onto the clock's time signature (beat LEDs). A no-op
         // on an unchanged value (`setTimeSignature` guards), so a no-meter / 4/4 scene
@@ -1830,7 +1839,8 @@ function makeBpxAdapter(
               // Fresh-seed re-derivation — identical opts to the eval path + the dormant
               // `reDeriveTreeEvents`, only the random draw differs.
               const rbpx: Session = createSession(ast, {
-                ...(currentBpm !== undefined ? { tempo: currentBpm } : {}),
+                // FERMER LA PORTE : le re-roll aussi dérive au @tempo de l'AST (BPx le lit),
+                // sans injection ; le WARP live (retune) persiste côté Kronos à travers le swap.
                 ...(settings !== undefined ? { settings } : {}),
                 ...(effectiveFlags !== undefined ? { initialFlags: effectiveFlags } : {}),
                 seed: freshSeed()
@@ -1949,6 +1959,14 @@ function makeBpxAdapter(
           });
           // The timeline reads ITS playhead (aligned to the heard audio), as on mono.
           kronosCursor.set(kronosAudio);
+          // FERMER LA PORTE : la scène est DÉRIVÉE au tempo BPx (`currentBpm`, handle
+          // `derivedTempo`) ; si l'utilisateur a un tempo de SESSION (`userTempo`, D10) différent,
+          // on WARPE le handle dessus (retune Kronos = même chaud que le changement live), jamais
+          // par injection dans BPx. Ex. : scène SANS directive dérivée à 60 + session 100 → warp
+          // à 100 → entendue à 100 (cas validé Romain). No-op si égal/absent.
+          if (declaredMm == null && userTempo != null && userTempo > 0 && userTempo !== currentBpm) {
+            kronosAudio.transport.setTempo(userTempo);
+          }
           // The production views read the LIVE Kairos tree/flat off this same eval.
           productionFeed.set(kairos ?? null);
         }
