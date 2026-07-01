@@ -104,6 +104,17 @@ const DEMO_META: Record<string, DemoMeta> = {
     tags: ['cv', 'modulation', 'superposition', 'test'],
     showcase: false
   },
+  'group-cutoff': {
+    name: 'Group cutoff — filtre de groupe',
+    tagline: 'la 1ʳᵉ note brillante, les suivantes sombres',
+    description:
+      'Démo du filtre de GROUPE (portée règle) : une seule enveloppe de cutoff sur toute la phrase. La 1ʳᵉ note attrape l’attaque (filtre ouvert, brillante) ; les suivantes sont au sustain (cutoff bas, sombres). Réglée pour un contraste évident (decay long, sustain bas, notes longues).',
+    category: 'bpscript',
+    outputs: ['audio'],
+    level: 'didactic',
+    tags: ['cv', 'modulation', 'group', 'cutoff'],
+    showcase: true
+  },
   'cv-lfo': {
     name: 'Spatial Arp — LFO',
     tagline: 'panning modulation',
