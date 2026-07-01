@@ -61,13 +61,23 @@ class ClockStore {
     // handle) that has not warped yet at this synchronous point → it would write the tempo
     // of the PREVIOUS change (one-change lag). Returning the applied value keeps UI ⇄ text
     // in lockstep (Model 1 « warp lisse + synchro texte », décision Romain 2026-07-01).
-    if (this.#tempo === bpm) return bpm;
+    //
+    // No-op guard on the tempo actually HEARD (the live Kronos handle when a scene plays, else
+    // the session value) — NOT the session `#tempo` alone. `#tempo` persists ACROSS scenes
+    // (D10), so a value left over from a previous scene could equal `bpm` while the current
+    // scene plays a DIFFERENT tempo → the guard would skip the warp, leaving the audio + UI
+    // unchanged while the text got rewritten (bug rapporté Romain 2026-07-01). Keying on the
+    // heard tempo makes the warp fire whenever what's heard differs from what's requested.
+    const heard = kronosCursor.active ? kronosCursor.tempo : this.#tempo;
     this.#tempo = bpm;
-    // USER input is the only legitimate host-owned tempo (D10): record it as the
-    // adapter's pre-derive INPUT for the NEXT eval of a no-`@mm` scene. The clamped
-    // value is what we persist, so display and seed agree. The SCENE tempo channel
-    // (`setSceneTempo`) NEVER routes here → `userTempo` is set on real type/tap ONLY.
+    // USER input is the only legitimate host-owned tempo (D10): record it (and `userTempo`)
+    // ALWAYS, even when the runtime fan is skipped below — the session value must reflect what
+    // the user typed. The SCENE tempo channel (`setSceneTempo`) NEVER routes here → `userTempo`
+    // is set on real type/tap ONLY.
     setUserTempo(bpm);
+    // Skip the runtime fan (warp) ONLY when what's HEARD is already `bpm` — no churn. When the
+    // heard tempo differs (incl. a stale-`#tempo` mismatch), the warp fires.
+    if (heard === bpm) return bpm;
     for (const id of listRuntimes()) {
       getAdapter(id)?.setBpm?.(bpm, (e) => core.console.push(e));
     }
