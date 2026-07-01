@@ -83,14 +83,14 @@ const DEMO_META: Record<string, DemoMeta> = {
     showcase: true
   },
   'cv-adsr': {
-    name: 'Acid Bass — ADSR + pan LFO',
-    tagline: 'per-note filter envelope, LFO panning',
+    name: 'Acid Bass — niveaux d’enveloppe',
+    tagline: 'groupe vs per-note vs terminal, 3 enveloppes',
     description:
-      'TB-303 acid bass: the filter envelope retriggers per note (*:cutoff) while an LFO pans the sound across the stereo field (signal).',
+      'Banc complet des niveaux d’expression de l’enveloppe de cutoff, combinés : per-note (*:cutoff), GROUPE (cutoff:env1, une enveloppe sur la phrase), terminal (C2:cutoff), et trois enveloppes de caractère distinct (pluck sombre / pad ouvert / wah médian) — plus un LFO de panoramique.',
     category: 'bpscript',
     outputs: ['audio'],
     level: 'intermediate',
-    tags: ['cv', 'bass', 'modulation'],
+    tags: ['cv', 'bass', 'modulation', 'adsr'],
     showcase: true
   },
   'superp-cutoff': {
