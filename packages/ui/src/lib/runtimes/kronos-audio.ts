@@ -248,6 +248,21 @@ export function setAudioForwardObserver(fn: ((e: unknown) => void) | null): void
   audioForwardObserver = fn;
 }
 
+// PILOTAGE (DEV) — affordance de MESURE de la sortie : Kanopi ne tient AUCUN nœud audio ; il lit
+// seulement des NOMBRES via l'affordance lecture-seule de runtime-audio (enableMeter/getMeasurement/
+// getFloatFrequencyData/disableMeter, commit 6148d03). Référence sur l'AudioRuntime COURANT (mis à
+// jour à chaque build de handle) que la façade `window.kanopi` lit. Nul en prod.
+export interface AudioMeter {
+  enableMeter(opts?: { fftSize?: number }): void;
+  disableMeter(): void;
+  getMeasurement(): { rms: number; spectralCentroid: number } | null;
+  getFloatFrequencyData(arr: Float32Array): void;
+}
+let currentAudioMeter: AudioMeter | null = null;
+export function pilotAudioMeter(): AudioMeter | null {
+  return currentAudioMeter;
+}
+
 export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   const { audioCtx, derivedTempo } = opts;
   // Bar fold width = the derived meter's beats-per-bar (BPx authority), default 4.
@@ -291,6 +306,10 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     clock,
     sounds: undefined
   });
+  // PILOTAGE (DEV) : expose l'AudioRuntime courant pour la sonde audio de `window.kanopi`. Lecture
+  // seule (le pilot n'appelle QUE l'affordance meter). Écrase la ref précédente → l'ancien runtime
+  // reste GC-able à la destruction du handle.
+  currentAudioMeter = audioRuntime as unknown as AudioMeter;
   const audioSink: TransportLike | null =
     opts.sinks?.webaudio ?? opts.sinks?.audio ?? (audioRuntime as unknown as TransportLike | null);
 

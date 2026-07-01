@@ -21,10 +21,10 @@ import { transport } from '../../stores/transport.svelte';
 import { openBlocks } from '../../stores/blocks.svelte';
 import { productionFeed } from '../../stores/production-feed.svelte';
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
-import { setAudioForwardObserver } from '../runtimes/kronos-audio';
+import { setAudioForwardObserver, pilotAudioMeter } from '../runtimes/kronos-audio';
 import { core } from '../core';
 
-const API_VERSION = 2;
+const API_VERSION = 3;
 
 // Tampon d'OBSERVATION (tooling de test, PAS de l'état d'app) : les derniers events audio
 // FORWARDÉS au sink, capturés VERBATIM par l'observateur lecture-seule de kronos-audio. Remplace
@@ -139,6 +139,24 @@ export function installKanopiApi(): void {
       /** Vide le tampon d'observation (avant une nouvelle capture). */
       clearObserved(): void {
         observedForwards.length = 0;
+      },
+      /** Mesure de la SORTIE audio réelle — délègue à l'affordance lecture-seule de runtime-audio
+       *  (Kanopi ne tient AUCUN nœud audio, il lit des NOMBRES). Le compteur est recréé à chaque
+       *  eval (nouveau AudioRuntime) → on l'active à la volée (idempotent). */
+      audio: {
+        enableMeter(fftSize = 2048): void {
+          pilotAudioMeter()?.enableMeter({ fftSize });
+        },
+        disableMeter(): void {
+          pilotAudioMeter()?.disableMeter();
+        },
+        /** { rms, spectralCentroid(Hz) } | null. Active le compteur au besoin. */
+        measure(): { rms: number; spectralCentroid: number } | null {
+          const m = pilotAudioMeter();
+          if (!m) return null;
+          m.enableMeter({ fftSize: 2048 });
+          return m.getMeasurement();
+        }
       },
       /** Compteur de génération (incrémenté à chaque re-charge / swap re-random). */
       generation(): number {
