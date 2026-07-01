@@ -240,6 +240,14 @@ function deriveOscBindings(
  * `stop()` tears down the driver; the host's `dispatcher.stop()` closes the
  * transports (cuts the scheduled audio) as usual.
  */
+// PILOTAGE (DEV) — observateur STRICTEMENT lecture-seule des events audio forwardés au sink, posé
+// par la façade `window.kanopi` (kanopi-api.ts) pour remplacer l'ancien tap `AudioRuntime.send`
+// ad-hoc. Nul en prod (jamais posé). Le forward réel ne dépend JAMAIS de lui (cf. audioAdapter).
+let audioForwardObserver: ((e: unknown) => void) | null = null;
+export function setAudioForwardObserver(fn: ((e: unknown) => void) | null): void {
+  audioForwardObserver = fn;
+}
+
 export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   const { audioCtx, derivedTempo } = opts;
   // Bar fold width = the derived meter's beats-per-bar (BPx authority), default 4.
@@ -386,7 +394,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       const { c, coerced, velRaw } = prep(ev.content);
       const controls: Record<string, unknown> = { ...coerced };
       if (velRaw != null) controls.velocity = velRaw / 127;
-      (audioSink as { send(e: unknown): void }).send({
+      const outEvent = {
         onset: ev.onset,
         duration: ev.duration,
         actor: ev.actor,
@@ -401,7 +409,19 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
         // AudioRuntime reads `c.pitch.hz` directly (its token→Hz resolver is now only a
         // fallback, retired in the final pitch-module cleanup).
         content: { token: c.token, controls, pitch: c.pitch, modulations: c.modulations ?? [] }
-      });
+      };
+      // PILOTAGE (1)/(b), validé archi [431] : observateur STRICTEMENT lecture-seule de ce qui
+      // est FORWARDÉ, verbatim. Le forward réel (ligne suivante) ne dépend JAMAIS de lui —
+      // try/catch pour qu'un observateur qui jette ne casse rien, et l'envoi est inconditionnel.
+      // Inerte hors DEV (nul tant que le pilot ne l'a pas posé). NE MUTE RIEN.
+      if (audioForwardObserver) {
+        try {
+          audioForwardObserver(outEvent);
+        } catch {
+          /* un observateur ne peut jamais affecter le rendu */
+        }
+      }
+      (audioSink as { send(e: unknown): void }).send(outEvent);
     }
   };
 
