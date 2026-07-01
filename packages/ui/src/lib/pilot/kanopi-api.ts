@@ -19,12 +19,13 @@ import { clock } from '../../stores/clock.svelte';
 import { playback } from '../../stores/playback.svelte';
 import { transport } from '../../stores/transport.svelte';
 import { openBlocks } from '../../stores/blocks.svelte';
+import { workspace } from '../../stores/workspace.svelte';
 import { productionFeed } from '../../stores/production-feed.svelte';
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 import { setAudioForwardObserver, pilotAudioMeter } from '../runtimes/kronos-audio';
 import { core } from '../core';
 
-const API_VERSION = 3;
+const API_VERSION = 4;
 
 // Tampon d'OBSERVATION (tooling de test, PAS de l'état d'app) : les derniers events audio
 // FORWARDÉS au sink, capturés VERBATIM par l'observateur lecture-seule de kronos-audio. Remplace
@@ -58,6 +59,15 @@ export function installKanopiApi(): void {
 
     // ————— COMMANDES (effet ⇒ délèguent au point d'entrée de l'UI) —————
 
+    /** Pose le TEXTE du fichier actif (délègue à `workspace.updateContents`) — l'éval lit ce
+     *  contenu. Rend un banc de repro AUTO-CONTENU (injecter une scène exacte sans la
+     *  bibliothèque). Retourne false s'il n'y a pas de fichier actif. */
+    setSceneText(text: string): boolean {
+      const id = workspace.activeTabId;
+      if (!id) return false;
+      workspace.updateContents(id, text);
+      return true;
+    },
     /** Éval de la session : délègue à `openBlocks.evalOne` pour chaque bloc ouvert — le même
      *  chemin que le Ctrl+Enter de l'éditeur (au niveau bloc). */
     async eval(): Promise<void> {
