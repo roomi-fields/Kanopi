@@ -642,9 +642,10 @@ const bpsFrontend: Frontend = (code) => {
   const parsed = {
     ast: c.ast,
     errors: [] as ParseError[],
-    // Tempo: BPx's `loadGrammar` reads the `@mm`/`_mm` metronome straight from the
-    // AST (loadGrammar.ts:1544/4346) and the playback tempo is the central clock's
-    // `currentBpm` (passed to `createBPx` as `tempo`). The former `c.settings` was
+    // Tempo: BPx's `loadGrammar` reads the `@mm`/`@tempo` metronome straight from the
+    // AST (loadGrammar.ts) and poses `tree.metadata.tempo`. PORTE FERMÉE : l'hôte ne passe PLUS
+    // de tempo à BPx (champ supprimé, 8741f9f) ; le tempo de session utilisateur warpe via
+    // Kronos. The former `c.settings` was
     // an empty BP3 settings ARRAY that BPx ignored entirely (it only reads
     // `settings.pclock/.qclock/.quantization/.natureOfTime`), so the `.bps` path
     // never needed it — dropped. `settings` stays meaningful for `.gr` only (real
@@ -912,11 +913,11 @@ let currentBpm = 0;
 let sceneBeatsPerBar = DEFAULT_BEATS_PER_BAR;
 
 // The user's LOCAL typed/tapped tempo (D10 — the only legitimate host-owned tempo:
-// input made before/without a live scene). `null` until the user sets one. It is
-// the pre-derive tempo INPUT only when a scene declares NO `@mm`; a declared `@mm`
-// (an upstream source) always wins, and an undeclared, un-typed tempo passes
-// `undefined` to BPx so the ENGINE's own default applies (and surfaces on
-// `tree.metadata.tempo`). Never a fabricated host default — no « 128 ».
+// input made before/without a live scene). `null` until the user sets one. PORTE FERMÉE
+// (Romain 2026-07-01) : il n'entre JAMAIS dans BPx (le champ d'injection de tempo est SUPPRIMÉ
+// côté BPx, 8741f9f) — il atteint le son par WARP Kronos (retune), appliqué au handle QUAND la
+// scène n'a PAS de directive `@tempo`/`@mm` (une directive de scène gagne, BPx la lit). Le tempo
+// EFFECTIF est lu sur `tree.metadata.tempo`. Never a fabricated host default — no « 128 ».
 let userTempo: number | null = null;
 
 // Set `userTempo` from a GENUINE user type/tap only — the clock store calls this from
@@ -1416,13 +1417,13 @@ function makeBpxAdapter(
         loadDeclaredLibraries(libraries, id, log);
       }
 
-      // NO-INJECT-TEMPO (décision Romain 2026-07-01) : l'hôte n'injecte PLUS le `@tempo`/`@mm`
-      // de SCÈNE. BPx LIT lui-même la directive de l'AST et pose `tree.metadata.tempo`
-      // (BPx 78d5f58 ; BPM = 60·Qclock/Pclock). Le SEUL tempo que l'hôte passe encore en
-      // `options.tempo` est la SAISIE UTILISATEUR (D10, `userTempo`) — l'override, que BPx
-      // garde en PRÉCÉDENCE 1 (gagne sur la directive de scène). `null` quand l'utilisateur
-      // n'a rien tapé → BPx lit la directive, sinon son défaut moteur 60 (jamais un host « 128 »).
-      // Le tempo EFFECTIF reste lu en retour sur `tree.metadata.tempo` (garanti peuplé, plus bas).
+      // PORTE FERMÉE (décision Romain 2026-07-01, contrat temps-horloge.md) : l'hôte n'injecte
+      // AUCUN tempo dans BPx — le champ d'injection est SUPPRIMÉ côté BPx (8741f9f). BPx lit le
+      // `@tempo`/`@mm` de l'AST et pose `tree.metadata.tempo` (défaut moteur 60 sans directive ;
+      // BPM = 60·Qclock/Pclock). Le tempo de SESSION utilisateur (`userTempo`, D10) n'entre
+      // JAMAIS dans BPx : il atteint le son par WARP Kronos (retune), appliqué au handle plus bas
+      // QUAND la scène n'a pas de directive. Le tempo EFFECTIF (dérivé) est lu sur
+      // `tree.metadata.tempo` (garanti peuplé, plus bas).
 
       // A5 named scenes: a `.bps` whose rules are ALL guarded by a named scene
       // flag (`[scene==calm] S -> …`) has no rule that derives without a scene
@@ -1486,9 +1487,10 @@ function makeBpxAdapter(
         // KAN-orchestration P1 (option A) — the host's BPx entry is the upstream
         // `createSession(ast, opts)` (it CARRIES `buildProjectionContext`, which the
         // Kairos projection path needs). `loadGrammar` is folded into the factory.
-        // Config → SessionOptions: tempo→tempo, settings→settings, flags→initialFlags,
-        // seed→seed (BPxInstance applied the same mapping). Proven derivation-identical
-        // to the former `createBPx + loadGrammar` by `createsession-parity.test.ts`.
+        // Config → SessionOptions: settings→settings, flags→initialFlags, seed→seed (le champ
+        // `tempo` a été SUPPRIMÉ de SessionOptions côté BPx — porte fermée 8741f9f — il n'est
+        // donc plus jamais passé ici). Proven derivation-identical to the former
+        // `createBPx + loadGrammar` by `createsession-parity.test.ts`.
         const bpx: Session = createSession(ast, {
           // FERMER LA PORTE : AUCUNE injection de tempo. BPx lit le @tempo/@mm de l'AST et pose
           // metadata.tempo (défaut moteur 60 sans directive). La saisie utilisateur (session)
