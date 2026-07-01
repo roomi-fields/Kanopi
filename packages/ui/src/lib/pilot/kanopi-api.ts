@@ -68,6 +68,14 @@ export function installKanopiApi(): void {
       structure() {
         return productionFeed.structure();
       },
+      /** La VUE flat Kairos (`productionFeed.plat()` = `arbreCourant()` cast en `FlatView`) :
+       *  durée + données d'affichage lues par les vues Texte/Timeline. Lecture seule.
+       *  NOTE : ce N'EST PAS les bindings de modulation par-event (clock/busRef/fenêtres) —
+       *  ceux-ci vivent sur les events que Kronos tire de Kairos ; une inspection dédiée
+       *  `modulations()` demande un hook de lecture (décision archi, escaladée). */
+      flat() {
+        return productionFeed.plat();
+      },
       /** Compteur de génération (incrémenté à chaque re-charge / swap re-random). */
       generation(): number {
         return productionFeed.generation;
