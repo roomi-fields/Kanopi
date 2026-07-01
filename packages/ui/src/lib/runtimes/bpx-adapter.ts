@@ -321,16 +321,37 @@ function soundingFromAst(ast: unknown): string[] {
 
 // Resolve the `-se` engine settings a grammar references. parseBP3 surfaces the
 // reference in `fileRefs`; we load the bundled `-se` text and let the upstream
-// parser interpret it. Absent reference / unbundled name → undefined (the
-// engine then uses its 1000 ms default; graceful, never throws).
-function resolveSeSettings(fileRefs: FileRef[]): SeEngineSettings | undefined {
+// parser interpret it. NO `-se` reference → undefined (legitimate: the grammar
+// wants the engine default). But a REFERENCED-yet-missing/unparseable `-se` is a
+// BUG, not a graceful default: the scene silently falls to a 1000 ms beat (×4/3
+// off the native tempo, e.g. acceleration) with NO signal. Per « l'hôte n'invente
+// rien / pas de repli silencieux », we WARN LOUDLY (once per name) instead of
+// swallowing it. Degradation stays graceful (no throw → the scene still plays),
+// but it is never SILENT — and `se-bundle-coverage.test.ts` catches it at build time.
+const _warnedSe = new Set<string>();
+function warnSeOnce(msg: string): void {
+  if (_warnedSe.has(msg)) return;
+  _warnedSe.add(msg);
+  console.warn(`[bp3] ${msg}`);
+}
+export function resolveSeSettings(fileRefs: FileRef[]): SeEngineSettings | undefined {
   const ref = fileRefs.find((r) => r.prefix === 'se');
-  if (!ref) return undefined;
+  if (!ref) return undefined; // pas de -se référencé → défaut moteur voulu, RAS
   const text = BUNDLED_SE[ref.name];
-  if (!text) return undefined;
+  if (!text) {
+    warnSeOnce(
+      `-se « ${ref.name} » référencé par la scène mais ABSENT de BUNDLED_SE → timing moteur ` +
+        `par défaut (1000 ms/beat, ×4/3 hors tempo natif). Ajouter se.${ref.name}.json au bundle.`
+    );
+    return undefined;
+  }
   try {
     return parseSeFile(text).engine;
-  } catch {
+  } catch (e) {
+    warnSeOnce(
+      `-se « ${ref.name} » bundlé mais NON PARSABLE (${(e as Error)?.message ?? e}) → timing ` +
+        `moteur par défaut (×4/3 hors tempo natif).`
+    );
     return undefined;
   }
 }
