@@ -4,7 +4,7 @@
 @core
 @controls
 @alphabet.western:browser
-@mm:90
+@tempo:90
 
 S -> {
   C4 C4 C4 (vel:100),

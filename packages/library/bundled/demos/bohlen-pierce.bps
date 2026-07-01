@@ -5,7 +5,7 @@
 @core
 @controls
 @alphabet.bohlen_pierce:browser
-@mm:80
+@tempo:80
 
 S -> Montee Retour Tenue
 

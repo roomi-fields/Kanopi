@@ -5,7 +5,7 @@
 @core
 @controls
 @alphabet.western:browser
-@mm:100
+@tempo:100
 
 cv sweep : mod.lfo(0.4, 0.9, shape:sine)
 

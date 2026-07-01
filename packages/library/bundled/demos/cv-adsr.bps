@@ -1,7 +1,7 @@
 @core
 @controls
 @alphabet.western:browser
-@mm:138
+@tempo:138
 
 cv env1   : mod.adsr(attack:5, decay:150, sustain:0.2, release:400)
 cv env2   : mod.adsr(attack:100, decay:500, sustain:0.8, release:400)
