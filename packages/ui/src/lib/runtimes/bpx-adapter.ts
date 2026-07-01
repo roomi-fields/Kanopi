@@ -69,7 +69,7 @@ import { buildModulators, type ModLib, type ExprSource } from '@kronos/core';
 // WebAudio synth. The old dispatcher is NEVER started for sound — it survives only
 // as the inert structure of transports/resolvers that Kronos reads.
 import { startKronosAudio, type KronosAudioHandle, type KronosAudioOptions } from './kronos-audio';
-import { beatsPerBarFromMeter, DEFAULT_BEATS_PER_BAR, type MeterLike } from './meter';
+import { DEFAULT_BEATS_PER_BAR, type MeterLike } from './meter';
 // EX4 phase 2: surface the ACTIVE Kronos cursor to the UI so the timeline draws
 // the playhead off the SAME clock as the audio (aligned + monotone-from-0),
 // instead of the central rAF clock (which lags ~1 note and jumps back at launch).
@@ -1393,8 +1393,7 @@ function makeBpxAdapter(
         backticks,
         flagStates,
         libraries,
-        sections: headSections,
-        mm: declaredMm
+        sections: headSections
       } = frontend(code);
       if (errors.length > 0) {
         const msg = errors.map((e) => `line ${e.line ?? '?'}: ${e.message}`).join('; ');
@@ -1414,18 +1413,13 @@ function makeBpxAdapter(
         loadDeclaredLibraries(libraries, id, log);
       }
 
-      // Pre-derive tempo INPUT to `createBPx({ tempo })`. The default tempo now
-      // lives IN the AST: BPScript writes the session tempo as `@mm` when the
-      // scene declares none (M5), so `declaredMm` (= `mmFromAst`) already reads
-      // either the DECLARED `@mm` (it wins) OR the injected session default —
-      // the `?? userTempo` reconciliation became redundant. `undefined` when the
-      // AST carries no tempo at all → BPx applies ITS OWN default (60), surfaced
-      // on `tree.metadata.tempo`; never a fabricated host « 128 ». (BPx does NOT
-      // re-read `@mm` itself to set `metadata.tempo`; the adapter routes the
-      // value in. The SINGLE SOURCE OF TRUTH stays the EFFECTIVE tempo the
-      // derivation reports back, reconciled below — that one value drives
-      // `currentBpm` (STEP grid) AND the central clock fan-out.)
-      const deriveTempo: number | undefined = declaredMm && declaredMm > 0 ? declaredMm : undefined;
+      // NO-INJECT-TEMPO (décision Romain 2026-07-01) : l'hôte n'injecte PLUS le `@tempo`/`@mm`
+      // de SCÈNE. BPx LIT lui-même la directive de l'AST et pose `tree.metadata.tempo`
+      // (BPx 78d5f58 ; BPM = 60·Qclock/Pclock). Le SEUL tempo que l'hôte passe encore en
+      // `options.tempo` est la SAISIE UTILISATEUR (D10, `userTempo`) — l'override, que BPx
+      // garde en PRÉCÉDENCE 1 (gagne sur la directive de scène). `null` quand l'utilisateur
+      // n'a rien tapé → BPx lit la directive, sinon son défaut moteur 60 (jamais un host « 128 »).
+      // Le tempo EFFECTIF reste lu en retour sur `tree.metadata.tempo` (garanti peuplé, plus bas).
 
       // A5 named scenes: a `.bps` whose rules are ALL guarded by a named scene
       // flag (`[scene==calm] S -> …`) has no rule that derives without a scene
@@ -1493,10 +1487,11 @@ function makeBpxAdapter(
         // seed→seed (BPxInstance applied the same mapping). Proven derivation-identical
         // to the former `createBPx + loadGrammar` by `createsession-parity.test.ts`.
         const bpx: Session = createSession(ast, {
-          // `undefined` when no `@mm` and no user tempo → BPx applies ITS OWN
-          // default (60) and surfaces it on `tree.metadata.tempo`; we never
-          // overwrite that default with a host-fabricated value.
-          ...(deriveTempo !== undefined ? { tempo: deriveTempo } : {}),
+          // NO-INJECT-TEMPO : on ne passe QUE la SAISIE UTILISATEUR (`userTempo`, D10) en
+          // `options.tempo` — l'override PRÉCÉDENCE 1. Le `@tempo`/`@mm` de scène n'est plus
+          // routé ici : BPx le LIT lui-même. `null` (pas de saisie) → BPx lit la directive,
+          // sinon son défaut moteur 60 ; jamais un host « 128 ».
+          ...(userTempo != null ? { tempo: userTempo } : {}),
           ...(settings !== undefined ? { settings } : {}),
           ...(effectiveFlags !== undefined ? { initialFlags: effectiveFlags } : {}),
           ...(currentSeed !== undefined ? { seed: currentSeed } : {})
@@ -1512,22 +1507,27 @@ function makeBpxAdapter(
           tree: deriveResult.tree,
           tokens: bpx.emit<BpxTimedToken[]>('timed-tokens')
         };
-        // METER (BPx authority): the resolved `[meter:…]` graven on the derivation
-        // root. Re-read EVERY derive (it can change on hot-swap). Absent → the host
-        // projects no bar of its own (the documented default 4 stands downstream).
-        sceneBeatsPerBar = beatsPerBarFromMeter((deriveResult as { meter?: MeterLike }).meter);
+        // METER (BPx authority): l'hôte LIT la facette `DeriveResult.meter.cycleBeats`
+        // (longueur de cycle repliée, RÉSOLUE par BPx — fe33ab0/B3) et la passe telle
+        // quelle au fold-barre entier de Kronos ; il ne SOMME plus les numérateurs
+        // (résolution sortie de l'hôte, décision archi 2026-07-01 option b). Re-lu à CHAQUE
+        // derive (peut changer au hot-swap). Absent (pas de `[meter:…]`) → défaut documenté 4.
+        sceneBeatsPerBar =
+          (deriveResult as { meter?: MeterLike }).meter?.cycleBeats ?? DEFAULT_BEATS_PER_BAR;
         // Model C proof: this is THE eval-path derivation (eval/edit/arm/produce/play-from-
         // stopped). Count it. The loop-boundary re-roll (`reDeriveTreeEvents`) is NOT counted
         // here — a Play-from-stopped on a persisted scene replays without reaching this point.
         __bpxDeriveCount++;
-        // SINGLE SOURCE OF TRUTH: project the EFFECTIVE tempo the derivation ran
-        // at onto BOTH ex-copies — `currentBpm` (the STEP/`beatDurSec` grid below)
-        // AND the central clock (display + transport, via the grammar sink) — so
-        // they can never diverge. The repli (`effectiveTempoBpm`'s fallback) is the
-        // tempo fed INTO the derivation — `@mm`, else the user's tempo, else BPx's
-        // own default (60) — NEVER a host « 128 ». `clock.setBpm` is a no-op on an
-        // unchanged tempo and never re-enters this path, so the fan-out cannot loop.
-        currentBpm = effectiveTempoBpm(derived, deriveTempo ?? 60);
+        // SINGLE SOURCE OF TRUTH: project the EFFECTIVE tempo the derivation ran at
+        // onto BOTH ex-copies — `currentBpm` (the STEP/`beatDurSec` grid below) AND the
+        // central clock (display + transport, via the grammar sink) — so they can never
+        // diverge. `tree.metadata.tempo` is GARANTI toujours peuplé par BPx (nombre requis,
+        // = 60 par défaut moteur explicite sans directive ni injection ; BPx 27fbf72,
+        // bp3-frontend fd91457 pour `.gr`) → l'hôte n'a plus AUCUN littéral de tempo de
+        // secours. `effectiveTempoBpm`'s fallback est mort-mais-défensif : `currentBpm`
+        // (jamais atteint puisque metadata.tempo est toujours là). `clock.setBpm` est un
+        // no-op sur tempo inchangé et ne ré-entre pas ici, donc la diffusion ne boucle pas.
+        currentBpm = effectiveTempoBpm(derived, currentBpm);
         // Fan the EFFECTIVE tempo to the central clock (display) via the SCENE tempo
         // channel (`clock.setSceneTempo`): it re-enters this adapter's `setBpm` for the
         // live retune but is NOT clamped and NEVER recorded as `userTempo`, so a scene's
