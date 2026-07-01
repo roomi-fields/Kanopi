@@ -53,9 +53,15 @@ class ClockStore {
    *  handle warps in place via its adapter's `setBpm`, so display + heard tempo stay coherent).
    *  A no-op on an unchanged tempo so a `.bps` that re-applies its own `@mm` on every replay
    *  doesn't churn the runtimes for nothing. */
-  setBpm(n: number) {
+  setBpm(n: number): number {
     const bpm = clampBpm(n);
-    if (this.#tempo === bpm) return;
+    // RETURN the applied (clamped) value even on a no-op: the caller writes it into the
+    // scene's `@tempo` directive (TransportCluster), and MUST use this value — NOT the
+    // readout `state.bpm`, which while a scene plays mirrors `kronosCursor.tempo` (the live
+    // handle) that has not warped yet at this synchronous point → it would write the tempo
+    // of the PREVIOUS change (one-change lag). Returning the applied value keeps UI ⇄ text
+    // in lockstep (Model 1 « warp lisse + synchro texte », décision Romain 2026-07-01).
+    if (this.#tempo === bpm) return bpm;
     this.#tempo = bpm;
     // USER input is the only legitimate host-owned tempo (D10): record it as the
     // adapter's pre-derive INPUT for the NEXT eval of a no-`@mm` scene. The clamped
@@ -65,6 +71,7 @@ class ClockStore {
     for (const id of listRuntimes()) {
       getAdapter(id)?.setBpm?.(bpm, (e) => core.console.push(e));
     }
+    return bpm;
   }
 
   /** SCENE tempo channel — the EFFECTIVE tempo the derivation ran at (BPx authority),
@@ -85,7 +92,10 @@ class ClockStore {
     this.#beatsPerBar = n;
   }
 
-  tap() {
+  /** Returns the applied BPM once ≥2 taps establish a tempo, else `null` (first tap). The
+   *  caller mirrors it into the scene `@tempo` — same reason as `setBpm`: it must use the
+   *  applied value, not the lagging readout. */
+  tap(): number | null {
     const now = performance.now();
     this.#tapTimes.push(now);
     this.#tapTimes = this.#tapTimes.filter((t) => now - t < 2500);
@@ -95,8 +105,9 @@ class ClockStore {
         deltas.push(this.#tapTimes[i] - this.#tapTimes[i - 1]);
       }
       const avg = deltas.reduce((a, b) => a + b, 0) / deltas.length;
-      this.setBpm(60000 / avg);
+      return this.setBpm(60000 / avg);
     }
+    return null;
   }
 }
 

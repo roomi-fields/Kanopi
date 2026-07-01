@@ -429,16 +429,22 @@ function flagStatesFromAst(a: SceneAstView | null): FlagStates {
   return out;
 }
 
-// Declared metronome from the AST directives: `@mm:70` parses to a `Directive`
-// with `name:'mm'`, `value:70`. This is the tempo the BPx engine derives note
-// durations at (loadGrammar reads `@mm` straight from the AST), so the central
-// clock + STEP grid (`beatDurSec = 60/bpm`) MUST adopt it or the displayed tempo
-// and the produced timeline diverge (a 70 bpm derivation stepped at 128 bpm
-// yields fractional, phantom beats). Absent → undefined (keep the current tempo).
+// Declared metronome from the AST directives: `@tempo:70` (v0.8 canon, arbitrage
+// 2026-06-26) OR the legacy `@mm:70` parse to a `Directive` with `name:'tempo'`/`'mm'`,
+// `value:70`. This is the tempo the BPx engine derives note durations at, so the central
+// clock + STEP grid (`beatDurSec = 60/bpm`) MUST adopt it or the displayed tempo and the
+// produced timeline diverge (a 70 bpm derivation stepped at 128 bpm yields fractional,
+// phantom beats). We read BOTH names — matching `writeMmDirective` — so a migrated `@tempo`
+// scene keeps its declared tempo instead of falling back to BPx's default (60). Absent →
+// undefined (keep the current tempo).
 function mmFromAst(a: SceneAstView | null): number | undefined {
   for (const d of a?.directives ?? []) {
     const node = d as { name?: string; value?: unknown };
-    if (node.name === 'mm' && typeof node.value === 'number' && node.value > 0) {
+    if (
+      (node.name === 'mm' || node.name === 'tempo') &&
+      typeof node.value === 'number' &&
+      node.value > 0
+    ) {
       return node.value;
     }
   }

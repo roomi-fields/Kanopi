@@ -71,16 +71,19 @@
     draft = clock.state.bpm != null ? clock.state.bpm.toFixed(1) : '';
     editing = true;
   }
-  // Mirror the transport BPM into the active scene's `@mm` directive (Romain:
-  // changing the tempo up top must change @mm in the scene). Only when the active
-  // file is a bp3/bpscript scene that already declares `@mm` — we never inject one
-  // — and only on an actual change, so it doesn't churn the editor. The editor
-  // reflects this external rewrite (CMEditor reconciles the doc → view).
-  function writeTempoToScene() {
+  // Mirror the transport BPM into the active scene's `@tempo`/`@mm` directive (Romain:
+  // changing the tempo up top must change the directive in the scene). Only when the active
+  // file is a bp3/bpscript scene that already declares one — we never inject one (décision
+  // Romain 2026-07-01 : pas d'injection) — and only on an actual change, so it doesn't churn
+  // the editor. The editor reflects this external rewrite (CMEditor reconciles the doc → view).
+  //
+  // Takes the APPLIED bpm from `setBpm`/`tap` (NOT `clock.state.bpm`): while a scene plays the
+  // readout mirrors the live handle tempo, which lags one change behind at this synchronous
+  // point → it wrote the PREVIOUS value. Passing the applied value keeps UI ⇄ text in lockstep.
+  function writeTempoToScene(bpm: number | null) {
     const f = activeFile;
     if (!f || (f.runtime !== 'bpscript' && f.runtime !== 'bp3')) return;
-    const bpm = clock.state.bpm;
-    if (bpm == null) return; // no tempo to mirror into @mm
+    if (bpm == null) return; // no tempo to mirror into the directive
     const next = writeMmDirective(f.contents, bpm);
     if (next !== f.contents) workspace.updateContents(f.id, next);
   }
@@ -94,9 +97,9 @@
     if (!Number.isNaN(n)) {
       // `setBpm` is the SOLE owner of the input bound ([20,300], `clampBpm`); the
       // component never re-bounds (a local [20,400] clamp let 350 look accepted then
-      // be silently dropped to 300 by the store).
-      clock.setBpm(n);
-      writeTempoToScene();
+      // be silently dropped to 300 by the store). It RETURNS the applied value, which we
+      // mirror into the scene directive (never the lagging readout).
+      writeTempoToScene(clock.setBpm(n));
     }
   }
   function cancelEdit() {
@@ -232,10 +235,7 @@
   <button
     class="tap-btn"
     type="button"
-    onclick={() => {
-      clock.tap();
-      writeTempoToScene();
-    }}>TAP</button
+    onclick={() => writeTempoToScene(clock.tap())}>TAP</button
   >
 
   <div class="beat-meter">
