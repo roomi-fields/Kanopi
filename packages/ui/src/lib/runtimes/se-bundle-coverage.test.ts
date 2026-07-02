@@ -49,7 +49,7 @@ describe('couverture -se — chaque -se référencé par une scène bundle est b
   });
 });
 
-describe('resolveSeSettings n\'échoue plus EN SILENCE (avertit bruyamment)', () => {
+describe("resolveSeSettings n'échoue plus EN SILENCE (avertit bruyamment)", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('un -se RÉFÉRENCÉ mais absent → console.warn (+ undefined, dégradation gracieuse)', () => {

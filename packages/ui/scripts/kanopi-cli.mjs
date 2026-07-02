@@ -19,6 +19,9 @@
 //   clearObserved                           # vide le tampon d'observation des modulations
 //   wait <ms>                               # pause (utile entre play et une mesure)
 
+/* global document, window */
+// Les callbacks passés à `page.evaluate` / `page.waitForFunction` s'exécutent dans le NAVIGATEUR
+// (Playwright), où `document`/`window` existent — PAS dans ce process Node. Déclaré pour eslint.
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
 
@@ -74,7 +77,9 @@ async function runCommand(page, tokens) {
         (el.textContent || '').toLowerCase().includes(needle.toLowerCase())
       );
       if (!card) throw new Error(`scène introuvable dans la bibliothèque: "${needle}"`);
-      const load = [...card.querySelectorAll('button')].find((b) => /load|charger/i.test(b.textContent || ''));
+      const load = [...card.querySelectorAll('button')].find((b) =>
+        /load|charger/i.test(b.textContent || '')
+      );
       (load || card.querySelector('button')).click();
       await new Promise((r) => setTimeout(r, 500));
       return { loaded: needle };

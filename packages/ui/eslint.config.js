@@ -94,6 +94,10 @@ export default [
       '.vite',
       'test-results',
       'playwright-report',
+      // Doc utilisateur EMBARQUÉE (MkDocs, artefact régénéré — cf. [446]) : JS minifié
+      // (lunr, search worker), CSS et HTML statiques. Ce n'est PAS du code source Kanopi
+      // → jamais lintée (sinon ~700 faux positifs no-undef sur le bundle mkdocs).
+      'public/docs/**',
       // Vendored upstream from BPscript/public/timeline.js — kept verbatim
       // (integration rule: no edits to the logic), so it is not linted here.
       'src/lib/timeline/timeline.js'

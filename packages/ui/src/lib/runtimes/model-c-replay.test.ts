@@ -223,10 +223,7 @@ describe('Model C — persisted timeline replays without re-deriving', () => {
     // the next replay reuses them → the 1st loop is frozen on the previous play's state. The
     // handle's `replay()` must call the AudioRuntime's `reset()` FIRST → pristine 1st loop.
     setActorsSink(() => {});
-    const resetSpy = vi.spyOn(
-      AudioRuntime.prototype as unknown as { reset: () => void },
-      'reset'
-    );
+    const resetSpy = vi.spyOn(AudioRuntime.prototype as unknown as { reset: () => void }, 'reset');
     const src = { actorId: 'cvainit.bps', fileId: 'cvainit.bps' };
     await bpscriptAdapter.evaluate(SCENE, src, () => {});
     const handle = kronosCursor.active!;

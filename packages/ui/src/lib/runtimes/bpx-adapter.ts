@@ -1968,7 +1968,12 @@ function makeBpxAdapter(
           // on WARPE le handle dessus (retune Kronos = même chaud que le changement live), jamais
           // par injection dans BPx. Ex. : scène SANS directive dérivée à 60 + session 100 → warp
           // à 100 → entendue à 100 (cas validé Romain). No-op si égal/absent.
-          if (declaredMm == null && userTempo != null && userTempo > 0 && userTempo !== currentBpm) {
+          if (
+            declaredMm == null &&
+            userTempo != null &&
+            userTempo > 0 &&
+            userTempo !== currentBpm
+          ) {
             kronosAudio.transport.setTempo(userTempo);
           }
           // The production views read the LIVE Kairos tree/flat off this same eval.

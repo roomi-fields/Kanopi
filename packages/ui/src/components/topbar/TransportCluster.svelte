@@ -232,11 +232,7 @@
     <span class="bpm-label">BPM</span>
   </div>
 
-  <button
-    class="tap-btn"
-    type="button"
-    onclick={() => writeTempoToScene(clock.tap())}>TAP</button
-  >
+  <button class="tap-btn" type="button" onclick={() => writeTempoToScene(clock.tap())}>TAP</button>
 
   <div class="beat-meter">
     <div class="beat-dots">

@@ -3,3 +3,6 @@ dist
 .vite
 *.log
 .DS_Store
+
+# Doc utilisateur embarquée (MkDocs) — ARTEFACT régénéré (mkdocs build), cf. [446]
+public/docs/
