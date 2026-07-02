@@ -13,7 +13,7 @@
     "arch": "depcruise 'src/**/*.ts' --config .dependency-cruiser.cjs --output-type err",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
-    "test": "vitest run -c vitest.config.ts",
+    "test": "bash scripts/vitest-guard.sh vitest run -c vitest.config.ts",
     "e2e": "playwright test",
     "e2e:dev": "playwright test",
     "e2e:prod": "KANOPI_BASE_URL=https://roomi-fields.com/kanopi/ playwright test",

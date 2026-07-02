@@ -26,6 +26,11 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    include: ['src/**/*.test.ts']
+    include: ['src/**/*.test.ts'],
+    // DURCISSEMENT PC2 [450] — plafonne les workers : un run vitest à 8 workers a gonflé à
+    // ~7,4 Go et contribué à un freeze machine (chaque worker ~1 Go). 3 garde le parallélisme
+    // sans saturer la RAM. La ceinture OOM (choom + ulimit) est dans scripts/vitest-guard.sh.
+    maxWorkers: 3,
+    minWorkers: 1
   }
 });
