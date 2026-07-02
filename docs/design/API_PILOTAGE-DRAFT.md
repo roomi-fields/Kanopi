@@ -1,8 +1,9 @@
-# API de pilotage Kanopi (« second front ») — SPÉCIFICATION (DRAFT, à valider archi)
+# API de pilotage Kanopi (« second front ») — RÉFÉRENCE de l'API PUBLIQUE
 
-> Statut : **brouillon** (intention + phasage), à ratifier Romain/archi — committée (`9cf10f3`,
-> phase 1 validée archi [430]). **La §4 décrit la surface RÉELLE `window.kanopi` v6** (`kanopi-api.ts`,
-> tenue à jour avec le code) ; les entrées non encore livrées sont en §4.4. Phasage en §8.
+> Statut : **API PUBLIQUE** (décision Romain 2026-07-02 — `window.kanopi` installée en prod, plus
+> DEV-only ; phase 1 validée archi [430]). **Référence informationnelle** : Romain en dérive une page
+> d'aide web pour humains, ce document reste la source. **La §4 décrit la surface RÉELLE `window.kanopi`
+> v6** (`kanopi-api.ts`, tenue à jour avec le code) ; les entrées non encore livrées sont en §4.4. Phasage en §8.
 > Cadrage Romain 2026-07-01 : une API scriptable qui pilote **la vraie app qui tourne**, à côté
 > de l'UI, **sans bypasser aucun composant**, avec **effets visibles dans l'UI**, et qui **remplace
 > toutes les bidouilles de test** ad-hoc actuelles. Doit être **évolutive**.
@@ -51,7 +52,7 @@ aucun état propre.
 
 ## 4. Interface — surface RÉELLE `window.kanopi` v6 (source de vérité : `kanopi-api.ts`)
 
-Installée **en DEV uniquement** (`import.meta.env.DEV`, droppée en prod). `window.kanopi.version` = **6**.
+Installée dans **TOUS les builds** (prod incluse — API publique, plus DEV-only). `window.kanopi.version` = **6**.
 Surface **additive** (ajouter une capacité ≠ casser l'existant). Deux familles : **commandes** (effet,
 délèguent au point d'entrée UI) et **inspection** (`inspect.*`, lecture seule, aucun effet).
 

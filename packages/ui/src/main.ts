@@ -22,7 +22,7 @@ restoreWorkspace();
 installSlotErrorBridge();
 const app = mount(App, { target });
 
-// Dev-only: expose stores on window for Playwright-based verification.
+// Dev-only: expose raw stores on `window.__kanopi` for Playwright-based verification.
 // Not used in prod code — purely a testing hatch. Kept guarded by `import.meta.env.DEV`
 // so tree-shaking drops it from the production bundle.
 if (import.meta.env.DEV) {
@@ -42,10 +42,13 @@ if (import.meta.env.DEV) {
     // e2e flips `reRandom` ON before evaluating so the Kairos re-derive arms at load.
     transport
   };
-  // `window.kanopi` — façade de pilotage (« second front ») : commandes + inspection qui
-  // DÉLÈGUENT aux mêmes points d'entrée que l'UI (voir lib/pilot/kanopi-api.ts). Remplace
-  // progressivement les bidouilles de test ad-hoc. DEV-only (comme `__kanopi`).
-  installKanopiApi();
 }
+
+// `window.kanopi` — PUBLIC piloting API (« second front ») : commands + inspection that
+// DELEGATE to the same entry points as the UI (see lib/pilot/kanopi-api.ts). Unlike the
+// `__kanopi` testing hatch above, this is a SUPPORTED, VERSIONED public surface
+// (`window.kanopi.version`) installed in EVERY build — prod included (décision Romain
+// 2026-07-02). It exposes no raw stores and holds no state: every method delegates.
+installKanopiApi();
 
 export default app;

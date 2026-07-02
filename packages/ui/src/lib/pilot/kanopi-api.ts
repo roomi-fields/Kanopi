@@ -5,10 +5,11 @@
 // Conséquences garanties par construction : aucun composant bypassé, et l'UI reflète tout effet
 // (mêmes instances singletons réactives). Déléguer, JAMAIS réimplémenter.
 //
-// DEV-only (installée sous `import.meta.env.DEV`, droppée du bundle prod). Surface VERSIONNÉE et
-// ADDITIVE : ajouter une capacité = ajouter un délégué, sans casser l'existant. Remplace les
-// bidouilles de test ad-hoc (wraps globaux d'AudioContext, imports dynamiques de stores — piège
-// d'instance DUPLIQUÉE —, surfaces jetables `window.__osc/__an/__bind`).
+// API PUBLIQUE : installée dans TOUS les builds (prod incluse — décision Romain 2026-07-02),
+// PAS droppée du bundle. Surface VERSIONNÉE et ADDITIVE : ajouter une capacité = ajouter un
+// délégué, sans casser l'existant (`version` = contrat de compat pour les consommateurs).
+// Remplace aussi les bidouilles de test ad-hoc (wraps globaux d'AudioContext, imports
+// dynamiques de stores — piège d'instance DUPLIQUÉE —, surfaces jetables `window.__osc/__an`).
 //
 // Phase 1 = commandes + inspection au niveau STORE (zéro extraction). Les actions logées dans un
 // composant Svelte (`produce`, `writeTempoToScene`, résolution du bloc-sous-curseur) sont des
@@ -47,7 +48,7 @@ interface ObservedBinding {
   seam: unknown;
 }
 
-/** Installe `window.kanopi`. Appelée UNIQUEMENT en DEV depuis main.ts. */
+/** Installe `window.kanopi` (API publique). Appelée inconditionnellement depuis main.ts. */
 export function installKanopiApi(): void {
   // Observateur lecture-seule des events audio forwardés (kronos-audio setAudioForwardObserver) :
   // accumule VERBATIM dans le tampon borné. Ne mute rien ; le forward réel n'en dépend pas.
