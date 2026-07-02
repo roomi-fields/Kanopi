@@ -1,6 +1,8 @@
 # API de pilotage Kanopi (« second front ») — SPÉCIFICATION (DRAFT, à valider archi)
 
-> Statut : **brouillon**, produit pour validation architecte + ratification Romain. Non commité.
+> Statut : **brouillon** (intention + phasage), à ratifier Romain/archi — committée (`9cf10f3`,
+> phase 1 validée archi [430]). **La §4 décrit la surface RÉELLE `window.kanopi` v6** (`kanopi-api.ts`,
+> tenue à jour avec le code) ; les entrées non encore livrées sont en §4.4. Phasage en §8.
 > Cadrage Romain 2026-07-01 : une API scriptable qui pilote **la vraie app qui tourne**, à côté
 > de l'UI, **sans bypasser aucun composant**, avec **effets visibles dans l'UI**, et qui **remplace
 > toutes les bidouilles de test** ad-hoc actuelles. Doit être **évolutive**.
@@ -47,39 +49,77 @@ Quatre couches :
 Principe transverse : **une seule source de vérité** (les stores singletons). L'API n'introduit
 aucun état propre.
 
-## 4. Interface — commandes (spécification)
+## 4. Interface — surface RÉELLE `window.kanopi` v6 (source de vérité : `kanopi-api.ts`)
 
-Deux familles : **commandes** (effet, délèguent à l'UI) et **inspection** (lecture, sans effet).
+Installée **en DEV uniquement** (`import.meta.env.DEV`, droppée en prod). `window.kanopi.version` = **6**.
+Surface **additive** (ajouter une capacité ≠ casser l'existant). Deux familles : **commandes** (effet,
+délèguent au point d'entrée UI) et **inspection** (`inspect.*`, lecture seule, aucun effet).
 
 ### 4.1 Commandes (effet ⇒ délègue au même point d'entrée que l'UI)
 
-| Commande | Délègue à (point d'entrée existant) | Équiv. UI |
+| Méthode | Délègue à | Équiv. UI |
 |---|---|---|
-| `loadScene(idOrText)` | `workspace` (ouvre/charge) | bouton Library / nouveau |
-| `setSceneText(text)` | contenu CM / `workspace.updateContents` | frappe éditeur |
-| `eval()` | `evaluateBlock` de l'adaptateur | Ctrl+Enter |
-| `produce()` | re-dérivation (re-roll) | bouton Produce |
-| `play()` `stop()` `pause()` `step()` | `playback.*` | boutons transport |
-| `seek(pos)` | `playback`/transport seek | scrubber |
-| `setTempo(n)` | `clock.setBpm` (+ `writeTempoToScene` via service) | champ BPM |
+| `setSceneText(text) → boolean` | `workspace.updateContents(id, text)` | frappe éditeur (false si pas d'onglet) |
+| `eval() → Promise` | `openBlocks.evalOne(b)` ∀ bloc ouvert | Ctrl+Enter (par bloc) |
+| `play()` `pause()` `stop()` | `playback.*` | boutons transport |
+| `setTempo(bpm) → number` | `clock.setBpm` (rend la valeur clampée) | champ BPM |
 | `toggleLoop()` `toggleReRandom()` | `transport.toggle*` | boutons |
-| `hush()` | même chemin que Ctrl+. | Ctrl+. |
+| `hush() → Promise` | `core.hushAll()` | Ctrl+. |
 
-### 4.2 Inspection (lecture seule)
+### 4.2 Inspection (`inspect.*`, lecture seule)
 
 | Requête | Source (singleton / facette) |
 |---|---|
-| `getSceneText()` | contenu CM |
-| `getStructure()` | `productionFeed.structure()` |
-| `getModulationBindings()` | `content.modulations` du flat courant (sonde formalisée) |
-| `getTransportState()` | `kronosCursor.active.transport` |
-| `getEffectiveTempo()` | `kronosCursor.tempo` |
-| `getMeter()` | facette mètre du DeriveResult |
-| `audio.measure({window, kind})` | analyseur branché sur la sortie (RMS / centroïde spectral) |
+| `inspect.structure()` | `productionFeed.structure()` (structure projetée Kairos) |
+| `inspect.flat()` | `productionFeed.plat()` — FlatView (durée + affichage Texte/Timeline) |
+| `inspect.modulations(input?)` | bindings OBSERVÉS sur les events forwardés (tampon borné 512) |
+| `inspect.clearObserved()` | vide le tampon d'observation (avant une capture) |
+| `inspect.audio.enableMeter(fftSize=2048)` / `disableMeter()` | compteur runtime-audio (lecture-seule) |
+| `inspect.audio.measure() → {rms, spectralCentroid} \| null` | idem (active le compteur au besoin) |
+| `inspect.generation() → number` | `productionFeed.generation` (re-charge / swap re-random) |
+| `inspect.transportState() → string\|null` | `kronosCursor.active.transport.state` (autorité Kronos) |
+| `inspect.position() → number\|null` | `kronosCursor.active.transport.position()` (beats) |
+| `inspect.effectiveTempo() → number` | `kronosCursor.tempo` (miroir réactif) |
+| `inspect.loop()` / `inspect.reRandom() → boolean` | `transport.loop` / `transport.reRandom` |
 
-La sonde `audio` est **la seule** partie qui touche Web Audio : un `AnalyserNode` branché **une fois**
-sur la sortie (pas des wraps globaux de `createOscillator`), plus un tap d'onsets planifiés pour
-corréler note→mesure. Formalisée, versionnée.
+`inspect.modulations(input?)` rend un tableau de bindings extraits VERBATIM du content forwardé :
+`{ token, onset, occurrence, input, clock, busRef, windowStartScene, windowEndScene, ringId, seam }`,
+filtrable par `input` (ex. `'cutoff'`). C'est un **observateur** (remplace le tap `AudioRuntime.send`),
+pas une lecture directe de la facette Kairos — une inspection par-facette des modulations demande un
+hook de lecture amont (décision archi escaladée).
+
+La sonde `audio` est **la seule** partie qui touche Web Audio et **ne tient aucun nœud côté Kanopi** :
+elle délègue à l'affordance lecture-seule de runtime-audio (`pilotAudioMeter()`) qui lit des NOMBRES
+(RMS, centroïde spectral en Hz) sur un `AnalyserNode` branché une fois. Le compteur est recréé à chaque
+eval (nouvel AudioRuntime) → `measure()` le réactive à la volée (idempotent).
+
+### 4.3 Canal CLI (`packages/ui/scripts/kanopi-cli.mjs`) — troisième front
+
+Pilote `window.kanopi` depuis un terminal via Playwright (Chrome headless sur le serveur de dev) :
+
+```
+node scripts/kanopi-cli.mjs <commande> [args…]      # une commande
+node scripts/kanopi-cli.mjs run <fichier|->         # un script (une commande/ligne, # = commentaire)
+```
+
+Env `KANOPI_BASE_URL` (défaut `http://localhost:5173`) · option `--headed`. Chaque commande = un appel
+`window.kanopi.*`, SAUF `load <nom-carte>` (clic UI sur la bibliothèque, cf. §4.4) et `wait <ms>`.
+`inspect <clé> [args]` route vers `inspect.<clé>` (structure | transportState | effectiveTempo | loop |
+reRandom | generation | flat | modulations [input]).
+
+### 4.4 Proposé / NON encore implémenté (phase 2 — action logée dans un composant Svelte)
+
+Ces entrées de la spec initiale **n'existent pas** dans la surface v6 : elles vivent dans un composant
+(pas dans un store), donc leur exposition propre passe par l'extraction en service partagé UI+API (§8) :
+
+- `loadScene(id)` — le chargement passe pour l'instant par un **clic UI** (le CLI `load` clique la
+  carte Library dont le titre contient le nom).
+- `produce()` — re-dérivation (re-roll) logée dans un composant.
+- `seek(pos)`, `step()` — non délégués.
+- `setTempo` **n'écrit pas** le tempo dans la scène (`writeTempoToScene`) : v6 fait seulement
+  `clock.setBpm` ; l'écriture-scène reste candidate phase 2.
+- `getSceneText()` / `getMeter()` — pas de getter de texte ni de mètre-DeriveResult (le mètre AUDIO,
+  lui, est `inspect.audio.*`).
 
 ## 5. Ce que ça remplace (nettoyage — obligatoire, pas optionnel)
 
@@ -108,10 +148,11 @@ corréler note→mesure. Formalisée, versionnée.
 
 ## 8. Phasage
 
-- **Phase 1 (petite)** — façade `window.kanopi` sur ce qui a déjà des méthodes de store
-  (load/eval/produce/transport/tempo + inspection structure/bindings/état) + sonde `audio` unifiée
-  + un wrapper CLI (Playwright/CDP). **Remplace mes bidouilles.**
-- **Phase 2 (refactor modéré)** — remonter les actions-composant (ex. `writeTempoToScene`) en
+- **Phase 1 (petite) — ✅ LIVRÉE (v6)** — façade `window.kanopi` sur ce qui a déjà des méthodes de
+  store (eval/transport/tempo + inspection structure/flat/modulations/état/position) + sonde `audio`
+  unifiée + le CLI `kanopi-cli.mjs` (Playwright/CDP). **Remplace les bidouilles.** Détail : §4.1–4.3.
+- **Phase 2 (refactor modéré) — pas lancée (gelée avec le lot pilotage)** — remonter les
+  actions-composant (`loadScene`, `produce`, `writeTempoToScene`, `seek`, `step` — cf. §4.4) en
   services partagés UI+API → complétude « aucun bypass ».
 - **Phase 3 (option)** — pont WebSocket (CLI persistante) + rendu audio hors-ligne déterministe.
 
