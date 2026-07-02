@@ -100,7 +100,6 @@ export interface CoreApi {
     docOffset?: number,
     actorId?: string,
     flags?: Record<string, number>,
-    section?: { index: number; count: number },
     produceOnly?: boolean
   ): Promise<void>;
   /**

@@ -11,8 +11,6 @@
 // Transport by the UI, never reconstructed here.
 
 import { core } from '../lib/core';
-import { production, beatCount } from './production.svelte';
-import { setResumeBeat } from '../lib/runtimes/bpx-adapter';
 import { kronosCursor } from './kronos-cursor.svelte';
 import { openBlocks } from './blocks.svelte';
 
@@ -75,8 +73,7 @@ class Playback {
     // EXPLICITLY eval the active scene's armed blocks — that eval derives once and creates the
     // persistent Kronos handle (whose transport flips to 'running', so `mode` reads 'playing').
     // No host clock to start: Kronos becomes the authority the instant the handle is built.
-    // Subsequent Stop/Play replay it without eval.
-    setResumeBeat(0);
+    // Subsequent Stop/Play replay it without eval. (No host resume-offset — Kronos handles resume.)
     void openBlocks.replayArmed();
   }
 
@@ -98,23 +95,19 @@ class Playback {
   }
 
   async step(file: PlayableFile) {
-    const cur = production.current;
-    const n = cur ? beatCount(cur.durationSec, cur.beatDurSec) : 0;
-    if (n < 2) return;
-    // The beat to play next is DERIVED from the Transport's frozen position — never a
-    // host counter. A stepped handle reports the beat it just PLAYED (`beatPosition` =
-    // the stepped second, aligned to the heard note), so the NEXT beat is that + 1.
-    // Read the HANDLE's `beatPosition()` (the kronos-cursor view), NOT the raw Transport:
-    // for a stepped handle the view compensates Kronos's `step(1)` landing-at-grain-end
-    // (returns the played beat K, not K+1). Reading the raw transport would yield K+1 → the
-    // next step would be K+2, skipping every other beat. Stopped (no handle) → start at 0.
-    // Each step advances one beat → monotone; `play` afterwards resumes forward.
-    const handle = kronosCursor.active;
-    const next = handle ? (((Math.round(handle.beatPosition().beatsTotal) + 1) % n) + n) % n : 0;
-    await core.evaluateBlock(file.runtime, file.contents, file.name, 0, undefined, undefined, {
-      index: next,
-      count: n
-    });
+    // STEP (RC-B fix) — UNE unité d'arbre sur le handle PERSISTANT (Model C). Plus de re-dérivation
+    // par geste, plus de compteur de beat hôte (`beatCount`/`(round+1)%n`), plus de grain grille-beat :
+    // `transport.step(1)` (via `handle.step`) est l'AUTORITÉ. Kronos joue la fenêtre bornée + snap-to-onset
+    // (la colonne atteinte SONNE = fix bug 2) et pose à la prochaine borne d'unité. L'hôte transmet le
+    // geste — il ne calcule ni l'index, ni le grain, et ne re-dérive pas la scène.
+    let handle = kronosCursor.active;
+    if (!handle) {
+      // Aucune machine construite (step avant tout produce/play) → PRODUIRE le handle persistant
+      // sans jouer (`produceOnly`), puis stepper dessus.
+      await core.evaluateBlock(file.runtime, file.contents, file.name, 0, undefined, undefined, true);
+      handle = kronosCursor.active;
+    }
+    handle?.step(1);
   }
 
   /** Beat (integer) for the LED meter, READ from the Transport; -1 when stopped. */

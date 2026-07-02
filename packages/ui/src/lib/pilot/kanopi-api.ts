@@ -172,6 +172,12 @@ export function installKanopiApi(): void {
           if (!m) return null;
           m.enableMeter({ fftSize: 2048 });
           return m.getMeasurement();
+        },
+        /** Canal (B) chantier transport-SM : le sink audio a-t-il reçu la vue horloge de
+         *  KRONOS (`bindClock` appelé à l'enregistrement du sink) ? Preuve du câblage, lecture
+         *  seule — lit l'instance RÉELLE du module (un import URL externe duplique le singleton). */
+        clockBound(): boolean {
+          return (pilotAudioMeter() as { clock?: unknown } | null)?.clock != null;
         }
       },
       /** Compteur de génération (incrémenté à chaque re-charge / swap re-random). */

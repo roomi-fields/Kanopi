@@ -26,6 +26,11 @@ export interface AudioRuntimeOptions {
 /** The RuntimeAdapter: receives Kronos `ScheduledEvent`s and renders Web Audio. */
 export declare class AudioRuntime {
   constructor(audioCtx: AudioContext, opts?: AudioRuntimeOptions);
+  /** Time-view t_scène↔t_audio for CV placement — PUBLIC field (adapter.js:39 `this.clock`),
+   *  read fresh at every use (adapter.js:181,369 — never cached), null until bound. Canal (B)
+   *  du chantier transport-SM : KRONOS l'injecte via `RuntimeAdapter.bindClock` à
+   *  l'enregistrement du sink ; l'hôte TRANSMET la référence, il ne la lit jamais. */
+  clock: AudioClock | null;
   /** Render one already-timed event (onset in t_audio). */
   send(event: {
     onset: number;

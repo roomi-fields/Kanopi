@@ -214,7 +214,6 @@ class OpenBlocksStore {
           b.block.from,
           b.qualifiedName,
           undefined,
-          undefined,
           // produceOnly (Model C): derive + show structure + BUILD the persistent Kronos
           // handle in STOPPED state — no sound, no audio-context wake, transport not playing.
           // The first Play replays this handle (0 re-derivation) instead of re-deriving.

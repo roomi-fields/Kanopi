@@ -272,7 +272,6 @@ class RealCore implements CoreApi {
     docOffset: number = 0,
     actorId?: string,
     flags?: Record<string, number>,
-    section?: { index: number; count: number },
     produceOnly: boolean = false
   ): Promise<void> {
     const adapter = getAdapter(runtime);
@@ -304,7 +303,7 @@ class RealCore implements CoreApi {
     // block doesn't falsely mark the scene as playing.
     await adapter.evaluate(
       code,
-      { actorId: slotId, fileId: sourceId, docOffset, flags, section, produceOnly },
+      { actorId: slotId, fileId: sourceId, docOffset, flags, produceOnly },
       this.log
     );
 
@@ -313,10 +312,6 @@ class RealCore implements CoreApi {
     // scene is ready, not playing. Play sounds it later.
     if (produceOnly) return;
 
-    // STEP (a `section` window) is a discrete advance, NOT continuous play: the dispatcher
-    // sounds the single stepped beat on its own clock and the Kronos handle parks (paused),
-    // so the transport readout stays out of continuous play. Nothing extra to do here.
-    if (section) return;
 
     // Surgical: a manual Ctrl+Enter (re)sounds ONLY this block — the block just evaluated
     // above is already live. A bp3/bpscript/.gr eval builds a Kronos handle (transport →

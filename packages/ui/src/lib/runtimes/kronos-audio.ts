@@ -17,16 +17,19 @@
 // shape `WebAudioTransport.send(event, absTime)` expects, reusing the dispatcher's own
 // `coerceControlValues` and the transport already configured with the scene's resolver.
 
+// Chantier transport-SM [471-482] : Kanopi ne CONSTRUIT plus le moteur (garantie ARCHITECTURALE).
+// La FABRIQUE `createTransport` assemble clock+scheduler+cursor+driver EN INTERNE et ne rend qu'un
+// handle (commandes + observables LECTURE SEULE + câblage sorties + pompe) — `InternalClock`/
+// `Scheduler`/`Cursor`/`MaterializedTimeline` sont RETIRÉS du public (tsc refuse : c'est la preuve
+// que l'hôte n'a plus les primitives pour reconstruire une position/step). `ModulationBinding` :
+// résidu parti (point 5). `Transport`/`RealtimeDriver` : types seuls (portés par le handle).
 import {
-  MaterializedTimeline,
-  InternalClock,
-  Scheduler,
-  RealtimeDriver,
-  Cursor,
-  Transport,
+  createTransport,
+  type KronosTransport,
+  type Transport,
   type RuntimeAdapter,
   type ScheduledEvent,
-  type ModulationBinding
+  type ClockProvider
 } from '@kronos/core';
 // KAN-orchestration P1 — Kairos is the SOURCE of the played timeline (it projects the
 // BPx tree into a Kronos Timeline and exposes a StructureSource the Transport PULLs).
@@ -92,16 +95,8 @@ export interface KronosAudioOptions {
   startSceneSec?: number;
   /** Whether re-random is active (gates the Kairos `reDeriveKairos` re-derive). */
   reRandom?: boolean;
-  /** STEP audition (one beat of the REAL production, in place). The host builds the
-   *  SAME full timeline as normal Play (real scene times, full CV windows) and asks
-   *  Kronos to seek to the beat's scene-second and play exactly one beat: the clock
-   *  re-anchors at `fromSec` and the scheduler's `playWindow(fromSec, fromSec+durSec)`
-   *  bounds EMISSION to that half-open scene window (lookahead included), so no event
-   *  past the beat — including the next beat at the window boundary — is ever scheduled.
-   *  The beat's note(s) + their release tails play out, nothing after. The CV is sampled
-   *  at `fromSec` EXACTLY as in full Play (no re-window, no distortion). Absent ⇒ normal
-   *  Play / loop. */
-  step?: { fromSec: number; durSec: number };
+  // (Le champ `step` hôte est RETIRÉ, RC-B : un STEP passe par le handle persistant
+  //  `handle.step`/`transport.step(1)`, plus par une construction dédiée avec grain de fenêtre.)
   /** Host logger (routed to the Console panel). */
   log?: (msg: string) => void;
   /** Déclenche la voix de code à son moment ordonnancé (routée par `output.runtime==='code'`).
@@ -165,6 +160,12 @@ export interface KronosAudioHandle {
    *  + re-fire the code voices. No re-derivation, no new scheduler — the SAME timeline the
    *  derivation built plays again. No-op after a full-teardown `stop()`. */
   replay(): void;
+  /** STEP `n` tree UNITS in place on the PERSISTENT handle (Model C, RC-B fix): `transport.step(n)`
+   *  (Kronos plays the bounded window `[P, position+n)`, snap-to-onset so the reached column SOUNDS
+   *  — bug 2 fix — and lands at the next unit boundary) + pump. NO re-derivation, NO host beat
+   *  counter (`%n`), NO grille-beat grain: the grain IS Kronos's tree unit (CVA-7). The host gesture
+   *  just forwards `step(1)` — it neither counts beats nor re-derives the scene. */
+  step(n: number): void;
   /** Cut the scene's sustained code voices (Strudel/Hydra) — host-managed PAUSE-cut. */
   cutCodeVoices(): void;
   /** Re-fire the scene's code voices in their slots — RESUME after a pause-cut. */
@@ -267,16 +268,14 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   const { audioCtx, derivedTempo } = opts;
   // Bar fold width = the derived meter's beats-per-bar (BPx authority), default 4.
   const beatsPerBar = opts.beatsPerBar ?? DEFAULT_BEATS_PER_BAR;
-  // STEP auditions ONE beat in place: never loop, and seek to the beat's scene
-  // second (the timeline + CV windows are the full production's, untouched).
-  const step = opts.step;
   // BUILD-ONLY (Model C produce/load): construct the machine + timeline but DON'T play.
-  // A STEP always plays its window, so it is never build-only. Determined HERE (not just
-  // before the play branch) so every "would actually sound" side-effect — including the
-  // OSC relay socket below — can stay gated behind it.
-  const buildOnly = step ? false : !!opts.buildOnly;
-  const loop = step ? false : opts.loop;
-  const startScene = step ? step.fromSec : (opts.startSceneSec ?? 0);
+  // Determined HERE (not just before the play branch) so every "would actually sound"
+  // side-effect — including the OSC relay socket below — can stay gated behind it.
+  // (Le STEP hôte est RETIRÉ, RC-B : il passe par le handle PERSISTANT `transport.step(1)`
+  // via `handle.step`, plus par une construction dédiée avec un grain.)
+  const buildOnly = !!opts.buildOnly;
+  const loop = opts.loop;
+  const startScene = opts.startSceneSec ?? 0;
   const log = opts.log ?? (() => {});
   const backtickSink = opts.backtickSink;
 
@@ -287,23 +286,37 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   //    BPx-compiled length) for the brief window before the swap. Kanopi builds NO timeline
   //    from events — the single read path is the tree → Kairos projection.
   const duration = opts.durationSec ?? 0;
-  const timeline = new MaterializedTimeline([], duration);
 
-  // 2. Clock on the shared AudioContext; anchor at the current instant (the host
-  //    calls us right where it would have started the dispatcher).
-  const clock = new InternalClock({ now: () => audioCtx.currentTime, derivedTempo });
-  clock.setDerivedTempo(derivedTempo);
-  clock.start(startScene);
+  // FABRIQUE (chantier transport-SM [471-482]) — DRAFT en cours : UN appel assemble
+  // clock+scheduler+cursor+driver+transport EN INTERNE et rend le handle (commandes + observables
+  // LECTURE SEULE + câblage sorties + pompe). Remplace l'ancien assemblage manuel (new InternalClock
+  // / new Scheduler / new Cursor / new Transport / new RealtimeDriver, tous retirés du public). La
+  // timeline placeholder est créée EN INTERNE (durationSec) ; Kairos la remplace au bind.
+  // À FINALISER (dès surface Kronos confirmée finale) : les usages downstream `scheduler`/`cursor`/
+  // `transport`/`driver` deviennent `kronos.addAdapter`/`kronos.transport`/`kronos.driver` ;
+  // le fold hôte `alignToSpeaker` (cursor.loopDuration) → `kronos.transport.position()` /
+  // `loopDurationScene()` (repli INTERNE, plus aucun fold hôte = la garantie).
+  const kronos: KronosTransport = createTransport({
+    now: () => audioCtx.currentTime,
+    derivedTempo,
+    startScene,
+    durationSec: duration,
+    loop,
+    lookahead: LOOKAHEAD_SEC,
+    intervalMs: 25
+  });
 
-  // 2b. AUDIO OUTPUT = the runtime-audio AudioRuntime, built HERE (where the shared clock
-  //     lives — it needs `musicalNow`/`audioTimeFor` to map t_scene↔t_audio for CV). It is
-  //     the 'audio'/'webaudio' SINK: a token resolves to Hz via the shared `pitch`, CV
-  //     renders from `content.modulations`. A host-provided `sinks.webaudio`/`sinks.audio`
-  //     (tests inject capture) OVERRIDES it.
-  // KAI-10 — the AudioRuntime reads `content.pitch.hz` off each event (graven by Kairos);
-  // the host injects NO pitch resolver (the `pitch` option is gone — Kanopi resolves nothing).
+  // 2b. AUDIO OUTPUT = the runtime-audio AudioRuntime (the 'audio'/'webaudio' SINK). KAI-10 — it
+  //     reads `content.pitch.hz` off each event (graven by Kairos) and renders `content.modulations`.
+  //     A host-provided `sinks.webaudio`/`sinks.audio` (tests inject capture) OVERRIDES it.
+  // CANAL (B) — CÂBLÉ ([485]→[494], archi tranché + openDAW) : le time-view du sink (musicalNow/
+  //    audioTimeFor pour placer les CV) NE PASSE PAS par l'hôte — sinon l'hôte pourrait reconstruire
+  //    la position. KRONOS l'injecte lui-même : à `addAdapter`, il appelle `adapter.bindClock?.(clock)`
+  //    (scheduler.ts:118,124) avec SA vue `ClockProvider` LECTURE SEULE ; l'`audioAdapter` ci-dessous
+  //    la TRANSMET au moteur de rendu (champ public `audioRuntime.clock`, lu frais à chaque usage).
+  //    L'hôte ne construit plus de clock et n'appelle JAMAIS musicalNow — par construction.
   const audioRuntime = createAudioRuntime(audioCtx, {
-    clock,
+    // clock : PAS ici — la vue horloge arrive par le canal adaptateur (B), de Kronos, jamais de l'hôte.
     sounds: undefined
   });
   // PILOTAGE (DEV) : expose l'AudioRuntime courant pour la sonde audio de `window.kanopi`. Lecture
@@ -387,7 +400,10 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       controls?: Record<string, unknown> | null;
       rq?: Record<string, number> | null;
       startSec?: number;
-      modulations?: ModulationBinding[] | null;
+      // Forwarded VERBATIM au sink (jamais manipulé structurellement ici) — la modulation est
+      // pilotée par `content.modulations` gravé par Kairos. Type opaque (l'ex-`ModulationBinding`
+      // de Kronos est retiré du public : l'hôte ne dépend plus de sa forme).
+      modulations?: unknown[] | null;
       // KAI-10 — the pitch facet graven by Kairos (`{hz, noteName, …}`); forwarded
       // verbatim to every output so it reads the canonical Hz off the event.
       pitch?: unknown;
@@ -408,6 +424,14 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // AUDIO: the AudioRuntime resolves token→Hz (shared `pitch`) and RENDERS
   // `content.modulations`. MIDI 0..127 `vel` → 0..1 `velocity`.
   const audioAdapter: RuntimeAdapter = {
+    // Canal (B) : KRONOS appelle ceci à l'enregistrement (`addAdapter`) avec SA vue horloge
+    // LECTURE SEULE (`ClockProvider` : now/musicalNow/audioTimeFor/rate/snapshot, zéro mutateur).
+    // L'hôte TRANSMET la référence au moteur de rendu — il ne la stocke pas ailleurs, ne la lit
+    // pas, ne recompute jamais un time-view : le sink LIT la carte de Kronos, l'autorité de
+    // position reste inatteignable (pas de handle, pas de curseur) — garantie par construction.
+    bindClock(clock: ClockProvider) {
+      audioRuntime.clock = clock;
+    },
     send(ev: ScheduledEvent) {
       if (!audioSink) return warnMissing('audio');
       const { c, coerced, velRaw } = prep(ev.content);
@@ -518,20 +542,22 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // 4. Scheduler + per-runtime adapter registration (NO default adapter — the host selects
   //    no sink; every event routes on its own `output.runtime`). A `.gr`/mono scene's
   //    default actor carries `output.runtime='audio'` from the AST, so it lands on 'audio'.
-  const scheduler = new Scheduler({ clock, timeline, loop });
+  // Enregistrement des sorties sur le HANDLE (la fabrique n'expose PAS le scheduler ; `kronos.addAdapter`
+  // délègue en interne). Plus de `new Scheduler` hôte. NO default adapter (chaque event route sur output.runtime).
   if (audioSink) {
-    scheduler.addAdapter('audio', audioAdapter);
-    scheduler.addAdapter('webaudio', audioAdapter);
+    kronos.addAdapter('audio', audioAdapter);
+    kronos.addAdapter('webaudio', audioAdapter);
   }
-  if (midiSink) scheduler.addAdapter('midi', midiAdapter);
-  if (oscSink) scheduler.addAdapter('osc', oscRuntimeAdapter);
-  if (backtickSink) scheduler.addAdapter('code', codeAdapter);
+  if (midiSink) kronos.addAdapter('midi', midiAdapter);
+  if (oscSink) kronos.addAdapter('osc', oscRuntimeAdapter);
+  if (backtickSink) kronos.addAdapter('code', codeAdapter);
 
   // The playing cursor (EX4 phase 2): the INVERSE of the time authority, not a separate
   // counter — it reads the same `clock` the scheduler does, so the drawn playhead is
   // rigorously aligned to the heard audio (no ~1-note lag) and monotone from `startScene`
   // (the only return-to-0 is the legitimate loop crossing). The timeline's single cursor.
-  const cursor = new Cursor(clock, { loopDuration: duration, loop });
+  // Le curseur est INTERNE au handle (plus de `new Cursor` hôte) : la tête de lecture se lit via
+  // `kronos.transport.position()`/`beatPosition()` (la machine replie, source unique — la garantie).
 
   // RE-RANDOM: Kairos owns the loop-edge pull. `applyReDerive` arms/disarms the host
   // re-derive on KAIROS (`setReDerive`) — gated by `reRandom && loop` — at construction AND
@@ -561,7 +587,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // READS state/position; it holds no FSM and no position counter. Composition over the
   // same clock/scheduler/cursor, so there is ZERO duplicated state — the position stays
   // the cursor. The host drives play/pause/stop/step/seek/setTempo/setLoop through this.
-  const transport = new Transport({ clock, scheduler, cursor });
+  const transport = kronos.transport;
   // Kairos drives the SOURCE of the played timeline. Bind its `StructureSource` on the
   // Transport (PULL channel): at bind the Transport swaps Kairos's projected Timeline into
   // the scheduler (replacing the empty placeholder) AND sets the cursor loop length from it
@@ -573,12 +599,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // lookahead window and ticks the TRANSPORT (which drains Kairos's control ops — tempo/mute
   // — THEN ticks the scheduler). Declared before the play branch so a BUILD-ONLY
   // construction can leave it un-started (no pump = no `send` = no sound).
-  const driver = new RealtimeDriver({
-    clock,
-    scheduler: transport,
-    lookahead: LOOKAHEAD_SEC,
-    intervalMs: 25
-  });
+  const driver = kronos.driver;
   // BUILD-ONLY (Model C produce/load): construct the machine + timeline but DON'T play —
   // transport stays 'stopped', the driver is NOT started, so nothing is ever emitted (zero
   // sound, the audio context is not woken here). The host registers this persistent handle
@@ -588,13 +609,6 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     // Park the position at the start scene second (frozen, transport 'stopped'); do not arm
     // the scheduler, do not start the pump. `replay()` will `transport.play()` + `driver.start()`.
     transport.seek(startScene);
-  } else if (step) {
-    // Audition one tree unit IN PLACE: seek to the unit, step once. The step grain is
-    // now the STRUCTURE's own unit (Kronos decision 2026-06-30, CVA-7) — `step(1)` lands
-    // on the next tree position, so the host no longer hands Kronos a time grain.
-    transport.seek(step.fromSec);
-    transport.step(1);
-    driver.start();
   } else {
     // Normal play from the start position (re-anchors clock + arms the scheduler).
     transport.seek(startScene);
@@ -610,35 +624,11 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
 
   let stopped = false;
 
-  // CVA-2 — playhead aligned to the SPEAKER, not to the audio being processed.
-  // The injected clock (l.271) reads raw `audioCtx.currentTime`, so `transport.position()`
-  // tracks the frame being PROCESSED; the speaker trails it by `audioCtx.outputLatency`
-  // (~32 ms measured here). Kronos's core position is exact (CVA-2 handoff) — the missing
-  // term is the host's `outputLatency`, ours to apply since we own the injected clock.
-  // We shift only the DISPLAY read (scheduling/anchoring keep raw currentTime): subtract
-  // the SCENE-second duration of `outputLatency`, computed via the clock's own `musicalNow`
-  // map (rate-exact, tempo-warp aware), then fold into the loop so the wrap shows the
-  // previous iteration's tail that is still sounding at the boundary. No host counter —
-  // every term is a Kronos read.
-  const alignToSpeaker = (raw: number): number => {
-    const L = audioCtx.outputLatency || 0;
-    if (L <= 0) return raw;
-    const a = clock.now();
-    const lagScene = clock.musicalNow(a) - clock.musicalNow(a - L);
-    let p = raw - lagScene;
-    // Fold modulo the LIVE loop length read FROM Kronos (`cursor.loopDuration`, which
-    // Kronos resyncs at every timeline swap AND tempo warp — structure-source, cursor
-    // 4aea362), NOT the construction-time `duration` constant. A live tempo change or a
-    // re-derive changes the scene-second loop length (e.g. 13.9 s → 21.3 s on a decel,
-    // → 9.6 s on an accel); folding the DISPLAY modulo the frozen `duration` wrapped the
-    // playhead at the OLD second — the loop appeared to restart at the wrong place and
-    // rests/notes drew shifted (CVA-L3, facette boucle, déclenchée par un changement de
-    // BPM en cours de boucle). The host READS Kronos's bound; it never holds its own.
-    const loopLen = cursor.loopDuration;
-    if (loopActive && loopLen > 0) p = ((p % loopLen) + loopLen) % loopLen;
-    else if (p < 0) p = 0;
-    return p;
-  };
+  // CVA-2 (alignement latence haut-parleur) — RETIRÉ du côté hôte : il lisait `clock.musicalNow`
+  // (map t_audio↔t_scène) et foldait `cursor.loopDuration`, deux primitives INTERNES à Kronos
+  // désormais retirées du public. La tête de lecture = `transport.position()` directe (Kronos replie
+  // en interne, source unique) ; la compensation de latence d'affichage revient à Kronos / au sink
+  // via son time-view injecté (gate B). L'hôte ne folde ni ne compense plus rien = la garantie.
 
   return {
     // The Kronos Transport — the SINGLE state machine + position authority. The host
@@ -725,60 +715,47 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     },
     setLoop(on: boolean) {
       loopActive = on;
-      scheduler.setLoop(on);
-      cursor.setLoop(on);
+      // Toggle live via les commandes Kronos (l'hôte ne touche pas scheduler/cursor — internes).
+      // `setLoop(start,end)` active la boucle pleine (V1 : les bornes sont déclaratives) ; `clearLoop`
+      // la désactive. `duration` = longueur de construction (borne déclarative pour l'observabilité).
+      if (on) transport.setLoop(0, duration);
+      else transport.clearLoop();
       applyReDerive();
     },
     position() {
-      // The TRANSPORT's position: the cursor while running, the FROZEN position when
-      // paused/stopped. The host reads this per-frame to draw the playhead — one
-      // authority (Kronos), never a host counter.
-      //
-      // STEP exception: Kronos's `step(1)` plays `[fromSec, fromSec+grain)` then lands
-      // (monotone) at the END `fromSec+grain`. Drawing the playhead there would put the
-      // cursor ONE BEAT AHEAD of the note that just sounded. So for a stepped handle the
-      // displayed position is the STEPPED beat itself (`fromSec`) — still the Kronos
-      // cursor (the scene second it played from), aligned to the heard note.
-      if (step) return step.fromSec;
-      // CVA-2 latency alignment: align the DISPLAY to the speaker (see alignToSpeaker).
-      // Running only — paused/stopped is frozen (no sound), so the raw frozen position is
-      // exactly right and must not be shifted.
-      return transport.state === 'running'
-        ? alignToSpeaker(transport.position())
-        : transport.position();
+      // Tête de lecture = position Kronos, source UNIQUE (la machine replie en interne). Plus de
+      // FIGEAGE STEP hôte (= fix bug 3 : la barre suit la position réelle au (re)play après un step,
+      // au lieu d'être gelée à `fromSec`) ni de fold de latence hôte (le clock est retiré du public).
+      // Kronos EST l'autorité de position ; l'hôte lit, ne recompute ni ne fige rien.
+      return transport.position();
     },
     beatPosition() {
-      // Same STEP exception: report the beat AT the stepped second (`fromSec`), via the
-      // cursor's own frozen-position formula (no host beat counter), so bar·beat matches
-      // the heard note instead of the landing boundary.
-      if (step) return cursor.beatPositionForScene(step.fromSec, clock.derivedTempo, beatsPerBar);
-      // CVA-2: the bar·beat readout reads the same speaker-aligned second while running,
-      // so the numeric display and the playhead pixel agree.
-      return transport.state === 'running'
-        ? cursor.beatPositionForScene(
-            alignToSpeaker(transport.position()),
-            clock.derivedTempo,
-            beatsPerBar
-          )
-        : transport.beatPosition(beatsPerBar);
+      // Bar·beat = lecture Kronos directe (plus de figeage step ni de fold hôte). Kronos replie,
+      // source unique — l'hôte ne tient aucun compteur de beat.
+      return transport.beatPosition(beatsPerBar);
     },
     seek(sceneSec: number) {
-      // Re-anchor the time authority and the scheduler to the SAME scene second
-      // (no new audio graph): the next scheduled events fire from there and the
-      // cursor reads from there — used by a Play-from-position / STEP resume.
-      clock.start(sceneSec);
-      scheduler.start(sceneSec);
+      // Re-ancre l'autorité de temps à la scène via la commande Kronos (l'hôte ne touche ni clock ni
+      // scheduler — internes ; `transport.seek` re-home + ré-ancre). Play-from-position / STEP resume.
+      transport.seek(sceneSec);
     },
     resume(sceneSec: number) {
-      // Resume IN PLACE (no re-eval): drop the pause bound, re-anchor at the frozen
-      // boundary, restart the pump. ONE scheduler lives across play→pause→play, so a
-      // rapid cycle can't stack a second emitter (the old re-eval-on-resume race that
-      // intermittently doubled the audio + left a voice ringing through pause).
+      // Reprise EN PLACE (no re-eval) : ré-ancre à la borne gelée puis relance. `transport.play()`
+      // relève lui-même la borne d'émission posée par `pause()` (transport.ts:158-161) et re-ancre
+      // depuis la position de reprise — l'hôte ne touche ni clock ni scheduler (internes). UN seul
+      // scheduler vit à travers play→pause→play (pas de 2e émetteur empilé — l'ancienne course).
       if (stopped) return;
-      scheduler.setSceneBound(null);
-      clock.start(sceneSec);
-      scheduler.start(sceneSec);
-      driver.start(); // idempotent: no-op if still running, restarts if pause stopped it
+      transport.seek(sceneSec);
+      transport.play();
+      driver.start(); // idempotent: no-op si déjà en marche, relance si la pause l'a arrêté
+    },
+    step(n: number) {
+      // STEP sur le handle PERSISTANT (Model C, RC-B) : Kronos avance d'`n` unités d'arbre (fenêtre
+      // bornée + snap-to-onset → la colonne atteinte SONNE = fix bug 2 ; pose à la prochaine borne),
+      // puis on pompe. Plus de re-dérivation par geste, plus de compteur %n, plus de grain
+      // grille-beat : le grain EST l'unité d'arbre de Kronos (CVA-7). L'hôte transmet juste step(n).
+      transport.step(n);
+      driver.start();
     },
     retune(bpm: number) {
       // Live tempo goes through Kairos's single write-door (`demande`), quantified

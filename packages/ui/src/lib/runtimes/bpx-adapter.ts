@@ -957,15 +957,9 @@ export function setMeterSink(fn: (beatsPerBar: number) => void): void {
   onMeterFromGrammar = fn;
 }
 
-// Resume offset (in beats) for the NEXT looping play, set by the transport state
-// machine (playback store) just before it triggers Play, and consumed ONCE by the
-// next non-STEP `evaluate`. Lets "Step → Play" continue from the next unplayed
-// beat instead of the top — the single source of the resume position is the
-// machine, not a guessed store value. null/0 → start from the top.
-let resumeBeat: number | null = null;
-export function setResumeBeat(beat: number | null): void {
-  resumeBeat = beat;
-}
+// (Resume-offset hôte RETIRÉ — RC-B / Kronos [489] : le resume-après-step est géré par KRONOS via son
+// park interne ; `play()` reprend à la position ATTEINTE par le step, jamais à 0. Plus de `resumeBeat`
+// hôte ni de `setResumeBeat` — l'hôte ne calcule aucune position de reprise.)
 
 // INSTRUMENTATION (Model C proof): count every BPx derivation of the EVAL path
 // (eval/edit/arm/produce/play-from-stopped). It does NOT count the per-loop-cycle
@@ -1669,29 +1663,15 @@ function makeBpxAdapter(
       // loop the whole derivation when the transport's LOOP toggle is on (default).
       // `section.index` is the beat index (the `section` field is reused as a
       // generic step window).
-      const section = src.section;
-      const isStep = !!(section && section.count > 1);
-      const looping = !section && transport.loop;
-      // Re-derive at each cycle only when looping AND re-random is on — re-rolls
-      // the grammar's weighted/random choices tour to tour (vs replaying the same
-      // derivation). Snapshotted here at start time off the session toggle.
+      // LOOP : la boucle tourne quand le toggle transport LOOP est ON (défaut). Le STEP ne passe
+      // PLUS par ici (RC-B) — il va sur le handle PERSISTANT via `transport.step(1)` (playback.step →
+      // handle.step). Donc plus de fenêtre de step hôte, plus de grain grille-beat, plus d'offset de
+      // reprise : KRONOS gère play-après-step (la lecture reprend à la position ATTEINTE par le step,
+      // jamais à 0 — prouvé transport.test.ts:77-95 monotone + bugs23-repro, réponse Kronos [489]).
+      const looping = transport.loop;
+      // Re-derive at each cycle only when looping AND re-random is on — re-rolls the grammar's
+      // weighted/random choices tour to tour (vs replaying the same derivation).
       const reRandom = looping && transport.reRandom;
-      // Resume-from-step offset (STEP → Play): the transport machine set
-      // `resumeBeat` before triggering Play; start the loop at that beat instead of
-      // the top, then consume it (one-shot). Only for a looping, non-STEP start.
-      const startOffsetSec =
-        !section && resumeBeat != null && resumeBeat > 0 && currentBpm > 0
-          ? resumeBeat * (60 / currentBpm)
-          : 0;
-      if (!section) resumeBeat = null;
-      // The beat's position on the REAL (full-production) timeline + its duration:
-      // one beat = 60/bpm s, at `section.index * (60/bpm)` — the same beat grid the
-      // flat slice used (`round(start / (60000/bpm)) === index`). The full timeline
-      // is seeked here, so the beat's note(s) keep their true scene onset and CV.
-      const beatDurSecStep = currentBpm > 0 ? 60 / currentBpm : 0;
-      const stepWindow = isStep
-        ? { fromSec: section!.index * beatDurSecStep, durSec: beatDurSecStep }
-        : undefined;
 
       const key = srcKey(src);
       const prev = voices.get(key);
@@ -1923,7 +1903,7 @@ function makeBpxAdapter(
             // The actor→output table (BPx authority) — used ONLY to enumerate the OSC devices
             // at setup. Per-event device/channel/runtime rides `event.output`.
             actors: actorOutputs,
-            startSceneSec: startOffsetSec,
+            startSceneSec: 0, // Kronos gère le resume-après-step via play() (park interne) — plus d'offset hôte ([489])
             // KAI-10 — no host pitch resolver fed to the outputs. The AudioRuntime reads
             // `content.pitch.hz` (graven by Kairos) off each event; MIDI/OSC likewise. The
             // host stopped resolving token→Hz (the audio fallback is retired in the final
@@ -1942,9 +1922,8 @@ function makeBpxAdapter(
             // RE-RANDOM re-derive: `startKronosAudio` installs it on Kairos (`setReDerive`)
             // gated by `reRandom && loop`, AND re-arms it on every live `setReRandom`/`setLoop`
             // toggle. A STEP never re-derives (no loop), so omit it there.
-            reDeriveKairos: section || stepWindow ? undefined : reDeriveKairos,
+            reDeriveKairos,
             reRandom,
-            step: stepWindow,
             // Kronos is the single emitter: a code voice is routed by `output.runtime==='code'`
             // (graven by Kairos) to the 'code' sink — the SAME backtick sink the legacy
             // dispatcher used. No host-side `isBacktick` token sniff anymore.
