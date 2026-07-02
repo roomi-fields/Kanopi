@@ -52,7 +52,11 @@ interface Hit {
 }
 
 /** Applique une regex ligne par ligne au code décommenté et renvoie les lignes fautives. */
-function scanLines(src: string, re: RegExp, keep: (m: RegExpMatchArray) => boolean = () => true): Hit[] {
+function scanLines(
+  src: string,
+  re: RegExp,
+  keep: (m: RegExpMatchArray) => boolean = () => true
+): Hit[] {
   const hits: Hit[] = [];
   const lines = stripComments(src).split('\n');
   for (let i = 0; i < lines.length; i++) {
@@ -91,18 +95,20 @@ export function detectBridgeImpl(src: string): Hit[] {
   );
 }
 
-/** inv#6 — DÉFAUT de tempo FABRIQUÉ (interdit). Un littéral BPM en fallback/défaut, SAUF 60
- *  (miroir documenté du défaut moteur BPx). */
+/** inv#6 — DÉFAUT de tempo FABRIQUÉ (interdit). AUCUN littéral BPM en fallback/défaut — même
+ *  pas un miroir du défaut moteur : depuis BPx 27fbf72, `tree.metadata.tempo` est GARANTI
+ *  toujours peuplé (60 par défaut moteur explicite), donc l'hôte lit la valeur et n'a PLUS
+ *  aucun littéral de tempo (invariant #6 étanche). */
 export function detectFabricatedTempo(src: string): Hit[] {
   const re =
     /\b(bpm|tempo)\w*\s*(?:\?\?|\|\||=)\s*(\d+(?:\.\d+)?)|(?:\?\?|\|\|)\s*(\d+(?:\.\d+)?)\s*\)?\s*(?:;|,|\)|as\b)?\s*(?:\/\/.*)?$|setBpm\(\s*(\d+(?:\.\d+)?)\s*\)/i;
   return scanLines(src, re, (m) => {
     const n = Number(m[2] ?? m[3] ?? m[4]);
     if (!Number.isFinite(n)) return false;
-    // 60 = défaut MOTEUR BPx mirroré (documenté effectiveTempoBpm) → toléré.
-    // Un tempo « inventé » (club/preset) est ≥ 90 ; on ne flague que le contexte bpm/tempo
-    // ou un setBpm(littéral), donc une couleur CSS `rgba(…120…)` n'entre pas ici.
-    return n !== 60 && n >= 40 && n <= 400;
+    // Tout littéral de tempo plausible (40–400 BPM) dans un contexte bpm/tempo ou un
+    // `setBpm(littéral)` est une violation. Une couleur CSS `rgba(…120…)` n'entre pas
+    // (hors contexte bpm/tempo). Plus d'exception pour 60 (l'hôte lit metadata.tempo).
+    return n >= 40 && n <= 400;
   });
 }
 
@@ -124,29 +130,41 @@ const fmt = (all: { path: string; hits: Hit[] }[]) =>
     .map((f) => f.hits.map((h) => `  ${rel(f.path)}:${h.line}  ${h.text}`).join('\n'))
     .join('\n');
 
-describe('pureté temporelle de l\'hôte — garde statique (contrat kronos-transport.md)', () => {
+describe("pureté temporelle de l'hôte — garde statique (contrat kronos-transport.md)", () => {
   it('a scanné un corpus non vide (garde non vacuant)', () => {
     expect(FILES.length).toBeGreaterThan(50);
   });
 
   it('inv#1 — aucun compteur/intégrateur de position ou de beat côté hôte', () => {
     const all = FILES.map((p) => ({ path: p, hits: detectPositionCounter(readFileSync(p)) }));
-    expect(fmt(all), `Position/beat ACCUMULÉ côté hôte (inv#1 : la position se LIT de Kronos).\n${fmt(all)}`).toBe('');
+    expect(
+      fmt(all),
+      `Position/beat ACCUMULÉ côté hôte (inv#1 : la position se LIT de Kronos).\n${fmt(all)}`
+    ).toBe('');
   });
 
-  it('inv#2 — l\'hôte ne DÉFINIT pas le pont musicalNow/audioTimeFor', () => {
+  it("inv#2 — l'hôte ne DÉFINIT pas le pont musicalNow/audioTimeFor", () => {
     const all = FILES.map((p) => ({ path: p, hits: detectBridgeImpl(readFileSync(p)) }));
-    expect(fmt(all), `Pont t_audio↔t_scène IMPLÉMENTÉ côté hôte (inv#2 : le pont est l'InternalClock de Kronos).\n${fmt(all)}`).toBe('');
+    expect(
+      fmt(all),
+      `Pont t_audio↔t_scène IMPLÉMENTÉ côté hôte (inv#2 : le pont est l'InternalClock de Kronos).\n${fmt(all)}`
+    ).toBe('');
   });
 
   it('inv#6 — aucun défaut de tempo fabriqué (BPM en dur ≠ 60)', () => {
     const all = FILES.map((p) => ({ path: p, hits: detectFabricatedTempo(readFileSync(p)) }));
-    expect(fmt(all), `Défaut de tempo FABRIQUÉ côté hôte (inv#6 : l'hôte n'invente aucun tempo ; seul le miroir moteur 60 est toléré).\n${fmt(all)}`).toBe('');
+    expect(
+      fmt(all),
+      `Défaut de tempo FABRIQUÉ côté hôte (inv#6 : l'hôte n'invente aucun tempo ; seul le miroir moteur 60 est toléré).\n${fmt(all)}`
+    ).toBe('');
   });
 
-  it('inv#7 — le tempo n\'est pas restauré depuis localStorage (garde statique, complète KAN-C17)', () => {
+  it("inv#7 — le tempo n'est pas restauré depuis localStorage (garde statique, complète KAN-C17)", () => {
     const all = FILES.map((p) => ({ path: p, hits: detectTempoRestore(p, readFileSync(p)) }));
-    expect(fmt(all), `setBpm dans le chemin de persistance (inv#7 : le tempo redécoule de la scène, jamais de localStorage).\n${fmt(all)}`).toBe('');
+    expect(
+      fmt(all),
+      `setBpm dans le chemin de persistance (inv#7 : le tempo redécoule de la scène, jamais de localStorage).\n${fmt(all)}`
+    ).toBe('');
   });
 });
 
@@ -167,7 +185,9 @@ describe('les détecteurs mordent (non-vacuité prouvée)', () => {
 
   it('inv#2 mord sur une définition, ignore un appel', () => {
     expect(detectBridgeImpl('function musicalNow(a) { return a; }').length).toBeGreaterThan(0);
-    expect(detectBridgeImpl('function musicalNow(a: number): number { return a; }').length).toBeGreaterThan(0); // type de retour
+    expect(
+      detectBridgeImpl('function musicalNow(a: number): number { return a; }').length
+    ).toBeGreaterThan(0); // type de retour
     expect(detectBridgeImpl('const audioTimeFor = (s) => s * rate;').length).toBeGreaterThan(0);
     // légitime : appeler le handle Kronos reçu, ou une SIGNATURE de type (pas d'implémentation)
     expect(detectBridgeImpl('const t = clock.musicalNow(a);')).toEqual([]);
@@ -178,14 +198,18 @@ describe('les détecteurs mordent (non-vacuité prouvée)', () => {
     expect(detectFabricatedTempo('const bpm = tempo ?? 128;').length).toBeGreaterThan(0);
     expect(detectFabricatedTempo('this.tempo = 120;').length).toBeGreaterThan(0);
     expect(detectFabricatedTempo('clock.setBpm(140);').length).toBeGreaterThan(0);
-    // toléré : miroir du défaut moteur BPx (documenté)
-    expect(detectFabricatedTempo('effectiveTempoBpm(derived, deriveTempo ?? 60);')).toEqual([]);
+    // durci : même un miroir `?? 60` est désormais une violation (l'hôte lit metadata.tempo)
+    expect(
+      detectFabricatedTempo('effectiveTempoBpm(derived, deriveTempo ?? 60);').length
+    ).toBeGreaterThan(0);
     // hors contexte tempo : une couleur CSS ne doit pas mordre
     expect(detectFabricatedTempo('background: rgba(80, 200, 120, 0.08);')).toEqual([]);
   });
 
   it('inv#7 mord sur un setBpm en persistance, ignore ailleurs', () => {
-    expect(detectTempoRestore('src/lib/persistence/snapshot.svelte.ts', 'clock.setBpm(w.bpm);').length).toBeGreaterThan(0);
+    expect(
+      detectTempoRestore('src/lib/persistence/snapshot.svelte.ts', 'clock.setBpm(w.bpm);').length
+    ).toBeGreaterThan(0);
     expect(detectTempoRestore('src/stores/clock.svelte.ts', 'clock.setBpm(n);')).toEqual([]);
   });
 });
