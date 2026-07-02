@@ -312,7 +312,6 @@ class RealCore implements CoreApi {
     // scene is ready, not playing. Play sounds it later.
     if (produceOnly) return;
 
-
     // Surgical: a manual Ctrl+Enter (re)sounds ONLY this block — the block just evaluated
     // above is already live. A bp3/bpscript/.gr eval builds a Kronos handle (transport →
     // running, so the readout follows the single authority); a pure code voice (Strudel/Hydra)

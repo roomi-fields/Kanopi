@@ -104,7 +104,15 @@ class Playback {
     if (!handle) {
       // Aucune machine construite (step avant tout produce/play) → PRODUIRE le handle persistant
       // sans jouer (`produceOnly`), puis stepper dessus.
-      await core.evaluateBlock(file.runtime, file.contents, file.name, 0, undefined, undefined, true);
+      await core.evaluateBlock(
+        file.runtime,
+        file.contents,
+        file.name,
+        0,
+        undefined,
+        undefined,
+        true
+      );
       handle = kronosCursor.active;
     }
     handle?.step(1);
