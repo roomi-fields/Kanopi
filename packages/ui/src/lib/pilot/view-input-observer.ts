@@ -9,6 +9,10 @@ export interface ViewInputSnapshot {
   mode: unknown;
   hasCursor: boolean;
   durationSec: unknown;
+  /** Stable identity of the `cursor` object (same number = SAME handle across pushes). */
+  cursorId: number | null;
+  /** Stable identity of the `structure` object (new number = re-pushed → view `load()` re-render). */
+  structureId: number | null;
 }
 
 type LoosyInput = {
@@ -18,13 +22,30 @@ type LoosyInput = {
 
 const lastByView = new Map<string, ViewInputSnapshot>();
 
+// Stable per-object identity (a monotone id assigned on first sighting) — lets a caller tell
+// whether the SAME cursor/structure object is re-pushed or a NEW one replaced it, without
+// leaking the object itself. Diagnostic only.
+const idMap = new WeakMap<object, number>();
+let nextId = 1;
+function identityOf(o: unknown): number | null {
+  if (o == null || typeof o !== 'object') return null;
+  let id = idMap.get(o as object);
+  if (id === undefined) {
+    id = nextId++;
+    idMap.set(o as object, id);
+  }
+  return id;
+}
+
 /** Called by ProductionViewHost right after each `view.update(input)`. */
 export function recordViewInput(viewId: string, input: LoosyInput): void {
   lastByView.set(viewId, {
     viewId,
     mode: input.transport?.mode ?? null,
     hasCursor: input.transport?.cursor != null,
-    durationSec: input.structure?.durationSec ?? null
+    durationSec: input.structure?.durationSec ?? null,
+    cursorId: identityOf(input.transport?.cursor),
+    structureId: identityOf(input.structure)
   });
 }
 
