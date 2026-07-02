@@ -38,8 +38,9 @@ describe('bp3 -se settings recipe (native tempo)', () => {
 
   it('derives the native beat with settings, the 1000 ms default without', () => {
     const engine = parseSeFile(BUNDLED_SE.Visser2).engine;
-    // Without settings: the engine's default clock (first terminal 500 ms here).
-    expect(firstDurations()[0]).toBe(500);
+    // Without settings: bp3's NATIVE default clock — Pclock=Qclock=1 → 1000 ms / 60 BPM
+    // (Inits.c:288, confirmé bp3-frontend [461]). Le 500 ms n'apparaît qu'AVEC un settings 120 BPM.
+    expect(firstDurations()[0]).toBe(1000);
     // With settings: the native sawtooth (first terminal 750 ms — Visser's tempo).
     expect(firstDurations(engine)[0]).toBe(750);
   });
