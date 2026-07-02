@@ -26,7 +26,7 @@ import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 import { setAudioForwardObserver, pilotAudioMeter } from '../runtimes/kronos-audio';
 import { core } from '../core';
 
-const API_VERSION = 6;
+const API_VERSION = 7;
 
 // Tampon d'OBSERVATION (tooling de test, PAS de l'état d'app) : les derniers events audio
 // FORWARDÉS au sink, capturés VERBATIM par l'observateur lecture-seule de kronos-audio. Remplace
@@ -186,6 +186,16 @@ export function installKanopiApi(): void {
       position(): number | null {
         const t = kronosCursor.active?.transport as { position?: () => number } | undefined;
         return t?.position?.() ?? null;
+      },
+      /** État transport MIROIR réactif (`kronosCursor.state`) — à comparer à `transportState()`
+       *  (l'autorité directe) pour diagnostiquer une désynchro du miroir vs le transport réel. */
+      cursorState(): string {
+        return kronosCursor.state;
+      },
+      /** Beat/bar RENDU du curseur (`kronosCursor.beat`), échantillonné par la boucle rAF du
+       *  rendu. `null` si arrêté / pas de scène. Sonde le redémarrage du rendu au (re)play. */
+      cursorBeat(): unknown {
+        return kronosCursor.beat;
       },
       /** Tempo EFFECTIF entendu (miroir réactif de Kronos). */
       effectiveTempo(): number {
