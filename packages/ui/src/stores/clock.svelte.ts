@@ -9,13 +9,14 @@
 //     the former 128). `setBpm` records the user's local value AND fans out to the runtimes
 //     (which retune the live handle), so the shown value and the heard tempo never drift.
 //   • beatsPerBar = a persisted SESSION VALUE (Kronos has no time signature).
-//   • playing/paused = DERIVED from Kronos's Transport state (`kronosCursor.state`). No host
-//     flag, no second FSM.
+//   • playing/paused = DERIVED from `playback.mode` (the SINGLE projection of Kronos's
+//     Transport state). No host flag, no second FSM, no parallel re-mapping of the authority.
 // Transport COMMANDS (play/stop/toggle) are NOT relayed here — the palette + keybindings
 // route straight to `playback` (the transport projection on Kronos).
 
 import type { ClockState } from '../lib/core';
 import { kronosCursor } from './kronos-cursor.svelte';
+import { playback } from './playback.svelte';
 import { getAdapter, listRuntimes } from '../lib/runtimes/registry';
 import { setUserTempo } from '../lib/runtimes/bpx-adapter';
 import { core } from '../lib/core';
@@ -41,12 +42,13 @@ class ClockStore {
 
   /** READOUT, derived — never a host authority. bpm: the live handle's tempo when a scene is
    *  loaded (the authority), else the user's local typed/tapped value, else `null` (nothing to
-   *  show — the UI renders « — »). playing/paused: PROJECTED from Kronos's Transport state. */
+   *  show — the UI renders « — »). playing/paused: derived from `playback.mode` (the single
+   *  projection of Kronos's Transport state) — NOT a 2nd parallel mapping of the authority (F29). */
   state = $derived<ClockState>({
     bpm: kronosCursor.active ? kronosCursor.tempo : this.#tempo,
     beatsPerBar: this.#beatsPerBar,
-    playing: kronosCursor.active != null && kronosCursor.state === 'running',
-    paused: kronosCursor.active != null && kronosCursor.state === 'paused'
+    playing: playback.mode === 'playing',
+    paused: playback.mode === 'paused'
   });
 
   /** Set the tempo: persist the session value AND retune every runtime live (the live Kronos
@@ -110,10 +112,18 @@ class ClockStore {
     this.#tapTimes.push(now);
     this.#tapTimes = this.#tapTimes.filter((t) => now - t < 2500);
     if (this.#tapTimes.length >= 2) {
+      // Keep only POSITIVE intervals (F27). `performance.now()` is clamped for cross-origin
+      // isolation, so two quick taps can collapse onto the SAME timestamp → a 0 (or, if the
+      // clock ran backwards, negative) delta. Averaging those gave `60000/0 = Infinity`, which
+      // `clampBpm` pinned to 300 → the tap became a silent jump to the max tempo. Dropping the
+      // degenerate deltas averages only the real intervals; if none survive (every retained tap
+      // shares a timestamp), the gesture carries no tempo → keep the current one (return null).
       const deltas: number[] = [];
       for (let i = 1; i < this.#tapTimes.length; i++) {
-        deltas.push(this.#tapTimes[i] - this.#tapTimes[i - 1]);
+        const d = this.#tapTimes[i] - this.#tapTimes[i - 1];
+        if (d > 0) deltas.push(d);
       }
+      if (deltas.length === 0) return null;
       const avg = deltas.reduce((a, b) => a + b, 0) / deltas.length;
       return this.setBpm(60000 / avg);
     }

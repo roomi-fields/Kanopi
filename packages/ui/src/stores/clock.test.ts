@@ -49,6 +49,21 @@ describe('tempo store — persisted session value (clamp + no-op + TAP)', () => 
     nowSpy.mockRestore();
     clock.setBpm(128);
   });
+
+  it('tap() ignores a degenerate (zero) interval — no silent jump to max (F27)', () => {
+    // Two taps on the SAME clamped timestamp (performance.now frozen — the cross-origin
+    // precision clamp can collapse two quick taps onto one value): the interval is 0. The old
+    // code did 60000/0 = Infinity → clampBpm → 300, so a tap became a silent jump to the max
+    // tempo. It must instead IGNORE the degenerate interval and keep the current tempo.
+    const nowSpy = vi.spyOn(performance, 'now').mockImplementation(() => 10000);
+    clock.setBpm(100);
+    expect(clock.tap()).toBeNull(); // first tap establishes nothing
+    const r = clock.tap(); // second tap, same timestamp → delta 0
+    expect(r).toBeNull(); // degenerate → ignored, not Infinity→300
+    expect(clock.state.bpm).toBe(100); // current tempo preserved (was 300)
+    nowSpy.mockRestore();
+    clock.setBpm(128);
+  });
 });
 
 describe('transport readout — PROJECTED from Kronos, never a host flag', () => {
