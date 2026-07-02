@@ -12,7 +12,12 @@
 // signal that "the living tree changed" — bumped on every (re)load.
 
 import type { Kairos } from '@kairos/core';
-import type { ProductionStructure, FlatView } from 'runtime-ui';
+import type { ProductionStructure } from 'runtime-ui';
+
+/** Retour natif de `Kairos.arbreCourant()` (la vue « flat » Kronos). Le type `FlatView`
+ *  de runtime-ui a été retiré en v1 (amendement UI-8) : on lit directement le type Kairos,
+ *  sans dépendre d'un type de vue amont (que la vue de production ne consomme plus). */
+type KairosFlat = ReturnType<Kairos['arbreCourant']>;
 
 class ProductionFeedStore {
   #kairos: Kairos | null = $state(null);
@@ -38,12 +43,12 @@ class ProductionFeedStore {
     return this.#kairos?.structureCourante() ?? null;
   }
 
-  /** Kronos flat (`arbreCourant()`). Guard: `arbreCourant()` THROWS when nothing is
-   *  loaded → try/catch → null. */
-  plat(): FlatView | null {
+  /** Kronos flat (`arbreCourant()`), lu depuis Kairos — exposé par `inspect.flat()` de
+   *  l'API publique. Garde : `arbreCourant()` LÈVE quand rien n'est chargé → try/catch → null. */
+  plat(): KairosFlat | null {
     if (!this.#kairos) return null;
     try {
-      return this.#kairos.arbreCourant() as unknown as FlatView;
+      return this.#kairos.arbreCourant();
     } catch {
       return null;
     }

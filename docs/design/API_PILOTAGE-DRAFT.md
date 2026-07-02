@@ -72,7 +72,7 @@ délèguent au point d'entrée UI) et **inspection** (`inspect.*`, lecture seule
 | Requête | Source (singleton / facette) |
 |---|---|
 | `inspect.structure()` | `productionFeed.structure()` (structure projetée Kairos) |
-| `inspect.flat()` | `productionFeed.plat()` — FlatView (durée + affichage Texte/Timeline) |
+| `inspect.flat()` | `productionFeed.plat()` — arbre « flat » Kairos (`arbreCourant()`, lecture) |
 | `inspect.modulations(input?)` | bindings OBSERVÉS sur les events forwardés (tampon borné 512) |
 | `inspect.clearObserved()` | vide le tampon d'observation (avant une capture) |
 | `inspect.audio.enableMeter(fftSize=2048)` / `disableMeter()` | compteur runtime-audio (lecture-seule) |
