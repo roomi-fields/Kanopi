@@ -361,6 +361,16 @@ class RealCore implements CoreApi {
     // Model C PLAY-from-stopped: each bpx adapter restarts its persisted (stopped)
     // handle from 0 with NO re-derivation. LEDs back on (the scene is sounding again).
     await this.#broadcast('__replay__', true);
+    // CVA-INIT — the replay's `reset()` cleared the audio arming (`_muted`) for a pristine
+    // 1st loop; RE-APPLY the composed arming from the actor store (the AUTHORITY) so a
+    // stop→play REPRODUCES the same performance: an orchestrated actor muted/disarmed before
+    // Stop must stay silent on replay (else stop→play would silently change the arming →
+    // non-deterministic, décision archi [448]). Armed actors need nothing (reset already
+    // re-armed them). No-op in mono (no orchestrated actors); `disarmOrchestratedActor` is
+    // itself a no-op for a name with no live voice.
+    for (const a of this.actors.list()) {
+      if (isOrchestratedActor(a.name) && (a.muted || !a.active)) disarmOrchestratedActor(a.name);
+    }
   }
 
   async hushAll(): Promise<void> {
