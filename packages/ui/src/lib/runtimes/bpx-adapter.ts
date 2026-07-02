@@ -59,11 +59,13 @@ import { type PitchLib, type DigitalLib } from '@kairos/core';
 // Tree-derived dispatch events (M5+ multi-actor refacto): flatten BPx's
 // `derive({ output: 'complete' }).tree` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
-// Kronos owns CV COMPOSITION (frontier R2 / migration #8): `buildModulators` fuses the
-// scene's `cv … : mod.x(…)` declarations with the `mod` library into the modulator registry.
-// The host builds it once and hands it to Kairos (`charger`'s `modulation:{registry,…}`);
-// Kairos's projection composes the bindings at flatten (KRO-24). Consumed AS-IS.
-import { buildModulators, type ModLib, type ExprSource } from '@kronos/core';
+// Kairos owns CV COMPOSITION (frontier R2 ; `buildModulators`/ModLib/ExprSource MIGRÉS de Kronos
+// vers @kairos/core — point 5, kairos 094abf3). `buildModulators` fuses the scene's `cv … : mod.x(…)`
+// declarations with the `mod` library into the modulator registry. The host builds it once and hands
+// it to Kairos (`charger`'s `modulation:{registry,…}`); Kairos's projection composes the bindings at
+// flatten (KRO-24). Consumed AS-IS. (Ménage point 3 — passer les données BRUTES plutôt qu'appeler
+// buildModulators côté hôte — reste SÉPARÉ, plus tard : il touche la compo CV.)
+import { buildModulators, type ModLib, type ExprSource } from '@kairos/core';
 // Kronos drives the REAL audio (the only engine; legacy removed). The Kronos
 // scheduler produces the timed events; a thin adapter bridges each to the existing
 // WebAudio synth. The old dispatcher is NEVER started for sound — it survives only
