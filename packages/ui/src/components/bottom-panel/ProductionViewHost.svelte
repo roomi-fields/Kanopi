@@ -3,6 +3,7 @@
   import type { ViewModule, ProductionInput, ProductionStructure } from 'runtime-ui';
   import { productionFeed } from '../../stores/production-feed.svelte';
   import { kronosCursor } from '../../stores/kronos-cursor.svelte';
+  import { recordViewInput } from '../../lib/pilot/view-input-observer';
 
   let { view }: { view: ViewModule } = $props();
   let container: HTMLElement;
@@ -32,6 +33,9 @@
       transport: { mode: kronosCursor.state, cursor: kronosCursor.active }
     };
     view.update(input);
+    // DEV probe (window.kanopi.inspect.lastViewInput) — record what the render layer receives,
+    // to prove/disprove a host-side wiring gap (e.g. cursor frozen on replay). No render effect.
+    recordViewInput(view.id, input);
   });
 </script>
 

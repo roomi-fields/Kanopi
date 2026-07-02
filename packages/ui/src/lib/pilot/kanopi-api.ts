@@ -24,6 +24,7 @@ import { workspace } from '../../stores/workspace.svelte';
 import { productionFeed } from '../../stores/production-feed.svelte';
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 import { setAudioForwardObserver, pilotAudioMeter } from '../runtimes/kronos-audio';
+import { lastViewInput } from './view-input-observer';
 import { core } from '../core';
 
 const API_VERSION = 7;
@@ -196,6 +197,11 @@ export function installKanopiApi(): void {
        *  rendu. `null` si arrêté / pas de scène. Sonde le redémarrage du rendu au (re)play. */
       cursorBeat(): unknown {
         return kronosCursor.beat;
+      },
+      /** Le DERNIER `ProductionInput` poussé par l'hôte à chaque vue (mode/cursor/durationSec) —
+       *  prouve ce que la couche RENDU reçoit (diag curseur re-play). Filtre optionnel par viewId. */
+      lastViewInput(viewId?: string): unknown {
+        return lastViewInput(viewId);
       },
       /** Tempo EFFECTIF entendu (miroir réactif de Kronos). */
       effectiveTempo(): number {
