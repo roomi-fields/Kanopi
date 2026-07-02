@@ -547,8 +547,12 @@ export function btTokenByActor(ast: unknown): Record<string, string> {
     seen.add(n);
     const node = n as Record<string, unknown>;
     if (node.type === 'Rule') {
-      const lhs = node.lhs as Array<{ name?: string }> | undefined;
-      const name = lhs?.[0]?.name;
+      const lhs = node.lhs as Array<{ name?: string; negated?: boolean }> | undefined;
+      // Prérequis flip AST (chantier inline, [497]) : des ATOMES NIÉS (`Symbol{negated:true}`)
+      // peuvent PRÉFIXER le LHS d'une règle contextuelle — la TÊTE de règle est le premier
+      // atome NON nié, jamais un contexte nié. INERTE pré-flip (aucune tête niée n'existe
+      // dans le flux actuel : `find` sans `negated` ≡ `lhs[0]`).
+      const name = lhs?.find((s) => !s?.negated)?.name;
       if (typeof name === 'string') {
         const bt = findBt(node.rhs, new Set());
         if (bt) out[name] = bt;
