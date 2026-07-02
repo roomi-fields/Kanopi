@@ -15,6 +15,14 @@
     { id: 'docs', title: 'Docs' },
     { id: 'account', title: 'Account' }
   ];
+
+  // « Docs » ouvre la doc utilisateur EMBARQUÉE (MkDocs, servie à la MÊME ORIGINE) dans un
+  // onglet dédié — SOURCE UNIQUE (décision Romain 2026-07-02). Pages .html PLATES : en dev
+  // `/docs/index.html`, en prod `/kanopi/docs/index.html` (via BASE_URL). Remplace l'ancien
+  // aide-mémoire codé en dur (DocsView, retiré). Ce n'est donc PLUS une vue de la sidebar.
+  function openDocs() {
+    window.open(import.meta.env.BASE_URL + 'docs/index.html', '_blank', 'noopener');
+  }
 </script>
 
 <nav class="activity-bar">
@@ -32,8 +40,8 @@
     <ActivityItem
       id={item.id}
       title={item.title}
-      active={ui.activeActivityView === item.id && !ui.sidebarCollapsed}
-      onclick={() => ui.setActivity(item.id)}
+      active={item.id !== 'docs' && ui.activeActivityView === item.id && !ui.sidebarCollapsed}
+      onclick={() => (item.id === 'docs' ? openDocs() : ui.setActivity(item.id))}
     />
   {/each}
 </nav>

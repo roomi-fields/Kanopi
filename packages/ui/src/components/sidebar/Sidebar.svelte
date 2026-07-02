@@ -2,7 +2,6 @@
   import { ui } from '../../stores/ui.svelte';
   import FilesView from './FilesView.svelte';
   import HardwareView from './HardwareView.svelte';
-  import DocsView from './DocsView.svelte';
   import LibraryView from './LibraryView.svelte';
   import ResourcesView from './ResourcesView.svelte';
 
@@ -27,8 +26,6 @@
       <FilesView />
     {:else if ui.activeActivityView === 'hardware'}
       <HardwareView />
-    {:else if ui.activeActivityView === 'docs'}
-      <DocsView />
     {:else if ui.activeActivityView === 'library'}
       <LibraryView />
     {:else if ui.activeActivityView === 'resources'}
