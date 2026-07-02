@@ -691,6 +691,17 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       // the SAME timeline plays again. After a full-teardown `stop()` this is a no-op.
       if (stopped) return;
       try {
+        // CVA-INIT — remise à zéro PRISTINE de la sortie audio AVANT de rejouer. Les nœuds de
+        // filtre PERSISTANTS (`ctrl::<controlId>`), les voix et le report de portamento SURVIVENT
+        // au `stopInPlace` (qui ne démonte pas le graphe de rendu, seulement le transport). Sans
+        // ce reset, le re-play réutilise les mêmes occurrences → le dédup `posed` empêche la
+        // re-pose de la courbe → 1re boucle FIGÉE sur l'état de la lecture précédente (le bug).
+        // `reset()` (runtime-audio) démonte le graphe → 1er tour identique à froid. Il oublie
+        // aussi l'armement (`_muted`) ; sa re-synchro orchestrée (syncActiveControls) est différée
+        // — sans effet en mono (aucun acteur désarmé), signalé archi pour l'orchestré.
+        // `reset` existe sur l'AudioRuntime (runtime-audio adapter.js:462) mais le type INFÉRÉ
+        // du module JS pur amont ne l'expose pas encore → cast défensif (`?.` = no-op si absent).
+        (audioRuntime as { reset?: () => void }).reset?.();
         transport.play();
         driver.start();
       } catch {
