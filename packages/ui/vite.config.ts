@@ -58,6 +58,12 @@ export default defineConfig({
         // after the first run. Keep it liberal for v1 — we can tighten later.
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,ico}'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        // Doc utilisateur EMBARQUÉE (/docs, MkDocs, source unique — [463]) : NE PAS la
+        // précacher (elle a sa propre navigation et ses centaines de pages) NI servir la
+        // coquille SPA sur ses navigations — sinon /kanopi/docs/* tomberait sur l'app au
+        // lieu des pages .html RÉELLES. En dev il n'y a pas de service worker → sans effet.
+        globIgnores: ['**/docs/**'],
+        navigateFallbackDenylist: [/^\/kanopi\/docs\//],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,

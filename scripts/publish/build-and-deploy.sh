@@ -42,6 +42,18 @@ UI_DIR="$REPO_ROOT/packages/ui"
 
 TS="$(date +%Y%m%d-%H%M%S)"
 
+# Doc utilisateur EMBARQUÉE (MkDocs) → packages/ui/public/docs, régénérée AVANT le vite build
+# (public/ → dist/) pour être servie à la même origine sous /kanopi/docs — SOURCE UNIQUE ([463]).
+# L'artefact public/docs est git-ignoré ; c'est CETTE étape qui le (re)produit à chaque déploiement.
+echo ">> [0/6] Build doc utilisateur (MkDocs) → packages/ui/public/docs"
+DOC_SRC="$REPO_ROOT/../atlas/doc-utilisateur"
+if [[ -x "$DOC_SRC/.venv/bin/mkdocs" ]]; then
+  ( cd "$DOC_SRC" && ./.venv/bin/mkdocs build -d "$UI_DIR/public/docs" )
+else
+  echo "ERREUR : mkdocs introuvable ($DOC_SRC/.venv/bin/mkdocs) — doc embarquée non régénérée" >&2
+  exit 1
+fi
+
 echo ">> [1/6] Build local (packages/ui, VITE_BASE_PATH=/kanopi/)"
 cd "$UI_DIR"
 VITE_BASE_PATH=/kanopi/ npm run build
