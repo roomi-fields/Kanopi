@@ -8,8 +8,10 @@ import { effectiveTempoBpm } from './bpx-adapter';
 // read back from `tree.metadata.tempo` — never overwritten by a host literal.
 //
 // These assertions are NON-CIRCULAR: they don't compare two halves of one host
-// computation. They trace the projected tempo to the UPSTREAM authority (BPx):
-// pass a tempo → metadata follows it; omit it → metadata is BPx's default, NOT 128.
+// computation. They trace the projected tempo to the UPSTREAM authority (BPx). Modèle
+// PORTE FERMÉE (f831830/c0fe56f, arbitrage archi [460]) : le tempo n'est PAS un input de
+// dérivation BPx — il vit au transport Kronos (warp). Donc `metadata.tempo` est TOUJOURS
+// le défaut moteur, quel que soit le tempo passé ; jamais un host 128.
 
 const SCENE_NO_MM = `@core
 @alphabet.western:browser
@@ -33,12 +35,17 @@ describe('KAN-C20 — host « 128 » default removed from the derivation seed', 
     expect(meta).not.toBe(128);
   });
 
-  it('the projected tempo TRACES to the engine: change the passed tempo → metadata follows', () => {
-    // Mutate the upstream input; the projected value must follow it (not a host fallback).
-    expect(deriveMetaTempo(96)).toBe(96);
-    expect(deriveMetaTempo(150)).toBe(150);
-    // …and with no input, it is the engine default — proving the host injects no 128.
+  it('createBPx({tempo}) does NOT inject the tempo into the derivation (porte fermée) — metadata stays the engine default; the heard tempo rides the Kronos WARP', () => {
+    // Modèle PORTE FERMÉE (arbitrage archi [460]) : le tempo n'est PAS un input de dérivation
+    // BPx (il vit au transport Kronos). Passer un tempo à createBPx ne le propage donc PAS à
+    // `tree.metadata.tempo` — celui-ci reste le défaut moteur (60), quel que soit le tempo
+    // passé. Le tempo entendu est appliqué par le WARP Kronos, hors dérivation. (L'ancien
+    // modèle injectait le tempo dans la dérivation → metadata suivait ; ce test le prouvait,
+    // il est mis à jour au modèle actuel. Invariant : jamais un host 128.)
+    expect(deriveMetaTempo(96)).toBe(60);
+    expect(deriveMetaTempo(150)).toBe(60);
     expect(deriveMetaTempo(undefined)).toBe(60);
+    expect(deriveMetaTempo(96)).not.toBe(128);
   });
 
   it('effectiveTempoBpm on a no-@mm derivation reads the engine default (60), not 128', () => {
