@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { bpscriptAdapter, setActorsSink, __getBpxDeriveCount } from './bpx-adapter';
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 import { core } from '../core';
+import { AudioRuntime } from 'runtime-audio';
 import type { KronosAudioHandle } from './kronos-audio';
 
 // Model C — the DERIVED timeline PERSISTS. Stop returns the playhead to 0 and cuts the
@@ -213,5 +214,33 @@ describe('Model C — persisted timeline replays without re-deriving', () => {
     // `active` is the narrow store view at compile time, but at runtime it is the full handle.
     (handle as unknown as KronosAudioHandle).replay();
     expect(handle.transport.state).toBe('stopped'); // stayed down, no resurrection
+  });
+
+  it('CVA-INIT — replay RESETS the audio output pristine (so the 1st loop is cold-identical)', async () => {
+    // The wiring proof (the pristine BEHAVIOUR is proven upstream: runtime-audio
+    // adapter.test.js:447). A `stopInPlace` does NOT tear down the audio render graph, so the
+    // PERSISTENT filter nodes (`ctrl::<controlId>`) + the `posed` dedup survive; without a reset
+    // the next replay reuses them → the 1st loop is frozen on the previous play's state. The
+    // handle's `replay()` must call the AudioRuntime's `reset()` FIRST → pristine 1st loop.
+    setActorsSink(() => {});
+    const resetSpy = vi.spyOn(
+      AudioRuntime.prototype as unknown as { reset: () => void },
+      'reset'
+    );
+    const src = { actorId: 'cvainit.bps', fileId: 'cvainit.bps' };
+    await bpscriptAdapter.evaluate(SCENE, src, () => {});
+    const handle = kronosCursor.active!;
+    expect(handle.transport.state).toBe('running');
+    resetSpy.mockClear(); // ignore any reset during build/eval — isolate the REPLAY
+
+    // STOP-IN-PLACE keeps the handle (audio graph NOT torn down), then REPLAY.
+    await bpscriptAdapter.stop(
+      { actorId: '__stop_in_place__', fileId: '__stop_in_place__' },
+      () => {}
+    );
+    expect(resetSpy).not.toHaveBeenCalled(); // stopInPlace must NOT reset (that's replay's job)
+    await bpscriptAdapter.stop({ actorId: '__replay__', fileId: '__replay__' }, () => {});
+    expect(handle.transport.state).toBe('running');
+    expect(resetSpy).toHaveBeenCalled(); // reset() fired on replay → pristine 1st loop
   });
 });
