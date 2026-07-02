@@ -50,9 +50,9 @@ Quatre couches :
 Principe transverse : **une seule source de vérité** (les stores singletons). L'API n'introduit
 aucun état propre.
 
-## 4. Interface — surface RÉELLE `window.kanopi` v6 (source de vérité : `kanopi-api.ts`)
+## 4. Interface — surface RÉELLE `window.kanopi` v8 (source de vérité : `kanopi-api.ts`)
 
-Installée dans **TOUS les builds** (prod incluse — API publique, plus DEV-only). `window.kanopi.version` = **6**.
+Installée dans **TOUS les builds** (prod incluse — API publique, plus DEV-only). `window.kanopi.version` = **8**.
 Surface **additive** (ajouter une capacité ≠ casser l'existant). Deux familles : **commandes** (effet,
 délèguent au point d'entrée UI) et **inspection** (`inspect.*`, lecture seule, aucun effet).
 
@@ -77,9 +77,13 @@ délèguent au point d'entrée UI) et **inspection** (`inspect.*`, lecture seule
 | `inspect.clearObserved()` | vide le tampon d'observation (avant une capture) |
 | `inspect.audio.enableMeter(fftSize=2048)` / `disableMeter()` | compteur runtime-audio (lecture-seule) |
 | `inspect.audio.measure() → {rms, spectralCentroid} \| null` | idem (active le compteur au besoin) |
+| `inspect.audio.clockBound() → boolean` | v8 — le sink audio a-t-il reçu la vue horloge de KRONOS (`bindClock`, canal B) |
 | `inspect.generation() → number` | `productionFeed.generation` (re-charge / swap re-random) |
 | `inspect.transportState() → string\|null` | `kronosCursor.active.transport.state` (autorité Kronos) |
 | `inspect.position() → number\|null` | `kronosCursor.active.transport.position()` (beats) |
+| `inspect.cursorState() → string` | v7 — miroir réactif `kronosCursor.state` (rendu ; l'autorité reste `transportState`) |
+| `inspect.cursorBeat() → {bar,beat,beatsTotal}\|null` | v7 — beat/bar RENDU (`kronosCursor.beat`, échantillonné par le rAF) |
+| `inspect.lastViewInput(viewId?) → snapshot\|snapshot[]` | v7 — dernier `ProductionInput` poussé aux vues (`mode`/`hasCursor`/`durationSec` + identités stables `cursorId`/`structureId`) |
 | `inspect.effectiveTempo() → number` | `kronosCursor.tempo` (miroir réactif) |
 | `inspect.loop()` / `inspect.reRandom() → boolean` | `transport.loop` / `transport.reRandom` |
 

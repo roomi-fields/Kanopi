@@ -27,7 +27,7 @@ import { setAudioForwardObserver, pilotAudioMeter } from '../runtimes/kronos-aud
 import { lastViewInput } from './view-input-observer';
 import { core } from '../core';
 
-const API_VERSION = 7;
+const API_VERSION = 8;
 
 // Tampon d'OBSERVATION (tooling de test, PAS de l'état d'app) : les derniers events audio
 // FORWARDÉS au sink, capturés VERBATIM par l'observateur lecture-seule de kronos-audio. Remplace
