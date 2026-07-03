@@ -32,6 +32,17 @@ côté hôte ; auto-création de fichiers/entités sans support réel.
 « corrigé en 2 s, toujours cassé » est interdit) ; toute dérogation se remonte à l'architecte
 AVANT de dévier.
 
+## Un bug observé chez moi n'est PAS à moi par défaut (règle PERMANENTE, Romain 2026-07-03)
+
+Dérive identifiée : les bugs arrivent à Kanopi (il a l'écran) et l'agent tend à les TRAITER
+plutôt que comprendre À QUI ils appartiennent — le schéma verrue historique (hôte qui absorbe
+les fixes) purgé au chantier transport. Règle, sur CHAQUE bug :
+1. **REPRODUIRE + DISCRIMINER** (bancs, bisection, variables isolées) ;
+2. **REPORTER la discrimination à l'architecte AVEC les pièces** — c'est LUI qui route par la
+   **DÉFINITION des rôles** (jamais par le symptôme) ;
+3. ne **CORRIGER que ce qui est démontré dans le périmètre d'hôte** (affichage, câblage du
+   handle, UI, stores). **JAMAIS de fix hors-périmètre, même évident, même petit.**
+
 ## DÉFINITION DE « FAIT » — honnêteté (violation = faute grave, pas une approximation)
 
 Des rapports « migration complète, gate vert » ont été rendus alors que des scènes réelles
