@@ -76,6 +76,44 @@ const RULES = [
     ecarts: '#9',
     label: "État transport relayé hôte→runtime (sink backtick, relais de cycle de vie)",
     patterns: [/\battachCodeVoiceLifecycle\b/, /\bbacktickSink\b/]
+  },
+  {
+    // §Garde 6 (contrat hote-runtimes-sortie.md, RATIFIÉE Romain — KRONOS SEUL gardien du temps).
+    // Toute HORLOGE PIRATE dans l'hôte : une lecture de temps réel (Date.now / performance.now /
+    // new Date / AudioContext.currentTime) ou une pompe (setInterval/Timeout/rAF) utilisée comme
+    // SOURCE de temps MUSICAL (planification / position / tempo). Le temps vient de Kronos, lu via
+    // la vue horloge — jamais fabriqué ici. Le retrait audio (#8 : audioCtx.currentTime →
+    // performance.now/1000 DANS createTransport) doit FAIRE DESCENDRE ce compteur.
+    garde: 6,
+    ecarts: 'temps',
+    label: "Horloge PIRATE dans l'hôte (temps musical fabriqué hors Kronos)",
+    patterns: [
+      /\bDate\.now\s*\(/,
+      /\bperformance\.now\s*\(/,
+      /\bnew\s+Date\s*\(/,
+      /\.currentTime\b/,
+      /\bsetInterval\s*\(/,
+      /\bsetTimeout\s*\(/,
+      /\brequestAnimationFrame\s*\(/
+    ],
+    // WHITELIST (usages LÉGITIMES — ne comptent PAS) :
+    //  - la base de temps INJECTÉE dans createTransport (`performance.now()/1000`, décision
+    //    temps-audio-multicontextes) : c'est l'horloge PROPRE de Kronos, pas une pirate ;
+    //  - un curseur/afficheur qui LIT la position de Kronos (`position()`/`beatPosition()`),
+    //    éventuellement via rAF pour le rendu — il lit, il ne fabrique pas ;
+    //  - l'offset audio-LOCAL d'un sink (`ctx.currentTime` recalé sur `view.now()`), qui traduit
+    //    le temps de Kronos vers l'échantillon, sans le reconstruire.
+    whitelist: [
+      /performance\.now\(\)\s*\/\s*1000/,
+      /\b(position|beatPosition)\s*\(\)/,
+      /currentTime\b.*\bnow\s*\(\)|\bnow\s*\(\).*currentTime\b/,
+      // Le curseur/afficheur LIT la position de Kronos via une boucle rAF (rendu, pas source de
+      // temps) — item whitelist « curseur UI qui lit position() » (le `position()` est appelé
+      // dans `#loop`, à une autre ligne que le rAF, d'où le ciblage par fichier).
+      { re: /\brequestAnimationFrame\s*\(/, file: 'kronos-cursor' },
+      // Générateur d'ID de fichier (non-musical) — pas une horloge.
+      { re: /\bDate\.now\s*\(/, file: 'workspace.svelte' }
+    ]
   }
 ];
 
@@ -112,12 +150,25 @@ for (const rule of RULES) {
     const lines = readFileSync(file, 'utf8').split('\n');
     lines.forEach((line, i) => {
       if (isCommentLine(line)) return;
+      // WHITELIST explicite d'une règle (usages LÉGITIMES qui ne comptent pas — ex. la base de
+      // temps de Kronos, un curseur qui LIT position()). Une entrée = un RegExp, ou `{re, file}`
+      // pour cibler un fichier précis (ex. le curseur/afficheur). Documentée dans la règle.
+      if (
+        rule.whitelist &&
+        rule.whitelist.some((w) => {
+          if (w instanceof RegExp) return w.test(line);
+          return (!w.file || relative(ROOT, file).includes(w.file)) && w.re.test(line);
+        })
+      )
+        return;
       if (rule.patterns.some((re) => re.test(line))) {
         hits.push(`${relative(ROOT, file)}:${i + 1}`);
       }
     });
   }
-  grandTotal += hits.length;
+  // Le total de BURNDOWN frontière = écarts #1-#9 (§Garde 1-5). §Garde 6 (temps) est un axe
+  // DISTINCT (gardien du temps), reporté à part — il descend avec le retrait audio, pas MIDI/OSC.
+  if (rule.garde <= 5) grandTotal += hits.length;
   report.push({ rule, count: hits.length, hits });
 }
 
