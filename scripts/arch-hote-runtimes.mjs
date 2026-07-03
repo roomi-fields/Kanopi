@@ -31,7 +31,8 @@ const EXCLUDE_FILE = /\.(test|spec)\.|\.d\.ts$|output-runtime-contract\.ts$/;
 // (Phase 2 MIDI) sans attendre la Phase 3 globale. Chaque nouvelle runtime migrée ajoute ses motifs.
 const LOCKED = [
   { runtime: 'midi', label: 'construction de transport MIDI dans l\'hôte (#6)', re: /\bMidiTransport\b/ },
-  { runtime: 'midi', label: 'canal MIDI résolu dans l\'hôte (#4)', re: /\.chan\b\s*=/ }
+  { runtime: 'midi', label: 'canal MIDI résolu dans l\'hôte (#4)', re: /\.chan\b\s*=/ },
+  { runtime: 'osc', label: 'dérivation des liaisons OSC dans l\'hôte (#5)', re: /\bderiveOscBindings\b/ }
 ];
 
 // Une règle §Garde = un ou plusieurs motifs de contenu, rattachés aux écarts du draft.

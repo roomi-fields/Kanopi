@@ -99,3 +99,28 @@ export declare class OscAdapter {
   /** Release timers + transport. */
   close(): void;
 }
+
+export interface OscRuntimeOptions {
+  oscWsUrl?: string;
+  /** Table BRUTE des acteurs (`metadata.actors`) — la fabrique DÉRIVE elle-même les devices. */
+  actors?: Record<string, { runtime: string; params?: Record<string, unknown> }>;
+  latency?: number;
+  log?: (msg: string) => void;
+  profile?: OscOutputProfile;
+}
+
+/** Sortie OSC — adaptateur UNIFORME (frontière hôte↔runtimes de sortie). POSSÈDE le socket
+ *  WS→pont, le profil d'adressage, et DÉRIVE les devices depuis la table brute d'acteurs —
+ *  l'hôte ne dérive rien, ne construit rien. Kronos appelle `send(ev)`/`bindClock`. */
+export interface OscRuntime {
+  readonly latency: number;
+  bindClock(clock: unknown): void;
+  send(event: unknown): void;
+  stop(): void;
+  setActorMuted(actor: string, muted: boolean): void;
+  dispose(): void;
+}
+
+/** Fabrique de la sortie OSC (parallèle à `createMidiRuntime`/`createAudioRuntime`). Rend `null`
+ *  si aucun acteur `runtime==='osc'` OU pas d'URL de relais. Point d'entrée hôte. */
+export declare function createOscRuntime(opts?: OscRuntimeOptions): OscRuntime | null;

@@ -50,7 +50,7 @@ import { createAudioRuntime } from 'runtime-audio';
 // (`node:dgram`), Node-only modules that crash in the browser. The `/browser`
 // subpath exposes only the browser-safe surface (OscAdapter/OscBridgeProfile/
 // WebSocketTransport) — deterministic under both Vite and vitest.
-import { OscAdapter, OscBridgeProfile, WebSocketTransport } from 'runtime-osc/browser';
+import { createOscRuntime } from 'runtime-osc/browser';
 // Reused AS-IS from the core dispatcher: coerces numeric-string controls to
 // numbers (vel/filterQ/…) while leaving strings (wave) untouched.
 import { coerceControlValues } from '../../../../core/src/dispatcher/dispatcher.js';
@@ -217,28 +217,9 @@ export interface KronosAudioHandle {
 // Scheduler look-ahead window (seconds).
 const LOOKAHEAD_SEC = 0.12;
 
-/**
- * ENUMERATE the scene's OSC devices for runtime-OSC's setup (`setBindings`, whose hot
- * `map()` is sync and pre-fetches device surfaces). The list is DERIVED from the scene's
- * actor→output table (`metadata.actors`) — the OSC actors (`runtime==='osc'`) and their
- * transport `params` (device + ch/channel). Kanopi chooses no binding; the per-event
- * device/channel still rides `event.output`. Keyed by ACTOR (the key runtime-OSC's profile
- * resolves on `event.actor`). `{ ... }` empty ⇒ no OSC.
- */
-function deriveOscBindings(
-  actors: Record<string, { runtime: string; params?: Record<string, unknown> }> | undefined
-): Record<string, { device?: string; channel?: number }> {
-  const out: Record<string, { device?: string; channel?: number }> = {};
-  for (const [name, ref] of Object.entries(actors ?? {})) {
-    if (ref.runtime !== 'osc') continue;
-    const p = ref.params ?? {};
-    const device = typeof p.device === 'string' ? p.device : undefined;
-    const channel =
-      typeof p.channel === 'number' ? p.channel : typeof p.ch === 'number' ? p.ch : undefined;
-    out[name] = { device, channel };
-  }
-  return out;
-}
+// Frontière hôte↔runtimes (Phase 2 OSC) : la DÉRIVATION des liaisons OSC (device/channel depuis
+// `metadata.actors`) a quitté l'hôte (écart #5) — `createOscRuntime` la fait DANS le paquet à
+// partir de la table BRUTE d'acteurs. L'hôte ne dérive plus rien.
 
 /**
  * Start Kronos driving the real audio for one scene. Call JUST BEFORE the host
@@ -335,54 +316,22 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // MIDI OUTPUT = the host-built per-actor MidiTransport, handed in as `sinks.midi`.
   const midiSink: TransportLike | null = opts.sinks?.midi ?? null;
 
-  // OSC OUTPUT (OSC-5b): runtime-OSC's adapter, built HERE (it schedules on the shared
-  // `audioCtx` clock — `now` must be the SAME scale as the event onset). The device
-  // ENUMERATION for setup (`setBindings`, sync hot path) is DERIVED from the scene's OSC
-  // actors in `metadata.actors`; the per-event device/channel rides `ev.output`. A
-  // host-provided `sinks.osc` overrides the built-in (tests).
-  // Gated by `!buildOnly`: a produce/load opens NO real WebSocket to the relay (the
-  // transport stays muted — opening a live connection during a silent build violates
-  // the buildOnly contract, exactly as `driver.start()` is gated below). The socket
-  // mounts only when the scene will actually play.
-  const oscBindings = deriveOscBindings(opts.actors);
-  let oscAdapter: InstanceType<typeof OscAdapter> | null = null;
-  if (!buildOnly && Object.keys(oscBindings).length > 0 && opts.oscWsUrl) {
-    try {
-      // Build the socket ourselves so a relay that is down (connection refused) is LOGGED
-      // once rather than silently queueing frames forever: the WebSocketTransport ctor
-      // returns synchronously, before the async connection result, so a dead relay never
-      // surfaces through the try/catch otherwise.
-      const url = opts.oscWsUrl;
-      const ws = new WebSocket(url);
-      let oscErrLogged = false;
-      const onOscUnreachable = () => {
-        if (oscErrLogged) return;
-        oscErrLogged = true;
-        log(`⚠ relais OSC injoignable (${url}) — voix OSC en attente, non émises`);
-      };
-      ws.addEventListener('error', onOscUnreachable);
-      ws.addEventListener('close', (e) => {
-        if (!(e as CloseEvent).wasClean) onOscUnreachable();
+  // OSC OUTPUT — l'adaptateur uniforme de runtime-OSC (frontière hôte↔runtimes, Phase 2). La
+  // fabrique POSSÈDE tout : socket WS→pont, profil d'adressage, DÉRIVATION des devices depuis la
+  // table BRUTE d'acteurs (l'hôte ne dérive plus rien, écart #5). Kronos câble l'horloge via
+  // `bindClock` à l'enregistrement → plus de `now: audioCtx.currentTime` côté hôte (écart #8).
+  // Gardée par `!buildOnly` (un produce/load n'ouvre AUCUN WebSocket réel). La fabrique rend
+  // `null` si aucun acteur OSC ou pas d'URL de relais → on n'enregistre rien. `sinks.osc` (tests)
+  // reste prioritaire.
+  const oscRuntime = buildOnly
+    ? null
+    : createOscRuntime({
+        oscWsUrl: opts.oscWsUrl,
+        actors: opts.actors,
+        log: (m: string) => log(m)
       });
-      const transport = new WebSocketTransport({ socket: ws });
-      oscAdapter = new OscAdapter({
-        transport,
-        profile: new OscBridgeProfile({ log: (m: string) => log(m) }),
-        now: () => audioCtx.currentTime
-      });
-      // setBindings pre-resolves device surfaces (async). Catch a rejection so it never
-      // becomes an unhandled rejection; the literal-fallback path resolves on a microtask,
-      // before the driver's setTimeout-scheduled first emission.
-      void oscAdapter.setBindings(oscBindings).catch((err: unknown) => {
-        log(`⚠ OSC setBindings a échoué (${String(err)})`);
-      });
-    } catch (err) {
-      log(`⚠ OSC indisponible (${String(err)}) — voix OSC muettes`);
-      oscAdapter = null;
-    }
-  }
   const oscSink: TransportLike | null =
-    opts.sinks?.osc ?? (oscAdapter as unknown as TransportLike | null);
+    opts.sinks?.osc ?? (oscRuntime as unknown as TransportLike | null);
 
   // 3. PER-RUNTIME adapters. Each ScheduledEvent already carries its `output.runtime` route
   //    key (graven by Kairos); the scheduler selects the adapter on that key alone
@@ -484,32 +433,9 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // (`output.channel`) et normalise la vélocité — l'hôte ne calcule plus vel/127 ni le canal, ne
   // reshape plus rien (écarts #3/#4 retirés). Kronos lui passe l'événement BRUT via `send(ev)`.
 
-  // OSC: hand the OscAdapter the RAW ScheduledEvent (its profile maps `content.controls` to
-  // device addresses + `content.token` to note on/off). `output` rides through so the sink
-  // reads device/channel from it.
-  const oscRuntimeAdapter: RuntimeAdapter = {
-    send(ev: ScheduledEvent) {
-      if (!oscSink) return warnMissing('osc');
-      const { c, coerced } = prep(ev.content);
-      (oscSink as { send(e: unknown): void }).send({
-        onset: ev.onset,
-        duration: ev.duration,
-        actor: ev.actor,
-        kind: ev.kind,
-        // CONTRAT_SINK_CONTROLE §3 : la nature voyage verbatim (le profil OSC route/ignore).
-        nature: ev.nature,
-        output: ev.output,
-        // KAI-10: forward the graven pitch facet; the OSC profile reads `content.pitch.hz`
-        // (→ note/Hz address) instead of resolving the token host-side.
-        content: {
-          token: c.token,
-          controls: coerced,
-          pitch: c.pitch,
-          modulations: c.modulations ?? []
-        }
-      });
-    }
-  };
+  // OSC : plus de wrapper hôte. L'adaptateur uniforme de runtime-OSC (`createOscRuntime`) est
+  // enregistré DIRECTEMENT sur Kronos (voir plus bas) et reçoit l'événement ordonnancé VERBATIM ;
+  // son profil mappe `content`/`output` vers les adresses OSC. L'hôte ne reshape plus rien.
 
   // CODE: a code voice (`output.runtime==='code'`) is NOT a note — fire it through the
   // backtick sink (the same sink the legacy dispatcher used). Its interpreter rides
@@ -549,7 +475,9 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // L'adaptateur uniforme de runtime-MIDI est enregistré DIRECTEMENT (il expose send(ev)/bindClock ;
   // Kronos appelle bindClock lui-même à l'enregistrement — vue horloge + bus de cycle de vie).
   if (midiSink) kronos.addAdapter('midi', midiSink as unknown as RuntimeAdapter);
-  if (oscSink) kronos.addAdapter('osc', oscRuntimeAdapter);
+  // L'adaptateur uniforme de runtime-OSC est enregistré DIRECTEMENT (send(ev)/bindClock ; Kronos
+  // câble l'horloge lui-même à l'enregistrement — plus de now:audioCtx hôte pour OSC).
+  if (oscSink) kronos.addAdapter('osc', oscSink as unknown as RuntimeAdapter);
   if (backtickSink) kronos.addAdapter('code', codeAdapter);
 
   // The playing cursor (EX4 phase 2): the INVERSE of the time authority, not a separate
@@ -659,9 +587,8 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       try {
         transport.stop();
         driver.stop();
-        // OSC: full teardown — cancel pending emissions AND close the relay socket
-        // (a same-file re-eval builds a fresh adapter + connection).
-        oscAdapter?.close();
+        // OSC: full teardown — l'adaptateur uniforme ferme son socket + annule les émissions.
+        (oscSink as { dispose?(): void } | null)?.dispose?.();
       } catch {
         /* already torn down */
       }
@@ -679,7 +606,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
         driver.stop();
         // OSC: cancel scheduled-but-unsent emissions, but KEEP the socket open — a
         // later `replay()` reuses this same adapter (Model C; no reconnect churn).
-        oscAdapter?.stop();
+        (oscSink as { stop?(): void } | null)?.stop?.();
       } catch {
         /* already torn down */
       }
