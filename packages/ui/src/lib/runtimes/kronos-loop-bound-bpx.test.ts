@@ -34,42 +34,13 @@ function reduceMax(events: DispatchEvent[]): number {
   return events.reduce((m, e) => Math.max(m, e.startSec + e.durSec), 0);
 }
 
-function param() {
-  return {
-    setValueAtTime() {},
-    setValueCurveAtTime() {},
-    linearRampToValueAtTime() {},
-    exponentialRampToValueAtTime() {},
-    cancelScheduledValues() {},
-    value: 0
-  };
-}
-function fakeCtx(): AudioContext {
-  return {
-    get currentTime() {
-      return 0;
-    },
-    createGain: () => ({ gain: param(), connect() {} }),
-    createOscillator: () => ({
-      frequency: param(),
-      detune: param(),
-      type: '',
-      connect() {},
-      start() {},
-      stop() {}
-    }),
-    createBiquadFilter: () => ({ frequency: param(), Q: param(), type: '', connect() {} }),
-    createStereoPanner: () => ({ pan: param(), connect() {} }),
-    destination: {}
-  } as unknown as AudioContext;
-}
-
 // Read the loop bound back through the upstream primitive, optionally supplying the
 // BPx-projected compiled length (`durationSec`). When `durationSec` is omitted, the
 // timeline materializes from the events (the repli).
 function loopBound(events: DispatchEvent[], durationSec?: number): number {
   const handle = startKronosAudio({
-    audioCtx: fakeCtx(),
+    now: () => 0,
+    sinks: { webaudio: { send() {} } },
     derivedTempo: 120,
     loop: true,
     startSceneSec: 0,

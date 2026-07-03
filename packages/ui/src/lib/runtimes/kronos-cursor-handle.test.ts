@@ -13,34 +13,6 @@ import type { DispatchEvent } from './kairos-test-helpers';
 // the RealtimeDriver's interval never advances time on its own. Each `now` bump
 // is one "frame"; we read `handle.position()` after each.
 
-function fakeCtx(now: { t: number }): AudioContext {
-  const param = () => ({
-    setValueAtTime() {},
-    setValueCurveAtTime() {},
-    linearRampToValueAtTime() {},
-    exponentialRampToValueAtTime() {},
-    cancelScheduledValues() {},
-    value: 0
-  });
-  return {
-    get currentTime() {
-      return now.t;
-    },
-    createGain: () => ({ gain: param(), connect() {} }),
-    createOscillator: () => ({
-      frequency: param(),
-      detune: param(),
-      type: '',
-      connect() {},
-      start() {},
-      stop() {}
-    }),
-    createBiquadFilter: () => ({ frequency: param(), Q: param(), type: '', connect() {} }),
-    createStereoPanner: () => ({ pan: param(), connect() {} }),
-    destination: {}
-  } as unknown as AudioContext;
-}
-
 // Two notes at 120 bpm, 0.5 s each → a 1.0 s scene loop.
 const EVENTS: DispatchEvent[] = [
   { token: 'C4', startSec: 0, durSec: 0.5, type: 'note', payload: null },
@@ -52,7 +24,8 @@ describe('Kronos audio handle — playing cursor forwarding', () => {
     const now = { t: 0 };
     const handle = startKronosAudio({
       durationSec: 1.0,
-      audioCtx: fakeCtx(now),
+      now: () => now.t,
+      sinks: { webaudio: { send() {} } },
       derivedTempo: 120,
       loop: true,
       startSceneSec: 0,
@@ -84,7 +57,8 @@ describe('Kronos audio handle — playing cursor forwarding', () => {
     const now = { t: 0 };
     const handle = startKronosAudio({
       durationSec: 1.0,
-      audioCtx: fakeCtx(now),
+      now: () => now.t,
+      sinks: { webaudio: { send() {} } },
       derivedTempo: 120,
       loop: true,
       startSceneSec: 0,
@@ -111,7 +85,8 @@ describe('Kronos audio handle — playing cursor forwarding', () => {
     const now = { t: 0 };
     const handle = startKronosAudio({
       durationSec: 1.0,
-      audioCtx: fakeCtx(now),
+      now: () => now.t,
+      sinks: { webaudio: { send() {} } },
       derivedTempo: 120,
       loop: true,
       startSceneSec: 0,

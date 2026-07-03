@@ -9,34 +9,6 @@ import type { Kairos } from '@kairos/core';
 // (The earlier events-timeline legacy cases — `reDerive` + `scheduler.setReDerive` — were
 // removed with that dead path; this Kairos-path case is their replacement.)
 
-function fakeCtx(now: { t: number }): AudioContext {
-  const param = () => ({
-    setValueAtTime() {},
-    setValueCurveAtTime() {},
-    linearRampToValueAtTime() {},
-    exponentialRampToValueAtTime() {},
-    cancelScheduledValues() {},
-    value: 0
-  });
-  return {
-    get currentTime() {
-      return now.t;
-    },
-    createGain: () => ({ gain: param(), connect() {} }),
-    createOscillator: () => ({
-      frequency: param(),
-      detune: param(),
-      type: '',
-      connect() {},
-      start() {},
-      stop() {}
-    }),
-    createBiquadFilter: () => ({ frequency: param(), Q: param(), type: '', connect() {} }),
-    createStereoPanner: () => ({ pan: param(), connect() {} }),
-    destination: {}
-  } as unknown as AudioContext;
-}
-
 describe('Kronos audio handle — live re-random / loop toggle', () => {
   // KAN-orchestration P1 — on the KAIROS path the re-derive is armed on KAIROS
   // (`kairos.setReDerive`), not the scheduler. The live `setReRandom`/`setLoop` toggle must
@@ -62,7 +34,8 @@ describe('Kronos audio handle — live re-random / loop toggle', () => {
     const now = { t: 0 };
     const handle = startKronosAudio({
       durationSec: 1.0,
-      audioCtx: fakeCtx(now),
+      now: () => now.t,
+      sinks: { webaudio: { send() {} } },
       derivedTempo: 60,
       loop: true,
       startSceneSec: 0,

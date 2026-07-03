@@ -30,42 +30,13 @@ function oldReduceMax(events: DispatchEvent[]): number {
   return events.reduce((m, e) => Math.max(m, e.startSec + e.durSec), 0);
 }
 
-function param() {
-  return {
-    setValueAtTime() {},
-    setValueCurveAtTime() {},
-    linearRampToValueAtTime() {},
-    exponentialRampToValueAtTime() {},
-    cancelScheduledValues() {},
-    value: 0
-  };
-}
-function fakeCtx(): AudioContext {
-  return {
-    get currentTime() {
-      return 0;
-    },
-    createGain: () => ({ gain: param(), connect() {} }),
-    createOscillator: () => ({
-      frequency: param(),
-      detune: param(),
-      type: '',
-      connect() {},
-      start() {},
-      stop() {}
-    }),
-    createBiquadFilter: () => ({ frequency: param(), Q: param(), type: '', connect() {} }),
-    createStereoPanner: () => ({ pan: param(), connect() {} }),
-    destination: {}
-  } as unknown as AudioContext;
-}
-
 // Build the REAL Kronos handle (real @kronos/core) WITHOUT passing a compiled
 // `durationSec`, so the timeline length is materialized from the events — exactly the
 // repli path. Then read the bound back through the upstream primitive.
 function loopDurationViaPrimitive(events: DispatchEvent[]): number {
   const handle = startKronosAudio({
-    audioCtx: fakeCtx(),
+    now: () => 0,
+    sinks: { webaudio: { send() {} } },
     derivedTempo: 120,
     loop: true,
     startSceneSec: 0,

@@ -1104,40 +1104,11 @@ export function isOrchestratedActor(name: string): boolean {
   return orchestratedVoices.has(name);
 }
 
-let audioCtx: AudioContext | undefined;
-// The dispatcher's lookahead clock schedules notes against `audioCtx.currentTime`.
-// On the first eval after page load the context can still be `suspended` (its
-// clock frozen near 0), so we must AWAIT the resume before starting playback —
-// otherwise only the notes inside the first 100 ms lookahead window get
-// scheduled and any grammar whose events are spread out (anacrusis / sparse
-// rhythms) falls silent.
-async function getCtx(): Promise<AudioContext> {
-  if (!audioCtx) audioCtx = new AudioContext();
-  if (audioCtx.state === 'suspended') await audioCtx.resume();
-  return audioCtx;
-}
-
-// BUILD-ONLY context accessor (Model C produce/load): get the shared context WITHOUT
-// resuming it — a produce must not WAKE the audio (the architect rule: building the
-// persistent handle on load stays silent, like a Stop keeps a silent handle). The
-// context's `currentTime` is a valid (frozen, if suspended) clock source for the built-
-// but-not-playing Transport; the first Play resumes it via `getCtx()` on `replay`.
-function peekCtx(): AudioContext {
-  if (!audioCtx) audioCtx = new AudioContext();
-  return audioCtx;
-}
-
-// True PAUSE for the WebAudio path: suspend the shared audio context. The
-// dispatcher's lookahead clock schedules against `audioCtx.currentTime`, so
-// freezing the context freezes playback in place WITHOUT tearing down the
-// dispatchers — resume continues exactly where it stopped. No context yet (never
-// played) → no-op. The core wires these to the central clock's pause/resume.
-export async function pauseAudioContext(): Promise<void> {
-  if (audioCtx && audioCtx.state === 'running') await audioCtx.suspend();
-}
-export async function resumeAudioContext(): Promise<void> {
-  if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
-}
+// Frontière hôte↔runtimes (Phase 2 audio, #7) : l'hôte ne CRÉE plus, ne POSSÈDE plus, ne RÉVEILLE
+// plus d'AudioContext. runtime-audio possède+réveille le sien (via le bus de cycle de vie, à la
+// transition replay/resume portée par la pile du geste utilisateur). Le temps de Kronos vient de
+// `performance.now()` (createTransport), plus d'un contexte audio. Les anciens getCtx/peekCtx/
+// pauseAudioContext/resumeAudioContext (contexte partagé hôte) sont RETIRÉS.
 
 function srcKey(s: EvalSource): string {
   return s.actorId ?? s.fileId;
@@ -1726,8 +1697,9 @@ function makeBpxAdapter(
       // BUILD-ONLY (produce/load) must NOT wake the audio: take the context WITHOUT resuming
       // it (`peekCtx`). A real play resumes via `getCtx()`. The built handle stays silent until
       // the first Play's `replay` resumes the context (the `__replay__` sentinel does so).
-      const ctx = buildOnly ? peekCtx() : await getCtx();
-      const dispatcher = new Dispatcher(ctx);
+      // Le Dispatcher ne reçoit plus de contexte hôte (il ne l'utilisait pas — structure inerte de
+      // résolveurs ; le seul transport qu'il portait, MIDI, a migré). runtime-audio possède le sien.
+      const dispatcher = new Dispatcher();
 
       // Orchestrator-only: BT token → owning actor (rule LHS), and the live set
       // of disarmed actors (consulted by the backtick sink + the per-actor note
@@ -1892,7 +1864,6 @@ function makeBpxAdapter(
           // built inside startKronosAudio) — it chooses no route and keeps no actor→transport
           // map. The `default`/mono case carries `output.runtime='audio'` from the AST.
           kronosAudio = startKronosAudio({
-            audioCtx: ctx,
             derivedTempo: currentBpm,
             // Beats-per-bar PROJECTED from the derived meter (BPx authority). The handle
             // folds bar/beat with it and surfaces it to the cursor store (onBar events).
@@ -2113,12 +2084,10 @@ function makeBpxAdapter(
       // running/paused handle is left untouched — Play-from-paused is the resume path, handled
       // in the store, not here).
       if (key === '__replay__') {
-        // WAKE the audio context first: a build-only (produce/load) handle left it
-        // suspended (no wake on load, by design), and a Stop-in-place may have parked it
-        // too — the WebAudio transport schedules against `currentTime`, frozen while
-        // suspended, so `replay` would queue notes that never sound. This Play is a user
-        // gesture, so resuming is allowed. `getCtx()` resumes if suspended (no-op if running).
-        await getCtx();
+        // Le RÉVEIL du contexte audio n'est plus l'affaire de l'hôte : runtime-audio possède le sien
+        // et le réveille à la transition `replay`/`resume` du bus de cycle de vie (ce Play est un
+        // geste utilisateur, dans la pile — le réveil y est autorisé). L'hôte se contente de
+        // COMMANDER le replay ; Kronos propage, le sink réveille son contexte (frontière Phase 2).
         for (const voice of voices.values()) {
           if (voice.kronosAudio?.transport.state === 'stopped') voice.kronosAudio.replay();
         }

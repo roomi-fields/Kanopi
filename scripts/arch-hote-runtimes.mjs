@@ -32,7 +32,9 @@ const EXCLUDE_FILE = /\.(test|spec)\.|\.d\.ts$|output-runtime-contract\.ts$/;
 const LOCKED = [
   { runtime: 'midi', label: 'construction de transport MIDI dans l\'hôte (#6)', re: /\bMidiTransport\b/ },
   { runtime: 'midi', label: 'canal MIDI résolu dans l\'hôte (#4)', re: /\.chan\b\s*=/ },
-  { runtime: 'osc', label: 'dérivation des liaisons OSC dans l\'hôte (#5)', re: /\bderiveOscBindings\b/ }
+  { runtime: 'osc', label: 'dérivation des liaisons OSC dans l\'hôte (#5)', re: /\bderiveOscBindings\b/ },
+  { runtime: 'audio', label: 'AudioContext créé dans l\'hôte (#7)', re: /\bnew\s+AudioContext\b/ },
+  { runtime: 'audio', label: 'source de temps audioCtx dans l\'hôte (#8)', re: /\baudioCtx\.currentTime\b/ }
 ];
 
 // Une règle §Garde = un ou plusieurs motifs de contenu, rattachés aux écarts du draft.

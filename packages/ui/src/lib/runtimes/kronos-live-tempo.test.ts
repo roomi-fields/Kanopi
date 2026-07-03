@@ -17,34 +17,6 @@ import type { DispatchEvent } from './kairos-test-helpers';
 // second before vs after the retune. We pump ONE `transport.tick(now.t)` after each
 // retune — the exact thing the RealtimeDriver does — so the queued tempo op applies.
 
-function fakeCtx(now: { t: number }): AudioContext {
-  const param = () => ({
-    setValueAtTime() {},
-    setValueCurveAtTime() {},
-    linearRampToValueAtTime() {},
-    exponentialRampToValueAtTime() {},
-    cancelScheduledValues() {},
-    value: 0
-  });
-  return {
-    get currentTime() {
-      return now.t;
-    },
-    createGain: () => ({ gain: param(), connect() {} }),
-    createOscillator: () => ({
-      frequency: param(),
-      detune: param(),
-      type: '',
-      connect() {},
-      start() {},
-      stop() {}
-    }),
-    createBiquadFilter: () => ({ frequency: param(), Q: param(), type: '', connect() {} }),
-    createStereoPanner: () => ({ pan: param(), connect() {} }),
-    destination: {}
-  } as unknown as AudioContext;
-}
-
 // Long single note so the playhead never folds on the loop during the window we
 // measure (we keep loop OFF and stay well within the duration anyway).
 const EVENTS: DispatchEvent[] = [
@@ -56,7 +28,8 @@ describe('Kronos audio handle — live tempo retune warps the heard tempo', () =
     const now = { t: 0 };
     const handle = startKronosAudio({
       durationSec: 100,
-      audioCtx: fakeCtx(now),
+      now: () => now.t,
+      sinks: { webaudio: { send() {} } },
       derivedTempo: 60, // events derived at 60 bpm → rate 1 at 60 bpm live
       loop: false,
       startSceneSec: 0,

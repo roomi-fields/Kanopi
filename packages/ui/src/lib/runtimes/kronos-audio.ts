@@ -28,8 +28,7 @@ import {
   type KronosTransport,
   type Transport,
   type RuntimeAdapter,
-  type ScheduledEvent,
-  type ClockProvider
+  type ScheduledEvent
 } from '@kronos/core';
 // KAN-orchestration P1 — Kairos is the SOURCE of the played timeline (it projects the
 // BPx tree into a Kronos Timeline and exposes a StructureSource the Transport PULLs).
@@ -53,7 +52,6 @@ import { createAudioRuntime } from 'runtime-audio';
 import { createOscRuntime } from 'runtime-osc/browser';
 // Reused AS-IS from the core dispatcher: coerces numeric-string controls to
 // numbers (vel/filterQ/…) while leaving strings (wave) untouched.
-import { coerceControlValues } from '../../../../core/src/dispatcher/dispatcher.js';
 import { DEFAULT_BEATS_PER_BAR } from './meter';
 // Relais lifecycle voix de code (chantier voix-code-transport S2) : suit l'état RÉEL du
 // Transport (pause quantifiée comprise) et relaie gel réel / reprise resynchronisée /
@@ -73,8 +71,11 @@ export interface KronosAudioOptions {
    *  timeline; the REAL loop bound comes from the Kairos timeline `bindStructureSource`
    *  swaps in (it sets the scheduler timeline AND the cursor loop length at bind). */
   durationSec?: number;
-  /** Shared AudioContext (the transports' time source). */
-  audioCtx: AudioContext;
+  // (audioCtx RETIRÉ, frontière Phase 2 audio : le temps vient de performance.now (createTransport),
+  //  et runtime-audio possède+réveille SON propre contexte — l'hôte n'en fournit plus.)
+  /** SEAM de test : horloge déterministe injectée dans createTransport. Jamais posé en prod
+   *  (défaut = `performance.now()/1000`). Permet aux tests de piloter le temps sans AudioContext. */
+  now?: () => number;
   /** Tempo (BPM) the events' seconds were derived at. */
   derivedTempo: number;
   /** Beats-per-bar PROJECTED from the derived meter (`DeriveResult.meter`, BPx authority)
@@ -228,14 +229,6 @@ const LOOKAHEAD_SEC = 0.12;
  * `stop()` tears down the driver; the host's `dispatcher.stop()` closes the
  * transports (cuts the scheduled audio) as usual.
  */
-// PILOTAGE (DEV) — observateur STRICTEMENT lecture-seule des events audio forwardés au sink, posé
-// par la façade `window.kanopi` (kanopi-api.ts) pour remplacer l'ancien tap `AudioRuntime.send`
-// ad-hoc. Nul en prod (jamais posé). Le forward réel ne dépend JAMAIS de lui (cf. audioAdapter).
-let audioForwardObserver: ((e: unknown) => void) | null = null;
-export function setAudioForwardObserver(fn: ((e: unknown) => void) | null): void {
-  audioForwardObserver = fn;
-}
-
 // PILOTAGE (DEV) — affordance de MESURE de la sortie : Kanopi ne tient AUCUN nœud audio ; il lit
 // seulement des NOMBRES via l'affordance lecture-seule de runtime-audio (enableMeter/getMeasurement/
 // getFloatFrequencyData/disableMeter, commit 6148d03). Référence sur l'AudioRuntime COURANT (mis à
@@ -252,7 +245,7 @@ export function pilotAudioMeter(): AudioMeter | null {
 }
 
 export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
-  const { audioCtx, derivedTempo } = opts;
+  const { derivedTempo } = opts;
   // Bar fold width = the derived meter's beats-per-bar (BPx authority), default 4.
   const beatsPerBar = opts.beatsPerBar ?? DEFAULT_BEATS_PER_BAR;
   // BUILD-ONLY (Model C produce/load): construct the machine + timeline but DON'T play.
@@ -284,7 +277,11 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // le fold hôte `alignToSpeaker` (cursor.loopDuration) → `kronos.transport.position()` /
   // `loopDurationScene()` (repli INTERNE, plus aucun fold hôte = la garantie).
   const kronos: KronosTransport = createTransport({
-    now: () => audioCtx.currentTime,
+    // SOURCE DE TEMPS de Kronos = horloge monotone PROPRE (décision temps-audio-multicontextes,
+    // #8). PLUS d'`audioCtx.currentTime` : le temps n'est plus couplé à un contexte audio (chaque
+    // sink sonnant possède le sien). `performance.now()/1000` = secondes, monotone, zéro AudioContext.
+    // `opts.now` = SEAM de test (horloge déterministe injectée), jamais posé en prod.
+    now: opts.now ?? (() => performance.now() / 1000),
     derivedTempo,
     startScene,
     durationSec: duration,
@@ -302,10 +299,14 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   //    (scheduler.ts:118,124) avec SA vue `ClockProvider` LECTURE SEULE ; l'`audioAdapter` ci-dessous
   //    la TRANSMET au moteur de rendu (champ public `audioRuntime.clock`, lu frais à chaque usage).
   //    L'hôte ne construit plus de clock et n'appelle JAMAIS musicalNow — par construction.
-  const audioRuntime = createAudioRuntime(audioCtx, {
-    // clock : PAS ici — la vue horloge arrive par le canal adaptateur (B), de Kronos, jamais de l'hôte.
-    sounds: undefined
-  });
+  // AUDIO OWNERSHIP (#7) : createAudioRuntime SANS contexte injecté → runtime-audio CRÉE et POSSÈDE
+  // le sien (new AudioContext), et le RÉVEILLE lui-même (via le bus de cycle de vie, à la transition
+  // replay/resume portée par la pile du geste). L'hôte ne fabrique plus, ne réveille plus, ne met
+  // plus en forme (pitch/vel/modulations = DANS le paquet). La vue horloge arrive par bindClock.
+  // Gardé derrière l'override de sink : si un `sinks.webaudio` est fourni (tests de capture /
+  // headless), on ne crée PAS le runtime — sinon il ferait un `new AudioContext()` inutile (et
+  // impossible en jsdom). En prod (pas d'override), createAudioRuntime crée+possède son contexte.
+  const audioRuntime = opts.sinks?.webaudio ? null : createAudioRuntime({ sounds: undefined });
   // PILOTAGE (DEV) : expose l'AudioRuntime courant pour la sonde audio de `window.kanopi`. Lecture
   // seule (le pilot n'appelle QUE l'affordance meter). Écrase la ref précédente → l'ancien runtime
   // reste GC-able à la destruction du handle.
@@ -341,91 +342,16 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   //    backtick sink (interpreter = ev.output.device). There is NO default adapter — an
   //    event whose runtime has no sink is surfaced by Kronos's `unknown-output-runtime`
   //    diagnostic, never silently rerouted.
-  const warned = new Set<string>();
-  const warnMissing = (runtime: string): void => {
-    if (warned.has(runtime)) return;
-    warned.add(runtime);
-    log(`⚠ no '${runtime}' sink registered — event(s) dropped`);
-  };
-  // Coerce numeric-string controls (vel/filterQ/…) to numbers, then drop any leftover CV
-  // descriptor OBJECTS — modulation is driven by `content.modulations`, never a literal.
-  const prep = (content: unknown) => {
-    const c = content as {
-      token: string;
-      controls?: Record<string, unknown> | null;
-      rq?: Record<string, number> | null;
-      startSec?: number;
-      // Forwarded VERBATIM au sink (jamais manipulé structurellement ici) — la modulation est
-      // pilotée par `content.modulations` gravé par Kairos. Type opaque (l'ex-`ModulationBinding`
-      // de Kronos est retiré du public : l'hôte ne dépend plus de sa forme).
-      modulations?: unknown[] | null;
-      // KAI-10 — the pitch facet graven by Kairos (`{hz, noteName, …}`); forwarded
-      // verbatim to every output so it reads the canonical Hz off the event.
-      pitch?: unknown;
-    };
-    const coerced = coerceControlValues(c.controls);
-    for (const k of Object.keys(coerced)) {
-      if (coerced[k] && typeof coerced[k] === 'object') delete coerced[k];
-    }
-    const velRaw =
-      typeof coerced.vel === 'number'
-        ? coerced.vel
-        : typeof c.rq?.vel === 'number'
-          ? c.rq.vel
-          : undefined;
-    return { c, coerced, velRaw };
-  };
+  // (Plus de `warnMissing` ni de `prep`/coerce hôte : les 3 sinks sonnants — audio/midi/osc — ont
+  //  migré ; chacun reçoit l'événement VERBATIM et met en forme DANS son paquet. Le seul adaptateur
+  //  encore écrit ici est `codeAdapter` — pur aiguillage d'un token vers le sink backtick, sans
+  //  mise en forme.)
 
-  // AUDIO: the AudioRuntime resolves token→Hz (shared `pitch`) and RENDERS
-  // `content.modulations`. MIDI 0..127 `vel` → 0..1 `velocity`.
-  const audioAdapter: RuntimeAdapter = {
-    // Canal (B) : KRONOS appelle ceci à l'enregistrement (`addAdapter`) avec SA vue horloge
-    // LECTURE SEULE (`ClockProvider` : now/musicalNow/audioTimeFor/rate/snapshot, zéro mutateur).
-    // L'hôte TRANSMET la référence au moteur de rendu — il ne la stocke pas ailleurs, ne la lit
-    // pas, ne recompute jamais un time-view : le sink LIT la carte de Kronos, l'autorité de
-    // position reste inatteignable (pas de handle, pas de curseur) — garantie par construction.
-    bindClock(clock: ClockProvider) {
-      audioRuntime.clock = clock;
-    },
-    send(ev: ScheduledEvent) {
-      if (!audioSink) return warnMissing('audio');
-      const { c, coerced, velRaw } = prep(ev.content);
-      const controls: Record<string, unknown> = { ...coerced };
-      if (velRaw != null) controls.velocity = velRaw / 127;
-      const outEvent = {
-        onset: ev.onset,
-        duration: ev.duration,
-        actor: ev.actor,
-        kind: ev.kind,
-        // CONTRAT_SINK_CONTROLE §3 : l'étiquette `nature` d'un `kind:'control'`
-        // (instant/transport-control) voyage VERBATIM — le sink l'applique ou l'ignore,
-        // l'hôte ne l'interprète jamais (routage Kronos, application sortie).
-        nature: ev.nature,
-        // SUPERP-1: forward the OCCURRENCE discriminant Kronos posed at emission
-        // (scheduler.ts, the loop-tour scene base). runtime-audio keys its persistent
-        // group-filter buses by `(busRef, occurrence)` (adapter.js _wireBuses) — a new
-        // tour = a new occurrence = a fresh bus, never a faulty cross-tour share. It rides
-        // at the EVENT level (like onset), outside the opaque `content`.
-        occurrence: ev.occurrence,
-        // KAI-10: forward the graven pitch facet (Kairos `content.pitch.hz`); the
-        // AudioRuntime reads `c.pitch.hz` directly (its token→Hz resolver is now only a
-        // fallback, retired in the final pitch-module cleanup).
-        content: { token: c.token, controls, pitch: c.pitch, modulations: c.modulations ?? [] }
-      };
-      // PILOTAGE (1)/(b), validé archi [431] : observateur STRICTEMENT lecture-seule de ce qui
-      // est FORWARDÉ, verbatim. Le forward réel (ligne suivante) ne dépend JAMAIS de lui —
-      // try/catch pour qu'un observateur qui jette ne casse rien, et l'envoi est inconditionnel.
-      // Inerte hors DEV (nul tant que le pilot ne l'a pas posé). NE MUTE RIEN.
-      if (audioForwardObserver) {
-        try {
-          audioForwardObserver(outEvent);
-        } catch {
-          /* un observateur ne peut jamais affecter le rendu */
-        }
-      }
-      (audioSink as { send(e: unknown): void }).send(outEvent);
-    }
-  };
+  // AUDIO : plus de wrapper hôte. L'adaptateur uniforme de runtime-audio (audioSink) est enregistré
+  // DIRECTEMENT sur Kronos (voir plus bas) et reçoit l'événement ordonnancé VERBATIM : c'est LUI qui
+  // lit `content.pitch.hz`, normalise la vélocité, et rend `content.modulations` (mise en forme
+  // rapatriée). Kronos appelle son `send(ev)`/`bindClock` — l'hôte ne reshape plus, ne transmet plus
+  // la clock à la main. (L'ancien observateur DEV des events forwardés est retiré avec le wrapper.)
 
   // MIDI : plus de wrapper hôte. Frontière hôte↔runtimes (Phase 2) — l'adaptateur uniforme de
   // runtime-MIDI (`createMidiRuntime`, construit dans bpx-adapter) est enregistré DIRECTEMENT sur
@@ -468,9 +394,11 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   //    default actor carries `output.runtime='audio'` from the AST, so it lands on 'audio'.
   // Enregistrement des sorties sur le HANDLE (la fabrique n'expose PAS le scheduler ; `kronos.addAdapter`
   // délègue en interne). Plus de `new Scheduler` hôte. NO default adapter (chaque event route sur output.runtime).
+  // L'adaptateur uniforme de runtime-audio enregistré DIRECTEMENT (send(ev) VERBATIM + bindClock ;
+  // Kronos câble l'horloge lui-même à l'enregistrement).
   if (audioSink) {
-    kronos.addAdapter('audio', audioAdapter);
-    kronos.addAdapter('webaudio', audioAdapter);
+    kronos.addAdapter('audio', audioSink as unknown as RuntimeAdapter);
+    kronos.addAdapter('webaudio', audioSink as unknown as RuntimeAdapter);
   }
   // L'adaptateur uniforme de runtime-MIDI est enregistré DIRECTEMENT (il expose send(ev)/bindClock ;
   // Kronos appelle bindClock lui-même à l'enregistrement — vue horloge + bus de cycle de vie).

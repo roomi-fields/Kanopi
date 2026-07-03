@@ -46,7 +46,9 @@ export function coerceControlValues(controls) {
 
 export class Dispatcher {
   /**
-   * @param {AudioContext} audioCtx
+   * @param {AudioContext} [audioCtx] OPTIONNEL — vestigial : jamais lu (structure inerte de
+   *   résolveurs). Depuis la frontière Phase 2, l'hôte n'a plus de contexte audio à fournir ;
+   *   runtime-audio possède le sien. Conservé pour compat des rares injections de test.
    */
   constructor(audioCtx) {
     this.audioCtx = audioCtx;

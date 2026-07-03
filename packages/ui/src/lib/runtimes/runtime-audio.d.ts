@@ -49,8 +49,11 @@ export declare class AudioRuntime {
   setActorMuted(actor: string, muted: boolean): void;
 }
 
+/** Frontière hôte↔runtimes Phase 2 (#7) : signature flexible. Sans contexte injecté
+ *  (`createAudioRuntime(opts)` / `createAudioRuntime()`), le runtime CRÉE et POSSÈDE le sien et
+ *  le réveille lui-même ; un contexte injecté (`(ctx, opts)`, tests) est utilisé tel quel. */
 export declare function createAudioRuntime(
-  audioCtx: AudioContext,
+  audioCtxOrOpts?: AudioContext | AudioRuntimeOptions,
   opts?: AudioRuntimeOptions
 ): AudioRuntime;
 

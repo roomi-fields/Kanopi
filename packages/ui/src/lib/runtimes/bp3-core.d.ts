@@ -7,7 +7,7 @@
 
 declare module '*/core/src/dispatcher/dispatcher.js' {
   export class Dispatcher {
-    constructor(audioCtx: AudioContext);
+    constructor(audioCtx?: AudioContext);
     addTransport(name: string, transport: unknown): void;
     load(timedTokens: Array<{ token: string; start: number; end: number }>): void;
     start(onEnd?: (() => void) | undefined, options?: { loop?: boolean }): void;
