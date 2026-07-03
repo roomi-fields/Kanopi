@@ -64,9 +64,7 @@ describe('the scene tempo drives the STEP grid and shows the LIVE handle tempo',
         onStateChange: (_cb: (s: string) => void) => () => {}
       },
       position: () => 0,
-      beatPosition: () => ({ bar: 1, beat: 0, phase: 0, beatsTotal: 0 }),
-      cutCodeVoices: () => {},
-      refireCodeVoices: () => {}
+      beatPosition: () => ({ bar: 1, beat: 0, phase: 0, beatsTotal: 0 })
     } as unknown as Parameters<typeof kronosCursor.set>[0];
     kronosCursor.set(fakeHandle);
     expect(clock.state.bpm).toBe(142);

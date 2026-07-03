@@ -11,6 +11,16 @@ import {
   type PublishedActor
 } from '../runtimes/bpx-adapter';
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
+// VOIE B (chantier voix-code-transport [523]) : le transport Kronos partagé des voix de code
+// AUTONOMES — plus aucune voix hors transport. L'éval enregistre la voix (registerCodeVoice),
+// le cœur relaie Stop/Play/hush au handle (le relais lifecycle coupe/gèle/reprend les moteurs).
+import {
+  registerCodeVoice,
+  stopCodeVoiceTransportInPlace,
+  replayCodeVoiceTransport,
+  disposeCodeVoiceTransport,
+  codeVoiceTransport
+} from '../runtimes/kronos-codevoice';
 import { installConsoleBridge } from '../runtimes/console-bridge';
 import { enableMidi, type MidiEvent } from '../midi/midi-input';
 import { createEventBus } from '../events/bus';
@@ -314,19 +324,51 @@ class RealCore implements CoreApi {
 
     // Surgical: a manual Ctrl+Enter (re)sounds ONLY this block — the block just evaluated
     // above is already live. A bp3/bpscript/.gr eval builds a Kronos handle (transport →
-    // running, so the readout follows the single authority); a pure code voice (Strudel/Hydra)
-    // sounds through its own adapter. No host clock to flip — the transport readout PROJECTS
-    // Kronos, it never invents a "playing" state the engine doesn't have.
+    // running, so the readout follows the single authority). VOIE B [523] : une voix de
+    // code AUTONOME (Strudel/Hydra/… évaluée seule) passe elle AUSSI sous un transport
+    // Kronos — le transport partagé des voix autonomes : l'éval (qui vient de tirer le
+    // code) enregistre la voix dessus et le curseur le lit → l'afficheur dit PLAYING au
+    // BPM porté (REV-F02) et Stop/Pause gouvernent la voix via le relais lifecycle
+    // (REV-F01). Toujours AUCUN état inventé : l'état affiché EST celui du transport.
+    if (runtime !== 'bp3' && runtime !== 'bpscript') {
+      // Tempo de session (D10) — import DYNAMIQUE du store (même règle anti-cycle que
+      // blocks.svelte plus haut : store → core → real-core).
+      const { clock } = await import('../../stores/clock.svelte');
+      const handle = registerCodeVoice({
+        runtime,
+        slotId,
+        fileId: sourceId,
+        refire: () => {
+          void adapter
+            .evaluate(code, { actorId: slotId, fileId: sourceId, docOffset, flags }, this.log)
+            .catch(() => {
+              /* le re-tir loggue déjà via l'adaptateur ; jamais dans l'horloge */
+            });
+        },
+        bpm: clock.state.bpm,
+        log: this.log
+      });
+      kronosCursor.set(handle);
+    }
   }
 
-  /** Broadcast one transport SENTINEL to every KNOWN runtime (not just the declared
-   *  actors': a loaded program's blocks sound through a runtime that may have no
-   *  `@actor`), then set the actors' LEDs. Per-runtime by id, best-effort —
-   *  `listRuntimes()` returns unique Map keys, so no dedup is needed. The sentinel
-   *  rides `stop()`'s `{actorId, fileId}` and each adapter interprets it
-   *  (`__hush__`/`__stop_in_place__`/`__replay__`); `ledsActive` is the final LED state. */
+  /** Broadcast one transport SENTINEL, then set the actors' LEDs. Per-runtime by id,
+   *  best-effort — `listRuntimes()` returns unique Map keys, so no dedup is needed.
+   *  The sentinel rides `stop()`'s `{actorId, fileId}`.
+   *
+   *  PORTÉE (chantier voix-code-transport [523]) : `__hush__` (panique) va à TOUS les
+   *  runtimes — c'est LE mot que chaque adaptateur voix-de-code documente comme hush
+   *  total. Les sentinelles Model C (`__stop_in_place__`/`__replay__`) sont le protocole
+   *  des adaptateurs BPX (elles pilotent leur handle Kronos) : les envoyer à un
+   *  adaptateur voix-de-code lui faisait SUPPRIMER un slot fantôme puis RE-FLUSHER son
+   *  composite — la voix se RE-TIRAIT après le stop propre (mécanisme REV-F01, vu à
+   *  l'écran). Les voix de code sont gouvernées par le RELAIS lifecycle de leur
+   *  transport (orchestré : handle de scène ; autonome : transport voie B), jamais par
+   *  ces sentinelles → on ne les leur envoie plus. */
   async #broadcast(sentinel: string, ledsActive: boolean): Promise<void> {
+    const bpxOnly = sentinel === '__stop_in_place__' || sentinel === '__replay__';
     for (const id of listRuntimes()) {
+      if (bpxOnly && id !== 'bp3' && id !== 'bpscript') continue;
       const adapter = getAdapter(id);
       if (!adapter) continue;
       try {
@@ -340,21 +382,33 @@ class RealCore implements CoreApi {
   }
 
   async silenceRuntimes(): Promise<void> {
-    // Full hush: silence every runtime + LEDs off.
+    // Full hush: silence every runtime + LEDs off. Le transport des voix autonomes est
+    // DÉMONTÉ (les voix sont déjà tues par `__hush__` ; sans teardown, l'afficheur
+    // continuerait de dire « playing » sur une session muette). Même règle que les handles
+    // de scène au hush : le curseur ne pointe pas un handle mort.
     await this.#broadcast('__hush__', false);
+    const wasCursor = kronosCursor.active === (codeVoiceTransport() as unknown);
+    disposeCodeVoiceTransport();
+    if (wasCursor) kronosCursor.set(null);
   }
 
   async stopInPlace(): Promise<void> {
     // Model C STOP: each bpx adapter returns its live scene's playhead to 0 and cuts
     // its sound WITHOUT discarding the derived timeline (the handle / kronos cursor stay
     // live so a Play replays the same timeline). LEDs off (the scene is stopped).
+    // Voix AUTONOMES (voie B) : leur transport passe à 'stopped' — le relais lifecycle
+    // coupe chaque voix (tais-toi immédiat, REV-F01) ; le handle persiste pour un replay.
     await this.#broadcast('__stop_in_place__', false);
+    stopCodeVoiceTransportInPlace();
   }
 
   async replayActiveScene(): Promise<void> {
     // Model C PLAY-from-stopped: each bpx adapter restarts its persisted (stopped)
     // handle from 0 with NO re-derivation. LEDs back on (the scene is sounding again).
+    // Voix AUTONOMES (voie B) : leur transport repart aussi — stopped→running, le relais
+    // re-tire chaque voix dans son slot (même performance, même armement).
     await this.#broadcast('__replay__', true);
+    replayCodeVoiceTransport();
     // CVA-INIT — the replay's `reset()` cleared the audio arming (`_muted`) for a pristine
     // 1st loop; RE-APPLY the composed arming from the actor store (the AUTHORITY) so a
     // stop→play REPRODUCES the same performance: an orchestrated actor muted/disarmed before

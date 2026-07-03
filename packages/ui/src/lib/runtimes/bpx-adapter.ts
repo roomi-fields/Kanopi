@@ -1932,16 +1932,28 @@ function makeBpxAdapter(
             // (graven by Kairos) to the 'code' sink — the SAME backtick sink the legacy
             // dispatcher used. No host-side `isBacktick` token sniff anymore.
             backtickSink: backtickHandles?.sink as KronosAudioOptions['backtickSink'],
-            stopCodeVoices: () => {
-              for (const a of orchestration.actors) {
-                void orchestratedVoices.get(a.name)?.stopCode?.();
-              }
-            },
-            refireCodeVoices: () => {
-              for (const a of orchestration.actors) {
-                orchestratedVoices.get(a.name)?.evalCode?.();
-              }
-            },
+            // RELAIS LIFECYCLE (S2 voix-code-transport) : les voix de code vivantes de CE
+            // handle, énumérées LAZY à chaque transition d'état du Transport. Le relais leur
+            // relaie gel réel / reprise resynchronisée / tais-toi (option (b) 2026-07-03) —
+            // remplace l'ancien cut+refire hôte. Le re-tir respecte l'armement (un acteur
+            // désarmé reste silencieux, même règle que le sink backtick).
+            codeVoiceSlots: () =>
+              orchestration.actors.flatMap((a) => {
+                const codeRuntime = a.evalInterp ? runtimeForInterp(a.evalInterp) : undefined;
+                if (!codeRuntime) return [];
+                return [
+                  {
+                    runtime: codeRuntime,
+                    actorId: slotForActor(a.name),
+                    fileId: src.fileId,
+                    refire: () => {
+                      if (mutedActors.has(a.name)) return;
+                      orchestratedVoices.get(a.name)?.evalCode?.();
+                    }
+                  }
+                ];
+              }),
+            codeVoiceLog: log,
             log: (m) => log({ runtime: id, level: 'info', msg: `[kronos] ${m}` })
           });
           // The timeline reads ITS playhead (aligned to the heard audio), as on mono.

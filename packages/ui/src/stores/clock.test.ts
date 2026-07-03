@@ -82,9 +82,7 @@ describe('transport readout — PROJECTED from Kronos, never a host flag', () =>
         onStateChange: (_cb: (s: typeof state) => void) => () => {}
       },
       position: () => 0,
-      beatPosition: () => ({ bar: 1, beat: 0, phase: 0, beatsTotal: 0 }),
-      cutCodeVoices: () => {},
-      refireCodeVoices: () => {}
+      beatPosition: () => ({ bar: 1, beat: 0, phase: 0, beatsTotal: 0 })
     } as unknown as Parameters<typeof kronosCursor.set>[0];
     kronosCursor.set(fakeHandle);
     expect(clock.state.playing).toBe(true);

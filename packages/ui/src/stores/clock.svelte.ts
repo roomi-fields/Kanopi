@@ -19,6 +19,7 @@ import { kronosCursor } from './kronos-cursor.svelte';
 import { playback } from './playback.svelte';
 import { getAdapter, listRuntimes } from '../lib/runtimes/registry';
 import { setUserTempo } from '../lib/runtimes/bpx-adapter';
+import { retuneCodeVoiceTransport } from '../lib/runtimes/kronos-codevoice';
 import { core } from '../lib/core';
 
 const DEFAULT_BEATS_PER_BAR = 4;
@@ -45,7 +46,11 @@ class ClockStore {
    *  show — the UI renders « — »). playing/paused: derived from `playback.mode` (the single
    *  projection of Kronos's Transport state) — NOT a 2nd parallel mapping of the authority (F29). */
   state = $derived<ClockState>({
-    bpm: kronosCursor.active ? kronosCursor.tempo : this.#tempo,
+    // `|| this.#tempo` : un transport SANS tempo (voie B, voix autonome sans tempo de
+    // session — Kronos `derivedTempo 0` = « temps de scène pur ») expose tempo 0 ; il n'y a
+    // alors RIEN d'honnête à afficher → repli sur la saisie utilisateur, sinon « — ».
+    // JAMAIS un « 0.0 BPM » fabriqué : 0 n'est pas un tempo entendu.
+    bpm: kronosCursor.active ? kronosCursor.tempo || this.#tempo : this.#tempo,
     beatsPerBar: this.#beatsPerBar,
     playing: playback.mode === 'playing',
     paused: playback.mode === 'paused'
@@ -83,6 +88,9 @@ class ClockStore {
     for (const id of listRuntimes()) {
       getAdapter(id)?.setBpm?.(bpm, (e) => core.console.push(e));
     }
+    // Voix AUTONOMES (voie B) : leur transport porte le tempo de session pour l'afficheur —
+    // il doit suivre le warp (les moteurs, eux, viennent d'être retunés par le fan-out).
+    retuneCodeVoiceTransport(bpm);
     return bpm;
   }
 

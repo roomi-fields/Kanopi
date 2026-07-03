@@ -55,9 +55,9 @@ class Playback {
     // Resume IN PLACE on the live Transport (no re-eval): one scheduler across the whole
     // play→pause→play cycle. UNCHANGED.
     if (t && t.state === 'paused') {
+      // Les voix de code reprennent via le relais lifecycle (paused→running = reprise
+      // resynchronisée à la position transport, option (b)) — plus d'appel hôte exprès.
       t.play();
-      // Resume the sustained code voices that PAUSE cut (Strudel/Hydra restart in place).
-      kronosCursor.active?.refireCodeVoices();
       return;
     }
     // Model C — Play from STOPPED with a PERSISTED handle: the derived timeline still lives
@@ -78,11 +78,10 @@ class Playback {
   }
 
   pause() {
-    // Kronos freezes the position (notes ring their tail). The sustained code voices
-    // (Strudel/Hydra) are host-managed, so cut them explicitly here (the scheduler's
-    // stop must NOT, or a same-file re-eval would tear them down). Resume re-fires them.
+    // Kronos freezes the position (pause QUANTIFIÉE au bord d'unité). Les voix de code
+    // gèlent via le relais lifecycle à l'instant RÉEL du gel (running→paused), au même
+    // moment que les notes — l'hôte ne coupe plus rien lui-même (option (b) 2026-07-03).
     this.transport?.pause();
-    kronosCursor.active?.cutCodeVoices();
   }
 
   stop() {

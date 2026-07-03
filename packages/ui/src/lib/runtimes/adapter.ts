@@ -83,6 +83,25 @@ export interface RuntimeAdapter {
   /** Propagate global tempo change. Optional. */
   setBpm?(bpm: number, log: LogPush): void;
   /**
+   * PAUSE transport — GEL RÉEL, GLOBAL (toutes les voix de ce moteur) : silence
+   * immédiat + le motif se fige à sa position ; jamais « muet pendant que l'horloge
+   * moteur continue ». Portée globale par contrat (CONTRAT_SINK_CONTROLE §6 : la
+   * pause transport gèle TOUT ; l'acteur isolé reste `stop`/arm-désarm). Décision
+   * option (b) pour tous les moteurs : `hub/decisions/2026-07-03-pause-voix-de-code-
+   * option-b.md`, forme convergée arbitrée [524]. Optionnel le temps de la migration
+   * des moteurs — absent, l'hôte dégrade BRUYAMMENT (stop loggé), jamais en silence.
+   */
+  pause?(): Promise<void>;
+  /**
+   * REPRISE après pause — GLOBALE : le motif repart EXACTEMENT où il s'était gelé,
+   * resynchronisé sur `atSec` = la position transport (SECONDES de scène, lue de
+   * Kronos à l'instant de la reprise ; cas normal `atSec` = position gelée →
+   * identité, mais pause→seek→resume doit recaler). Le tempo continue d'arriver par
+   * `setBpm`. Un moteur qui ne sait pas se repositionner à `atSec` ≠ position gelée :
+   * best-effort DOCUMENTÉ ou escalade — pas de silence ([524]).
+   */
+  resume?(atSec: number): Promise<void>;
+  /**
    * Notifications de battement du clock central. `count` est l'indice
    * monotonic (absBeat/absBar) depuis start. Permet à un adapter dont
    * le langage s'appuie sur une horloge visuelle (ex: Hydra `.rotate(beat)`)

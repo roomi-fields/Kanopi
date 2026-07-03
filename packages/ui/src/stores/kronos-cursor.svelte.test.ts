@@ -73,8 +73,6 @@ function fakeView(opts: {
     beatsPerBar: 4,
     position: () => 0,
     beatPosition: () => bp(opts.folded()),
-    cutCodeVoices: () => {},
-    refireCodeVoices: () => {},
     step: () => {}
   };
 }

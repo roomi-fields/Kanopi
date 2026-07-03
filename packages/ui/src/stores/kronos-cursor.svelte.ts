@@ -31,10 +31,6 @@ export interface KronosCursorView {
   position(): number;
   /** Beat/bar readout (frozen-aware), for the transport display. */
   beatPosition(): KronosCursorBeat;
-  /** Cut the scene's sustained code voices (Strudel/Hydra) — PAUSE-cut. */
-  cutCodeVoices(): void;
-  /** Re-fire the scene's code voices in their slots — RESUME after a pause-cut. */
-  refireCodeVoices(): void;
   /** STEP `n` tree units in place on the persistent handle (Model C, RC-B) — `transport.step(n)` +
    *  pump. The reached column sounds (snap-to-onset); NO re-derivation, NO host beat counter/grain. */
   step(n: number): void;
