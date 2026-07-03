@@ -149,6 +149,13 @@ const RULES = [
       { re: /\brequestAnimationFrame\s*\(/, file: "kronos-cursor" },
       // Générateur d'ID de fichier (non-musical) — pas une horloge.
       { re: /\bDate\.now\s*\(/, file: "workspace.svelte" },
+      // Horodatage d'un ÉVÉNEMENT de télémétrie (adapterEvents.emit d'un 'trigger' eval/stop, lu
+      // par le pilote) — un timestamp de log, pas un temps musical (ne planifie/positionne/tempo rien).
+      { re: /\bt:\s*performance\.now\(\)/, file: "bpx-adapter" },
+      // TAP-TEMPO : mesure les intervalles entre les FRAPPES de l'utilisateur pour en déduire un BPM
+      // — timing d'un GESTE d'entrée (la saisie utilisateur, seul état propre à l'hôte), pas une
+      // reconstruction du temps de Kronos. Ne suit aucune position, n'ordonnance rien.
+      { re: /const now = performance\.now\(\)/, file: "clock.svelte" },
     ],
   },
 ];
@@ -267,5 +274,25 @@ if (regressions.length) {
 console.log(
   `   ✅ Cliquet OK : runtimes migrées (${lockedRuntimes}) restent à 0 dans l'hôte (§Garde 4 mord).\n`,
 );
-// Le RESTE est en MODE MESURE : non bloquant tant que sa runtime n'est pas migrée.
+
+// ---- §Garde 6 (HORLOGE PIRATE) : MORDANT (audit horloges clos, challenge Romain [559]). Les 2
+//      lectures résiduelles sont CLASSÉES A (télémétrie + tap-tempo, whitelist ci-dessus) → §6 = 0.
+//      Toute NOUVELLE horloge non-whitelistée (temps musical fabriqué hors Kronos) fait MORDRE. ----
+const g6 = report.find((r) => r.rule.garde === 6);
+if (g6 && g6.count > 0) {
+  console.log(
+    "   ⛔ §Garde 6 MORD — horloge PIRATE dans l'hôte (temps musical fabriqué hors Kronos) :",
+  );
+  for (const h of g6.hits) console.log(`        · ${h}`);
+  console.log(
+    "   Le temps/position/tempo appartiennent à KRONOS (lus via la vue horloge) → refuser. Si c'est\n" +
+      "   un alignement légitime (offset/télémétrie/geste), l'ajouter à la whitelist §6 avec sa raison.\n",
+  );
+  process.exit(1);
+}
+console.log(
+  "   ✅ §Garde 6 OK : aucune horloge pirate dans l'hôte (les 2 lectures classées A, whitelistées).\n",
+);
+
+// Le RESTE (§Garde 1-5, hors motifs verrouillés) reste en MODE MESURE.
 process.exit(0);
