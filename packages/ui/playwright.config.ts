@@ -4,14 +4,23 @@ import { defineConfig, devices } from '@playwright/test';
 // (shared AudioContext, single device output), so workers stays at 1. Retries
 // compensate for occasional WSL2 timing flakiness around the dev server boot.
 //
-// `webServer` auto-spawns the Vite dev server with the same polling env vars
-// the project relies on for HMR on WSL2 (see vite-hmr-reset skill). When
-// KANOPI_BASE_URL is set (e.g. running specs against a deployed build), we
-// skip the local dev server entirely.
+// `webServer` : le portillon POSSÈDE son serveur, sur un port DÉDIÉ au gate (`GATE_PORT`,
+// jamais 5173/5174), avec `reuseExistingServer: false` → TOUJOURS un serveur FRAIS, jamais la
+// réutilisation d'un serveur de dev qui tourne. Ferme pour de bon la classe de collision
+// e2e↔serveur-de-dev : l'ancienne config ciblait 5173 avec `reuseExistingServer: !CI` (donc
+// `true` en local), et RÉUTILISAIT le serveur de dev actif de l'utilisateur — les e2e
+// martelaient son 5173. Playwright démarre ET teardown ce serveur. Quand KANOPI_BASE_URL est
+// posé (build déployé externe), on ne spawn rien.
+//
+// Serveur de DEV (pas preview) : les e2e s'appuient sur la surface de pilotage `window.kanopi`,
+// affordance DEV-ONLY absente du build de prod (un preview casse 28 e2e sur
+// `undefined (reading 'workspace')`). Le port dédié + `reuseExistingServer:false` suffisent à
+// isoler le gate ; inutile — et cassant — de passer par un build de prod.
 //
 // KANOPI_CROSS_BROWSER=1 enables firefox + webkit projects in addition to the
 // chromium default — useful for the self-test layer's cross-browser sweep.
-const baseURL = process.env.KANOPI_BASE_URL ?? 'http://localhost:5173';
+const GATE_PORT = 4321;
+const baseURL = process.env.KANOPI_BASE_URL ?? `http://localhost:${GATE_PORT}`;
 const crossBrowser = process.env.KANOPI_CROSS_BROWSER === '1';
 
 const projects = [
@@ -53,12 +62,14 @@ export default defineConfig({
   webServer: process.env.KANOPI_BASE_URL
     ? undefined
     : {
-        command: 'VITE_FORCE_POLLING=1 CHOKIDAR_USEPOLLING=1 npm run dev',
-        url: 'http://localhost:5173',
-        reuseExistingServer: !process.env.CI,
-        // Cold Vite boot has been observed to exceed 120s when the machine is
-        // under heavy load (load average ~90 on the WSL2 dev box) — and load
-        // is a normal condition here, not an anomaly.
+        // Serveur de DEV frais sur le port dédié au gate. `--strictPort` : échoue plutôt que
+        // de glisser sur un autre port (sinon `url` ne correspondrait plus).
+        // `reuseExistingServer: false` : jamais la réutilisation d'un serveur qui tourne — le
+        // gate possède le sien, frais, et le teardown.
+        command: `npm run dev -- --port ${GATE_PORT} --strictPort`,
+        url: `http://localhost:${GATE_PORT}`,
+        reuseExistingServer: false,
+        // Le preview démarre vite, mais le CPU peut être chargé — marge large.
         timeout: 240_000
       }
 });
