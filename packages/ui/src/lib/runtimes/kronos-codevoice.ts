@@ -1,26 +1,19 @@
 // CHANTIER voix-code-transport (S2, [523]) — VOIE B (KR-13) : le transport Kronos des voix
 // de code AUTONOMES (.strudel/.hydra/.tidal/.p5/.js — fichiers évalués seuls, sans scène BPx).
 //
-// AVANT : une voix autonome sonnait SANS handle Kronos → Stop/Pause inertes (REV-F01) et
-// transport affiché « STOPPED » pendant que ça sonne (REV-F02). PLUS AUCUNE VOIX HORS
-// TRANSPORT : ce module tient UN transport Kronos partagé (« la tête de lecture des voix
-// autonomes »), créé à la première éval, sous lequel chaque voix s'enregistre comme slot.
+// PLUS AUCUNE VOIX HORS TRANSPORT : ce module tient UN transport Kronos partagé (« la tête de
+// lecture des voix autonomes »), créé à la première éval, sur lequel l'adaptateur uniforme de
+// runtime-codevoices est ENREGISTRÉ. Position/état/tempo se LISENT dessus ; le cycle de vie
+// (gel réel à la pause quantifiée, reprise resynchronisée, tais-toi au stop) est propagé par le
+// BUS de Kronos — runtime-codevoices s'y abonne à son `bindClock` (frontière Phase 2 : le relais
+// lifecycle a DESCENDU dans le paquet, plus de relais hôte).
 //
-// Le transport est un handle `createTransport` à timeline VIDE (aucune partition : le code a
-// déjà été tiré par l'éval — sémantique live-coding) ; il n'est PAS une 2e autorité : c'est
-// KRONOS, l'autorité du temps (contrat kronos-transport.md), instancié par l'hôte (branchement,
-// périmètre Kanopi). Position/état/tempo se LISENT dessus ; le relais lifecycle
-// (code-voice-lifecycle.ts) relaie ses transitions aux moteurs : gel réel à la pause
-// (quantifiée), reprise resynchronisée, tais-toi immédiat au stop (option (b) 2026-07-03).
-//
-// Tempo affiché = tempo de session (D10, `clock.bpm`) : le seul tempo légitime côté hôte
-// (saisie utilisateur) ; les moteurs le reçoivent déjà par le fan-out `setBpm` — le transport
-// le porte pour que l'afficheur BPM dise ce que les moteurs entendent (REV-F02).
+// Le transport est un handle `createTransport` à timeline VIDE (le code a déjà été tiré par
+// l'éval — sémantique live-coding) ; ce n'est PAS une 2e autorité : c'est KRONOS (contrat
+// kronos-transport.md), instancié par l'hôte (branchement). Tempo affiché = tempo de session (D10).
 
 import { createTransport, type KronosTransport, type Transport } from '@kronos/core';
-import { attachCodeVoiceLifecycle, type CodeVoiceSlot } from './code-voice-lifecycle';
-import type { LogPush } from './adapter';
-import type { Runtime } from '../core-mock';
+import type { CodeVoicesRuntime } from 'runtime-codevoices';
 import { DEFAULT_BEATS_PER_BAR } from './meter';
 import type { KronosCursorBeat } from './kronos-audio';
 
@@ -32,25 +25,22 @@ export interface CodeVoiceTransportHandle {
   position(): number;
   beatPosition(): KronosCursorBeat;
   step(n: number): void;
-  /** Stop transport (bouton Stop) : tête à 0, voix coupées PAR LE RELAIS (tais-toi immédiat,
-   *  REV-F01). Le handle reste vivant : un Play suivant rejoue (replay). */
+  /** Stop transport (bouton Stop) : tête à 0, voix coupées PAR LE BUS (tais-toi immédiat). */
   stopInPlace(): void;
-  /** Play-depuis-stop : les voix repartent dans leurs slots via le relais (stopped→running). */
+  /** Play-depuis-stop : les voix repartent via le bus (stopped→running). */
   replay(): void;
   /** Warp du tempo affiché/battu (le fan-out `setBpm` porte déjà le tempo aux moteurs). */
   retune(bpm: number): void;
-  /** Teardown complet (hush) : relais détaché puis machine arrêtée — le handle est mort. */
+  /** Teardown complet (hush) : le runtime est disposé puis la machine arrêtée. */
   dispose(): void;
 }
 
-interface Slot extends CodeVoiceSlot {
-  refire: () => void;
-}
-
-// LE transport partagé des voix autonomes (0 ou 1 par session) + ses slots vivants.
-let live: { kronos: KronosTransport; handle: CodeVoiceTransportHandle; detach: () => void } | null =
-  null;
-const slots = new Map<string, Slot>(); // clé = actorId (slot d'éval)
+// LE transport partagé des voix autonomes (0 ou 1 par session) + le runtime qui y est enregistré.
+let live: {
+  kronos: KronosTransport;
+  handle: CodeVoiceTransportHandle;
+  runtime: CodeVoicesRuntime;
+} | null = null;
 
 /** Le handle courant, ou null si aucune voix autonome n'est sous transport. */
 export function codeVoiceTransport(): CodeVoiceTransportHandle | null {
@@ -58,34 +48,21 @@ export function codeVoiceTransport(): CodeVoiceTransportHandle | null {
 }
 
 /**
- * Enregistre (ou ré-enregistre — re-éval same-file) une voix autonome sous le transport
- * partagé, en le créant au besoin. L'éval a DÉJÀ tiré le code (le moteur sonne) ; ici on
- * met la voix SOUS le transport : état lisible (REV-F02), lifecycle câblé (REV-F01).
- * Retourne le handle (l'appelant le pose sur le curseur — dernier éval gagne, comme .bps).
+ * Met une voix autonome (déjà tirée par `runtime.evaluate` côté cœur) SOUS le transport partagé,
+ * en le créant au besoin et en y ENREGISTRANT l'adaptateur uniforme de runtime-codevoices (Kronos
+ * l'abonne au bus de cycle de vie à `bindClock`). Retourne le handle (l'appelant le pose sur le
+ * curseur — dernier éval gagne, comme .bps).
  */
 export function registerCodeVoice(opts: {
-  runtime: Runtime;
-  /** Slot d'éval de la voix (actorId ?? fileId — même clé que l'éval). */
-  slotId: string;
-  fileId: string;
-  /** Re-tire la voix dans son slot (replay / fallback transitoire de reprise). */
-  refire: () => void;
+  /** L'adaptateur uniforme de runtime-codevoices (celui à travers lequel la voix a été évaluée). */
+  runtime: CodeVoicesRuntime;
   /** Tempo de session (D10) au moment de l'éval — porté par le transport pour l'afficheur. */
   bpm: number | null;
-  log: LogPush;
 }): CodeVoiceTransportHandle {
-  slots.set(opts.slotId, {
-    runtime: opts.runtime,
-    actorId: opts.slotId,
-    fileId: opts.fileId,
-    refire: opts.refire
-  });
-
   if (!live) {
-    // Première voix autonome → créer LA tête de lecture. Timeline VIDE (le transport ne
-    // rejoue aucune partition — les moteurs bouclent eux-mêmes) ; hors boucle, la position
-    // est monotone (foldScene identité). Source de temps : horloge murale en secondes —
-    // aucun ordonnancement audio ne se fait ici (timeline vide), seule la position compte.
+    // Première voix autonome → créer LA tête de lecture. Timeline VIDE (le transport ne rejoue
+    // aucune partition — les moteurs bouclent eux-mêmes) ; hors boucle, la position est monotone.
+    // Source de temps : horloge monotone en secondes (aucun ordonnancement audio ici).
     const kronos = createTransport({
       now: () => performance.now() / 1000,
       ...(opts.bpm != null && opts.bpm > 0 ? { derivedTempo: opts.bpm } : {}),
@@ -94,12 +71,11 @@ export function registerCodeVoice(opts: {
     });
     const transport = kronos.transport;
     const driver = kronos.driver;
-    // Relais lifecycle AVANT le play initial ? Non — même règle que le chemin scène : le
-    // premier stopped→running est l'éval elle-même (la voix vient d'être tirée), pas un
-    // replay à re-tirer. On joue d'abord, on branche ensuite.
+    // ENREGISTREMENT du runtime : Kronos appelle `bindClock` → le runtime s'abonne au bus de
+    // cycle de vie (gel/reprise/tais-toi). L'hôte ne relaie plus rien.
+    kronos.addAdapter('code', opts.runtime as unknown as Parameters<typeof kronos.addAdapter>[1]);
     transport.play();
     driver.start();
-    const detach = attachCodeVoiceLifecycle(transport, () => [...slots.values()], opts.log);
     const handle: CodeVoiceTransportHandle = {
       transport,
       beatsPerBar: DEFAULT_BEATS_PER_BAR,
@@ -110,18 +86,16 @@ export function registerCodeVoice(opts: {
         return transport.beatPosition(DEFAULT_BEATS_PER_BAR);
       },
       step(n: number) {
-        // STEP sur une timeline vide : la tête avance d'une unité (rien à sonner) — le
-        // geste reste honnête (position bouge, aucun son fabriqué).
         transport.step(n);
         driver.start();
       },
       stopInPlace() {
-        // Tête à 0 + le relais (attaché) coupe toutes les voix sur la transition 'stopped'.
+        // Tête à 0 + le bus coupe toutes les voix sur la transition 'stopped'.
         transport.stop();
         driver.stop();
       },
       replay() {
-        // stopped→running : le relais re-tire les voix dans leurs slots.
+        // stopped→running : le bus re-tire les voix.
         transport.play();
         driver.start();
       },
@@ -129,20 +103,15 @@ export function registerCodeVoice(opts: {
         transport.setTempo(bpm);
       },
       dispose() {
-        // Teardown (hush) : détacher d'ABORD — les voix sont déjà coupées par le hush
-        // global (`__hush__`), le relais n'a pas à re-stopper sur la transition.
-        detach();
+        void live?.runtime.dispose();
         kronos.dispose();
-        slots.clear();
         live = null;
       }
     };
-    live = { kronos, handle, detach };
+    live = { kronos, handle, runtime: opts.runtime };
   } else {
-    // Transport déjà vivant : re-éval / nouvelle voix. S'il était en pause ou stoppé,
-    // l'éval RELANCE la lecture (sémantique live-coding : évaluer = jouer) — la reprise
-    // des AUTRES voix passe par le relais (paused→running = resync ; stopped→running =
-    // re-tir), la voix évaluée vient d'être tirée par l'éval elle-même.
+    // Transport déjà vivant : re-éval / nouvelle voix. Évaluer = jouer (live-coding) — la reprise
+    // des AUTRES voix passe par le bus ; la voix évaluée vient d'être tirée par `runtime.evaluate`.
     live.kronos.transport.play();
     live.kronos.driver.start();
   }
@@ -159,14 +128,13 @@ export function replayCodeVoiceTransport(): void {
   live?.handle.replay();
 }
 
-/** Teardown complet (hush) — les voix sont coupées par le `__hush__` global ; ici on
- *  démonte la tête de lecture pour que l'afficheur retombe à « stopped » sans mentir. */
+/** Teardown complet (hush) — démonte la tête de lecture (le runtime se dispose) pour que
+ *  l'afficheur retombe à « stopped » sans mentir. */
 export function disposeCodeVoiceTransport(): void {
   live?.handle.dispose();
 }
 
-/** Warp le tempo affiché quand l'utilisateur change le BPM de session (D10) — les moteurs
- *  reçoivent le leur par le fan-out `setBpm` existant ; l'afficheur doit suivre. */
+/** Warp le tempo affiché quand l'utilisateur change le BPM de session (D10). */
 export function retuneCodeVoiceTransport(bpm: number): void {
   live?.handle.retune(bpm);
 }

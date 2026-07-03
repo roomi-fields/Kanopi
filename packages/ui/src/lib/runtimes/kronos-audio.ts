@@ -27,8 +27,7 @@ import {
   createTransport,
   type KronosTransport,
   type Transport,
-  type RuntimeAdapter,
-  type ScheduledEvent
+  type RuntimeAdapter
 } from '@kronos/core';
 // KAN-orchestration P1 — Kairos is the SOURCE of the played timeline (it projects the
 // BPx tree into a Kronos Timeline and exposes a StructureSource the Transport PULLs).
@@ -56,7 +55,6 @@ import { DEFAULT_BEATS_PER_BAR } from './meter';
 // Relais lifecycle voix de code (chantier voix-code-transport S2) : suit l'état RÉEL du
 // Transport (pause quantifiée comprise) et relaie gel réel / reprise resynchronisée /
 // tais-toi aux moteurs de voix (option (b) 2026-07-03, arbitrage [524]).
-import { attachCodeVoiceLifecycle, type CodeVoiceSlot } from './code-voice-lifecycle';
 
 /** A per-runtime OUTPUT SINK this module drives. The host registers sinks BY RUNTIME
  *  NAME (the key Kairos emits in `event.output.runtime`); Kanopi chooses no sink itself —
@@ -104,23 +102,11 @@ export interface KronosAudioOptions {
   //  `handle.step`/`transport.step(1)`, plus par une construction dédiée avec grain de fenêtre.)
   /** Host logger (routed to the Console panel). */
   log?: (msg: string) => void;
-  /** Déclenche la voix de code à son moment ordonnancé (routée par `output.runtime==='code'`).
-   *  `interp` = l'interpréteur, porté par `event.output.device` (strudel/hydra/…). */
-  backtickSink?: (
-    token: string,
-    info: { startSec: number; durSec: number; absTime: number },
-    interp?: string
-  ) => void;
-  /** Les voix de code VIVANTES sous ce transport (LAZY : rappelée à chaque transition —
-   *  l'orchestré enregistre ses voix APRÈS la construction du handle). Le relais lifecycle
-   *  (code-voice-lifecycle.ts) suit `transport.onStateChange` et leur relaie gel réel /
-   *  reprise resynchronisée / tais-toi (option (b), décision 2026-07-03 + arbitrage [524]).
-   *  Remplace l'ancien couple cut+refire hôte (`stopCodeVoices`/`refireCodeVoices`). */
-  codeVoiceSlots?: () => readonly CodeVoiceSlot[];
-  /** Logger STRUCTURÉ (niveau + runtime) pour le relais lifecycle — les dégradations
-   *  transitoires (moteur sans gel) doivent arriver en `warn` au panneau console, pas en
-   *  info préfixée. Requis si `codeVoiceSlots` est fourni. */
-  codeVoiceLog?: import('./adapter').LogPush;
+  /** Sortie VOIX DE CODE : l'adaptateur uniforme de runtime-codevoices (`send`/`bindClock`/
+   *  `evaluate`/`dispose`), construit par la dérivation hôte (table backticks BPx). Enregistré
+   *  sur la clé 'code' ; c'est LUI qui tire les backticks à l'onset et s'abonne au bus de cycle
+   *  de vie (le relais lifecycle a DESCENDU dans le paquet — plus de code-voice-lifecycle hôte). */
+  codeVoicesRuntime?: RuntimeAdapter;
   /** BUILD-ONLY (Model C produce/load): construire la machine (clock/scheduler/cursor/driver/
    *  transport) et la timeline SANS jouer — le transport reste 'stopped', le driver n'est PAS
    *  démarré, donc AUCUN `send` n'a lieu (zéro son, le contexte audio n'est pas réveillé ici).
@@ -257,7 +243,6 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   const loop = opts.loop;
   const startScene = opts.startSceneSec ?? 0;
   const log = opts.log ?? (() => {});
-  const backtickSink = opts.backtickSink;
 
   // 1. Placeholder timeline — Kronos's `Scheduler`/`Cursor` need an initial Timeline, but
   //    the REAL played timeline is the Kairos projection that `bindStructureSource` swaps in
@@ -369,25 +354,10 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // sink resolves it itself. AGNOSTIQUE AU `kind` (CONTRAT_SINK_CONTROLE §2-3/§7) : le
   // token sonnant BT (kind absent ⇒ 'note') ET un éventuel `kind:'control'` porteur de
   // token tirent le code À LEUR ONSET — même chemin, durée 0 comprise.
-  const codeAdapter: RuntimeAdapter = {
-    send(ev: ScheduledEvent) {
-      const tok = (ev.content as { token?: string }).token;
-      if (!tok || !backtickSink) return;
-      backtickSink(
-        tok,
-        {
-          startSec: (ev.content as { startSec?: number }).startSec ?? 0,
-          durSec: ev.duration,
-          absTime: ev.onset
-        },
-        typeof ev.output?.device === 'string' ? ev.output.device : undefined
-      );
-    }
-    // NOTE: no `stop()` on any adapter. The scheduler's stop must NOT cut the code voices,
-    // or a SAME-FILE re-eval (which calls `transport.stop()` on the previous handle to drop
-    // its note timeline) would tear down the still-wanted Hydra/Strudel voice. Code voices
-    // are host-managed: cut explicitly on Pause/Stop, preserved on a same-file re-eval.
-  };
+  // CODE : plus d'adaptateur hôte. L'adaptateur uniforme de runtime-codevoices (opts.codeVoicesRuntime)
+  // est enregistré DIRECTEMENT sur 'code' (voir plus bas) : son `send(ev)` lit `content.token`, résout
+  // l'interprète (sa registry interne) et tire le code à l'onset ; son `bindClock` l'abonne au bus de
+  // cycle de vie de Kronos (gel/reprise/tais-toi). L'hôte ne route ni ne relaie plus rien.
 
   // 4. Scheduler + per-runtime adapter registration (NO default adapter — the host selects
   //    no sink; every event routes on its own `output.runtime`). A `.gr`/mono scene's
@@ -406,7 +376,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // L'adaptateur uniforme de runtime-OSC est enregistré DIRECTEMENT (send(ev)/bindClock ; Kronos
   // câble l'horloge lui-même à l'enregistrement — plus de now:audioCtx hôte pour OSC).
   if (oscSink) kronos.addAdapter('osc', oscSink as unknown as RuntimeAdapter);
-  if (backtickSink) kronos.addAdapter('code', codeAdapter);
+  if (opts.codeVoicesRuntime) kronos.addAdapter('code', opts.codeVoicesRuntime);
 
   // The playing cursor (EX4 phase 2): the INVERSE of the time authority, not a separate
   // counter — it reads the same `clock` the scheduler does, so the drawn playhead is
@@ -483,11 +453,8 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // onset), pas un replay à re-tirer. Toute transition SUIVANTE est relayée aux moteurs :
   // gel réel à la pause (quantifiée), reprise resynchronisée, tais-toi au stop. Le
   // détachement AVANT le stop() de teardown préserve la voix à la re-éval same-file.
-  const detachVoiceLifecycle =
-    opts.codeVoiceSlots && opts.codeVoiceLog
-      ? attachCodeVoiceLifecycle(transport, opts.codeVoiceSlots, opts.codeVoiceLog)
-      : null;
-
+  // (Plus de relais lifecycle hôte : runtime-codevoices s'abonne LUI-MÊME au bus de cycle de vie de
+  //  Kronos à son `bindClock`. L'hôte ne fait que COMMANDER le transport ; Kronos propage.)
   let stopped = false;
 
   // CVA-2 (alignement latence haut-parleur) — RETIRÉ du côté hôte : il lisait `clock.musicalNow`
@@ -506,12 +473,9 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     stop() {
       if (stopped) return;
       stopped = true;
-      // TEARDOWN (re-éval same-file / swap de scène) : les voix de code NE sont PAS coupées
-      // ici — la re-éval doit garder la voix Hydra/Strudel qui sonne (règle existante). On
-      // DÉTACHE donc le relais lifecycle AVANT transport.stop(), sinon la transition
-      // 'stopped' qu'il observe couperait la voix encore voulue. Le Stop TRANSPORT
-      // explicite passe par `stopInPlace` (relais attaché → tais-toi immédiat).
-      detachVoiceLifecycle?.();
+      // TEARDOWN (re-éval same-file / swap de scène) : le teardown du transport ne coupe pas les
+      // voix de code — leur cycle de vie est géré par runtime-codevoices via le bus (une re-éval
+      // same-file garde la voix Hydra/Strudel qui sonne). L'hôte ne relaie plus rien ici.
       try {
         transport.stop();
         driver.stop();

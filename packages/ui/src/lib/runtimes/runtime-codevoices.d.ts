@@ -16,7 +16,35 @@
  * Kanopi registry — declared here directly as Kanopi's `RuntimeAdapter`.
  */
 import type { Extension } from '@codemirror/state';
-import type { RuntimeAdapter } from './adapter';
+import type { RuntimeAdapter, EvalSource, LogPush } from './adapter';
+
+// --- Le runtime UNIFORME des voix de code (frontière hôte↔runtimes de sortie, Phase 2) ---
+export interface CodeVoicesRuntimeOptions {
+  /** Table des backticks de la scène (dérivée BPx, territoire hôte). Vide pour une voix autonome. */
+  backticks: Record<string, { interp: string; code: string }>;
+  fileId: string;
+  log: LogPush;
+  /** Orchestration `.bps` (slots par acteur + mute). Absente ⇒ backtick simple / voix autonome. */
+  orchestration?: {
+    btToActor: Record<string, string>;
+    mutedActors: Set<string>;
+    slotForActor(actor: string): string;
+  };
+}
+
+/** L'adaptateur uniforme : `send` (sink backtick tiré à l'onset) / `bindClock` (abonnement au bus
+ *  de cycle de vie de Kronos) / `evaluate` (capture d'une voix autonome — `interp` en 3e arg) /
+ *  `setActorMuted` / `dispose`. */
+export interface CodeVoicesRuntime {
+  send(ev: unknown): void;
+  bindClock(clock: unknown): void;
+  evaluate(code: string, src: EvalSource, interp?: string): Promise<void>;
+  setActorMuted(actor: string, muted: boolean): void;
+  dispose(): void;
+}
+
+/** Fabrique de la sortie voix-de-code (parallèle à createAudioRuntime/createMidiRuntime/createOscRuntime). */
+export declare function createCodeVoicesRuntime(opts: CodeVoicesRuntimeOptions): CodeVoicesRuntime;
 
 // --- The 7 code-voice adapters ---
 export declare const strudelAdapter: RuntimeAdapter;

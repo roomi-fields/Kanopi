@@ -71,7 +71,7 @@ import { buildModulators, type ModLib, type ExprSource } from '@kairos/core';
 // scheduler produces the timed events; a thin adapter bridges each to the existing
 // WebAudio synth. The old dispatcher is NEVER started for sound — it survives only
 // as the inert structure of transports/resolvers that Kronos reads.
-import { startKronosAudio, type KronosAudioHandle, type KronosAudioOptions } from './kronos-audio';
+import { startKronosAudio, type KronosAudioHandle } from './kronos-audio';
 import { DEFAULT_BEATS_PER_BAR, type MeterLike } from './meter';
 // EX4 phase 2: surface the ACTIVE Kronos cursor to the UI so the timeline draws
 // the playhead off the SAME clock as the audio (aligned + monotone-from-0),
@@ -108,7 +108,7 @@ import type { VoiceOutputType } from './adapter';
 // load it through the Strudel `samples()` path. Consumed AS-IS — the adapter
 // only maps ids → loader.
 import { findBank } from '../library/audio-banks';
-import { loadSampleBank, codeVoiceAdapters } from 'runtime-codevoices';
+import { loadSampleBank, codeVoiceAdapters, createCodeVoicesRuntime } from 'runtime-codevoices';
 // OSC output (OSC-5b): the osc-bridge WS→UDP relay endpoint. Kanopi's WebSocket
 // transport (built in startKronosAudio) connects here; the relay forwards UDP.
 import routingJson from '../../../../library/routing.json';
@@ -717,6 +717,13 @@ interface BP3Voice {
    *  MidiTransport. Disposé au teardown de scène (remplace la fermeture par le dispatcher :
    *  plus de `dispatcher.addTransport('midi', …)`). */
   midi?: ReturnType<typeof createMidiRuntime>;
+  /** MISE À JOUR VIVANTE (re-éval same-file) : refs REUTILISÉES au lieu de teardown+recreate —
+   *  le handle Kairos (re-charger la nouvelle dérivation sur le transport qui TOURNE), l'adaptateur
+   *  voix-de-code (son bus n'émet pas 'stopped' → Hydra/Strudel CONTINUE), et la table de backticks
+   *  (MUTÉE en place : le runtime la lit frais à chaque send). */
+  kairos?: InstanceType<typeof Kairos>;
+  codeVoicesRuntime?: ReturnType<typeof createCodeVoicesRuntime>;
+  backticks?: BacktickTable;
 }
 
 // Minimal shape of the grammar's own symbol table: the engine resolves a leaf's
@@ -1178,101 +1185,6 @@ async function gateVoiceDevice(
 }
 
 /**
- * Build a backtick sink (lot 4, ADAPTER_SPEC §1bis). A `BT<interp><id>` token in
- * the derivation is a REFERENCE to foreign code; Kronos (the single emitter)
- * places it in time and fires this sink at the scheduled moment — it receives the
- * returned closures via `startKronosAudio({ isBacktick, backtickSink })`.
- * The sink looks up `backticks[token]` (direct, no parsing), resolves the
- * interpreter adapter, and evaluates the code — the engine then plays, PLACED in
- * time by Kronos. Layering: the scheduler (packages/core) never imports an
- * adapter; bp3.ts builds this closure.
- *
- * - unknown interp → clear log error (never silent).
- * - async evaluate → fire-and-forget, errors logged.
- * - §1bis (b) device-type compatibility is gated UP-FRONT in `evaluate` (see
- *   `gateVoiceDevice`), per actor, before the dispatcher starts — not here at
- *   fire time. This sink only PLACES the already-validated voice in time.
- */
-function registerBacktickSink(
-  backticks: BacktickTable,
-  id: Runtime,
-  src: EvalSource,
-  log: LogPush,
-  // Orchestrator-only: map a BT token → its owning actor, the set of actors
-  // currently disarmed, and the slot id to evaluate each code voice into. When
-  // an actor is disarmed, its BT token does not fire; each code voice owns a
-  // DISTINCT slot so it can be stopped independently. Absent for a plain (non-
-  // orchestrated) backtick file — all voices then share `src.actorId` as before.
-  orchestration?: {
-    btToActor: Record<string, string>;
-    mutedActors: Set<string>;
-    slotForActor: (actor: string) => string;
-  }
-): {
-  isBacktick: (t: string) => boolean;
-  sink: (
-    t: string,
-    info?: { startSec: number; durSec: number; absTime: number },
-    interp?: string
-  ) => void;
-} {
-  const isBacktick = (token: string) => Object.prototype.hasOwnProperty.call(backticks, token);
-  // `interp` (KAI-9): the code voice's interpreter now travels on `event.output.device`
-  // (graven by Kairos), not on the AST backtick node — Kronos's 'code' adapter passes it
-  // here. Fall back to the table's own `interp` for any path that still carries it.
-  const sink = (
-    token: string,
-    _info?: { startSec: number; durSec: number; absTime: number },
-    interp?: string
-  ) => {
-    const entry = backticks[token];
-    if (!entry) return;
-    const actor = orchestration?.btToActor[token];
-    // Disarmed code voice: don't (re)fire it. The dispatcher loops, so skipping
-    // here keeps it silent until the actor is re-armed (which re-evaluates it).
-    if (actor && orchestration?.mutedActors.has(actor)) return;
-    // Each orchestrated code voice evaluates into its OWN slot (file + actor) so
-    // arm/disarm can stop just that voice. A plain backtick file keeps the
-    // whole-file slot.
-    const actorId = actor && orchestration ? orchestration.slotForActor(actor) : src.actorId;
-    const interpName = interp ?? entry.interp;
-    const runtime = runtimeForInterp(interpName);
-    if (!runtime) {
-      log({
-        runtime: id,
-        level: 'error',
-        msg: `backtick: unknown interpreter "${interpName}" (token ${token}) — tag the code with a known runtime`
-      });
-      return;
-    }
-    // The registry is reached lazily (dynamic import) to break the bp3 ↔ registry
-    // module cycle: registry.ts imports bp3Adapter/bpscriptAdapter at load, so
-    // bp3.ts must NOT pull registry at module-eval. Fire-and-forget: the engine
-    // renders itself in time (capture-for-retransport is backlog B4); errors are
-    // logged, never thrown into the audio clock.
-    import('./registry')
-      .then(({ getAdapter }) => {
-        const adapter = getAdapter(runtime);
-        if (!adapter) {
-          log({
-            runtime: id,
-            level: 'error',
-            msg: `backtick: no adapter for "${interpName}" (token ${token})`
-          });
-          return;
-        }
-        return adapter.evaluate(entry.code, { actorId, fileId: src.fileId }, log);
-      })
-      .catch((err) =>
-        log({ runtime: id, level: 'error', msg: `backtick ${interpName}: ${String(err)}` })
-      );
-  };
-  // Return the closures so the orchestrated kronos path can hand them to the Kronos
-  // scheduler (it intercepts BT tokens itself; the dispatcher is not started there).
-  return { isBacktick, sink };
-}
-
-/**
  * Load the sample/sound banks a `.bps` declares per engine (`@library.strudel
  * "dirt-samples"`). Only the `strudel` engine has a bank loader today (the
  * `samples()` path); other engines'
@@ -1452,6 +1364,10 @@ function makeBpxAdapter(
       // played timeline (its `sourceStructure()` is bound on the Transport in
       // `startKronosAudio`). Built inside the try (needs `bpx`/`rawTree` in scope).
       let kairos: Kairos | undefined;
+      // MISE À JOUR VIVANTE (re-éval same-file) : arbre dérivé + contexte de projection capturés du
+      // charger (dans le bloc où `bpx`/`derived` vivent) pour re-charger le Kairos VIVANT au teardown.
+      let liveUpdateTree: Parameters<Kairos['charger']>[0] | undefined;
+      let liveUpdateCtx: Parameters<Kairos['charger']>[1] | undefined;
       // KAI-10 — the host builds NO pitch resolver at all. Kairos graves `content.pitch.hz`
       // (read by every output) AND `content.sounds` (the DISPLAY note-vs-text predicate, read
       // below off the timeline), both from `ctx.pitchLib` + the tree; the sound transpose
@@ -1587,6 +1503,16 @@ function makeBpxAdapter(
             modulation: { registry: kronosRegistry, exprSource: onExprSource }
           } as unknown as Parameters<Kairos['charger']>[1]
         );
+        // Capture pour la MISE À JOUR VIVANTE (re-éval same-file) : arbre + contexte de projection,
+        // pour re-charger le Kairos VIVANT au teardown sans reconstruire la scène (bpx/derived ne
+        // vivent que dans ce bloc). Contexte reconstruit à frais comme le fait le re-random.
+        liveUpdateTree = derived.tree as unknown as Parameters<Kairos['charger']>[0];
+        liveUpdateCtx = {
+          ...(bpx.buildProjectionContext() as object),
+          pitchLib: PITCH_LIB,
+          digitalLib: DIGITAL_LIB,
+          modulation: { registry: kronosRegistry, exprSource: onExprSource }
+        } as unknown as Parameters<Kairos['charger']>[1];
         // BPx authority for the scene's compiled length (includes any trailing rest);
         // projected into the Kronos loop bound below.
         totalDurationBeats = derived.tree?.metadata?.totalDurationBeats;
@@ -1655,6 +1581,39 @@ function makeBpxAdapter(
 
       const key = srcKey(src);
       const prev = voices.get(key);
+      // MISE À JOUR VIVANTE (re-éval du MÊME fichier, scène orchestrée déjà VIVANTE) : une re-éval
+      // est une mise à jour LIVE (live-coding), pas une fin de scène (arbitrage archi [556]). On NE
+      // teardown PAS — on re-charge Kairos sur le transport qui TOURNE (Kronos swap les notes au
+      // prochain bord, comme le re-random), on MUTE la table de backticks EN PLACE (le runtime la lit
+      // frais à chaque send → le nouveau code s'applique aux prochains onsets), et on réutilise le
+      // handle + le runtime voix-de-code. AUCUN 'stopped' émis sur le bus → la voix Hydra/Strudel
+      // CONTINUE (fin de la régression : une re-éval same-file ne coupe plus les voix de code).
+      if (
+        prev &&
+        prev.file === src.fileId &&
+        prev.kronosAudio &&
+        prev.kairos &&
+        prev.codeVoicesRuntime &&
+        prev.backticks &&
+        orchestration &&
+        orchestration.actors.length > 0 &&
+        !buildOnly &&
+        liveUpdateTree &&
+        liveUpdateCtx
+      ) {
+        for (const k of Object.keys(prev.backticks)) delete prev.backticks[k];
+        Object.assign(prev.backticks, backticks);
+        prev.kairos.charger(liveUpdateTree, liveUpdateCtx);
+        productionFeed.swapped();
+        // Si le transport était ARRÊTÉ (handle build-only d'une ouverture qui PRODUIT sans jouer,
+        // ou un Stop), l'éval le DÉMARRE (replay : stopped→running → Kronos re-tire les notes + les
+        // backticks à leurs onsets). S'il TOURNE déjà (vraie re-éval live), on ne touche PAS la
+        // position — le swap de dérivation prend au prochain bord et la voix Hydra/Strudel continue.
+        if (prev.kronosAudio.transport.state === 'stopped') prev.kronosAudio.replay();
+        kronosCursor.set(prev.kronosAudio as unknown as Parameters<typeof kronosCursor.set>[0]);
+        emitLifecycle('eval', src.fileId);
+        return;
+      }
       if (prev) {
         prev.kronosAudio?.stop();
         prev.midi?.dispose(); // le runtime MIDI possède son transport → on le ferme ici
@@ -1718,18 +1677,20 @@ function makeBpxAdapter(
       // Backtick voices (lot 4): route each `BT<interp><id>` terminal to its
       // interpreter, fired in time by the dispatcher. Registered before load so
       // both the orchestrated and the simple path place backticks correctly.
-      let backtickHandles:
-        | { isBacktick: (t: string) => boolean; sink: (t: string) => void }
-        | undefined;
-      if (backticks && Object.keys(backticks).length > 0) {
-        backtickHandles = registerBacktickSink(
-          backticks,
-          id,
-          src,
-          log,
-          isOrchestrated ? { btToActor, mutedActors, slotForActor } : undefined
-        );
-      }
+      // La sortie voix-de-code : l'adaptateur uniforme de runtime-codevoices (send = sink backtick
+      // tiré à l'onset, evaluate = capture d'une voix autonome, bindClock = abonnement au bus de
+      // cycle de vie de Kronos → le relais lifecycle DESCEND, plus de code-voice-lifecycle hôte). La
+      // table des backticks (dérivée BPx) RESTE territoire hôte, remise au constructeur. Enregistré
+      // sur la clé 'code' dans startKronosAudio.
+      const codeVoicesRuntime =
+        backticks && Object.keys(backticks).length > 0
+          ? createCodeVoicesRuntime({
+              backticks,
+              fileId: src.fileId,
+              log,
+              orchestration: isOrchestrated ? { btToActor, mutedActors, slotForActor } : undefined
+            })
+          : undefined;
 
       // Orchestrator `.bps`: each `@actor` owns an alphabet and a transport
       // (an @devices appliance). The dispatcher routes each note by its OWN
@@ -1909,32 +1870,11 @@ function makeBpxAdapter(
             // toggle. A STEP never re-derives (no loop), so omit it there.
             reDeriveKairos,
             reRandom,
-            // Kronos is the single emitter: a code voice is routed by `output.runtime==='code'`
-            // (graven by Kairos) to the 'code' sink — the SAME backtick sink the legacy
-            // dispatcher used. No host-side `isBacktick` token sniff anymore.
-            backtickSink: backtickHandles?.sink as KronosAudioOptions['backtickSink'],
-            // RELAIS LIFECYCLE (S2 voix-code-transport) : les voix de code vivantes de CE
-            // handle, énumérées LAZY à chaque transition d'état du Transport. Le relais leur
-            // relaie gel réel / reprise resynchronisée / tais-toi (option (b) 2026-07-03) —
-            // remplace l'ancien cut+refire hôte. Le re-tir respecte l'armement (un acteur
-            // désarmé reste silencieux, même règle que le sink backtick).
-            codeVoiceSlots: () =>
-              orchestration.actors.flatMap((a) => {
-                const codeRuntime = a.evalInterp ? runtimeForInterp(a.evalInterp) : undefined;
-                if (!codeRuntime) return [];
-                return [
-                  {
-                    runtime: codeRuntime,
-                    actorId: slotForActor(a.name),
-                    fileId: src.fileId,
-                    refire: () => {
-                      if (mutedActors.has(a.name)) return;
-                      orchestratedVoices.get(a.name)?.evalCode?.();
-                    }
-                  }
-                ];
-              }),
-            codeVoiceLog: log,
+            // Kronos est le seul émetteur : une voix de code est routée par `output.runtime==='code'`
+            // (gravé par Kairos) vers l'adaptateur uniforme de runtime-codevoices, enregistré sur
+            // 'code'. Son `send(ev)` tire le backtick à l'onset ; son `bindClock` l'abonne au bus de
+            // cycle de vie (gel/reprise/tais-toi) — plus de sink ni de relais hôte.
+            codeVoicesRuntime,
             log: (m) => log({ runtime: id, level: 'info', msg: `[kronos] ${m}` })
           });
           // The timeline reads ITS playhead (aligned to the heard audio), as on mono.
@@ -1965,7 +1905,11 @@ function makeBpxAdapter(
           orchestrator: true,
           codeSlots,
           kronosAudio,
-          midi
+          midi,
+          // Refs pour la MISE À JOUR VIVANTE d'une re-éval same-file (voir BP3Voice).
+          kairos: kairos ?? undefined,
+          codeVoicesRuntime,
+          backticks
         });
 
         // Publish the actor list to the Actors panel (groove + viz, …) and

@@ -21,11 +21,25 @@ import {
   disposeCodeVoiceTransport,
   codeVoiceTransport
 } from '../runtimes/kronos-codevoice';
+import { createCodeVoicesRuntime, type CodeVoicesRuntime } from 'runtime-codevoices';
+import type { LogPush } from '../runtimes/adapter';
 import { installConsoleBridge } from '../runtimes/console-bridge';
 import { enableMidi, type MidiEvent } from '../midi/midi-input';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
 import { production } from '../../stores/production.svelte';
+
+// LE runtime des voix de code AUTONOMES (partagé, lazy). Il ÉVALUE les voix autonomes (capture
+// §3.1 — résout l'interprète, tire le moteur) et, une fois enregistré sur le transport autonome,
+// s'abonne au bus de cycle de vie. Backticks vides (une voix autonome n'a pas de scène .bps ;
+// l'interprète voyage en argument d'`evaluate`). fileId par voix = via `src`.
+let _autonomousCV: CodeVoicesRuntime | null = null;
+function autonomousCodeVoices(log: LogPush): CodeVoicesRuntime {
+  if (!_autonomousCV) {
+    _autonomousCV = createCodeVoicesRuntime({ backticks: {}, fileId: 'autonomous', log });
+  }
+  return _autonomousCV;
+}
 
 class RealActors extends MockActors {
   // We override toggle to delegate to the real-core orchestration via a callback.
@@ -311,11 +325,22 @@ class RealCore implements CoreApi {
 
     // Eval first — if it throws, we leave transport+LED alone so a broken
     // block doesn't falsely mark the scene as playing.
-    await adapter.evaluate(
-      code,
-      { actorId: slotId, fileId: sourceId, docOffset, flags, produceOnly },
-      this.log
-    );
+    // Voix de code AUTONOME : évaluée À TRAVERS l'adaptateur uniforme de runtime-codevoices
+    // (capture §3.1 — il résout l'interprète et tire le moteur), pas via la registry hôte. Les
+    // natifs bp3/bpscript passent par leur adaptateur BPx. (Une voix de code n'a pas de produceOnly.)
+    if (runtime !== 'bp3' && runtime !== 'bpscript') {
+      await autonomousCodeVoices(this.log).evaluate(
+        code,
+        { actorId: slotId, fileId: sourceId, docOffset, flags },
+        runtime
+      );
+    } else {
+      await adapter.evaluate(
+        code,
+        { actorId: slotId, fileId: sourceId, docOffset, flags, produceOnly },
+        this.log
+      );
+    }
 
     // PRODUCE-only (scene opened, not played): the adapter derived + published the
     // structure, but we must NOT touch the transport or light the actor LED — the
@@ -334,19 +359,12 @@ class RealCore implements CoreApi {
       // Tempo de session (D10) — import DYNAMIQUE du store (même règle anti-cycle que
       // blocks.svelte plus haut : store → core → real-core).
       const { clock } = await import('../../stores/clock.svelte');
+      // On met la voix (déjà tirée) SOUS le transport autonome, en y ENREGISTRANT l'adaptateur
+      // uniforme de runtime-codevoices : Kronos l'abonne au bus de cycle de vie (le re-tir /
+      // gel / reprise / tais-toi passent par le bus, plus par un refire hôte).
       const handle = registerCodeVoice({
-        runtime,
-        slotId,
-        fileId: sourceId,
-        refire: () => {
-          void adapter
-            .evaluate(code, { actorId: slotId, fileId: sourceId, docOffset, flags }, this.log)
-            .catch(() => {
-              /* le re-tir loggue déjà via l'adaptateur ; jamais dans l'horloge */
-            });
-        },
-        bpm: clock.state.bpm,
-        log: this.log
+        runtime: autonomousCodeVoices(this.log),
+        bpm: clock.state.bpm
       });
       kronosCursor.set(handle);
     }

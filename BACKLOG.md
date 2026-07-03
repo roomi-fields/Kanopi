@@ -178,3 +178,5 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 - **KAN-UX3** `ouvert` — UX Romain 2026-07-03 : volume GÉNÉRAL avec mute + vol/mute PAR ACTEUR (comme les voies d'un DAW) — UI kanopi, gain = runtime-audio (coordonner)
 - **KAN-UX4** `ouvert` — UX Romain 2026-07-03 : retirer l'icône git (ne sert à rien, usage futur non défini)
 - **KAN-UX5** `ouvert` — FEATURE Romain 2026-07-03 : files/libraries/ressources — organiser DEUX espaces standard/perso ; gestion de comptes MINIMALE (je tape mon nom = ça crée mon compte, SANS authentification) pour sauver/activer son espace perso
+- **KAN-STOP-SERRAGE** `ouvert` [P3] — Serrage stop autonome ~400 ms (mesure codevoices [1384]) : le relais lifecycle appelle pause() (coupe maître 15 ms) AVANT les stops par slot — Stop encore plus « immédiat ». Autorisé architecte, pas urgent
+- **KAN-PAUSE-ENSEMBLE** `ouvert` — Multi-scènes : Pause ne gouverne que le handle de la dernière éval (2 onglets évalués) ; Stop/hush couvrent tout. Cadrage Romain requis : veut-on une pause d'ensemble ? (observation kanopi [1385], préexistant)
