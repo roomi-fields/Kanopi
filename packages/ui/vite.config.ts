@@ -19,6 +19,15 @@ const BPSCRIPT_ORDER_TOKENS = new URL(
   import.meta.url
 ).pathname;
 
+// Same class of glue for the BPScript EDITOR MODE (`bpscript/public/editor/bpscript-lang.js`,
+// consumed AS-IS): it imports @codemirror/language + @lezer/highlight as bare specifiers, but
+// the BPscript repo ships no node_modules — dev resolution falls back to Kanopi's copy while
+// Rollup (vite build) resolves from the file's REAL path and FAILS. Alias both to Kanopi's
+// hoisted copies (also required for CM6 correctness: two @codemirror/language instances would
+// break facets/highlighting).
+const CM_LANGUAGE = new URL('../../node_modules/@codemirror/language', import.meta.url).pathname;
+const LEZER_HIGHLIGHT = new URL('../../node_modules/@lezer/highlight', import.meta.url).pathname;
+
 // Subpath deployment support: GitHub Actions exports VITE_BASE_PATH=/kanopi/
 // before `npm run build` so assets and the service-worker scope resolve under
 // https://roomi-fields.com/kanopi/. Dev and tests keep the default `/`.
@@ -97,7 +106,10 @@ export default defineConfig({
   resolve: {
     alias: {
       // Pin runtime-ui's deep bpscript import to Kanopi's real copy (see note above).
-      'bpscript/src/transpiler/orderTokens.js': BPSCRIPT_ORDER_TOKENS
+      'bpscript/src/transpiler/orderTokens.js': BPSCRIPT_ORDER_TOKENS,
+      // Pin the editor mode's CM6/Lezer bare imports to Kanopi's copies (see note above).
+      '@codemirror/language': CM_LANGUAGE,
+      '@lezer/highlight': LEZER_HIGHLIGHT
     },
     dedupe: [
       '@strudel/core',
@@ -132,7 +144,16 @@ export default defineConfig({
       // here (exactly like @strudel/* + mercury-engine above) pins them to Kanopi's copy.
       'hydra-synth',
       'p5',
-      '@csound/browser'
+      '@csound/browser',
+      // The BPScript editor mode (`bpscript/public/editor/bpscript-lang.js`, a symlinked
+      // source dep consumed AS-IS) imports these CM6/Lezer packages, but the BPscript repo
+      // ships no node_modules: dev resolution falls back to Kanopi's copy, while Rollup
+      // (vite build) resolves from the file's REAL path and fails ("Rollup failed to
+      // resolve import '@codemirror/language'"). Dedupe pins both to Kanopi's copy — which
+      // is also required for CM6 correctness (two @codemirror/language instances would
+      // break facets/highlighting).
+      '@codemirror/language',
+      '@lezer/highlight'
     ],
     // DEPS-FRAÎCHES (décision 2026-06-30) : les amonts BPx/kairos/kronos sont des
     // liens (symlinks) vers leur dépôt source. On les CONSOMME EN SOURCE pour la
