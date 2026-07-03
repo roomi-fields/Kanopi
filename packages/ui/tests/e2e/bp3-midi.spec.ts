@@ -112,17 +112,17 @@ test('an EXPLICIT transport:midi actor routes BPx tokens to runtime-midi (NoteOn
   noErrors();
 });
 
-// Per-actor MIDI channel travels to the bytes. `lead` declares `transport.midi(ch:1)`,
-// `bass` declares `ch:2` — two actors, two channels, from ONE scene. Proves the migrated MIDI
-// runtime (runtime-midi, Phase 2 frontière hôte↔runtimes) resolves the channel from the graven
-// output layer (`output.channel`) — the HOST reshapes nothing (its midi wrapper + vel/127 +
-// channel resolution are gone). Assertion is convention-independent (0- vs 1-based wire
-// channel): only the DIFFERENCE matters — ch:2 sits exactly 1 above ch:1.
+// Per-actor MIDI channel AND inline per-note override travel to the bytes. `lead` declares
+// `transport.midi(ch:1)`, `bass` declares `ch:2`, and the note `lead.E4(ch:5)` carries an inline
+// channel override. From ONE scene: three distinct channels reach the wire. Proves the migrated
+// MIDI runtime (runtime-midi, Phase 2 frontière hôte↔runtimes) resolves the channel from the
+// graven output layer (`output.channel`) — the HOST reshapes nothing (its midi wrapper + vel/127
+// + channel resolution are gone). Assertions are convention-independent (0- vs 1-based wire
+// channel): only the DIFFERENCES matter — ch:2 sits 1 above ch:1, ch:5 sits 4 above ch:1.
 //
-// NOTE: the inline NUDE-note override `E4(ch:5)` (library scene midi-channel-override.bps) is
-// NOT asserted here — that note is dropped from the MIDI output (its output layer isn't graven
-// as `midi`), an UPSTREAM attribution issue (Kairos/BPx), independent of this host migration
-// (routed to the architect). The per-actor address below is exactly what the host change owns.
+// The override note is PREFIXED (`lead.E4`), not nude — required with two western actors (décision
+// Romain 2026-07-03, note-nue-ch-implique-sortie-midi.md): a nude note's actor is ambiguous, so its
+// output isn't graven and it drops from MIDI; the prefix names the actor and Kairos graves ch:5.
 const TWO_CHANNEL_SCENE = `@core
 @tempo:120
 @actor lead  alphabet.western  transport.midi(ch:1)
@@ -130,13 +130,11 @@ const TWO_CHANNEL_SCENE = `@core
 
 S -> Lead Low
 
-Lead -> lead.C4 lead.E4 lead.G4 lead.C4
+Lead -> lead.C4 lead.E4(ch:5) lead.G4 lead.C4
 Low  -> bass.C2 bass.G2 bass.C2 bass.E2
 `;
 
-test('per-actor MIDI channel travels to the bytes (bass is 1 channel above lead)', async ({
-  page
-}) => {
+test('per-actor channel + inline (ch:5) override travel to the MIDI bytes', async ({ page }) => {
   await setupFakeMidi(page);
   const noErrors = expectNoConsoleErrors(page);
 
@@ -175,14 +173,15 @@ test('per-actor MIDI channel travels to the bytes (bass is 1 channel above lead)
 
   await evalBlockAt(page, 1);
 
-  // Wait until both discriminating notes are captured: lead C4 (60), bass C2 (36).
+  // Wait until the three discriminating notes are captured: lead C4 (60), the E4 override
+  // (64), and bass C2 (36).
   await page.waitForFunction(
     () => {
       const w = window as unknown as { __kanopiMidiBytes?: number[][] };
       const notes = (w.__kanopiMidiBytes ?? [])
         .filter((m) => (m[0] & 0xf0) === 0x90 && m[2] > 0)
         .map((m) => m[1]);
-      return notes.includes(60) && notes.includes(36);
+      return notes.includes(60) && notes.includes(64) && notes.includes(36);
     },
     undefined,
     { timeout: 15_000 }
@@ -195,15 +194,17 @@ test('per-actor MIDI channel travels to the bytes (bass is 1 channel above lead)
       const m = noteOns.find((x) => x[1] === note);
       return m ? m[0] & 0x0f : -1;
     };
-    // Proof: the exact status/note bytes captured for the two-channel scene.
-    console.log('captured two-channel NoteOn bytes:', JSON.stringify(noteOns));
-    return { lead: chanOf(60), bass: chanOf(36) };
+    // Proof: the exact status/note bytes captured for the two-channel + override scene.
+    console.log('captured channel NoteOn bytes:', JSON.stringify(noteOns));
+    return { lead: chanOf(60), override: chanOf(64), bass: chanOf(36) };
   });
 
-  // Per-actor address travels through the migrated runtime: bass is exactly 1 channel
-  // above lead (ch:2 vs ch:1), and each is a valid channel (not the -1 sentinel).
+  // Everything travels through the migrated runtime, each a valid channel (not -1):
   expect(chan.lead).toBeGreaterThanOrEqual(0);
+  // Per-actor address: bass is exactly 1 channel above lead (ch:2 vs ch:1).
   expect(chan.bass - chan.lead).toBe(1);
+  // Inline per-note override: lead.E4 jumps 4 channels above lead's declared channel (ch:5 vs ch:1).
+  expect(chan.override - chan.lead).toBe(4);
 
   await page.keyboard.press('ControlOrMeta+Period');
   await page.waitForTimeout(200);
