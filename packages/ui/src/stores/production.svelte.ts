@@ -120,21 +120,10 @@ export interface ProductionSet {
   symbolNames?: Record<number, string>;
 }
 
-// Number of STEP beats a production spans. STEP advances one clock beat
-// (`beatDurSec`) at a time, so the count is `durationSec / beatDurSec` — but a
-// derivation usually ends EXACTLY on a beat boundary, and floating-point makes
-// that land at e.g. 31.9999 or 32.00001. A naive `Math.ceil` then yields a
-// phantom trailing beat (the "+2"/"+1" overshoot in the Structure view). Snap to
-// the nearest integer when within one part in a thousand of it, otherwise round
-// up (a genuine partial final beat is still its own step). Returns 0 for a
-// non-positive beat length.
-export function beatCount(durationSec: number, beatDurSec: number): number {
-  if (!(beatDurSec > 0)) return 0;
-  const raw = durationSec / beatDurSec;
-  const rounded = Math.round(raw);
-  if (Math.abs(raw - rounded) < 1e-3) return Math.max(0, rounded);
-  return Math.max(0, Math.ceil(raw));
-}
+// (`beatCount` — le compteur de pas STEP hôte (`durationSec / beatDurSec`) — est RETIRÉ,
+// chantier transport-SM RC-B + verdict (b) « battement écrit » [496/499] : le pas est UNE
+// unité d'écriture, référent universel porté par Kronos (`transport.step(1)`) — l'hôte ne
+// compte plus les temps d'une production, ni pour stepper ni pour afficher le bouton.)
 
 class ProductionStore {
   // The whole derived production of the most recent eval (null before any). This

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { clock } from '../../stores/clock.svelte';
-  import { production, beatCount } from '../../stores/production.svelte';
   import { workspace } from '../../stores/workspace.svelte';
   import { transport } from '../../stores/transport.svelte';
   import { playback } from '../../stores/playback.svelte';
@@ -9,21 +8,19 @@
   import { kronosCursor } from '../../stores/kronos-cursor.svelte';
   import { fmt2, fmt3 } from '../../lib/format/bar-beat';
 
-  // STEP lives in the transport cluster (beta issue 4 — transport buttons
-  // grouped). It's driven off the PRODUCED timeline, not the `.bps` head rule, so
-  // it enables for ANY runtime whose last eval produced a timeline — BP3 `.gr`,
-  // backtick `.bps`, plain `.bps` alike. The STEP unit is one clock beat
-  // (`beatDurSec = 60/bpm`); the button shows when the production spans more than
-  // one beat. STEP re-evaluates the ACTIVE file beat by beat.
+  // STEP lives in the transport cluster (beta issue 4 — transport buttons grouped).
+  // Verdict (b) « battement ÉCRIT » ([496/499]) : step(1) avance d'UN temps d'écriture,
+  // référent UNIVERSEL (strié + lisse, temps vide = pas valide silencieux) → la
+  // disponibilité du bouton ne dépend PLUS du contenu produit (l'ancien compteur hôte
+  // `beatCount(duration/beatDur) > 1` est retiré — c'était un calcul de grille hôte).
+  // Critère : un fichier symbolique jouable est actif (même critère que Produce) ; le
+  // geste délègue à `playback.step` → `handle.step(1)` (Kronos, autorité du pas).
   const activeFile = $derived(
     workspace.activeTabId ? workspace.fileById(workspace.activeTabId) : undefined
   );
-  const beats = $derived.by(() => {
-    const cur = production.current;
-    if (!cur) return 0;
-    return beatCount(cur.durationSec, cur.beatDurSec);
-  });
-  const canStep = $derived(beats > 1);
+  const canStep = $derived(
+    !!activeFile && (activeFile.runtime === 'bpscript' || activeFile.runtime === 'bp3')
+  );
 
   // PRODUCE: (re)derive the active scene and refresh its structure, leaving the
   // transport at REST (Romain's produce/play split — produce generates, Play
