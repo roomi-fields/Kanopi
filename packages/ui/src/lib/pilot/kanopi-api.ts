@@ -26,9 +26,10 @@ import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 import { setAudioForwardObserver, pilotAudioMeter } from '../runtimes/kronos-audio';
 import { lastViewInput } from './view-input-observer';
 import { startFrameMonitor, readFrameStats } from './frame-stats';
+import { profileMainThread } from './stack-profiler';
 import { core } from '../core';
 
-const API_VERSION = 9;
+const API_VERSION = 10;
 
 // Tampon d'OBSERVATION (tooling de test, PAS de l'état d'app) : les derniers events audio
 // FORWARDÉS au sink, capturés VERBATIM par l'observateur lecture-seule de kronos-audio. Remplace
@@ -189,6 +190,14 @@ export function installKanopiApi(): void {
        *  > 50 ms, horodatés (agoMs). Lecture seule ; le moniteur tourne en continu. */
       frameStats() {
         return readFrameStats();
+      },
+      /** v10 — sonde de PILE CHAUDE : profile le fil principal pendant `ms` (défaut 8 s,
+       *  JS Self-Profiling API) et NOMME les fonctions qui le tiennent (self-time trié).
+       *  Protocole : lancer, puis reproduire le geste (scroll/saisie) PENDANT la fenêtre.
+       *  Exige l'en-tête `Document-Policy: js-profiling` (posé par vite.config — un serveur
+       *  démarré avant ce changement doit être redémarré ; la sonde l'explique si absent). */
+      profileScroll(ms = 8000) {
+        return profileMainThread(ms);
       },
       /** Compteur de génération (incrémenté à chaque re-charge / swap re-random). */
       generation(): number {

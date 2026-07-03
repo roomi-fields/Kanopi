@@ -50,9 +50,9 @@ Quatre couches :
 Principe transverse : **une seule source de vérité** (les stores singletons). L'API n'introduit
 aucun état propre.
 
-## 4. Interface — surface RÉELLE `window.kanopi` v9 (source de vérité : `kanopi-api.ts`)
+## 4. Interface — surface RÉELLE `window.kanopi` v10 (source de vérité : `kanopi-api.ts`)
 
-Installée dans **TOUS les builds** (prod incluse — API publique, plus DEV-only). `window.kanopi.version` = **9**.
+Installée dans **TOUS les builds** (prod incluse — API publique, plus DEV-only). `window.kanopi.version` = **10**.
 Surface **additive** (ajouter une capacité ≠ casser l'existant). Deux familles : **commandes** (effet,
 délèguent au point d'entrée UI) et **inspection** (`inspect.*`, lecture seule, aucun effet).
 
@@ -79,6 +79,7 @@ délèguent au point d'entrée UI) et **inspection** (`inspect.*`, lecture seule
 | `inspect.audio.measure() → {rms, spectralCentroid} \| null` | idem (active le compteur au besoin) |
 | `inspect.audio.clockBound() → boolean` | v8 — le sink audio a-t-il reçu la vue horloge de KRONOS (`bindClock`, canal B) |
 | `inspect.frameStats() → {frames, rafStallsOver100, longtasks}` | v9 — sonde de FLUIDITÉ du fil principal (~15 s glissantes, gels horodatés) pour mesurer dans la session réelle |
+| `inspect.profileScroll(ms=8000) → Promise<{ok, samples, idlePct, top}>` | v10 — sonde de PILE CHAUDE (JS Self-Profiling) : NOMME les fonctions qui tiennent le fil pendant un geste reproduit (exige l'en-tête `Document-Policy: js-profiling`, posé par vite.config — redémarrer un serveur antérieur) |
 | `inspect.generation() → number` | `productionFeed.generation` (re-charge / swap re-random) |
 | `inspect.transportState() → string\|null` | `kronosCursor.active.transport.state` (autorité Kronos) |
 | `inspect.position() → number\|null` | `kronosCursor.active.transport.position()` (beats) |

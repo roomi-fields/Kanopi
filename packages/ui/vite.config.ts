@@ -164,7 +164,13 @@ export default defineConfig({
     // Le `dist` ne sert plus QU'À la prod (condition d'export `import`).
     exclude: ['@kairos/core', '@kronos/core', 'bpx']
   },
+  preview: {
+    headers: { 'Document-Policy': 'js-profiling' }
+  },
   server: {
+    // JS Self-Profiling API (sonde `inspect.profileScroll`) : le navigateur ne l'expose
+    // que si la RÉPONSE porte cet en-tête. Posé aussi sur le preview (bundle prod local).
+    headers: { 'Document-Policy': 'js-profiling' },
     port: 5173,
     strictPort: false,
     // `bpx` and `bp3-frontend` are sibling repos linked via `file:` (npm
