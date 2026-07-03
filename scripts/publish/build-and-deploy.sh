@@ -54,6 +54,28 @@ else
   exit 1
 fi
 
+# DIST AMONT FRAIS (LAN-14 / DEPLOY-DIST-STALE, GO [521]) : le build prod consomme les
+# DIST de bpx/kronos/kairos (condition d'export `import`) ; depuis deps-fraîches le dev
+# sert leurs SRC et plus rien ne rebuildait les dist → un deploy embarquait des briques
+# périmées (site potentiellement muet, 'ax is not a constructor'). On REBUILD dans
+# l'ordre de dépendance (bpx et kronos, puis kairos qui dépend des deux), puis une GARDE
+# refuse BRUYAMMENT le deploy si un dist reste plus vieux que sa source.
+UPSTREAMS=(/home/romi/dev/bp/BPx /home/romi/dev/bp/kronos /home/romi/dev/bp/kairos)
+echo ">> [0bis/6] Rebuild des dist amont (bpx, kronos, kairos)…"
+for d in "${UPSTREAMS[@]}"; do
+  echo "   - $(basename "$d")"
+  ( cd "$d" && npm run build )
+done
+for d in "${UPSTREAMS[@]}"; do
+  main="$d/dist/index.js"
+  [[ -f "$main" ]] || { echo "ERREUR : $main absent après build — deploy REFUSÉ" >&2; exit 1; }
+  stale="$(find "$d/src" -type f \( -name '*.ts' -o -name '*.js' \) -newer "$main" | head -1)"
+  if [[ -n "$stale" ]]; then
+    echo "ERREUR : dist périmé pour $d (source plus récente : $stale) — deploy REFUSÉ" >&2
+    exit 1
+  fi
+done
+
 echo ">> [1/6] Build local (packages/ui, VITE_BASE_PATH=/kanopi/)"
 cd "$UI_DIR"
 VITE_BASE_PATH=/kanopi/ npm run build
