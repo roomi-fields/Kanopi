@@ -95,9 +95,12 @@ if (typeof window !== 'undefined') {
 export function installAutosave() {
   $effect.root(() => {
     $effect(() => {
-      // touch every reactive surface we care about
+      // Touch every reactive surface we care about. Reading `contents.length` per file
+      // registers the SAME reactive dependency as concatenating the contents did, without
+      // building an O(workspace-size) string ON EVERY KEYSTROKE (the old map+join ran in
+      // the effect body, OUTSIDE the debounce — KANOPI-AUTOSAVE-PAR-FRAPPE, P3).
       void workspace.files.length;
-      void workspace.files.map((f) => f.contents).join('|').length;
+      for (const f of workspace.files) void f.contents.length;
       void workspace.openTabIds.length;
       void workspace.activeTabId;
       void scenes.active?.name;
