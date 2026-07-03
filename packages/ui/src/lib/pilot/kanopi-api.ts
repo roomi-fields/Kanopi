@@ -25,9 +25,10 @@ import { productionFeed } from '../../stores/production-feed.svelte';
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 import { setAudioForwardObserver, pilotAudioMeter } from '../runtimes/kronos-audio';
 import { lastViewInput } from './view-input-observer';
+import { startFrameMonitor, readFrameStats } from './frame-stats';
 import { core } from '../core';
 
-const API_VERSION = 8;
+const API_VERSION = 9;
 
 // Tampon d'OBSERVATION (tooling de test, PAS de l'état d'app) : les derniers events audio
 // FORWARDÉS au sink, capturés VERBATIM par l'observateur lecture-seule de kronos-audio. Remplace
@@ -51,6 +52,8 @@ interface ObservedBinding {
 
 /** Installe `window.kanopi` (API publique). Appelée inconditionnellement depuis main.ts. */
 export function installKanopiApi(): void {
+  // Sonde de fluidité (inspect.frameStats) — démarrée ici pour capter AVANT toute repro.
+  startFrameMonitor();
   // Observateur lecture-seule des events audio forwardés (kronos-audio setAudioForwardObserver) :
   // accumule VERBATIM dans le tampon borné. Ne mute rien ; le forward réel n'en dépend pas.
   setAudioForwardObserver((e) => {
@@ -179,6 +182,13 @@ export function installKanopiApi(): void {
         clockBound(): boolean {
           return (pilotAudioMeter() as { clock?: unknown } | null)?.clock != null;
         }
+      },
+      /** v9 — sonde de FLUIDITÉ du fil principal, pour mesurer les gels DANS la session
+       *  réelle (frappes / coller / molette pendant lecture) : photographie des ~15
+       *  dernières secondes — percentiles de frames, gels rAF > 100 ms et long tasks
+       *  > 50 ms, horodatés (agoMs). Lecture seule ; le moniteur tourne en continu. */
+      frameStats() {
+        return readFrameStats();
       },
       /** Compteur de génération (incrémenté à chaque re-charge / swap re-random). */
       generation(): number {
