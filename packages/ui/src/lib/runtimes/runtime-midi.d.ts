@@ -40,3 +40,30 @@ export declare class MidiTransport {
   init(): Promise<void>;
   send(event: Record<string, unknown>, absTime: number): void;
 }
+
+export interface MidiRuntimeOptions {
+  latency?: number;
+  outputIndex?: number;
+  /** Constant semitone offset (BP `c4key`). Under KAI-10 keep 0 (graven Hz is absolute). */
+  keyOffset?: number;
+  mpe?: boolean;
+  velocitySeed?: number;
+}
+
+/** Sortie MIDI — adaptateur UNIFORME (frontière hôte↔runtimes de sortie). POSSÈDE son
+ *  MidiTransport, résout le canal (`output.channel`), normalise la vélocité, met en forme
+ *  l'événement — l'hôte ne fait rien de tout ça. Kronos appelle `send(ev)`/`bindClock` ;
+ *  l'hôte appelle `init()` (acquisition Web MIDI) et `dispose()` (teardown). */
+export interface MidiRuntime {
+  init(): Promise<boolean | void>;
+  setOutput(port: unknown): void;
+  bindClock(clock: unknown): void;
+  send(event: unknown): void;
+  stop(): void;
+  setActorMuted(actor: string, muted: boolean): void;
+  dispose(): void;
+  close(): void;
+}
+
+/** Fabrique de la sortie MIDI (parallèle à `createAudioRuntime`). Point d'entrée hôte. */
+export declare function createMidiRuntime(opts?: MidiRuntimeOptions): MidiRuntime;

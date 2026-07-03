@@ -44,11 +44,12 @@ import { Dispatcher } from '../../../../core/src/dispatcher/dispatcher.js';
 // (compiles a backtick curve → ModulationSource), injected into Kronos's composition
 // so Kanopi NEVER compiles/renders CV. The AudioRuntime itself is built in kronos-audio.
 import { exprSource } from 'runtime-audio';
-// Per-actor MIDI transport for a voice routed `transport:midi`. Consumed AS-IS from
-// the canonical runtime-MIDI package (conformité MIDI : zéro copie dans Kanopi/core —
-// la copie core `dispatcher/transports/midi.js` est supprimée). runtime-MIDI OWNS the
-// MIDI path; Kanopi only routes Kronos's per-actor events to it.
-import { MidiTransport } from 'runtime-midi';
+// Sortie MIDI — l'adaptateur uniforme de runtime-MIDI (frontière hôte↔runtimes, Phase 2).
+// `createMidiRuntime` POSSÈDE son transport, résout le canal (output.channel) et normalise la
+// vélocité DANS le paquet : l'hôte ne construit plus de transport, ne calcule plus vel/127 ni le
+// canal (écarts #2/#3/#4/#6 rapatriés). Kanopi ne fait que l'enregistrer sur Kronos par sa clé ;
+// Kronos lui passe l'événement BRUT et câble l'horloge+le bus via `bindClock`.
+import { createMidiRuntime } from 'runtime-midi';
 // Pitch resolution (token → Hz) AND the alphabet-aware "sounds" classification both live
 // in KAIROS now: it OWNS the pitch module and GRAVES `content.pitch.hz` + `content.sounds`
 // per note (KAI-10), from the catalogs the host supplies as `ctx.pitchLib`. Kanopi RESOLVES
@@ -712,6 +713,10 @@ interface BP3Voice {
    *  Stopped alongside the dispatcher; the dispatcher's own stop closes the
    *  transports that cut the scheduled sound. */
   kronosAudio?: KronosAudioHandle;
+  /** MIDI runtime (runtime-MIDI's uniform adapter) for this scene — POSSÈDE son propre
+   *  MidiTransport. Disposé au teardown de scène (remplace la fermeture par le dispatcher :
+   *  plus de `dispatcher.addTransport('midi', …)`). */
+  midi?: ReturnType<typeof createMidiRuntime>;
 }
 
 // Minimal shape of the grammar's own symbol table: the engine resolves a leaf's
@@ -1681,6 +1686,7 @@ function makeBpxAdapter(
       const prev = voices.get(key);
       if (prev) {
         prev.kronosAudio?.stop();
+        prev.midi?.dispose(); // le runtime MIDI possède son transport → on le ferme ici
         prev.dispatcher.stop();
       }
       // Loading a DIFFERENT program: stop the previous ORCHESTRATOR's dispatcher.
@@ -1699,6 +1705,7 @@ function makeBpxAdapter(
         if (vKey === key) continue;
         if (v.orchestrator && v.file !== undefined && v.file !== src.fileId) {
           v.kronosAudio?.stop();
+          v.midi?.dispose(); // ferme le transport que le runtime MIDI possède
           v.dispatcher.stop();
           if (v.codeSlots) outgoingCodeSlots.push(...v.codeSlots);
           voices.delete(vKey);
@@ -1783,12 +1790,15 @@ function makeBpxAdapter(
         // clock); the OSC device enumeration is derived there from `metadata.actors`.
         // KAI-10 — no host resolver: the MIDI sink reads `event.pitch.hz` (graven by Kairos)
         // and derives note+bend from it; its own token→Hz resolver is now only a stand-in.
-        let midi: InstanceType<typeof MidiTransport> | undefined;
+        let midi: ReturnType<typeof createMidiRuntime> | undefined;
         for (const actor of orchestration.actors) {
           if (devices.get(actor.name)!.type === 'midi' && !midi) {
-            midi = new MidiTransport({});
-            await midi.init().catch(() => {}); // no hardware → silent, never throws
-            dispatcher.addTransport('midi', midi); // lifecycle: dispatcher.stop() closes it
+            // runtime-MIDI possède/construit/init SON transport (#6). init() acquiert Web MIDI
+            // (après geste user) ; silencieux sans matériel, ne throw pas. L'adaptateur est
+            // enregistré sur Kronos dans startKronosAudio ; teardown = `midi.dispose()` (ci-dessous),
+            // plus de `dispatcher.addTransport` (le paquet possède le cycle de vie de son transport).
+            midi = createMidiRuntime({});
+            await midi.init().catch(() => {});
           }
         }
         // Per-actor routing (KAI-9): each note carries its OWN output layer — Kairos
@@ -1983,7 +1993,8 @@ function makeBpxAdapter(
           file: src.fileId,
           orchestrator: true,
           codeSlots,
-          kronosAudio
+          kronosAudio,
+          midi
         });
 
         // Publish the actor list to the Actors panel (groove + viz, …) and

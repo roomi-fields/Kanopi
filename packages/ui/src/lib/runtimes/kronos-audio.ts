@@ -478,31 +478,11 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     }
   };
 
-  // MIDI: the MidiTransport reads a flat event (token + controls). The CHANNEL comes from
-  // the OUTPUT layer (`ev.output.channel`, graven by Kairos) — never the host.
-  const midiAdapter: RuntimeAdapter = {
-    send(ev: ScheduledEvent) {
-      if (!midiSink) return warnMissing('midi');
-      const { c, coerced, velRaw } = prep(ev.content);
-      const event: Record<string, unknown> = {
-        token: c.token,
-        startSec: c.startSec ?? 0,
-        durSec: ev.duration,
-        // CONTRAT_SINK_CONTROLE §3 : kind/nature voyagent VERBATIM (un event `control`
-        // d'une nature que le sink MIDI ne connaît pas est ignoré par LUI, pas filtré ici).
-        kind: ev.kind,
-        nature: ev.nature,
-        ...coerced
-      };
-      if (velRaw != null) event.velocity = velRaw / 127;
-      // KAI-10: forward the graven pitch facet; the MIDI sink reads `event.pitch.hz`
-      // and derives note+bend from it (its token→Hz resolver is now a stand-in only).
-      if (c.pitch != null) event.pitch = c.pitch;
-      const ch = ev.output?.channel;
-      if (typeof ch === 'number') event.chan = ch;
-      midiSink.send(event, ev.onset);
-    }
-  };
+  // MIDI : plus de wrapper hôte. Frontière hôte↔runtimes (Phase 2) — l'adaptateur uniforme de
+  // runtime-MIDI (`createMidiRuntime`, construit dans bpx-adapter) est enregistré DIRECTEMENT sur
+  // Kronos (voir plus bas). C'est LUI qui met en forme l'événement, résout le canal
+  // (`output.channel`) et normalise la vélocité — l'hôte ne calcule plus vel/127 ni le canal, ne
+  // reshape plus rien (écarts #3/#4 retirés). Kronos lui passe l'événement BRUT via `send(ev)`.
 
   // OSC: hand the OscAdapter the RAW ScheduledEvent (its profile maps `content.controls` to
   // device addresses + `content.token` to note on/off). `output` rides through so the sink
@@ -566,7 +546,9 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     kronos.addAdapter('audio', audioAdapter);
     kronos.addAdapter('webaudio', audioAdapter);
   }
-  if (midiSink) kronos.addAdapter('midi', midiAdapter);
+  // L'adaptateur uniforme de runtime-MIDI est enregistré DIRECTEMENT (il expose send(ev)/bindClock ;
+  // Kronos appelle bindClock lui-même à l'enregistrement — vue horloge + bus de cycle de vie).
+  if (midiSink) kronos.addAdapter('midi', midiSink as unknown as RuntimeAdapter);
   if (oscSink) kronos.addAdapter('osc', oscRuntimeAdapter);
   if (backtickSink) kronos.addAdapter('code', codeAdapter);
 

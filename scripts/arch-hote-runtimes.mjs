@@ -25,6 +25,15 @@ const SCAN_ROOTS = [
 ];
 const EXCLUDE_FILE = /\.(test|spec)\.|\.d\.ts$|output-runtime-contract\.ts$/;
 
+// CLIQUET (ratchet) : une fois une runtime MIGRÉE (ses écarts retirés, thermomètre à 0 pour ses
+// motifs), ses motifs deviennent VERROUILLÉS — s'ils réapparaissent, le garde MORD (exit 1), pour
+// cette runtime, même si le reste est encore en mesure. C'est ainsi que « §Garde 4 mord pour MIDI »
+// (Phase 2 MIDI) sans attendre la Phase 3 globale. Chaque nouvelle runtime migrée ajoute ses motifs.
+const LOCKED = [
+  { runtime: 'midi', label: 'construction de transport MIDI dans l\'hôte (#6)', re: /\bMidiTransport\b/ },
+  { runtime: 'midi', label: 'canal MIDI résolu dans l\'hôte (#4)', re: /\.chan\b\s*=/ }
+];
+
 // Une règle §Garde = un ou plusieurs motifs de contenu, rattachés aux écarts du draft.
 const RULES = [
   {
@@ -124,5 +133,28 @@ console.log(`\n   TOTAL occurrences comptées : ${grandTotal}  (lignes de code, 
 console.log('   Baseline de burndown : ce nombre doit DÉCROÎTRE à chaque runtime migrée (Phase 2), viser 0.');
 console.log('   (écart #10 « voix de code muettes » = effet de #7/#9, prouvé à l\'écran, non compté ici)\n');
 
-// MODE MESURE : jamais bloquant en Phase 1.
+// ---- Cliquet des runtimes migrées : ces motifs-là MORDENT (exit 1 s'ils réapparaissent) ----
+const regressions = [];
+for (const lock of LOCKED) {
+  const hits = [];
+  for (const file of files) {
+    const lines = readFileSync(file, 'utf8').split('\n');
+    lines.forEach((line, i) => {
+      if (!isCommentLine(line) && lock.re.test(line)) hits.push(`${relative(ROOT, file)}:${i + 1}`);
+    });
+  }
+  if (hits.length) regressions.push({ lock, hits });
+}
+const lockedRuntimes = [...new Set(LOCKED.map((l) => l.runtime))].join(', ');
+if (regressions.length) {
+  console.log(`   ⛔ CLIQUET — régression sur une runtime MIGRÉE (${lockedRuntimes}) :`);
+  for (const { lock, hits } of regressions) {
+    console.log(`      [${lock.runtime}] ${lock.label}`);
+    for (const h of hits) console.log(`        · ${h}`);
+  }
+  console.log('   La mise en forme de cette runtime est repartie dans l\'hôte → refuser (garde §4 mord).\n');
+  process.exit(1);
+}
+console.log(`   ✅ Cliquet OK : runtimes migrées (${lockedRuntimes}) restent à 0 dans l'hôte (§Garde 4 mord).\n`);
+// Le RESTE est en MODE MESURE : non bloquant tant que sa runtime n'est pas migrée.
 process.exit(0);
