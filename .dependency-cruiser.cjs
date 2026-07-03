@@ -36,6 +36,20 @@ module.exports = {
       from: { path: "^packages/(ui|core|library)/src" },
       to: { path: "(/pitch(/|$)|pitch-resolver|/resolver(\\.|/))" },
     },
+    {
+      // §Garde 4 du contrat hote-runtimes-sortie.md — MODE MESURE (info, ne bloque pas encore ;
+      // passe en `error` en Phase 3). L'hôte n'importe des paquets runtime QUE leur adaptateur
+      // d'entrée (`runtime-audio`, `runtime-midi`, `runtime-osc/browser`, `runtime-codevoices`) —
+      // JAMAIS leurs internes (`.../src|dist|lib/...`). Lit 0 aujourd'hui (l'hôte passe par les
+      // entrées) : garde PRÉVENTIF contre une future colonisation par sous-chemin.
+      name: "hote-n-importe-que-l-adaptateur-runtime",
+      severity: "info",
+      comment:
+        "Frontière hôte↔runtimes (§Garde 4) : importer l'ADAPTATEUR d'un paquet runtime, " +
+        "jamais ses internes (src/dist/lib). La mise en forme vit DANS la runtime.",
+      from: { path: "^packages/(ui|core)/src" },
+      to: { path: "runtime-(audio|midi|osc|codevoices)/(src|dist|lib)/" },
+    },
   ],
   options: {
     tsConfig: { fileName: "tsconfig.arch.json" },

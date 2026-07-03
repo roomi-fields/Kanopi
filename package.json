@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "postinstall": "simple-git-hooks",
-    "arch": "node scripts/deps-fraicheur.mjs && depcruise \"packages/ui/src/**/*.{ts,svelte}\" \"packages/core/src/**/*.js\" --config .dependency-cruiser.cjs --output-type err",
+    "arch": "node scripts/deps-fraicheur.mjs && depcruise \"packages/ui/src/**/*.{ts,svelte}\" \"packages/core/src/**/*.js\" --config .dependency-cruiser.cjs --output-type err && node scripts/arch-hote-runtimes.mjs",
     "verify": "cd packages/ui && npm run verify"
   },
   "simple-git-hooks": {
