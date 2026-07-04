@@ -1,0 +1,14 @@
+// Voix de code — TIDALCYCLES (patterns, Haskell).
+// Deux formes montrées : héritage (acteur `beat eval.tidal`) sur la règle `beat`,
+// et override par TAG propre (`sc:`) pour une ligne SuperCollider ponctuelle.
+// NB : Tidal/SC exigent un backend natif (SuperDirt) — cette démo montre la FORME
+// des voix ; en navigateur elle ne sonne pas (pas de serveur SC).
+
+@core
+@tempo:120
+
+@actor beat  eval.tidal  transport.audio
+
+S -> beat beat beat `sc: Synth.new(\ping)`
+
+beat -> `d1 $ sound "bd sn hh sn" # gain 0.9`

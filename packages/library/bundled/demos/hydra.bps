@@ -1,0 +1,13 @@
+// Voix de code — HYDRA (synthé vidéo / visuels).
+// L'acteur `visuals eval.hydra` type le langage ; le backtick de flux hérite de hydra.
+// Une voix de code n'est pas forcément sonore : hydra rend de l'image, routée par
+// son runtime. Le container (début/fin/boucle) reste piloté par Kronos.
+
+@core
+@tempo:120
+
+@actor visuals  eval.hydra  transport.audio
+
+S -> visuals visuals
+
+visuals -> `osc(10, 0.1, 0.8).rotate(0.5).out()`

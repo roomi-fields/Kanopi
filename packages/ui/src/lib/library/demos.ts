@@ -22,6 +22,8 @@ interface DemoMeta {
   tagline: string;
   description: string;
   category: LibraryCategory;
+  /** the primary language/runtime for the card badge + filter; defaults to 'bpscript' */
+  language?: string;
   outputs: OutputKind[];
   level: Level;
   tags: string[];
@@ -134,17 +136,6 @@ const DEMO_META: Record<string, DemoMeta> = {
     tags: ['midi'],
     showcase: true
   },
-  'cv-backtick': {
-    name: 'Wobble Bass — backtick',
-    tagline: 'a custom JS curve in a backtick',
-    description:
-      'A wobble bass whose filter is modulated by a custom JavaScript curve embedded in a backtick — BPScript hosting code inline.',
-    category: 'bpscript-backticks',
-    outputs: ['audio'],
-    level: 'advanced',
-    tags: ['cv', 'backtick', 'code'],
-    showcase: true
-  },
   'strudel-backtick': {
     name: 'Strudel backtick — code voice',
     tagline: 'a strudel pattern as a terminal in the flow',
@@ -154,6 +145,86 @@ const DEMO_META: Record<string, DemoMeta> = {
     outputs: ['audio'],
     level: 'advanced',
     tags: ['backtick', 'code', 'cross-runtime', 'strudel'],
+    showcase: true
+  },
+  strudel: {
+    name: 'Strudel — code voice',
+    tagline: 'a synth bassline inherited from the actor',
+    description:
+      'A code voice: the actor (eval.strudel) types the language, so a flow backtick in its head rule inherits Strudel with no tag. A synth bass pattern (no samples needed — it sounds without the network) sits in the rule flow as a terminal; Kronos owns start/stop/loop, the code is captured then transported.',
+    category: 'other-langs',
+    language: 'strudel',
+    outputs: ['audio'],
+    level: 'didactic',
+    tags: ['strudel', 'patterns'],
+    showcase: true
+  },
+  hydra: {
+    name: 'Hydra — code voice',
+    tagline: 'video synth, not every voice makes sound',
+    description:
+      'A code voice for visuals: the actor (eval.hydra) types the language and the flow backtick inherits Hydra. A code voice need not be audible — Hydra renders image, routed by its runtime; the start/stop/loop container stays driven by Kronos.',
+    category: 'other-langs',
+    language: 'hydra',
+    outputs: ['visual'],
+    level: 'didactic',
+    tags: ['hydra', 'visuals'],
+    showcase: true
+  },
+  p5: {
+    name: 'p5 — code voice',
+    tagline: 'an explicit tag, no actor needed',
+    description:
+      'A code voice via the explicit tag form (p5: …): no code-voice actor is declared, the tag gives the language directly. Equivalent to an eval.p5 actor by inheritance. The sketch draws to the p5 canvas, placed in time by the dispatcher.',
+    category: 'other-langs',
+    language: 'p5',
+    outputs: ['visual'],
+    level: 'didactic',
+    tags: ['p5', 'creative-coding']
+  },
+  csound: {
+    name: 'Csound — code voice',
+    tagline: 'a synthesis instrument, Kronos owns tempo',
+    description:
+      'A code voice for audio synthesis: the actor (eval.csound) types the language and the flow backtick inherits Csound. Any absolute tempo in the patch is overridden — Kronos is the sole time master (DAW model).',
+    category: 'other-langs',
+    language: 'csound',
+    outputs: ['audio'],
+    level: 'intermediate',
+    tags: ['csound', 'synthesis']
+  },
+  mercury: {
+    name: 'Mercury — code voice',
+    tagline: 'minimal live coding, slaved to the master tempo',
+    description:
+      'A code voice for minimal live coding: the actor (eval.mercury) types the language, inherited on the head rule. A set tempo in the patch would be overridden — the voice is slaved to Kronos, its rhythm scales; polytempo is a ratio.',
+    category: 'other-langs',
+    language: 'mercury',
+    outputs: ['audio'],
+    level: 'didactic',
+    tags: ['mercury', 'live-coding']
+  },
+  tidal: {
+    name: 'Tidal — code voice',
+    tagline: 'inheritance plus a per-terminal tag override',
+    description:
+      'A code voice for TidalCycles patterns: two forms shown — inheritance (the eval.tidal actor types the beat rule) and a per-terminal tag override (sc:) for a one-off SuperCollider line in the flow.',
+    category: 'other-langs',
+    language: 'tidal',
+    outputs: ['audio'],
+    level: 'intermediate',
+    tags: ['tidal', 'patterns']
+  },
+  'cv-curve-js': {
+    name: 'CV curve in JS — code voice',
+    tagline: 'a reusable modulation curve wired at a param point',
+    description:
+      'A CV modulation in JS: the cv keyword types the role (modulation) and the js: tag types the language. The curve (0..1 over the note duration) is declared once, reusable, and wired at a parameter point (C4(cutoff:sweep)).',
+    category: 'bpscript-backticks',
+    language: 'js',
+    outputs: ['audio'],
+    level: 'intermediate',
+    tags: ['cv', 'modulation', 'js'],
     showcase: true
   },
   'midi-actors': {
@@ -209,7 +280,7 @@ export const DEMO_ITEMS: LibraryItem[] = Object.entries(raw)
       tagline: m.tagline,
       description: m.description,
       category: m.category,
-      language: 'bpscript',
+      language: m.language ?? 'bpscript',
       outputs: m.outputs,
       level: m.level,
       tags: m.tags,
