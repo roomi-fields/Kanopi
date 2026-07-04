@@ -74,8 +74,19 @@ const CONTROL_COMPLETIONS: Completion[] = vocab.controls.map((c) => ({
   info: controlInfo(c)
 }));
 
-// Default popup outside any special context: directives + controls (as before).
-const DEFAULT_COMPLETIONS: Completion[] = [...DIRECTIVE_COMPLETIONS, ...CONTROL_COMPLETIONS];
+// Fixed SYNTAX keywords (`gate`/`trigger`/`cv`/`lambda`) — bare words the authority
+// exposes via `syntaxWords` (kind `keyword`). Operators (`->`/`<-`/`<>`) are syntax
+// too but not word-completable, so only the `keyword` kind joins the popup.
+const SYNTAX_KEYWORD_COMPLETIONS: Completion[] = Object.entries(vocab.syntaxWords)
+  .filter(([, d]) => d.kind === 'keyword')
+  .map(([name, d]) => ({ label: name, type: 'keyword', detail: 'keyword', info: d.description }));
+
+// Default popup outside any special context: directives + syntax keywords + controls.
+const DEFAULT_COMPLETIONS: Completion[] = [
+  ...DIRECTIVE_COMPLETIONS,
+  ...SYNTAX_KEYWORD_COMPLETIONS,
+  ...CONTROL_COMPLETIONS
+];
 
 // Inside `( … )` — a control point / CV target — the FULL union: controls,
 // overridable values, digital functions, address keys, modulation inputs.
@@ -107,6 +118,21 @@ const CONTROL_VALUE_MAP: Record<string, Completion[]> = (() => {
     const vals = enumValues(c.values);
     if (vals.length > 0)
       map[c.name] = vals.map((v) => ({ label: v, type: 'enum', detail: c.name }));
+  }
+  return map;
+})();
+
+// Enum values per DIRECTIVE (`@mode:` → ord/random/…, `@scan:` → left/right/rnd),
+// from the authority's `directiveValues`. Each value carries its own description.
+const DIRECTIVE_VALUE_MAP: Record<string, Completion[]> = (() => {
+  const map: Record<string, Completion[]> = {};
+  for (const [name, d] of Object.entries(vocab.directiveValues)) {
+    map[name] = d.values.map((v) => ({
+      label: v.name,
+      type: 'enum',
+      detail: name,
+      info: v.description
+    }));
   }
   return map;
 })();
@@ -145,11 +171,11 @@ export function bpscriptCompletion(context: CompletionContext): CompletionResult
     const options = m && COMPONENT_MAP[m[1]];
     if (options) return { from: axisCtx.to - m![2].length, options, validFor: /^\w*$/ };
   }
-  // Directive value: `@mode:ra` → the directive's allowed values (authority-driven).
+  // Directive value: `@mode:ra` → the directive's allowed values (from `directiveValues`).
   const dirVal = context.matchBefore(/@(\w+):(\w*)/);
   if (dirVal) {
     const m = /^@(\w+):(\w*)$/.exec(dirVal.text);
-    const options = m && CONTROL_VALUE_MAP[m[1]];
+    const options = m && DIRECTIVE_VALUE_MAP[m[1]];
     if (options) return { from: dirVal.to - m![2].length, options, validFor: /^\w*$/ };
   }
   // Control value: `wave:tr` → triangle/… (the value, not the control name).
@@ -269,11 +295,20 @@ function hoverHitAt(lineText: string, col: number): HoverHit | null {
     }
     if (vocab.keywords.includes(name)) return { title: '@' + name, desc: 'Directive' };
   }
-  // Any bare vocabulary word (control / value / function / address / modulation).
+  // Syntax operators: -> <- <> (from the authority's `syntaxWords`).
+  const op = findTokenAt(lineText, col, /(->|<-|<>)/g);
+  if (op) {
+    const s = vocab.syntaxWords[op[1]];
+    if (s) return { title: op[1], syntax: s.syntax, desc: s.description };
+  }
+  // A bare vocabulary word (control / value / function / address / modulation),
+  // else a fixed syntax keyword (gate / trigger / cv / lambda).
   const w = findTokenAt(lineText, col, /[A-Za-z][\w-]*/g);
   if (w) {
     const hit = vocabWordHover(w[0]);
     if (hit) return hit;
+    const s = vocab.syntaxWords[w[0]];
+    if (s && s.kind === 'keyword') return { title: w[0], syntax: s.syntax, desc: s.description };
   }
   return null;
 }

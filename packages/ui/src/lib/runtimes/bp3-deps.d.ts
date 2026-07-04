@@ -219,5 +219,15 @@ export interface Vocabulary {
   components: Record<string, string[]>;
   addressKeys: string[];
   modulationInputs: string[];
+  /** Allowed values per directive (`mode` → ord/random/…), for `@dir:` completion. */
+  directiveValues: Record<
+    string,
+    { description?: string; values: Array<{ name: string; description?: string }> }
+  >;
+  /** Fixed syntax words/operators (`gate`/`trigger`/`cv`/`lambda`, `->`, `<-`, `<>`) for hover + keyword completion. */
+  syntaxWords: Record<
+    string,
+    { kind: 'keyword' | 'operator'; description?: string; syntax?: string }
+  >;
 }
 export function describeVocabulary(directives?: Array<{ name: string }>): Vocabulary;
