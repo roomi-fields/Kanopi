@@ -184,3 +184,40 @@ export function compileToBPxAST(
   source: string,
   environnement?: { tempo?: number }
 ): CompileToBPxASTResult;
+
+// describeVocabulary (BPscript f79664d): the LIVING authority of the language's
+// vocabulary — the same aggregation the compile guard uses — that the Kanopi
+// editor consumes for autocompletion + hover tooltips (replaces the static
+// `public/help/reference.json` catalog). Grows automatically with user libraries.
+/** One control point / CV subject (`cc`, `wave`, `cutoff`, `vel`, …). */
+export interface VocabControl {
+  name: string;
+  args?: string[];
+  range?: [number, number];
+  /** Enum options: a comma string ("sine, triangle, …") OR an array. */
+  values?: string | string[];
+  default?: string | number;
+  description?: string;
+  transportGroup?: string;
+}
+/** An overridable scene/occurrence value (e.g. `diapason`). */
+export interface VocabValue {
+  name: string;
+  range?: [number, number];
+  unit?: string;
+  values?: string | string[];
+  description?: string;
+}
+export interface Vocabulary {
+  /** Reserved directive words (`mode`, `tempo`, `alphabet`, `tuning`, …). */
+  keywords: string[];
+  controls: VocabControl[];
+  values: VocabValue[];
+  /** Digital functions (`transpose`, `keyxpand`, `rotate`). */
+  functions: string[];
+  /** Catalog entries per axis (`alphabet`, `tuning`, `octaves`). */
+  components: Record<string, string[]>;
+  addressKeys: string[];
+  modulationInputs: string[];
+}
+export function describeVocabulary(directives?: Array<{ name: string }>): Vocabulary;

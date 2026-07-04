@@ -3,152 +3,172 @@ import type { Extension } from '@codemirror/state';
 import { hoverTooltip, EditorView, type Tooltip } from '@codemirror/view';
 import { linter, type Diagnostic } from '@codemirror/lint';
 import { compileBps } from '../../lib/runtimes/compile-cache';
-import refJson from 'bpscript/public/help/reference.json';
+import {
+  describeVocabulary,
+  type VocabControl,
+  type VocabValue
+} from 'bpscript/src/transpiler/index.js';
 
-// BPScript editor intelligence, ALL sourced from BPScript's OWN `reference.json`
-// (the catalog its Help panel + web editor use) and its transpiler — the same
-// features the old web editor shipped, ported AS-IS:
+// BPScript editor intelligence, ALL sourced from BPScript's LIVING vocabulary
+// authority `describeVocabulary()` (the same aggregation its compile guard uses),
+// NOT a static catalog. As user libraries register new controls/values/catalog
+// entries, the editor sees them with zero code change. It drives:
 //   - autocompletion: directives (`@…`), control names + their enum VALUES
-//     (`wave:` → sine/triangle/…), directive values (`@mode:` → ord/random/…),
-//     keywords;
-//   - a linter that underlines transpiler errors;
-//   - hover tooltips (syntax + description) for directives, arrows, controls,
-//     engine instructions, symbols and keywords.
-// We don't reinvent the catalog — we render it.
+//     (`wave:` → sine/triangle/…), catalog axes after `@alphabet.`/`@tuning.`/
+//     `@octaves.`, and the CV / control-point union inside `( … )`;
+//   - a linter that underlines transpiler errors (unchanged, transpiler-driven);
+//   - hover tooltips (metadata + description) for directives, catalog entries,
+//     controls, values, functions, address keys and modulation inputs.
+// We don't reinvent the vocabulary — we render the authority's answer.
 
-interface RefEntry {
-  name?: string;
-  syntax?: string;
-  desc?: string;
-  description?: string;
-  range?: string;
-  /** Enum values: a comma string for controls, a {value: desc} map for directives. */
-  values?: string | Record<string, string>;
-}
-type RefMap = Record<string, RefEntry | string>;
-interface Reference {
-  directives?: RefMap;
-  controls_runtime?: RefMap;
-  controls_engine?: RefMap;
-  keywords?: RefMap;
-  symbols?: RefMap;
+// Queried ONCE at module load, like the old static import. Covers the COMPLETE
+// registry (built-in + user libs), not just a given scene.
+const vocab = describeVocabulary();
+
+/** Enum options as a list of words, accepting the authority's two shapes:
+ *  a comma string ("sine, triangle, …") OR an array. Numeric-range controls
+ *  (no word-like options) yield an empty list → no value completion. */
+function enumValues(values: string | string[] | undefined): string[] {
+  if (!values) return [];
+  const arr = Array.isArray(values) ? values : values.split(',');
+  return arr.map((v) => v.trim()).filter((v) => /^[A-Za-z][\w-]*$/.test(v));
 }
 
-const ref = refJson as unknown as Reference;
-
-function infoOf(d: RefEntry | string | undefined): string | undefined {
-  if (!d) return undefined;
-  if (typeof d === 'string') return d;
-  return d.desc ?? d.description;
+/** Short inline `detail` for a control popup entry (its transport group if any). */
+function controlDetail(c: VocabControl): string {
+  return c.transportGroup ? `control · ${c.transportGroup}` : 'control';
 }
 
-function collect(
-  map: RefMap | undefined,
-  render: (name: string, info?: string) => Completion
-): Completion[] {
+/** Expanded `info` doc for a control (description + range/default/args). */
+function controlInfo(c: VocabControl): string | undefined {
+  const parts: string[] = [];
+  if (c.description) parts.push(c.description);
+  if (c.args && c.args.length) parts.push(`args: ${c.args.join(', ')}`);
+  if (c.range) parts.push(`range ${c.range[0]}–${c.range[1]}`);
+  if (c.default !== undefined) parts.push(`default ${c.default}`);
+  return parts.length ? parts.join(' · ') : undefined;
+}
+
+/** Expanded `info` doc for an overridable value (e.g. `diapason`). */
+function valueInfo(v: VocabValue): string | undefined {
+  const parts: string[] = [];
+  if (v.description) parts.push(v.description);
+  if (v.range) parts.push(`range ${v.range[0]}–${v.range[1]}${v.unit ? ' ' + v.unit : ''}`);
+  else if (v.unit) parts.push(v.unit);
+  return parts.length ? parts.join(' · ') : undefined;
+}
+
+// Directive completions: the reserved words, offered `@`-prefixed (the form in
+// which they appear in a scene: `@mode`, `@alphabet.western`, …).
+const DIRECTIVE_COMPLETIONS: Completion[] = vocab.keywords.map((name) => ({
+  label: '@' + name,
+  type: 'keyword',
+  detail: 'directive'
+}));
+
+// Control completions (bare name), the default control-point vocabulary.
+const CONTROL_COMPLETIONS: Completion[] = vocab.controls.map((c) => ({
+  label: c.name,
+  type: 'property',
+  detail: controlDetail(c),
+  info: controlInfo(c)
+}));
+
+// Default popup outside any special context: directives + controls (as before).
+const DEFAULT_COMPLETIONS: Completion[] = [...DIRECTIVE_COMPLETIONS, ...CONTROL_COMPLETIONS];
+
+// Inside `( … )` — a control point / CV target — the FULL union: controls,
+// overridable values, digital functions, address keys, modulation inputs.
+// Deduped by label (a name may live in two categories).
+const PAREN_COMPLETIONS: Completion[] = (() => {
+  const seen = new Set<string>();
   const out: Completion[] = [];
-  for (const [name, d] of Object.entries(map ?? {})) {
-    if (name.startsWith('_')) continue; // doc-only `_comment` keys are not entries
-    out.push(render(name, infoOf(d)));
-  }
+  const push = (c: Completion) => {
+    if (seen.has(c.label)) return;
+    seen.add(c.label);
+    out.push(c);
+  };
+  for (const c of vocab.controls)
+    push({ label: c.name, type: 'property', detail: controlDetail(c), info: controlInfo(c) });
+  for (const v of vocab.values)
+    push({ label: v.name, type: 'variable', detail: 'value', info: valueInfo(v) });
+  for (const f of vocab.functions) push({ label: f, type: 'function', detail: 'function' });
+  for (const k of vocab.addressKeys) push({ label: k, type: 'property', detail: 'address' });
+  for (const m of vocab.modulationInputs)
+    push({ label: m, type: 'variable', detail: 'modulation input' });
   return out;
-}
+})();
 
-const COMPLETIONS: Completion[] = [
-  ...collect(ref.directives, (name, info) => ({
-    label: '@' + name,
-    type: 'keyword',
-    detail: 'directive',
-    info
-  })),
-  ...collect(ref.controls_runtime, (name, info) => ({
-    label: name,
-    type: 'property',
-    detail: 'control',
-    info
-  })),
-  ...collect(ref.controls_engine, (name, info) => ({
-    label: name,
-    type: 'property',
-    detail: 'engine',
-    info
-  })),
-  ...collect(ref.keywords, (name, info) => ({
-    label: name,
-    type: 'keyword',
-    detail: 'keyword',
-    info
-  }))
-];
-
-// Enum values per CONTROL, parsed from the reference's `values` string (a comma
-// list like "sine, triangle, square, sawtooth"). Controls whose values are a
-// numeric range (vel "0-127") have no word-like options → skipped.
+// Enum values per CONTROL (`wave:` → sine/triangle/…), from the authority's
+// `values` (string or array). Range-only controls have no word-like options.
 const CONTROL_VALUE_MAP: Record<string, Completion[]> = (() => {
   const map: Record<string, Completion[]> = {};
-  for (const src of [ref.controls_runtime, ref.controls_engine]) {
-    for (const [name, d] of Object.entries(src ?? {})) {
-      if (name.startsWith('_') || typeof d === 'string' || typeof d.values !== 'string') continue;
-      const vals = d.values
-        .split(',')
-        .map((v) => v.trim())
-        .filter((v) => /^[a-zA-Z][\w-]*$/.test(v));
-      if (vals.length > 0) {
-        map[name] = vals.map((v) => ({ label: v, type: 'enum', detail: name }));
-      }
-    }
+  for (const c of vocab.controls) {
+    const vals = enumValues(c.values);
+    if (vals.length > 0)
+      map[c.name] = vals.map((v) => ({ label: v, type: 'enum', detail: c.name }));
   }
   return map;
 })();
 
-// Enum values per DIRECTIVE, from the reference's `values` MAP ({value: desc}) —
-// e.g. `@mode:` → ord / random / lin / sub / … each with its description.
-const DIRECTIVE_VALUE_MAP: Record<string, Completion[]> = (() => {
+// Catalog entries per axis (`@alphabet.` → western/sargam/…, `@tuning.` → …).
+const COMPONENT_MAP: Record<string, Completion[]> = (() => {
   const map: Record<string, Completion[]> = {};
-  for (const [name, d] of Object.entries(ref.directives ?? {})) {
-    if (
-      name.startsWith('_') ||
-      typeof d === 'string' ||
-      !d.values ||
-      typeof d.values === 'string'
-    ) {
-      continue;
-    }
-    map[name] = Object.entries(d.values).map(([v, info]) => ({
-      label: v,
-      type: 'enum',
-      detail: name,
-      info
-    }));
+  for (const [axis, entries] of Object.entries(vocab.components)) {
+    map[axis] = entries.map((e) => ({ label: e, type: 'constant', detail: axis }));
   }
   return map;
 })();
+
+/** True when the cursor sits inside an unclosed `(` on its own line — the
+ *  control-point / CV zone where the full vocabulary union is offered. */
+function insideParen(context: CompletionContext): boolean {
+  const line = context.state.doc.lineAt(context.pos);
+  const before = context.state.sliceDoc(line.from, context.pos);
+  return before.lastIndexOf('(') > before.lastIndexOf(')');
+}
 
 /**
  * CM6 completion source for `.bps`. Modes, in priority order:
- *  - after `@directive:` (e.g. `@mode:ra`) → the directive's allowed VALUES;
- *  - after `control:` (e.g. `wave:tr`) → the control's allowed VALUES;
- *  - otherwise → directives / control names / keywords from the reference.
+ *  - after `@axis.` (`@alphabet.`, `@tuning.`, `@octaves.`) → the axis' catalog;
+ *  - after `@directive:` → the directive's enum VALUES (if the authority has any);
+ *  - after `control:` (e.g. `wave:tr`) → the control's enum VALUES;
+ *  - inside `( … )` → controls ∪ values ∪ functions ∪ addressKeys ∪ modInputs;
+ *  - otherwise → directives + control names.
  * Fuzzy-filtered by the word being typed. Attached via `languageData`.
  */
 export function bpscriptCompletion(context: CompletionContext): CompletionResult | null {
-  // Directive value: `@mode:ra` → ord/random/… (the value, not the directive name).
+  // Catalog axis: `@alphabet.we` → western/… (the entry, not the axis name).
+  const axisCtx = context.matchBefore(/@(\w+)\.(\w*)/);
+  if (axisCtx) {
+    const m = /^@(\w+)\.(\w*)$/.exec(axisCtx.text);
+    const options = m && COMPONENT_MAP[m[1]];
+    if (options) return { from: axisCtx.to - m![2].length, options, validFor: /^\w*$/ };
+  }
+  // Directive value: `@mode:ra` → the directive's allowed values (authority-driven).
   const dirVal = context.matchBefore(/@(\w+):(\w*)/);
   if (dirVal) {
     const m = /^@(\w+):(\w*)$/.exec(dirVal.text);
-    const options = m && DIRECTIVE_VALUE_MAP[m[1]];
-    if (options) return { from: dirVal.to - (m![2]?.length ?? 0), options, validFor: /^\w*$/ };
+    const options = m && CONTROL_VALUE_MAP[m[1]];
+    if (options) return { from: dirVal.to - m![2].length, options, validFor: /^\w*$/ };
   }
   // Control value: `wave:tr` → triangle/… (the value, not the control name).
   const valueCtx = context.matchBefore(/[A-Za-z]\w*:\w*/);
   if (valueCtx) {
     const m = /^([A-Za-z]\w*):(\w*)$/.exec(valueCtx.text);
     const options = m && CONTROL_VALUE_MAP[m[1]];
-    if (options) return { from: valueCtx.to - (m![2]?.length ?? 0), options, validFor: /^\w*$/ };
+    if (options) return { from: valueCtx.to - m![2].length, options, validFor: /^\w*$/ };
+  }
+  // Control-point / CV zone: inside `( … )` → the full vocabulary union.
+  if (insideParen(context)) {
+    const word = context.matchBefore(/[\w]*/);
+    if (word && (word.from !== word.to || context.explicit)) {
+      return { from: word.from, options: PAREN_COMPLETIONS, validFor: /^\w*$/ };
+    }
   }
   const word = context.matchBefore(/@?[\w]*/);
   if (!word || (word.from === word.to && !context.explicit)) return null;
-  return { from: word.from, options: COMPLETIONS, validFor: /^@?\w*$/ };
+  return { from: word.from, options: DEFAULT_COMPLETIONS, validFor: /^@?\w*$/ };
 }
 
 // ---- Linter: transpiler diagnostics (underlines errors) --------------------
@@ -192,9 +212,10 @@ export const bpscriptLinter = linter(
   { delay: 600 }
 );
 
-// ---- Hover tooltips (syntax + description from the reference) ---------------
-// The first regex match that spans the hovered column wins, in the same order as
-// the old web editor: directive → arrow → control → engine → symbol → keyword.
+// ---- Hover tooltips (metadata + description from the authority) -------------
+// The first regex match that spans the hovered column wins: an `@directive`
+// (with optional `.catalogEntry`) first, then any bare vocabulary word (control,
+// value, function, address key, modulation input) resolved against the authority.
 function findTokenAt(lineText: string, col: number, re: RegExp): RegExpExecArray | null {
   re.lastIndex = 0;
   let m: RegExpExecArray | null;
@@ -211,45 +232,48 @@ interface HoverHit {
   desc?: string;
 }
 
-function refEntry(map: RefMap | undefined, key: string): RefEntry | undefined {
-  const d = map?.[key];
-  return d && typeof d !== 'string' ? d : undefined;
+// Fast lookups by name into the authority's flat lists.
+const CONTROL_BY_NAME = new Map(vocab.controls.map((c) => [c.name, c]));
+const VALUE_BY_NAME = new Map(vocab.values.map((v) => [v.name, v]));
+const FUNCTION_SET = new Set(vocab.functions);
+const ADDRESS_SET = new Set(vocab.addressKeys);
+const MODINPUT_SET = new Set(vocab.modulationInputs);
+
+/** Resolve a bare word against the vocabulary, richest category first. */
+function vocabWordHover(word: string): HoverHit | null {
+  const c = CONTROL_BY_NAME.get(word);
+  if (c) {
+    const syntax = c.args && c.args.length ? `${c.name}(${c.args.join(', ')})` : undefined;
+    return { title: c.name, syntax, desc: controlInfo(c) };
+  }
+  const v = VALUE_BY_NAME.get(word);
+  if (v) return { title: v.name, desc: valueInfo(v) };
+  if (FUNCTION_SET.has(word)) return { title: word, desc: 'Digital function' };
+  if (ADDRESS_SET.has(word)) return { title: word, desc: 'Address key' };
+  if (MODINPUT_SET.has(word)) return { title: word, desc: 'Modulation input' };
+  return null;
 }
 
 function hoverHitAt(lineText: string, col: number): HoverHit | null {
-  // Directive: @xxx(.subkey)?(:binding)?
-  const dir = findTokenAt(lineText, col, /@(\w[\w.]*(?::[\w./-]+)?)/g);
+  // Directive: @axis(.entry)? or @directive
+  const dir = findTokenAt(lineText, col, /@(\w+)(?:\.(\w+))?/g);
   if (dir) {
-    const dirName = dir[1].split('.')[0].split(':')[0];
-    const def = refEntry(ref.directives, dirName);
-    if (def) return { title: '@' + dirName, syntax: def.syntax, desc: infoOf(def) };
-  }
-  // Arrow: -> <- <>
-  const arrow = findTokenAt(lineText, col, /(->|<-|<>)/g);
-  if (arrow) {
-    const def = refEntry(ref.symbols, arrow[1]);
-    if (def) return { title: def.name ?? arrow[1], syntax: def.syntax, desc: infoOf(def) };
-  }
-  // Control: (key:value)
-  const ctrl = findTokenAt(lineText, col, /\((\w+):([^)]*)\)/g);
-  if (ctrl) {
-    const def = refEntry(ref.controls_runtime, ctrl[1]);
-    if (def) {
-      const extra = def.range ? ` [${def.range}]` : '';
-      return { title: ctrl[1], syntax: def.syntax, desc: (infoOf(def) ?? '') + extra };
+    const name = dir[1];
+    const sub = dir[2];
+    const axis = vocab.components[name];
+    if (axis) {
+      if (sub && axis.includes(sub)) {
+        return { title: `@${name}.${sub}`, desc: `${name} catalog entry` };
+      }
+      return { title: '@' + name, desc: `Catalog axis (${axis.length} entries)` };
     }
+    if (vocab.keywords.includes(name)) return { title: '@' + name, desc: 'Directive' };
   }
-  // Engine instruction: [key:value] or [key]
-  const eng = findTokenAt(lineText, col, /\[(\w+)(?::([^\]]*))?\]/g);
-  if (eng) {
-    const def = refEntry(ref.controls_engine, eng[1]);
-    if (def) return { title: eng[1], syntax: def.syntax, desc: infoOf(def) };
-  }
-  // Keyword: gate / trigger / cv / lambda
-  const kw = findTokenAt(lineText, col, /\b(gate|trigger|cv|lambda)\b/g);
-  if (kw) {
-    const def = refEntry(ref.keywords, kw[1]);
-    if (def) return { title: def.name ?? kw[1], syntax: def.syntax, desc: infoOf(def) };
+  // Any bare vocabulary word (control / value / function / address / modulation).
+  const w = findTokenAt(lineText, col, /[A-Za-z][\w-]*/g);
+  if (w) {
+    const hit = vocabWordHover(w[0]);
+    if (hit) return hit;
   }
   return null;
 }
