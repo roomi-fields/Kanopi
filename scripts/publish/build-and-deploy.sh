@@ -1,21 +1,29 @@
 #!/usr/bin/env bash
-# build-and-deploy.sh — build local de la SPA/PWA Kanopi (PC2) + rsync sur le VPS
-# Hostinger dans une release timestampée + bascule atomique du symlink `current`
-# + reload nginx + health-check (avec rollback automatique si KO).
+# build-and-deploy.sh — UNE procédure de build, DEUX destinations ([570], demande Romain) :
 #
-# Pourquoi local : Kanopi dépend de 4 dépôts frères via des chemins file:../../../../bp/*
+#   bash scripts/publish/build-and-deploy.sh local   # serveur de test local FRAIS (vite preview → 4173)
+#   bash scripts/publish/build-and-deploy.sh prod    # déploiement VPS (releases + rollback), INCHANGÉ
+#
+# Les deux cibles partagent le MÊME tronc (garantie dev/prod ISO) :
+#   1. rebuild des compilés amont que Kanopi consomme via `dist` en build — BPx, kronos,
+#      kairos (les runtimes sont consommés en SOURCE, pas de build) + GARDE anti-périmé
+#      bruyante → on ne teste/déploie JAMAIS sur du compilé périmé (piège vécu 2026-07-04 :
+#      un preview 4173 bâti sur des dist BPx/kairos périmés rendait les voix de code muettes
+#      alors que le dev 5173 sonnait) ;
+#   2. vite build.
+# Puis la cible diverge : `local` sert dist/ via vite preview (4173) ; `prod` rsync sur le
+# VPS dans une release timestampée + bascule atomique + health-check/rollback.
+#
+# Pourquoi build local : Kanopi dépend de dépôts frères via des chemins file:../../../../bp/*
 # qui n'existent QUE sur PC2. Le build doit donc se faire ici (les deps résolvent),
-# pas dans un conteneur. Calque du modèle viasophia (scripts/publish/build-and-deploy.sh),
-# enrichi d'un schéma de releases + rollback.
+# pas dans un conteneur. Calque du modèle viasophia, enrichi releases + rollback.
 #
-# Déclencheur : MANUEL, par l'architecte, depuis le repo Kanopi sur PC2. Pas de cron / CI.
-#   bash scripts/publish/build-and-deploy.sh
+# Déclencheur : MANUEL (architecte/agent), depuis le repo Kanopi sur PC2. Pas de cron / CI.
 #
 # Prérequis :
 #   - Node (>=18) + npm, deps installées (npm ci à la racine du monorepo)
-#   - Les 4 deps frères présentes : /home/romi/dev/bp/{bp3-frontend,BPx,BPscript,runtime-MIDI}
-#   - Clé SSH VPS : ~/.ssh/claude_hostinger_temp
-#   - Conteneur kanopi-web déjà up sur le VPS (cf. deploy/compose.yml)
+#   - Les deps frères présentes : /home/romi/dev/bp/{BPx,kronos,kairos,BPscript,…}
+#   - prod seulement : clé SSH VPS (~/.ssh/claude_hostinger_temp) + conteneur kanopi-web up
 #
 # Variables d'environnement (avec valeurs par défaut) :
 #   VPS_HOST   = root@72.61.97.213
@@ -23,9 +31,19 @@
 #   REMOTE_BASE= /var/www/kanopi          (contient releases/ + le symlink current)
 #   CONTAINER  = kanopi-web
 #   KEEP       = 5                         (nb de releases conservées)
+#   PREVIEW_PORT = 4173                    (cible local)
 
 set -euo pipefail
 
+TARGET="${1:-}"
+if [[ "$TARGET" != "local" && "$TARGET" != "prod" ]]; then
+  echo "Usage : $(basename "$0") local | prod" >&2
+  echo "  local : rebuild dist amont (BPx, kronos, kairos) + vite build + vite preview (4173)" >&2
+  echo "  prod  : même tronc de build, puis déploiement VPS (releases + rollback)" >&2
+  exit 64
+fi
+
+PREVIEW_PORT="${PREVIEW_PORT:-4173}"
 VPS_HOST="${VPS_HOST:-root@72.61.97.213}"
 VPS_KEY="${VPS_KEY:-$HOME/.ssh/claude_hostinger_temp}"
 REMOTE_BASE="${REMOTE_BASE:-/var/www/kanopi}"
@@ -45,13 +63,17 @@ TS="$(date +%Y%m%d-%H%M%S)"
 # Doc utilisateur EMBARQUÉE (MkDocs) → packages/ui/public/docs, régénérée AVANT le vite build
 # (public/ → dist/) pour être servie à la même origine sous /kanopi/docs — SOURCE UNIQUE ([463]).
 # L'artefact public/docs est git-ignoré ; c'est CETTE étape qui le (re)produit à chaque déploiement.
+# prod : OBLIGATOIRE (on ne publie pas sans la doc). local : best-effort (le banc de test
+# n'a pas besoin de la doc ; absente → avertir et continuer).
 echo ">> [0/6] Build doc utilisateur (MkDocs) → packages/ui/public/docs"
 DOC_SRC="$REPO_ROOT/../atlas/doc-utilisateur"
 if [[ -x "$DOC_SRC/.venv/bin/mkdocs" ]]; then
   ( cd "$DOC_SRC" && ./.venv/bin/mkdocs build -d "$UI_DIR/public/docs" )
-else
+elif [[ "$TARGET" == "prod" ]]; then
   echo "ERREUR : mkdocs introuvable ($DOC_SRC/.venv/bin/mkdocs) — doc embarquée non régénérée" >&2
   exit 1
+else
+  echo "   (local) mkdocs introuvable — doc embarquée non régénérée, on continue" >&2
 fi
 
 # DIST AMONT FRAIS (LAN-14 / DEPLOY-DIST-STALE, GO [521]) : le build prod consomme les
@@ -76,15 +98,44 @@ for d in "${UPSTREAMS[@]}"; do
   fi
 done
 
-echo ">> [1/6] Build local (packages/ui, VITE_BASE_PATH=/kanopi/)"
+if [[ "$TARGET" == "local" ]]; then
+  echo ">> [1/2] Build (packages/ui, base par défaut — servi à la racine)"
+else
+  echo ">> [1/6] Build local (packages/ui, VITE_BASE_PATH=/kanopi/)"
+fi
 cd "$UI_DIR"
-VITE_BASE_PATH=/kanopi/ npm run build
+if [[ "$TARGET" == "local" ]]; then
+  npm run build
+else
+  VITE_BASE_PATH=/kanopi/ npm run build
+fi
 
 if [[ ! -d "$UI_DIR/dist" || ! -f "$UI_DIR/dist/index.html" ]]; then
   echo "ERREUR : packages/ui/dist/index.html inexistant après build" >&2
   exit 1
 fi
 
+# ————————————————————————————— CIBLE local : servir le build frais ——————————————————————————
+if [[ "$TARGET" == "local" ]]; then
+  echo ">> [2/2] Serveur de test local (vite preview → $PREVIEW_PORT)"
+  if curl -sf -o /dev/null "http://localhost:$PREVIEW_PORT/"; then
+    # Un preview tourne déjà : il sert dist/ depuis le disque, donc il sert DÉJÀ le build
+    # tout frais — pas de nouveau process (et on ne tue jamais un serveur qu'on n'a pas lancé).
+    echo "   preview déjà actif sur $PREVIEW_PORT — il sert le dist/ fraîchement rebâti."
+  else
+    ( cd "$UI_DIR" && nohup npx vite preview --port "$PREVIEW_PORT" --strictPort \
+        > /tmp/kanopi-preview-$PREVIEW_PORT.log 2>&1 & )
+    sleep 2
+    if ! curl -sf -o /dev/null "http://localhost:$PREVIEW_PORT/"; then
+      echo "ERREUR : vite preview ne répond pas sur $PREVIEW_PORT (log : /tmp/kanopi-preview-$PREVIEW_PORT.log)" >&2
+      exit 1
+    fi
+  fi
+  echo ">> ✓ Build local FRAIS servi — http://localhost:$PREVIEW_PORT/ (dist amont rebâtis + gardés)"
+  exit 0
+fi
+
+# ————————————————————————————— CIBLE prod : déploiement VPS (INCHANGÉ) —————————————————————
 echo ">> [2/6] Rsync dist/ vers $VPS_HOST:$REMOTE_BASE/releases/$TS/kanopi/"
 # Le build est rangé sous kanopi/ pour que l'URL /kanopi/* mappe directement sur
 # le filesystem (nginx root = .../current, location /kanopi/).

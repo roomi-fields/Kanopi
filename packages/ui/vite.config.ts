@@ -38,6 +38,14 @@ export default defineConfig({
   plugins: [
     svelte(),
     VitePWA({
+      // WORKER PWA SUPPRIMÉ (demande Romain 2026-07-04) : le précache servait de VIEILLES
+      // versions de l'app après rebuild/deploy (symptômes fantômes, rupture dev/prod ISO).
+      // `selfDestroying` publie un worker d'AUTO-DESTRUCTION : chez tout client qui revient,
+      // il désinstalle le worker existant et purge ses caches, puis ne cache plus rien.
+      // NE PAS retirer le plugin à la place : les navigateurs déjà équipés garderaient
+      // l'ancien worker (et l'ancienne app) indéfiniment. Coût assumé : plus d'offline ni
+      // de précache d'échantillons — la fraîcheur prime (décision Romain).
+      selfDestroying: true,
       registerType: 'autoUpdate',
       base: BASE_PATH,
       scope: BASE_PATH,
@@ -118,7 +126,20 @@ export default defineConfig({
       '@strudel/tonal',
       '@strudel/draw',
       '@strudel/webaudio',
-      '@strudel/codemirror'
+      '@strudel/codemirror',
+      // PEERS OPTIONNELS de runtime-codevoices (dep source symlinkée) — pin BUILD [572].
+      // `optimizeDeps.include` (plus bas) ne protège que le DEV : au `vite build`, Rollup
+      // résout ces bare imports depuis le CHEMIN RÉEL de runtime-codevoices (pas de
+      // node_modules là-bas) et, faute de résolution, substitue un STUB
+      // `__vite-optional-peer-dep` VIDE (~0.03 kB) → en prod les moteurs de voix de code
+      // (Strudel/Hydra/p5/Csound/Mercury) chargent un module vide = voix MUETTES pendant
+      // que le dev sonne (rupture ISO dev/prod constatée 2026-07-04). Le dedupe épingle la
+      // résolution sur la copie de Kanopi dans les DEUX modes.
+      '@strudel/web',
+      'hydra-synth',
+      'p5',
+      'mercury-engine',
+      '@csound/browser'
     ]
   },
   optimizeDeps: {
