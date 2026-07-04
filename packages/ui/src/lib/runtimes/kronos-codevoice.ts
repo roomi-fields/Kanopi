@@ -73,7 +73,16 @@ export function registerCodeVoice(opts: {
     const driver = kronos.driver;
     // ENREGISTREMENT du runtime : Kronos appelle `bindClock` → le runtime s'abonne au bus de
     // cycle de vie (gel/reprise/tais-toi). L'hôte ne relaie plus rien.
-    kronos.addAdapter('code', opts.runtime as unknown as Parameters<typeof kronos.addAdapter>[1]);
+    //
+    // GARDE D'IDENTITÉ DE FORME (frontière kanopi-runtime-codevoices, [566]) : `opts.runtime`
+    // (CodeVoicesRuntime de runtime-codevoices) est passé SANS cast — tsc VÉRIFIE donc que sa forme
+    // (`send`/`bindClock`) reste assignable à l'adaptateur uniforme attendu par Kronos. Le double-cast
+    // `as unknown as Parameters<…>` précédent DÉSARMAIT ce contrôle (il autorisait n'importe quelle
+    // forme à passer) ; son retrait fait de tsc le garde MORDANT de la frontière : toute divergence de
+    // signature amont = build rouge. Vérifié sur pièces [566] : l'assignabilité tient sans cast (le
+    // cast était sur-défensif, il ne masquait aucun écart) ; une forme divergente injectée au point
+    // d'appel casse `npm run check`.
+    kronos.addAdapter('code', opts.runtime);
     transport.play();
     driver.start();
     const handle: CodeVoiceTransportHandle = {

@@ -5,11 +5,12 @@
  * CONTENU (mise en forme d'événement, /127, canal, contexte audio, relais transport) que la surface
  * de branchement hôte ne doit PAS porter.
  *
- * MODE MESURE (Phase 1) : ce garde COMPTE les écarts et imprime une baseline chiffrée — le
- * thermomètre de burndown des Phases 2-3 — puis sort TOUJOURS 0 (ne bloque pas le gate). Le passage
- * en BLOQUANT est la Phase 3, une fois les runtimes migrées.
+ * PHASE 3 — BLOQUANT ([566], 2026-07-04) : les 4 runtimes sont migrées (thermomètre #1-#9 à 0) →
+ * §Garde 1-5 basculent de MESURE en MORDANT (comme §6/§7). Toute réapparition d'un écart #1-#9 dans
+ * la surface hôte REFUSE au portillon (exit 1). Le garde imprime encore le compte (0, informatif),
+ * mais il n'est plus un simple thermomètre : c'est la clôture de la normalisation (contrat §Garde).
  *
- * Les 9 motifs comptés correspondent aux écarts #1-#9 du diagnostic
+ * Les 9 motifs correspondent aux écarts #1-#9 du diagnostic
  * `docs/arch/contrat-hote-runtimes-DRAFT.md`. L'écart #10 (voix de code muettes) est l'EFFET
  * observable de #7/#9, pas un motif de code hôte statique — il se prouve à l'écran, pas ici.
  */
@@ -23,7 +24,11 @@ const SCAN_ROOTS = [
   "packages/ui/src/lib/core-real",
   "packages/ui/src/stores",
 ];
-const EXCLUDE_FILE = /\.(test|spec)\.|\.d\.ts$|output-runtime-contract\.ts$/;
+// Exclus : tests/specs, DÉCLARATIONS de types (.d.ts — pas du code exécuté), le fichier de CONTRAT
+// (qui NOMME les facettes pour les interdire), et les AIDES DE TEST (`*-test-helpers.ts` — infra de
+// test qui SIMULE la projection d'une runtime, donc lit légitimement des facettes ; non-production).
+const EXCLUDE_FILE =
+  /\.(test|spec)\.|test-helpers\.|\.d\.ts$|output-runtime-contract\.ts$/;
 
 // CLIQUET (ratchet) : une fois une runtime MIGRÉE (ses écarts retirés, thermomètre à 0 pour ses
 // motifs), ses motifs deviennent VERROUILLÉS — s'ils réapparaissent, le garde MORD (exit 1), pour
@@ -78,6 +83,7 @@ const LOCKED = [
 const RULES = [
   {
     garde: 1,
+    bite: true, // PHASE 3 BLOQUANT ([566]) : 4 runtimes migrées, écarts #1-#9 à 0 → verrouillé.
     ecarts: "#1,#2",
     label:
       "Adaptateur/mise en forme écrits côté hôte (wrapper `send`, prep/coerce)",
@@ -89,6 +95,7 @@ const RULES = [
   },
   {
     garde: 2,
+    bite: true, // PHASE 3 BLOQUANT ([566]).
     ecarts: "#7",
     label:
       "Contexte audio créé/piloté par l'hôte (`new AudioContext`, resume/suspend)",
@@ -96,6 +103,7 @@ const RULES = [
   },
   {
     garde: 3,
+    bite: true, // PHASE 3 BLOQUANT ([566]).
     ecarts: "#3,#4,#5,#8",
     label:
       "Mapping de sortie côté hôte (vélocité /127, canal, liaisons OSC, horloge audioCtx)",
@@ -109,12 +117,14 @@ const RULES = [
   },
   {
     garde: 4,
+    bite: true, // PHASE 3 BLOQUANT ([566]).
     ecarts: "#6",
     label: "Transport de sortie CONSTRUIT par l'hôte (`MidiTransport`)",
     patterns: [/\bMidiTransport\b/],
   },
   {
     garde: 5,
+    bite: true, // PHASE 3 BLOQUANT ([566]).
     ecarts: "#9",
     label:
       "État transport relayé hôte→runtime (sink backtick, relais de cycle de vie)",
@@ -188,6 +198,62 @@ const RULES = [
     // faux positif apparaît (une var locale homonyme), resserrer le motif aux vrais noms d'arbre.
     whitelist: [],
   },
+  {
+    // §Garde 8 (contrat `hub/contrats/kronos-transport.md` « interdits durs » — garde 2 BORDS,
+    // [238] 2026-07-04, posé par Kronos) : l'hôte ne tient NI un COMPTEUR DE POSITION (le
+    // `lastBeat`/`beatCount` historique, une transition calculée `(x+1)%n`, une intégration
+    // `+=`), NI une 2ᵉ MACHINE D'ÉTAT transport (assignation d'un littéral d'état hors miroir
+    // `onStateChange`). La position se LIT de Kronos (`position()`/`beatPosition()`), l'état se
+    // MIROITE (affichage seul). Au-delà du §6 : le §6 interdit de FABRIQUER le temps, le §8
+    // interdit de RECONSTRUIRE position/état par-dessus le temps de Kronos. Bord jumeau côté
+    // Kronos : la surface publique resserrée est FIGÉE par test (les moteurs de reconstruction
+    // ne sont pas exportés — `kronos/src/frontiere-hote-surface.test.ts`, gate verify).
+    garde: 8,
+    bite: true, // MORDANT dès la pose : baseline 0 vérifiée sur toute la surface hôte ([238]).
+    ecarts: "transport",
+    label:
+      "Compteur de position / 2e machine d'état transport dans l'hôte (kronos-transport.md)",
+    // L'UI transport vit AUSSI hors des racines communes (boutons topbar, palette de commandes,
+    // raccourcis clavier) → cette règle scanne la surface commune PLUS ces racines-là.
+    extraRoots: [
+      "packages/ui/src/components",
+      "packages/ui/src/lib/commands",
+      "packages/ui/src/lib/keybindings",
+    ],
+    patterns: [
+      /\b(lastBeat|beatCount)\b/, //                        les compteurs historiques (bugs figés)
+      /\b(beat|round|step|bar|pos)\w*\s*\+\s*1\s*\)\s*%/i, // transition calculée ((x+1)%n)
+      /\b(position|beat|scene|playhead)\w*\s*\+=/i, //      intégration de position hôte
+      /\b(mode|state)\s*=\s*['"](playing|running|paused|stopped)['"]/, // 2e FSM (littéral assigné)
+    ],
+    whitelist: [
+      // Le miroir réactif (kronos-cursor) REPOSE sa valeur d'affichage à 'stopped' au démontage
+      // du handle (AUCUN transport : rien à miroiter). Recopie pour affichage prévue au contrat
+      // — les transitions réelles arrivent par `onStateChange` (mêmes lignes au-dessus) ; jamais
+      // une autorité (la vérité reste `active.transport.state`).
+      { re: /\bstate\s*=\s*'stopped'/, file: "kronos-cursor" },
+    ],
+  },
+  {
+    // §Garde 9 (frontière kanopi-bpx-tree, KAI-9/10 + hote-runtimes-sortie.md:6-8 — l'hôte FORWARDE
+    // l'arbre/l'événement OPAQUE ; toute lecture de FACETTE résolue (`content.pitch.hz`,
+    // `content.sounds`, `payload.*`, `controls.vel`…) se fait DANS la runtime, JAMAIS dans l'hôte.
+    // BPx/Kairos GRAVENT ces facettes sur l'arbre ; un hôte qui les LIT recompose au lieu de porter
+    // (cas d'école KAI-9 : une propriété déduite « en douce » au lieu d'être lue par la runtime).
+    // Distinct de §7 (qui interdit d'ÉCRIRE l'arbre) : §9 interdit de LIRE ses facettes résolues.
+    // Vérifié [566] sur pièces : production hôte à 0 (les seules lectures vivent dans les aides de
+    // test — `*-test-helpers.ts`, exclues, qui SIMULENT une runtime). MORDANT dès la pose.
+    garde: 9,
+    bite: true,
+    ecarts: "facettes",
+    label:
+      "Lecture d'une facette de l'arbre/événement dérivé par l'hôte (payload/content.* — autorité runtimes)",
+    patterns: [
+      /\.payload\b/, //                                    lecture du payload d'un événement/nœud dérivé
+      /\bcontent\.(pitch|sounds|frequency|hz|duration|controls|params|modulations)\b/, // facette résolue
+    ],
+    whitelist: [],
+  },
 ];
 
 function walk(dir) {
@@ -220,7 +286,12 @@ const report = [];
 
 for (const rule of RULES) {
   const hits = [];
-  for (const file of files) {
+  // Une règle peut ÉLARGIR sa surface (`extraRoots`, ex. §8 : l'UI transport vit aussi dans
+  // components/commands/keybindings) — la surface commune reste SCAN_ROOTS pour toutes.
+  const ruleFiles = rule.extraRoots
+    ? [...files, ...rule.extraRoots.flatMap((r) => walk(join(ROOT, r)))]
+    : files;
+  for (const file of ruleFiles) {
     const lines = readFileSync(file, "utf8").split("\n");
     lines.forEach((line, i) => {
       if (isCommentLine(line)) return;
@@ -251,7 +322,7 @@ for (const rule of RULES) {
 
 // ---- Rapport (thermomètre) ----
 console.log(
-  "\n🌡  Garde frontière hôte↔runtimes — MODE MESURE (ne bloque pas, Phase 1)",
+  "\n🛡  Garde frontière hôte↔runtimes — PHASE 3 BLOQUANT (§Garde 1-7 mordants)",
 );
 console.log(
   "   Contrat : hub/contrats/hote-runtimes-sortie.md · draft : docs/arch/contrat-hote-runtimes-DRAFT.md",
@@ -265,10 +336,7 @@ for (const { rule, count, hits } of report) {
   for (const h of hits) console.log(`        · ${h}`);
 }
 console.log(
-  `\n   TOTAL occurrences comptées : ${grandTotal}  (lignes de code, réparties sur les écarts #1-#9)`,
-);
-console.log(
-  "   Baseline de burndown : ce nombre doit DÉCROÎTRE à chaque runtime migrée (Phase 2), viser 0.",
+  `\n   TOTAL écarts #1-#9 : ${grandTotal}  (attendu 0 — normalisation close, §Garde 1-5 mordants)`,
 );
 console.log(
   "   (écart #10 « voix de code muettes » = effet de #7/#9, prouvé à l'écran, non compté ici)\n",
@@ -305,8 +373,9 @@ console.log(
   `   ✅ Cliquet OK : runtimes migrées (${lockedRuntimes}) restent à 0 dans l'hôte (§Garde 4 mord).\n`,
 );
 
-// ---- §Garde MORDANTS (bite:true) : §6 (horloge pirate, [559]) + §7 (mutation d'arbre/AST, [562]).
-//      Leur baseline légitime est 0 (whitelist curée) → toute occurrence NON-whitelistée refuse. ----
+// ---- §Garde MORDANTS (bite:true) : §1-5 (normalisation close, Phase 3 [566]) + §6 (horloge
+//      pirate, [559]) + §7 (mutation d'arbre/AST, [562]). Baseline légitime 0 → toute occurrence
+//      NON-whitelistée refuse (exit 1). C'est la clôture de la normalisation de la frontière. ----
 const biting = report.filter((entry) => entry.rule.bite && entry.count > 0);
 if (biting.length) {
   for (const { rule, hits } of biting) {
@@ -314,8 +383,9 @@ if (biting.length) {
     for (const h of hits) console.log(`        · ${h}`);
   }
   console.log(
-    "   Autorité amont (temps→Kronos ; arbre/AST→BPx/Kairos) : l'hôte LIT, ne fabrique/mute pas.\n" +
-      "   Si c'est un usage légitime, l'ajouter à la whitelist de sa règle AVEC sa raison écrite.\n",
+    "   La frontière hôte↔runtimes est CLOSE : la mise en forme/le mapping/le contexte/le transport\n" +
+      "   de sortie appartiennent aux runtimes ; le temps à Kronos ; l'arbre à BPx/Kairos. L'hôte\n" +
+      "   BRANCHE et FORWARDE — il ne fabrique rien. Usage légitime → whitelist de la règle AVEC sa raison.\n",
   );
   process.exit(1);
 }
@@ -324,8 +394,7 @@ const bitingGardes = report
   .map(({ rule }) => `§${rule.garde}`)
   .join("+");
 console.log(
-  `   ✅ Gardes mordants OK (${bitingGardes}) : aucune horloge pirate ni mutation d'arbre/AST dans l'hôte.\n`,
+  `   ✅ Gardes mordants OK (${bitingGardes}) : normalisation close (mise en forme/mapping/contexte/\n` +
+    "      transport aux runtimes), aucune horloge pirate, aucune mutation d'arbre/AST dans l'hôte.\n",
 );
-
-// Le RESTE (§Garde 1-5, hors motifs verrouillés) reste en MODE MESURE.
 process.exit(0);
