@@ -29,6 +29,16 @@ export function getAdapter(runtime: Runtime): RuntimeAdapter | undefined {
   return adapters.get(runtime);
 }
 
+// Code-voice runtimes (strudel/tidal/hydra/p5/mercury/csound/js). Their MASTER TEMPO
+// arrives via Kronos's bus (`onTempo` → runtime-codevoices `reslaveTempo`, M2 [261]),
+// NOT a parallel host tempo fan-out — `clock.svelte.ts` skips them so the guest engine
+// has a single tempo authority (Kronos). bp3/bpscript are NOT here: their `setBpm`
+// retunes the Kronos handle in place (the host warp), which stays.
+const codeVoiceRuntimeIds = new Set<Runtime>(codeVoiceAdapters.map((a) => a.id));
+export function isCodeVoiceRuntime(runtime: Runtime): boolean {
+  return codeVoiceRuntimeIds.has(runtime);
+}
+
 export function listRuntimes(): Runtime[] {
   return [...adapters.keys()];
 }

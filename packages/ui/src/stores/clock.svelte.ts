@@ -19,7 +19,7 @@
 import type { ClockState } from '../lib/core';
 import { kronosCursor } from './kronos-cursor.svelte';
 import { playback } from './playback.svelte';
-import { getAdapter, listRuntimes } from '../lib/runtimes/registry';
+import { getAdapter, listRuntimes, isCodeVoiceRuntime } from '../lib/runtimes/registry';
 import { setUserTempo } from '../lib/runtimes/bpx-adapter';
 import { retuneCodeVoiceTransport } from '../lib/runtimes/kronos-codevoice';
 import { core } from '../lib/core';
@@ -89,10 +89,16 @@ class ClockStore {
     // heard tempo differs (incl. a stale-`#tempo` mismatch), the warp fires.
     if (heard === bpm) return bpm;
     for (const id of listRuntimes()) {
+      // Les VOIX DE CODE ne reçoivent PLUS le tempo par ce fan-out hôte (M2 [261]) : le tempo
+      // maître les atteint UNIQUEMENT par le bus Kronos (`onTempo` → runtime-codevoices
+      // `reslaveTempo`), autorité unique. Ne restent ici que bp3/bpscript, dont le `setBpm`
+      // retune le HANDLE Kronos en place (le warp hôte, qui vise l'horloge de Kronos).
+      if (isCodeVoiceRuntime(id)) continue;
       getAdapter(id)?.setBpm?.(bpm, (e) => core.console.push(e));
     }
-    // Voix AUTONOMES (voie B) : leur transport porte le tempo de session pour l'afficheur —
-    // il doit suivre le warp (les moteurs, eux, viennent d'être retunés par le fan-out).
+    // Voix AUTONOMES (voie B) : leur transport Kronos porte le tempo de session ; le warp
+    // (`transport.setTempo`) pousse `onTempo` sur le bus → les moteurs se re-slavent (bus),
+    // et l'afficheur suit. Plus de retune moteur direct côté hôte.
     retuneCodeVoiceTransport(bpm);
     return bpm;
   }
@@ -105,6 +111,9 @@ class ClockStore {
    *  no-`@mm` scene). It only fans the live retune out to the runtimes, like `setBpm`. */
   setSceneTempo(bpm: number) {
     for (const id of listRuntimes()) {
+      // Idem `setBpm` : les voix de code prennent le tempo maître par le bus Kronos (M2 [261]),
+      // pas par ce fan-out. Ne restent que bp3/bpscript (retune du handle Kronos).
+      if (isCodeVoiceRuntime(id)) continue;
       getAdapter(id)?.setBpm?.(bpm, (e) => core.console.push(e));
     }
   }
