@@ -292,6 +292,14 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // headless), on ne crée PAS le runtime — sinon il ferait un `new AudioContext()` inutile (et
   // impossible en jsdom). En prod (pas d'override), createAudioRuntime crée+possède son contexte.
   const audioRuntime = opts.sinks?.webaudio ? null : createAudioRuntime({ sounds: undefined });
+  // PRÉCHAUFFAGE au CHARGEMENT (design ratifié archi [589]) : à un PRODUCE/LOAD (`buildOnly`, dans
+  // la chaîne du geste : clic library / Ctrl+Enter), on RÉVEILLE le contexte audio de runtime-audio
+  // MAINTENANT (`warmup()` = resume one-shot, 16933ca) au lieu d'attendre la 1ʳᵉ transition de play →
+  // 1er son sans glitch. C'est ICI que se fait le warmup audio (PAS via la registry statique de
+  // l'hôte : l'AudioRuntime n'y est pas, il vit sur le handle). Best-effort, jamais bloquant.
+  if (buildOnly && audioRuntime) {
+    void (audioRuntime as unknown as { warmup?: () => Promise<void> }).warmup?.();
+  }
   // PILOTAGE (DEV) : expose l'AudioRuntime courant pour la sonde audio de `window.kanopi`. Lecture
   // seule (le pilot n'appelle QUE l'affordance meter). Écrase la ref précédente → l'ancien runtime
   // reste GC-able à la destruction du handle.

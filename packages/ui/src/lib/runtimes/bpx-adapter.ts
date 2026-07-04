@@ -120,7 +120,7 @@ import { loadSampleBank, codeVoiceAdapters, createCodeVoicesRuntime } from 'runt
 import * as codevoices from 'runtime-codevoices';
 // Helper hôte : énumération des interprètes voix-de-code d'une scène + réveil défensif du contexte
 // audio des sorties (no-op tant que runtime-audio n'expose pas `warmup`).
-import { codeVoiceInterps, warmupAudioContext } from './warmup';
+import { codeVoiceInterps } from './warmup';
 // OSC output (OSC-5b): the osc-bridge WS→UDP relay endpoint. Kanopi's WebSocket
 // transport (built in startKronosAudio) connects here; the relay forwards UDP.
 import routingJson from '../../../../library/routing.json';
@@ -1315,12 +1315,12 @@ function makeBpxAdapter(
       }
 
       // PRÉCHAUFFAGE au CHARGEMENT (design ratifié archi [589]) : à l'ouverture/produce d'une scène
-      // (PAS au 1er play), on préchauffe les moteurs voix-de-code + le contexte audio pour un
-      // démarrage sans glitch, dans la chaîne du geste (produce = clic library / Ctrl+Enter). ADDITIF
-      // ET DÉFENSIF : `preload`/`warmup` ne sont pas encore livrés par les pairs → `?.` = no-op ;
-      // best-effort → un warmup qui échoue NE casse PAS le produce (try/catch, loggé, jamais throw).
-      // Idempotent : re-produce/re-load rappelle sans effet de bord (repose sur l'idempotence des pairs,
-      // l'hôte n'ajoute aucun état). S'active quand runtime-codevoices/runtime-audio livreront.
+      // (PAS au 1er play), on préchauffe les MOTEURS voix-de-code (leurs contextes) via l'entrée
+      // paquet `preload` de runtime-codevoices, dans la chaîne du geste (produce = clic library /
+      // Ctrl+Enter). Best-effort → un warmup qui échoue NE casse PAS le produce (try/catch, loggé,
+      // jamais throw). Idempotent (repose sur l'idempotence du paquet, l'hôte n'ajoute aucun état).
+      // Le CONTEXTE AUDIO (runtime-audio) est warmé À PART, dans `startKronosAudio` au `buildOnly`
+      // (l'AudioRuntime vit sur le handle, PAS dans la registry statique de l'hôte).
       if (src.produceOnly) {
         const interps = codeVoiceInterps(orchestration, backticks);
         if (interps.length > 0) {
@@ -1333,16 +1333,6 @@ function makeBpxAdapter(
               msg: `warmup voix-de-code: ${(e as Error)?.message ?? e}`
             });
           }
-        }
-        try {
-          const { getAdapter } = await import('./registry');
-          await warmupAudioContext(getAdapter);
-        } catch (e) {
-          log({
-            runtime: id,
-            level: 'warn',
-            msg: `warmup contexte audio: ${(e as Error)?.message ?? e}`
-          });
         }
       }
 

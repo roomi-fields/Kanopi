@@ -1,7 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { codeVoiceInterps, warmupAudioContext } from './warmup';
-import type { Runtime } from '../core-mock/types';
-import type { RuntimeAdapter } from './adapter';
+import { describe, it, expect } from 'vitest';
+import { codeVoiceInterps } from './warmup';
 
 describe('codeVoiceInterps', () => {
   it("collecte les interps DISTINCTS d'une scène orchestrée multi-acteurs + backticks", () => {
@@ -32,28 +30,5 @@ describe('codeVoiceInterps', () => {
   it('retourne une liste vide pour une scène SANS voix-code (mono notes, aucun backtick)', () => {
     expect(codeVoiceInterps({ actors: [{ evalInterp: undefined }] }, {})).toEqual([]);
     expect(codeVoiceInterps(undefined, undefined)).toEqual([]);
-  });
-});
-
-describe('warmupAudioContext (défensif)', () => {
-  it("no-op sans throw quand aucun adaptateur audio n'est enregistré (getAdapter → undefined)", async () => {
-    const getAdapter = vi.fn((_r: Runtime): RuntimeAdapter | undefined => undefined);
-    await expect(warmupAudioContext(getAdapter)).resolves.toBeUndefined();
-    // Il sonde les ids audio candidats (webaudio, audio) sans exiger qu'ils existent.
-    expect(getAdapter).toHaveBeenCalled();
-  });
-
-  it("no-op sans throw quand l'adaptateur existe mais n'implémente pas warmup", async () => {
-    const adapter = { warmup: undefined } as unknown as RuntimeAdapter;
-    const getAdapter = vi.fn((_r: Runtime): RuntimeAdapter | undefined => adapter);
-    await expect(warmupAudioContext(getAdapter)).resolves.toBeUndefined();
-  });
-
-  it("appelle warmup() quand l'adaptateur l'expose", async () => {
-    const warmup = vi.fn(async () => {});
-    const adapter = { warmup } as unknown as RuntimeAdapter;
-    const getAdapter = vi.fn((_r: Runtime): RuntimeAdapter | undefined => adapter);
-    await warmupAudioContext(getAdapter);
-    expect(warmup).toHaveBeenCalled();
   });
 });
