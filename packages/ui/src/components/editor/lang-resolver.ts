@@ -9,6 +9,7 @@ import type { Runtime } from '../../lib/core-mock';
 import { bpscriptLanguage, bp3Language } from 'bpscript/public/editor/bpscript-lang.js';
 import { lintGutter } from '@codemirror/lint';
 import { bpscriptCompletion, bpscriptExtras } from './lang-bpscript';
+import { bpsLibwordHighlight } from './bps-libword-highlight';
 
 export function languageFor(runtime: Runtime): Extension {
   switch (runtime) {
@@ -19,6 +20,9 @@ export function languageFor(runtime: Runtime): Extension {
       return [
         bpscriptLanguage,
         bpscriptLanguage.language.data.of({ autocomplete: bpscriptCompletion }),
+        // Overlay that re-colours library-vocabulary words (from the same
+        // `describeVocabulary()` authority) distinctly from note terminals.
+        bpsLibwordHighlight,
         ...bpscriptExtras,
         lintGutter()
       ];

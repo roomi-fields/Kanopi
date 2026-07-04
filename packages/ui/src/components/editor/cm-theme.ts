@@ -158,6 +158,14 @@ export const kanopiGlobalStyles = EditorView.baseTheme({
   '.autocomplete-info-examples-section, .autocomplete-info-params-section': {
     margin: '0'
   },
+  // `.bps` library-vocabulary words (controls, values, functions, catalog
+  // entries, address keys, modulation inputs), set by the bps-libword overlay.
+  // `--sc` (blue) is the palette's "callable" colour — library vocabulary is
+  // property/function-like — and is otherwise unused in `.bps` (whose flat
+  // grammar emits no propertyName/function tags), so it reads distinct from
+  // note terminals (`--text`) and directives (`--amber`). `> *` + !important
+  // beat the nested `variableName` highlight span (same trick as `.cm-mini-*`).
+  '.cm-bps-libword, .cm-bps-libword > *': { color: 'var(--sc) !important' },
   '.cm-mini-op, .cm-mini-op > *': { color: 'var(--amber) !important', fontWeight: '500' },
   '.cm-mini-rest, .cm-mini-rest > *': { color: 'var(--text-faint) !important' },
   '.cm-mini-num, .cm-mini-num > *': { color: 'var(--cyan) !important' },
