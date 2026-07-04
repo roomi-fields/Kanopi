@@ -3,7 +3,6 @@ import type { Actor, CoreApi, LogEntry, Runtime, Scene } from '../core-mock/type
 import { getAdapter, listRuntimes } from '../runtimes/registry';
 import {
   setTempoSink,
-  setMeterSink,
   setActorsSink,
   armOrchestratedActor,
   disarmOrchestratedActor,
@@ -114,12 +113,8 @@ class RealCore implements CoreApi {
     setTempoSink((bpm) => {
       void import('../../stores/clock.svelte').then((m) => m.clock.setSceneTempo(bpm));
     });
-    // A scene's RESOLVED meter (`DeriveResult.meter`, BPx authority) projects onto the
-    // clock's time signature so the beat LEDs reflect the declared meter (absent → the
-    // default 4 stays). Same lazy-import shape as the tempo sink (avoids the module cycle).
-    setMeterSink((beatsPerBar) => {
-      void import('../../stores/clock.svelte').then((m) => m.clock.setTimeSignature(beatsPerBar));
-    });
+    // (Le mètre de scène — DeriveResult.meter, autorité BPx — n'est plus POUSSÉ dans le clock : le
+    //  readout DÉRIVE `kronosCursor.active.beatsPerBar` en direct (KAN-C09, [562]). Plus de setMeterSink.)
     // An orchestrator `.bps` publishes its `@actor` list here so the Actors panel
     // shows every voice (groove + viz, …). The actors are armed by default (a
     // freshly-evaluated orchestrator sounds every voice); the per-actor arm/disarm

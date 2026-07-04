@@ -2,13 +2,15 @@
 //
 // Kanopi holds NO authoritative clock (contract `kronos-transport.md`). This store keeps
 // the public shape the UI + snapshot already use (`state.{bpm,beatsPerBar,playing,paused}`,
-// `setBpm`/`setTimeSignature`/`tap`) but owns NO transport state machine and NO clock object:
+// `setBpm`/`tap`) but owns NO transport state machine and NO clock object:
 //   • bpm = the live tempo when a Kronos handle exists (`transport.tempo`, the authority),
 //     else the user's LOCAL typed/tapped tempo if any, else `null` (nothing live + no input
 //     → no tempo to show; the readout displays « — », it does NOT invent a host default like
 //     the former 128). `setBpm` records the user's local value AND fans out to the runtimes
 //     (which retune the live handle), so the shown value and the heard tempo never drift.
-//   • beatsPerBar = a persisted SESSION VALUE (Kronos has no time signature).
+//   • beatsPerBar = DERIVED from the live scene's meter (`kronosCursor.active.beatsPerBar` =
+//     `DeriveResult.meter`, BPx authority). The host holds NO copy (KAN-C09) — reads it live;
+//     no scene → default 4. No `setTimeSignature` (dead input), no pushed `setMeterSink` copy.
 //   • playing/paused = DERIVED from `playback.mode` (the SINGLE projection of Kronos's
 //     Transport state). No host flag, no second FSM, no parallel re-mapping of the authority.
 // Transport COMMANDS (play/stop/toggle) are NOT relayed here — the palette + keybindings
@@ -37,8 +39,6 @@ class ClockStore {
    *  before/without a scene). `null` until the user sets one; a live scene's tempo always
    *  supersedes it in the readout. Never a fabricated default — no host « 128 ». */
   #tempo = $state<number | null>(null);
-  /** Persisted SESSION time signature numerator (Kronos has no signature → kept here). */
-  #beatsPerBar = $state(DEFAULT_BEATS_PER_BAR);
   #tapTimes: number[] = [];
 
   /** READOUT, derived — never a host authority. bpm: the live handle's tempo when a scene is
@@ -51,7 +51,10 @@ class ClockStore {
     // alors RIEN d'honnête à afficher → repli sur la saisie utilisateur, sinon « — ».
     // JAMAIS un « 0.0 BPM » fabriqué : 0 n'est pas un tempo entendu.
     bpm: kronosCursor.active ? kronosCursor.tempo || this.#tempo : this.#tempo,
-    beatsPerBar: this.#beatsPerBar,
+    // Le mètre AFFICHÉ DÉRIVE du mètre de la scène vivante (kronosCursor = DeriveResult.meter,
+    // autorité BPx) — l'hôte LIT, il ne tient plus de COPIE poussée (KAN-C09, [562]). Aucune
+    // scène → défaut 4. Plus de setTimeSignature (input mort) ni de setMeterSink→clock.
+    beatsPerBar: kronosCursor.active?.beatsPerBar ?? DEFAULT_BEATS_PER_BAR,
     playing: playback.mode === 'playing',
     paused: playback.mode === 'paused'
   });
@@ -104,12 +107,6 @@ class ClockStore {
     for (const id of listRuntimes()) {
       getAdapter(id)?.setBpm?.(bpm, (e) => core.console.push(e));
     }
-  }
-
-  setTimeSignature(beatsPerBar: number) {
-    const n = Math.max(1, Math.min(32, Math.round(beatsPerBar)));
-    if (this.#beatsPerBar === n) return;
-    this.#beatsPerBar = n;
   }
 
   /** Returns the applied BPM once ≥2 taps establish a tempo, else `null` (first tap). The

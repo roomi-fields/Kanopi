@@ -966,12 +966,9 @@ export function setTempoSink(fn: (bpm: number) => void): void {
 
 // Sink to project the DERIVED scene's beats-per-bar (from `DeriveResult.meter`, BPx
 // authority) onto the central clock's time signature, so the beat LEDs reflect the
-// declared meter. The core sets this to `clock.setTimeSignature`; left unset
-// (tests, headless) the adapter still folds bars at the derived value via the handle.
-let onMeterFromGrammar: ((beatsPerBar: number) => void) | undefined;
-export function setMeterSink(fn: (beatsPerBar: number) => void): void {
-  onMeterFromGrammar = fn;
-}
+// (setMeterSink RETIRÉ, KAN-C09 [562] : le mètre de scène n'est plus POUSSÉ vers le clock. Le
+//  readout DÉRIVE `kronosCursor.active.beatsPerBar` en direct — l'autorité est le handle Kronos,
+//  que `startKronosAudio({ beatsPerBar: sceneBeatsPerBar })` porte déjà. L'hôte ne tient plus de copie.)
 
 // (Resume-offset hôte RETIRÉ — RC-B / Kronos [489] : le resume-après-step est géré par KRONOS via son
 // park interne ; `play()` reprend à la position ATTEINTE par le step, jamais à 0. Plus de `resumeBeat`
@@ -1438,10 +1435,8 @@ function makeBpxAdapter(
         if (heardBpm > 0) {
           onTempoFromGrammar?.(heardBpm);
         }
-        // Project the DERIVED meter onto the clock's time signature (beat LEDs). A no-op
-        // on an unchanged value (`setTimeSignature` guards), so a no-meter / 4/4 scene
-        // never churns. Pure local state — no cross-runtime fan-out, no re-entry guard.
-        onMeterFromGrammar?.(sceneBeatsPerBar);
+        // (Le mètre dérivé n'est plus POUSSÉ vers le clock — KAN-C09 [562] : le readout le DÉRIVE
+        //  de `kronosCursor.active.beatsPerBar`, que le handle porte déjà via `startKronosAudio`.)
         // The TREE (with control nodes) drives the multi-actor dispatcher. The
         // FLAT tokens keep their prior `'sounding'` shape for every legacy
         // consumer (production readout, STEP slicing, MIDI sink, mono/text

@@ -121,6 +121,7 @@ const RULES = [
     // la vue horloge — jamais fabriqué ici. Le retrait audio (#8 : audioCtx.currentTime →
     // performance.now/1000 DANS createTransport) doit FAIRE DESCENDRE ce compteur.
     garde: 6,
+    bite: true, // MORDANT (audit horloges clos, [559]) : toute horloge pirate non-whitelistée refuse.
     ecarts: "temps",
     label: "Horloge PIRATE dans l'hôte (temps musical fabriqué hors Kronos)",
     patterns: [
@@ -157,6 +158,28 @@ const RULES = [
       // reconstruction du temps de Kronos. Ne suit aucune position, n'ordonnance rien.
       { re: /const now = performance\.now\(\)/, file: "clock.svelte" },
     ],
+  },
+  {
+    // §Garde 7 (KAN-kairos, KAI-9/10 + kanopi-architecture.md — l'ARBRE de production est autorité
+    // BPx/Kairos ; l'hôte le LIT, ne le MUTE JAMAIS, ne touche pas l'AST). Toute ÉCRITURE sur la
+    // structure dérivée (arbre/AST/metadata) dans la surface hôte = mutation d'autorité amont =
+    // refus. Une modification (tempo/mute/arm) passe par une demande à Kairos, pas par une mutation.
+    // Vérifié [562] : le code hôte actuel est à 0 (arm/mute = flags + re-éval ; AST via options de
+    // createSession). MORDANT dès la pose.
+    garde: 7,
+    bite: true,
+    ecarts: "arbre",
+    label:
+      "Mutation de l'arbre de production / AST par l'hôte (autorité BPx/Kairos)",
+    patterns: [
+      /\b(rawTree|ast)\.\w+\s*=[^=]/, //        écriture sur l'arbre brut / l'AST
+      /\bderived\.tree\.\w+\s*=[^=]/, //         écriture sur l'arbre dérivé
+      /\.metadata\.\w+\s*=[^=]/, //              écriture sur les métadonnées de l'arbre (tempo/meter/actors)
+      /\.cvInstances\s*=[^=]/, //                réécriture du sidecar CV de l'AST
+    ],
+    // Pas de whitelist (aucune écriture d'arbre/AST hôte n'est légitime — cf. définition). Si un
+    // faux positif apparaît (une var locale homonyme), resserrer le motif aux vrais noms d'arbre.
+    whitelist: [],
   },
 ];
 
@@ -275,23 +298,26 @@ console.log(
   `   ✅ Cliquet OK : runtimes migrées (${lockedRuntimes}) restent à 0 dans l'hôte (§Garde 4 mord).\n`,
 );
 
-// ---- §Garde 6 (HORLOGE PIRATE) : MORDANT (audit horloges clos, challenge Romain [559]). Les 2
-//      lectures résiduelles sont CLASSÉES A (télémétrie + tap-tempo, whitelist ci-dessus) → §6 = 0.
-//      Toute NOUVELLE horloge non-whitelistée (temps musical fabriqué hors Kronos) fait MORDRE. ----
-const g6 = report.find((r) => r.rule.garde === 6);
-if (g6 && g6.count > 0) {
+// ---- §Garde MORDANTS (bite:true) : §6 (horloge pirate, [559]) + §7 (mutation d'arbre/AST, [562]).
+//      Leur baseline légitime est 0 (whitelist curée) → toute occurrence NON-whitelistée refuse. ----
+const biting = report.filter((entry) => entry.rule.bite && entry.count > 0);
+if (biting.length) {
+  for (const { rule, hits } of biting) {
+    console.log(`   ⛔ §Garde ${rule.garde} MORD — ${rule.label} :`);
+    for (const h of hits) console.log(`        · ${h}`);
+  }
   console.log(
-    "   ⛔ §Garde 6 MORD — horloge PIRATE dans l'hôte (temps musical fabriqué hors Kronos) :",
-  );
-  for (const h of g6.hits) console.log(`        · ${h}`);
-  console.log(
-    "   Le temps/position/tempo appartiennent à KRONOS (lus via la vue horloge) → refuser. Si c'est\n" +
-      "   un alignement légitime (offset/télémétrie/geste), l'ajouter à la whitelist §6 avec sa raison.\n",
+    "   Autorité amont (temps→Kronos ; arbre/AST→BPx/Kairos) : l'hôte LIT, ne fabrique/mute pas.\n" +
+      "   Si c'est un usage légitime, l'ajouter à la whitelist de sa règle AVEC sa raison écrite.\n",
   );
   process.exit(1);
 }
+const bitingGardes = report
+  .filter(({ rule }) => rule.bite)
+  .map(({ rule }) => `§${rule.garde}`)
+  .join("+");
 console.log(
-  "   ✅ §Garde 6 OK : aucune horloge pirate dans l'hôte (les 2 lectures classées A, whitelistées).\n",
+  `   ✅ Gardes mordants OK (${bitingGardes}) : aucune horloge pirate ni mutation d'arbre/AST dans l'hôte.\n`,
 );
 
 // Le RESTE (§Garde 1-5, hors motifs verrouillés) reste en MODE MESURE.

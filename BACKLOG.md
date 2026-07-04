@@ -75,9 +75,9 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 - **KAN-C06** `ouvert` — [moyenne/PLAUSIBLE] stores/production.svelte.ts:133 — beatCount : quantif (epsilon/ceil) inventée (D2/D7)
 - **KAN-C07** `ouvert` — [moyenne/CONFIRMED] lib/runtimes/kronos-audio.ts:222 — BEATS_PER_BAR=4 en dur (3e copie) (D7)
 - **KAN-C08** `ouvert` — [moyenne/CONFIRMED] stores/kronos-cursor.svelte.ts:125 — events bar floor(beat/4), ignore beatsPerBar (D7)
-- **KAN-C09** `ouvert` — [moyenne/CONFIRMED] stores/clock.svelte.ts:73 — store #beatsPerBar = signature d'autorité hôte (D7) — DÉBLOQUÉ result.meter
+- **KAN-C09** `fait` — [moyenne/CONFIRMED] stores/clock.svelte.ts:73 — store #beatsPerBar = signature d'autorité hôte (D7) — DÉBLOQUÉ result.meter
 - **KAN-C10** `fait` — [moyenne/CONFIRMED] stores/clock.svelte.ts:24 — currentBpm=128 : 2e copie tempo (grille STEP) (D7/D9)  _(fait: D/E #1, poussé (gate vert 203/203))_
-- **KAN-C11** `ouvert` — [moyenne/CONFIRMED] stores/clock.svelte.ts:27 — clampBpm [20,300]+arrondi : politique tempo inventée (D7)
+- **KAN-C11** `fait` — [moyenne/CONFIRMED] stores/clock.svelte.ts:27 — clampBpm [20,300]+arrondi : politique tempo inventée (D7)
 - **KAN-C12** `ouvert` — [basse/CONFIRMED] components/topbar/TransportCluster.svelte:56 — n° barre (Kronos BPB=4) ≠ nb LEDs (D7)
 - **KAN-C13** `ouvert` — [basse/CONFIRMED] components/topbar/TransportCluster.svelte:62 — dots vs pos.beat, 2 signatures (D7)
 - **KAN-C14** `ouvert` — [moyenne/CONFIRMED] components/topbar/TransportCluster.svelte:61 — commentaire "@time 7/8→7 dots" faux (D7)
@@ -117,7 +117,7 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 - **KAN-F04** `ouvert` — [basse/CONFIRMED] components/statusbar/Statusbar.svelte:57 — compteur devices codé à 0 (vraie source listPorts()) (D7)
 - **KAN-F05** `ouvert` — [basse/CONFIRMED] components/sidebar/DocsView.svelte:171 — doc "CC→60-180 BPM" : plage inventée + mapping non implémenté (D7)
 - **KAN-G01** `ouvert` — [basse/CONFIRMED] components/right-panel/InspectorPanel.svelte:27 — Pause replié en "stopped" (3e état Kronos non projeté) (D2)
-- **KAN-kairos** `ouvert` — Migration Kairos : (1) ne plus JAMAIS muter l arbre de production -> adresser des demandes a Kairos (tempo/mute/arm via demande()) ; (2) ne JAMAIS toucher l AST -> fournir l environnement (defauts) en entree de transpilation BPScript. Cf hub/projets/spec-ecriture-structure.md
+- **KAN-kairos** `garde-posé` — Migration Kairos : (1) ne plus JAMAIS muter l arbre de production -> adresser des demandes a Kairos (tempo/mute/arm via demande()) ; (2) ne JAMAIS toucher l AST -> fournir l environnement (defauts) en entree de transpilation BPScript. Cf hub/projets/spec-ecriture-structure.md
 - **KAN-C20** `fait` — DEFAULT_BPM=128 + clampBpm[20,300] = constantes hote NON sourcees (repli affichage, hors chemin d autorite) — A SOURCER via l environnement ; lien direct point-1 defauts (BPS-defaut-env)  _(fait: constante hote 128 retiree (clock #tempo=null) ; M5 tempo via env->AST prouve ecran 3/3 (a5f681c))_
 - **KAN-Abis** `ouvert` — Predicat audio utilise le resolveur de SCENE (pas per-acteur) ; passer per-feuille via resolverFor(actor.alphabet) quand A* composera activeActors x sounds (escalade)
 - **KAN-purete** `ouvert` — PURETE (Romain, radical, MAINTENANT) : devenir HOTE PUR — extraire le rendu de production vers runtime-ui (vue Texte = text-order+TextStreamPanel ; vue Timeline = timeline+TimelinePanel ; UN runtime, 2 vues) + aplatissement tree-dispatch -> Kairos, SUPPRIMER ces rendus de Kanopi, ROUTER la donnee, rendre ZERO production. Kanopi = surface + gestes + cablage des runtimes. Perte d affichage temporaire acceptee
