@@ -83,3 +83,11 @@ export declare function unregisterStrudelEditorView(fileId: string): void;
 
 // --- Sample bank loading (driven by bpx-adapter from `@sound` banks) ---
 export declare function loadSampleBank(source: string): Promise<void>;
+
+// --- PRÉCHAUFFAGE au chargement (design ratifié archi [589]) ---
+// Entrée de PAQUET idempotente : résout les interps EN INTERNE + warme leurs moteurs. Interface
+// FIGÉE. PAS ENCORE livrée par le pair → déclarée POSSIBLEMENT ABSENTE (`| undefined`) pour que
+// l'appel hôte soit optional-chained (`preload?.(…)`) = no-op tant qu'elle n'est pas exportée
+// (au runtime elle est réellement `undefined`). Additif : quand le pair l'exporte comme fonction,
+// le type reste satisfait et l'appel hôte s'active sans changement.
+export declare const preload: ((interps: string[]) => Promise<void>) | undefined;

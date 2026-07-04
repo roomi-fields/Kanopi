@@ -113,6 +113,14 @@ import type { VoiceOutputType } from './adapter';
 // only maps ids → loader.
 import { findBank } from '../library/audio-banks';
 import { loadSampleBank, codeVoiceAdapters, createCodeVoicesRuntime } from 'runtime-codevoices';
+// Préchauffage au CHARGEMENT (design ratifié archi [589]) : entrée de PAQUET `preload` (résout les
+// interps + warme les moteurs voix-de-code). Namespace import DÉFENSIF : `preload` n'est pas encore
+// exportée → `codevoices.preload` = undefined → `?.()` no-op (un `import { preload }` casserait le
+// build tant que non exporté). Voir runtime-codevoices.d.ts.
+import * as codevoices from 'runtime-codevoices';
+// Helper hôte : énumération des interprètes voix-de-code d'une scène + réveil défensif du contexte
+// audio des sorties (no-op tant que runtime-audio n'expose pas `warmup`).
+import { codeVoiceInterps, warmupAudioContext } from './warmup';
 // OSC output (OSC-5b): the osc-bridge WS→UDP relay endpoint. Kanopi's WebSocket
 // transport (built in startKronosAudio) connects here; the relay forwards UDP.
 import routingJson from '../../../../library/routing.json';
@@ -1304,6 +1312,38 @@ function makeBpxAdapter(
       // its samples. De-duped + fire-and-forget inside the helper.
       if (libraries && Object.keys(libraries).length > 0) {
         loadDeclaredLibraries(libraries, id, log);
+      }
+
+      // PRÉCHAUFFAGE au CHARGEMENT (design ratifié archi [589]) : à l'ouverture/produce d'une scène
+      // (PAS au 1er play), on préchauffe les moteurs voix-de-code + le contexte audio pour un
+      // démarrage sans glitch, dans la chaîne du geste (produce = clic library / Ctrl+Enter). ADDITIF
+      // ET DÉFENSIF : `preload`/`warmup` ne sont pas encore livrés par les pairs → `?.` = no-op ;
+      // best-effort → un warmup qui échoue NE casse PAS le produce (try/catch, loggé, jamais throw).
+      // Idempotent : re-produce/re-load rappelle sans effet de bord (repose sur l'idempotence des pairs,
+      // l'hôte n'ajoute aucun état). S'active quand runtime-codevoices/runtime-audio livreront.
+      if (src.produceOnly) {
+        const interps = codeVoiceInterps(orchestration, backticks);
+        if (interps.length > 0) {
+          try {
+            await codevoices.preload?.(interps);
+          } catch (e) {
+            log({
+              runtime: id,
+              level: 'warn',
+              msg: `warmup voix-de-code: ${(e as Error)?.message ?? e}`
+            });
+          }
+        }
+        try {
+          const { getAdapter } = await import('./registry');
+          await warmupAudioContext(getAdapter);
+        } catch (e) {
+          log({
+            runtime: id,
+            level: 'warn',
+            msg: `warmup contexte audio: ${(e as Error)?.message ?? e}`
+          });
+        }
       }
 
       // PORTE FERMÉE (décision Romain 2026-07-01, contrat temps-horloge.md) : l'hôte n'injecte

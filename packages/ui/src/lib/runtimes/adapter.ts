@@ -110,6 +110,13 @@ export interface RuntimeAdapter {
   onBeat?(count: number, log: LogPush): void;
   onBar?(count: number, log: LogPush): void;
   /**
+   * PRÉCHAUFFAGE au CHARGEMENT de scène (produce/load), dans la chaîne du geste utilisateur
+   * (clic library / Ctrl+Enter). Idempotent : pré-initialise le moteur + réveille (resume) le
+   * contexte audio EN AMONT du 1er play → démarrage propre, sans glitch. Optionnel : un adaptateur
+   * qui ne l'implémente pas est un no-op (le réveil se fera au play). Amendement ratifié archi [589].
+   */
+  warmup?(): Promise<void>;
+  /**
    * Optional per-adapter event bus. If present, the core relays `onAny` into
    * `core.events` at init so visualizers consume a single unified stream.
    */
