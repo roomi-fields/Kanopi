@@ -109,7 +109,11 @@ describe('OSC address-in-the-tree (consumed bpscript/bpx copies — stale-dep gu
     const tree = createSession(ast, { seed: 1, tempo: 120 }).derive().tree as {
       metadata?: { actors?: Record<string, unknown> };
     };
-    expect(tree.metadata?.actors?.bass).toEqual({
+    // `toMatchObject` (pas `toEqual`) : le ROUTAGE OSC est `runtime:'osc'` + `params{device,ch}` —
+    // c'est ce que ce test (et sa garde stale-dep) vérifie. La cascade @diapason amont (Kairos)
+    // grave EN PLUS un `values:{diapason:…}` sur chaque acteur (défaut résolu), champ ADDITIF
+    // orthogonal au routage : on le tolère au lieu de coupler ce test au diapason par défaut.
+    expect(tree.metadata?.actors?.bass).toMatchObject({
       runtime: 'osc',
       params: { device: 'bridge1', ch: 5 }
     });
