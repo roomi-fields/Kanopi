@@ -65,6 +65,13 @@ const LOCKED = [
     label: "relais lifecycle des voix de code dans l'hôte (#9)",
     re: /\battachCodeVoiceLifecycle\b/,
   },
+  {
+    // KRO-24 / KAI-9-10 (cv-sur-arbre, [565]) : la COMPOSITION CV appartient à Kairos (il lit les
+    // cvInstances SUR l'arbre et compose à l'aplatissement). L'hôte PORTE l'arbre, ne compose plus.
+    runtime: "cv",
+    label: "composition CV (buildModulators) dans l'hôte — appartient à Kairos",
+    re: /\bbuildModulators\b/,
+  },
 ];
 
 // Une règle §Garde = un ou plusieurs motifs de contenu, rattachés aux écarts du draft.

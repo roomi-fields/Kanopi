@@ -66,7 +66,11 @@ import { type PitchLib, type DigitalLib } from '@kairos/core';
 // it to Kairos (`charger`'s `modulation:{registry,…}`); Kairos's projection composes the bindings at
 // flatten (KRO-24). Consumed AS-IS. (Ménage point 3 — passer les données BRUTES plutôt qu'appeler
 // buildModulators côté hôte — reste SÉPARÉ, plus tard : il touche la compo CV.)
-import { buildModulators, type ModLib, type ExprSource } from '@kairos/core';
+// KRO-24 / KAI-9-10 — la COMPOSITION CV appartient à Kairos (il détient l'arbre, lit les cvInstances
+// SUR l'arbre — tree.metadata.cvInstances, BPx ad4dfed — et compose à l'aplatissement). L'hôte ne
+// COMPOSE plus : il n'appelle/importe plus `buildModulators` ; il forwarde l'arbre + la donnée-
+// librairie de contexte (`modLib`, L26, hors arbre) + la fabrique de courbes `exprSource`.
+import { type ModLib, type ExprSource } from '@kairos/core';
 // Kronos drives the REAL audio (the only engine; legacy removed). The Kronos
 // scheduler produces the timed events; a thin adapter bridges each to the existing
 // WebAudio synth. The old dispatcher is NEVER started for sound — it survives only
@@ -1352,10 +1356,6 @@ function makeBpxAdapter(
       // expose it (adapters then fall back).
       let symbolNames: Record<number, string> = {};
       // Modulator registry, built ONCE from CONSTANT inputs (ast.cvInstances +
-      // modLibJson). Identical for the eval-path composition AND the per-cycle
-      // re-random re-derivation (only the derivation's random draw differs), so
-      // it is hoisted above the try and reused by both (no duplicate build).
-      let kronosRegistry: ReturnType<typeof buildModulators>;
       // KAN-orchestration P1 — Kairos handle: `charger`ed with the derived tree + the
       // BPx projection context (resolvers + emit options). It becomes the SOURCE of the
       // played timeline (its `sourceStructure()` is bound on the Transport in
@@ -1443,17 +1443,10 @@ function makeBpxAdapter(
         // dispatcher.load): `'complete'` ALSO injects zero-duration `type:
         // 'control'` tokens into the flat stream, which those paths never saw —
         // drop them here so nothing downstream regresses.
-        // CV — the modulator registry is built ONCE from CONSTANT inputs (ast.cvInstances +
-        // modLibJson) and handed to Kairos in the charger's `modulation:{registry,...}`:
-        // Kairos's projection COMPOSES the bindings at flatten (KRO-24) and carries them on
-        // `content.modulations` for the runtime-audio AudioRuntime to render. The host no
-        // longer composes/stamps CV bindings itself — the Kairos projection owns CV composition.
-        kronosRegistry = buildModulators(
-          ((ast as { cvInstances?: unknown[] } | null)?.cvInstances ?? []) as Parameters<
-            typeof buildModulators
-          >[0],
-          modLibJson as unknown as ModLib
-        );
+        // CV — la COMPOSITION appartient à Kairos (KRO-24) : il lit les cvInstances SUR l'arbre
+        // (`tree.metadata.cvInstances`, BPx ad4dfed) et compose à l'aplatissement. L'hôte ne
+        // construit plus de registre (`buildModulators` retiré) ; il forwarde l'arbre + la
+        // donnée-librairie `modLib` (contexte L26, hors arbre) + la fabrique `exprSource`.
         // CV is composed by Kronos (Kairos projection) and RENDERED by the runtime-audio
         // AudioRuntime. The legacy `resolveCvControls`
         // (which stamped `{__cv}` descriptors for the now-removed internal WebAudio synth)
@@ -1495,7 +1488,7 @@ function makeBpxAdapter(
             // transpose per actor, off `ctx.pitchLib` + the tree). The host lends no
             // `transposeToken` (the old host path was a prod no-op, FLAG3); a display-only
             // token transpose, if ever needed, comes from the Kairos views (KAN-18).
-            modulation: { registry: kronosRegistry, exprSource: onExprSource }
+            modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
           } as unknown as Parameters<Kairos['charger']>[1]
         );
         // Capture pour la MISE À JOUR VIVANTE (re-éval same-file) : arbre + contexte de projection,
@@ -1506,7 +1499,7 @@ function makeBpxAdapter(
           ...(bpx.buildProjectionContext() as object),
           pitchLib: PITCH_LIB,
           digitalLib: DIGITAL_LIB,
-          modulation: { registry: kronosRegistry, exprSource: onExprSource }
+          modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
         } as unknown as Parameters<Kairos['charger']>[1];
         // BPx authority for the scene's compiled length (includes any trailing rest);
         // projected into the Kronos loop bound below.
@@ -1786,7 +1779,7 @@ function makeBpxAdapter(
                   // KAI-B03 — same provided digital lib on every re-derive (transpose &c.).
                   digitalLib: DIGITAL_LIB,
                   // KAI-10 — sound transpose in Kairos; host lends no transposeToken.
-                  modulation: { registry: kronosRegistry, exprSource: onExprSource }
+                  modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
                 } as unknown as Parameters<Kairos['charger']>[1]
               );
               // Same instance re-charger'd → bump generation so the views re-render.
