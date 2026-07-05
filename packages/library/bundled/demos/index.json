@@ -120,9 +120,9 @@
   },
   {
     "id": "speed-tempo",
-    "title": "Speed & Tempo",
+    "title": "Duration & Tempo",
     "category": "basics",
-    "description": "Speeding up and slowing down with [speed:N]",
+    "description": "Note and group duration with ':' (e.g. {A B}:2, A4:1/2) and global tempo",
     "file": "speed-tempo.bps"
   },
   {

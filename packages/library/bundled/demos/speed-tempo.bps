@@ -1,15 +1,22 @@
-// Speed & Tempo — accélération et ralentissement
-// Démo : [speed:N] change le ratio temporel d'un groupe
+// Duration & Tempo — two distinct concepts
+//
+// DURATION is written with a GLUED ':' (it replaces the old [speed], removed 2026-06-26):
+//   - on a group : {G4 A4 B4}:2   → the group fits inside polymetric frame 2
+//   - on a note  : A4:1/2          → eighth note  (A4:1 = quarter, A4:2 = half)
+// ⚠️ the ':' must be GLUED: `{...}:2`, `A4:1/2`. Spaced (`A4 1/2`) = old meaning (rest).
+//
+// TEMPO (the pace, the clock) is a SEPARATE concept: @tempo:72 (global).
 
 @core
 @controls
 @alphabet.western:browser
 @tempo:72
 
-// Normal, puis double vitesse, puis demi-vitesse
-S -> Normal Fast Slow Final
+// Normal, then group at frame 2, then at frame 1/2, then per-note durations
+S -> Normal Fast Slow Notes Final
 
 Normal -> C4 D4 E4 F4
-Fast -> {G4 A4 B4 C5 B4 A4 G4 F4}[speed:2]
-Slow -> {E4 D4 C4}[speed:1/2]
-Final -> C4 _ _ _
+Fast   -> {G4 A4 B4 C5 B4 A4 G4 F4}:2
+Slow   -> {E4 D4 C4}:1/2
+Notes  -> C4:1 D4:1/2 E4:1/2 F4:2
+Final  -> C4 _ _ _
