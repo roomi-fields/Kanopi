@@ -120,6 +120,13 @@ export default defineConfig({
       '@lezer/highlight': LEZER_HIGHLIGHT
     },
     dedupe: [
+      // runtime-ui (dep source symlinkée) monte ses vues via `mount()` de `svelte` (îlots
+      // impératifs : TextStreamPanel + les boutons de couches on/off). Étant symlinkée, ses
+      // imports `svelte` résoudraient depuis SON node_modules → un 2ᵉ runtime Svelte 5, dont
+      // le planificateur d'effets distinct FIGE les composants (les toggles de couches ne
+      // réagiraient plus). Épingler `svelte` sur la copie de Kanopi = un seul runtime pour
+      // l'app ET les vues montées (garde-fou intégration rappelé par runtime-ui, [607]).
+      'svelte',
       '@strudel/core',
       '@strudel/mini',
       '@strudel/transpiler',
