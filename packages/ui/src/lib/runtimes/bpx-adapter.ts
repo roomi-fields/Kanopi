@@ -15,7 +15,7 @@ import type { FileRef, SeEngineSettings, SceneActor } from 'bp3-frontend';
 // dans sa `pitchLib` (cf. l'en-tête du module amont) : le frontal .gr émet une CLÉ d'alphabet, Kairos
 // résout token→hauteur via son résolveur GÉNÉRIQUE en lisant cette DÉFINITION. Dernier maillon [79]
 // (part a) : sans la fusion, une grammaire FR/sargam émet la clé mais résout MUET.
-import { BP3_PITCH_CATALOG } from 'bp3-frontend/src/emit/bp3-alphabets';
+import { BP3_PITCH_CATALOG, bp3AlphabetKey } from 'bp3-frontend/src/emit/bp3-alphabets';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 // bpscript's musical catalogs, imported AS-IS (same path as
 // lib/library/resources.ts). A `.bps` that declares `@alphabet.X` (+ optional
@@ -196,6 +196,14 @@ const PITCH_LIB: PitchLib = {
 // function itself. Without it Kairos falls back to its legacy hardcoded transpose. `_comment` doc
 // keys → cast through `unknown`. Personal/community digital libs overlay here later (3 provenances).
 const DIGITAL_LIB: DigitalLib = BPSCRIPT_LIBS.digital as unknown as DigitalLib;
+
+// Noms de TOKENISATION anglais par défaut (quels noms nus sont des terminaux de note au parse
+// d'une `.gr`), SOURCÉS du catalogue BP3-fidèle — plus de liste occidentale EN DUR (nettoyage L26
+// étape 2/2, GO archi [95], hand-off bp3-frontend [628]). Le rôle HAUTEUR de l'ancien repli est
+// mort (les 3 conventions résolvent via `PITCH_LIB`, bp3-frontend émet la clé anglaise depuis
+// 4df0b78) ; SEUL le rôle tokenisation subsiste, ici depuis la donnée. `parseWithSound` choisit la
+// convention réelle (`bp3_fr`/`bp3_indian`) selon le `-se`.
+const BP3_EN_TOKENS = BP3_PITCH_CATALOG.alphabets[bp3AlphabetKey(0)].notes;
 
 // A front-end turns language source into a derivable BP3 SceneAST + parse
 // errors. Both languages produce the SAME `ast` shape (BPScript compiles down
@@ -420,21 +428,25 @@ export function resolveSeNoteConvention(fileRefs: FileRef[]): number | null | un
 // `-so`/`-mi`/`-cs` references in fileRefs; we load those, learn which symbols
 // sound, and re-parse so the front-end can assign them (actors[0].assignments).
 // All-note / no-prototype grammars need no second pass.
-function parseWithSound(code: string, fallbackAlphabet: string[]) {
-  const first = parseBP3(code, { alphabetNames: fallbackAlphabet });
+function parseWithSound(code: string) {
+  // 1re passe : tokenisation ANGLAISE par défaut (défaut BP3) pour récupérer les fileRefs (dont le -se).
+  const first = parseBP3(code, { alphabetNames: BP3_EN_TOKENS });
+  // La convention de notes du `-se` pilote (1) l'émission de la clé d'alphabet BP3-fidèle
+  // (`bp3_english`/`bp3_fr`/`bp3_indian`) sur l'acteur — dernier maillon [79] (part b) — ET (2) la
+  // TOKENISATION : les noms nus de LA BONNE convention sont les terminaux du parse (nettoyage L26
+  // étape 2/2, GO [95], hand-off [628] : plus de liste occidentale en dur ; la donnée du catalogue
+  // fait foi). On lit le `-se` (fileRefs stables entre les deux passes) et on repasse avec la
+  // convention → clé gravée + do/re/mi (FR) ou sa/re/ga (sargam) reconnus comme terminaux.
+  const noteConvention = resolveSeNoteConvention(first.fileRefs);
+  const convTokens =
+    BP3_PITCH_CATALOG.alphabets[bp3AlphabetKey(noteConvention)]?.notes ?? BP3_EN_TOKENS;
   const { alphabetNames, soundSymbols } = resolveGrAux(
     first.fileRefs,
     bundledAuxLoader,
-    fallbackAlphabet
+    convTokens
   );
-  // La convention de notes du `-se` pilote l'émission de la clé d'alphabet BP3-fidèle
-  // (`bp3_fr`/`bp3_indian`) sur l'acteur — dernier maillon [79] (part b). On la lit du même
-  // `-se` (fileRefs stables entre les deux passes) et on la passe à parseBP3 ; une convention
-  // FR/sargam FORCE la re-passe pour que la clé soit gravée (sans quoi l'acteur reste sans clé
-  // → Kairos résout muet malgré le catalogue fusionné).
-  const noteConvention = resolveSeNoteConvention(first.fileRefs);
   const reparse =
-    soundSymbols.length > 0 || alphabetNames !== fallbackAlphabet || noteConvention != null;
+    soundSymbols.length > 0 || alphabetNames !== BP3_EN_TOKENS || noteConvention != null;
   const r = reparse ? parseBP3(code, { alphabetNames, soundSymbols, noteConvention }) : first;
   return {
     ast: r.ast,
@@ -451,9 +463,8 @@ function parseWithSound(code: string, fallbackAlphabet: string[]) {
 // (`headSectionNamesFromAst`) — no separate grammar-text path. (The former text
 // scanner was buggy: it mis-read multi-line / fraction-directive head rules; see
 // the regression lock in `gr-head-sections.test.ts`.)
-const WESTERN_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const grFrontend: Frontend = (code) => {
-  const parsed = parseWithSound(code, WESTERN_NOTES);
+  const parsed = parseWithSound(code);
   const sections = headSectionNamesFromAst(parsed.ast);
   const base = sections.length > 0 ? { ...parsed, sections } : parsed;
   // `.gr` (BP3) has no `@actor`, but bp3-frontend materializes one IMPLICIT `default`
