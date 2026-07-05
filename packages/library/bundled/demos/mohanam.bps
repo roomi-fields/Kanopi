@@ -20,9 +20,10 @@
 @tempo:90
 
 // The browser synth defaults to a triangle voice (runtime-audio), so no per-note
-// timbre is needed. @transpose is a no-op on the sargam audio path (tracked as
-// TR-NOOP); left untouched from the fixture for that separate investigation.
-@transpose:-24
+// timbre is needed. The fixture's -24 was a TEST ARTEFACT of the Bernard/BP3
+// grammar, not a musical intent (arbitrage Romain [599]); -12 traverses the
+// sargam grid cleanly (sa → mandra_sa 120 Hz, Kairos f54085f) — no L26 cry.
+@transpose:-12
 
 // ============================================================
 // Sous-grammaire 1 — Initialisation @mode:random
