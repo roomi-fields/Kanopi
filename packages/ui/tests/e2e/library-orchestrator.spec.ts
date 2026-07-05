@@ -14,10 +14,14 @@ test('a BPScript orchestrator plays its WebAudio voice', async ({ page }) => {
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   await page.locator('.ab-btn[title="Library"]').click();
-  await page.locator('.cat', { hasText: 'Orchestrator' }).click();
-  await page.locator('.search').fill('dual actors');
-  await expect(page.locator('.card')).toHaveCount(1);
-  await page.locator('.card .load').click();
+  // Category label is French after the 12-theme restructure (89e59c7): « Orchestrateur ».
+  await page.locator('.cat', { hasText: 'Orchestrateur' }).click();
+  // The all-audio orchestrator demo `dual-actors-audio` is displayed « Twin synth
+  // voices — all audio » (renamed in the restructure). Target it by NAME.
+  await page.locator('.search').fill('twin');
+  const orchCard = page.locator('.card', { hasText: 'Twin synth voices' });
+  await expect(orchCard).toBeVisible();
+  await orchCard.locator('.load').click();
 
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
   await evalBlockAt(page, 1);

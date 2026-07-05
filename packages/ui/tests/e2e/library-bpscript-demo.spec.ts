@@ -14,14 +14,18 @@ test('a BPScript demo loads from the library and plays', async ({ page }) => {
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   await page.locator('.ab-btn[title="Library"]').click();
-  await page.locator('.cat', { hasText: 'BPScript' }).click();
-  // The BPScript category carries the bundled demos.
+  // The library rail is now organised by musical THEME (12-theme restructure, 89e59c7),
+  // so a BPScript demo is reached via the LANGUAGE filter (`bpscript`), not a runtime category.
+  await page.locator('select.filter').first().selectOption('bpscript');
   await expect(page.locator('.card').first()).toBeVisible();
 
-  // Load the polymetric-rhythm demo (plain western notes — renders correctly).
+  // Load the polymetric-rhythm demo (display title « 3 vs 4 vs 5 » — plain western
+  // notes, renders correctly). Target the card by NAME (robust to how many others
+  // the search/filter also matches) rather than a fragile exact count.
   await page.locator('.search').fill('polymetric');
-  await expect(page.locator('.card')).toHaveCount(1);
-  await page.locator('.card .load').click();
+  const demoCard = page.locator('.card', { hasText: 'Polymetric rhythm' });
+  await expect(demoCard).toBeVisible();
+  await demoCard.locator('.load').click();
 
   // Back in the editor with the .bps open; evaluate it.
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
