@@ -1,6 +1,7 @@
 <script lang="ts">
   import { workspace } from '../../stores/workspace.svelte';
   import { programCompileStatus } from '../../lib/library/referenced';
+  import { deriveStatus } from '../../stores/derive-status.svelte';
   import Tab from './Tab.svelte';
 
   function onDropEnd(e: DragEvent) {
@@ -17,7 +18,10 @@
   const activeFile = $derived(
     workspace.activeTabId ? workspace.fileById(workspace.activeTabId) : undefined
   );
-  const compile = $derived(programCompileStatus(activeFile?.name, activeFile?.contents));
+  // Fold the eval pipeline's DERIVATION outcome (msg [598]) into the chip so a
+  // scene that parses but throws at derive reads red, not a misleading "compiles".
+  const derive = $derived(deriveStatus.for(workspace.activeTabId, activeFile?.contents));
+  const compile = $derived(programCompileStatus(activeFile?.name, activeFile?.contents, derive));
 </script>
 
 <div class="tabbar" role="tablist" tabindex="-1" ondragover={onDragOver} ondrop={onDropEnd}>
@@ -41,6 +45,8 @@
       <span class="compile-dot"></span>
       {#if compile.ok}
         <span class="compile-label">compiles</span>
+      {:else if compile.phase === 'derive'}
+        <span class="compile-label">derive error</span>
       {:else}
         <span class="compile-label"
           >{compile.errors.length} error{compile.errors.length > 1 ? 's' : ''}</span

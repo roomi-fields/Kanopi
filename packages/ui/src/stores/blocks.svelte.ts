@@ -6,6 +6,14 @@ import { core } from '../lib/core';
 import { getAdapter } from '../lib/runtimes/registry';
 import { onSlotErrorChange, getSlotErrors } from 'runtime-codevoices';
 import { playback } from './playback.svelte';
+import { deriveStatus, type DeriveError } from './derive-status.svelte';
+
+// The thrown-error shape carries a message; pull a line if BPx tagged one.
+function toDeriveError(err: unknown): DeriveError {
+  const message = err instanceof Error ? err.message : String(err);
+  const line = (err as { line?: number })?.line;
+  return typeof line === 'number' ? { message, line } : { message };
+}
 
 /**
  * A block-scoped actor surfaced in the panel:
@@ -202,10 +210,16 @@ class OpenBlocksStore {
     this.armLoadedProgram(fileId);
     const file = workspace.fileById(fileId);
     if (!file) return;
+    // Record the DERIVATION outcome of this produce so the compile chip is fail-loud
+    // (msg [598]): a symbolic scene that PARSES but throws at derive (e.g. an
+    // unresolvable pitch) must not read green. First thrown block = the file fails.
+    let deriveError: DeriveError | undefined;
+    let derivedAny = false;
     for (const b of this.blocksForFile(fileId)) {
       if (b.runtime !== 'bp3' && b.runtime !== 'bpscript') continue;
       const code = file.contents.slice(b.block.from, b.block.to);
       if (!code.trim()) continue;
+      derivedAny = true;
       try {
         await core.evaluateBlock(
           b.runtime,
@@ -219,10 +233,12 @@ class OpenBlocksStore {
           // The first Play replays this handle (0 re-derivation) instead of re-deriving.
           true
         );
-      } catch {
-        /* per-block failures logged by the adapter */
+      } catch (err) {
+        /* per-block failures logged by the adapter; surface the FIRST to the chip */
+        if (!deriveError) deriveError = toDeriveError(err);
       }
     }
+    if (derivedAny) deriveStatus.report(fileId, file.contents, !deriveError, deriveError);
   }
 
   /**
@@ -265,13 +281,22 @@ class OpenBlocksStore {
         if (this.armed.has(b.qualifiedName)) armedList.push(b);
       }
     }
+    // Same fail-loud recording as produce (msg [598]): a play-from-stopped that
+    // throws at derive flags the chip for the active file too.
+    let deriveError: DeriveError | undefined;
+    let derivedAny = false;
     for (const b of armedList) {
+      if (b.runtime === 'bp3' || b.runtime === 'bpscript') derivedAny = true;
       try {
         await this.evalOne(b);
-      } catch {
-        /* per-block failures logged by adapter */
+      } catch (err) {
+        /* per-block failures logged by adapter; surface the FIRST to the chip */
+        if (!deriveError) deriveError = toDeriveError(err);
       }
     }
+    const activeFile = activeTab ? workspace.fileById(activeTab) : undefined;
+    if (derivedAny && activeFile)
+      deriveStatus.report(activeTab!, activeFile.contents, !deriveError, deriveError);
   }
 }
 

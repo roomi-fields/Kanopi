@@ -176,10 +176,20 @@ export function referencedLibraries(
 export interface CompileStatus {
   /** Whether this file type is one we compile (bps/bp3); false → no indicator. */
   applicable: boolean;
-  /** True when the program compiles with no errors. */
+  /** True when the program PARSES and DERIVES with no errors. */
   ok: boolean;
-  /** Compile errors (line + message), empty when ok. */
+  /** Errors (line + message), empty when ok. */
   errors: { line?: number; message: string }[];
+  /** Which stage failed: parse errors, or a derivation throw at eval time. Lets
+   *  the chip say "derive error" — fail-loud, not a misleading green "compiles". */
+  phase?: 'parse' | 'derive';
+}
+
+/** The last derivation outcome of the file, as recorded by the eval pipeline
+ *  (`deriveStatus.for(...)`). `null` = never derived or stale since the last edit. */
+export interface DeriveOutcomeView {
+  ok: boolean;
+  error?: { line?: number; message: string };
 }
 
 // Loosely-typed compile error from compileToBPxAST.
@@ -194,10 +204,17 @@ interface BpsError {
  * its status comes from `compileToBPxAST`. `.gr` is native BP3 grammar parsed by
  * `parseBP3` (different validator, needs alphabet plumbing) — running the BPScript
  * transpiler on it would report a FALSE error, so `.gr` shows no chip for now.
+ *
+ * `derive` is the last DERIVATION outcome recorded by the eval pipeline (msg [598]).
+ * A scene can PARSE cleanly yet throw at `derive()` (an unresolvable pitch, …); the
+ * chip must be fail-loud, not a green "compiles" over a scene that never sounds. So
+ * a passing parse + a failed derive → not ok. `null`/undefined derive (never
+ * evaluated, or stale since the last edit) leaves the status at parse-only.
  */
 export function programCompileStatus(
   fileName: string | undefined,
-  contents: string | undefined
+  contents: string | undefined,
+  derive?: DeriveOutcomeView | null
 ): CompileStatus {
   if (!fileName || contents === undefined) return { applicable: false, ok: true, errors: [] };
   const runtime = runtimeFromExt(fileName);
@@ -206,9 +223,23 @@ export function programCompileStatus(
   }
   try {
     const c = compileBps(contents) as { errors?: BpsError[] };
-    const errors = (c.errors ?? []).map((e) => ({ line: e.line, message: e.message ?? 'error' }));
-    return { applicable: true, ok: errors.length === 0, errors };
+    const parseErrors = (c.errors ?? []).map((e) => ({
+      line: e.line,
+      message: e.message ?? 'error'
+    }));
+    if (parseErrors.length > 0)
+      return { applicable: true, ok: false, errors: parseErrors, phase: 'parse' };
+    // Parse clean → the derivation outcome (if the pipeline recorded one for THIS
+    // content) decides. A derive throw reads red with the engine's message.
+    if (derive && !derive.ok)
+      return {
+        applicable: true,
+        ok: false,
+        errors: [derive.error ?? { message: 'derivation failed' }],
+        phase: 'derive'
+      };
+    return { applicable: true, ok: true, errors: [] };
   } catch (e) {
-    return { applicable: true, ok: false, errors: [{ message: String(e) }] };
+    return { applicable: true, ok: false, errors: [{ message: String(e) }], phase: 'parse' };
   }
 }

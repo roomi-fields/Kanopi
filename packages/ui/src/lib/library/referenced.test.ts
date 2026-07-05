@@ -87,4 +87,41 @@ describe('programCompileStatus', () => {
     // `.py` resolves to the `python` runtime, not `bpscript`, so no compile chip.
     expect(programCompileStatus('notes.py', 'hello').applicable).toBe(false);
   });
+
+  // Fail-loud on derivation (msg [598]): a scene that PARSES clean but the eval
+  // pipeline recorded a derive throw for → red, phase 'derive', with the message.
+  it('reports a derive failure when parse is clean but the eval derive threw', () => {
+    const code = `@core\n@controls\n@alphabet.western:browser\n@mm:120\nS -> Bass\nBass -> C2 C2 (wave:sawtooth)`;
+    const s = programCompileStatus('mohanam.bps', code, {
+      ok: false,
+      error: { message: 'transposeToken: unresolved pitch' }
+    });
+    expect(s.ok).toBe(false);
+    expect(s.phase).toBe('derive');
+    expect(s.errors[0].message).toContain('transposeToken');
+  });
+
+  it('stays ok when parse is clean and the derive outcome is ok', () => {
+    const code = `@core\n@controls\n@alphabet.western:browser\n@mm:120\nS -> Bass\nBass -> C2 C2 (wave:sawtooth)`;
+    const s = programCompileStatus('ok.bps', code, { ok: true });
+    expect(s.ok).toBe(true);
+    expect(s.errors).toEqual([]);
+  });
+
+  it('parse errors win over a derive outcome (parse phase reported first)', () => {
+    const code = `@core\n@controls\n@alphabet.western:browser\n@mm:120\nS -> Bass\nBass -> C2 C2 (wave:triangle123)`;
+    const s = programCompileStatus('bad.bps', code, {
+      ok: false,
+      error: { message: 'derive too' }
+    });
+    expect(s.ok).toBe(false);
+    expect(s.phase).toBe('parse');
+    expect(s.errors[0].message).toContain('triangle123');
+  });
+
+  it('null derive (never evaluated / stale) leaves the status at parse-only', () => {
+    const code = `@core\n@controls\n@alphabet.western:browser\n@mm:120\nS -> Bass\nBass -> C2 C2 (wave:sawtooth)`;
+    expect(programCompileStatus('ok.bps', code, null).ok).toBe(true);
+    expect(programCompileStatus('ok.bps', code, undefined).ok).toBe(true);
+  });
 });
