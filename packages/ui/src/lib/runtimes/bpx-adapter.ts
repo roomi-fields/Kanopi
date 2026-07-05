@@ -10,6 +10,12 @@ import {
   alphabetSoundRef
 } from 'bp3-frontend';
 import type { FileRef, SeEngineSettings, SceneActor } from 'bp3-frontend';
+// Catalogue d'alphabets BP3-FIDÈLES (finding [79], b3a29f8, co-conçu Kairos). Donnée pure
+// (tables C verbatim bp3_english/bp3_fr/bp3_indian + diapasons authentiques) que l'hôte FUSIONNE
+// dans sa `pitchLib` (cf. l'en-tête du module amont) : le frontal .gr émet une CLÉ d'alphabet, Kairos
+// résout token→hauteur via son résolveur GÉNÉRIQUE en lisant cette DÉFINITION. Dernier maillon [79]
+// (part a) : sans la fusion, une grammaire FR/sargam émet la clé mais résout MUET.
+import { BP3_PITCH_CATALOG } from 'bp3-frontend/src/emit/bp3-alphabets';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 // bpscript's musical catalogs, imported AS-IS (same path as
 // lib/library/resources.ts). A `.bps` that declares `@alphabet.X` (+ optional
@@ -156,12 +162,32 @@ import { headSectionNamesFromAst, sectionLeafCounts } from './head-sections-ast'
 // `ctx.pitchLib` so IT builds the resolver and graves `content.pitch.hz`/`content.sounds`.
 // Kanopi embeds no resolution logic and runs no resolver — it only supplies this DATA.
 // The catalogs carry doc-only `_comment` keys, so cast through `unknown`.
+// Les catalogues BPScript (`@alphabet.X`) FUSIONNÉS avec le catalogue BP3-fidèle (clés
+// `bp3_english`/`bp3_fr`/`bp3_indian`, disjointes des clés BPScript). Un seul `ctx.pitchLib`,
+// un seul résolveur Kairos générique — pas de branche BP3 (arbitrage archi [90]/[303]).
+// Dernier maillon [79] : le frontal .gr émet la clé sur `actor.alphabet`, Kairos lit l'entrée
+// correspondante ici. Les entrées BP3 (typées `Bp3PitchLib`, forme sœur) sont lues AS-IS.
 const PITCH_LIB: PitchLib = {
-  alphabets: alphabetsJson as unknown as PitchLib['alphabets'],
-  tunings: tuningsJson as unknown as PitchLib['tunings'],
-  temperaments: temperamentsJson as unknown as PitchLib['temperaments'],
-  scales: scalesJson as unknown as PitchLib['scales'],
-  octaves: octavesJson as unknown as PitchLib['octaves']
+  alphabets: {
+    ...(alphabetsJson as unknown as PitchLib['alphabets']),
+    ...(BP3_PITCH_CATALOG.alphabets as unknown as PitchLib['alphabets'])
+  },
+  tunings: {
+    ...(tuningsJson as unknown as PitchLib['tunings']),
+    ...(BP3_PITCH_CATALOG.tunings as unknown as PitchLib['tunings'])
+  },
+  temperaments: {
+    ...(temperamentsJson as unknown as PitchLib['temperaments']),
+    ...(BP3_PITCH_CATALOG.temperaments as unknown as PitchLib['temperaments'])
+  },
+  scales: {
+    ...(scalesJson as unknown as PitchLib['scales']),
+    ...(BP3_PITCH_CATALOG.scales as unknown as PitchLib['scales'])
+  },
+  octaves: {
+    ...(octavesJson as unknown as PitchLib['octaves']),
+    ...(BP3_PITCH_CATALOG.octaves as unknown as PitchLib['octaves'])
+  }
 };
 
 // The provided DIGITAL function library (`bpscript/lib/digital.json`), handed to Kairos as the
@@ -371,6 +397,25 @@ export function resolveSeSettings(fileRefs: FileRef[]): SeEngineSettings | undef
   }
 }
 
+// La CONVENTION DE NOTES du `-se` (0=anglaise, 1=française, 2=indienne) — dernier maillon [79]
+// (part b). parseBP3 émet la CLÉ d'alphabet BP3-fidèle (`bp3_fr`/`bp3_indian`) sur l'acteur
+// UNIQUEMENT si on lui passe cette convention (`options.noteConvention`) ; sans elle, une grammaire
+// FR/sargam émet des notes mais aucune clé → Kairos résout MUET (le catalogue est là, cf. la fusion
+// dans PITCH_LIB, mais rien ne le désigne). On lit `parseSeFile(...).protocol.noteConvention` — le
+// même `-se` que `resolveSeSettings`, dont le CONTENU est déjà bundlé. Absent → undefined (anglais /
+// repli inchangé). L'hôte n'invente rien : il TRANSPORTE la convention de la donnée `-se` vers le frontal.
+export function resolveSeNoteConvention(fileRefs: FileRef[]): number | null | undefined {
+  const ref = fileRefs.find((r) => r.prefix === 'se');
+  if (!ref) return undefined;
+  const text = BUNDLED_SE[ref.name];
+  if (!text) return undefined;
+  try {
+    return parseSeFile(text).protocol?.noteConvention ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 // Parse a BP3 grammar with per-symbol sound routing. parseBP3 surfaces the
 // `-so`/`-mi`/`-cs` references in fileRefs; we load those, learn which symbols
 // sound, and re-parse so the front-end can assign them (actors[0].assignments).
@@ -382,8 +427,15 @@ function parseWithSound(code: string, fallbackAlphabet: string[]) {
     bundledAuxLoader,
     fallbackAlphabet
   );
-  const reparse = soundSymbols.length > 0 || alphabetNames !== fallbackAlphabet;
-  const r = reparse ? parseBP3(code, { alphabetNames, soundSymbols }) : first;
+  // La convention de notes du `-se` pilote l'émission de la clé d'alphabet BP3-fidèle
+  // (`bp3_fr`/`bp3_indian`) sur l'acteur — dernier maillon [79] (part b). On la lit du même
+  // `-se` (fileRefs stables entre les deux passes) et on la passe à parseBP3 ; une convention
+  // FR/sargam FORCE la re-passe pour que la clé soit gravée (sans quoi l'acteur reste sans clé
+  // → Kairos résout muet malgré le catalogue fusionné).
+  const noteConvention = resolveSeNoteConvention(first.fileRefs);
+  const reparse =
+    soundSymbols.length > 0 || alphabetNames !== fallbackAlphabet || noteConvention != null;
+  const r = reparse ? parseBP3(code, { alphabetNames, soundSymbols, noteConvention }) : first;
   return {
     ast: r.ast,
     errors: r.errors.map((e) => ({ line: e.line, message: e.message })),
