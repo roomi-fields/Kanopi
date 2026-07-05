@@ -1,0 +1,3 @@
+// Bol Processor BP3 compatible with version BP2.9.8
+// Grammar file saved as "-gr.drum". Date: 2020-09-24 09:34:35
+S --> {_chan(1) _vel(120) _staccato(96) C8 - - - , _chan(1) _vel(120) _staccato(96) - C7 C7 C7 , _chan(1) _vel(120) _staccato(92) E7 E7 E7 E7 E7 E7 E7 E7}

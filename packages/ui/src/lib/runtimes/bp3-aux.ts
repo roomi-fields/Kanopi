@@ -15,6 +15,19 @@ import seNotReich from '../../../../library/bundled/se.NotReich.json?raw';
 import seTryRotate from '../../../../library/bundled/se.tryRotate.json?raw';
 import seTransposition3 from '../../../../library/bundled/se.transposition3.json?raw';
 import seVisser5 from '../../../../library/bundled/se.Visser5.json?raw';
+import se765432 from '../../../../library/bundled/se.765432.json?raw';
+import seAlan from '../../../../library/bundled/se.Alan.json?raw';
+import seBeatrix from '../../../../library/bundled/se.Beatrix.json?raw';
+import seDjinns from '../../../../library/bundled/se.Djinns.json?raw';
+import seDoeslittle from '../../../../library/bundled/se.doeslittle.json?raw';
+import seKss from '../../../../library/bundled/se.kss.json?raw';
+import seLivecode1 from '../../../../library/bundled/se.livecode1.json?raw';
+import seLivecode2 from '../../../../library/bundled/se.livecode2.json?raw';
+import seMozart from '../../../../library/bundled/se.Mozart.json?raw';
+import seMyMelody from '../../../../library/bundled/se.MyMelody.json?raw';
+import seRajeev from '../../../../library/bundled/se.Rajeev.json?raw';
+import seRuwet from '../../../../library/bundled/se.Ruwet.json?raw';
+import seVisser3 from '../../../../library/bundled/se.Visser3.json?raw';
 
 // reference name (as it appears in the .gr `-se.<name>` line) → raw -se text
 export const BUNDLED_SE: Record<string, string> = {
@@ -23,7 +36,20 @@ export const BUNDLED_SE: Record<string, string> = {
   NotReich: seNotReich,
   tryRotate: seTryRotate,
   transposition3: seTransposition3,
-  Visser5: seVisser5
+  Visser5: seVisser5,
+  '765432': se765432,
+  Alan: seAlan,
+  Beatrix: seBeatrix,
+  Djinns: seDjinns,
+  doeslittle: seDoeslittle,
+  kss: seKss,
+  livecode1: seLivecode1,
+  livecode2: seLivecode2,
+  Mozart: seMozart,
+  MyMelody: seMyMelody,
+  Rajeev: seRajeev,
+  Ruwet: seRuwet,
+  Visser3: seVisser3
 };
 
 // Sound-object aux files (-so/-mi/-cs) → which alphabet symbols carry a sound,

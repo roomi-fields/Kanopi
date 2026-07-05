@@ -1,0 +1,143 @@
+// Bol Processor BP3 compatible with version BP2.9.8
+// Grammar file saved as "-gr.Ruwet". Date: 2020-10-31 17:03:39
+-ho.Ruwet
+-se.Ruwet
+
+// This model of theme-and-variation was inspired by an analysis by musicologist Nicolas Ruwet. It was done by a student of mine using a very old version of BP2. I have "recycled" it recently. Suggestions are welcome.
+// Variables starting with low-case characters are delimited with | | to avoid any confusion with terminal symbols.
+
+// Note that the alphabet is defining three homomorphisms: "m1", "m2", "mineur". Only "mineur" is used in this example.
+
+ORD [1]
+gram#1[1] S --> 4+4+4+4+4+4/4 P1 P2 P3
+gram#1[2] P1 --> A8 B"8 C8 B'8
+gram#1[3] P2 --> A8 B8 C8 B8
+gram#1[4] P3 --> C'8 B'8 C'8 B'8
+gram#1[5] A8 --> |a4| |b4|
+gram#1[6] B"8 --> |c"4| |f4|
+gram#1[7] B8 --> |c4| |f4|
+gram#1[8] B'8 --> |c'4| |f4|
+gram#1[9] C8 --> |d4| |e4|
+gram#1[10] C'8 --> (= |e4|)(: |e4|)
+-------------------------------
+LIN [2]
+gram#2[1] |a4| --> |x| |z31|
+gram#2[2] |b4| --> |y| |z5|
+gram#2[3] |c4| --> |w| |z31|
+gram#2[4] |c"4| --> |w| |z311|
+gram#2[5] |c'4| --> |w| |z3|
+gram#2[6] |d4| --> |miny| |z32|
+gram#2[7] |e4| --> |y1| |z31|
+gram#2[8] |f4| --> |o| |z1|
+--------------------------------
+LIN [3]
+gram#3[1] <4>|x| --> fa4 do5
+gram#3[2] <1>|x| --> |x1| [Variant]
+gram#3[3] <1>|x| --> |x2| [Variant]
+gram#3[4] <1>|x| --> |x3| [Variant]
+gram#3[5] <1>|x| --> |x4| [Variant]
+
+gram#3[6] |y| --> fa4 la4
+gram#3[7] |y| --> |y1| [Variant]
+gram#3[8] |y| --> |y2| [Variant]
+gram#3[9] |y| --> |y3| [Variant]
+gram#3[10] |y| --> |y4| [Variant]
+gram#3[11] |y| --> |y5| [Variant]
+gram#3[12] |y| --> |y6| [Variant]
+gram#3[13] |y| --> |y7| [Variant]
+gram#3[14] |y| --> |y8| [Variant]
+
+gram#3[15] |w| --> la4 do5
+gram#3[16] |w| --> |w1| [Variant]
+gram#3[17] |w| --> |w2| [Variant]
+gram#3[18] |w| --> |w3| [Variant]
+gram#3[19] |w| --> |w4| [Variant]
+gram#3[20] |w| --> |w5| [Variant]
+
+gram#3[21] <4> |z1| --> fa4 fa4
+gram#3[22] <1> |z1| |miny| --> |z12| |miny| [Variant]
+gram#3[23] <1> |z1| |miny| --> |z13| |miny| [Variant]
+
+gram#3[24] |z3| --> la4 la4
+gram#3[25] |z3| --> |z31| [Variant]
+gram#3[26] |z3| --> |z311| [Variant]
+gram#3[27] |z3| --> |z32| [Variant]
+gram#3[28] |z3| --> |z321| [Variant]
+gram#3[29] |z3| --> |z33| [Variant]
+gram#3[30] |z3| --> |z34| [Variant]
+gram#3[31] |z3| --> |z35| [Variant]
+gram#3[32] |z3| --> |z36| [Variant]
+
+gram#3[33] |z5| --> do5 do5
+gram#3[34] |z5| --> |z51| [Variant]
+gram#3[35] |z5| --> |z511| [Variant]
+gram#3[36] |z5| --> |z52| [Variant]
+gram#3[37] |z5| --> |z521| [Variant]
+gram#3[38] |z5| --> |z53| [Variant]
+gram#3[39] |z5| --> |z54| [Variant]
+gram#3[40] |z5| --> |z55| [Variant]
+gram#3[41] |z5| --> |z56| [Variant]
+gram#3[42] |z5| --> |z57| [Variant]
+
+gram#3[43] |z31| --> sib4 la4
+gram#3[44] |z32| --> sol4 la4
+gram#3[45] |z311| --> sib4 {1,la4 la4}
+
+gram#3[46] <3> |o| --> sib4 {1,la4 sol4}
+gram#3[47] <1> |o| |miny| --> |o1| |miny| [Variant]
+gram#3[48] <1> |o| |miny| --> |o2| |miny| [Variant]
+gram#3[49] <1> |o| (|z13|) --> |o3| [Variant. Remote context ()]
+--------------------------------
+ORD [4]
+gram#4[1] |x1| --> {1, fa4 la4} do5
+gram#4[2] |x2| --> fa4 {1, la4 do5}
+gram#4[3] |x3| --> {2, fa4 sol4 la4 do5} [?]
+gram#4[4] |x4| --> {2, fa4 la4 sib4 do5} [?]
+
+gram#4[5] |y1| --> fa4 {1,sol4 la4}
+gram#4[6] |y2| -->{1,fa4 sol4} la4 [Variant][bug fixed here]
+gram#4[7] |y3| --> fa4 {1,la4 sib4} [Variant]
+gram#4[8] |y4| --> {2,fa4 sol4 la4 sib4}[?] [Variant]
+gram#4[9] |y5| --> {2,fa4 la4 sol4 la4}[?] [Variant]
+gram#4[10] |y6| --> {2,fa4 sol4 sib4 la4}[?] [Variant]
+gram#4[11] |y7| --> {2,fa4 la4 sib4 la4}[?] [Variant]
+gram#4[12] |y8| --> {2,fa4 sol4 fa4 la4}[?] [Variant]
+
+gram#4[13] |w1| -->{1, la4 sib4} do5 [Variant]
+gram#4[14] |w2| --> la4 {1, sib4 do5} [Variant]
+gram#4[15] |w3| --> {2,la4 sib4 do5 sib4}[?] [Variant]
+gram#4[16] |w4| --> {2,la4 sol4 la4 do5}[?] [Variant]
+gram#4[17] |w5| --> {2,la4 sib4 la4 do5}[?] [Variant]
+
+gram#4[18] |z11| --> {1,fa4 mi4} fa4 [Not relevant]
+gram#4[19] |z12| --> {1,fa4 sol4} fa4
+gram#4[20] |z13| --> sol4 fa4 [|z13| is used as context in the preceding grammar]
+gram#4[21] |z14| --> mi4 fa4 [Not relevant]
+
+gram#4[22] |z31| --> sib4 la4
+gram#4[23] |z311| --> sib4 {1,la4 la4}
+gram#4[24] |z32| --> sol4 la4 [Variant]
+gram#4[25] |z321| --> sol4 {1,la4 la4} [Variant]
+gram#4[26] |z33| -->{1, la4 sol4} la4 [Variant]
+gram#4[27] |z34| -->{1, la4 sib4} la4 [Variant]
+gram#4[28] |z35| --> {2,la4 sol4 sib4 la4}[Variant] [?]
+gram#4[29] |z36| --> {2,sib4 la4 sol4 la4} [Variant] [?]
+
+gram#4[30] |z51| --> re5 do5 [Variant]
+gram#4[31] |z511| --> re5 {1, do5 do5 } [Variant]
+gram#4[32] |z52| --> sib4 do5 [Variant]
+gram#4[33] |z521| --> sib4 {1, do5 do5 } [Variant]
+gram#4[34] |z53| --> {1, do5 sib4} do5 [Variant]
+gram#4[35] |z54| --> {1, do5 re5} do5 [Variant]
+gram#4[36] |z55| --> {2,do5 sib4 re5 do5}[Variant] [?]
+gram#4[37] |z56| --> {2,re5 do5 sib4 do5}[Variant] [?]
+gram#4[38] |z57| --> {2,do5 re5 do5 sib4}[Variant] [?]
+
+gram#4[39] |o1| --> {2,do5 sib4 la4 sol4}
+gram#4[40] |o2| --> {2,sib4 sib4 la4 sol4}
+gram#4[41] |o3| --> {2,sib4 do5 sib4 la4}
+
+gram#4[42] |miny| --> mineur (= |y|)
+------------------------------
+ORD [5]
+gram#5[1] |y| --> fa4 la4

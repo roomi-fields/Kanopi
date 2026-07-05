@@ -133,6 +133,115 @@ const STARTER_AXES: Record<string, Axes> = {
     level: 'advanced',
     tags: ['generative'],
     showcase: true
+  },
+  'bp3-765432': {
+    category: 'bp3',
+    language: 'bp3',
+    outputs: ['audio'],
+    level: 'advanced',
+    tags: ['polyrhythm', 'dance'],
+    showcase: true
+  },
+  'bp3-alan': {
+    category: 'bp3',
+    language: 'bp3',
+    outputs: ['audio'],
+    level: 'intermediate',
+    tags: ['melody']
+  },
+  'bp3-alarm': {
+    category: 'bp3',
+    language: 'bp3',
+    outputs: ['audio'],
+    level: 'didactic',
+    tags: ['melody']
+  },
+  'bp3-beatrix': {
+    category: 'bp3',
+    language: 'bp3',
+    outputs: ['audio'],
+    level: 'intermediate',
+    tags: ['melody']
+  },
+  'bp3-djinns': {
+    category: 'bp3',
+    language: 'bp3',
+    outputs: ['audio'],
+    level: 'advanced',
+    tags: ['generative', 'palindrome'],
+    showcase: true
+  },
+  'bp3-doeslittle': {
+    category: 'bp3',
+    language: 'bp3',
+    outputs: ['audio'],
+    level: 'didactic',
+    tags: ['minimal']
+  },
+  'bp3-drum': {
+    category: 'bp3',
+    language: 'bp3',
+    outputs: ['audio'],
+    level: 'didactic',
+    tags: ['drums', 'rhythm']
+  },
+  'bp3-kss2': {
+    category: 'bp3',
+    language: 'bp3',
+    outputs: ['audio'],
+    level: 'intermediate',
+    tags: ['melody']
+  },
+  'bp3-livecode1': {
+    category: 'bp3',
+    language: 'bp3',
+    outputs: ['audio'],
+    level: 'intermediate',
+    tags: ['chords']
+  },
+  'bp3-livecode2': {
+    category: 'bp3',
+    language: 'bp3',
+    outputs: ['audio'],
+    level: 'advanced',
+    tags: ['polytempo', 'rhythm']
+  },
+  'bp3-mozart': {
+    category: 'bp3',
+    language: 'bp3',
+    outputs: ['audio'],
+    level: 'advanced',
+    tags: ['harmony'],
+    showcase: true
+  },
+  'bp3-mymelody': {
+    category: 'bp3',
+    language: 'bp3',
+    outputs: ['audio'],
+    level: 'didactic',
+    tags: ['melody', 'polyphony']
+  },
+  'bp3-rajeev': {
+    category: 'bp3',
+    language: 'bp3',
+    outputs: ['audio'],
+    level: 'advanced',
+    tags: ['raga', 'drone'],
+    showcase: true
+  },
+  'bp3-ruwet': {
+    category: 'bp3',
+    language: 'bp3',
+    outputs: ['audio'],
+    level: 'intermediate',
+    tags: ['variations']
+  },
+  'bp3-visser3': {
+    category: 'bp3',
+    language: 'bp3',
+    outputs: ['audio'],
+    level: 'advanced',
+    tags: ['polymetric']
   }
 };
 

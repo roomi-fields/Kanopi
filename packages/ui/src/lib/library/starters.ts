@@ -23,6 +23,23 @@ import bpAcceleration from '../../../../library/bundled/bp-acceleration.gr?raw';
 import bpTransposition from '../../../../library/bundled/bp-transposition.gr?raw';
 import bpAmes from '../../../../library/bundled/bp-ames.gr?raw';
 import bpVisser5 from '../../../../library/bundled/bp-visser5.gr?raw';
+// Expanded Bol Processor corpus (2026-07): every additional .gr from Bernard Bel's
+// BP3 test-data that actually derives + sounds through Kanopi's WebAudio path.
+import bp765432 from '../../../../library/bundled/bp-765432.gr?raw';
+import bpAlan from '../../../../library/bundled/bp-alan.gr?raw';
+import bpAlarm from '../../../../library/bundled/bp-alarm.gr?raw';
+import bpBeatrix from '../../../../library/bundled/bp-beatrix.gr?raw';
+import bpDjinns from '../../../../library/bundled/bp-djinns.gr?raw';
+import bpDoeslittle from '../../../../library/bundled/bp-doeslittle.gr?raw';
+import bpDrum from '../../../../library/bundled/bp-drum.gr?raw';
+import bpKss2 from '../../../../library/bundled/bp-kss2.gr?raw';
+import bpLivecode1 from '../../../../library/bundled/bp-livecode1.gr?raw';
+import bpLivecode2 from '../../../../library/bundled/bp-livecode2.gr?raw';
+import bpMozart from '../../../../library/bundled/bp-mozart.gr?raw';
+import bpMyMelody from '../../../../library/bundled/bp-mymelody.gr?raw';
+import bpRajeev from '../../../../library/bundled/bp-rajeev.gr?raw';
+import bpRuwet from '../../../../library/bundled/bp-ruwet.gr?raw';
+import bpVisser3 from '../../../../library/bundled/bp-visser3.gr?raw';
 
 export interface StarterFile {
   path: string;
@@ -195,6 +212,126 @@ function bpShowcase(): Starter[] {
       'A Bol Processor grammar by Harm Visser (1998): a dense, fully generative polyphonic piece (~1000+ notes) layering transposed and rotated melodic cells. Bernard Bel’s formalism, derived by the next-gen BPx engine, playing in Kanopi. Ctrl+Enter to play, Ctrl+. to silence.',
       'bp-visser5.gr',
       bpVisser5
+    ),
+    bpStarter(
+      '765432',
+      'BP — 765432',
+      'Andrine Bel · a polyrhythmic dance piece',
+      'A Bol Processor piece titled “765432”, composed by Andrine Bel in 1994 for the Cronos dance production. Overlapping voices in shifting odd meters build a dense polyrhythmic texture (~800 notes), derived by the BPx engine and played through Kanopi’s WebAudio path. Ctrl+Enter to derive, Ctrl+. to hush.',
+      'bp-765432.gr',
+      bp765432
+    ),
+    bpStarter(
+      'alan',
+      'BP — Alan',
+      'a two-part melodic study',
+      'A Bol Processor grammar from Bernard Bel’s corpus: two sections (A and B) of eight cells each, transposed down an octave, played as pitched notes. Derived by the next-gen BPx engine and voiced through Kanopi. Ctrl+Enter to play, Ctrl+. to silence.',
+      'bp-alan.gr',
+      bpAlan
+    ),
+    bpStarter(
+      'alarm',
+      'BP — Alarm',
+      'an early linear grammar (1994)',
+      'One of the oldest grammars in Bernard Bel’s corpus (1994), a compact linear rule set that assembles a short melodic “alarm” from flag-selected fragments. Derived by BPx and rendered through Kanopi’s WebAudio transport. Ctrl+Enter to derive, Ctrl+. to hush.',
+      'bp-alarm.gr',
+      bpAlarm
+    ),
+    bpStarter(
+      'beatrix',
+      'BP — Beatrix',
+      'a two-part melodic study',
+      'A Bol Processor grammar from Bernard Bel’s corpus: two eight-cell sections (A and B) unfolded as a steady two-part melody. Derived by the next-gen BPx engine and played in Kanopi. Ctrl+Enter to play, Ctrl+. to silence.',
+      'bp-beatrix.gr',
+      bpBeatrix
+    ),
+    bpStarter(
+      'djinns',
+      'BP — Djinns',
+      'a symmetric arch for the Roland D-50',
+      'A Bol Processor grammar by Bernard Bel (1998), originally voiced on a Roland D-50 percussion patch. Its start rule expands into a long palindromic arch (~900 notes), derived by BPx and played through Kanopi’s WebAudio path. Ctrl+Enter to derive, Ctrl+. to hush.',
+      'bp-djinns.gr',
+      bpDjinns
+    ),
+    bpStarter(
+      'doeslittle',
+      'BP — Does Little',
+      'minimal by design',
+      'A tiny Bol Processor grammar from Bernard Bel’s corpus (1998), self-described as “a very simple grammar that does almost nothing”: a handful of notes and a rest. The clearest look at a bare grammar, derived by BPx inside Kanopi. Ctrl+Enter to play, Ctrl+. to silence.',
+      'bp-doeslittle.gr',
+      bpDoeslittle
+    ),
+    bpStarter(
+      'drum',
+      'BP — Drum',
+      'a polymetric drum cell',
+      'A short Bol Processor grammar (2020) stacking three percussion lines at different subdivisions on one channel — a compact polymetric drum cell with per-note velocity and staccato. Derived by BPx and played through Kanopi’s WebAudio transport. Ctrl+Enter to derive, Ctrl+. to hush.',
+      'bp-drum.gr',
+      bpDrum
+    ),
+    bpStarter(
+      'kss2',
+      'BP — KSS',
+      'Kumar S. Subramanian · 1995',
+      'A Bol Processor grammar composed by Kumar S. Subramanian in June 1995. A melodic study of roughly a hundred notes, derived by the next-gen BPx engine and rendered through Kanopi’s WebAudio path. Ctrl+Enter to play, Ctrl+. to silence.',
+      'bp-kss2.gr',
+      bpKss2
+    ),
+    bpStarter(
+      'livecode1',
+      'BP — Livecode 1',
+      'dense two-voice chords',
+      'A Bol Processor grammar from Bernard Bel’s corpus written as a live-coding sketch: two channels of stacked chords interlocking in time. Derived by the BPx engine and voiced through Kanopi. Ctrl+Enter to derive, Ctrl+. to hush.',
+      'bp-livecode1.gr',
+      bpLivecode1
+    ),
+    bpStarter(
+      'livecode2',
+      'BP — Livecode 2',
+      'polytempo fractional rhythm',
+      'A Bol Processor live-coding grammar layering voices at independent fractional tempi, producing intricate cross-rhythms. Derived by the next-gen BPx engine and played through Kanopi’s WebAudio path. Ctrl+Enter to play, Ctrl+. to silence.',
+      'bp-livecode2.gr',
+      bpLivecode2
+    ),
+    bpStarter(
+      'mozart',
+      'BP — Mozart',
+      'a harmony study for harpsichord',
+      'A Bol Processor grammar from Bernard Bel’s corpus (2025) built as a Mozart-style harmony study, intended for a harpsichord or piano voice. Derived by the BPx engine and rendered through Kanopi’s WebAudio transport. Ctrl+Enter to derive, Ctrl+. to hush.',
+      'bp-mozart.gr',
+      bpMozart
+    ),
+    bpStarter(
+      'mymelody',
+      'BP — My Melody',
+      'melody over an accompaniment',
+      'A Bol Processor grammar from Bernard Bel’s corpus (1996) playing a melody and a running accompaniment at the same time — a small two-part texture. Derived by BPx and voiced through Kanopi. Ctrl+Enter to play, Ctrl+. to silence.',
+      'bp-mymelody.gr',
+      bpMyMelody
+    ),
+    bpStarter(
+      'rajeev',
+      'BP — Rajeev',
+      'sargam melody over a drone',
+      'A Bol Processor grammar (1995) in the Indian classical idiom: a sargam melody unfolding over a sustained drone. Derived by the next-gen BPx engine and played through Kanopi’s WebAudio path. Ctrl+Enter to derive, Ctrl+. to hush.',
+      'bp-rajeev.gr',
+      bpRajeev
+    ),
+    bpStarter(
+      'ruwet',
+      'BP — Ruwet',
+      'theme and variation, after Nicolas Ruwet',
+      'A Bol Processor theme-and-variation grammar inspired by an analysis by musicologist Nicolas Ruwet. Derived by the BPx engine and rendered through Kanopi’s WebAudio transport. Ctrl+Enter to play, Ctrl+. to silence.',
+      'bp-ruwet.gr',
+      bpRuwet
+    ),
+    bpStarter(
+      'visser3',
+      'BP — Visser3',
+      'Harm Visser · complex polymetric time',
+      'A Bol Processor grammar by Harm Visser (1998) that generates a very complex time structure from lower-common-multiple polymetric ratios, even where the surface melody stays simple. Derived by the next-gen BPx engine and played in Kanopi. Ctrl+Enter to play, Ctrl+. to silence.',
+      'bp-visser3.gr',
+      bpVisser3
     )
   ];
 }

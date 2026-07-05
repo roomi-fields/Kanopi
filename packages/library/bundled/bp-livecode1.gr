@@ -1,0 +1,9 @@
+// Bol Processor BP3
+// Grammar saved as "-gr.livecode1". Date: 2025-03-11 10:07:56
+-se.livecode1
+
+RND
+
+S --> {_vel(64) _chan(1){4,{D6 A4 A4{1/2,G5 Bb5}{1/2,D6 C6 Bb5}, 1{Cb4,Eb4,F4,Ab4}{Bb3,D4,Gb4}-}},_vel(64) _chan(2){4,{D4 F3 E3{1/2,G3 Bb3}{1/2,D4 C4 Bb3}, 1{Db2,Ab2}{C2,G2}-}}}
+
+// S --> _tempo(2) C4 D4 E4 F4
