@@ -115,6 +115,11 @@ export interface ParseBP3Options {
   /** Per-symbol sound routing: alphabet symbols that carry a sound prototype
    *  (loaded by the caller from the -so/-mi/-cs that fileRefs signals). */
   soundSymbols?: string[];
+  /** Note convention from the `-se` (ENGLISH=0, FRENCH=1, INDIAN=2). Drives the
+   *  BP3-faithful alphabet KEY emitted on the actor (`bp3_english`/`bp3_fr`/`bp3_indian`)
+   *  so Kairos resolves FR/sargam pitches — finding [79]. Read via
+   *  `parseSeFile(...).protocol.noteConvention`. */
+  noteConvention?: number | null;
 }
 export interface FileRef {
   prefix: string;
@@ -143,7 +148,13 @@ export interface ParseBP3Result {
 }
 export function parseBP3(source: string, options?: ParseBP3Options): ParseBP3Result;
 /** Parse a `-se.*` settings file (JSON) → engine timing the BPx session consumes. */
-export function parseSeFile(text: string): { engine: SeEngineSettings; [k: string]: unknown };
+export function parseSeFile(text: string): {
+  engine: SeEngineSettings;
+  /** PROTOCOLE du harnais BP3 (convention de notes, seed, c4key…). `noteConvention`
+   *  (0=anglaise, 1=française, 2=indienne) pilote la clé d'alphabet BP3-fidèle — finding [79]. */
+  protocol?: { noteConvention?: number | null; [k: string]: unknown };
+  [k: string]: unknown;
+};
 /** Extract the sounding-symbol names from a `-so`/`-mi`/`-cs` aux file. */
 export function parseSoundObjects(text: string): string[];
 /** True when a symbol is a pitch name (English / solfège / sargam) — sounds by default. */
