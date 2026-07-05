@@ -1742,14 +1742,36 @@ function makeBpxAdapter(
         // KAI-10 — no host resolver: the MIDI sink reads `event.pitch.hz` (graven by Kairos)
         // and derives note+bend from it; its own token→Hz resolver is now only a stand-in.
         let midi: ReturnType<typeof createMidiRuntime> | undefined;
-        for (const actor of orchestration.actors) {
-          if (devices.get(actor.name)!.type === 'midi' && !midi) {
-            // runtime-MIDI possède/construit/init SON transport (#6). init() acquiert Web MIDI
-            // (après geste user) ; silencieux sans matériel, ne throw pas. L'adaptateur est
-            // enregistré sur Kronos dans startKronosAudio ; teardown = `midi.dispose()` (ci-dessous),
-            // plus de `dispatcher.addTransport` (le paquet possède le cycle de vie de son transport).
-            midi = createMidiRuntime({});
-            await midi.init().catch(() => {});
+        // Un sink MIDI existe SSI un acteur SORT en MIDI. L'AUTORITÉ est `output.runtime`
+        // (gravé par BPx dans `tree.metadata.actors`, la MÊME clé sur laquelle Kronos route
+        // — invariant « un sink existe pour la clé routée », contrat hote-runtimes-sortie.md:121,
+        // tranché archi [624]). PAS `devices.type` : l'appareil @devices est l'ADRESSE (canal/
+        // port) DANS le runtime, un concern SÉPARÉ (KAI-9, bpscript-bpx.md:32). Un `@actor
+        // transport:midi` grave `runtime='midi'` → même clé, même sink que tout futur
+        // `@alphabet.X:midi` qui convergera vers `runtime='midi'` à la source.
+        const routesToMidi =
+          !!actorOutputs && Object.values(actorOutputs).some((a) => a.runtime === 'midi');
+        if (routesToMidi) {
+          // runtime-MIDI possède/construit/init SON transport (#6). L'adaptateur est enregistré
+          // sur Kronos dans startKronosAudio ; teardown = `midi.dispose()` (ci-dessous), plus de
+          // `dispatcher.addTransport` (le paquet possède le cycle de vie de son transport).
+          midi = createMidiRuntime({});
+          // RÈGLE PRODUIT (Romain, [619]) : une scène écrite pour MIDI sans périphérique au PLAY
+          // NE joue PAS en silence trompeur — l'hôte CRIE clairement. Contrat runtime-midi (épinglé
+          // v2 §3, coord [621]) : `init(): Promise<boolean>` — `false` = aucune sortie MIDI jouable
+          // acquise (pas de Web MIDI, 0 port, ou accès refusé), `true` = un port est prêt. On CAPTURE
+          // ce booléen (l'ancien `.catch(()=>{})` le JETAIT → silence muet). Répartition des rôles
+          // (coord [621]) : runtime-midi SIGNALE (sortie pure, sans UI), l'hôte ÉMET le cri (il
+          // possède le canal d'erreur). Pas de repli webaudio : chaque event route par son propre
+          // `output.runtime` (déjà conforme). [TODO refinement additif : quand runtime-midi fige
+          //  `status(): {ready, reason}`, brancher 3 messages actionnables sur `reason`.]
+          const midiReady = (await midi.init().catch(() => false)) === true;
+          if (!midiReady) {
+            log({
+              runtime: id,
+              level: 'error',
+              msg: 'Sortie MIDI demandée mais aucun périphérique MIDI jouable — branche un périphérique MIDI (ou choisis une sortie audio). Aucun son MIDI ne sera émis.'
+            });
           }
         }
         // Per-actor routing (KAI-9): each note carries its OWN output layer — Kairos
