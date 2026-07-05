@@ -59,7 +59,7 @@ export const STARTERS: Starter[] = [
   },
   {
     id: 'bundled-03-scenes-A-B',
-    name: '03 — Sections enchaînées',
+    name: '03 — Sequenced sections',
     tagline: 'two sections sequenced in time — calm, then full',
     description:
       'One self-contained `.bps` that SEQUENCES two sections in time: `calm` (drums only), then `full` (drums + lead). Two Strudel code voices inlined as backticks. Ctrl+Enter to evaluate the whole sequence; Ctrl+. to hush.',
@@ -68,7 +68,7 @@ export const STARTERS: Starter[] = [
   },
   {
     id: 'bundled-04-scenes-select',
-    name: '04 — Sélecteur de scènes',
+    name: '04 — Scene selector',
     tagline: 'named selectable scenes — pick calm or full live',
     description:
       'One self-contained `.bps` with named scenes guarded by a flag: `calm` (drums only) and `full` (drums + lead). Open it, then use the scene buttons in the transport bar (or Alt+1 / Alt+2) to switch which scene is armed — each click re-derives the grammar with that scene selected. Ctrl+. to hush.',

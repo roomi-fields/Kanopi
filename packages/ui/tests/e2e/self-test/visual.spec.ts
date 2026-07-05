@@ -154,7 +154,7 @@ test('Library panel screenshot shows the bundled starters and Bol Processor show
   const starterNames = [
     '01 — Strudel solo',
     '02 — Strudel + Hydra',
-    '03 — Sections enchaînées',
+    '03 — Sequenced sections',
     'BP — Rotate scales',
     'BP — NotReich',
     'BP — Acceleration',

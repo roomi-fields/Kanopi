@@ -157,10 +157,10 @@ const CURATED: Record<string, DemoMeta> = {
     showcase: true
   },
   'cv-adsr': {
-    name: 'Acid Bass — niveaux d’enveloppe',
-    tagline: 'groupe vs per-note vs terminal, 3 enveloppes',
+    name: 'Acid Bass — envelope levels',
+    tagline: 'group vs per-note vs terminal, 3 envelopes',
     description:
-      'Banc complet des niveaux d’expression de l’enveloppe de cutoff, combinés : per-note (*:cutoff), GROUPE (cutoff:env1, une enveloppe sur la phrase), terminal (C2:cutoff), et trois enveloppes de caractère distinct (pluck sombre / pad ouvert / wah médian) — plus un LFO de panoramique.',
+      'A full bench of cutoff-envelope expression levels, combined: per-note (*:cutoff), GROUP (cutoff:env1, one envelope over the whole phrase), terminal (C2:cutoff), and three envelopes of distinct character (dark pluck / open pad / mid wah) — plus a panning LFO.',
     category: 'cv',
     outputs: ['audio'],
     level: 'intermediate',
@@ -179,10 +179,10 @@ const CURATED: Record<string, DemoMeta> = {
     showcase: false
   },
   'group-cutoff': {
-    name: 'Group cutoff — filtre de groupe',
-    tagline: 'la 1ʳᵉ note brillante, les suivantes sombres',
+    name: 'Group cutoff — group filter',
+    tagline: 'first note bright, the rest dark',
     description:
-      'Démo du filtre de GROUPE (portée règle) : une seule enveloppe de cutoff sur toute la phrase. La 1ʳᵉ note attrape l’attaque (filtre ouvert, brillante) ; les suivantes sont au sustain (cutoff bas, sombres). Réglée pour un contraste évident (decay long, sustain bas, notes longues).',
+      'A GROUP-filter demo (rule scope): a single cutoff envelope over the whole phrase. The first note catches the attack (filter open, bright); the rest sit at sustain (low cutoff, dark). Tuned for an obvious contrast (long decay, low sustain, long notes).',
     category: 'synthesis',
     outputs: ['audio'],
     level: 'didactic',
