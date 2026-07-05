@@ -33,12 +33,12 @@ describe('library catalog — filtering', () => {
 
   it('filters by category, language, output, level', () => {
     const it1 = item({
-      category: 'bpscript',
+      category: 'world',
       language: 'bpscript',
       outputs: ['midi'],
       level: 'advanced'
     });
-    expect(matchesFilters(it1, filters({ category: 'bpscript' }))).toBe(true);
+    expect(matchesFilters(it1, filters({ category: 'world' }))).toBe(true);
     expect(matchesFilters(it1, filters({ category: 'bp3' }))).toBe(false);
     expect(matchesFilters(it1, filters({ language: 'bpscript' }))).toBe(true);
     expect(matchesFilters(it1, filters({ output: 'midi' }))).toBe(true);
@@ -71,12 +71,12 @@ describe('library catalog — category counts', () => {
     const items = [
       item({ category: 'bp3', outputs: ['audio'] }),
       item({ category: 'bp3', outputs: ['text'] }),
-      item({ category: 'bpscript', outputs: ['audio'] })
+      item({ category: 'world', outputs: ['audio'] })
     ];
     const all = categoryCounts(items, EMPTY_FILTERS);
     expect(all.all).toBe(3);
     expect(all.bp3).toBe(2);
-    expect(all.bpscript).toBe(1);
+    expect(all.world).toBe(1);
 
     // An output filter narrows the counts (the category axis itself is ignored).
     const audioOnly = categoryCounts(items, filters({ output: 'audio' }));

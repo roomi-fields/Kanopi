@@ -2,12 +2,14 @@
 // Slow sine LFO sweeps the sound left-right
 // Pedal note stays center, arpeggios move in stereo
 
+@mod
 @core
 @controls
 @alphabet.western:browser
 @tempo:100
 
-cv sweep : mod.lfo(0.4, 0.9, shape:sine)
+// Modulateur descriptif : sweep EST un LFO sinus lent
+cv sweep : mod.lfo(rate:0.4, amplitude:0.9, shape:sine)
 
 S -> {G2 _ _ _ G2 _ _ _ (vel:60, wave:triangle), Arp Arp}
 
@@ -15,6 +17,7 @@ S -> {G2 _ _ _ G2 _ _ _ (vel:60, wave:triangle), Arp Arp}
 
 @mode:random
 
+// Branchement au point de paramètre : sweep module le panoramique (pan) de l'arpège
 Arp -> G4 B4 D5 G5 (pan: sweep, wave:sine, vel:75, attack:5, release:200) [weight:40]
 Arp -> D4 G4 B4 D5 (pan: sweep, wave:sine, vel:75, attack:5, release:200)
 Arp -> B3 D4 G4 B4 (pan: sweep, wave:sine, vel:75, attack:5, release:200) [weight:30]

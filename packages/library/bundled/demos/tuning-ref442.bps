@@ -1,0 +1,14 @@
+// Tuning: Reference pitch A4 = 442 Hz
+// European orchestral standard — slightly sharper than 440
+// SCENE_VALUES (hub [293]) : le diapason est une VALEUR (':'), l'accordage un
+// COMPOSANT ('.'). @tuning.western_12TET référence l'accordage ; @diapason:442
+// pose la hauteur de référence (override du 440 par défaut du composant).
+
+@core
+@controls
+@alphabet.western:browser
+@tuning.western_12TET
+@diapason:442
+@tempo:90
+
+S -> A4 _ E4 A4 _ E5 A5 _ _ _ (wave:sine, vel:85)

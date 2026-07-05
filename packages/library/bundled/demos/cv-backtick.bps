@@ -1,0 +1,27 @@
+// CV: Wobble Bass — custom JS curve for dubstep-style filter modulation
+// The curve oscillates faster and faster (exponential chirp), 0..1 over the note.
+//
+// SCENE forme CANONIQUE (décision hub 2026-07-04-cv-curve-syntaxe-backtick-type.md) :
+//   • `cv wobble : `js: …`` — `cv` type le RÔLE (modulation) ; le TAG `js:` type le
+//     LANGAGE (obligatoire, jamais deviné). La courbe est déclarée, réutilisable.
+//   • Branchement AU POINT DE PARAMÈTRE : `C2(cutoff:wobble)` applique la courbe au
+//     cutoff du filtre. Le transport = celui de l'acteur.
+// (Remplace l'ancienne forme `wobble(Bass, browser) = …` REJETÉE : elle collisionnait
+//  avec la macro et son backtick n'était pas typé.)
+
+@core
+@controls
+@alphabet.western:browser
+@tempo:70
+
+cv wobble : `js: (t, dur) => { const rate = 2 + 20 * (t/dur) * (t/dur); return Math.sin(t * rate * Math.PI * 2) * 0.5 + 0.5; }`
+
+S -> Bass Bass Bass Bass
+
+-----
+
+@mode:random
+
+Bass -> C2(cutoff:wobble) _ _ C2 _ _ C2 _ (wave:sawtooth, vel:110, filterQ:6) [weight:50]
+Bass -> C2(cutoff:wobble) _ Eb2 _ C2 _ _ - (wave:sawtooth, vel:110, filterQ:6)
+Bass -> C2(cutoff:wobble) _ _ _ _ _ _ - (wave:sawtooth, vel:110, filterQ:6) [weight:30]

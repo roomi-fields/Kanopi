@@ -1,0 +1,13 @@
+// Tutorial 3 — Silence and prolongation
+//
+//   -   silence (takes 1 beat, like a note)
+//   _   prolongation (extends the previous note by 1 beat)
+//
+// C4 _ = C4 held for 2 beats
+// C4 - D4 = C4, 1 beat silence, then D4
+
+@core
+@controls
+@alphabet.western:browser
+
+S -> C4 _ _ D4 - E4 _ F4 G4 _ _ _

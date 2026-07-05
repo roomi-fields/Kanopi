@@ -1,36 +1,23 @@
-// cv-adsr — banc COMPLET des niveaux d'expression de l'enveloppe de cutoff, COMBINÉS :
-//   • per-note (`*:cutoff:Env`, règle 1) — chaque note re-déclenche l'enveloppe ;
-//   • GROUPE (`cutoff:env1`, règle 2) — UNE enveloppe partagée sur toute la phrase ;
-//   • terminal (`C2:cutoff:env1`, règle 3) — l'enveloppe seulement sur les C2 ;
-//   • trois enveloppes de CARACTÈRE distinct (env1/env2/env3), tirées au sort par la voix Env.
-// La structure (polymétrie, @mode:random, règles) est celle d'origine — SEULES les enveloppes
-// sont réglées pour que les contrastes s'entendent :
-//   env1 = PLUCK sombre  : attaque instantanée → chute vers un cutoff TRÈS bas (65 Hz) ;
-//   env2 = PAD ouvert     : attaque douce → reste BRILLANT (sustain haut ~3600 Hz) ;
-//   env3 = WAH long       : attaque instantanée → longue descente vers un cutoff MÉDIAN (500 Hz).
-// À l'oreille : le GROUPE fait UNE ouverture au début de la phrase (1ʳᵉ note brillante, suite
-// sombre) ; le per-note fait une ouverture PAR note ; et env1/env2/env3 sonnent nettement
-// différentes (sombre / ouverte / médiane).
+// CV: Acid Bass — ADSR filter envelope on resonant sawtooth
+// TB-303 style: short attack, sharp decay, low sustain
+// The filter opens on each phrase then closes
 
+@mod
 @core
 @controls
 @alphabet.western:browser
 @tempo:138
 
-cv env1   : mod.adsr(attack:5, decay:400, sustain:0.15, release:350)
-cv env2   : mod.adsr(attack:120, decay:150, sustain:0.8, release:400)
-cv env3   : mod.adsr(attack:5, decay:600, sustain:0.45, release:400)
-cv panLfo : mod.lfo(rate:0.3, amplitude:0.45, shape:sine)
+// Modulateur descriptif : env1 EST une enveloppe adsr (sortie 0..1)
+cv env1 : mod.adsr(attack:5, decay:150, sustain:0.2, release:400)
 
-S -> {Bass Bass Bass Bass, Env Env Env Env }
+S -> Bass Bass Bass Bass
 
 -----
 
 @mode:random
 
-Bass -> C2 C2 C3 C2 - C2 Eb2 C2 (*:cutoff:Env, pan: panLfo, wave:sawtooth, vel:100, filterQ:8) [weight:40]
-Bass -> C2 - Eb2 F2 F#2 F2 Eb2 - (cutoff:env1, pan: panLfo, wave:sawtooth, vel:100, filterQ:8) [weight:30]
-Bass -> C2 C2 C2 - G2 - Eb2 C2 (C2:cutoff:env1, pan: panLfo, wave:sawtooth, vel:100, filterQ:8)
-Env -> env1
-Env -> env2
-Env -> env3
+// Branchement au point de paramètre : env1 module la coupure (cutoff) de CHAQUE note (sujet *)
+Bass -> C2 C2 C3 C2 - C2 Eb2 C2 (*:cutoff: env1, wave:sawtooth, vel:100, filterQ:8) [weight:50]
+Bass -> C2 - Eb2 F2 F#2 F2 Eb2 - (*:cutoff: env1, wave:sawtooth, vel:100, filterQ:8) [weight:30]
+Bass -> C2 C2 C2 - G2 - Eb2 C2 (*:cutoff: env1, wave:sawtooth, vel:100, filterQ:8)

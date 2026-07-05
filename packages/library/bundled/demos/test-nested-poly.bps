@@ -1,0 +1,19 @@
+// Test Nested Poly - structures imbriquees
+// Polymetre a 2 niveaux + sequence lineaire
+
+@core
+@controls
+@alphabet.western:browser
+@tempo:100
+
+// Niveau 1: melodie vs basse
+S -> Intro {Melodie, Basse} Coda
+
+Intro -> C4 E4 G4
+Coda -> G4 E4 C4
+
+// Niveau 2: la melodie est elle-meme polymetrique (3 contre 2)
+Melodie -> {A4 B4 C5, D5 E5} {F5 G5 A5 B5, C5 D5 E5}
+
+// Basse simple
+Basse -> C2 G2 C2 G2 C2 G2 E2 G2

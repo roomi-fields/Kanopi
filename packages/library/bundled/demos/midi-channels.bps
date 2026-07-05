@@ -1,0 +1,12 @@
+// MIDI Channels — notes réparties sur plusieurs canaux
+// Utile pour piloter plusieurs synthés ou timbres
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> Voice1 Voice2 Voice3
+
+Voice1 -> C4(chan:1) E4(chan:1) G4(chan:1) C5(chan:1)
+Voice2 -> C3(chan:2) G3(chan:2) C4(chan:2) G4(chan:2)
+Voice3 -> C2(chan:3) - G2(chan:3) - C3(chan:3) - G3(chan:3) -

@@ -1,12 +1,11 @@
-// Maqam Rast — Arabic just-intonation scale (zalzalian)
-// Uses the authentic Arabic degree names of maqam Rast:
-//   rast dukah sikah jaharkah nawa husayni awj
-// sikah (3rd) and awj (7th) are NEUTRAL — the quarter-tone signature of the maqam.
+// Maqam Rast — Arabic quarter-tone scale
+// Noms de degrés arabes (perde) : rast dukah sikah jaharkah nawa husayni awj,
+// avec les intervalles en quarts de ton de l'accordage arabic_24TET.
 
 @core
 @controls
 @alphabet.arabic:browser
-@tuning:maqam_rast
+@tuning.arabic_24TET
 @tempo:70
 
 S -> Sayr Rujoo Qarar

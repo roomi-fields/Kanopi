@@ -18,7 +18,17 @@ class LibraryStore {
   readonly items: LibraryItem[] = LIBRARY_ITEMS;
 
   get filtered(): LibraryItem[] {
-    return this.items.filter((i) => matchesFilters(i, this.filters));
+    // Filter, then sort by `order` WITHIN each category (only tutorials carry an
+    // order → the `learn` rail renders 1→10). Category groups keep their original
+    // relative position; a stable index tie-break preserves order elsewhere.
+    return this.items
+      .filter((i) => matchesFilters(i, this.filters))
+      .map((item, i) => ({ item, i }))
+      .sort((a, b) => {
+        if (a.item.category !== b.item.category) return a.i - b.i;
+        return (a.item.order ?? 0) - (b.item.order ?? 0) || a.i - b.i;
+      })
+      .map((x) => x.item);
   }
 
   get counts(): Record<LibraryCategory | 'all', number> {

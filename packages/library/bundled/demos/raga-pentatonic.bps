@@ -1,0 +1,13 @@
+// Raga Mohanam — pentatonic ascending/descending
+// sa re ga pa dha — sargam notation
+
+@core
+@controls
+@alphabet.sargam:browser
+@tuning.sargam_22shruti
+
+S -> Aroha Avaroha Phrase
+
+Aroha -> sa re ga pa dha (wave:sine, vel:85)
+Avaroha -> dha pa ga re sa
+Phrase -> ga _ pa dha - sa dha pa _ ga re sa _ _ (vel:70)

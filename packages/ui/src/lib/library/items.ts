@@ -20,7 +20,7 @@ interface Axes {
 // Keyed by starter id. Anything unmapped falls back to a sensible default.
 const STARTER_AXES: Record<string, Axes> = {
   'bundled-01-strudel-solo': {
-    category: 'other-langs',
+    category: 'codevoice',
     language: 'strudel',
     outputs: ['audio'],
     level: 'didactic',
@@ -28,7 +28,7 @@ const STARTER_AXES: Record<string, Axes> = {
     showcase: true
   },
   'bundled-02-strudel-hydra': {
-    category: 'orchestrator',
+    category: 'codevoice',
     language: 'strudel',
     outputs: ['audio', 'visual'],
     level: 'intermediate',
@@ -52,35 +52,35 @@ const STARTER_AXES: Record<string, Axes> = {
     showcase: true
   },
   'tidal-intro': {
-    category: 'orchestrator',
+    category: 'codevoice',
     language: 'tidal',
     outputs: ['audio'],
     level: 'didactic',
     tags: ['tidal', 'scenes', 'multi-actor']
   },
   'hydra-audio': {
-    category: 'orchestrator',
+    category: 'codevoice',
     language: 'hydra',
     outputs: ['audio', 'visual'],
     level: 'didactic',
     tags: ['visuals', 'hydra', 'scenes']
   },
   'mercury-intro': {
-    category: 'other-langs',
+    category: 'codevoice',
     language: 'mercury',
     outputs: ['audio'],
     level: 'didactic',
     tags: ['mercury']
   },
   'csound-intro': {
-    category: 'other-langs',
+    category: 'codevoice',
     language: 'csound',
     outputs: ['audio'],
     level: 'intermediate',
     tags: ['csound']
   },
   'js-webaudio': {
-    category: 'other-langs',
+    category: 'codevoice',
     language: 'js',
     outputs: ['audio'],
     level: 'intermediate',
@@ -137,7 +137,7 @@ const STARTER_AXES: Record<string, Axes> = {
 };
 
 const DEFAULT_AXES: Axes = {
-  category: 'other-langs',
+  category: 'basics',
   language: 'bpscript',
   outputs: ['audio'],
   level: 'intermediate',

@@ -4,13 +4,23 @@
 // library space sorts/filters by. UI (the dedicated space) and content (the
 // owner-filled catalogue) build on this; this file holds NO UI and NO content.
 
-// The five fixed categories (brief, lot 2). Order here is the display order.
+// THEME-primary taxonomy (decision Romain 2026-07-04): the primary rail is the
+// MUSICAL theme, not the runtime/language. Runtime/language stays SECONDARY —
+// the `language` field drives the card badge and its own independent filter.
+// Order here is the display order in the rail.
 export type LibraryCategory =
-  | 'bp3' // BP3 `.gr` grammars that play
-  | 'bpscript' // BPScript on its own
-  | 'bpscript-backticks' // BPScript with embedded code in backticks
+  | 'learn' // guided tutorials, in order 1→10
+  | 'basics' // core sequencing gestures (scales, arps, rests, ties)
+  | 'tuning' // temperaments & references (12-TET, just, A=442…)
+  | 'world' // living traditions (maqam, gamelan, raga, shakuhachi…)
+  | 'synthesis' // waveform/timbre/filter/envelope studies
+  | 'cv' // control-voltage modulation (envelopes, LFOs, curves)
+  | 'polymetric' // polymeter & polyrhythm
+  | 'generative' // rule rewriting, random selection, flags
+  | 'midi' // MIDI output scenes
   | 'orchestrator' // multi-actor `.bps` (cross-runtime, multi-voice)
-  | 'other-langs'; // Tidal, Hydra, Strudel, Mercury, p5, Csound…
+  | 'codevoice' // single-language code voices (Strudel, Hydra, Tidal, JS…)
+  | 'bp3'; // BP3 `.gr` grammars that play
 
 // What a scene emits — drives the "output" filter. A scene can have several
 // (an orchestrator session mixes audio + visuals + text).
@@ -38,19 +48,48 @@ export interface LibraryItem {
   tags: string[];
   /** the "⭐ vitrine / percutante" flag — surfaces in the showcase filter */
   showcase?: boolean;
+  /** intra-category display order (only tutorials need it; sorted ascending) */
+  order?: number;
   /** the file to open/focus once loaded (a `.bps`, `.gr`, …) */
   sessionFile: string;
   /** every file the scene drops into the workspace */
   files: LibraryFile[];
 }
 
-// Category display metadata — label + one-line hint for the category rail.
+// Category display metadata — label (fr) + one-line hint for the category rail.
 export const CATEGORIES: { id: LibraryCategory; label: string; hint: string }[] = [
-  { id: 'bp3', label: 'BP3', hint: 'Bol Processor grammars (.gr) that play' },
-  { id: 'bpscript', label: 'BPScript', hint: 'The native sequencer language, on its own' },
-  { id: 'bpscript-backticks', label: '+ code', hint: 'BPScript with embedded code (backticks)' },
-  { id: 'orchestrator', label: 'Orchestrator', hint: 'Multi-actor sessions across runtimes' },
-  { id: 'other-langs', label: 'Tidal & others', hint: 'Strudel, Hydra, Mercury, p5, Csound…' }
+  { id: 'learn', label: 'Apprendre', hint: 'Tutoriels guidés, dans l’ordre 1→10' },
+  {
+    id: 'basics',
+    label: 'Bases',
+    hint: 'Gestes fondamentaux : gammes, arpèges, silences, liaisons'
+  },
+  { id: 'tuning', label: 'Accordages', hint: 'Tempéraments et références (12-TET, juste, A=442…)' },
+  { id: 'world', label: 'Traditions du monde', hint: 'Maqâm, gamelan, râga, shakuhachi, solfège…' },
+  {
+    id: 'synthesis',
+    label: 'Synthèse & timbre',
+    hint: 'Formes d’onde, filtres, enveloppes, panoramique'
+  },
+  { id: 'cv', label: 'Modulation (CV)', hint: 'Enveloppes, LFO et courbes de modulation' },
+  { id: 'polymetric', label: 'Polymétrie & rythme', hint: 'Polymètre et polyrythmie superposés' },
+  {
+    id: 'generative',
+    label: 'Génératif',
+    hint: 'Réécriture, choix aléatoire, drapeaux et compteurs'
+  },
+  { id: 'midi', label: 'MIDI', hint: 'Scènes routées vers une sortie MIDI' },
+  {
+    id: 'orchestrator',
+    label: 'Orchestrateur',
+    hint: 'Sessions multi-acteurs à travers les runtimes'
+  },
+  {
+    id: 'codevoice',
+    label: 'Voix de code',
+    hint: 'Strudel, Hydra, Tidal, Mercury, p5, Csound, JS…'
+  },
+  { id: 'bp3', label: 'BP3', hint: 'Grammaires Bol Processor (.gr) qui jouent' }
 ];
 
 // Filter axes the library space exposes. Each is independent; an item matches a
@@ -94,14 +133,8 @@ export function categoryCounts(
   f: LibraryFilters
 ): Record<LibraryCategory | 'all', number> {
   const base = { ...f, category: 'all' as const };
-  const counts = {
-    all: 0,
-    bp3: 0,
-    bpscript: 0,
-    'bpscript-backticks': 0,
-    orchestrator: 0,
-    'other-langs': 0
-  } as Record<LibraryCategory | 'all', number>;
+  const counts = { all: 0 } as Record<LibraryCategory | 'all', number>;
+  for (const c of CATEGORIES) counts[c.id] = 0;
   for (const item of items) {
     if (!matchesFilters(item, base)) continue;
     counts.all++;
