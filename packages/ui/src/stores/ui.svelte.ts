@@ -9,6 +9,23 @@ export type ActivityView =
   | 'account';
 export type RightPanelTab = 'actors' | 'scenes' | 'inspector';
 export type BottomPanelTab = 'console' | 'text' | 'structure';
+export type Theme = 'dark' | 'light';
+
+const THEME_KEY = 'kanopi.theme';
+
+function loadTheme(): Theme {
+  try {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === 'light' || saved === 'dark') return saved;
+  } catch {
+    /* localStorage unavailable (private mode, tests) — fall back to dark */
+  }
+  return 'dark';
+}
+
+function applyTheme(t: Theme) {
+  document.documentElement.setAttribute('data-theme', t);
+}
 
 class UiStore {
   activeActivityView = $state<ActivityView>('files');
@@ -21,6 +38,21 @@ class UiStore {
   paletteOpen = $state(false);
   sidebarWidth = $state(260);
   rightPanelWidth = $state(300);
+  theme = $state<Theme>(loadTheme());
+
+  constructor() {
+    applyTheme(this.theme);
+  }
+
+  toggleTheme() {
+    this.theme = this.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(this.theme);
+    try {
+      localStorage.setItem(THEME_KEY, this.theme);
+    } catch {
+      /* best-effort persistence only */
+    }
+  }
 
   setSidebarWidth(n: number) {
     this.sidebarWidth = Math.max(160, Math.min(600, n));

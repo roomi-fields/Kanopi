@@ -48,7 +48,7 @@
 
 <style>
   .activity-bar {
-    background: linear-gradient(to bottom, #12151a, #0f1215);
+    background: linear-gradient(to bottom, var(--bar-gradient-a), var(--bar-gradient-b));
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;

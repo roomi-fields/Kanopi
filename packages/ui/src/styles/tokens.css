@@ -6,6 +6,10 @@
   --border: #24282e;
   --border-dim: #1b1e22;
   --divider: #20242a;
+  /* Subtle gradient used by chrome bars (Topbar, ActivityBar) — a hair darker
+     than --surface/--bg so the bar reads as a distinct strip without a hard edge. */
+  --bar-gradient-a: #171a1f;
+  --bar-gradient-b: #13161a;
 
   --text: #e8e4da;
   --text-muted: #8a8c91;
@@ -38,4 +42,43 @@
   --font-mono: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
   --font-code: 'JetBrains Mono', 'IBM Plex Mono', monospace;
   --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+/* Thème clair — bascule via le bouton Settings (Topbar), `data-theme` sur <html>,
+   persisté en localStorage (ui.svelte.ts). Même jeu de noms de variables ; seules
+   les valeurs changent, donc tout composant qui lit déjà var(--xxx) suit sans
+   modification. Palette dérivée par inversion de luminance + accents désaturés
+   (l'amber/rouge/vert restent lisibles sur fond clair). */
+:root[data-theme='light'] {
+  --bg: #f7f6f3;
+  --surface: #ffffff;
+  --panel: #f1efe9;
+  --elevated: #e7e4dc;
+  --border: #d8d4c9;
+  --border-dim: #e3e0d7;
+  --divider: #ddd9cf;
+  --bar-gradient-a: #fbfaf7;
+  --bar-gradient-b: #f1efe9;
+
+  --text: #24262b;
+  --text-muted: #5c5f66;
+  --text-dim: #8a8d93;
+  --text-faint: #aeb1b6;
+
+  --amber: #b5730f;
+  --amber-soft: #8a5a12;
+  --amber-glow: rgba(181, 115, 15, 0.25);
+  --amber-dim: #d9a35f;
+
+  --green: #3f8f39;
+  --green-glow: rgba(63, 143, 57, 0.35);
+  --red: #b23a3a;
+  --red-glow: rgba(178, 58, 58, 0.3);
+
+  --tidal: #7a5a94;
+  --sc: #3c6fa0;
+  --hydra: #9a6f2e;
+  --python: #3d7a5c;
+  --kanopi: #b5730f;
+  --cyan: #2f7c85;
 }

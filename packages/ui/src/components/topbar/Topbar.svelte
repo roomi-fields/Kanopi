@@ -48,18 +48,31 @@
       <kbd>⌘</kbd><kbd>K</kbd>
       <span>command</span>
     </button>
-    <button class="icon-btn" type="button" title="Settings">
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 14 14"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.2"
-      >
-        <circle cx="7" cy="7" r="2" />
-        <path d="M7 1v2M7 11v2M1 7h2M11 7h2M3 3l1.4 1.4M9.6 9.6L11 11M3 11l1.4-1.4M9.6 4.4L11 3" />
-      </svg>
+    <button
+      class="icon-btn"
+      type="button"
+      title={ui.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+      onclick={() => ui.toggleTheme()}
+    >
+      {#if ui.theme === 'dark'}
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.2"
+        >
+          <circle cx="7" cy="7" r="3" />
+          <path
+            d="M7 0.5v2M7 11.5v2M0.5 7h2M11.5 7h2M2.3 2.3l1.4 1.4M10.3 10.3l1.4 1.4M2.3 11.7l1.4-1.4M10.3 3.7l1.4-1.4"
+          />
+        </svg>
+      {:else}
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" stroke="none">
+          <path d="M6.5 1a5.5 5.5 0 1 0 6 9.3A6.2 6.2 0 0 1 6.5 1Z" />
+        </svg>
+      {/if}
     </button>
   </div>
 </header>
@@ -69,7 +82,7 @@
     display: grid;
     grid-template-columns: 240px 1fr auto;
     align-items: center;
-    background: linear-gradient(to bottom, #171a1f, #13161a);
+    background: linear-gradient(to bottom, var(--bar-gradient-a), var(--bar-gradient-b));
     border-bottom: 1px solid var(--border);
     padding: 0 16px 0 14px;
     position: relative;
