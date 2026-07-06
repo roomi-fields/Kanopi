@@ -11,7 +11,15 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helper
 //
 // Cold Mercury boot = Vite-transforming the ~1.5 MB mercury-engine bundle on
 // first eval — same 90s budget the legacy spec used for the same reason.
-test('a .bps mercury code voice evaluates and produces audio', async ({ page }) => {
+//
+// SKIPPED (Romain, 2026-07-06): intermittent HTTP 429 from an external audio
+// resource under gate load ("Error loading audio file" — rate-limited third
+// party, not a Kanopi/Mercury regression). Passes 2/2 in isolation; fails
+// non-deterministically only when the full e2e suite runs back-to-back and
+// exhausts the remote quota. Not worth retry-flakiness in every gate run —
+// re-enable once the audio dependency is self-hosted or the flakiness source
+// is otherwise removed.
+test.skip('a .bps mercury code voice evaluates and produces audio', async ({ page }) => {
   test.setTimeout(90_000);
 
   const audio = await setupAudioCapture(page);
