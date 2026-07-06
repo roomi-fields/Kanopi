@@ -54,9 +54,19 @@ export const midiOutput = {
   },
 
   /** Select a MIDI output by ID (or null to clear). Persists in runtime-midi's session
-   *  singleton — a scene's next play resolves it via its own `status()`. */
+   *  singleton — a scene's next play resolves it via its own `status()`. Re-produces the
+   *  active scene so a `:midi` orchestrator that had FAILED the gate (no device yet, so
+   *  `onActorsFromGrammar` never ran — bpx-adapter.ts:1817-1838 throws BEFORE the actor
+   *  table is published) re-runs now that the gate can pass, populating the Actors panel.
+   *  Lazy import: avoids a module cycle (lib/midi → stores/blocks → lib/core → …). */
   select(id: string | null) {
     midi.setOutput(id);
     selectedId = id;
+    void import('../../stores/blocks.svelte').then(({ openBlocks }) => {
+      void import('../../stores/workspace.svelte').then(({ workspace }) => {
+        const activeTab = workspace.activeTabId;
+        if (activeTab) void openBlocks.produceLoadedProgram(activeTab);
+      });
+    });
   }
 };
