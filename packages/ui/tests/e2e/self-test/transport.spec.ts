@@ -24,9 +24,12 @@ const POS_LOCATOR = '.sb-item[title^="bar.beat"] .num';
 
 // Minimal BPScript scene: 8 Western pitches → 8 beats at the default 128 BPM.
 // Enough span for bar.beat to visibly advance once the Kronos Transport plays it.
+// `:browser` (webaudio), NOT `:midi`: this probe tests the TRANSPORT, and since the
+// MIDI fail-loud GATE a `:midi` scene without a device (no setupFakeMidi here)
+// would be BLOCKED at eval — the probe must stay playable without MIDI hardware.
 const PROBE_SCENE = `@core
 @controls
-@alphabet.western:midi
+@alphabet.western:browser
 
 S -> C4 D4 E4 G4 C5 G4 E4 C4
 `;

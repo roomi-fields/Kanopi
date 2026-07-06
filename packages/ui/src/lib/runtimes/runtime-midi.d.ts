@@ -50,13 +50,42 @@ export interface MidiRuntimeOptions {
   velocitySeed?: number;
 }
 
-/** Sortie MIDI — adaptateur UNIFORME (frontière hôte↔runtimes de sortie). POSSÈDE son
- *  MidiTransport, résout le canal (`output.channel`), normalise la vélocité, met en forme
- *  l'événement — l'hôte ne fait rien de tout ça. Kronos appelle `send(ev)`/`bindClock` ;
- *  l'hôte appelle `init()` (acquisition Web MIDI) et `dispose()` (teardown). */
+/** Raison de non-disponibilité de la sortie MIDI (fail-loud, contrat §3). `no-selection` :
+ *  l'accès Web MIDI est ouvert et des ports existent, mais aucun n'a été explicitement
+ *  choisi par l'utilisateur (le loopback ALSA « Midi Through » est TOUJOURS présent mais
+ *  ne compte jamais comme jouable). */
+export type MidiUnavailableReason = null | 'no-webmidi' | 'no-output' | 'denied' | 'no-selection';
+
+/** Sortie MIDI — adaptateur UNIFORME (frontière hôte↔runtimes de sortie). POSSÈDE SEUL
+ *  l'accès Web MIDI (singleton de module, persistant inter-scènes) + son MidiTransport ;
+ *  résout le canal (`output.channel`), normalise la vélocité, met en forme l'événement —
+ *  l'hôte ne fait rien de tout ça et n'ouvre JAMAIS son propre `requestMIDIAccess`.
+ *  Kronos appelle `send(ev)`/`bindClock` ; l'hôte appelle `init()` (ouvre/réutilise
+ *  l'accès), `listOutputs()`/`setOutput(id)` (sélection display-only par ID — l'objet
+ *  `MIDIOutput` ne traverse JAMAIS la frontière), `status()` (gate AU PLAY), `dispose()`.
+ *
+ *  Contrat pinné : hub/contrats/kanopi-runtime-midi.md §3 (2bcbdc9). */
 export interface MidiRuntime {
-  init(): Promise<boolean | void>;
-  setOutput(port: unknown): void;
+  /** Ouvre (ou réutilise) l'accès Web MIDI singleton. `ok` reflète UNIQUEMENT « l'accès
+   *  est ouvert ET ≥1 port existe », INDÉPENDAMMENT de toute sélection — la sélection
+   *  réelle se lit via `status()`. Ne PAS gater sur `init().ok` (un port existe presque
+   *  toujours — loopback ALSA — même sans device choisi : le gate mordrait jamais). */
+  init(): Promise<{ ok: boolean; reason: null | 'no-webmidi' | 'no-output' | 'denied' }>;
+  /** Énumération DISPLAY-ONLY des sorties ({id, name}, jamais l'objet MIDIOutput) — peuple
+   *  le sélecteur hôte. Vide tant que `init()` n'a pas ouvert l'accès. */
+  listOutputs(): { id: string; name: string }[];
+  /** Sélectionne la sortie PAR ID (RUPTURE : remplace l'ancien `setOutput(port)` qui
+   *  acceptait l'objet MIDIOutput — root cause du silence croisé-accès). La sélection
+   *  persiste en session (singleton) : une prochaine scène la retrouve sans rien retenir
+   *  côté hôte. */
+  setOutput(id: string | null): void;
+  /** Sondage synchrone de disponibilité — l'hôte le sonde AU PLAY pour GATER (ready=false
+   *  → cri actionnable mappé sur `reason`, jamais un play muet). `ready` reflète un device
+   *  EXPLICITEMENT sélectionné, pas juste « un accès est ouvert ». */
+  status(): { ready: boolean; reason: MidiUnavailableReason };
+  /** Relais bonus du hot-plug ALSA/OS — rafraîchit le dropdown hôte (pas un fail-loud
+   *  runtime). Renvoie le désabonnement. */
+  onDevicesChanged(cb: (outputs: { id: string; name: string }[]) => void): () => void;
   bindClock(clock: unknown): void;
   send(event: unknown): void;
   stop(): void;

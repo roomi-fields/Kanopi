@@ -74,6 +74,16 @@ test('an EXPLICIT transport:midi actor routes BPx tokens to runtime-midi (NoteOn
 
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
 
+  // Fail-loud gate (contract §3, 2bcbdc9): a `:midi` scene without an EXPLICITLY
+  // selected device is blocked at eval (`status().ready===false`, reason
+  // 'no-selection') even though our fake Web MIDI access has a port. Select the
+  // fake device via the real Hardware panel UI before evaluating — the same path
+  // Romain uses.
+  await page.click('.ab-btn[title="Hardware"]');
+  const outSection = page.locator('.hw section').filter({ hasText: 'MIDI Output' });
+  await outSection.locator('button').click();
+  await outSection.locator('select.port-select').selectOption({ label: 'Kanopi Fake MIDI Out' });
+
   // Ctrl+Enter evaluates the whole scene; the eval is the user gesture that
   // unlocks requestMIDIAccess (our fake) and the AudioContext clock.
   await evalBlockAt(page, 1);
@@ -170,6 +180,12 @@ test('per-actor channel + inline (ch:5) override travel to the MIDI bytes', asyn
     }
   });
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
+
+  // Fail-loud gate (contract §3, 2bcbdc9): select the fake device before eval.
+  await page.click('.ab-btn[title="Hardware"]');
+  const outSection = page.locator('.hw section').filter({ hasText: 'MIDI Output' });
+  await outSection.locator('button').click();
+  await outSection.locator('select.port-select').selectOption({ label: 'Kanopi Fake MIDI Out' });
 
   await evalBlockAt(page, 1);
 

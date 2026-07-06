@@ -1819,22 +1819,32 @@ function makeBpxAdapter(
           // sur Kronos dans startKronosAudio ; teardown = `midi.dispose()` (ci-dessous), plus de
           // `dispatcher.addTransport` (le paquet possède le cycle de vie de son transport).
           midi = createMidiRuntime({});
-          // RÈGLE PRODUIT (Romain, [619]) : une scène écrite pour MIDI sans périphérique au PLAY
-          // NE joue PAS en silence trompeur — l'hôte CRIE clairement. Contrat runtime-midi (épinglé
-          // v2 §3, coord [621]) : `init(): Promise<boolean>` — `false` = aucune sortie MIDI jouable
-          // acquise (pas de Web MIDI, 0 port, ou accès refusé), `true` = un port est prêt. On CAPTURE
-          // ce booléen (l'ancien `.catch(()=>{})` le JETAIT → silence muet). Répartition des rôles
-          // (coord [621]) : runtime-midi SIGNALE (sortie pure, sans UI), l'hôte ÉMET le cri (il
-          // possède le canal d'erreur). Pas de repli webaudio : chaque event route par son propre
-          // `output.runtime` (déjà conforme). [TODO refinement additif : quand runtime-midi fige
-          //  `status(): {ready, reason}`, brancher 3 messages actionnables sur `reason`.]
-          const midiReady = (await midi.init().catch(() => false)) === true;
-          if (!midiReady) {
-            log({
-              runtime: id,
-              level: 'error',
-              msg: 'Sortie MIDI demandée mais aucun périphérique MIDI jouable — branche un périphérique MIDI (ou choisis une sortie audio). Aucun son MIDI ne sera émis.'
-            });
+          // RÈGLE PRODUIT (Romain, [619]) : une scène écrite pour MIDI sans périphérique au
+          // PLAY NE joue PAS en silence trompeur — l'hôte GATE (bloque) et CRIE. Contrat pinné
+          // hub/contrats/kanopi-runtime-midi.md §3 (2bcbdc9). `init()` ouvre/réutilise le
+          // SINGLETON d'accès (device sélectionné dans une scène précédente persiste — on ne
+          // retient rien côté hôte) et NE DOIT PAS servir de gate : `init().ok` reflète « un
+          // port existe » (le loopback ALSA « Midi Through » est TOUJOURS là) même SANS device
+          // choisi — gater dessus laisserait le play muet passer (root cause du bug remonté
+          // par Romain [647]). Le GATE réel sonde `status().ready` APRÈS init, qui reflète un
+          // device EXPLICITEMENT sélectionné (résolu par setOutput(id) dans le panneau
+          // Hardware, hors playback). ready===false → throw un message actionnable mappé sur
+          // reason (ajoute 'no-selection' : aucun device choisi malgré un accès disponible).
+          await midi.init().catch(() => undefined);
+          const { ready, reason } = midi.status();
+          if (!ready) {
+            midi.dispose();
+            midi = undefined;
+            const msg =
+              reason === 'no-webmidi'
+                ? 'Ce navigateur ne supporte pas Web MIDI — la sortie MIDI est indisponible.'
+                : reason === 'no-output'
+                  ? 'Aucun périphérique MIDI détecté — branche un périphérique MIDI, puis réessaie.'
+                  : reason === 'no-selection'
+                    ? 'Aucun périphérique MIDI sélectionné — choisis-en un dans le panneau Hardware, puis réessaie.'
+                    : 'Accès MIDI refusé — autorise le MIDI dans les paramètres de ce site, puis réessaie.';
+            log({ runtime: id, level: 'error', msg });
+            throw new Error(msg);
           }
         }
         // Per-actor routing (KAI-9): each note carries its OWN output layer — Kairos

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { core } from '../../lib/core';
   import { listPorts } from '../../lib/midi/midi-input';
+  import { midiOutput } from '../../lib/midi/midi-output.svelte';
 
   let ports = $state<string[]>(listPorts());
   let enabled = $state(false);
@@ -16,11 +17,16 @@
     enabled = true;
     busy = false;
   }
+
+  let outEnabled = $derived(midiOutput.accessGranted === true);
+  async function enableMidiOutput() {
+    await midiOutput.requestAccess();
+  }
 </script>
 
 <div class="hw">
   <section>
-    <h4>WebMIDI</h4>
+    <h4>MIDI Input</h4>
     {#if !enabled}
       <button class="enable" type="button" disabled={busy} onclick={enable}>
         {busy ? '…' : 'Enable MIDI input'}
@@ -35,6 +41,32 @@
           <li><span class="dot"></span>{p}</li>
         {/each}
       </ul>
+    {/if}
+  </section>
+
+  <section>
+    <h4>MIDI Output</h4>
+    {#if !outEnabled}
+      <button class="enable" type="button" disabled={midiOutput.busy} onclick={enableMidiOutput}>
+        {midiOutput.busy ? '…' : 'Enable MIDI output'}
+      </button>
+      <p class="hint">
+        Browser will prompt for permission. Select a device to route MIDI scenes to.
+      </p>
+    {:else if midiOutput.outputs.length === 0}
+      <p class="hint">No MIDI output detected. Plug a device and click refresh.</p>
+      <button class="enable" type="button" onclick={enableMidiOutput}>Refresh</button>
+    {:else}
+      <select
+        class="port-select"
+        value={midiOutput.selectedId ?? ''}
+        onchange={(e) => midiOutput.select((e.target as HTMLSelectElement).value || null)}
+      >
+        <option value="">— choose a device —</option>
+        {#each midiOutput.outputs as p (p.id)}
+          <option value={p.id}>{p.name}</option>
+        {/each}
+      </select>
     {/if}
   </section>
 </div>
@@ -96,5 +128,19 @@
     border-radius: 50%;
     background: var(--green);
     box-shadow: 0 0 5px var(--green-glow);
+  }
+  .port-select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 11px;
+    font-family: var(--font-mono);
+  }
+  .port-select:focus {
+    border-color: var(--amber);
+    outline: none;
   }
 </style>
