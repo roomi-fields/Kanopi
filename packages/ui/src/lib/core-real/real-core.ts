@@ -10,6 +10,10 @@ import {
   type PublishedActor
 } from '../runtimes/bpx-adapter';
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
+// KAN-UX3 — la couche mute MIXER (intention performeur, persistante) : consultée en
+// garde des chemins d'armement pour qu'un arm/replay/publish ne ré-arme jamais un
+// acteur que le mixer tient muet (module pur, importable sans cycle).
+import { mixerMutedFor } from '../mixer/mixer-intent';
 // VOIE B (chantier voix-code-transport [523]) : le transport Kronos partagé des voix de code
 // AUTONOMES — plus aucune voix hors transport. L'éval enregistre la voix (registerCodeVoice),
 // le cœur relaie Stop/Play/hush au handle (le relais lifecycle coupe/gèle/reprend les moteurs).
@@ -141,6 +145,13 @@ class RealCore implements CoreApi {
           active: true
         }))
       );
+      // KAN-UX3 — a fresh publish re-registered the voices fully armed; re-apply the
+      // PERSISTENT mixer mutes (performer intent, keyed by actor name) so they survive
+      // re-evals and scene loads. The arming re-sync at replay is handled separately
+      // (`replayActiveScene`).
+      for (const p of published) {
+        if (mixerMutedFor(p.name)) disarmOrchestratedActor(p.name);
+      }
     });
     // Relay beat/bar events from the clock to any adapter that opts in.
     // Symmetric with `setBpm` above; lets adapters whose language exposes a
@@ -250,7 +261,8 @@ class RealCore implements CoreApi {
     // arm/disarm — silence the voice while the rest play, restore on unmute).
     if (isOrchestratedActor(a.name)) {
       if (willBeMuted) disarmOrchestratedActor(a.name);
-      else armOrchestratedActor(a.name);
+      // Un-muting the ARMING layer must not override the MIXER layer (KAN-UX3).
+      else if (!mixerMutedFor(a.name)) armOrchestratedActor(a.name);
       return;
     }
   }
@@ -271,7 +283,8 @@ class RealCore implements CoreApi {
           void import('../../stores/blocks.svelte').then((m) => m.openBlocks.replayArmed());
           return;
         }
-        armOrchestratedActor(a.name);
+        // An actor armed while mixer-muted stays silent — the mixer layer wins (KAN-UX3).
+        if (!mixerMutedFor(a.name)) armOrchestratedActor(a.name);
         this.log({ runtime: a.runtime, level: 'info', msg: `arm [${a.name}]` });
       } else {
         disarmOrchestratedActor(a.name);
@@ -430,7 +443,10 @@ class RealCore implements CoreApi {
     // re-armed them). No-op in mono (no orchestrated actors); `disarmOrchestratedActor` is
     // itself a no-op for a name with no live voice.
     for (const a of this.actors.list()) {
-      if (isOrchestratedActor(a.name) && (a.muted || !a.active)) disarmOrchestratedActor(a.name);
+      // `mixerMutedFor`: the PERSISTENT mixer layer (KAN-UX3) is re-applied here too —
+      // the replay `reset()` must never un-mute a mixer-muted actor.
+      if (isOrchestratedActor(a.name) && (a.muted || !a.active || mixerMutedFor(a.name)))
+        disarmOrchestratedActor(a.name);
     }
   }
 

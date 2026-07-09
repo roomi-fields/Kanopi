@@ -3,6 +3,7 @@
   import { workspace } from '../../stores/workspace.svelte';
   import { openBlocks } from '../../stores/blocks.svelte';
   import type { OpenBlock } from '../../stores/blocks.svelte';
+  import MixerStrips from './MixerStrips.svelte';
 
   function openFile(fileName?: string) {
     if (!fileName) return;
@@ -96,6 +97,8 @@
     {/each}
   </ul>
 {/if}
+
+<MixerStrips />
 
 <style>
   .actors {
