@@ -6,6 +6,7 @@
   import { RESOURCE_GROUPS } from '../../lib/library/resources';
   import { ui } from '../../stores/ui.svelte';
   import FileTree from './FileTree.svelte';
+  import AccountSwitcher from './AccountSwitcher.svelte';
 
   // Resource libraries the ACTIVE program references via its `@` directives.
   // Recomputed reactively as the active file (or its contents) changes.
@@ -99,6 +100,9 @@
 </script>
 
 <div class="files-view">
+  <!-- KAN-UX5 — the files below are the PERSONAL space of the active account
+       (the standard space is the read-only Library panel). -->
+  <AccountSwitcher />
   <div class="toolbar">
     <button type="button" class="new-btn" onclick={openDialog} title="New file (name.ext)"
       >+ New file</button

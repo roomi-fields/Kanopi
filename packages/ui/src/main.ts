@@ -4,6 +4,7 @@ import './styles/reset.css';
 import './styles/global.css';
 import App from './App.svelte';
 import { restoreWorkspace } from './lib/persistence/snapshot.svelte';
+import { migrateLegacyWorkspace } from './lib/persistence/workspace-db';
 import { core } from './lib/core';
 import { workspace } from './stores/workspace.svelte';
 import { clock } from './stores/clock.svelte';
@@ -18,6 +19,9 @@ import { installKanopiApi } from './lib/pilot/kanopi-api';
 const target = document.getElementById('app');
 if (!target) throw new Error('#app root not found');
 
+// KAN-UX5 — le snapshot global d'avant les comptes devient l'espace du compte
+// par défaut (migration une fois, rien n'est perdu), AVANT la restauration.
+migrateLegacyWorkspace();
 restoreWorkspace();
 installSlotErrorBridge();
 const app = mount(App, { target });
