@@ -3,9 +3,18 @@
 > ⚠️ **STATUT : PROPOSITION DE DESIGN — non encore implementee dans le parser BPScript.**
 > Le feature scenes-hierarchiques decrit ici (`@map`, `@scene`, `@expose [x]`, l'heritage
 > de contexte `[mood]`/`[mood==dark]`, les canaux `sys.*`) **n'est PAS reconnu par le
-> compilateur actuel** (verifie via l'oracle atlas, 2026-06-26). Ce document fixe l'intention
-> de design ; il ne documente pas du canon en vigueur. Les declarations de base (acteur,
-> `@tempo`, `transport.*`, `alphabet.*`) sont en revanche a jour en syntaxe v0.8.
+> compilateur actuel** (verifie via l'oracle atlas, 2026-06-26 ; re-verifie 2026-07-09).
+> Ce document fixe l'intention de design ; il ne documente pas du canon en vigueur.
+> Les declarations de base (acteur, `@tempo`, `transport.*`, `alphabet.*`) sont en revanche
+> a jour en syntaxe v0.8.
+>
+> Detail du constat oracle 2026-07-09 (structurel uniquement — « parse » ne veut pas dire
+> « feature cablee ») : `@scene`, `@expose [x]` et les `@map` a source simple
+> (`@map cc:60 -> verse.play`, `@map sys.beat -> osc:/vis/beat`) **passent** le parser actuel ;
+> sont **rejetees** les formes proposees suivantes : source pointee de `@map`
+> (`verse.[x]`, `verse.<!trigger`, `verse.sys.playing`), adressage nu `verse.play` en
+> instruction, et assignation de flag hors regle `[mood=dark]`. Les blocs concernes
+> ci-dessous sont annotes « proposition » individuellement.
 
 > Voir aussi : [ARCHITECTURE.md](ARCHITECTURE.md) pour le pipeline dispatcher,
 > [SOUNDS.md](SOUNDS.md) pour le modele acteur.
@@ -121,6 +130,9 @@ S -> verse <!verse_done chorus             // attend le signal de verse
 
 Un enfant peut rendre un flag visible a l'exterieur avec `@expose` :
 
+> Proposition, non implementee : la source pointee `verse.[intensity]` de `@map` est
+> rejetee par le compilateur actuel (oracle 2026-07-09 : « Expected ->, <-> or <- in @map »).
+
 ```bpscript
 // verse.bps
 @expose [intensity]           // rend ce flag lisible par le parent
@@ -136,6 +148,9 @@ Sans `@expose`, le flag reste prive. L'encapsulation est le defaut.
 
 Deux scenes soeurs ne se voient pas directement. Toute communication
 passe par le parent (via flags herites ou mappings explicites) :
+
+> Proposition, non implementee : la source-trigger `verse.<!climax` de `@map` est rejetee
+> par le compilateur actuel (oracle 2026-07-09).
 
 ```bpscript
 // concert.bps — le parent orchestre la communication
@@ -169,6 +184,9 @@ sys.prev_scene    // scene precedente
 
 ### Adressage
 
+> Proposition, non implementee : l'adressage nu `verse.play` en instruction est rejete par
+> le compilateur actuel (oracle 2026-07-09 : « Expected arrow (-> <- <>), got PERIOD »).
+
 ```bpscript
 // Depuis concert.bps (parent)
 verse.play            // OK — sys auto-expose
@@ -191,6 +209,10 @@ sys.play              // la scene elle-meme (ou session globale)
 ### sys en sortie
 
 Le systeme emet aussi des evenements observables :
+
+> Proposition, non implementee : la source a deux segments `verse.sys.playing` est rejetee
+> par le compilateur actuel (oracle 2026-07-09) ; `@map sys.beat -> ...` et
+> `@map sys.bar -> ...` passent, eux, structurellement.
 
 ```bpscript
 @map sys.beat -> osc:/vis/beat           // chaque beat -> OSC
@@ -373,6 +395,11 @@ La recursion est bornee : un fichier ne peut pas se referencer lui-meme
 ---
 
 ## Exemple complet
+
+> Proposition, non implementee : cet exemple cumule les formes proposees ci-dessus ; le
+> compilateur actuel bute d'abord sur l'assignation de flag hors regle `[mood=dark]`
+> (oracle 2026-07-09 : « Expected RBRACKET, got EQUALS »), puis viendraient les sources
+> pointees de `@map`.
 
 ```bpscript
 // === concert.bps (maitre) ===

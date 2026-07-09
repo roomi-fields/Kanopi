@@ -5,6 +5,7 @@
 - [EVENTS.md](design/EVENTS.md) — spec du bus `KanopiEvent`
 - [LIBRARY.md](design/LIBRARY.md) — système library 3 sources (bundled / mine / community)
 - [SCENES.md](design/SCENES.md) — hiérarchie scènes + scoping flags
+- [UI_FEATURES.md](design/UI_FEATURES.md) — fonctionnalités UI livrées : mixer, comptes/espaces perso, bandeau droit, onglets du bas, préchauffage, CV-sur-arbre
 - [PLAYBACK_LOOP.md](design/PLAYBACK_LOOP.md) — boucle de lecture : horloge/curseur, modèle continu↔discret, perf
 - [MODULATION_INPUTS.md](design/MODULATION_INPUTS.md) — registre CV du runtime webaudio (cutoff/amplitude/resonance/pitch/pan)
 - [TEMPORAL_INTERPRETER.md](design/TEMPORAL_INTERPRETER.md) — **proposition** : timeline canonique, autorité unique du temps, portée structurelle (à étudier avec l'architecte)
