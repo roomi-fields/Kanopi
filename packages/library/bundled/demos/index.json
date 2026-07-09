@@ -369,5 +369,75 @@
     "category": "midi",
     "description": "Dual output via @actor — mélodie MIDI ch1, basse WebAudio",
     "file": "midi-actors.bps"
+  },
+  {
+    "id": "mozart-dice",
+    "title": "Mozart Dice Game",
+    "category": "generative",
+    "description": "Mozart's musical dice game — 176 bars picked by two simulated dice. MIDI output — select a MIDI device in Hardware to hear it",
+    "file": "mozart-dice.bps"
+  },
+  {
+    "id": "alan-dice",
+    "title": "Alan Dice Game",
+    "category": "generative",
+    "description": "Alan's musical dice game — 158 bars picked by two simulated dice. MIDI output — select a MIDI device in Hardware to hear it",
+    "file": "alan-dice.bps"
+  },
+  {
+    "id": "ruwet",
+    "title": "Ruwet Variations",
+    "category": "generative",
+    "description": "Theme and variation after Nicolas Ruwet's analysis. MIDI output — select a MIDI device in Hardware to hear it",
+    "file": "ruwet.bps"
+  },
+  {
+    "id": "not-reich",
+    "title": "Not Reich",
+    "category": "polymetric",
+    "description": "Steve Reich-style phasing by Thierry Montaudon (1997). MIDI output — select a MIDI device in Hardware to hear it",
+    "file": "not-reich.bps"
+  },
+  {
+    "id": "visser-waves",
+    "title": "Visser: Waves",
+    "category": "polymetric",
+    "description": "Harm Visser's \"Waves\" (1998) — nested imbedding pattern for solo piano. MIDI output — select a MIDI device in Hardware to hear it",
+    "file": "visser-waves.bps"
+  },
+  {
+    "id": "visser-shapes",
+    "title": "Visser: Shapes",
+    "category": "generative",
+    "description": "Harm Visser's \"Shapes\" (1998) — rotations, expansions, trills and velocity contours. MIDI output — select a MIDI device in Hardware to hear it",
+    "file": "visser-shapes.bps"
+  },
+  {
+    "id": "nadaka",
+    "title": "Nadaka",
+    "category": "raga",
+    "description": "Carnatic improvisation by Nadaka (1997) in sargam notation. MIDI output — select a MIDI device in Hardware to hear it",
+    "file": "nadaka.bps"
+  },
+  {
+    "id": "drum",
+    "title": "Drum",
+    "category": "polymetric",
+    "description": "Drum pattern in 3 polymetric voices (kick, snare, hihat). MIDI output — select a MIDI device in Hardware to hear it",
+    "file": "drum.bps"
+  },
+  {
+    "id": "shapes-rhythm",
+    "title": "Shapes in Rhythm",
+    "category": "world",
+    "description": "Kathak-based dance piece by Andreine Bel in 9 parts. MIDI output — select a MIDI device in Hardware to hear it",
+    "file": "shapes-rhythm.bps"
+  },
+  {
+    "id": "acceleration",
+    "title": "Acceleration",
+    "category": "generative",
+    "description": "Harm Visser's \"sawtooth rhythm\" (1997) — an accelerating chain of rules. MIDI output — select a MIDI device in Hardware to hear it",
+    "file": "acceleration.bps"
   }
 ]

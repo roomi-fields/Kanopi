@@ -85,6 +85,18 @@ const MANIFEST_AXES: Record<string, AxisOverride> = {
   'midi-channels': { outputs: ['midi'] },
   'midi-controls': { outputs: ['midi'] },
   'midi-microtonal': { outputs: ['midi'] },
+  // KAN-VOLET-A corpus scenes — `@alphabet.X:midi` routes to the MIDI runtime
+  // (ed5a637): verified on-screen (MIDI cry without a device, plays with one).
+  'mozart-dice': { outputs: ['midi'] },
+  'alan-dice': { outputs: ['midi'] },
+  ruwet: { outputs: ['midi'] },
+  'not-reich': { outputs: ['midi'] },
+  'visser-waves': { outputs: ['midi'] },
+  'visser-shapes': { outputs: ['midi'] },
+  nadaka: { outputs: ['midi'] },
+  drum: { outputs: ['midi'] },
+  'shapes-rhythm': { outputs: ['midi'] },
+  acceleration: { outputs: ['midi'] },
   'backtick-sketch': { language: 'sc' },
   'cv-backtick': { language: 'js', showcase: true },
   // ≤5 standouts added to the showcase set:
