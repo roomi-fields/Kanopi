@@ -5,7 +5,6 @@
   import IconResources from '../../lib/icons/IconResources.svelte';
   import IconSearch from '../../lib/icons/IconSearch.svelte';
   import IconHardware from '../../lib/icons/IconHardware.svelte';
-  import IconGit from '../../lib/icons/IconGit.svelte';
   import IconDocs from '../../lib/icons/IconDocs.svelte';
   import IconAccount from '../../lib/icons/IconAccount.svelte';
 
@@ -25,7 +24,6 @@
   {:else if id === 'resources'}<IconResources />
   {:else if id === 'search'}<IconSearch />
   {:else if id === 'hardware'}<IconHardware />
-  {:else if id === 'git'}<IconGit />
   {:else if id === 'docs'}<IconDocs />
   {:else if id === 'account'}<IconAccount />
   {/if}

@@ -14,9 +14,9 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../../hel
 // Selectors come straight from the components, not guesses:
 //   - CommandPalette.svelte:78 — `.palette[role="dialog"]`, with the input
 //     auto-focused once `ui.paletteOpen` flips to true.
-//   - ScenesPanel.svelte:31-34 — `.card` per scene, `.active` class when
-//     `s.active` is true. The Scenes tab is `.rp-tab` with text "Scenes"
-//     (cf session-scenes.spec.ts:56).
+//   - Alt+1..9 resolves scene N through `core.scenes` (bindings.ts:59-66);
+//     the active scene is read from the statusbar readout
+//     (cf session-scenes.spec.ts — the Scenes cards panel was removed, KAN-UX1).
 //   - `.cm-content` — CodeMirror's contenteditable host.
 //   - `.cm-flash-ok` / `.cm-flash-err` — eval-flash decorations
 //     (eval-flash.ts:12-13).

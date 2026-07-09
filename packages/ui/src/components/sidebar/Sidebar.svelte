@@ -11,7 +11,6 @@
     resources: 'Resources',
     search: 'Search',
     hardware: 'Hardware',
-    git: 'Git',
     docs: 'Docs',
     account: 'Account'
   };

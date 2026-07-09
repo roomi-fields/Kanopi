@@ -8,8 +8,7 @@
     { id: 'library', title: 'Library' },
     { id: 'resources', title: 'Resources' },
     { id: 'search', title: 'Search' },
-    { id: 'hardware', title: 'Hardware', badge: 2 },
-    { id: 'git', title: 'Git' }
+    { id: 'hardware', title: 'Hardware', badge: 2 }
   ];
   const bottom: Item[] = [
     { id: 'docs', title: 'Docs' },
