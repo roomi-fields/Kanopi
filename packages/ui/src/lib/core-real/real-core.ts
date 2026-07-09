@@ -14,6 +14,7 @@ import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 // garde des chemins d'armement pour qu'un arm/replay/publish ne ré-arme jamais un
 // acteur que le mixer tient muet (module pur, importable sans cycle).
 import { mixerMutedFor } from '../mixer/mixer-intent';
+import { applyMixerGains } from '../mixer/mixer-gain';
 // VOIE B (chantier voix-code-transport [523]) : le transport Kronos partagé des voix de code
 // AUTONOMES — plus aucune voix hors transport. L'éval enregistre la voix (registerCodeVoice),
 // le cœur relaie Stop/Play/hush au handle (le relais lifecycle coupe/gèle/reprend les moteurs).
@@ -129,6 +130,9 @@ class RealCore implements CoreApi {
       // previous program's orchestrator voices (groove/viz) with nothing.
       if (published.length === 0) {
         this.actors.setActors([]);
+        // KAN-UX3 — a mono `.gr`/`.bps` publishes no actors but DID rebuild the
+        // AudioRuntime: re-project the persisted gains (master volume/mute) too.
+        applyMixerGains();
         return;
       }
       // A PRODUCE/scene-load arms EVERY actor (they all sound — Kronos plays the whole
@@ -152,6 +156,10 @@ class RealCore implements CoreApi {
       for (const p of published) {
         if (mixerMutedFor(p.name)) disarmOrchestratedActor(p.name);
       }
+      // KAN-UX3 — the eval rebuilt the AudioRuntime: re-project the persisted
+      // VOLUME intent (master gain/mute + per-actor gains) onto the fresh
+      // instance, same hook as the mixer-mute re-application just above.
+      applyMixerGains();
     });
     // Relay beat/bar events from the clock to any adapter that opts in.
     // Symmetric with `setBpm` above; lets adapters whose language exposes a
@@ -448,6 +456,10 @@ class RealCore implements CoreApi {
       if (isOrchestratedActor(a.name) && (a.muted || !a.active || mixerMutedFor(a.name)))
         disarmOrchestratedActor(a.name);
     }
+    // KAN-UX3 — belt over the runtime guarantee: levels + master mute survive
+    // `reset()` runtime-side (contract [651]), but re-projecting the persisted
+    // intent here keeps replay deterministic from the SAME source of truth.
+    applyMixerGains();
   }
 
   async hushAll(): Promise<void> {

@@ -13,13 +13,13 @@
  * through the EXISTING live primitives (arm/disarm orchestrated voice). The
  * host renders nothing and touches no audio node.
  *
- * VOLUME is stored as intent but applied NOWHERE yet: runtime-audio exposes no
- * gain API (its master GainNode `_master` is private, and there is no per-actor
- * gain). The UI keeps the volume sliders disabled until the upstream API lands.
+ * VOLUME (and the master mute) is applied through runtime-audio's gain API
+ * (contract [651]: setMasterGain/setMasterMuted/setActorGain, linear 0..1,
+ * effective = actor × master) — see `mixer-gain.ts`, the ONE application path.
  */
 
 export interface ChannelIntent {
-  /** Linear 0..1. Stored intent only — NOT applied (no upstream gain API yet). */
+  /** Linear 0..1, applied via runtime-audio's gain API (effective = actor × master). */
   volume: number;
   muted: boolean;
 }

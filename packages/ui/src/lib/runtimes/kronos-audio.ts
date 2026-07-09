@@ -230,6 +230,21 @@ export function pilotAudioMeter(): AudioMeter | null {
   return currentAudioMeter;
 }
 
+// MIXAGE (KAN-UX3, contrat [651]) — l'affordance GAIN de runtime-audio (setMasterGain/
+// setMasterMuted/setActorGain, adapter.js:706+). Même chemin d'accès que la sonde meter :
+// une référence sur l'AudioRuntime COURANT (mise à jour à chaque build de handle), lue par
+// la couche mixer de l'hôte. L'hôte n'a AUCUN nœud audio : il exprime l'intention (0..1
+// linéaire, effectif = acteur × maître), la runtime possède les nœuds et la rampe anti-clic.
+export interface AudioGainControl {
+  setMasterGain(value: number): void;
+  setMasterMuted(muted: boolean): void;
+  setActorGain(actor: string, value: number): void;
+}
+let currentAudioGain: AudioGainControl | null = null;
+export function audioGainControl(): AudioGainControl | null {
+  return currentAudioGain;
+}
+
 export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   const { derivedTempo } = opts;
   // Bar fold width = the derived meter's beats-per-bar (BPx authority), default 4.
@@ -304,6 +319,10 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // seule (le pilot n'appelle QUE l'affordance meter). Écrase la ref précédente → l'ancien runtime
   // reste GC-able à la destruction du handle.
   currentAudioMeter = audioRuntime as unknown as AudioMeter;
+  // MIXAGE (KAN-UX3) : même mise à jour que la sonde meter — la couche mixer lit toujours
+  // l'AudioRuntime COURANT (recréé à chaque eval ; la re-projection des niveaux persistés
+  // se fait aux points d'accroche de real-core, publish + replay). Nul sous sink de test.
+  currentAudioGain = audioRuntime as unknown as AudioGainControl | null;
   const audioSink: TransportLike | null =
     opts.sinks?.webaudio ?? opts.sinks?.audio ?? (audioRuntime as unknown as TransportLike | null);
 

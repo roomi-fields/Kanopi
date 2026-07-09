@@ -1,8 +1,8 @@
 <script lang="ts">
   // KAN-UX3 — DAW-like mixer: master strip on top, one strip per live actor.
   // The mute is the PERSISTENT performer layer (mixer intent, localStorage) —
-  // distinct from the arming M of the actor list above. Volume sliders are
-  // disabled until runtime-audio exposes a gain API (reported upstream).
+  // distinct from the arming M of the actor list above. Volumes ride
+  // runtime-audio's gain API (contract [651]): effective = actor × master.
   import { actors } from '../../stores/actors.svelte';
   import { mixer } from '../../stores/mixer.svelte';
   import MixerMaster from './MixerMaster.svelte';
@@ -25,8 +25,8 @@
             max="1"
             step="0.01"
             value={mixer.actorEntry(a.name).volume}
-            disabled
-            title="volume {a.name} — soon (waiting for the audio runtime's gain API)"
+            oninput={(e) => mixer.setActorVolume(a.name, e.currentTarget.valueAsNumber)}
+            title="volume {a.name}"
           />
           <button
             class="mute"
@@ -86,10 +86,6 @@
     flex: 1;
     min-width: 0;
     accent-color: var(--amber);
-  }
-  .vol:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
   }
   .mute {
     width: 20px;

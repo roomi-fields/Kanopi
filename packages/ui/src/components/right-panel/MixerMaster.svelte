@@ -4,8 +4,8 @@
 
 <div class="strip master" class:muted={mixer.master.muted}>
   <span class="label">master</span>
-  <!-- Volume is stored intent only: runtime-audio exposes no gain API yet
-       (reported upstream) — a dead slider must read as disabled, never fake. -->
+  <!-- Volume rides runtime-audio's gain API (KAN-UX3, contract [651]): raw
+       0..1 intent, the anti-click ramp is the runtime's. -->
   <input
     class="vol"
     type="range"
@@ -13,8 +13,8 @@
     max="1"
     step="0.01"
     value={mixer.master.volume}
-    disabled
-    title="master volume — soon (waiting for the audio runtime's gain API)"
+    oninput={(e) => mixer.setMasterVolume(e.currentTarget.valueAsNumber)}
+    title="master volume"
   />
   <button
     class="mute"
@@ -54,10 +54,6 @@
     flex: 1;
     min-width: 0;
     accent-color: var(--amber);
-  }
-  .vol:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
   }
   .mute {
     width: 20px;

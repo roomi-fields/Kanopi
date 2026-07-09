@@ -1,11 +1,13 @@
 // KAN-UX3 — Reactive projection of the mixer intent (master + per-actor
-// volume/mute) + LIVE application of the mute through the EXISTING primitives.
+// volume/mute) + LIVE application through the EXISTING primitives.
 //
 // The AUTHORITY is `lib/mixer/mixer-intent.ts` (user input, persisted); this
 // store only mirrors its snapshots for the UI (same pattern as ActorsStore over
-// `core.actors`). Application routes through `arm/disarmOrchestratedActor`
-// (Kronos scheduler gate via `setNoteMuted` + code-voice stop/eval) — the host
-// mutes at the intent level, it touches no audio node itself.
+// `core.actors`). Per-actor MUTE routes through `arm/disarmOrchestratedActor`
+// (Kronos scheduler gate via `setNoteMuted` + code-voice stop/eval); VOLUMES and
+// the MASTER mute route through runtime-audio's gain API (contract [651], via
+// `applyMixerGains`) — the host mutes/levels at the intent level, it touches no
+// audio node itself.
 //
 // Layering: the mixer mute is a PERSISTENT performer layer on top of the arming
 // layer (actor store `active`/`muted`). Un-muting the mixer never re-arms an
@@ -18,6 +20,7 @@ import {
   type ChannelIntent,
   type MixerSnapshot
 } from '../lib/mixer/mixer-intent';
+import { applyMixerGains } from '../lib/mixer/mixer-gain';
 import {
   armOrchestratedActor,
   disarmOrchestratedActor,
@@ -56,16 +59,36 @@ class MixerStore {
     this.#apply(name);
   }
 
+  /** Actor VOLUME (0..1, linear) — distinct from the mute: gain 0 keeps the
+   *  voice armed (inaudible), a mute removes the voice (contract [651]). */
+  setActorVolume(name: string, volume: number) {
+    mixerIntent.setActorVolume(name, volume);
+    applyMixerGains();
+  }
+
   toggleMasterMuted() {
     this.setMasterMuted(!this.master.muted);
   }
 
   setMasterMuted(muted: boolean) {
     mixerIntent.setMasterMuted(muted);
-    // Fan the master mute out over the live actors through the SAME per-actor
-    // primitive (there is no upstream master-mute API — reported gap; a mono
-    // scene without actors is therefore not covered by the master mute yet).
+    // MASTER mute = runtime-audio's `setMasterMuted` (via `applyMixerGains`):
+    // cuts the whole master bus — including a mono scene without actors, the
+    // gap the old fan-out-only version left open. The runtime memorizes the
+    // level and restores it on un-mute (contract [651]).
+    applyMixerGains();
+    // The fan-out over the per-actor primitive is KEPT on top: code voices
+    // (Strudel/Hydra), MIDI and OSC actors do not pass through runtime-audio's
+    // master bus, so only the arm/disarm gate silences them. Un-mute still
+    // respects each strip + the arming layer (#apply).
     for (const a of actors.list) this.#apply(a.name);
+  }
+
+  /** Master VOLUME (0..1, linear, multiplies every actor). Sent raw — the
+   *  anti-click ramp is the runtime's job, no host smoothing. */
+  setMasterVolume(volume: number) {
+    mixerIntent.setMasterVolume(volume);
+    applyMixerGains();
   }
 
   /** Route the composed intent to the live voice. Mixer says muted → disarm.
