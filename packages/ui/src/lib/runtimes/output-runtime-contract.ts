@@ -48,4 +48,25 @@ export interface OutputRuntimeAdapter {
 
   /** hôte→rt : libère tout (contexte audio, nœuds, écouteurs). */
   dispose?(): void;
+
+  /**
+   * hôte→rt : pré-init IDEMPOTENTE + réveil du contexte, appelée au chargement de scène dans la
+   * chaîne de geste (resume audio honoré) ; no-op si déjà chaud, best-effort hors geste. Optionnel
+   * — sorties sœurs seulement (les voix de code sont réchauffées via `preload()` de paquet, hors
+   * interface uniforme, cf. asymétrie ratifiée).
+   */
+  warmup?(): void | Promise<void>;
+
+  /**
+   * hôte→rt : intention de MIXAGE (gains 0..1 linéaires, multiplicatifs acteur×maître). Les nœuds
+   * de gain appartiennent à la runtime (créés par elle, à la demande) — l'hôte n'en crée aucun et
+   * ne porte que l'intention ; rampe anti-clic (~20 ms) à chaque écriture, côté runtime ; niveaux +
+   * mute maître survivent au stop→play ET à reset() (réglage de console, pas état de rendu) ; borne
+   * 0..1, valeur non-numérique → défaut sûr 1. `setActorGain(a, 0)` ≠ `setActorMuted(a, true)` :
+   * gain 0 = voix armée mais inaudible, mute = la voix ne sonne pas — indépendants et composables.
+   * Optionnel. (Amendement 2026-07-09, runtime-audio `7348674`, ratifié architecte.)
+   */
+  setMasterGain?(v: number): void;
+  setActorGain?(actor: string, v: number): void;
+  setMasterMuted?(m: boolean): void;
 }
