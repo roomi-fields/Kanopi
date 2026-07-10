@@ -5,8 +5,7 @@
 //
 // This replaces the regex-on-grammar-text `headSections`/`headSectionNames` for
 // the `.bps` path. The `.gr` path stays on the text reader (it never goes through
-// compileBPS, so it has no AST). Two variants mirror the two former call sites:
-//   - `headSectionsFromAst`     : the Scenes-bar variant (no control/note filter)
+// compileBPS, so it has no AST).
 //   - `headSectionNamesFromAst` : the bp3 adapter variant (drops control terminals,
 //                                 incl. bare notes, matching the old grFrontend)
 //
@@ -91,10 +90,9 @@ function startRule(ast: SceneAst): AstRule | null {
   return sg.rules.find((r) => r.lhs.some((e) => e.name === 'S')) ?? null;
 }
 
-// Walk the start rule's top-level RHS into sections. `filterControl` drops control
-// terminals (incl. bare notes) — the bp3-adapter variant; left false for the
-// Scenes-bar variant, which kept every top-level element verbatim.
-function sectionsFromAst(ast: SceneAst, filterControl: boolean): string[] {
+// Walk the start rule's top-level RHS into sections, dropping control terminals
+// (incl. bare notes) — the bp3-adapter variant.
+function sectionsFromAst(ast: SceneAst): string[] {
   const rule = startRule(ast);
   if (!rule) return [];
   const out: string[] = [];
@@ -106,22 +104,16 @@ function sectionsFromAst(ast: SceneAst, filterControl: boolean): string[] {
     if (el.type === 'Control' || el.type === 'InstantControl') continue;
     const tok = elementToken(el);
     if (!tok) continue;
-    if (filterControl && isControlTerminal(tok)) continue;
+    if (isControlTerminal(tok)) continue;
     out.push(tok);
   }
   return out;
 }
 
-// Scenes-bar variant (former `bpsScenes.headSections`): keeps every top-level
-// element, including bare notes and standalone backticks.
-export function headSectionsFromAst(ast: unknown): string[] {
-  return sectionsFromAst(ast as SceneAst, false);
-}
-
 // bp3-adapter variant (former bp3.ts `headSectionNames`): drops control terminals
 // and bare notes, keeping only the structural section symbols.
 export function headSectionNamesFromAst(ast: unknown): string[] {
-  return sectionsFromAst(ast as SceneAst, true);
+  return sectionsFromAst(ast as SceneAst);
 }
 
 // How many SOUNDING leaves each top-level head-rule section expands into — used to

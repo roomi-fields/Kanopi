@@ -88,7 +88,7 @@ export const STARTERS: Starter[] = [
     name: '04 — Scene selector',
     tagline: 'named selectable scenes — pick calm or full live',
     description:
-      'One self-contained `.bps` with named scenes guarded by a flag: `calm` (drums only) and `full` (drums + lead). Open it, then use the scene buttons in the transport bar (or Alt+1 / Alt+2) to switch which scene is armed — each click re-derives the grammar with that scene selected. Ctrl+. to hush.',
+      'One self-contained `.bps` with named scenes guarded by a flag (`@flag scene: calm:1, full:2`): `calm` (drums only) and `full` (drums + lead). Open it and look at the code to see how the flag picks which rule derives. Ctrl+. to hush.',
     sessionFile: '04-scenes-select.bps',
     files: [{ path: '04-scenes-select.bps', contents: bundled04Session }]
   },
@@ -97,7 +97,7 @@ export const STARTERS: Starter[] = [
     name: 'Tidal intro',
     tagline: 'drums + bass, two named scenes',
     description:
-      'One self-contained `.bps`: a Tidal drums voice and a Strudel bass voice, both inlined as backticks → audio. Two named scenes guarded by a flag — `intro` (drums only) and `full` (drums + bass). Open it, then use the scene buttons in the transport bar (or Alt+1 / Alt+2) to switch. Ctrl+. to hush.',
+      'One self-contained `.bps`: a Tidal drums voice and a Strudel bass voice, both inlined as backticks → audio. Two named scenes guarded by a flag — `intro` (drums only) and `full` (drums + bass). Open it and look at the code to see how the flag picks which scene derives. Ctrl+. to hush.',
     sessionFile: 'tidal-intro.bps',
     files: [{ path: 'tidal-intro.bps', contents: tidalIntroSession }]
   },
@@ -106,7 +106,7 @@ export const STARTERS: Starter[] = [
     name: 'Hydra + audio',
     tagline: 'reactive visuals over a drum loop',
     description:
-      'One self-contained `.bps`: a Tidal drums voice → audio and a Hydra visual → video, both inlined as backticks. Two named scenes guarded by a flag — `a` (drums only) and `b` (drums + visuals). Open it, then switch scenes from the transport bar (or Alt+1 / Alt+2). Hydra renders behind the editor. Ctrl+. to hush.',
+      'One self-contained `.bps`: a Tidal drums voice → audio and a Hydra visual → video, both inlined as backticks. Two named scenes guarded by a flag — `a` (drums only) and `b` (drums + visuals). Open it and look at the code to see how the flag picks which scene derives. Hydra renders behind the editor. Ctrl+. to hush.',
     sessionFile: 'hydra-audio.bps',
     files: [{ path: 'hydra-audio.bps', contents: hydraAudioSession }]
   },
