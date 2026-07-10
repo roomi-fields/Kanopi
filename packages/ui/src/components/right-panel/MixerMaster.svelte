@@ -2,17 +2,22 @@
   import { mixer } from '../../stores/mixer.svelte';
   import { actors } from '../../stores/actors.svelte';
   import { isCodeVoiceRuntime } from '../../lib/runtimes/registry';
-  import { reachesGainBus } from '../../lib/mixer/mixer-gain';
+  import { reachesGainBus, codeVoiceReachesGainBus } from '../../lib/mixer/mixer-gain';
 
-  // Master gain is projected onto EVERY live gain bus (audio/midi/osc — applyMixerGains
-  // calls setMasterGain/setMasterMuted on each), which only NATIVE actors declared on one
-  // of those transports (Actor.outputTransport, BPx's `output.runtime`) reach — a code
-  // voice (strudel/hydra/…) renders through its own graph, and a native actor routed dmx
-  // (API not yet confirmed) never touches any of these buses either (exact same "nothing
-  // to act on" as a code voice, different cause). Only disable the master when NO live
-  // actor genuinely reaches a gain bus; if even one does, the master stays live.
+  // Master gain is projected onto EVERY live gain bus (audio/midi/osc/codevoices —
+  // applyMixerGains calls setMasterGain/setMasterMuted on each). A NATIVE actor reaches
+  // one when its declared transport (Actor.outputTransport, BPx's `output.runtime`) is
+  // audio/midi/osc; a CODE-VOICE actor (strudel/hydra/…) reaches one only for
+  // strudel/tidal/csound (`codeVoiceReachesGainBus` — the sole adapters implementing the
+  // gain API in the package). A native actor routed dmx (API not yet confirmed) or a
+  // hydra/p5/mercury/js voice touch none of these buses. Only disable the master when NO
+  // live actor genuinely reaches a gain bus; if even one does, the master stays live.
   const anyReachesGainBus = $derived(
-    actors.list.some((a) => !isCodeVoiceRuntime(a.runtime) && reachesGainBus(a.outputTransport))
+    actors.list.some((a) =>
+      isCodeVoiceRuntime(a.runtime)
+        ? codeVoiceReachesGainBus(a.runtime)
+        : reachesGainBus(a.outputTransport)
+    )
   );
   const disabled = $derived(actors.list.length > 0 && !anyReachesGainBus);
   const DISABLED_TITLE =

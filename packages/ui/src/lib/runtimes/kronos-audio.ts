@@ -263,6 +263,15 @@ let currentOscGain: AudioGainControl | null = null;
 export function oscGainControl(): AudioGainControl | null {
   return currentOscGain;
 }
+let currentCodeVoicesGain: AudioGainControl | null = null;
+/** Même contrat gain que `audioGainControl()`, porté par l'instance runtime-codevoices VIVANTE
+ *  (`opts.codeVoicesRuntime`, bpx-adapter.ts — construite par createCodeVoicesRuntime, transmise
+ *  telle quelle). `null` quand la scène n'a aucun backtick (pas de voix de code). Diffusé en
+ *  interne à TOUS les adaptateurs de voix (paquet, [73]) ; seuls strudel/tidal/csound réagissent
+ *  réellement (mercury/hydra/p5/js n'implémentent pas la méthode → no-op silencieux côté paquet). */
+export function codeVoicesGainControl(): AudioGainControl | null {
+  return currentCodeVoicesGain;
+}
 
 export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   const { derivedTempo } = opts;
@@ -429,6 +438,10 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // L'adaptateur uniforme de runtime-OSC est enregistré DIRECTEMENT (send(ev)/bindClock ; Kronos
   // câble l'horloge lui-même à l'enregistrement — plus de now:audioCtx hôte pour OSC).
   if (oscSink) kronos.addAdapter('osc', oscSink as unknown as RuntimeAdapter);
+  // MIXAGE : même mise à jour que la sonde audio/midi/osc — reçu (pas construit) ici, c'est le
+  // SEUL point où `startKronosAudio` touche `opts.codeVoicesRuntime`. Nul quand la scène n'a
+  // aucun backtick (pas d'objet transmis).
+  currentCodeVoicesGain = (opts.codeVoicesRuntime ?? null) as unknown as AudioGainControl | null;
   if (opts.codeVoicesRuntime) kronos.addAdapter('code', opts.codeVoicesRuntime);
 
   // The playing cursor (EX4 phase 2): the INVERSE of the time authority, not a separate

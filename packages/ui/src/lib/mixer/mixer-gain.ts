@@ -21,13 +21,15 @@ import {
   audioGainControl,
   midiGainControl,
   oscGainControl,
+  codeVoicesGainControl,
   type AudioGainControl
 } from '../runtimes/kronos-audio';
 
-/** Every currently-live gain control (audio/midi/osc — codevoices out of scope, dmx awaiting
- *  upstream, per the same contract). */
+/** Every currently-live gain control (audio/midi/osc/codevoices — dmx awaiting upstream, per the
+ *  same contract). The codevoices control is a SINGLE object diffusing internally to all 7 voice
+ *  adapters; only strudel/tidal/csound actually react (see `codeVoiceReachesGainBus`). */
 function liveGainControls(): AudioGainControl[] {
-  return [audioGainControl(), midiGainControl(), oscGainControl()].filter(
+  return [audioGainControl(), midiGainControl(), oscGainControl(), codeVoicesGainControl()].filter(
     (g): g is AudioGainControl => g !== null
   );
 }
@@ -49,11 +51,10 @@ export function applyMixerGains(): void {
 
 // KAN-UX3-B — `applyMixerGains` now reaches audio/midi/osc. An actor whose declared output
 // transport (`Actor.outputTransport`, read off BPx's `output.runtime`) is anything else (dmx or
-// a custom @devices name not yet confirmed) has NOTHING wired to a slider move; same story for
-// a code voice, which renders through its own graph and never registers on any of these gain
-// buses at all (its `outputTransport` is irrelevant — `isCodeVoiceRuntime(a.runtime)` gates it
-// upstream of this check, in the components). Absent/undeclared transport = the AST's implicit
-// default, 'audio' (the webaudio bus) — reaches, not gated.
+// a custom @devices name not yet confirmed) has NOTHING wired to a slider move. Absent/undeclared
+// transport = the AST's implicit default, 'audio' (the webaudio bus) — reaches, not gated. A code
+// voice does NOT go through this check — see `codeVoiceReachesGainBus` below, gated in the
+// components by `isCodeVoiceRuntime(a.runtime)` before either predicate applies.
 export function reachesGainBus(outputTransport: string | undefined): boolean {
   return (
     outputTransport === undefined ||
@@ -64,9 +65,29 @@ export function reachesGainBus(outputTransport: string | undefined): boolean {
   );
 }
 
+/** Mirror of `reachesGainBus`, for CODE-VOICE runtimes. Only strudel/tidal/csound actually
+ *  implement `setActorGain`/`setMasterGain`/`setMasterMuted` on their individual adapter (the
+ *  runtime-codevoices package diffuses with `adapter.setActorGain?.(...)` — hydra/p5/mercury/js
+ *  have no such method, so the call is a silent no-op for them: no API, not a "not confirmed yet"
+ *  gap like dmx). */
+export function codeVoiceReachesGainBus(runtime: string): boolean {
+  return runtime === 'strudel' || runtime === 'tidal' || runtime === 'csound';
+}
+
 /** One message, parameterized by what the actor is instead routed to — covers both the
  *  code-voice case ('voix de code') and a native actor on dmx/a custom @devices name
  *  identically. */
 export function mixerSliderDisabledTitle(kind: string): string {
   return `acteur routé ${kind} — pas de contrôle de volume depuis Kanopi (en attente d'une API d'entrée côté runtime)`;
+}
+
+/** Title for an ACTIVE (non-disabled) slider. csound's gain lands on a control channel
+ *  (`gain_<acteur>`/`gain_master`) the AUTHOR's orchestra must read via `chnget` — without that
+ *  read, moving the slider has no audible effect, so its title says so explicitly. Every other
+ *  runtime (including strudel/tidal, whose gain reaches a real bus) gets the generic label. */
+export function mixerSliderActiveTitle(name: string, runtime: string): string {
+  if (runtime === 'csound') {
+    return `volume ${name} — effectif seulement si l'orchestre lit le canal gain_${name} (chnget)`;
+  }
+  return `volume ${name}`;
 }

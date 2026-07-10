@@ -7,16 +7,22 @@
   import { actors } from '../../stores/actors.svelte';
   import { mixer } from '../../stores/mixer.svelte';
   import { isCodeVoiceRuntime } from '../../lib/runtimes/registry';
-  import { reachesGainBus, mixerSliderDisabledTitle } from '../../lib/mixer/mixer-gain';
+  import {
+    reachesGainBus,
+    codeVoiceReachesGainBus,
+    mixerSliderDisabledTitle,
+    mixerSliderActiveTitle
+  } from '../../lib/mixer/mixer-gain';
   import MixerMaster from './MixerMaster.svelte';
 
-  // The slider moves whichever live gain bus (audio/midi/osc) owns the actor
-  // (`applyMixerGains` → audioGainControl()/midiGainControl()/oscGainControl()). Two
-  // families of actor never reach ANY of them:
+  // The slider moves whichever live gain bus owns the actor (`applyMixerGains` →
+  // audioGainControl()/midiGainControl()/oscGainControl()/codeVoicesGainControl()). Two
+  // families of actor can fail to reach a bus:
   //  - a code voice (strudel/hydra/p5/mercury/csound/tidal/js — anything backed by
-  //    `eval.<interp>`) runs its own audio graph, entirely bypassing all three buses
-  //    (`isCodeVoiceRuntime`, registry.ts — the same list the runtime registry is
-  //    built from);
+  //    `eval.<interp>`, `isCodeVoiceRuntime`, registry.ts) only reaches a bus for
+  //    strudel/tidal/csound (`codeVoiceReachesGainBus`) — the package's individual
+  //    adapters are the only ones implementing the gain API; hydra/p5/mercury/js
+  //    render their own graph with no such hook;
   //  - a NATIVE actor (notes, not a code voice) routed to dmx/a custom @devices name
   //    whose gain API isn't confirmed yet (`Actor.outputTransport`, BPx's
   //    `output.runtime`, decision [624]) — same "slider lies" problem, different cause.
@@ -32,9 +38,10 @@
     <ul class="strips">
       {#each actors.list as a (a.name)}
         {@const isCodeVoice = isCodeVoiceRuntime(a.runtime)}
-        {@const disabledKind = isCodeVoice
+        {@const codeVoiceGainOk = isCodeVoice && codeVoiceReachesGainBus(a.runtime)}
+        {@const disabledKind = isCodeVoice && !codeVoiceGainOk
           ? 'voix de code'
-          : !reachesGainBus(a.outputTransport)
+          : !isCodeVoice && !reachesGainBus(a.outputTransport)
             ? (a.outputTransport ?? 'inconnu')
             : null}
         <li class="strip" class:muted={mixer.isActorMuted(a.name) || mixer.master.muted}>
@@ -50,7 +57,7 @@
             disabled={disabledKind !== null}
             title={disabledKind !== null
               ? mixerSliderDisabledTitle(disabledKind)
-              : `volume ${a.name}`}
+              : mixerSliderActiveTitle(a.name, a.runtime)}
           />
           <button
             class="mute"

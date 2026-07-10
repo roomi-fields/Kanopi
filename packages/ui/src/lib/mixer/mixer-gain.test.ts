@@ -21,19 +21,23 @@ function makeFakeControl() {
 let audio = makeFakeControl();
 let midi = makeFakeControl();
 let osc = makeFakeControl();
+let codevoices = makeFakeControl();
 let audioLive: AudioGainControl | null = audio.control;
 let midiLive: AudioGainControl | null = midi.control;
 let oscLive: AudioGainControl | null = osc.control;
+let codevoicesLive: AudioGainControl | null = codevoices.control;
 
 // kronos-audio pulls the whole engine graph (@kronos/core, runtime-audio…) —
-// mock the three accessors mixer-gain reads.
+// mock the four accessors mixer-gain reads.
 vi.mock('../runtimes/kronos-audio', () => ({
   audioGainControl: () => audioLive,
   midiGainControl: () => midiLive,
-  oscGainControl: () => oscLive
+  oscGainControl: () => oscLive,
+  codeVoicesGainControl: () => codevoicesLive
 }));
 
-const { applyMixerGains } = await import('./mixer-gain');
+const { applyMixerGains, codeVoiceReachesGainBus, mixerSliderActiveTitle } =
+  await import('./mixer-gain');
 const { mixerIntent } = await import('./mixer-intent');
 
 function resetIntent() {
@@ -54,9 +58,11 @@ describe('applyMixerGains (KAN-UX3 / KAN-UX3-B)', () => {
     audio = makeFakeControl();
     midi = makeFakeControl();
     osc = makeFakeControl();
+    codevoices = makeFakeControl();
     audioLive = audio.control;
     midiLive = midi.control;
     oscLive = osc.control;
+    codevoicesLive = codevoices.control;
   });
 
   it('projects the persisted intent onto the audio gain API', () => {
@@ -71,7 +77,7 @@ describe('applyMixerGains (KAN-UX3 / KAN-UX3-B)', () => {
     expect(audio.setActorGain).toHaveBeenCalledWith('viz', 0.7);
   });
 
-  it('projects the SAME intent onto midi AND osc when they are live (KAN-UX3-B)', () => {
+  it('projects the SAME intent onto midi, osc AND codevoices when they are live (KAN-UX3-B)', () => {
     mixerIntent.setMasterVolume(0.5);
     mixerIntent.setActorVolume('melody', 0.3);
     applyMixerGains();
@@ -79,15 +85,19 @@ describe('applyMixerGains (KAN-UX3 / KAN-UX3-B)', () => {
     expect(midi.setActorGain).toHaveBeenCalledWith('melody', 0.3);
     expect(osc.setMasterGain).toHaveBeenLastCalledWith(0.5);
     expect(osc.setActorGain).toHaveBeenCalledWith('melody', 0.3);
+    expect(codevoices.setMasterGain).toHaveBeenLastCalledWith(0.5);
+    expect(codevoices.setActorGain).toHaveBeenCalledWith('melody', 0.3);
   });
 
   it('skips a runtime that is not live without touching the others', () => {
     midiLive = null;
+    codevoicesLive = null;
     mixerIntent.setMasterVolume(0.4);
     applyMixerGains();
     expect(audio.setMasterGain).toHaveBeenCalledWith(0.4);
     expect(osc.setMasterGain).toHaveBeenCalledWith(0.4);
     expect(midi.setMasterGain).not.toHaveBeenCalled();
+    expect(codevoices.setMasterGain).not.toHaveBeenCalled();
   });
 
   it('mutating the INTENT changes what a later re-application sends (traceability)', () => {
@@ -105,9 +115,39 @@ describe('applyMixerGains (KAN-UX3 / KAN-UX3-B)', () => {
     audioLive = null;
     midiLive = null;
     oscLive = null;
+    codevoicesLive = null;
     expect(() => applyMixerGains()).not.toThrow();
     expect(audio.setMasterGain).not.toHaveBeenCalled();
     expect(midi.setMasterGain).not.toHaveBeenCalled();
     expect(osc.setMasterGain).not.toHaveBeenCalled();
+    expect(codevoices.setMasterGain).not.toHaveBeenCalled();
+  });
+});
+
+describe('codeVoiceReachesGainBus (KAN-UX3-B)', () => {
+  it('is true for strudel, tidal and csound — the only adapters implementing the gain API', () => {
+    expect(codeVoiceReachesGainBus('strudel')).toBe(true);
+    expect(codeVoiceReachesGainBus('tidal')).toBe(true);
+    expect(codeVoiceReachesGainBus('csound')).toBe(true);
+  });
+
+  it('is false for hydra, p5, mercury and js — no gain API on their adapter', () => {
+    expect(codeVoiceReachesGainBus('hydra')).toBe(false);
+    expect(codeVoiceReachesGainBus('p5')).toBe(false);
+    expect(codeVoiceReachesGainBus('mercury')).toBe(false);
+    expect(codeVoiceReachesGainBus('js')).toBe(false);
+  });
+});
+
+describe('mixerSliderActiveTitle (KAN-UX3-B)', () => {
+  it('warns csound the effect depends on the author reading the control channel', () => {
+    const title = mixerSliderActiveTitle('drums', 'csound');
+    expect(title).toContain('drums');
+    expect(title).toMatch(/chnget|gain_drums/);
+  });
+
+  it('uses the generic label for every other runtime', () => {
+    expect(mixerSliderActiveTitle('groove', 'strudel')).toBe('volume groove');
+    expect(mixerSliderActiveTitle('groove', 'audio')).toBe('volume groove');
   });
 });

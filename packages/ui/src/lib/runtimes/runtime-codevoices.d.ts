@@ -40,6 +40,12 @@ export interface CodeVoicesRuntime {
   bindClock(clock: unknown): void;
   evaluate(code: string, src: EvalSource, interp?: string): Promise<void>;
   setActorMuted(actor: string, muted: boolean): void;
+  /** MIXAGE (hote-runtimes-sortie.md:51, amendement 2026-07-09, arbitrage [73]) — même contrat
+   *  gain 0..1 linéaire que runtime-audio/midi/osc, diffusé en interne à TOUS les adaptateurs de
+   *  voix ; seuls strudel/tidal/csound l'implémentent réellement sur leur adaptateur individuel. */
+  setActorGain(actor: string, gain: number): void;
+  setMasterGain(gain: number): void;
+  setMasterMuted(muted: boolean): void;
   dispose(): void;
 }
 
