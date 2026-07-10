@@ -1,5 +1,22 @@
 <script lang="ts">
   import { mixer } from '../../stores/mixer.svelte';
+  import { actors } from '../../stores/actors.svelte';
+  import { isCodeVoiceRuntime } from '../../lib/runtimes/registry';
+  import { reachesGainBus } from '../../lib/mixer/mixer-gain';
+
+  // Master gain is projected onto EVERY live gain bus (audio/midi/osc — applyMixerGains
+  // calls setMasterGain/setMasterMuted on each), which only NATIVE actors declared on one
+  // of those transports (Actor.outputTransport, BPx's `output.runtime`) reach — a code
+  // voice (strudel/hydra/…) renders through its own graph, and a native actor routed dmx
+  // (API not yet confirmed) never touches any of these buses either (exact same "nothing
+  // to act on" as a code voice, different cause). Only disable the master when NO live
+  // actor genuinely reaches a gain bus; if even one does, the master stays live.
+  const anyReachesGainBus = $derived(
+    actors.list.some((a) => !isCodeVoiceRuntime(a.runtime) && reachesGainBus(a.outputTransport))
+  );
+  const disabled = $derived(actors.list.length > 0 && !anyReachesGainBus);
+  const DISABLED_TITLE =
+    "aucun acteur actif ne joint une sortie mixable — pas de contrôle de volume depuis Kanopi (en attente d'une API d'entrée côté runtime)";
 </script>
 
 <div class="strip master" class:muted={mixer.master.muted}>
@@ -14,7 +31,8 @@
     step="0.01"
     value={mixer.master.volume}
     oninput={(e) => mixer.setMasterVolume(e.currentTarget.valueAsNumber)}
-    title="master volume"
+    {disabled}
+    title={disabled ? DISABLED_TITLE : 'master volume'}
   />
   <button
     class="mute"
@@ -54,6 +72,10 @@
     flex: 1;
     min-width: 0;
     accent-color: var(--amber);
+  }
+  .vol:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
   }
   .mute {
     width: 20px;

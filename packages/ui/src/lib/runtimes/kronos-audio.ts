@@ -230,11 +230,16 @@ export function pilotAudioMeter(): AudioMeter | null {
   return currentAudioMeter;
 }
 
-// MIXAGE (KAN-UX3, contrat [651]) — l'affordance GAIN de runtime-audio (setMasterGain/
-// setMasterMuted/setActorGain, adapter.js:706+). Même chemin d'accès que la sonde meter :
-// une référence sur l'AudioRuntime COURANT (mise à jour à chaque build de handle), lue par
-// la couche mixer de l'hôte. L'hôte n'a AUCUN nœud audio : il exprime l'intention (0..1
-// linéaire, effectif = acteur × maître), la runtime possède les nœuds et la rampe anti-clic.
+// MIXAGE (KAN-UX3, contrat hote-runtimes-sortie.md:51, amendement 2026-07-09) — l'affordance
+// GAIN (setMasterGain/setMasterMuted/setActorGain) est désormais ratifiée IDENTIQUE sur les
+// TROIS runtimes de sortie sonnants (runtime-audio adapter.js:706+, runtime-midi
+// midi-runtime.js:209+, runtime-osc adapter.js:265+ — noms/signature/sémantique 0..1 linéaire,
+// effectif = acteur × maître, confirmés par les 3 équipes [661]-[665]). MÊME chemin d'accès que
+// la sonde meter pour chacun : une référence sur l'instance COURANTE (mise à jour à chaque
+// build de handle), lue par la couche mixer de l'hôte. L'hôte ne porte que l'INTENTION ; la
+// réalisation sur le fil (rampe anti-clic pour l'audio, mise à l'échelle de la vélocité pour
+// midi/osc — protocole discret, effet à la PROCHAINE note) est ENTIÈREMENT interne à chaque
+// runtime.
 export interface AudioGainControl {
   setMasterGain(value: number): void;
   setMasterMuted(muted: boolean): void;
@@ -243,6 +248,20 @@ export interface AudioGainControl {
 let currentAudioGain: AudioGainControl | null = null;
 export function audioGainControl(): AudioGainControl | null {
   return currentAudioGain;
+}
+let currentMidiGain: AudioGainControl | null = null;
+/** Même contrat gain que `audioGainControl()`, porté par l'instance MIDI VIVANTE de la scène
+ *  (`voice.midi` en amont — bpx-adapter.ts — passé ici en `opts.sinks.midi`). `null` quand la
+ *  scène n'a aucun acteur MIDI (pas de sink construit). */
+export function midiGainControl(): AudioGainControl | null {
+  return currentMidiGain;
+}
+let currentOscGain: AudioGainControl | null = null;
+/** Même contrat gain que `audioGainControl()`, porté par l'`OscAdapter` VIVANT (recréé à
+ *  chaque `startKronosAudio`, jamais en `buildOnly` — mêmes gardes que `oscRuntime` plus bas).
+ *  `null` quand la scène n'a aucun acteur OSC ou pas d'URL de relais. */
+export function oscGainControl(): AudioGainControl | null {
+  return currentOscGain;
 }
 
 export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
@@ -328,6 +347,10 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
 
   // MIDI OUTPUT = the host-built per-actor MidiTransport, handed in as `sinks.midi`.
   const midiSink: TransportLike | null = opts.sinks?.midi ?? null;
+  // MIXAGE : `midiSink` EST déjà l'instance MIDI vivante (bpx-adapter la construit et la passe
+  // ici telle quelle, `sinks: { midi }` — pas de wrapper hôte) ; même mise à jour que la sonde
+  // audio ci-dessus.
+  currentMidiGain = midiSink as unknown as AudioGainControl | null;
 
   // OSC OUTPUT — l'adaptateur uniforme de runtime-OSC (frontière hôte↔runtimes, Phase 2). La
   // fabrique POSSÈDE tout : socket WS→pont, profil d'adressage, DÉRIVATION des devices depuis la
@@ -343,6 +366,9 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
         actors: opts.actors,
         log: (m: string) => log(m)
       });
+  // MIXAGE : même garde que `currentAudioGain` — l'instance RÉELLE (`oscRuntime`, pas
+  // `oscSink` qui peut être un test override), nulle en `buildOnly`/sans acteur OSC.
+  currentOscGain = oscRuntime as unknown as AudioGainControl | null;
   const oscSink: TransportLike | null =
     opts.sinks?.osc ?? (oscRuntime as unknown as TransportLike | null);
 

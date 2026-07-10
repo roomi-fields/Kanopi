@@ -90,6 +90,15 @@ export interface MidiRuntime {
   send(event: unknown): void;
   stop(): void;
   setActorMuted(actor: string, muted: boolean): void;
+  /** MIXAGE (slot optionnel du contrat hote-runtimes-sortie.md:51, amendement 2026-07-09
+   *  ratifié — même nom/signature que runtime-audio). L'hôte porte l'INTENTION (0..1 linéaire,
+   *  effectif = acteur × maître) ; la réalisation (mise à l'échelle de la vélocité, effet à la
+   *  PROCHAINE note — protocole discret, pas de rampe anti-clic) est interne au paquet. État
+   *  MODULE-LEVEL (`_mixer`, midi-runtime.js:50) : survit à un `stop()`→`play()` et à un
+   *  MidiRuntime recréé par scène, PAS besoin de re-pousser après un play. */
+  setMasterGain(value: number): void;
+  setMasterMuted(muted: boolean): void;
+  setActorGain(actor: string, value: number): void;
   dispose(): void;
   close(): void;
 }

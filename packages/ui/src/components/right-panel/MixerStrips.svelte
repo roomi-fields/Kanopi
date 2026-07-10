@@ -1,11 +1,26 @@
 <script lang="ts">
-  // KAN-UX3 — DAW-like mixer: master strip on top, one strip per live actor.
+  // KAN-UX3 / KAN-UX3-B — DAW-like mixer: master strip on top, one strip per live actor.
   // The mute is the PERSISTENT performer layer (mixer intent, localStorage) —
-  // distinct from the arming M of the actor list above. Volumes ride
-  // runtime-audio's gain API (contract [651]): effective = actor × master.
+  // distinct from the arming M of the actor list above. Volumes ride the ratified gain
+  // API (contract hote-runtimes-sortie.md:51): effective = actor × master, on WHICHEVER
+  // live runtime (audio/midi/osc) owns the actor — `applyMixerGains` calls all of them.
   import { actors } from '../../stores/actors.svelte';
   import { mixer } from '../../stores/mixer.svelte';
+  import { isCodeVoiceRuntime } from '../../lib/runtimes/registry';
+  import { reachesGainBus, mixerSliderDisabledTitle } from '../../lib/mixer/mixer-gain';
   import MixerMaster from './MixerMaster.svelte';
+
+  // The slider moves whichever live gain bus (audio/midi/osc) owns the actor
+  // (`applyMixerGains` → audioGainControl()/midiGainControl()/oscGainControl()). Two
+  // families of actor never reach ANY of them:
+  //  - a code voice (strudel/hydra/p5/mercury/csound/tidal/js — anything backed by
+  //    `eval.<interp>`) runs its own audio graph, entirely bypassing all three buses
+  //    (`isCodeVoiceRuntime`, registry.ts — the same list the runtime registry is
+  //    built from);
+  //  - a NATIVE actor (notes, not a code voice) routed to dmx/a custom @devices name
+  //    whose gain API isn't confirmed yet (`Actor.outputTransport`, BPx's
+  //    `output.runtime`, decision [624]) — same "slider lies" problem, different cause.
+  // Disable rather than let the slider silently do nothing.
 </script>
 
 <div class="mixer">
@@ -16,6 +31,12 @@
   {:else}
     <ul class="strips">
       {#each actors.list as a (a.name)}
+        {@const isCodeVoice = isCodeVoiceRuntime(a.runtime)}
+        {@const disabledKind = isCodeVoice
+          ? 'voix de code'
+          : !reachesGainBus(a.outputTransport)
+            ? (a.outputTransport ?? 'inconnu')
+            : null}
         <li class="strip" class:muted={mixer.isActorMuted(a.name) || mixer.master.muted}>
           <span class="label" title={a.name}>{a.name}</span>
           <input
@@ -26,7 +47,10 @@
             step="0.01"
             value={mixer.actorEntry(a.name).volume}
             oninput={(e) => mixer.setActorVolume(a.name, e.currentTarget.valueAsNumber)}
-            title="volume {a.name}"
+            disabled={disabledKind !== null}
+            title={disabledKind !== null
+              ? mixerSliderDisabledTitle(disabledKind)
+              : `volume ${a.name}`}
           />
           <button
             class="mute"
@@ -86,6 +110,10 @@
     flex: 1;
     min-width: 0;
     accent-color: var(--amber);
+  }
+  .vol:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
   }
   .mute {
     width: 20px;

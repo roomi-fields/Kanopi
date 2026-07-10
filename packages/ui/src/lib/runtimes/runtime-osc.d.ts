@@ -96,6 +96,16 @@ export declare class OscAdapter {
   stop(): void;
   /** Mute/unmute an actor's emission (arm/disarm). */
   setActorMuted(actor: string, muted: boolean): void;
+  /** MIXAGE (slot optionnel du contrat hote-runtimes-sortie.md:51, amendement 2026-07-09
+   *  ratifié — même nom/signature que runtime-audio/runtime-midi). L'hôte porte l'INTENTION
+   *  (0..1 linéaire, effectif = acteur × maître) ; la réalisation (mise à l'échelle de la
+   *  vélocité, effet à la PROCHAINE note) est interne au paquet. État PRIVÉ D'INSTANCE
+   *  (`#masterGain`/`#actorGains`, adapter.js:63-65) : un `OscAdapter` frais est créé à
+   *  chaque play (pas de `buildOnly`) — le rôle de le ré-appliquer revient à l'hôte, aux
+   *  mêmes points d'accroche `applyMixerGains()` déjà utilisés pour runtime-audio. */
+  setMasterGain(value: number): void;
+  setMasterMuted(muted: boolean): void;
+  setActorGain(actor: string, value: number): void;
   /** Release timers + transport. */
   close(): void;
 }
@@ -118,6 +128,11 @@ export interface OscRuntime {
   send(event: unknown): void;
   stop(): void;
   setActorMuted(actor: string, muted: boolean): void;
+  /** MIXAGE — voir `OscAdapter` ci-dessus (même contrat, l'instance rendue par la fabrique EST
+   *  un `OscAdapter`). */
+  setMasterGain(value: number): void;
+  setMasterMuted(muted: boolean): void;
+  setActorGain(actor: string, value: number): void;
   dispose(): void;
 }
 
