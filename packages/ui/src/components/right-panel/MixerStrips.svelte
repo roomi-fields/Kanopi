@@ -39,11 +39,12 @@
       {#each actors.list as a (a.name)}
         {@const isCodeVoice = isCodeVoiceRuntime(a.runtime)}
         {@const codeVoiceGainOk = isCodeVoice && codeVoiceReachesGainBus(a.runtime)}
-        {@const disabledKind = isCodeVoice && !codeVoiceGainOk
-          ? 'voix de code'
-          : !isCodeVoice && !reachesGainBus(a.outputTransport)
-            ? (a.outputTransport ?? 'inconnu')
-            : null}
+        {@const disabledKind =
+          isCodeVoice && !codeVoiceGainOk
+            ? 'voix de code'
+            : !isCodeVoice && !reachesGainBus(a.outputTransport)
+              ? (a.outputTransport ?? 'inconnu')
+              : null}
         <li class="strip" class:muted={mixer.isActorMuted(a.name) || mixer.master.muted}>
           <span class="label" title={a.name}>{a.name}</span>
           <input
