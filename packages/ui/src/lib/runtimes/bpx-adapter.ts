@@ -1090,6 +1090,16 @@ export interface PublishedActor {
   runtime: Runtime;
   /** Source file the orchestrator was evaluated from (so the UI can show it). */
   file?: string;
+  /**
+   * The actor's declared output transport family, read off `actorOutputs[actor.name]
+   * .runtime` (`tree.metadata.actors`, BPx authority — the SAME `output.runtime` key
+   * Kronos routes events on, decision [624], see the `routesToMidi` read a few hundred
+   * lines above this publish loop). Absent declaration ⇒ the AST's implicit default,
+   * 'audio' (the webaudio bus) — mirrors the `default`/mono-scene default documented at
+   * the `startKronosAudio` call site. Host-UI concern only (gates the mixer slider);
+   * Kanopi performs no routing decision off this field.
+   */
+  outputTransport?: string;
 }
 
 // Optional hook the core wires so an orchestrator `.bps`'s `@actor` list reaches
@@ -1843,8 +1853,27 @@ function makeBpxAdapter(
                   : reason === 'no-selection'
                     ? 'Aucun périphérique MIDI sélectionné — choisis-en un dans le panneau Hardware, puis réessaie.'
                     : 'Accès MIDI refusé — autorise le MIDI dans les paramètres de ce site, puis réessaie.';
-            log({ runtime: id, level: 'error', msg });
-            throw new Error(msg);
+            // Scope au(x) SEUL(S) acteur(s) MIDI (Object.values(actorOutputs) au-dessus
+            // ne dit que "au moins un" — on redérive les noms ici pour le message).
+            // Le CRI reste (contrat kanopi-runtime-midi.md §3, [619]) mais NE THROW PLUS :
+            // un acteur webaudio de la même scène (ex. `bass` dans midi-actors.bps) n'a
+            // rien à voir avec MIDI et doit continuer à dériver/publier/jouer — throw ici
+            // abortait `evaluate()` en ENTIER avant startKronosAudio + la publication des
+            // acteurs, rendant TOUTE la scène silencieuse et « derive error » pour un
+            // manque de matériel MIDI sur UN SEUL acteur. Laisser `midi = undefined` (déjà
+            // fait ci-dessus) suffit : `sinks` omet la clé 'midi', et Kronos fait déjà
+            // échouer fort chaque évènement routé MIDI via son diagnostic
+            // `unknown-output-runtime` (kronos-audio.ts ~349-356) — jamais de repli muet.
+            const midiActorNames = actorOutputs
+              ? Object.entries(actorOutputs)
+                  .filter(([, a]) => a.runtime === 'midi')
+                  .map(([name]) => name)
+              : [];
+            const scopedMsg =
+              midiActorNames.length > 0
+                ? `acteur(s) MIDI muet(s) (${midiActorNames.join(', ')}) : ${msg}`
+                : msg;
+            log({ runtime: id, level: 'error', msg: scopedMsg });
           }
         }
         // Per-actor routing (KAI-9): each note carries its OWN output layer — Kairos
@@ -2044,7 +2073,15 @@ function makeBpxAdapter(
           const codeRuntime = actor.evalInterp ? runtimeForInterp(actor.evalInterp) : undefined;
           if (codeRuntime)
             codeSlots.push({ runtime: codeRuntime, actorId: slotForActor(actor.name) });
-          published.push({ name: actor.name, runtime: codeRuntime ?? id, file: src.fileId });
+          // Same authority + default as `routesToMidi` above ('audio' when the actor
+          // declares no explicit `transport.` — the AST's implicit default).
+          const outputTransport = actorOutputs?.[actor.name]?.runtime ?? 'audio';
+          published.push({
+            name: actor.name,
+            runtime: codeRuntime ?? id,
+            file: src.fileId,
+            outputTransport
+          });
           const btToken = actorToBt[actor.name];
           orchestratedVoices.set(actor.name, {
             file: src.fileId,

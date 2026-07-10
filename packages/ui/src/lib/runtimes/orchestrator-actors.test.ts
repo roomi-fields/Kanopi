@@ -13,7 +13,12 @@ import * as registry from './registry';
 
 // Minimal WebAudio + node stubs so the orchestrator eval can build its dispatcher.
 class FakeGain {
-  gain = { value: 1, setValueAtTime() {} };
+  gain = {
+    value: 1,
+    setValueAtTime() {},
+    linearRampToValueAtTime() {},
+    cancelScheduledValues() {}
+  };
   connect() {
     return this;
   }
@@ -104,6 +109,65 @@ describe('orchestrator actor publication', () => {
     expect(byName.groove).toBe('strudel');
     expect(byName.viz).toBe('hydra');
     await bpscriptAdapter.stop({ actorId: '__hush__', fileId: 'x.bps' }, () => {});
+  });
+});
+
+// Verbatim copy of the bundled demo (packages/library/bundled/demos/midi-actors.bps):
+// one actor on MIDI, one on WebAudio. In vitest/jsdom there is no
+// `navigator.requestMIDIAccess`, so `createMidiRuntime(...).init()` resolves to
+// `ready:false, reason:'no-webmidi'` for real — the actual "MIDI unavailable"
+// condition, no mocking of runtime-midi needed.
+const MIDI_PLUS_WEBAUDIO = `@core
+@controls
+
+@actor melody  alphabet:western  transport:midi(ch:1)
+@actor bass    alphabet:western  transport:webaudio
+
+S -> {Mel, Low}
+
+Mel -> melody.C4 melody.E4 melody.G4 melody.C5 melody.B4 melody.G4 melody.E4 melody.C4
+Low -> bass.C2(wave:sawtooth)(vel:80) - bass.G2 - bass.C2 - bass.E2 -
+`;
+
+describe('orchestrator MIDI gate scope (one actor MIDI-unavailable must not silence the whole scene)', () => {
+  it('publishes + plays the webaudio actor even when the MIDI actor has no device', async () => {
+    let published: PublishedActor[] = [];
+    setActorsSink((a) => {
+      published = a;
+    });
+    const logs: Array<{ runtime: string; level: string; msg: string }> = [];
+
+    // Must NOT throw/reject: melody's MIDI gate failing is a per-actor cry, not a
+    // scene-wide derive error (the bug: it used to abort evaluate() before
+    // startKronosAudio + actor publication ran at all).
+    await expect(
+      bpscriptAdapter.evaluate(
+        MIDI_PLUS_WEBAUDIO,
+        { actorId: 'midi-actors.bps', fileId: 'midi-actors.bps' },
+        (e) => logs.push(e)
+      )
+    ).resolves.not.toThrow();
+
+    // Both actors published — bass (webaudio) is NOT collateral damage of melody's
+    // (midi) missing hardware.
+    expect(published.map((p) => p.name).sort()).toEqual(['bass', 'melody']);
+
+    // outputTransport reflects the DECLARED transport per actor (BPx's
+    // `tree.metadata.actors[name].runtime`, decision [624]) — the field the mixer
+    // gates its slider on: melody (transport:midi) must read 'midi', bass
+    // (transport:webaudio) must read the webaudio family so its slider stays live.
+    const transportByName = Object.fromEntries(published.map((p) => [p.name, p.outputTransport]));
+    expect(transportByName.melody).toBe('midi');
+    expect(transportByName.bass).toBe('webaudio');
+
+    // The cry still happens, scoped to the MIDI actor, with the established
+    // no-webmidi actionable text (contract kanopi-runtime-midi.md §3, [619]).
+    const midiCry = logs.find(
+      (l) => l.level === 'error' && l.msg.includes('melody') && l.msg.includes('Web MIDI')
+    );
+    expect(midiCry).toBeDefined();
+
+    await bpscriptAdapter.stop({ actorId: '__hush__', fileId: 'midi-actors.bps' }, () => {});
   });
 });
 

@@ -146,7 +146,8 @@ class RealCore implements CoreApi {
           name: p.name,
           runtime: p.runtime,
           file: p.file,
-          active: true
+          active: true,
+          outputTransport: p.outputTransport
         }))
       );
       // KAN-UX3 — a fresh publish re-registered the voices fully armed; re-apply the
