@@ -1123,26 +1123,24 @@ export function setExprSource(fn: ExprSource | undefined): void {
 // curves through it (Kanopi still never compiles/renders — it only passes it on).
 setExprSource(exprSource as unknown as ExprSource);
 
-// Live arm/disarm handle for ONE orchestrated actor's voice. Registered per
-// (file, actor) when an orchestrator evaluates; the core reaches it by actor
-// name to silence/restore that single voice while the rest keep playing.
+// Live mute + teardown handle for ONE orchestrated actor's voice. Registered per
+// (file, actor) when an orchestrator evaluates.
 interface OrchestratedVoiceHandle {
-  /** Mute/unmute the actor's NOTES on the running dispatcher (native voices). */
-  setNoteMuted: (muted: boolean) => void;
-  /** Stop the actor's CODE voice (Strudel/Hydra). Resolves once its adapter's
-   *  `stop` has run (the Hydra hush that blackens the canvas + clears its rAF
-   *  callbacks). Undefined for note voices. */
+  /** Route the mute INTENT through Kronos's own state machine
+   *  (`kronosAudio.setActorMuted` → `kairos.demande({type:'mute',...})` → Kronos's
+   *  registry, which pilots BOTH the notes scheduler AND runtime-codevoices' sink —
+   *  contracts kanopi-runtime-codevoices.md:72, kronos-transport.md:62/108,
+   *  temps-horloge.md:65, arbitrage [671]/[673]). The host carries the intent only;
+   *  it no longer decides itself whether/when a code voice fires or stops — that WAS
+   *  the deviation (`armOrchestratedActor`/`disarmOrchestratedActor` calling
+   *  `evalCode`/`stopCode` directly, retired 2026-07-11 per [673]). */
+  setActorMuted: (muted: boolean) => void;
+  /** Stop the actor's CODE voice (Strudel/Hydra) for SCENE-SWAP teardown
+   *  (`tearDownOutgoingVoices`) and global hush (`__hush__`) — NOT for mute, which
+   *  routes through `setActorMuted` above. Resolves once its adapter's `stop` has run
+   *  (the Hydra hush that blackens the canvas + clears its rAF callbacks). Undefined
+   *  for note voices. */
   stopCode?: () => Promise<void>;
-  /** Re-evaluate the actor's CODE voice (Strudel/Hydra). Undefined for notes. */
-  evalCode?: () => void;
-  /** Is this actor's orchestrator transport currently running? `armOrchestratedActor`
-   *  reads this to decide whether `evalCode` should fire immediately — un-muting while
-   *  STOPPED must not start sound on its own; the code voice should stay silent until a
-   *  genuine Play, which fires it through the normal cycle (the sink already reads the
-   *  cleared mute below). Firing it here regardless of transport state was the bug: an
-   *  unmute click while stopped started an orphan Strudel loop with no owner in the
-   *  stop/replay bookkeeping — Stop couldn't reach it (Romain, 2026-07-11). */
-  isRunning: () => boolean;
   /** The orchestrator file this voice belongs to, so loading a DIFFERENT
    *  program can tear down only the OUTGOING voices (cf. `tearDownOutgoingVoices`). */
   file: string;
@@ -1172,34 +1170,16 @@ async function tearDownOutgoingVoices(keepFile: string | undefined): Promise<voi
 }
 
 /**
- * Live-arm an orchestrated actor: route/play its voice again. A code voice
- * (Strudel/Hydra) is re-evaluated; a native notes voice is un-muted on the
- * dispatcher. No-op when the actor isn't a live orchestrated voice.
+ * Live-mute/un-mute an orchestrated actor's voice — notes AND code voices alike,
+ * through the SAME channel (`kronosAudio.setActorMuted`). No-op when the actor
+ * isn't a live orchestrated voice.
  */
-export function armOrchestratedActor(name: string): void {
-  const h = orchestratedVoices.get(name);
-  if (!h) return;
-  h.setNoteMuted(false);
-  // Only fire the code voice immediately if its transport is actually running —
-  // un-muting while stopped clears the mute (the sink picks it up on the next real
-  // Play) but must not start sound on its own (see `isRunning` doc above).
-  if (h.isRunning()) h.evalCode?.();
-}
-
-/**
- * Live-disarm an orchestrated actor: silence its voice while the others keep
- * playing. A code voice is stopped; a native notes voice is muted on the
- * dispatcher. No-op when the actor isn't a live orchestrated voice.
- */
-export function disarmOrchestratedActor(name: string): void {
-  const h = orchestratedVoices.get(name);
-  if (!h) return;
-  h.setNoteMuted(true);
-  h.stopCode?.();
+export function setOrchestratedActorMuted(name: string, muted: boolean): void {
+  orchestratedVoices.get(name)?.setActorMuted(muted);
 }
 
 /** True when the named actor is a live orchestrated voice (lets the core pick
- *  the orchestrated arm/disarm path). */
+ *  the orchestrated mute path). */
 export function isOrchestratedActor(name: string): boolean {
   return orchestratedVoices.has(name);
 }
@@ -1762,18 +1742,15 @@ function makeBpxAdapter(
       // résolveurs ; le seul transport qu'il portait, MIDI, a migré). runtime-audio possède le sien.
       const dispatcher = new Dispatcher();
 
-      // Orchestrator-only: BT token → owning actor (rule LHS), and the live set
-      // of disarmed actors (consulted by the backtick sink + the per-actor note
-      // gate). Per-eval — a re-eval rebuilds them. A code voice evaluates into a
-      // distinct slot `<fileId>::<actor>` so arm/disarm can stop just that voice.
+      // Orchestrator-only: BT token → owning actor (rule LHS). Per-eval — a
+      // re-eval rebuilds it. A code voice evaluates into a distinct slot
+      // `<fileId>::<actor>` so a scene swap can tear down just that voice.
       const isOrchestrated = !!(orchestration && orchestration.actors.length > 0);
       // actor → BT token (rule LHS → its backtick). The sink needs the INVERSE
-      // (token → actor) to find which voice a fired BT belongs to; `evalCode`
-      // (re-arm) needs actor → token. Build both from the one extraction.
+      // (token → actor) to find which voice a fired BT belongs to.
       const actorToBt = isOrchestrated ? btTokenByActor(ast) : {};
       const btToActor: Record<string, string> = {};
       for (const [actor, token] of Object.entries(actorToBt)) btToActor[token] = actor;
-      const mutedActors = new Set<string>();
       const slotForActor = (actor: string) => `${src.fileId}::${actor}`;
 
       // Backtick voices (lot 4): route each `BT<interp><id>` terminal to its
@@ -1790,7 +1767,14 @@ function makeBpxAdapter(
               backticks,
               fileId: src.fileId,
               log,
-              orchestration: isOrchestrated ? { btToActor, mutedActors, slotForActor } : undefined
+              // `mutedActors` is VESTIGIAL: mute now routes through Kronos's state
+              // machine (kronosAudio.setActorMuted → runtime-codevoices' own ACTIVE
+              // sink), so the host neither reads nor writes it any more — never
+              // populated, kept only because the field is still required by the
+              // TYPE ([673]: coordinated removal once confirmed unused both sides).
+              orchestration: isOrchestrated
+                ? { btToActor, mutedActors: new Set<string>(), slotForActor }
+                : undefined
             })
           : undefined;
 
@@ -1897,9 +1881,9 @@ function makeBpxAdapter(
         // The dispatcher is now ONLY the inert resolver structure (per-actor pitch
         // resolvers) + the MIDI transport's lifecycle owner; it NEVER emits, carries no
         // timeline, and is NOT read for routing. The PLAYED timeline is the Kairos
-        // projection (bound on the Transport). Live mute is the shared `mutedActors` set
-        // (consulted by the backtick sink) + `kairos.demande` for the note voices — no
-        // host event pre-filtering. Code voices (Strudel/Hydra backticks) fire via the
+        // projection (bound on the Transport). Live mute for EVERY actor kind routes
+        // through `kairos.demande` → Kronos's own registry (no host event
+        // pre-filtering, [673]). Code voices (Strudel/Hydra backticks) fire via the
         // Kronos adapter's `'code'` sink (interpreter from `output.device`).
         let kronosAudio: KronosAudioHandle | undefined;
         // Kronos is the ONLY engine (legacy removed): it drives notes + CV + the code
@@ -2065,12 +2049,11 @@ function makeBpxAdapter(
           backticks
         });
 
-        // Publish the actor list to the Actors panel (groove + viz, …) and
-        // register a live arm/disarm handle per actor. A code voice (Strudel/
-        // Hydra) is stopped/re-evaluated through its own adapter + slot; a native
-        // notes voice is muted via Kronos's scheduler (`kronosAudio.setActorMuted`)
-        // + the shared `mutedActors` set. The handle map is keyed by actor name and
-        // replaced on each re-eval.
+        // Publish the actor list to the Actors panel (groove + viz, …) and register
+        // a live handle per actor: mute (ANY actor kind) routes uniformly through
+        // `kronosAudio.setActorMuted`; `stopCode` stays for scene-swap teardown only
+        // (code voices live on their own adapter, outside this dispatcher). The
+        // handle map is keyed by actor name and replaced on each re-eval.
         // Tear down the OUTGOING program's code voices (a previous orchestrator's
         // Hydra canvas + its rAF loop, Strudel audio) before registering this one's
         // — loading a new program must not leave the old scene's voices rendering
@@ -2093,16 +2076,13 @@ function makeBpxAdapter(
             file: src.fileId,
             outputTransport
           });
-          const btToken = actorToBt[actor.name];
           orchestratedVoices.set(actor.name, {
             file: src.fileId,
-            isRunning: () => kronosAudio?.transport.state === 'running',
-            setNoteMuted: (muted: boolean) => {
-              // The live mute set is the single source of truth per re-derive cycle
-              // (consulted by `orchestratedLive` + the backtick sink).
-              if (muted) mutedActors.add(actor.name);
-              else mutedActors.delete(actor.name);
-              // Kronos drives the notes, so the live mute must reach ITS scheduler.
+            // Uniform channel for EVERY actor kind (notes AND code voices): Kronos's
+            // registry now pilots both the scheduler's emission gate and
+            // runtime-codevoices' sink from this ONE call — the host carries the
+            // intent only ([673], see OrchestratedVoiceHandle doc above).
+            setActorMuted: (muted: boolean) => {
               kronosAudio?.setActorMuted(actor.name, muted);
             },
             stopCode: codeRuntime
@@ -2113,25 +2093,7 @@ function makeBpxAdapter(
                       log
                     )
                   )
-              : undefined,
-            // Re-arm a code voice by re-firing it now (the dispatcher's loop also
-            // re-fires the BT token on the next cycle, but evaluating immediately
-            // restores sound without waiting a full cycle). No BT token → no-op.
-            evalCode:
-              codeRuntime && btToken && backticks?.[btToken]
-                ? () => {
-                    const entry = backticks[btToken];
-                    void import('./registry').then(({ getAdapter }) => {
-                      void getAdapter(codeRuntime)
-                        ?.evaluate(
-                          entry.code,
-                          { actorId: slotForActor(actor.name), fileId: src.fileId },
-                          log
-                        )
-                        .catch(() => {});
-                    });
-                  }
-                : undefined
+              : undefined
           });
         }
         onActorsFromGrammar?.(published, src.fileId);

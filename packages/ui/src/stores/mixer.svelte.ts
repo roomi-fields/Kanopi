@@ -3,11 +3,11 @@
 //
 // The AUTHORITY is `lib/mixer/mixer-intent.ts` (user input, persisted); this
 // store only mirrors its snapshots for the UI (same pattern as ActorsStore over
-// `core.actors`). Per-actor MUTE routes through `arm/disarmOrchestratedActor`
-// (Kronos scheduler gate via `setNoteMuted` + code-voice stop/eval); VOLUMES and
-// the MASTER mute route through runtime-audio's gain API (contract [651], via
-// `applyMixerGains`) — the host mutes/levels at the intent level, it touches no
-// audio node itself.
+// `core.actors`). Per-actor MUTE routes through `setOrchestratedActorMuted` →
+// `kronosAudio.setActorMuted` → Kronos's own state machine, uniformly for notes
+// AND code voices ([673]); VOLUMES and the MASTER mute route through
+// runtime-audio's gain API (contract [651], via `applyMixerGains`) — the host
+// mutes/levels at the intent level, it touches no audio node itself.
 //
 // Layering: the mixer mute is a PERSISTENT performer layer on top of the arming
 // layer (actor store `active`/`muted`). Un-muting the mixer never re-arms an
@@ -21,11 +21,7 @@ import {
   type MixerSnapshot
 } from '../lib/mixer/mixer-intent';
 import { applyMixerGains } from '../lib/mixer/mixer-gain';
-import {
-  armOrchestratedActor,
-  disarmOrchestratedActor,
-  isOrchestratedActor
-} from '../lib/runtimes/bpx-adapter';
+import { setOrchestratedActorMuted, isOrchestratedActor } from '../lib/runtimes/bpx-adapter';
 import { actors } from './actors.svelte';
 
 const DEFAULT_CHANNEL: ChannelIntent = { volume: 1, muted: false };
@@ -91,16 +87,16 @@ class MixerStore {
     applyMixerGains();
   }
 
-  /** Route the composed intent to the live voice. Mixer says muted → disarm.
-   *  Mixer clear → re-arm ONLY if the arming layer (actor store) allows it. */
+  /** Route the composed intent through Kronos's own mute state. Mixer says muted
+   *  → mute. Mixer clear → un-mute ONLY if the arming layer (actor store) allows it. */
   #apply(name: string) {
     if (!isOrchestratedActor(name)) return;
     if (mixerMutedFor(name)) {
-      disarmOrchestratedActor(name);
+      setOrchestratedActorMuted(name, true);
       return;
     }
     const a = actors.list.find((x) => x.name === name);
-    if (a && a.active && !a.muted) armOrchestratedActor(name);
+    if (a && a.active && !a.muted) setOrchestratedActorMuted(name, false);
   }
 }
 

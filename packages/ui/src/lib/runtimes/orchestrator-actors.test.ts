@@ -4,8 +4,7 @@ import {
   bpscriptAdapter,
   setActorsSink,
   isOrchestratedActor,
-  armOrchestratedActor,
-  disarmOrchestratedActor,
+  setOrchestratedActorMuted,
   btTokenByActor,
   type PublishedActor
 } from './bpx-adapter';
@@ -194,7 +193,7 @@ describe('orchestrator arm/disarm', () => {
     await bpscriptAdapter.stop({ actorId: '__hush__', fileId: 'z.bps' }, () => {});
   });
 
-  it('disarm stops the code voice; arm re-evaluates it', async () => {
+  it('mute/unmute NEVER call the code-voice adapter directly — the host only carries the intent to Kronos ([673])', async () => {
     setActorsSink(() => {});
     await bpscriptAdapter.evaluate(SRC, { actorId: 'y.bps', fileId: 'y.bps' }, () => {});
 
@@ -202,16 +201,16 @@ describe('orchestrator arm/disarm', () => {
     const stopSpy = vi.spyOn(strudel, 'stop').mockResolvedValue(undefined);
     const evalSpy = vi.spyOn(strudel, 'evaluate').mockResolvedValue(undefined);
 
-    disarmOrchestratedActor('groove');
+    // This is the exact deviation that was retired 2026-07-11: `armOrchestratedActor`/
+    // `disarmOrchestratedActor` used to call `evaluate`/`stop` on the runtime directly.
+    // Kronos + runtime-codevoices' own ACTIVE `setActorMuted` now own firing/stopping —
+    // the host must never touch the adapter for a mute toggle, running or not.
+    setOrchestratedActorMuted('groove', true);
     await new Promise((r) => setTimeout(r, 10));
-    expect(stopSpy).toHaveBeenCalled();
-    // stop slot is the per-actor slot (file::actor), not the whole file
-    expect(stopSpy.mock.calls[0][0]).toMatchObject({ actorId: 'y.bps::groove' });
-
-    armOrchestratedActor('groove');
+    setOrchestratedActorMuted('groove', false);
     await new Promise((r) => setTimeout(r, 10));
-    expect(evalSpy).toHaveBeenCalled();
-    expect(evalSpy.mock.calls[0][1]).toMatchObject({ actorId: 'y.bps::groove' });
+    expect(stopSpy).not.toHaveBeenCalled();
+    expect(evalSpy).not.toHaveBeenCalled();
 
     stopSpy.mockRestore();
     evalSpy.mockRestore();
@@ -231,12 +230,11 @@ describe('orchestrator arm/disarm', () => {
     const strudel = registry.getAdapter('strudel')!;
     const evalSpy = vi.spyOn(strudel, 'evaluate').mockResolvedValue(undefined);
 
-    // Toggling mute/unmute on the strip before ever pressing Play must NOT start
-    // the code voice — it should stay silent until a real Play runs it through
-    // the normal cycle (the regression: it used to fire `evaluate` unconditionally,
-    // and Stop then had no owner to reach since the transport never transitioned).
-    disarmOrchestratedActor('groove');
-    armOrchestratedActor('groove');
+    // Toggling mute/unmute on the strip before ever pressing Play must NOT start the
+    // code voice — with the unified mute channel this is now guaranteed by construction
+    // (the host never calls `evaluate`), not by a transport-state guard.
+    setOrchestratedActorMuted('groove', true);
+    setOrchestratedActorMuted('groove', false);
     await new Promise((r) => setTimeout(r, 10));
     expect(evalSpy).not.toHaveBeenCalled();
 

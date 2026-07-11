@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "npm run docs:refresh",
     "dev": "vite",
     "docs:refresh": "bash scripts/docs-refresh.sh",
     "icons": "node scripts/gen-icons.mjs",

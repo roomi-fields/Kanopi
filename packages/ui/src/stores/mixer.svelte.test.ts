@@ -1,17 +1,15 @@
-// KAN-UX3 — mixer store: the MUTE intent is APPLIED through the existing live
-// primitives (arm/disarm orchestrated voice, arming layer keeps priority on
-// re-arm); VOLUMES + the MASTER mute also route through runtime-audio's gain
-// API (`applyMixerGains`, contract [651]). The heavy adapter graph is mocked.
+// KAN-UX3 — mixer store: the MUTE intent is APPLIED through the unified Kronos
+// mute channel (`setOrchestratedActorMuted`, notes AND code voices alike, [673]);
+// VOLUMES + the MASTER mute also route through runtime-audio's gain API
+// (`applyMixerGains`, contract [651]). The heavy adapter graph is mocked.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const armOrchestratedActor = vi.fn((_n: string) => {});
-const disarmOrchestratedActor = vi.fn((_n: string) => {});
+const setOrchestratedActorMuted = vi.fn((_n: string, _muted: boolean) => {});
 const isOrchestratedActor = vi.fn((_n: string) => true);
 const applyMixerGains = vi.fn(() => {});
 
 vi.mock('../lib/runtimes/bpx-adapter', () => ({
-  armOrchestratedActor: (n: string) => armOrchestratedActor(n),
-  disarmOrchestratedActor: (n: string) => disarmOrchestratedActor(n),
+  setOrchestratedActorMuted: (n: string, muted: boolean) => setOrchestratedActorMuted(n, muted),
   isOrchestratedActor: (n: string) => isOrchestratedActor(n)
 }));
 vi.mock('../lib/mixer/mixer-gain', () => ({
@@ -52,18 +50,18 @@ describe('mixer store application (KAN-UX3)', () => {
     resetMix();
   });
 
-  it('muting a strip disarms the live voice; un-muting re-arms it', () => {
+  it('muting a strip mutes the live voice through Kronos; un-muting clears it', () => {
     mixer.setActorMuted('groove', true);
-    expect(disarmOrchestratedActor).toHaveBeenCalledWith('groove');
+    expect(setOrchestratedActorMuted).toHaveBeenCalledWith('groove', true);
     mixer.setActorMuted('groove', false);
-    expect(armOrchestratedActor).toHaveBeenCalledWith('groove');
+    expect(setOrchestratedActorMuted).toHaveBeenCalledWith('groove', false);
   });
 
   it('un-muting the mixer never re-arms an actor the ARMING layer holds silent', () => {
     actorList[0].muted = true; // arming layer says muted
     mixer.setActorMuted('groove', true);
     mixer.setActorMuted('groove', false);
-    expect(armOrchestratedActor).not.toHaveBeenCalled();
+    expect(setOrchestratedActorMuted).not.toHaveBeenCalledWith('groove', false);
   });
 
   it('master mute rides the runtime gain API (setMasterMuted, mono scenes covered)', () => {
@@ -80,13 +78,13 @@ describe('mixer store application (KAN-UX3)', () => {
     mixer.setActorMuted('viz', true);
     vi.clearAllMocks();
     mixer.setMasterMuted(true);
-    expect(disarmOrchestratedActor).toHaveBeenCalledWith('groove');
-    expect(disarmOrchestratedActor).toHaveBeenCalledWith('viz');
+    expect(setOrchestratedActorMuted).toHaveBeenCalledWith('groove', true);
+    expect(setOrchestratedActorMuted).toHaveBeenCalledWith('viz', true);
     vi.clearAllMocks();
     mixer.setMasterMuted(false);
-    expect(armOrchestratedActor).toHaveBeenCalledWith('groove');
-    expect(armOrchestratedActor).not.toHaveBeenCalledWith('viz'); // its strip stays muted
-    expect(disarmOrchestratedActor).toHaveBeenCalledWith('viz');
+    expect(setOrchestratedActorMuted).toHaveBeenCalledWith('groove', false);
+    expect(setOrchestratedActorMuted).not.toHaveBeenCalledWith('viz', false); // its strip stays muted
+    expect(setOrchestratedActorMuted).toHaveBeenCalledWith('viz', true);
   });
 
   it('volume changes update the intent and route through the gain API — never arm/disarm', () => {
@@ -97,15 +95,14 @@ describe('mixer store application (KAN-UX3)', () => {
     expect(mixer.actorEntry('groove').volume).toBe(0.25);
     expect(applyMixerGains).toHaveBeenCalledTimes(2);
     // Volume is INDEPENDENT of mute (gain 0 = armed but inaudible ≠ disarmed).
-    expect(armOrchestratedActor).not.toHaveBeenCalled();
-    expect(disarmOrchestratedActor).not.toHaveBeenCalled();
+    expect(setOrchestratedActorMuted).not.toHaveBeenCalled();
     expect(mixer.isActorMuted('groove')).toBe(false);
   });
 
   it('non-orchestrated names are a no-op (no live voice to gate)', () => {
     isOrchestratedActor.mockReturnValue(false);
     mixer.setActorMuted('groove', true);
-    expect(disarmOrchestratedActor).not.toHaveBeenCalled();
+    expect(setOrchestratedActorMuted).not.toHaveBeenCalled();
   });
 
   it('reflects the intent reactively (muted state readable by the UI)', () => {

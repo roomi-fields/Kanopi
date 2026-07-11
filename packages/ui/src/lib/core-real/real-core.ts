@@ -4,8 +4,7 @@ import { getAdapter, listRuntimes } from '../runtimes/registry';
 import {
   setTempoSink,
   setActorsSink,
-  armOrchestratedActor,
-  disarmOrchestratedActor,
+  setOrchestratedActorMuted,
   isOrchestratedActor,
   type PublishedActor
 } from '../runtimes/bpx-adapter';
@@ -155,7 +154,7 @@ class RealCore implements CoreApi {
       // re-evals and scene loads. The arming re-sync at replay is handled separately
       // (`replayActiveScene`).
       for (const p of published) {
-        if (mixerMutedFor(p.name)) disarmOrchestratedActor(p.name);
+        if (mixerMutedFor(p.name)) setOrchestratedActorMuted(p.name, true);
       }
       // KAN-UX3 — the eval rebuilt the AudioRuntime: re-project the persisted
       // VOLUME intent (master gain/mute + per-actor gains) onto the fresh
@@ -269,9 +268,9 @@ class RealCore implements CoreApi {
     // Orchestrator `.bps` actor: mute/unmute its live voice (same mechanism as
     // arm/disarm — silence the voice while the rest play, restore on unmute).
     if (isOrchestratedActor(a.name)) {
-      if (willBeMuted) disarmOrchestratedActor(a.name);
+      if (willBeMuted) setOrchestratedActorMuted(a.name, true);
       // Un-muting the ARMING layer must not override the MIXER layer (KAN-UX3).
-      else if (!mixerMutedFor(a.name)) armOrchestratedActor(a.name);
+      else if (!mixerMutedFor(a.name)) setOrchestratedActorMuted(a.name, false);
       return;
     }
   }
@@ -293,10 +292,10 @@ class RealCore implements CoreApi {
           return;
         }
         // An actor armed while mixer-muted stays silent — the mixer layer wins (KAN-UX3).
-        if (!mixerMutedFor(a.name)) armOrchestratedActor(a.name);
+        if (!mixerMutedFor(a.name)) setOrchestratedActorMuted(a.name, false);
         this.log({ runtime: a.runtime, level: 'info', msg: `arm [${a.name}]` });
       } else {
-        disarmOrchestratedActor(a.name);
+        setOrchestratedActorMuted(a.name, true);
         this.log({ runtime: a.runtime, level: 'info', msg: `disarm [${a.name}]` });
       }
       return;
@@ -449,13 +448,15 @@ class RealCore implements CoreApi {
     // stop→play REPRODUCES the same performance: an orchestrated actor muted/disarmed before
     // Stop must stay silent on replay (else stop→play would silently change the arming →
     // non-deterministic, décision archi [448]). Armed actors need nothing (reset already
-    // re-armed them). No-op in mono (no orchestrated actors); `disarmOrchestratedActor` is
-    // itself a no-op for a name with no live voice.
+    // re-armed them). No-op in mono (no orchestrated actors); `setOrchestratedActorMuted`
+    // is itself a no-op for a name with no live voice. Kronos is separately adding its
+    // OWN mute re-affirmation across a replay ([673] NB) — this host loop stays as belt
+    // over that until confirmed redundant, same pattern as the runtime-audio gain guarantee below.
     for (const a of this.actors.list()) {
       // `mixerMutedFor`: the PERSISTENT mixer layer (KAN-UX3) is re-applied here too —
       // the replay `reset()` must never un-mute a mixer-muted actor.
       if (isOrchestratedActor(a.name) && (a.muted || !a.active || mixerMutedFor(a.name)))
-        disarmOrchestratedActor(a.name);
+        setOrchestratedActorMuted(a.name, true);
     }
     // KAN-UX3 — belt over the runtime guarantee: levels + master mute survive
     // `reset()` runtime-side (contract [651]), but re-projecting the persisted
