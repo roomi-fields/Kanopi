@@ -1135,6 +1135,14 @@ interface OrchestratedVoiceHandle {
   stopCode?: () => Promise<void>;
   /** Re-evaluate the actor's CODE voice (Strudel/Hydra). Undefined for notes. */
   evalCode?: () => void;
+  /** Is this actor's orchestrator transport currently running? `armOrchestratedActor`
+   *  reads this to decide whether `evalCode` should fire immediately — un-muting while
+   *  STOPPED must not start sound on its own; the code voice should stay silent until a
+   *  genuine Play, which fires it through the normal cycle (the sink already reads the
+   *  cleared mute below). Firing it here regardless of transport state was the bug: an
+   *  unmute click while stopped started an orphan Strudel loop with no owner in the
+   *  stop/replay bookkeeping — Stop couldn't reach it (Romain, 2026-07-11). */
+  isRunning: () => boolean;
   /** The orchestrator file this voice belongs to, so loading a DIFFERENT
    *  program can tear down only the OUTGOING voices (cf. `tearDownOutgoingVoices`). */
   file: string;
@@ -1172,7 +1180,10 @@ export function armOrchestratedActor(name: string): void {
   const h = orchestratedVoices.get(name);
   if (!h) return;
   h.setNoteMuted(false);
-  h.evalCode?.();
+  // Only fire the code voice immediately if its transport is actually running —
+  // un-muting while stopped clears the mute (the sink picks it up on the next real
+  // Play) but must not start sound on its own (see `isRunning` doc above).
+  if (h.isRunning()) h.evalCode?.();
 }
 
 /**
@@ -2085,6 +2096,7 @@ function makeBpxAdapter(
           const btToken = actorToBt[actor.name];
           orchestratedVoices.set(actor.name, {
             file: src.fileId,
+            isRunning: () => kronosAudio?.transport.state === 'running',
             setNoteMuted: (muted: boolean) => {
               // The live mute set is the single source of truth per re-derive cycle
               // (consulted by `orchestratedLive` + the backtick sink).

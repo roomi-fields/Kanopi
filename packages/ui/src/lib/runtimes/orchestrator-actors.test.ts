@@ -217,4 +217,30 @@ describe('orchestrator arm/disarm', () => {
     evalSpy.mockRestore();
     await bpscriptAdapter.stop({ actorId: '__hush__', fileId: 'y.bps' }, () => {});
   });
+
+  it('unmute on a STOPPED transport (scene just opened, never played) does not fire sound (Romain 2026-07-11)', async () => {
+    setActorsSink(() => {});
+    // Opening a scene PRODUCES it (structure only, transport stays 'stopped') —
+    // the exact state after a Library load, before any Play click.
+    await bpscriptAdapter.evaluate(
+      SRC,
+      { actorId: 'w.bps', fileId: 'w.bps', produceOnly: true },
+      () => {}
+    );
+
+    const strudel = registry.getAdapter('strudel')!;
+    const evalSpy = vi.spyOn(strudel, 'evaluate').mockResolvedValue(undefined);
+
+    // Toggling mute/unmute on the strip before ever pressing Play must NOT start
+    // the code voice — it should stay silent until a real Play runs it through
+    // the normal cycle (the regression: it used to fire `evaluate` unconditionally,
+    // and Stop then had no owner to reach since the transport never transitioned).
+    disarmOrchestratedActor('groove');
+    armOrchestratedActor('groove');
+    await new Promise((r) => setTimeout(r, 10));
+    expect(evalSpy).not.toHaveBeenCalled();
+
+    evalSpy.mockRestore();
+    await bpscriptAdapter.stop({ actorId: '__hush__', fileId: 'w.bps' }, () => {});
+  });
 });
