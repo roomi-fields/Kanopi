@@ -13,7 +13,10 @@
     mixerSliderDisabledTitle,
     mixerSliderActiveTitle
   } from '../../lib/mixer/mixer-gain';
+  import { midiOutput } from '../../lib/midi/midi-output.svelte';
   import MixerMaster from './MixerMaster.svelte';
+
+  const MIDI_NO_DEVICE_TITLE = 'sortie MIDI — sélectionne un périphérique dans le panneau Hardware';
 
   // The slider moves whichever live gain bus owns the actor (`applyMixerGains` →
   // audioGainControl()/midiGainControl()/oscGainControl()/codeVoicesGainControl()). Two
@@ -45,7 +48,12 @@
             : !isCodeVoice && !reachesGainBus(a.outputTransport)
               ? (a.outputTransport ?? 'inconnu')
               : null}
-        <li class="strip" class:muted={mixer.isActorMuted(a.name) || mixer.master.muted}>
+        {@const midiUnselected = a.outputTransport === 'midi' && midiOutput.selectedId === null}
+        <li
+          class="strip"
+          class:muted={mixer.isActorMuted(a.name) || mixer.master.muted}
+          class:inactive={midiUnselected}
+        >
           <span class="label" title={a.name}>{a.name}</span>
           <input
             class="vol"
@@ -55,16 +63,23 @@
             step="0.01"
             value={mixer.actorEntry(a.name).volume}
             oninput={(e) => mixer.setActorVolume(a.name, e.currentTarget.valueAsNumber)}
-            disabled={disabledKind !== null}
-            title={disabledKind !== null
-              ? mixerSliderDisabledTitle(disabledKind)
-              : mixerSliderActiveTitle(a.name, a.runtime)}
+            disabled={disabledKind !== null || midiUnselected}
+            title={midiUnselected
+              ? MIDI_NO_DEVICE_TITLE
+              : disabledKind !== null
+                ? mixerSliderDisabledTitle(disabledKind)
+                : mixerSliderActiveTitle(a.name, a.runtime)}
           />
           <button
             class="mute"
             type="button"
             class:on={mixer.isActorMuted(a.name)}
-            title={mixer.isActorMuted(a.name) ? `unmute ${a.name}` : `mute ${a.name} (mixer)`}
+            disabled={midiUnselected}
+            title={midiUnselected
+              ? MIDI_NO_DEVICE_TITLE
+              : mixer.isActorMuted(a.name)
+                ? `unmute ${a.name}`
+                : `mute ${a.name} (mixer)`}
             onclick={() => mixer.toggleActorMuted(a.name)}
           >
             M
@@ -114,6 +129,10 @@
   .strip.muted .label {
     opacity: 0.5;
   }
+  .strip.inactive .label,
+  .strip.inactive .mute {
+    opacity: 0.35;
+  }
   .vol {
     flex: 1;
     min-width: 0;
@@ -145,6 +164,13 @@
   .mute.on {
     color: var(--amber);
     border-color: var(--amber-dim);
+  }
+  .mute:disabled {
+    cursor: not-allowed;
+  }
+  .mute:disabled:hover {
+    color: var(--text-faint);
+    border-color: transparent;
   }
   .empty {
     padding: 6px 12px 8px;

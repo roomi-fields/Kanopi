@@ -1,6 +1,7 @@
 <script lang="ts">
   import ActorsPanel from './ActorsPanel.svelte';
-  import InspectorPanel from './InspectorPanel.svelte';
+  // Inspector retiré 2026-07-12 (Romain) — aucune info utile pour l'instant ; garder pour réintégration
+  // import InspectorPanel from './InspectorPanel.svelte';
 
   // No dedicated Viz tab — upstream fullscreen canvas (#test-canvas,
   // task 1.2), inline widgets (task 1.3bis), and mini-notation highlight
@@ -18,12 +19,14 @@
       <ActorsPanel />
     </div>
   </section>
+  <!-- Inspector retiré 2026-07-12 (Romain) — aucune info utile pour l'instant ; garder pour réintégration
   <section class="rp-widget">
     <h3 class="rp-widget-title">Inspector</h3>
     <div class="rp-widget-body">
       <InspectorPanel />
     </div>
   </section>
+  -->
 </aside>
 
 <style>
@@ -41,9 +44,13 @@
     min-height: 0;
     flex: 1;
   }
+  /* Inspector retiré 2026-07-12 (Romain) — un seul .rp-widget reste monté, donc ce
+     sélecteur adjacent est inerte tant que l'Inspector est hors-rendu ; garder pour
+     réintégration.
   .rp-widget + .rp-widget {
     border-top: 1px solid var(--border-dim);
   }
+  */
   .rp-widget-title {
     padding: 10px 12px;
     font-size: 10px;
