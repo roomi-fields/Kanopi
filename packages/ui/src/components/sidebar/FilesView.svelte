@@ -4,11 +4,12 @@
   import { session } from '../../stores/session.svelte';
   import { cloudDocs } from '../../stores/cloud-docs.svelte';
   import { KNOWN_EXTENSIONS } from '../../lib/workspace/types';
-  import type { DocMeta } from '../../lib/storage/storage-service';
+  import { buildTree } from '../../lib/workspace/build-tree';
   import { referencedLibraries, type ReferencedLib } from '../../lib/library/referenced';
   import { RESOURCE_GROUPS } from '../../lib/library/resources';
   import { ui } from '../../stores/ui.svelte';
   import FileTree from './FileTree.svelte';
+  import CloudFileTree from './CloudFileTree.svelte';
   import AccountSwitcher from './AccountSwitcher.svelte';
 
   // Resource libraries the ACTIVE program references via its `@` directives.
@@ -23,13 +24,24 @@
   // .bps to match the typical "new scratch program" flow.
   const exts = KNOWN_EXTENSIONS;
 
+  // Cloud docs rendered as a folder tree (the `/` in each path = a directory) —
+  // `buildTree` only reads `id`/`path`, already true of `DocMeta`, so no VirtualFile
+  // shimming needed. A folder is not a real entity server-side: it exists only as
+  // long as at least one doc's path starts with it (see submitFolder below).
+  const cloudTree = $derived(buildTree(cloudDocs.docs));
+
   let creating = $state(false);
   let newName = $state('');
   let errorMsg = $state<string | null>(null);
   let inputEl: HTMLInputElement | undefined = $state();
 
+  let creatingFolder = $state(false);
+  let folderName = $state('');
+  let folderInputEl: HTMLInputElement | undefined = $state();
+
   function openDialog() {
     creating = true;
+    creatingFolder = false;
     newName = '';
     errorMsg = null;
     tick().then(() => inputEl?.focus());
@@ -39,6 +51,44 @@
     creating = false;
     newName = '';
     errorMsg = null;
+  }
+
+  function openFolderDialog() {
+    creatingFolder = true;
+    creating = false;
+    folderName = '';
+    errorMsg = null;
+    tick().then(() => folderInputEl?.focus());
+  }
+
+  function cancelFolderDialog() {
+    creatingFolder = false;
+    folderName = '';
+    errorMsg = null;
+  }
+
+  /** "New folder" doesn't create a folder entity (none exists server-side) — it
+   * just pre-fills the "+ New file" dialog with `<name>/`, so the first file
+   * created inside it is what makes the folder appear in the tree. */
+  function submitFolder() {
+    const raw = folderName.trim().replace(/^\/+|\/+$/g, '');
+    if (!raw) {
+      errorMsg = 'folder name is empty';
+      return;
+    }
+    cancelFolderDialog();
+    openDialog();
+    newName = raw + '/';
+  }
+
+  function onFolderKey(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      submitFolder();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelFolderDialog();
+    }
   }
 
   function submit() {
@@ -76,26 +126,9 @@
     cancelDialog();
   }
 
-  // ————— Docs cloud (connecté) — actions par item, commandes vers le service —————
-  function extOf(path: string): string {
-    return path.split('.').pop() ?? '';
-  }
-
-  function renameCloudDoc(doc: DocMeta) {
-    const next = prompt('Rename to:', doc.path);
-    const trimmed = next?.trim();
-    if (!trimmed || trimmed === doc.path) return;
-    void cloudDocs.renameDoc(doc.id, trimmed);
-  }
-
-  function duplicateCloudDoc(doc: DocMeta) {
-    void cloudDocs.duplicateDoc(doc.id);
-  }
-
-  function removeCloudDoc(doc: DocMeta) {
-    if (!confirm(`Delete ${doc.path}?`)) return;
-    void cloudDocs.removeDoc(doc.id);
-  }
+  // Docs cloud (connecté) — actions par item + arbre : voir CloudFileTree.svelte
+  // (rename/duplicate/delete y sont câblées directement sur `cloudDocs`, plus
+  // besoin de wrapper ici).
 
   // Open a referenced library's CONTENT in the editor display (not just switch
   // the sidebar). A catalog-backed lib (alphabet/tuning/scale/…) opens its JSON
@@ -142,6 +175,12 @@
     <button type="button" class="new-btn" onclick={openDialog} title="New file (name.ext)"
       >+ New file</button
     >
+    <button
+      type="button"
+      class="new-btn"
+      onclick={openFolderDialog}
+      title="New folder (created once it holds a file)">+ New folder</button
+    >
   </div>
 
   {#if creating}
@@ -152,10 +191,11 @@
         oninput={() => (errorMsg = null)}
         onkeydown={onKey}
         type="text"
-        placeholder="name.tidal, scratch.strudel…"
+        placeholder="drums/kick.bps, scratch.strudel…"
         spellcheck="false"
         autocomplete="off"
       />
+      <p class="hint">Use / to place it in a folder, e.g. drums/kick.bps</p>
       <div class="create-actions">
         <button type="button" class="ok" onclick={submit}>Create</button>
         <button type="button" class="cancel" onclick={cancelDialog}>Cancel</button>
@@ -164,26 +204,33 @@
     </div>
   {/if}
 
+  {#if creatingFolder}
+    <div class="create">
+      <input
+        bind:this={folderInputEl}
+        bind:value={folderName}
+        oninput={() => (errorMsg = null)}
+        onkeydown={onFolderKey}
+        type="text"
+        placeholder="folder name, e.g. drums"
+        spellcheck="false"
+        autocomplete="off"
+      />
+      <p class="hint">A folder becomes visible once you create a file inside it.</p>
+      <div class="create-actions">
+        <button type="button" class="ok" onclick={submitFolder}>Next: add a file</button>
+        <button type="button" class="cancel" onclick={cancelFolderDialog}>Cancel</button>
+      </div>
+      {#if errorMsg}<p class="err">{errorMsg}</p>{/if}
+    </div>
+  {/if}
+
   {#if session.session}
-    <ul class="cloud-tree">
-      {#each cloudDocs.docs as doc (doc.id)}
-        <li class="cloud-row" class:active={workspace.activeTabId === doc.id}>
-          <button type="button" class="cloud-open" onclick={() => cloudDocs.openInEditor(doc.id)}>
-            <span class="ext ext-{extOf(doc.path)}"></span>
-            <span class="name">{doc.path}</span>
-          </button>
-          <span class="cloud-actions">
-            <button type="button" title="Rename" onclick={() => renameCloudDoc(doc)}>✎</button>
-            <button type="button" title="Duplicate" onclick={() => duplicateCloudDoc(doc)}>⧉</button
-            >
-            <button type="button" title="Delete" onclick={() => removeCloudDoc(doc)}>✕</button>
-          </span>
-        </li>
-      {/each}
-      {#if cloudDocs.docs.length === 0}
-        <p class="cloud-empty">No cloud documents yet.</p>
-      {/if}
-    </ul>
+    {#if cloudDocs.docs.length === 0}
+      <p class="cloud-empty">No cloud documents yet.</p>
+    {:else}
+      <CloudFileTree nodes={cloudTree} />
+    {/if}
   {:else}
     <FileTree nodes={workspace.tree} />
   {/if}
@@ -220,6 +267,7 @@
   }
   .toolbar {
     display: flex;
+    gap: 6px;
     padding: 0 6px 6px;
   }
   .new-btn {
@@ -262,6 +310,12 @@
   .create input:focus {
     border-color: var(--amber);
   }
+  .hint {
+    margin: 5px 0 0;
+    font-size: 10px;
+    color: var(--text-faint);
+    font-style: italic;
+  }
   .create-actions {
     display: flex;
     gap: 4px;
@@ -293,74 +347,6 @@
     font-size: 10px;
     color: var(--red, #c84040);
     font-family: var(--font-mono);
-  }
-  .cloud-tree {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .cloud-row {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-  }
-  .cloud-row.active .cloud-open {
-    background: rgba(232, 156, 62, 0.08);
-    color: var(--amber);
-  }
-  .cloud-open {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex: 1;
-    min-width: 0;
-    padding: 3px 8px;
-    font-size: 11px;
-    color: var(--text-muted);
-    text-align: left;
-    border-radius: 2px;
-    transition: background 0.1s;
-  }
-  .cloud-open:hover {
-    background: rgba(255, 255, 255, 0.025);
-    color: var(--text);
-  }
-  .cloud-open .ext {
-    flex-shrink: 0;
-    width: 8px;
-    height: 8px;
-    border-radius: 1px;
-    display: inline-block;
-    background: var(--text-faint);
-  }
-  .cloud-open .name {
-    font-family: var(--font-mono);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .cloud-actions {
-    display: flex;
-    gap: 1px;
-    flex-shrink: 0;
-    opacity: 0;
-    transition: opacity 0.1s;
-  }
-  .cloud-row:hover .cloud-actions {
-    opacity: 1;
-  }
-  .cloud-actions button {
-    padding: 2px 5px;
-    background: transparent;
-    border: none;
-    color: var(--text-faint);
-    font-size: 10px;
-    cursor: pointer;
-    border-radius: 2px;
-  }
-  .cloud-actions button:hover {
-    color: var(--amber);
-    background: rgba(255, 255, 255, 0.04);
   }
   .cloud-empty {
     margin: 6px 8px;

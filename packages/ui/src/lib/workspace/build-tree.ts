@@ -1,6 +1,8 @@
 import type { TreeNode, VirtualFile } from './types';
 
-export function buildTree(files: VirtualFile[]): TreeNode[] {
+/** Only `id` + `path` are read — narrower than `VirtualFile` so callers with a
+ * lighter shape (e.g. cloud `DocMeta`) can build a tree without a fake VirtualFile. */
+export function buildTree(files: Pick<VirtualFile, 'id' | 'path'>[]): TreeNode[] {
   const root: TreeNode = { type: 'dir', name: '', path: '', children: [] };
   for (const f of files) {
     const parts = f.path.split('/');
