@@ -156,9 +156,10 @@ test('muting a Strudel actor via the mixer silences it, unmuting brings it back 
   // loudest moment before we trust "audio is running".
   const rmsBefore = await audio.getMaxRMS(2500);
   console.log(`[mute-code-voice] rmsBefore (playing, unmuted) = ${rmsBefore}`);
-  expect(rmsBefore, 'audio must be running before we test mute — else the test is vacuous').toBeGreaterThan(
-    0.001
-  );
+  expect(
+    rmsBefore,
+    'audio must be running before we test mute — else the test is vacuous'
+  ).toBeGreaterThan(0.001);
 
   // The performer gesture: click the mixer strip's "M" button for `drums`.
   const muteButton = page.getByTitle('mute drums (mixer)');
@@ -189,7 +190,9 @@ test('muting a Strudel actor via the mixer silences it, unmuting brings it back 
   // audible part of its lookahead window). Budget: 10 x 500ms = up to 5s.
   const rmsBack = await waitForRms(audio, (v) => v > 0.001);
   console.log(`[mute-code-voice] rmsBack (unmuted again) = ${rmsBack}`);
-  expect(rmsBack, `unmute must bring the sound back — got rmsBack=${rmsBack}`).toBeGreaterThan(0.001);
+  expect(rmsBack, `unmute must bring the sound back — got rmsBack=${rmsBack}`).toBeGreaterThan(
+    0.001
+  );
 
   await page.keyboard.press('ControlOrMeta+Period');
   await page.waitForTimeout(500);
@@ -250,9 +253,10 @@ test('muting the Strudel actor in a Strudel+Hydra session silences audio only (0
 
   const rmsBefore = await audio.getMaxRMS(2500);
   console.log(`[mute-code-voice] (02) rmsBefore (playing, unmuted) = ${rmsBefore}`);
-  expect(rmsBefore, 'audio must be running before we test mute — else the test is vacuous').toBeGreaterThan(
-    0.001
-  );
+  expect(
+    rmsBefore,
+    'audio must be running before we test mute — else the test is vacuous'
+  ).toBeGreaterThan(0.001);
 
   // `viz` (Hydra) is video-only and not asserted here — RMS cannot see it.
   const muteButton = page.getByTitle('mute groove (mixer)');
@@ -276,7 +280,9 @@ test('muting the Strudel actor in a Strudel+Hydra session silences audio only (0
 
   const rmsBack = await waitForRms(audio, (v) => v > 0.001);
   console.log(`[mute-code-voice] (02) rmsBack (unmuted again) = ${rmsBack}`);
-  expect(rmsBack, `unmute must bring the sound back — got rmsBack=${rmsBack}`).toBeGreaterThan(0.001);
+  expect(rmsBack, `unmute must bring the sound back — got rmsBack=${rmsBack}`).toBeGreaterThan(
+    0.001
+  );
 
   await page.keyboard.press('ControlOrMeta+Period');
   await page.waitForTimeout(500);
