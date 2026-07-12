@@ -1,5 +1,6 @@
 <script lang="ts">
   import { workspace } from '../../stores/workspace.svelte';
+  import { cloudDocs } from '../../stores/cloud-docs.svelte';
   import TabBar from './TabBar.svelte';
   import CMEditor from './CMEditor.svelte';
   import { core } from '../../lib/core';
@@ -24,7 +25,13 @@
         doc={file?.contents}
         runtime={file?.runtime}
         readOnly={file?.readOnly ?? false}
-        onChange={(text) => file && workspace.updateContents(file.id, text)}
+        onChange={(text) => {
+          if (!file) return;
+          workspace.updateContents(file.id, text);
+          // Doc cloud (projeté depuis session.storage) : re-projette la frappe en
+          // commande d'écriture débouncée. Fichier local (déconnecté/brouillon) : inchangé.
+          if (cloudDocs.isCloudDoc(file.id)) cloudDocs.setContent(file.id, text);
+        }}
         onEval={(code, docOffset, actorId) =>
           file && core.evaluateBlock(file.runtime, code, file.name, docOffset, actorId)}
       />

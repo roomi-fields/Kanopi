@@ -50,6 +50,7 @@
     "idb": "^8.0.0",
     "mercury-engine": "^1.7.0",
     "p5": "^2.2.3",
+    "pocketbase": "^0.27.0",
     "runtime-audio": "file:../../../../bp/runtime-audio",
     "runtime-codevoices": "file:../../../../bp/runtime-codevoices",
     "runtime-midi": "file:../../../../bp/runtime-MIDI",

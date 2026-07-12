@@ -1,7 +1,10 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import { workspace } from '../../stores/workspace.svelte';
+  import { session } from '../../stores/session.svelte';
+  import { cloudDocs } from '../../stores/cloud-docs.svelte';
   import { KNOWN_EXTENSIONS } from '../../lib/workspace/types';
+  import type { DocMeta } from '../../lib/storage/storage-service';
   import { referencedLibraries, type ReferencedLib } from '../../lib/library/referenced';
   import { RESOURCE_GROUPS } from '../../lib/library/resources';
   import { ui } from '../../stores/ui.svelte';
@@ -53,6 +56,17 @@
       errorMsg = `unknown extension ${ext}. use one of: ${exts.join(', ')}`;
       return;
     }
+    // Connecté : le fichier est un document CLOUD — création via commande au service,
+    // re-projetée (cloudDocs.docs), jamais un fichier local inventé côté hôte.
+    if (session.session) {
+      if (cloudDocs.docs.some((d) => d.path === path)) {
+        errorMsg = `${path} already exists`;
+        return;
+      }
+      cancelDialog();
+      void cloudDocs.createDoc(path);
+      return;
+    }
     if (workspace.files.some((f) => f.path === path || f.name === path)) {
       errorMsg = `${path} already exists`;
       return;
@@ -60,6 +74,27 @@
     const id = workspace.addFile(path, '');
     workspace.openFile(id);
     cancelDialog();
+  }
+
+  // ————— Docs cloud (connecté) — actions par item, commandes vers le service —————
+  function extOf(path: string): string {
+    return path.split('.').pop() ?? '';
+  }
+
+  function renameCloudDoc(doc: DocMeta) {
+    const next = prompt('Rename to:', doc.path);
+    const trimmed = next?.trim();
+    if (!trimmed || trimmed === doc.path) return;
+    void cloudDocs.renameDoc(doc.id, trimmed);
+  }
+
+  function duplicateCloudDoc(doc: DocMeta) {
+    void cloudDocs.duplicateDoc(doc.id);
+  }
+
+  function removeCloudDoc(doc: DocMeta) {
+    if (!confirm(`Delete ${doc.path}?`)) return;
+    void cloudDocs.removeDoc(doc.id);
   }
 
   // Open a referenced library's CONTENT in the editor display (not just switch
@@ -129,7 +164,29 @@
     </div>
   {/if}
 
-  <FileTree nodes={workspace.tree} />
+  {#if session.session}
+    <ul class="cloud-tree">
+      {#each cloudDocs.docs as doc (doc.id)}
+        <li class="cloud-row" class:active={workspace.activeTabId === doc.id}>
+          <button type="button" class="cloud-open" onclick={() => cloudDocs.openInEditor(doc.id)}>
+            <span class="ext ext-{extOf(doc.path)}"></span>
+            <span class="name">{doc.path}</span>
+          </button>
+          <span class="cloud-actions">
+            <button type="button" title="Rename" onclick={() => renameCloudDoc(doc)}>✎</button>
+            <button type="button" title="Duplicate" onclick={() => duplicateCloudDoc(doc)}>⧉</button
+            >
+            <button type="button" title="Delete" onclick={() => removeCloudDoc(doc)}>✕</button>
+          </span>
+        </li>
+      {/each}
+      {#if cloudDocs.docs.length === 0}
+        <p class="cloud-empty">No cloud documents yet.</p>
+      {/if}
+    </ul>
+  {:else}
+    <FileTree nodes={workspace.tree} />
+  {/if}
 
   {#if activeFile}
     <section class="libs">
@@ -236,6 +293,80 @@
     font-size: 10px;
     color: var(--red, #c84040);
     font-family: var(--font-mono);
+  }
+  .cloud-tree {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .cloud-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .cloud-row.active .cloud-open {
+    background: rgba(232, 156, 62, 0.08);
+    color: var(--amber);
+  }
+  .cloud-open {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    padding: 3px 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: left;
+    border-radius: 2px;
+    transition: background 0.1s;
+  }
+  .cloud-open:hover {
+    background: rgba(255, 255, 255, 0.025);
+    color: var(--text);
+  }
+  .cloud-open .ext {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 1px;
+    display: inline-block;
+    background: var(--text-faint);
+  }
+  .cloud-open .name {
+    font-family: var(--font-mono);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cloud-actions {
+    display: flex;
+    gap: 1px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+  .cloud-row:hover .cloud-actions {
+    opacity: 1;
+  }
+  .cloud-actions button {
+    padding: 2px 5px;
+    background: transparent;
+    border: none;
+    color: var(--text-faint);
+    font-size: 10px;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+  .cloud-actions button:hover {
+    color: var(--amber);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .cloud-empty {
+    margin: 6px 8px;
+    font-size: 10.5px;
+    color: var(--text-faint);
+    font-style: italic;
   }
   .libs {
     margin: 14px 4px 0;

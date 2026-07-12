@@ -1,5 +1,6 @@
 <script lang="ts">
   import { ui } from '../../stores/ui.svelte';
+  import AccountView from './AccountView.svelte';
   import FilesView from './FilesView.svelte';
   import HardwareView from './HardwareView.svelte';
   import LibraryView from './LibraryView.svelte';
@@ -29,6 +30,8 @@
       <LibraryView />
     {:else if ui.activeActivityView === 'resources'}
       <ResourcesView />
+    {:else if ui.activeActivityView === 'account'}
+      <AccountView />
     {:else}
       <p class="placeholder">— {labels[ui.activeActivityView].toLowerCase()} view —</p>
     {/if}
