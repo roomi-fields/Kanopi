@@ -61,6 +61,27 @@ function copyPath(path: string): string {
 }
 
 /**
+ * Traduit l'échec de création de compte du service en message affichable, en français et
+ * dans les termes de l'utilisateur — l'interprétation des erreurs du SDK vit ICI (seul
+ * fichier qui connaît PocketBase, contrat §2), pas dans l'UI. Le service renvoie des erreurs
+ * de validation par champ : `{ data: { password: { code }, email: { code } }, ... }`.
+ */
+function registerErrorMessage(err: unknown): string {
+  const data = (err as { response?: { data?: Record<string, { code?: string }> } })?.response?.data;
+  if (data?.password) {
+    return data.password.code === 'validation_min_text_constraint'
+      ? 'Le mot de passe doit faire au moins 8 caractères.'
+      : 'Mot de passe invalide.';
+  }
+  if (data?.email) {
+    return data.email.code === 'validation_not_unique'
+      ? 'Cet email est déjà utilisé.'
+      : 'Email invalide.';
+  }
+  return 'Échec de la création du compte — réessaie.';
+}
+
+/**
  * Construit l'implémentation PocketBase de `StorageService`. Une instance = un client
  * (un authStore persistant, réutilisé au démarrage pour `currentSession`). L'hôte n'appelle
  * QUE cette factory ; il ne voit jamais `pb`.
@@ -74,7 +95,11 @@ export function createPocketBaseStorage(baseUrl: string = STORAGE_BASE_URL): Sto
       return { userId: auth.record.id, email: (auth.record.email as string) ?? email };
     },
     async register(email, password) {
-      await pb.collection(USERS).create({ email, password, passwordConfirm: password });
+      try {
+        await pb.collection(USERS).create({ email, password, passwordConfirm: password });
+      } catch (err) {
+        throw new Error(registerErrorMessage(err));
+      }
       const auth = await pb.collection(USERS).authWithPassword(email, password);
       return { userId: auth.record.id, email: (auth.record.email as string) ?? email };
     },

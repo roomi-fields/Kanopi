@@ -43,8 +43,8 @@
       await session.register(email, password);
       password = '';
       passwordConfirm = '';
-    } catch {
-      error = 'Échec de la création — email déjà utilisé ou invalide.';
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'Échec de la création du compte — réessaie.';
     } finally {
       busy = false;
     }
@@ -85,7 +85,14 @@
         </label>
         <label>
           <span class="label">Mot de passe</span>
-          <input type="password" bind:value={password} autocomplete="new-password" required />
+          <input
+            type="password"
+            bind:value={password}
+            autocomplete="new-password"
+            minlength={8}
+            required
+          />
+          <span class="hint">8 caractères minimum</span>
         </label>
         <label>
           <span class="label">Confirmer le mot de passe</span>
@@ -180,6 +187,11 @@
   }
   .switch-mode:hover {
     color: var(--text);
+  }
+  .hint {
+    font-size: 9px;
+    color: var(--text-muted);
+    opacity: 0.8;
   }
   .error {
     color: var(--red, #c84040);
