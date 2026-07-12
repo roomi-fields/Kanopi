@@ -7,10 +7,12 @@
 // mince (`pocketbase-adapter.ts`) — le SEUL fichier qui importe le SDK (contrat §2).
 // On peut remplacer l'implémentation sans toucher au reste de Kanopi.
 
-/** Session authentifiée. `userId` = identité PocketBase de l'utilisateur. */
+/** Session authentifiée. `userId` = identité PocketBase de l'utilisateur. `name` = nom
+ *  d'affichage optionnel (profil utilisateur, distinct de l'email d'authentification). */
 export interface Session {
   userId: string;
   email: string;
+  name?: string;
 }
 
 /**
@@ -49,6 +51,15 @@ export interface StorageService {
   currentSession(): Session | null;
   /** Relais login/logout/expiration ; renvoie la fonction de désabonnement. */
   onSession(cb: (s: Session | null) => void): () => void;
+  /** Change le mot de passe (connecté). Échec = throw typé (ex. mot de passe actuel
+   *  incorrect). Le service invalide le token courant au changement — l'adaptateur
+   *  ré-authentifie pour préserver la session. */
+  changePassword(oldPassword: string, newPassword: string): Promise<void>;
+  /** Demande un lien de réinitialisation par email. MUET par construction : ne révèle
+   *  jamais si le compte existe (anti-énumération) — ne throw jamais côté appelant. */
+  requestPasswordReset(email: string): Promise<void>;
+  /** Met à jour le profil (ex. nom d'affichage) ; renvoie la session reprojetée. */
+  updateProfile(patch: { name?: string }): Promise<Session>;
 
   // ————— Documents (espace perso, lecture-écriture) —————
   /** Métadonnées de TOUS les documents de l'utilisateur (pas de contenu). */

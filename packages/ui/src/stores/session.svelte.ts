@@ -36,6 +36,21 @@ class SessionStore {
   async logout(): Promise<void> {
     await storage.logout();
   }
+
+  /** Change le mot de passe (connecté). Échec = throw (l'UI l'attrape). */
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    await storage.changePassword(oldPassword, newPassword);
+  }
+
+  /** Demande un lien de réinitialisation par email. Ne throw jamais (contrat anti-énumération). */
+  async requestPasswordReset(email: string): Promise<void> {
+    await storage.requestPasswordReset(email);
+  }
+
+  /** Met à jour le profil (ex. nom d'affichage) et reprojette la session. Échec = throw. */
+  async updateProfile(patch: { name?: string }): Promise<void> {
+    this.session = await storage.updateProfile(patch);
+  }
 }
 
 export const session = new SessionStore();

@@ -46,7 +46,11 @@ function toDoc(rec: RecordModel): Doc {
 function sessionFromStore(pb: PocketBase): Session | null {
   const rec = (pb.authStore.record ?? pb.authStore.model) as RecordModel | null;
   if (!pb.authStore.isValid || !rec) return null;
-  return { userId: rec.id, email: (rec.email as string) ?? '' };
+  return {
+    userId: rec.id,
+    email: (rec.email as string) ?? '',
+    name: (rec.name as string) || undefined
+  };
 }
 
 /** Dérive un `path` « copie » pour un duplicate (« save as ») : insère « copy » avant
@@ -70,15 +74,32 @@ function registerErrorMessage(err: unknown): string {
   const data = (err as { response?: { data?: Record<string, { code?: string }> } })?.response?.data;
   if (data?.password) {
     return data.password.code === 'validation_min_text_constraint'
-      ? 'Le mot de passe doit faire au moins 8 caractères.'
-      : 'Mot de passe invalide.';
+      ? 'Password must be at least 8 characters.'
+      : 'Invalid password.';
   }
   if (data?.email) {
     return data.email.code === 'validation_not_unique'
-      ? 'Cet email est déjà utilisé.'
-      : 'Email invalide.';
+      ? 'This email is already in use.'
+      : 'Invalid email.';
   }
-  return 'Échec de la création du compte — réessaie.';
+  return "Couldn't create the account — try again.";
+}
+
+/**
+ * Traduit l'échec de changement de mot de passe du service en message affichable, en
+ * anglais (UI tout-anglais). Même mécanique que `registerErrorMessage` : le service
+ * renvoie des erreurs de validation par champ, `oldPassword` étant spécifique à cette
+ * opération (mot de passe actuel incorrect).
+ */
+function changePasswordErrorMessage(err: unknown): string {
+  const data = (err as { response?: { data?: Record<string, { code?: string }> } })?.response?.data;
+  if (data?.oldPassword) {
+    return 'Current password is incorrect.';
+  }
+  if (data?.password) {
+    return 'New password must be at least 8 characters.';
+  }
+  return "Couldn't change password — try again.";
 }
 
 /**
@@ -91,8 +112,8 @@ export function createPocketBaseStorage(baseUrl: string = STORAGE_BASE_URL): Sto
 
   return {
     async login(email, password) {
-      const auth = await pb.collection(USERS).authWithPassword(email, password);
-      return { userId: auth.record.id, email: (auth.record.email as string) ?? email };
+      await pb.collection(USERS).authWithPassword(email, password);
+      return sessionFromStore(pb)!;
     },
     async register(email, password) {
       try {
@@ -100,8 +121,8 @@ export function createPocketBaseStorage(baseUrl: string = STORAGE_BASE_URL): Sto
       } catch (err) {
         throw new Error(registerErrorMessage(err));
       }
-      const auth = await pb.collection(USERS).authWithPassword(email, password);
-      return { userId: auth.record.id, email: (auth.record.email as string) ?? email };
+      await pb.collection(USERS).authWithPassword(email, password);
+      return sessionFromStore(pb)!;
     },
     async logout() {
       pb.authStore.clear();
@@ -112,6 +133,36 @@ export function createPocketBaseStorage(baseUrl: string = STORAGE_BASE_URL): Sto
     onSession(cb) {
       // `onChange` relaie login/logout/expiration ; on reprojette en Session|null.
       return pb.authStore.onChange(() => cb(sessionFromStore(pb)));
+    },
+    async changePassword(oldPassword, newPassword) {
+      const rec = pb.authStore.record ?? pb.authStore.model;
+      if (!rec) throw new Error('Not signed in.');
+      const email = rec.email as string;
+      try {
+        await pb.collection(USERS).update(rec.id, {
+          oldPassword,
+          password: newPassword,
+          passwordConfirm: newPassword
+        });
+      } catch (err) {
+        throw new Error(changePasswordErrorMessage(err));
+      }
+      // PocketBase invalide le token au changement de mot de passe → ré-auth pour garder la session.
+      await pb.collection(USERS).authWithPassword(email, newPassword);
+    },
+    async requestPasswordReset(email) {
+      try {
+        await pb.collection(USERS).requestPasswordReset(email);
+      } catch {
+        // MUET : ne jamais révéler l'existence/format du compte à l'appelant (anti-énumération).
+      }
+    },
+    async updateProfile({ name }) {
+      const rec = pb.authStore.record ?? pb.authStore.model;
+      if (!rec) throw new Error('Not signed in.');
+      const updated = await pb.collection(USERS).update(rec.id, { name: name ?? '' });
+      pb.authStore.save(pb.authStore.token, updated); // synchronise le nom dans la session projetée
+      return sessionFromStore(pb)!;
     },
 
     async list() {
