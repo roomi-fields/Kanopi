@@ -188,3 +188,9 @@ Ce dépôt est indexé avec CodeGraph (`.codegraph/`). Pour **comprendre ou loca
 `codegraph explore "<question | symbole>"` (ou l'outil MCP `codegraph_explore`) **avant** grep/find ou
 la lecture de fichiers. Complémentaire de RTFM : **RTFM** pour le quoi/où documentaire (texte + PDF),
 **CodeGraph** pour la structure d'appel du code. (Index local, non versionné ; cloisonné à ce dépôt.)
+
+## ⚠️ Sous-agents de dev — modèle imposé : Sonnet 5 (Romain 2026-07-12)
+
+Quand tu lances un **sous-agent de développement** (outil Agent/Task), choisis
+**TOUJOURS le modèle Sonnet 5** (`claude-sonnet-5`). Vaut pour chaque sous-agent
+de dev que tu délègues — jamais un modèle plus lourd par défaut pour ce travail.
