@@ -10,7 +10,8 @@
 // NOTATION: native saptak — sargam's canonical register convention (the alphabet
 // carries "octaves":"saptak", nothing to declare). Registers are word-prefixes:
 // madhya (middle) is the DEFAULT (bare svara), taar one octave up ("taar_sa").
-// Renders in a comfortable register (madhya sa ≈ 240 Hz, taar ≈ 480 Hz); pitches
+// The alphabet's base register is madhya sa ≈ 240 Hz (taar ≈ 480 Hz); the scene
+// @transpose below shifts the whole frame two octaves down (see there). Pitches
 // stay sargam-microtonal (@tuning:sargam_22shruti unchanged).
 
 @core
@@ -20,10 +21,14 @@
 @tempo:90
 
 // The browser synth defaults to a triangle voice (runtime-audio), so no per-note
-// timbre is needed. The fixture's -24 was a TEST ARTEFACT of the Bernard/BP3
-// grammar, not a musical intent (arbitrage Romain [599]); -12 traverses the
-// sargam grid cleanly (sa → mandra_sa 120 Hz, Kairos f54085f) — no L26 cry.
-@transpose:-12
+// timbre is needed. `@transpose:1/4` = a REAL transposition of the whole frame by
+// the interval 1/4 (two octaves down, the octave being 2:1 in every tuning). This
+// IS the original fixture gesture: BP3 `_transpose(-24)` = 24 semitones = 2 octaves
+// down (décision 2026-07-11-transposition-reelle-vs-scalaire §Migration, superseding
+// the interim -12 of [599] that patched the removed transpose-grid). Sounding madhya
+// sa ≈ 60 Hz (240 × 1/4). Interval form is NUE (no quotes): the oracle rejects
+// "1/4", accepts 1/4.
+@transpose:1/4
 
 // ============================================================
 // Sous-grammaire 1 — Initialisation @mode:random
