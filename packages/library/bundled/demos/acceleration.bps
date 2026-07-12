@@ -7,7 +7,7 @@
 @alphabet.western:midi
 
 @mode:ord
-S -> !(transpose:12, vel:60) A B !(vel:65) C D !(vel:70) E F !(vel:75) G !(vel:77) H !(vel:80) I !(vel:85) J !(vel:87) K !(vel:90) L
+S -> !(transpose:1200c, vel:60) A B !(vel:65) C D !(vel:70) E F !(vel:75) G !(vel:77) H !(vel:80) I !(vel:85) J !(vel:87) K !(vel:90) L
 
 A -> E2 .
 B -> D2 A
