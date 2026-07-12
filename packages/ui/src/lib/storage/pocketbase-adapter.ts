@@ -73,6 +73,11 @@ export function createPocketBaseStorage(baseUrl: string = STORAGE_BASE_URL): Sto
       const auth = await pb.collection(USERS).authWithPassword(email, password);
       return { userId: auth.record.id, email: (auth.record.email as string) ?? email };
     },
+    async register(email, password) {
+      await pb.collection(USERS).create({ email, password, passwordConfirm: password });
+      const auth = await pb.collection(USERS).authWithPassword(email, password);
+      return { userId: auth.record.id, email: (auth.record.email as string) ?? email };
+    },
     async logout() {
       pb.authStore.clear();
     },

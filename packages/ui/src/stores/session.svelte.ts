@@ -27,6 +27,12 @@ class SessionStore {
     this.session = s;
   }
 
+  /** Crée le compte + ouvre la session. Échec = throw (l'UI l'attrape). */
+  async register(email: string, password: string): Promise<void> {
+    const s = await storage.register(email, password);
+    this.session = s;
+  }
+
   async logout(): Promise<void> {
     await storage.logout();
   }

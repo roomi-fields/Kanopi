@@ -42,6 +42,8 @@ export interface StorageService {
   // ————— Auth —————
   /** Ouvre la session (email + mot de passe). Échec = throw typé. */
   login(email: string, password: string): Promise<Session>;
+  /** Crée un compte (email + mot de passe) PUIS ouvre la session (auto-login). Échec = throw typé. */
+  register(email: string, password: string): Promise<Session>;
   logout(): Promise<void>;
   /** Session courante, LUE synchrone au démarrage (depuis le token persistant). */
   currentSession(): Session | null;
