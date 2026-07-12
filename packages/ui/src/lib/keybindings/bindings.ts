@@ -1,5 +1,8 @@
 import { ui } from '../../stores/ui.svelte';
 import { playback } from '../../stores/playback.svelte';
+import { workspace } from '../../stores/workspace.svelte';
+import { cloudDocs } from '../../stores/cloud-docs.svelte';
+import { session } from '../../stores/session.svelte';
 import { core } from '../core';
 import { flushPersist } from '../persistence/snapshot.svelte';
 
@@ -40,6 +43,21 @@ export function handleGlobalKey(e: KeyboardEvent) {
     e.preventDefault();
     flushPersist();
     core.console.push({ runtime: 'kanopi', level: 'info', msg: 'workspace saved' });
+    // Espace perso cloud (Lot A1, ESPACE_PERSO_SPEC §4.3) : ⌘S sur le fichier ACTIF.
+    // Doc cloud → déjà en auto-save, rien de destructif à faire ici (la puce d'état de
+    // TabBar reflète déjà « enregistré »/« enregistrement… »). Copie de bibliothèque ou
+    // brouillon local ÉDITABLE + connecté → promotion explicite (même commande que le
+    // bouton « Enregistrer chez moi »). Déconnecté → ouvre le panneau Compte (pas de
+    // sauvegarde cloud possible sans session). Une collision de chemin est laissée au
+    // bouton « Enregistrer sous… » visible (pas d'écrasement silencieux depuis le clavier).
+    const active = workspace.activeTabId ? workspace.fileById(workspace.activeTabId) : undefined;
+    if (active && !active.readOnly && !cloudDocs.isCloudDoc(active.id)) {
+      if (!session.session) {
+        ui.activeActivityView = 'account';
+      } else if (!cloudDocs.pathExistsInCloud(active.path)) {
+        void cloudDocs.saveToCloud(active.id);
+      }
+    }
     return;
   }
   // Cmd/Ctrl + 1..9 → toggle mute on the Nth actor (atom-tidalcycles).

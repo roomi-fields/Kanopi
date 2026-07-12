@@ -31,6 +31,10 @@ export function createWriteScheduler(opts: {
   write: (id: string, content: string) => Promise<void>;
   isAlive: (id: string) => boolean;
   onError?: (id: string, err: unknown) => void;
+  /** Notifie l'état d'enregistrement (pure projection pour l'écran — friction 4.3 spec
+   *  espace perso : « enregistré » / « enregistrement… » / « hors-ligne, réessai »). Ne change
+   *  RIEN au débounce/retry, c'est un callback d'observation en plus. */
+  onState?: (id: string, state: 'saving' | 'saved' | 'error') => void;
 }): WriteScheduler {
   const pending = new Map<string, string>();
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -47,9 +51,13 @@ export function createWriteScheduler(opts: {
       await opts.write(id, content);
       // Ne purge que si rien de plus récent n'a été tapé pendant l'écriture (sinon on
       // écraserait une frappe plus récente).
-      if (pending.get(id) === content) pending.delete(id);
+      if (pending.get(id) === content) {
+        pending.delete(id);
+        opts.onState?.(id, 'saved');
+      }
     } catch (err) {
       opts.onError?.(id, err);
+      opts.onState?.(id, 'error');
       // Zéro-perte : le contenu reste en attente et on RETENTE — sauf si le doc n'existe
       // plus côté service (supprimé entre-temps), auquel cas plus rien à écrire.
       if (!opts.isAlive(id)) {
@@ -68,6 +76,7 @@ export function createWriteScheduler(opts: {
   return {
     schedule(id, content) {
       pending.set(id, content);
+      opts.onState?.(id, 'saving');
       const existing = timers.get(id);
       if (existing) clearTimeout(existing);
       timers.set(

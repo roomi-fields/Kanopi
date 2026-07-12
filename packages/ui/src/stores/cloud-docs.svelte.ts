@@ -37,6 +37,11 @@ function localDraftFiles(): { path: string; content: string }[] {
 class CloudDocsStore {
   docs = $state<DocMeta[]>([]);
 
+  /** État d'enregistrement PAR DOC, projeté depuis les notifications du write-scheduler
+   *  (friction 4.3 spec espace perso — « enregistré » / « enregistrement… » / « hors-ligne »).
+   *  Aucune minuterie ici : pur miroir des callbacks `onState`. */
+  saveState = $state<Record<string, 'saving' | 'saved' | 'error'>>({});
+
   // Débounce d'auto-save + retry réseau : délégués à la couche I/O (write-scheduler), pas
   // de minuterie dans ce store de projection. `write` = write-through immédiat du service ;
   // `isAlive` = le doc existe-t-il encore (on ne retente pas un doc supprimé).
@@ -44,7 +49,10 @@ class CloudDocsStore {
     write: (id, content) => session.storage.write(id, content),
     isAlive: (id) => this.isCloudDoc(id),
     onError: (id, err) =>
-      console.error('[cloud-docs] auto-save failed — retrying, edit kept locally', id, err)
+      console.error('[cloud-docs] auto-save failed — retrying, edit kept locally', id, err),
+    onState: (id, s) => {
+      this.saveState = { ...this.saveState, [id]: s };
+    }
   });
 
   constructor() {
@@ -104,6 +112,20 @@ class CloudDocsStore {
     return this.docs.some((d) => d.id === id);
   }
 
+  /** État d'enregistrement affichable à l'écran pour ce doc (chip TabBar). `undefined` =
+   *  aucune activité observée depuis l'ouverture (pas encore modifié) — le rendu le lit
+   *  comme « ✓ enregistré » (le contenu affiché est déjà celui du service). */
+  saveStatus(id: string): 'saving' | 'saved' | 'error' | undefined {
+    return this.saveState[id];
+  }
+
+  /** Un doc cloud existe-t-il déjà à ce chemin ? Utilisé pour distinguer « Enregistrer chez
+   *  moi » (création) d'une collision qui doit se comporter comme « Enregistrer sous » (nom à
+   *  choisir) — jamais d'écrasement silencieux d'un doc existant. */
+  pathExistsInCloud(path: string): boolean {
+    return this.docs.some((d) => d.path === path);
+  }
+
   async openInEditor(id: string): Promise<void> {
     if (workspace.fileById(id)) {
       workspace.openFile(id);
@@ -157,6 +179,21 @@ class CloudDocsStore {
       workspace.closeTab(id);
       workspace.files = workspace.files.filter((f) => f.id !== id);
     }
+  }
+
+  /** « Enregistrer chez moi » / « Enregistrer sous » : promeut le fichier ACTIF (copie de
+   *  bibliothèque, brouillon, ou doc cloud pour un « save as ») en NOUVEAU doc cloud, puis
+   *  bascule l'éditeur dessus (auto-save actif ensuite). `path` optionnel = nom choisi (save as).
+   *  Renvoie l'id cloud. Commande `create` au service — aucune fabrication locale. */
+  async saveToCloud(sourceId: string, path?: string): Promise<string> {
+    const f = workspace.fileById(sourceId);
+    if (!f) throw new Error('fichier introuvable');
+    const doc = await session.storage.create(path ?? f.path, f.contents);
+    await this.refresh();
+    workspace.closeTab(sourceId);
+    workspace.files = workspace.files.filter((x) => x.id !== sourceId);
+    await this.openInEditor(doc.id);
+    return doc.id;
   }
 
   private projectIntoWorkspace(doc: Doc): void {
