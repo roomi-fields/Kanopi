@@ -1100,6 +1100,11 @@ export interface PublishedActor {
    * Kanopi performs no routing decision off this field.
    */
   outputTransport?: string;
+  /** Erreur de BRANCHEMENT de l'hôte pour cet acteur (ex. sortie MIDI indisponible
+   *  au Play) — état UI par-acteur, reconstruit à CHAQUE publication (donc courant :
+   *  une ré-éval réussie republie sans ce champ → le badge disparaît). Concern hôte
+   *  (branchement/routage), pas une autorité amont. */
+  error?: string;
 }
 
 // Optional hook the core wires so an orchestrator `.bps`'s `@actor` list reaches
@@ -1817,6 +1822,10 @@ function makeBpxAdapter(
         // port) DANS le runtime, un concern SÉPARÉ (KAI-9, bpscript-bpx.md:32). Un `@actor
         // transport:midi` grave `runtime='midi'` → même clé, même sink que tout futur
         // `@alphabet.X:midi` qui convergera vers `runtime='midi'` à la source.
+        // État UI de branchement par-acteur, reconstruit à CHAQUE éval (donc courant :
+        // une ré-éval réussie republie sans erreur → le badge disparaît). Rempli par le
+        // gate MIDI ci-dessous, lu dans la boucle de publication (même portée).
+        const actorWiringErrors: Record<string, string> = {};
         const routesToMidi =
           !!actorOutputs && Object.values(actorOutputs).some((a) => a.runtime === 'midi');
         if (routesToMidi) {
@@ -1869,6 +1878,7 @@ function makeBpxAdapter(
                 ? `acteur(s) MIDI muet(s) (${midiActorNames.join(', ')}) : ${msg}`
                 : msg;
             log({ runtime: id, level: 'error', msg: scopedMsg });
+            for (const n of midiActorNames) actorWiringErrors[n] = scopedMsg;
           }
         }
         // Per-actor routing (KAI-9): each note carries its OWN output layer — Kairos
@@ -2074,7 +2084,8 @@ function makeBpxAdapter(
             name: actor.name,
             runtime: codeRuntime ?? id,
             file: src.fileId,
-            outputTransport
+            outputTransport,
+            error: actorWiringErrors[actor.name]
           });
           orchestratedVoices.set(actor.name, {
             file: src.fileId,

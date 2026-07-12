@@ -49,6 +49,9 @@ export interface Actor {
    * alone performs off the SAME upstream field.
    */
   outputTransport?: string;
+  /** Erreur de branchement hôte pour cet acteur (sortie indisponible au Play, ex.
+   *  MIDI sans device). État UI par-acteur, reconstruit à chaque publication. */
+  error?: string;
 }
 
 export interface ActorManager {

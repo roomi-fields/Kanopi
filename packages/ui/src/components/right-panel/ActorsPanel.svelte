@@ -28,20 +28,21 @@
 
 <ul class="actors">
   {#each actors.list as a, i (a.name)}
-    <li class="actor" class:active={a.active} class:muted={a.muted}>
+    <li class="actor" class:active={a.active} class:muted={a.muted} class:errored={!!a.error}>
       <button
         class="toggle"
         type="button"
         title="toggle {a.name}"
         onclick={() => actors.toggle(a.name)}
       >
-        <span class="led" class:on={a.active} class:muted={a.muted}></span>
+        <span class="led" class:on={a.active} class:muted={a.muted} class:err={!!a.error}></span>
       </button>
       <button class="info" type="button" onclick={() => openFile(a.file)}>
         <span class="name">{a.name}</span>
         <span class="meta">
           <span class="rt rt-{a.runtime}">{a.runtime}</span>
           {#if a.file}<span class="file">{a.file}</span>{/if}
+          {#if a.error}<span class="err-badge" title={a.error}>⚠ output</span>{/if}
         </span>
       </button>
       {#if i < 9}
@@ -263,5 +264,13 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
     font-weight: 500;
+  }
+  .err-badge {
+    font-size: 9px;
+    color: var(--red, #c84040);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    cursor: help;
   }
 </style>
