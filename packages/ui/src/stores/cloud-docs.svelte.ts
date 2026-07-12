@@ -2,6 +2,7 @@ import { session } from './session.svelte';
 import { workspace } from './workspace.svelte';
 import { runtimeFromExt } from '../lib/workspace/types';
 import type { VirtualFile } from '../lib/workspace/types';
+import { starterFiles } from '../lib/workspace/fixtures';
 import type { Doc, DocMeta } from '../lib/storage/storage-service';
 import { createWriteScheduler } from '../lib/storage/write-scheduler';
 
@@ -19,6 +20,20 @@ import { createWriteScheduler } from '../lib/storage/write-scheduler';
 // à la source (qui, comme `SessionStore`, relaie login/logout/expiration) est le point
 // d'entrée le plus propre et fonctionne dès l'import du module (pas de `init()` à appeler
 // depuis un composant).
+/**
+ * Le « vrai travail » local à promouvoir au 1er login : les fichiers de l'espace local que
+ * l'utilisateur a CRÉÉS (aucun starter au même chemin) ou MODIFIÉS (starter au même chemin mais
+ * contenu ≠ vierge). Exclut les fichiers en lecture seule (ressources) et les starters INTACTS
+ * (bibliothèque embarquée, jamais dupliquée dans le cloud — contrat §4).
+ */
+function localDraftFiles(): { path: string; content: string }[] {
+  const pristine = new Map(starterFiles().map((f) => [f.path, f.contents]));
+  return workspace.files
+    .filter((f) => !f.readOnly)
+    .filter((f) => pristine.get(f.path) !== f.contents)
+    .map((f) => ({ path: f.path, content: f.contents }));
+}
+
 class CloudDocsStore {
   docs = $state<DocMeta[]>([]);
 
@@ -35,7 +50,7 @@ class CloudDocsStore {
   constructor() {
     session.storage.onSession((s) => {
       if (s) {
-        void this.refresh();
+        void this.onLogin(s.userId);
       } else {
         this.closeCloudTabs();
         this.docs = [];
@@ -43,9 +58,37 @@ class CloudDocsStore {
     });
     // Session déjà ouverte au chargement du module (token persistant relu au démarrage) —
     // `onSession` ne re-tire qu'au PROCHAIN changement, donc on liste aussi maintenant.
-    if (session.storage.currentSession()) {
-      void this.refresh();
+    const cur = session.storage.currentSession();
+    if (cur) {
+      void this.onLogin(cur.userId);
     }
+  }
+
+  /** À la connexion : rattache le brouillon anonyme (une seule fois par compte) PUIS liste. */
+  private async onLogin(userId: string): Promise<void> {
+    await this.attachDraftOnce(userId);
+    await this.refresh();
+  }
+
+  /**
+   * Rattachement du brouillon anonyme au 1er login (contrat §6, règle validée archi [692],
+   * sourcée §4) : on PROMEUT dans le cloud le SEUL travail PROPRE de l'utilisateur — fichiers
+   * qu'il a CRÉÉS + starters qu'il a MODIFIÉS. Les starters/démos VIERGES ne sont PAS rattachés
+   * (ils vivent déjà comme bibliothèque lecture-seule embarquée, §4 ; les dupliquer = pollution).
+   * ONE-SHOT par compte (drapeau localStorage), ADDITIF (create, jamais d'écrasement). Zéro-perte :
+   * le brouillon local n'est jamais jeté — on ne fait que le promouvoir.
+   */
+  private async attachDraftOnce(userId: string): Promise<void> {
+    const flagKey = `kanopi:cloud:draft-attached:${userId}`;
+    if (localStorage.getItem(flagKey)) return;
+    for (const d of localDraftFiles()) {
+      try {
+        await session.storage.create(d.path, d.content);
+      } catch (err) {
+        console.error('[cloud-docs] draft-attach create failed', d.path, err);
+      }
+    }
+    localStorage.setItem(flagKey, '1');
   }
 
   async refresh(): Promise<void> {
