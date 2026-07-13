@@ -46,6 +46,12 @@ export interface CodeVoicesRuntime {
   setActorGain(actor: string, gain: number): void;
   setMasterGain(gain: number): void;
   setMasterMuted(muted: boolean): void;
+  /** INTROSPECTION LECTURE SEULE, NON-AUTORITAIRE (runtime-codevoices d8c3162) — coup d'œil sur
+   *  l'horloge PROPRE d'un moteur de voix-code (Hydra : `synth.time`), pour la preuve/débogage
+   *  hôte (banc e2e seek fin, `k.inspect.hydraClock()`). `undefined` : moteur absent ou sans
+   *  horloge de scène observable (seul Hydra l'expose). Jamais consultée par une décision de temps
+   *  (Kronos reste seul gardien). */
+  peekClock(runtime: string): number | undefined;
   dispose(): void;
 }
 

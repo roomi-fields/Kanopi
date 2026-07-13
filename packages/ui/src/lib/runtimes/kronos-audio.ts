@@ -272,6 +272,18 @@ let currentCodeVoicesGain: AudioGainControl | null = null;
 export function codeVoicesGainControl(): AudioGainControl | null {
   return currentCodeVoicesGain;
 }
+/** L'instance runtime-codevoices VIVANTE vue pour l'INTROSPECTION lecture seule du banc
+ *  (`k.inspect.hydraClock()`) : `peekClock(runtime)` relit l'horloge PROPRE d'un moteur (Hydra :
+ *  `synth.time`), pour PROUVER le recalage au seek fin. MÊME instance que `codeVoicesGainControl()`
+ *  (`opts.codeVoicesRuntime`), ré-exposée avec sa capacité de peek. `null` sans voix de code.
+ *  Lecture seule, non-autoritaire — Kronos reste seul gardien du temps. */
+export function pilotCodeVoicesRuntime(): {
+  peekClock(runtime: string): number | undefined;
+} | null {
+  return currentCodeVoicesGain as unknown as {
+    peekClock(runtime: string): number | undefined;
+  } | null;
+}
 
 export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   const { derivedTempo } = opts;

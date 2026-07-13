@@ -24,13 +24,13 @@ import { workspace } from '../../stores/workspace.svelte';
 import { isNonProgramFile } from '../workspace/types';
 import { productionFeed } from '../../stores/production-feed.svelte';
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
-import { pilotAudioMeter } from '../runtimes/kronos-audio';
+import { pilotAudioMeter, pilotCodeVoicesRuntime } from '../runtimes/kronos-audio';
 import { lastViewInput } from './view-input-observer';
 import { startFrameMonitor, readFrameStats } from './frame-stats';
 import { profileMainThread } from './stack-profiler';
 import { core } from '../core';
 
-const API_VERSION = 10;
+const API_VERSION = 11;
 
 // (L'observateur des events audio forwardés + l'inspection `modulations()` sont RETIRÉS avec le
 //  wrapper audio hôte — frontière Phase 2 audio : l'hôte ne forwarde plus d'events audio shapés,
@@ -183,6 +183,14 @@ export function installKanopiApi(): void {
       },
       reRandom(): boolean {
         return transport.reRandom;
+      },
+      /** v11 — horloge PROPRE d'une voix de code (introspection lecture seule, runtime-codevoices
+       *  d8c3162). Délègue à `pilotCodeVoicesRuntime().peekClock(runtime)` : Hydra rend `synth.time`
+       *  (secondes de scène, posée par le seek fin) ; les moteurs sans horloge posable (Strudel…) ⇒
+       *  `undefined`. Sert le banc seek-fin : PROUVER `hydraClock('hydra') == sceneTime` après un
+       *  drag. `null` si pas de voix de code vivante. Kronos reste seul gardien du temps. */
+      hydraClock(runtime = 'hydra'): number | null {
+        return pilotCodeVoicesRuntime()?.peekClock?.(runtime) ?? null;
       }
     }
   };
