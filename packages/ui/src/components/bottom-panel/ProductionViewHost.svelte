@@ -38,13 +38,7 @@
         // en interne — l'hôte ne fait que PORTER l'unique méthode (PORTER ≠ RÉSOUDRE), zéro
         // composition, zéro conversion (`sec` = domaine de `cursor.position()`). Aucun handle
         // actif → no-op propre (canal ouvert mais geste ignoré, cf contrat TransportView).
-        // PONT DE TYPE (routé à Kronos) : `playFrom` EXISTE au runtime (impl cee7339 + tests verts)
-        // mais le type `Transport` EXPORTÉ par @kronos/core (dist/index.d.ts) ne la déclare pas encore
-        // → on forwarde via une forme locale étroite. À retirer dès que le type exporté porte playFrom.
-        playFrom: (sec: number) =>
-          (
-            kronosCursor.active?.transport as { playFrom?(sec: number): void } | undefined
-          )?.playFrom?.(sec)
+        playFrom: (sec: number) => kronosCursor.active?.transport?.playFrom(sec)
       }
     };
     view.update(input);

@@ -219,24 +219,38 @@ function readDomain(json: unknown): string {
   return j && typeof j === 'object' && typeof j.domain === 'string' ? j.domain : 'uncategorized';
 }
 
-function libraryFile(id: string, data: unknown): LibraryFile {
-  return { id, name: id, description: describeFile(data), domain: readDomain(data), data };
+// `domainOverride` : ONLY for Kanopi's OWN catalogs (devices/routing/audio-banks/
+// visuals), which carry no `domain` field of their own — the architecte ratified
+// "tes propres catalogues = à toi de catégoriser" ([726]). We declare OUR data's
+// domain here (legitimate: it's ours), NEVER a bpscript file's (those declare it
+// themselves or bpscript adds it — L26, we don't invent for others).
+function libraryFile(id: string, data: unknown, domainOverride?: string): LibraryFile {
+  return {
+    id,
+    name: id,
+    description: describeFile(data),
+    domain: domainOverride ?? readDomain(data),
+    data
+  };
 }
 
 /** One card per REAL library file (Factory › Libraries browser). Grouped by the
- *  `domain` each file DECLARES (readDomain), never by an invented taxonomy. */
+ *  `domain` each file DECLARES (readDomain), never by an invented taxonomy.
+ *  `core.json` is EXCLUDED (architecte [726]) : it is the LANGUAGE SCHEMA (@core :
+ *  base defaults + reserved vocabulary), NOT a browsable library — excluding a
+ *  non-library is not inventing a domain (L26). It stays in RESOURCE_GROUPS below
+ *  for NowView (a scene that references @core still surfaces it as "used"). */
 export const RESOURCE_FILES: LibraryFile[] = [
   libraryFile('alphabets', alphabetsJson),
   libraryFile('tunings', tuningsJson),
   libraryFile('temperaments', temperamentsJson),
   libraryFile('scales', scalesJson),
   libraryFile('octaves', octavesJson),
-  libraryFile('core', coreJson),
   libraryFile('controls', controlsJson),
   libraryFile('mod', modJson),
   libraryFile('digital', digitalJson),
-  libraryFile('devices', devicesJson),
-  libraryFile('routing', routingJson),
-  libraryFile('audio-banks', audioBanks),
-  libraryFile('visuals', visualsCatalog)
+  libraryFile('devices', devicesJson, 'device'),
+  libraryFile('routing', routingJson, 'routing'),
+  libraryFile('audio-banks', audioBanks, 'sound'),
+  libraryFile('visuals', visualsCatalog, 'visual')
 ];
