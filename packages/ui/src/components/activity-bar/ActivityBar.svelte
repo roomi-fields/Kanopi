@@ -7,8 +7,8 @@
   // (Now/Factory/Mine, primary axis = origin) — Lenses (Hardware, a read-only
   // reference) — Utilities (Docs/Search/Account) pinned to the bottom. The
   // former standalone "Resources" lens was dropped (redundant with Factory ›
-  // Libraries, which already renders ResourcesView — same catalog, one entry
-  // point).
+  // Libraries, which renders the same resource catalogs as a card grid — same
+  // content, one entry point).
   const content: Item[] = [
     { id: 'now', title: 'Now' },
     { id: 'factory', title: 'Factory' },

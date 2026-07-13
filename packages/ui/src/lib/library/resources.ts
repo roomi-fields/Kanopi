@@ -41,17 +41,19 @@ export interface ResourceGroup {
   entries: ResourceEntry[];
 }
 
-// bpscript catalogs are objects keyed by name. They carry doc-only `_comment`
-// (and `_comment_*` fragment) keys that are NOT real entries — skip them.
-function isCommentKey(k: string): boolean {
-  return k === '_comment' || k.startsWith('_comment');
+// bpscript catalogs are objects keyed by name. They carry META keys that are NOT
+// real entries and must not surface as browsable cards: any `_`-prefixed key
+// (doc-only `_comment`/`_comment_*`, `_anchor_doc`, …) and the catalog's own
+// `domain` self-declaration (same schema as personal libs) — skip them all.
+function isMetaKey(k: string): boolean {
+  return k === 'domain' || k.startsWith('_');
 }
 
 type NamedCatalog = Record<string, unknown>;
 
 function entriesFromNamedCatalog(catalog: NamedCatalog): ResourceEntry[] {
   return Object.keys(catalog)
-    .filter((k) => !isCommentKey(k))
+    .filter((k) => !isMetaKey(k))
     .map((id) => {
       const v = catalog[id] as { description?: unknown; culture?: unknown } | undefined;
       const desc = v && typeof v === 'object' ? v.description : undefined;

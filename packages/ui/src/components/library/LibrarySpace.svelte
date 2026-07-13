@@ -6,18 +6,83 @@
   import { core } from '../../lib/core';
   import { tick } from 'svelte';
   import { CATEGORIES, type LibraryItem, type LibraryCategory } from '../../lib/library/catalog';
-  import ResourcesView from '../sidebar/ResourcesView.svelte';
+  import { RESOURCE_GROUPS, type ResourceEntry } from '../../lib/library/resources';
 
   const OUTPUTS = ['audio', 'midi', 'text', 'visual'] as const;
   const LEVELS = ['didactic', 'intermediate', 'advanced'] as const;
 
   // Secondary split INSIDE the Factory origin (ESPACE_PERSO_SPEC §10.3): Scenes
   // (starters/démos, the by-theme rail below — commit 89e59c7) vs Libraries
-  // (audio banks + grammars + catalogs, reusing the Resources catalog as-is —
-  // it already ships exactly that content, read-only). Not a rail icon: a
+  // (resource catalogs — alphabets, tunings, scales…). Libraries now uses the
+  // SAME visual pattern as Scenes (rail of domains + card grid + search) —
+  // Romain wants one visual identity for Factory, not two (the former
+  // ResourcesView list-of-groups render is retired). Not a rail icon: a
   // section toggle inside this one origin.
   type Section = 'scenes' | 'libraries';
   let section = $state<Section>('scenes');
+
+  // --- Libraries section state (resource catalogs, card-grid pattern) ---
+  interface ResourceCard {
+    groupType: string;
+    entry: ResourceEntry;
+  }
+  const RESOURCE_GROUP_TITLES: Record<string, string> = Object.fromEntries(
+    RESOURCE_GROUPS.map((g) => [g.type, g.title])
+  );
+  const allResourceCards: ResourceCard[] = RESOURCE_GROUPS.flatMap((g) =>
+    g.entries.map((entry) => ({ groupType: g.type, entry }))
+  );
+  let resourceType = $state<string>('all');
+  let resourceQuery = $state('');
+
+  function matchesResourceQuery(card: ResourceCard, q: string): boolean {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return true;
+    const hay = [card.entry.id, card.entry.label ?? '', card.groupType].join(' ').toLowerCase();
+    return hay.includes(needle);
+  }
+
+  // Counts respect the search query but not the selected domain (same pattern
+  // as categoryCounts for Scenes: each rail entry shows how many cards would
+  // match if it were picked).
+  const resourceCounts = $derived.by(() => {
+    const counts: Record<string, number> = { all: 0 };
+    for (const g of RESOURCE_GROUPS) counts[g.type] = 0;
+    for (const card of allResourceCards) {
+      if (!matchesResourceQuery(card, resourceQuery)) continue;
+      counts.all++;
+      counts[card.groupType]++;
+    }
+    return counts;
+  });
+
+  const filteredResourceCards = $derived(
+    allResourceCards.filter(
+      (card) =>
+        (resourceType === 'all' || card.groupType === resourceType) &&
+        matchesResourceQuery(card, resourceQuery)
+    )
+  );
+
+  function pickResourceType(t: string) {
+    resourceType = t;
+  }
+
+  function resetResourceFilters() {
+    resourceType = 'all';
+    resourceQuery = '';
+  }
+
+  // Open a resource entry as a read-only JSON file in the editor, same as a
+  // scene file (workspace.openFile) — the VirtualFile is created in memory and
+  // reused on subsequent clicks (addFile dedupes by path). Stays on Factory ›
+  // Libraries — opening a resource must not jump to Mine.
+  function openResource(card: ResourceCard) {
+    const path = `resources/${card.groupType}/${card.entry.id}.json`;
+    const contents = JSON.stringify(card.entry.data, null, 2);
+    const id = workspace.addFile(path, contents, true);
+    workspace.openFile(id);
+  }
 
   async function load(item: LibraryItem) {
     // Swap scenes WITHOUT a full `hushAll`: silence the outgoing scene's runtimes (audio +
@@ -63,9 +128,69 @@
   </div>
 
   {#if section === 'libraries'}
-    <div class="libraries-pane">
-      <ResourcesView />
-    </div>
+    <section class="space">
+      <!-- Left rail: resource domains + counts — SAME pattern as the Scenes rail. -->
+      <nav class="rail">
+        <h2 class="rail-title">Libraries</h2>
+        <button
+          class="cat"
+          class:active={resourceType === 'all'}
+          type="button"
+          onclick={() => pickResourceType('all')}
+        >
+          <span class="cat-label">All</span>
+          <span class="cat-count">{resourceCounts.all}</span>
+        </button>
+        {#each RESOURCE_GROUPS as g (g.type)}
+          <button
+            class="cat"
+            class:active={resourceType === g.type}
+            type="button"
+            onclick={() => pickResourceType(g.type)}
+          >
+            <span class="cat-label">{g.title}</span>
+            <span class="cat-count">{resourceCounts[g.type]}</span>
+          </button>
+        {/each}
+      </nav>
+
+      <!-- Main: filter bar + results grid — no onboarding banner (read-only catalogs). -->
+      <div class="main">
+        <header class="bar">
+          <input
+            class="search"
+            type="search"
+            placeholder="Search libraries…"
+            value={resourceQuery}
+            oninput={(e) => (resourceQuery = e.currentTarget.value)}
+          />
+          <span class="result-count">{filteredResourceCards.length} entries</span>
+        </header>
+
+        {#if filteredResourceCards.length === 0}
+          <div class="empty">
+            No entry matches these filters. <button type="button" onclick={resetResourceFilters}
+              >clear filters</button
+            >
+          </div>
+        {:else}
+          <div class="grid">
+            {#each filteredResourceCards as card (card.groupType + ':' + card.entry.id)}
+              <article class="card">
+                <header class="card-head">
+                  <span class="name">{card.entry.id}</span>
+                </header>
+                {#if card.entry.label}<p class="tagline">{card.entry.label}</p>{/if}
+                <div class="meta">
+                  <span class="chip lang">{RESOURCE_GROUP_TITLES[card.groupType]}</span>
+                </div>
+                <button class="load" type="button" onclick={() => openResource(card)}>open</button>
+              </article>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    </section>
   {:else}
     <section class="space">
       <!-- Left rail: the five fixed categories + counts, then the auxiliary shelves. -->
@@ -218,12 +343,6 @@
     color: var(--amber);
     border-color: var(--amber-dim);
     background: var(--surface);
-  }
-  .libraries-pane {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    padding-top: 6px;
   }
   .space {
     display: grid;
