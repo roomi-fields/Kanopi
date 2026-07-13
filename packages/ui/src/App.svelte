@@ -16,6 +16,7 @@
   import { ui } from './stores/ui.svelte';
   import { installGlobalKeybindings } from './lib/keybindings/bindings';
   import { installAutosave } from './lib/persistence/snapshot.svelte';
+  import { installPersonalPitchLib } from './stores/personal-pitch-lib.svelte';
   import { core } from './lib/core';
   import { workspace } from './stores/workspace.svelte';
   import { openBlocks } from './stores/blocks.svelte';
@@ -58,6 +59,10 @@
 
   onMount(() => {
     installAutosave();
+    // Composeur des librairies HAUTEUR personnelles (`libraries/<domaine>/…`) → catalogue
+    // `pitchLibMine` de bpx-adapter. Doit démarrer AVANT toute dérivation pour alimenter le
+    // setter à temps (même patron que `installAutosave`).
+    installPersonalPitchLib();
 
     // Strudel logs async pattern errors via its own logger (repl's catch,
     // scheduler-tick errorLogger) without rejecting the evaluate() promise.

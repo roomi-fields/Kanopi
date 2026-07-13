@@ -1128,6 +1128,23 @@ export function setExprSource(fn: ExprSource | undefined): void {
 // curves through it (Kanopi still never compiles/renders — it only passes it on).
 setExprSource(exprSource as unknown as ExprSource);
 
+// Librairies HAUTEUR PERSONNELLES de l'utilisateur (`ctx.pitchLibMine`), sur le MÊME patron que
+// `onExprSource`/`setExprSource` : bpx-adapter ne compose/parse rien et n'importe aucun store
+// (garde `npm run arch`, cycle interdit) — un module hôte séparé (le composeur,
+// `stores/personal-pitch-lib.svelte.ts`) lit les fichiers perso du stockage et POUSSE la MAP ici.
+//
+// FORME (décision 2026-07-13, co-signée archi [714] / Kairos [713]) : une MAP PLATE
+// `Record<string, string>` — clé = chemin du fichier sous `libraries/` (extension retirée,
+// `/`→`.`), valeur = CONTENU BRUT du fichier (string, verbatim). Le fichier DÉCLARE son domaine
+// DEDANS (champ JSON `domain`) : c'est KAIROS qui lit + parse (rôle résolveur, un fichier
+// malformé crie CHEZ LUI). L'hôte ne fait AUCUN `JSON.parse`, aucun bucketing par domaine.
+// Vide par défaut = no-op total : le kairos consommé (231d207, ancien type `PitchLib`) lit
+// `mine[<domaine>]` sur cette map plate → sous-clés absentes → factory INTACT, aucun crash.
+let personalPitchLib: Record<string, string> = {};
+export function setPersonalPitchLib(map: Record<string, string>): void {
+  personalPitchLib = map;
+}
+
 // Live mute + teardown handle for ONE orchestrated actor's voice. Registered per
 // (file, actor) when an orchestrator evaluates.
 interface OrchestratedVoiceHandle {
@@ -1573,6 +1590,11 @@ function makeBpxAdapter(
             // the catalogs. Kairos consumes this to build the resolver and grave
             // `content.pitch.hz` + `content.sounds`; the host calls no resolver itself.
             pitchLib: PITCH_LIB,
+            // Librairies PERSONNELLES (`ctx.pitchLibMine`) : MAP PLATE chemin→contenu BRUT
+            // (chaque fichier déclare son domaine dedans, Kairos lit/parse). Vide par défaut =
+            // no-op total, factory intact ([714]/[713]). Cast `as unknown` ci-dessous : absorbe
+            // l'écart avec le kairos consommé (type PitchLib de l'ancien modèle, sans crash).
+            pitchLibMine: personalPitchLib,
             // KAI-B03 — hand Kairos the provided DIGITAL function lib (transpose &c.), exact
             // sibling of `pitchLib`. Kairos applies it at projection; without it the sound transpose
             // falls back to Kairos's legacy hardcode (decision tout-par-librairies, 2026-06-29).
@@ -1597,6 +1619,7 @@ function makeBpxAdapter(
         liveUpdateCtx = {
           ...(bpx.buildProjectionContext() as object),
           pitchLib: PITCH_LIB,
+          pitchLibMine: personalPitchLib,
           digitalLib: DIGITAL_LIB,
           modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
         } as unknown as Parameters<Kairos['charger']>[1];
@@ -1935,6 +1958,9 @@ function makeBpxAdapter(
                   ...(rbpx.buildProjectionContext() as object),
                   // KAI-10 — same read-only catalogs on every re-derive (cycle-invariant).
                   pitchLib: PITCH_LIB,
+                  // Catalogue perso — même patron, cycle-invariant lui aussi (lu par référence
+                  // module au moment du re-derive, pas re-composé ici).
+                  pitchLibMine: personalPitchLib,
                   // KAI-B03 — same provided digital lib on every re-derive (transpose &c.).
                   digitalLib: DIGITAL_LIB,
                   // KAI-10 — sound transpose in Kairos; host lends no transposeToken.

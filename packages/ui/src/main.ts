@@ -15,6 +15,7 @@ import { ui } from './stores/ui.svelte';
 import { production } from './stores/production.svelte';
 import { transport } from './stores/transport.svelte';
 import { installKanopiApi } from './lib/pilot/kanopi-api';
+import { personalPitchLibSnapshot } from './stores/personal-pitch-lib.svelte';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('#app root not found');
@@ -44,7 +45,11 @@ if (import.meta.env.DEV) {
     production,
     // Loop / re-random session toggles (default loop ON, re-random OFF). The re-random
     // e2e flips `reRandom` ON before evaluating so the Kairos re-derive arms at load.
-    transport
+    transport,
+    // Last-built `pitchLibMine` catalog (personal pitch libraries composed from
+    // `libraries/<domain>/…`), read by the e2e proving population before/after creating
+    // a personal library doc. Function (not a value) so each call reads the CURRENT catalog.
+    personalPitchLib: personalPitchLibSnapshot
   };
 }
 
