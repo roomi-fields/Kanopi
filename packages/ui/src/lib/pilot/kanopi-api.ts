@@ -21,6 +21,7 @@ import { playback } from '../../stores/playback.svelte';
 import { transport } from '../../stores/transport.svelte';
 import { openBlocks } from '../../stores/blocks.svelte';
 import { workspace } from '../../stores/workspace.svelte';
+import { isNonProgramFile } from '../workspace/types';
 import { productionFeed } from '../../stores/production-feed.svelte';
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 import { pilotAudioMeter } from '../runtimes/kronos-audio';
@@ -52,6 +53,12 @@ export function installKanopiApi(): void {
     setSceneText(text: string): boolean {
       const id = workspace.activeTabId;
       if (!id) return false;
+      // NE JAMAIS écraser un fichier de DONNÉES (une lib `libraries/…` ou une entrée de
+      // catalogue `resources/…`) avec du texte de scène — ça corrompt la lib (bug de banc
+      // 2026-07-13 : setSceneText écrivait dans l'onglet FOCUS, quel qu'il soit). L'appelant
+      // doit d'abord donner le focus à un onglet de SCÈNE ; sinon on refuse.
+      const f = workspace.fileById(id);
+      if (f && isNonProgramFile(f.path)) return false;
       workspace.updateContents(id, text);
       return true;
     },
