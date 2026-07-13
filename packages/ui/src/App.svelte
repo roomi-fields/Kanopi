@@ -121,14 +121,14 @@
   <div
     class="body"
     class:sidebar-collapsed={ui.sidebarCollapsed}
-    style:grid-template-columns={ui.activeActivityView === 'library'
+    style:grid-template-columns={ui.activeActivityView === 'factory'
       ? '44px 1fr'
       : ui.sidebarCollapsed
         ? `44px 1fr 4px ${ui.rightPanelWidth}px`
         : `44px ${ui.sidebarWidth}px 4px 1fr 4px ${ui.rightPanelWidth}px`}
   >
     <ActivityBar />
-    {#if ui.activeActivityView === 'library'}
+    {#if ui.activeActivityView === 'factory'}
       <!-- Dedicated full-width library space (replaces editor + panels). The
            activity bar stays visible so another icon returns to the editor. -->
       <LibrarySpace />

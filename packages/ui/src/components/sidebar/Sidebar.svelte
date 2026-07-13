@@ -3,12 +3,16 @@
   import AccountView from './AccountView.svelte';
   import FilesView from './FilesView.svelte';
   import HardwareView from './HardwareView.svelte';
-  import LibraryView from './LibraryView.svelte';
+  import NowView from './NowView.svelte';
   import ResourcesView from './ResourcesView.svelte';
 
+  // 'factory' is NOT routed here — App.svelte swaps the whole body for the
+  // dedicated full-width LibrarySpace when it's active (see App.svelte), so
+  // Sidebar never renders for that view.
   const labels = {
-    files: 'Files',
-    library: 'Library',
+    now: 'Now',
+    mine: 'Mine',
+    factory: 'Factory',
     resources: 'Resources',
     search: 'Search',
     hardware: 'Hardware',
@@ -22,12 +26,12 @@
     <span class="label">{labels[ui.activeActivityView]}</span>
   </header>
   <div class="sb-body">
-    {#if ui.activeActivityView === 'files'}
+    {#if ui.activeActivityView === 'now'}
+      <NowView />
+    {:else if ui.activeActivityView === 'mine'}
       <FilesView />
     {:else if ui.activeActivityView === 'hardware'}
       <HardwareView />
-    {:else if ui.activeActivityView === 'library'}
-      <LibraryView />
     {:else if ui.activeActivityView === 'resources'}
       <ResourcesView />
     {:else if ui.activeActivityView === 'account'}

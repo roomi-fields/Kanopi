@@ -1,5 +1,6 @@
 // Resource libraries — the catalogs a program draws on (NOT the demo/scene
-// catalogue in LibraryView). Read-only browse for the "Resources" activity view.
+// catalogue in LibrarySpace). Read-only browse for the "Resources" activity view
+// (also reused, as-is, for Factory's "Libraries" section — ESPACE_PERSO_SPEC §10.3).
 //
 // Two sources, glued here:
 //   - bpscript's musical catalogs (alphabets, tunings, temperaments, scales,

@@ -12,7 +12,7 @@
     const contents = JSON.stringify(entry.data, null, 2);
     const id = workspace.addFile(path, contents, true);
     workspace.openFile(id);
-    ui.activeActivityView = 'files';
+    ui.activeActivityView = 'mine';
   }
 </script>
 

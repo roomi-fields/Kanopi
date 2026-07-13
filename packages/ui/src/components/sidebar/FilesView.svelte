@@ -5,30 +5,39 @@
   import { cloudDocs } from '../../stores/cloud-docs.svelte';
   import { KNOWN_EXTENSIONS } from '../../lib/workspace/types';
   import { buildTree } from '../../lib/workspace/build-tree';
-  import { referencedLibraries, type ReferencedLib } from '../../lib/library/referenced';
-  import { RESOURCE_GROUPS } from '../../lib/library/resources';
-  import { ui } from '../../stores/ui.svelte';
   import FileTree from './FileTree.svelte';
   import CloudFileTree from './CloudFileTree.svelte';
-  import AccountSwitcher from './AccountSwitcher.svelte';
-
-  // Resource libraries the ACTIVE program references via its `@` directives.
-  // Recomputed reactively as the active file (or its contents) changes.
-  const activeFile = $derived(
-    workspace.activeTabId ? workspace.fileById(workspace.activeTabId) : undefined
-  );
-  const referenced = $derived(referencedLibraries(activeFile?.name, activeFile?.contents));
 
   // Allowed extensions pulled from the single `EXTENSION_TO_RUNTIME`
   // table in lib/workspace/types. Leaving the extension off defaults to
   // .bps to match the typical "new scratch program" flow.
   const exts = KNOWN_EXTENSIONS;
 
+  // Secondary split INSIDE the Mine origin (ESPACE_PERSO_SPEC §10.3): a personal
+  // LIBRARY is just a doc filed under the reserved `libraries/` folder — no
+  // storage-contract change (the path carries everything, no separate kind/ext
+  // field). So the split is a pure PROJECTION: partition the doc list by path
+  // prefix. Renaming a doc to add/remove `libraries/` moves it between sections
+  // automatically (the partition is derived from the live doc list). Full paths
+  // are kept (the `libraries/` folder stays visible) so the cloud rename dialog,
+  // which pre-fills with the node's path, still shows/edits the real prefix.
+  const LIB_PREFIX = 'libraries/';
+  const isLibraryPath = (p: string) => p.startsWith(LIB_PREFIX);
+
   // Cloud docs rendered as a folder tree (the `/` in each path = a directory) —
   // `buildTree` only reads `id`/`path`, already true of `DocMeta`, so no VirtualFile
   // shimming needed. A folder is not a real entity server-side: it exists only as
   // long as at least one doc's path starts with it (see submitFolder below).
-  const cloudTree = $derived(buildTree(cloudDocs.docs));
+  const cloudScenesTree = $derived(buildTree(cloudDocs.docs.filter((d) => !isLibraryPath(d.path))));
+  const cloudLibrariesTree = $derived(
+    buildTree(cloudDocs.docs.filter((d) => isLibraryPath(d.path)))
+  );
+  const localScenesTree = $derived(
+    buildTree(workspace.files.filter((f) => !isLibraryPath(f.path)))
+  );
+  const localLibrariesTree = $derived(
+    buildTree(workspace.files.filter((f) => isLibraryPath(f.path)))
+  );
 
   let creating = $state(false);
   let newName = $state('');
@@ -65,6 +74,21 @@
     creatingFolder = false;
     folderName = '';
     errorMsg = null;
+  }
+
+  /** "New library" is a "New file" whose path is pre-seeded with the reserved
+   * `libraries/` prefix (same mechanism as "New folder" pre-filling a folder):
+   * whatever the user names lands under `libraries/`, so it shows up in the
+   * Libraries section. No new storage concept — just a path convention. */
+  function openLibraryDialog() {
+    openDialog();
+    newName = LIB_PREFIX;
+    tick().then(() => {
+      inputEl?.focus();
+      // Caret after the prefix so the user types the library name, not over it.
+      const len = inputEl?.value.length ?? 0;
+      inputEl?.setSelectionRange(len, len);
+    });
   }
 
   /** "New folder" doesn't create a folder entity (none exists server-side) — it
@@ -130,32 +154,6 @@
   // (rename/duplicate/delete y sont câblées directement sur `cloudDocs`, plus
   // besoin de wrapper ici).
 
-  // Open a referenced library's CONTENT in the editor display (not just switch
-  // the sidebar). A catalog-backed lib (alphabet/tuning/scale/…) opens its JSON
-  // read-only, exactly like the Resources view. A bare language module (@core /
-  // @controls — no Kanopi catalog, the content lives in the BPScript language)
-  // opens a short read-only note so the click still surfaces something.
-  function openReferenced(lib: ReferencedLib) {
-    const entry = RESOURCE_GROUPS.find((g) => g.type === lib.type)?.entries.find(
-      (e) => e.id === lib.name
-    );
-    if (entry) {
-      const path = `resources/${lib.type}/${entry.id}.json`;
-      const id = workspace.addFile(path, JSON.stringify(entry.data, null, 2), true);
-      workspace.openFile(id);
-    } else {
-      const path = `resources/${lib.type}/${lib.name}.json`;
-      const note = {
-        module: lib.name,
-        kind: `BPScript ${lib.typeLabel}`,
-        note: `@${lib.name} charge une bibliothèque du langage BPScript. Son contenu vit dans le langage (fonctions de grammaire / terminaux de contrôle), pas dans un catalogue de données Kanopi — rien à parcourir ici.`
-      };
-      const id = workspace.addFile(path, JSON.stringify(note, null, 2), true);
-      workspace.openFile(id);
-    }
-    ui.activeActivityView = 'files';
-  }
-
   function onKey(e: KeyboardEvent) {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -168,9 +166,6 @@
 </script>
 
 <div class="files-view">
-  <!-- KAN-UX5 — the files below are the PERSONAL space of the active account
-       (the standard space is the read-only Library panel). -->
-  <AccountSwitcher />
   <div class="toolbar">
     <button type="button" class="new-btn" onclick={openDialog} title="New file (name.ext)"
       >+ New file</button
@@ -180,6 +175,12 @@
       class="new-btn"
       onclick={openFolderDialog}
       title="New folder (created once it holds a file)">+ New folder</button
+    >
+    <button
+      type="button"
+      class="new-btn"
+      onclick={openLibraryDialog}
+      title="New library (a doc filed under libraries/)">+ New library</button
     >
   </div>
 
@@ -225,37 +226,41 @@
     </div>
   {/if}
 
+  <!-- Two sections, always visible (empty ones show a hint so the user learns
+       where content goes). Ordered Scenes then Libraries. Connected → cloud docs
+       via CloudFileTree; disconnected → local draft via FileTree. -->
   {#if session.session}
-    {#if cloudDocs.docs.length === 0}
-      <p class="cloud-empty">No cloud documents yet.</p>
-    {:else}
-      <CloudFileTree nodes={cloudTree} />
-    {/if}
-  {:else}
-    <FileTree nodes={workspace.tree} />
-  {/if}
-
-  {#if activeFile}
-    <section class="libs">
-      <h3 class="libs-title">Libraries used</h3>
-      {#if referenced.length === 0}
-        <p class="libs-empty">This program references no resource libraries.</p>
+    <section class="tree-section">
+      <h3 class="section-title">Scenes</h3>
+      {#if cloudScenesTree.length === 0}
+        <p class="section-empty">No scenes yet.</p>
       {:else}
-        <ul class="libs-list">
-          {#each referenced as lib (lib.type + ':' + lib.name)}
-            <li>
-              <button
-                type="button"
-                class="lib-row"
-                title="Ouvrir dans l'éditeur"
-                onclick={() => openReferenced(lib)}
-              >
-                <span class="lib-type">{lib.typeLabel}</span>
-                <span class="lib-name">{lib.name}</span>
-              </button>
-            </li>
-          {/each}
-        </ul>
+        <CloudFileTree nodes={cloudScenesTree} />
+      {/if}
+    </section>
+    <section class="tree-section">
+      <h3 class="section-title">Libraries</h3>
+      {#if cloudLibrariesTree.length === 0}
+        <p class="section-empty">No libraries yet. Use “+ New library”.</p>
+      {:else}
+        <CloudFileTree nodes={cloudLibrariesTree} />
+      {/if}
+    </section>
+  {:else}
+    <section class="tree-section">
+      <h3 class="section-title">Scenes</h3>
+      {#if localScenesTree.length === 0}
+        <p class="section-empty">No scenes yet.</p>
+      {:else}
+        <FileTree nodes={localScenesTree} />
+      {/if}
+    </section>
+    <section class="tree-section">
+      <h3 class="section-title">Libraries</h3>
+      {#if localLibrariesTree.length === 0}
+        <p class="section-empty">No libraries yet. Use “+ New library”.</p>
+      {:else}
+        <FileTree nodes={localLibrariesTree} />
       {/if}
     </section>
   {/if}
@@ -267,11 +272,12 @@
   }
   .toolbar {
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
     padding: 0 6px 6px;
   }
   .new-btn {
-    flex: 1;
+    flex: 1 1 30%;
     padding: 6px 8px;
     background: transparent;
     border: 1px dashed var(--border-dim);
@@ -348,68 +354,21 @@
     color: var(--red, #c84040);
     font-family: var(--font-mono);
   }
-  .cloud-empty {
-    margin: 6px 8px;
-    font-size: 10.5px;
-    color: var(--text-faint);
-    font-style: italic;
+  .tree-section {
+    margin-bottom: 10px;
   }
-  .libs {
-    margin: 14px 4px 0;
-    padding-top: 10px;
-    border-top: 1px solid var(--border-dim);
-  }
-  .libs-title {
-    margin: 0 0 6px 6px;
+  .section-title {
+    margin: 0 0 4px 6px;
     font-size: 9px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--text-dim);
     font-weight: 500;
   }
-  .libs-empty {
-    margin: 0 0 0 6px;
+  .section-empty {
+    margin: 0 0 0 8px;
     font-size: 10.5px;
     color: var(--text-faint);
     font-style: italic;
-  }
-  .libs-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-  }
-  .lib-row {
-    display: flex;
-    align-items: baseline;
-    gap: 7px;
-    width: 100%;
-    padding: 3px 6px;
-    background: transparent;
-    border: none;
-    border-radius: 2px;
-    cursor: pointer;
-    text-align: left;
-  }
-  .lib-row:hover {
-    background: rgba(255, 255, 255, 0.03);
-  }
-  .lib-type {
-    flex-shrink: 0;
-    font-size: 9px;
-    letter-spacing: 0.06em;
-    color: var(--amber);
-    font-family: var(--font-mono);
-    text-transform: lowercase;
-  }
-  .lib-name {
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: 11.5px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 </style>

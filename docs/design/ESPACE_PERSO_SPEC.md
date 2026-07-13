@@ -214,3 +214,55 @@ passe** · **Mot de passe oublié** · **Profil (nom affiché)**.
 - **Phase B** : ajoute `changePassword(oldPassword, newPassword)` et, si retenu,
   `requestPasswordReset(email)`. **Escalade envoyée à l'architecte** (le contrat `kanopi-storage.md`
   §3 est figé — toute extension passe par lui).
+
+---
+
+## 10. Barre latérale — organisation par ORIGINE (ratifié Romain 2026-07-13)
+
+Modèle calqué sur les DAW (Ableton Live « Current Project / Library / User Library / Places »,
+openDAW) : **l'axe primaire est l'ORIGINE** (elle gouverne les droits : usine = lecture seule,
+perso = modifiable ; et accueille la Communauté à venir sans refonte). Le **type** (Scènes /
+Librairies) est un découpage **secondaire à l'intérieur de chaque origine**, jamais un onglet racine
+(une librairie existe dans toutes les origines). Décision : axe = origine ; nom de l'espace fourni =
+**Factory**.
+
+### 10.1 Le rail (icônes, haut → bas)
+
+| Groupe | Icône | `ActivityView` | Contenu | Droits |
+|---|---|---|---|---|
+| Contenu | **Now** | `now` | scène en cours + ses librairies utilisées | lentille (lecture) |
+| Contenu | **Factory** | `factory` (ex-`library`) | démos/scènes multi-langages + librairies d'usine | lecture seule |
+| Contenu | **Mine** | `mine` (ex-`files`) | mes scènes (+ mes librairies = post-v1) | modifiable |
+| Contenu | *Community* | *(différé)* | scènes + librairies partagées | — |
+| Lentille | **Hardware** | `hardware` | périphériques détectés (badge = nb) | référence |
+| Lentille | **Resources** | `resources` | catalogue vocabulaire (alphabets/accordages/gammes/banques) | lecture seule |
+| Utilitaire | **Docs** | `docs` | doc embarquée (ouvre un onglet) | — |
+| Utilitaire | **Search** | `search` | **grisé/désactivé** (cassé, infobulle « à venir ») | — |
+| Utilitaire | **Account** | `account` | compte | — |
+
+### 10.2 Now — la lentille sur ce qui est chargé
+Pas un dépôt : un reflet de la scène jouée/chargée. Reprend le bloc « Libraries used » (aujourd'hui
+noyé dans *Files*) + la scène active. La duplication apparente Now ↔ Factory/Mine est **voulue**
+(Now référence des fichiers qui vivent dans une origine, comme « Current Project » d'Ableton).
+
+### 10.3 Découpage secondaire Scènes / Librairies
+- **Factory** : split RÉEL — *Scènes* (starters/démos) vs *Librairies* (banques audio, grammaires,
+  catalogues). Réutilise l'organisation par thème musical déjà en place (commit 89e59c7).
+- **Mine** : split RÉEL en v1 (Romain 2026-07-13 : « avoir des librairies dans l'espace perso, c'est
+  basique »). Mécanisme **sans extension de contrat** : le modèle de doc ratifié dit « le chemin porte
+  TOUT, pas de champ `kind`/`ext` séparé » → une **librairie perso = un doc rangé sous le dossier
+  réservé `libraries/`** (choix réel de l'utilisateur, pas une distinction inventée). *Mine* montre
+  deux sections : **Scenes** (tout le reste) et **Libraries** (`libraries/…`). « New library » pré-remplit
+  le chemin avec `libraries/` ; « Save to my space » pourra viser Scene ou Library. RÉSERVE honnête :
+  *gérer/stocker* une librairie perso = fait ici ; qu'une scène l'**importe** au moment de la dérivation
+  = capacité du langage/résolveur (BPx) à vérifier/router, PAS à fabriquer côté hôte.
+
+### 10.4 Ce qui change côté code (photo, pas contrat)
+- `ActivityView` : renommer `library`→`factory`, `files`→`mine`, ajouter `now` (garder `resources`/
+  `hardware`/`docs`/`search`/`account`).
+- Rail (`ActivityBar.svelte`) : nouvel ordre + groupes ; `search` rendu **désactivé**.
+- `Now` : nouveau `NowView.svelte` (extrait le bloc « Libraries used » de `FilesView`).
+- `Mine` (ex-`FilesView`) : inchangé sur le fond (explorateur cloud/brouillon), sans le bloc libs.
+- `Factory` (ex-`LibraryView`) : split Scènes/Librairies (secondaire).
+- Aucune extension de l'interface de stockage (`kanopi-storage.md` §3) : purement UI/projection.
+- Gate : re-baseline la capture visuelle du panneau Library/Factory (changement UI volontaire).

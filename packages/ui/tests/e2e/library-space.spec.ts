@@ -8,7 +8,7 @@ test('library space filters scenes by category and search', async ({ page }) => 
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   // Open the dedicated library space.
-  await page.locator('.ab-btn[title="Library"]').click();
+  await page.locator('.ab-btn[title="Factory"]').click();
   await expect(page.locator('.space')).toBeVisible({ timeout: 5_000 });
 
   // Every bundled scene shows under "All".

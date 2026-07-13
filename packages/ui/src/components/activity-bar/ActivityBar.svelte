@@ -2,16 +2,22 @@
   import { ui, type ActivityView } from '../../stores/ui.svelte';
   import ActivityItem from './ActivityItem.svelte';
 
-  type Item = { id: ActivityView; title: string; badge?: number };
-  const top: Item[] = [
-    { id: 'files', title: 'Files' },
-    { id: 'library', title: 'Library' },
-    { id: 'resources', title: 'Resources' },
-    { id: 'search', title: 'Search' },
-    { id: 'hardware', title: 'Hardware', badge: 2 }
+  type Item = { id: ActivityView; title: string; badge?: number; disabled?: boolean };
+  // Groups per the DAW-style origin model (ESPACE_PERSO_SPEC §10.1): Content
+  // (Now/Factory/Mine, primary axis = origin) — Lenses (Hardware/Resources,
+  // read-only references) — Utilities (Docs/Search/Account) pinned to the bottom.
+  const content: Item[] = [
+    { id: 'now', title: 'Now' },
+    { id: 'factory', title: 'Factory' },
+    { id: 'mine', title: 'Mine' }
+  ];
+  const lenses: Item[] = [
+    { id: 'hardware', title: 'Hardware', badge: 2 },
+    { id: 'resources', title: 'Resources' }
   ];
   const bottom: Item[] = [
     { id: 'docs', title: 'Docs' },
+    { id: 'search', title: 'Search — coming soon', disabled: true },
     { id: 'account', title: 'Account' }
   ];
 
@@ -25,7 +31,17 @@
 </script>
 
 <nav class="activity-bar">
-  {#each top as item (item.id)}
+  {#each content as item (item.id)}
+    <ActivityItem
+      id={item.id}
+      title={item.title}
+      badge={item.badge}
+      active={ui.activeActivityView === item.id && !ui.sidebarCollapsed}
+      onclick={() => ui.setActivity(item.id)}
+    />
+  {/each}
+  <div class="ab-divider"></div>
+  {#each lenses as item (item.id)}
     <ActivityItem
       id={item.id}
       title={item.title}
@@ -39,6 +55,7 @@
     <ActivityItem
       id={item.id}
       title={item.title}
+      disabled={item.disabled}
       active={item.id !== 'docs' && ui.activeActivityView === item.id && !ui.sidebarCollapsed}
       onclick={() => (item.id === 'docs' ? openDocs() : ui.setActivity(item.id))}
     />
@@ -54,6 +71,12 @@
     align-items: center;
     padding: 10px 0;
     gap: 4px;
+  }
+  .ab-divider {
+    width: 22px;
+    height: 1px;
+    background: var(--border-dim);
+    margin: 4px 0;
   }
   .ab-spacer {
     flex: 1;

@@ -41,7 +41,7 @@ for (const { cardName, grFile, audibleHeadless } of SHOWCASE) {
     await page.goto('');
     await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
-    await page.locator('button[title="Library"]').click();
+    await page.locator('button[title="Factory"]').click();
 
     const card = page.locator('.card', { has: page.getByText(cardName, { exact: true }) }).first();
     await expect(card).toBeVisible({ timeout: 5_000 });

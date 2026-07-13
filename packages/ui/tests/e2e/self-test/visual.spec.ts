@@ -146,7 +146,7 @@ test('Library panel screenshot shows the bundled starters and Bol Processor show
 
   // Open Library via the activity bar button (same selector used by
   // library.spec.ts — the `title=Library` attribute on the <button>).
-  await page.locator('button[title="Library"]').click();
+  await page.locator('button[title="Factory"]').click();
 
   // Wait for the bundled starter cards plus the Bol Processor showcase cards to
   // render. Names come from STARTERS in starters.ts. Asserting visibility forces

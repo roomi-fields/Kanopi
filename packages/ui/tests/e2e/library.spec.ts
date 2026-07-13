@@ -28,7 +28,7 @@ test('library: bundled starter loads via the Library panel and evaluates', async
   // Activity bar button: every entry renders an <ActivityItem> whose
   // <button> carries the `title` attribute set in ActivityBar.svelte. The
   // `title=Library` selector is stable.
-  await page.locator('button[title="Library"]').click();
+  await page.locator('button[title="Factory"]').click();
 
   // The LibraryView panel renders one card per STARTERS entry. We added
   // "01 — Strudel solo" at the top of the list; click its `load` button.

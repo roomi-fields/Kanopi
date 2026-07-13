@@ -13,7 +13,7 @@ test('a BPScript demo loads from the library and plays', async ({ page }) => {
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
-  await page.locator('.ab-btn[title="Library"]').click();
+  await page.locator('.ab-btn[title="Factory"]').click();
   // The library rail is now organised by musical THEME (12-theme restructure, 89e59c7),
   // so a BPScript demo is reached via the LANGUAGE filter (`bpscript`), not a runtime category.
   await page.locator('select.filter').first().selectOption('bpscript');

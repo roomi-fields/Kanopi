@@ -6,9 +6,18 @@
   import { core } from '../../lib/core';
   import { tick } from 'svelte';
   import { CATEGORIES, type LibraryItem, type LibraryCategory } from '../../lib/library/catalog';
+  import ResourcesView from '../sidebar/ResourcesView.svelte';
 
   const OUTPUTS = ['audio', 'midi', 'text', 'visual'] as const;
   const LEVELS = ['didactic', 'intermediate', 'advanced'] as const;
+
+  // Secondary split INSIDE the Factory origin (ESPACE_PERSO_SPEC §10.3): Scenes
+  // (starters/démos, the by-theme rail below — commit 89e59c7) vs Libraries
+  // (audio banks + grammars + catalogs, reusing the Resources catalog as-is —
+  // it already ships exactly that content, read-only). Not a rail icon: a
+  // section toggle inside this one origin.
+  type Section = 'scenes' | 'libraries';
+  let section = $state<Section>('scenes');
 
   async function load(item: LibraryItem) {
     // Swap scenes WITHOUT a full `hushAll`: silence the outgoing scene's runtimes (audio +
@@ -19,7 +28,7 @@
     openBlocks.disarmAll();
     const focusId = workspace.loadFiles(item.files, item.sessionFile);
     // The library is a launcher: land back in the editor with the session open.
-    ui.activeActivityView = 'files';
+    ui.activeActivityView = 'mine';
     // Load = PRODUCE, not play (Romain's produce/play split): derive the scene so
     // its structure shows + the tempo (`@mm`) is adopted, and arm it so Play
     // sounds it — but do NOT start the transport on load. `await tick()` flushes
@@ -35,124 +44,191 @@
   }
 </script>
 
-<section class="space">
-  <!-- Left rail: the five fixed categories + counts, then the auxiliary shelves. -->
-  <nav class="rail">
-    <h2 class="rail-title">Library</h2>
+<div class="factory">
+  <!-- Secondary split (ESPACE_PERSO_SPEC §10.3): Scenes vs Libraries, both
+       inside the Factory origin. Not a rail icon — a section toggle. -->
+  <div class="section-toggle">
     <button
-      class="cat"
-      class:active={library.filters.category === 'all'}
       type="button"
-      onclick={() => pickCategory('all')}
+      class="section-btn"
+      class:active={section === 'scenes'}
+      onclick={() => (section = 'scenes')}>Scenes</button
     >
-      <span class="cat-label">All</span>
-      <span class="cat-count">{library.counts.all}</span>
-    </button>
-    {#each CATEGORIES as c (c.id)}
-      <button
-        class="cat"
-        class:active={library.filters.category === c.id}
-        type="button"
-        title={c.hint}
-        onclick={() => pickCategory(c.id)}
-      >
-        <span class="cat-label">{c.label}</span>
-        <span class="cat-count">{library.counts[c.id]}</span>
-      </button>
-    {/each}
-  </nav>
-
-  <!-- Main: onboarding banner + filter bar + results grid. -->
-  <div class="main">
-    <!-- 5-minute on-ramp + feedback channel (brief lot 5/7). -->
-    <div class="welcome">
-      <span class="wave">New to Kanopi?</span>
-      <span class="hint">
-        Load a <button class="inline-star" type="button" onclick={() => library.toggleShowcase()}
-          >★ showcase</button
-        > scene and press Ctrl+Enter to hear it. Ctrl+. silences everything.
-      </span>
-      <a class="feedback" href="mailto:contact@roomi-fields.com?subject=Kanopi beta feedback"
-        >Send feedback</a
-      >
-    </div>
-    <header class="bar">
-      <input
-        class="search"
-        type="search"
-        placeholder="Search scenes…"
-        value={library.filters.query}
-        oninput={(e) => library.setQuery(e.currentTarget.value)}
-      />
-      <select
-        class="filter"
-        value={library.filters.language}
-        onchange={(e) => library.setLanguage(e.currentTarget.value)}
-      >
-        <option value="all">any language</option>
-        {#each library.languages as l (l)}<option value={l}>{l}</option>{/each}
-      </select>
-      <select
-        class="filter"
-        value={library.filters.output}
-        onchange={(e) =>
-          library.setOutput(e.currentTarget.value as (typeof OUTPUTS)[number] | 'all')}
-      >
-        <option value="all">any output</option>
-        {#each OUTPUTS as o (o)}<option value={o}>{o}</option>{/each}
-      </select>
-      <select
-        class="filter"
-        value={library.filters.level}
-        onchange={(e) => library.setLevel(e.currentTarget.value as (typeof LEVELS)[number] | 'all')}
-      >
-        <option value="all">any level</option>
-        {#each LEVELS as l (l)}<option value={l}>{l}</option>{/each}
-      </select>
-      <button
-        class="star"
-        class:on={library.filters.showcaseOnly}
-        type="button"
-        title="Showcase only"
-        onclick={() => library.toggleShowcase()}>★ showcase</button
-      >
-      <span class="result-count">{library.filtered.length} scenes</span>
-    </header>
-
-    {#if library.filtered.length === 0}
-      <div class="empty">
-        No scene matches these filters. <button type="button" onclick={() => library.reset()}
-          >clear filters</button
-        >
-      </div>
-    {:else}
-      <div class="grid">
-        {#each library.filtered as item (item.id)}
-          <article class="card">
-            <header class="card-head">
-              <span class="name">{item.name}</span>
-              {#if item.showcase}<span class="badge-star" title="Showcase">★</span>{/if}
-            </header>
-            <p class="tagline">{item.tagline}</p>
-            <p class="desc">{item.description}</p>
-            <div class="meta">
-              <span class="chip lang">{item.language}</span>
-              {#each item.outputs as o (o)}<span class="chip out">{o}</span>{/each}
-              <span class="chip level">{item.level}</span>
-            </div>
-            <button class="load" type="button" onclick={() => load(item)}>load</button>
-          </article>
-        {/each}
-      </div>
-    {/if}
+    <button
+      type="button"
+      class="section-btn"
+      class:active={section === 'libraries'}
+      onclick={() => (section = 'libraries')}>Libraries</button
+    >
   </div>
-</section>
+
+  {#if section === 'libraries'}
+    <div class="libraries-pane">
+      <ResourcesView />
+    </div>
+  {:else}
+    <section class="space">
+      <!-- Left rail: the five fixed categories + counts, then the auxiliary shelves. -->
+      <nav class="rail">
+        <h2 class="rail-title">Library</h2>
+        <button
+          class="cat"
+          class:active={library.filters.category === 'all'}
+          type="button"
+          onclick={() => pickCategory('all')}
+        >
+          <span class="cat-label">All</span>
+          <span class="cat-count">{library.counts.all}</span>
+        </button>
+        {#each CATEGORIES as c (c.id)}
+          <button
+            class="cat"
+            class:active={library.filters.category === c.id}
+            type="button"
+            title={c.hint}
+            onclick={() => pickCategory(c.id)}
+          >
+            <span class="cat-label">{c.label}</span>
+            <span class="cat-count">{library.counts[c.id]}</span>
+          </button>
+        {/each}
+      </nav>
+
+      <!-- Main: onboarding banner + filter bar + results grid. -->
+      <div class="main">
+        <!-- 5-minute on-ramp + feedback channel (brief lot 5/7). -->
+        <div class="welcome">
+          <span class="wave">New to Kanopi?</span>
+          <span class="hint">
+            Load a <button
+              class="inline-star"
+              type="button"
+              onclick={() => library.toggleShowcase()}>★ showcase</button
+            > scene and press Ctrl+Enter to hear it. Ctrl+. silences everything.
+          </span>
+          <a class="feedback" href="mailto:contact@roomi-fields.com?subject=Kanopi beta feedback"
+            >Send feedback</a
+          >
+        </div>
+        <header class="bar">
+          <input
+            class="search"
+            type="search"
+            placeholder="Search scenes…"
+            value={library.filters.query}
+            oninput={(e) => library.setQuery(e.currentTarget.value)}
+          />
+          <select
+            class="filter"
+            value={library.filters.language}
+            onchange={(e) => library.setLanguage(e.currentTarget.value)}
+          >
+            <option value="all">any language</option>
+            {#each library.languages as l (l)}<option value={l}>{l}</option>{/each}
+          </select>
+          <select
+            class="filter"
+            value={library.filters.output}
+            onchange={(e) =>
+              library.setOutput(e.currentTarget.value as (typeof OUTPUTS)[number] | 'all')}
+          >
+            <option value="all">any output</option>
+            {#each OUTPUTS as o (o)}<option value={o}>{o}</option>{/each}
+          </select>
+          <select
+            class="filter"
+            value={library.filters.level}
+            onchange={(e) =>
+              library.setLevel(e.currentTarget.value as (typeof LEVELS)[number] | 'all')}
+          >
+            <option value="all">any level</option>
+            {#each LEVELS as l (l)}<option value={l}>{l}</option>{/each}
+          </select>
+          <button
+            class="star"
+            class:on={library.filters.showcaseOnly}
+            type="button"
+            title="Showcase only"
+            onclick={() => library.toggleShowcase()}>★ showcase</button
+          >
+          <span class="result-count">{library.filtered.length} scenes</span>
+        </header>
+
+        {#if library.filtered.length === 0}
+          <div class="empty">
+            No scene matches these filters. <button type="button" onclick={() => library.reset()}
+              >clear filters</button
+            >
+          </div>
+        {:else}
+          <div class="grid">
+            {#each library.filtered as item (item.id)}
+              <article class="card">
+                <header class="card-head">
+                  <span class="name">{item.name}</span>
+                  {#if item.showcase}<span class="badge-star" title="Showcase">★</span>{/if}
+                </header>
+                <p class="tagline">{item.tagline}</p>
+                <p class="desc">{item.description}</p>
+                <div class="meta">
+                  <span class="chip lang">{item.language}</span>
+                  {#each item.outputs as o (o)}<span class="chip out">{o}</span>{/each}
+                  <span class="chip level">{item.level}</span>
+                </div>
+                <button class="load" type="button" onclick={() => load(item)}>load</button>
+              </article>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    </section>
+  {/if}
+</div>
 
 <style>
+  .factory {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: var(--bg);
+  }
+  .section-toggle {
+    display: flex;
+    gap: 6px;
+    padding: 10px 14px 0;
+    flex-shrink: 0;
+  }
+  .section-btn {
+    padding: 5px 14px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--elevated);
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .section-btn:hover {
+    color: var(--text-muted);
+  }
+  .section-btn.active {
+    color: var(--amber);
+    border-color: var(--amber-dim);
+    background: var(--surface);
+  }
+  .libraries-pane {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-top: 6px;
+  }
   .space {
     display: grid;
     grid-template-columns: 180px 1fr;
-    height: 100%;
+    flex: 1;
     min-height: 0;
     background: var(--bg);
     overflow: hidden;

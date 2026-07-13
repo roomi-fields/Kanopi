@@ -1,6 +1,7 @@
 export type ActivityView =
-  | 'files'
-  | 'library'
+  | 'now'
+  | 'factory'
+  | 'mine'
   | 'resources'
   | 'search'
   | 'hardware'
@@ -26,7 +27,7 @@ function applyTheme(t: Theme) {
 }
 
 class UiStore {
-  activeActivityView = $state<ActivityView>('files');
+  activeActivityView = $state<ActivityView>('now');
   sidebarCollapsed = $state(false);
   // KAN-21: Structure is the default bottom tab (the 'structure' production view).
   bottomPanelTab = $state<BottomPanelTab>('structure');

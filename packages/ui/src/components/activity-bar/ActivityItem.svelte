@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ActivityView } from '../../stores/ui.svelte';
+  import IconNow from '../../lib/icons/IconNow.svelte';
   import IconFiles from '../../lib/icons/IconFiles.svelte';
   import IconLibrary from '../../lib/icons/IconLibrary.svelte';
   import IconResources from '../../lib/icons/IconResources.svelte';
@@ -13,14 +14,24 @@
     title: string;
     active: boolean;
     badge?: number;
+    disabled?: boolean;
     onclick: () => void;
   };
-  const { id, title, active, badge, onclick }: Props = $props();
+  const { id, title, active, badge, disabled = false, onclick }: Props = $props();
 </script>
 
-<button class="ab-btn" class:active {title} type="button" {onclick}>
-  {#if id === 'files'}<IconFiles />
-  {:else if id === 'library'}<IconLibrary />
+<button
+  class="ab-btn"
+  class:active
+  class:disabled
+  {title}
+  type="button"
+  {disabled}
+  onclick={disabled ? undefined : onclick}
+>
+  {#if id === 'now'}<IconNow />
+  {:else if id === 'mine'}<IconFiles />
+  {:else if id === 'factory'}<IconLibrary />
   {:else if id === 'resources'}<IconResources />
   {:else if id === 'search'}<IconSearch />
   {:else if id === 'hardware'}<IconHardware />
@@ -47,6 +58,15 @@
   .ab-btn:hover {
     color: var(--text-muted);
     background: rgba(255, 255, 255, 0.02);
+  }
+  .ab-btn.disabled {
+    color: var(--text-faint);
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .ab-btn.disabled:hover {
+    color: var(--text-faint);
+    background: none;
   }
   .ab-btn.active {
     color: var(--amber);
