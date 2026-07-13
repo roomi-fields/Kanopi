@@ -492,6 +492,45 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // — THEN ticks the scheduler). Declared before the play branch so a BUILD-ONLY
   // construction can leave it un-started (no pump = no `send` = no sound).
   const driver = kronos.driver;
+
+  // ÉTABLISSEMENT RÉACTIF de la sortie audio (seek-daw, décision architecte [735] + confirmation
+  // Kronos [736]) : Kronos garantit que `transport.playFrom(sec)` DEPUIS L'ARRÊT (le seek de la
+  // vue Structure, `ProductionViewHost.svelte` — passe-plat pur) émet EXACTEMENT le MÊME
+  // événement de cycle de vie (transition stopped→running) qu'un `play()` impératif, en parité
+  // stricte avec `stop()+play()`. Donc le (RÉ)ÉTABLISSEMENT du runtime audio — `reset()` du
+  // graphe périmé + réveil du pompage — se fait DEPUIS CE SEUL POINT, sur la transition
+  // observée, au lieu de vivre dupliqué dans chaque commande qui démarre la lecture. Toute voie
+  // (play impératif initial, `replay()`, `resume()`, le `playFrom` de la vue) passe par
+  // `transport.play()`/`playFrom()` → un seul chemin d'établissement (one path, Kronos only).
+  // `lastTransportState` n'est PAS une 2e machine d'état : c'est un simple repère local
+  // d'ARÊTE (edge-detect), jamais lu ailleurs ni utilisé pour la position/l'affichage — la seule
+  // chose qu'il permet est de distinguer, au sens du contrat `RuntimeAdapter.LifecycleTransition`
+  // (kronos `runtime-adapter.ts`), un REPLAY (stopped→running : re-tir depuis 0) d'un RESUME
+  // (paused→running : reprise en place) — distinction que `transport.onStateChange` n'expose
+  // qu'implicitement (il ne donne QUE l'état suivant, pas l'état précédent).
+  let lastTransportState = transport.state;
+  transport.onStateChange((next) => {
+    const prev = lastTransportState;
+    lastTransportState = next;
+    if (next !== 'running') return;
+    if (prev === 'stopped') {
+      // REPLAY (re-tir depuis 0) : le graphe de rendu peut porter des nœuds PERSISTANTS
+      // (filtres `ctrl::<controlId>`, report de portamento) d'une lecture précédente —
+      // `stopInPlace()` arrête le transport/le pompage mais NE démonte PAS le graphe. Sans ce
+      // reset, le re-play réutilise les mêmes occurrences → le dédup `posed` empêche la re-pose
+      // de la courbe → 1er tour FIGÉ (bug Model C, CVA-INIT). Appelé AVANT `driver.start()` —
+      // synchrone, zéro tick entre les deux — donc aucun événement n'atteint le graphe périmé.
+      // Sur une toute première lecture (jamais rien joué), le graphe est déjà vide : no-op.
+      // `audioRuntime` est `null` sous un `sinks.webaudio` de test (pas d'AudioRuntime construit,
+      // cf. plus haut) — chaîné en optionnel AVANT le cast (sinon accès direct sur `null`).
+      (audioRuntime as { reset?: () => void } | null)?.reset?.();
+    }
+    // RESUME (paused→running, reprise en place) : PAS de reset — le graphe survit intact
+    // (portamento, filtres soutenus). Dans les deux cas le pompage doit tourner :
+    // `driver.start()` est idempotent (no-op si déjà en marche).
+    driver.start();
+  });
+
   // BUILD-ONLY (Model C produce/load): construct the machine + timeline but DON'T play —
   // transport stays 'stopped', the driver is NOT started, so nothing is ever emitted (zero
   // sound, the audio context is not woken here). The host registers this persistent handle
@@ -499,13 +538,14 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // (`buildOnly` is computed up top so the OSC socket mount is gated by it too.)
   if (buildOnly) {
     // Park the position at the start scene second (frozen, transport 'stopped'); do not arm
-    // the scheduler, do not start the pump. `replay()` will `transport.play()` + `driver.start()`.
+    // the scheduler, do not start the pump. `replay()` will `transport.play()` (the reactive
+    // listener above re-establishes: reset() + `driver.start()`).
     transport.seek(startScene);
   } else {
-    // Normal play from the start position (re-anchors clock + arms the scheduler).
+    // Normal play from the start position (re-anchors clock + arms the scheduler). The reactive
+    // listener above fires synchronously inside `transport.play()` and starts the driver.
     transport.seek(startScene);
     transport.play();
-    driver.start();
   }
 
   log(
@@ -572,27 +612,17 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     replay() {
       // Model C — REPLAY the persisted scene from 0. `transport.stop()` left resume=0, so
       // `transport.play()` re-anchors clock+scheduler at 0 and re-arms emission; the WebAudio
-      // transport recreates its nodes on the next `send`. `driver.start()` is idempotent.
-      // Les voix de code repartent dans leurs slots via le relais lifecycle
-      // (stopped→running). No re-derivation — the SAME timeline plays again. After a
-      // full-teardown `stop()` this is a no-op.
+      // transport recreates its nodes on the next `send`. No re-derivation — the SAME timeline
+      // plays again. After a full-teardown `stop()` this is a no-op.
+      // CVA-INIT (remise à zéro PRISTINE avant de rejouer) + `driver.start()` sont désormais
+      // portés par le listener RÉACTIF sur `transport.onStateChange` (plus haut dans cette
+      // fabrique) : il voit la MÊME transition stopped→running que ce `transport.play()`
+      // déclenche et ré-établit la sortie audio depuis là — un seul point, plus de duplication
+      // (fix seek-daw [735]/[736] : `playFrom` de la vue passe par le MÊME chemin).
+      // Les voix de code repartent dans leurs slots via le relais lifecycle (stopped→running).
       if (stopped) return;
       try {
-        // CVA-INIT — remise à zéro PRISTINE de la sortie audio AVANT de rejouer. Les nœuds de
-        // filtre PERSISTANTS (`ctrl::<controlId>`), les voix et le report de portamento SURVIVENT
-        // au `stopInPlace` (qui ne démonte pas le graphe de rendu, seulement le transport). Sans
-        // ce reset, le re-play réutilise les mêmes occurrences → le dédup `posed` empêche la
-        // re-pose de la courbe → 1re boucle FIGÉE sur l'état de la lecture précédente (le bug).
-        // `reset()` (runtime-audio) démonte le graphe → 1er tour identique à froid. Il oublie
-        // aussi l'armement (`_muted`) ; sa re-synchro orchestrée (syncActiveControls) est différée
-        // — sans effet en mono (aucun acteur désarmé), signalé archi pour l'orchestré.
-        // `reset` existe sur l'AudioRuntime (runtime-audio adapter.js:462) mais le type INFÉRÉ
-        // du module JS pur amont ne l'expose pas encore → cast défensif (`?.` = no-op si absent).
-        (audioRuntime as { reset?: () => void }).reset?.();
-        // Le re-tir des voix de code est relayé par le lifecycle (transition
-        // stopped→running = replay depuis 0) — plus d'appel hôte exprès.
         transport.play();
-        driver.start();
       } catch {
         /* torn down */
       }
@@ -632,10 +662,11 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       // relève lui-même la borne d'émission posée par `pause()` (transport.ts:158-161) et re-ancre
       // depuis la position de reprise — l'hôte ne touche ni clock ni scheduler (internes). UN seul
       // scheduler vit à travers play→pause→play (pas de 2e émetteur empilé — l'ancienne course).
+      // `driver.start()` est désormais porté par le listener réactif (transition paused→running :
+      // PAS de reset, le graphe survit intact) — plus d'appel exprès ici.
       if (stopped) return;
       transport.seek(sceneSec);
       transport.play();
-      driver.start(); // idempotent: no-op si déjà en marche, relance si la pause l'a arrêté
     },
     step(n: number) {
       // STEP sur le handle PERSISTANT (Model C, RC-B) : Kronos avance d'`n` unités d'arbre (fenêtre
