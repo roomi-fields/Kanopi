@@ -1141,8 +1141,42 @@ setExprSource(exprSource as unknown as ExprSource);
 // Vide par défaut = no-op total : le kairos consommé (231d207, ancien type `PitchLib`) lit
 // `mine[<domaine>]` sur cette map plate → sous-clés absentes → factory INTACT, aucun crash.
 let personalPitchLib: Record<string, string> = {};
+
+// Barrière de CHARGEMENT des libs perso (trou timing, archi [729]#1). En session cloud, le
+// composeur (`personal-pitch-lib.svelte.ts`) va CHERCHER le contenu des libs perso de façon
+// ASYNCHRONE (`storage.read`). Un derive déclenché AVANT la fin de ce fetch verrait
+// `personalPitchLib = {}` → Kairos résout `@mine.*` sur une map vide et crie « lib introuvable »
+// (constaté : 1er eval après chargement de page échouait, les suivants passaient). L'hôte doit
+// GARANTIR sa projection FOURNIE avant que Kairos la consomme (loi 26/27) — sans rien inventer :
+// il attend juste sa propre donnée. Le composeur SIGNALE le début d'un (re)chargement
+// (`markPersonalPitchLibLoading`, synchrone) et sa fin (`setPersonalPitchLib`) ; `evaluate` attend
+// cette barrière AVANT de dériver. Défaut = déjà résolu (rien à charger → aucune attente).
+let personalPitchLibReady: Promise<void> = Promise.resolve();
+let resolvePersonalPitchLibReady: (() => void) | null = null;
+
 export function setPersonalPitchLib(map: Record<string, string>): void {
   personalPitchLib = map;
+  // Fin de (re)chargement : lève la barrière (seule une reconstruction GAGNANTE appelle ce setter).
+  resolvePersonalPitchLibReady?.();
+  resolvePersonalPitchLibReady = null;
+}
+
+/** Le composeur appelle ceci de façon SYNCHRONE dès qu'une (re)construction de la map perso
+ *  démarre — AVANT tout derive possible — pour qu'`evaluate` attende la map à jour au lieu de
+ *  dériver sur `{}`. Idempotent : une seule barrière en vol à la fois (les fires d'effet
+ *  intermédiaires ne créent pas de nouvelle promesse ; la reconstruction gagnante la résout). */
+export function markPersonalPitchLibLoading(): void {
+  if (!resolvePersonalPitchLibReady) {
+    personalPitchLibReady = new Promise<void>((res) => {
+      resolvePersonalPitchLibReady = res;
+    });
+  }
+}
+
+/** La barrière de chargement des libs perso — `evaluate` l'attend avant de dériver ; exposée
+ *  aussi pour le banc/les tests (prouver l'ordre : en vol tant qu'un chargement n'a pas fini). */
+export function whenPersonalPitchLibReady(): Promise<void> {
+  return personalPitchLibReady;
 }
 
 // Live mute + teardown handle for ONE orchestrated actor's voice. Registered per
@@ -1392,6 +1426,13 @@ function makeBpxAdapter(
         log({ runtime: id, level: 'error', msg });
         throw new Error(`${id}: ${msg}`);
       }
+
+      // Trou timing (archi [729]#1) : attendre que les libs perso soient FOURNIES avant TOUT
+      // derive de ce bloc — sinon une scène `@mine.*` résout sur une map vide au 1er eval (le
+      // fetch cloud n'est pas fini) et Kairos crie « lib introuvable ». En régime établi (rien à
+      // charger), la barrière est déjà résolue → attente négligeable. Une seule attente par
+      // `evaluate`, couvre les deux branches de derive (mono + orchestré).
+      await personalPitchLibReady;
 
       // `@library.<engine>` banks: start loading the declared sample banks now
       // (before derive/dispatch) so a backtick voice that references them finds

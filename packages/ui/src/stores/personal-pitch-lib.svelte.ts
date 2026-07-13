@@ -1,7 +1,7 @@
 import { session } from './session.svelte';
 import { cloudDocs } from './cloud-docs.svelte';
 import { workspace } from './workspace.svelte';
-import { setPersonalPitchLib } from '../lib/runtimes/bpx-adapter';
+import { setPersonalPitchLib, markPersonalPitchLibLoading } from '../lib/runtimes/bpx-adapter';
 
 // Composeur des librairies HAUTEUR personnelles → `pitchLibMine` (`ctx` de projection Kairos).
 //
@@ -109,6 +109,10 @@ export function installPersonalPitchLib(): void {
         void f.path;
         void f.contents.length;
       }
+      // Barrière SYNCHRONE (trou timing archi [729]#1) : signaler le (re)chargement AVANT de lancer
+      // le fetch async, pour qu'un derive concurrent ATTENDE la map à jour au lieu de dériver sur
+      // `{}`. `rebuild()` (async) la lèvera via `setPersonalPitchLib` quand la reconstruction gagne.
+      markPersonalPitchLibLoading();
       void rebuild();
     });
   });
