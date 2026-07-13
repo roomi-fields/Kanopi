@@ -55,6 +55,16 @@ function maskTargets(page: import('@playwright/test').Page) {
   ];
 }
 
+// Arrête le transport AVANT une capture pour figer un ÉTAT STABLE (archi [731]). Évaluer une
+// scène démarre le transport ; le laisser tourner à la capture rend la vue non-déterministe (la
+// tête de lecture avance et la timeline STRUCTURE l'auto-suit). `stop` ramène la position au
+// repos (0, vérifié à l'écran) → on teste la vue arrêtée, déterministe, pas la vue transitoire de
+// lecture. Délègue à `window.kanopi.stop()` (même point d'entrée que le bouton Stop de l'UI).
+async function stopTransport(page: import('@playwright/test').Page) {
+  await page.evaluate(() => (window as unknown as { kanopi: { stop(): void } }).kanopi.stop());
+  await page.waitForTimeout(400);
+}
+
 // Wait long enough for adapter-deferred work (Strudel core import, p5 boot,
 // font shaping) to settle before the very first screenshot — otherwise the
 // boot pixmap drifts session-to-session depending on cold/warm caches.
@@ -205,6 +215,14 @@ test('starter 01 (Strudel solo) loaded and evaluated', async ({ page }) => {
   // Let Strudel's scheduler render at least one cycle so any post-eval UI
   // (active actor LED, runtimes count) reaches its steady state.
   await page.waitForTimeout(1200);
+  // Capture a STABLE, deterministic state (archi [731]). Evaluating auto-starts the transport,
+  // so shooting now would capture it RUNNING — the playhead moves and the STRUCTURE timeline
+  // AUTO-FOLLOWS it (voulu — Romain 2026-07-13), both non-deterministic at the pixel. Stop
+  // first: the playhead returns to rest (position 0, verified on screen) and the timeline
+  // settles to the full stopped view. We assert THAT stable view — no masking, no regression
+  // hidden (auto-follow only exists during playback, which we no longer capture). Mirrors
+  // starter 02, which already stops (hush) before its screenshot.
+  await stopTransport(page);
   await freezeAnimations(page);
 
   await expect(page).toHaveScreenshot('__screenshots__/starter-01-strudel-solo.png', {
@@ -326,6 +344,9 @@ test('starter 03 (sequenced sections) loaded and evaluated', async ({ page }) =>
   // placed in time via their inlined Strudel backtick voices.
   await evalBlockAt(page, 8);
   await page.waitForTimeout(1200);
+  // Voir starter 01 : capture d'un ÉTAT STABLE (archi [731]). Stop → tête de lecture au repos +
+  // timeline arrêtée (déterministe), au lieu de la vue de lecture qui auto-suit le curseur.
+  await stopTransport(page);
   await freezeAnimations(page);
 
   await expect(page).toHaveScreenshot('__screenshots__/starter-03-scenes-A-B.png', {
