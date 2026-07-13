@@ -6,7 +6,7 @@
   import { core } from '../../lib/core';
   import { tick } from 'svelte';
   import type { LibraryItem, LibraryCategory } from '../../lib/library/catalog';
-  import { RESOURCE_GROUPS, type ResourceEntry } from '../../lib/library/resources';
+  import { RESOURCE_FILES, type LibraryFile } from '../../lib/library/resources';
 
   const OUTPUTS = ['audio', 'midi', 'text', 'visual'] as const;
   const LEVELS = ['didactic', 'intermediate', 'advanced'] as const;
@@ -21,67 +21,77 @@
   type Section = 'scenes' | 'libraries';
   let section = $state<Section>('scenes');
 
-  // --- Libraries section state (resource catalogs, card-grid pattern) ---
-  interface ResourceCard {
-    groupType: string;
-    entry: ResourceEntry;
+  // --- Libraries section state (1 card = 1 REAL library file, Romain
+  // 2026-07-13: end of the per-entry split — see resources.ts header). Rail
+  // groups by the DOMAIN each file DECLARES inside itself (`domain` field),
+  // derived from the file list itself — no fixed category list, no invented
+  // taxonomy (same pattern as the Scenes rail deriving categories from real
+  // folders). A file declaring no `domain` groups under 'uncategorized'
+  // (honest — the upstream data hole shows, routed to bpscript).
+  const DOMAINS: string[] = (() => {
+    const seen = new Set<string>();
+    for (const f of RESOURCE_FILES) seen.add(f.domain);
+    return [...seen];
+  })();
+
+  // Display label for a domain key ('alphabet' → 'Alphabet'); title-cased only,
+  // no renaming — the key IS the declared domain.
+  function domainLabel(d: string): string {
+    return d.charAt(0).toUpperCase() + d.slice(1);
   }
-  const RESOURCE_GROUP_TITLES: Record<string, string> = Object.fromEntries(
-    RESOURCE_GROUPS.map((g) => [g.type, g.title])
-  );
-  const allResourceCards: ResourceCard[] = RESOURCE_GROUPS.flatMap((g) =>
-    g.entries.map((entry) => ({ groupType: g.type, entry }))
-  );
-  let resourceType = $state<string>('all');
+
+  let resourceDomain = $state<string>('all');
   let resourceQuery = $state('');
 
-  function matchesResourceQuery(card: ResourceCard, q: string): boolean {
+  function matchesResourceQuery(file: LibraryFile, q: string): boolean {
     const needle = q.trim().toLowerCase();
     if (!needle) return true;
-    const hay = [card.entry.id, card.entry.label ?? '', card.groupType].join(' ').toLowerCase();
+    const hay = [file.id, file.description ?? '', file.domain].join(' ').toLowerCase();
     return hay.includes(needle);
   }
 
-  // Counts respect the search query but not the selected domain (same pattern
+  // Counts respect the search query but not the selected group (same pattern
   // as categoryCounts for Scenes: each rail entry shows how many cards would
   // match if it were picked).
   const resourceCounts = $derived.by(() => {
     const counts: Record<string, number> = { all: 0 };
-    for (const g of RESOURCE_GROUPS) counts[g.type] = 0;
-    for (const card of allResourceCards) {
-      if (!matchesResourceQuery(card, resourceQuery)) continue;
+    for (const d of DOMAINS) counts[d] = 0;
+    for (const file of RESOURCE_FILES) {
+      if (!matchesResourceQuery(file, resourceQuery)) continue;
       counts.all++;
-      counts[card.groupType]++;
+      counts[file.domain]++;
     }
     return counts;
   });
 
-  const filteredResourceCards = $derived(
-    allResourceCards.filter(
-      (card) =>
-        (resourceType === 'all' || card.groupType === resourceType) &&
-        matchesResourceQuery(card, resourceQuery)
+  const filteredResourceFiles = $derived(
+    RESOURCE_FILES.filter(
+      (file) =>
+        (resourceDomain === 'all' || file.domain === resourceDomain) &&
+        matchesResourceQuery(file, resourceQuery)
     )
   );
 
-  function pickResourceType(t: string) {
-    resourceType = t;
+  function pickResourceDomain(d: string) {
+    resourceDomain = d;
   }
 
   function resetResourceFilters() {
-    resourceType = 'all';
+    resourceDomain = 'all';
     resourceQuery = '';
   }
 
-  // Open a resource entry as a read-only JSON file in the editor, same as a
-  // scene file (workspace.openFile) — the VirtualFile is created in memory and
-  // reused on subsequent clicks (addFile dedupes by path). Stays on Factory ›
-  // Libraries — opening a resource must not jump to Mine.
-  function openResource(card: ResourceCard) {
-    const path = `resources/${card.groupType}/${card.entry.id}.json`;
-    const contents = JSON.stringify(card.entry.data, null, 2);
+  // Open a library file as a whole, read-only, in the editor — same as a
+  // scene file (workspace.openFile). The VirtualFile is created in memory and
+  // reused on subsequent clicks (addFile dedupes by path). Reveals the editor
+  // (Now) like loading a scene does (Romain 2026-07-13: opening something to
+  // look at it shouldn't stay hidden behind Factory's full-screen panel).
+  function openLibraryFile(file: LibraryFile) {
+    const path = `resources/${file.domain}/${file.id}.json`;
+    const contents = JSON.stringify(file.data, null, 2);
     const id = workspace.addFile(path, contents, true);
     workspace.openFile(id);
+    ui.activeActivityView = 'now';
   }
 
   async function load(item: LibraryItem) {
@@ -131,27 +141,27 @@
 
   {#if section === 'libraries'}
     <section class="space">
-      <!-- Left rail: resource domains + counts — SAME pattern as the Scenes rail. -->
+      <!-- Left rail: the DOMAIN each file DECLARES + counts — SAME pattern as the Scenes rail. -->
       <nav class="rail">
         <h2 class="rail-title">Libraries</h2>
         <button
           class="cat"
-          class:active={resourceType === 'all'}
+          class:active={resourceDomain === 'all'}
           type="button"
-          onclick={() => pickResourceType('all')}
+          onclick={() => pickResourceDomain('all')}
         >
           <span class="cat-label">All</span>
           <span class="cat-count">{resourceCounts.all}</span>
         </button>
-        {#each RESOURCE_GROUPS as g (g.type)}
+        {#each DOMAINS as d (d)}
           <button
             class="cat"
-            class:active={resourceType === g.type}
+            class:active={resourceDomain === d}
             type="button"
-            onclick={() => pickResourceType(g.type)}
+            onclick={() => pickResourceDomain(d)}
           >
-            <span class="cat-label">{g.title}</span>
-            <span class="cat-count">{resourceCounts[g.type]}</span>
+            <span class="cat-label">{domainLabel(d)}</span>
+            <span class="cat-count">{resourceCounts[d]}</span>
           </button>
         {/each}
       </nav>
@@ -166,27 +176,29 @@
             value={resourceQuery}
             oninput={(e) => (resourceQuery = e.currentTarget.value)}
           />
-          <span class="result-count">{filteredResourceCards.length} entries</span>
+          <span class="result-count">{filteredResourceFiles.length} files</span>
         </header>
 
-        {#if filteredResourceCards.length === 0}
+        {#if filteredResourceFiles.length === 0}
           <div class="empty">
-            No entry matches these filters. <button type="button" onclick={resetResourceFilters}
+            No file matches these filters. <button type="button" onclick={resetResourceFilters}
               >clear filters</button
             >
           </div>
         {:else}
           <div class="grid">
-            {#each filteredResourceCards as card (card.groupType + ':' + card.entry.id)}
+            {#each filteredResourceFiles as file (file.domain + ':' + file.id)}
               <article class="card">
                 <header class="card-head">
-                  <span class="name">{card.entry.id}</span>
+                  <span class="name">{file.name}</span>
                 </header>
-                {#if card.entry.label}<p class="tagline">{card.entry.label}</p>{/if}
+                {#if file.description}<p class="tagline">{file.description}</p>{/if}
                 <div class="meta">
-                  <span class="chip lang">{RESOURCE_GROUP_TITLES[card.groupType]}</span>
+                  <span class="chip lang">{domainLabel(file.domain)}</span>
                 </div>
-                <button class="load" type="button" onclick={() => openResource(card)}>open</button>
+                <button class="load" type="button" onclick={() => openLibraryFile(file)}
+                  >open</button
+                >
               </article>
             {/each}
           </div>

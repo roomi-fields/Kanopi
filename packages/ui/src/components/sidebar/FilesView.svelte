@@ -51,6 +51,12 @@
   let creatingFolder = $state(false);
   let folderName = $state('');
   let folderInputEl: HTMLInputElement | undefined = $state();
+  // Which section a folder-in-progress lands in — decided by which section's
+  // "+ New folder" button opened the dialog. Romain 2026-07-13: "new folder"
+  // was ambiguous (Scenes or Libraries?); the fix is that there is no longer a
+  // single global folder action — each section owns its own, so the dialog
+  // itself always knows its destination.
+  let folderTarget = $state<'scenes' | 'libraries'>('scenes');
 
   // A personal library is a `libraries/…` JSON catalog that DECLARES its own
   // domain inside the file (decision 2026-07-13-invocation-librairies-factory-
@@ -65,7 +71,9 @@
   let libraryName = $state('');
   let libraryInputEl: HTMLInputElement | undefined = $state();
 
-  function openDialog() {
+  // "+ New" under Scenes: a scene file — never lands under `libraries/` (guarded
+  // in submit() below), so there is never a question of which section it goes to.
+  function openSceneFileDialog() {
     creating = true;
     creatingFolder = false;
     creatingLibrary = false;
@@ -80,10 +88,13 @@
     errorMsg = null;
   }
 
-  function openFolderDialog() {
+  // "+ New folder" under EITHER section — `target` fixes which section the
+  // resulting file/library lands in, so the dialog itself is unambiguous.
+  function openFolderDialog(target: 'scenes' | 'libraries') {
     creatingFolder = true;
     creating = false;
     creatingLibrary = false;
+    folderTarget = target;
     folderName = '';
     errorMsg = null;
     tick().then(() => folderInputEl?.focus());
@@ -172,8 +183,12 @@
   }
 
   /** "New folder" doesn't create a folder entity (none exists server-side) — it
-   * just pre-fills the "+ New file" dialog with `<name>/`, so the first file
-   * created inside it is what makes the folder appear in the tree. */
+   * pre-fills the NEXT dialog with `<name>/`, so the first file/library created
+   * inside it is what makes the folder appear in the tree. Which dialog depends
+   * on `folderTarget`: a Scenes folder pre-fills "+ New file" (any program
+   * extension), a Libraries folder pre-fills "+ New library" (a typed `.json`
+   * catalog under `libraries/`) — each section's own creation flow, never the
+   * other's. */
   function submitFolder() {
     const raw = folderName.trim().replace(/^\/+|\/+$/g, '');
     if (!raw) {
@@ -181,8 +196,13 @@
       return;
     }
     cancelFolderDialog();
-    openDialog();
-    newName = raw + '/';
+    if (folderTarget === 'libraries') {
+      openLibraryDialog();
+      libraryName = raw + '/';
+    } else {
+      openSceneFileDialog();
+      newName = raw + '/';
+    }
   }
 
   function onFolderKey(e: KeyboardEvent) {
@@ -206,11 +226,14 @@
     const hasExt = /\.[a-z0-9]+$/i.test(raw);
     const path = hasExt ? raw : raw + '.bps';
     const ext = '.' + path.split('.').pop()!.toLowerCase();
-    // `.json` is only accepted under the reserved `libraries/` prefix (a
-    // personal library catalog, not a program) — everywhere else it stays
-    // rejected like any other unknown extension.
-    const isLibraryJson = isLibraryPath(path) && ext === '.json';
-    if (!exts.includes(ext) && !isLibraryJson) {
+    // This dialog is Scenes' own "+ New" — a path under `libraries/` belongs to
+    // the Libraries section's "+ New library" instead (that's the only place a
+    // `libraries/*.json` file is created, keeping the two sections unambiguous).
+    if (isLibraryPath(path)) {
+      errorMsg = `${LIB_PREFIX}… is created from the Libraries section, not here`;
+      return;
+    }
+    if (!exts.includes(ext)) {
       errorMsg = `unknown extension ${ext}. use one of: ${exts.join(', ')}`;
       return;
     }
@@ -250,104 +273,73 @@
 </script>
 
 <div class="files-view">
-  <div class="toolbar">
-    <button type="button" class="new-btn" onclick={openDialog} title="New file (name.ext)"
-      >+ New file</button
-    >
-    <button
-      type="button"
-      class="new-btn"
-      onclick={openFolderDialog}
-      title="New folder (created once it holds a file)">+ New folder</button
-    >
-    <button
-      type="button"
-      class="new-btn"
-      onclick={openLibraryDialog}
-      title="New personal library (a typed JSON catalog under libraries/)">+ New library</button
-    >
-  </div>
-
-  {#if creating}
-    <div class="create">
-      <input
-        bind:this={inputEl}
-        bind:value={newName}
-        oninput={() => (errorMsg = null)}
-        onkeydown={onKey}
-        type="text"
-        placeholder="drums/kick.bps, scratch.strudel…"
-        spellcheck="false"
-        autocomplete="off"
-      />
-      <p class="hint">Use / to place it in a folder, e.g. drums/kick.bps</p>
-      <div class="create-actions">
-        <button type="button" class="ok" onclick={submit}>Create</button>
-        <button type="button" class="cancel" onclick={cancelDialog}>Cancel</button>
-      </div>
-      {#if errorMsg}<p class="err">{errorMsg}</p>{/if}
-    </div>
-  {/if}
-
-  {#if creatingFolder}
-    <div class="create">
-      <input
-        bind:this={folderInputEl}
-        bind:value={folderName}
-        oninput={() => (errorMsg = null)}
-        onkeydown={onFolderKey}
-        type="text"
-        placeholder="folder name, e.g. drums"
-        spellcheck="false"
-        autocomplete="off"
-      />
-      <p class="hint">A folder becomes visible once you create a file inside it.</p>
-      <div class="create-actions">
-        <button type="button" class="ok" onclick={submitFolder}>Next: add a file</button>
-        <button type="button" class="cancel" onclick={cancelFolderDialog}>Cancel</button>
-      </div>
-      {#if errorMsg}<p class="err">{errorMsg}</p>{/if}
-    </div>
-  {/if}
-
-  {#if creatingLibrary}
-    <div class="create">
-      <label class="field-label" for="library-domain">Domain</label>
-      <select id="library-domain" class="domain-select" bind:value={libraryDomain}>
-        {#each LIBRARY_DOMAINS as d (d)}
-          <option value={d}>{d}</option>
-        {/each}
-      </select>
-      <label class="field-label" for="library-name">Name</label>
-      <input
-        id="library-name"
-        bind:this={libraryInputEl}
-        bind:value={libraryName}
-        oninput={() => (errorMsg = null)}
-        onkeydown={onLibraryKey}
-        type="text"
-        placeholder="mes-svaras"
-        spellcheck="false"
-        autocomplete="off"
-      />
-      <p class="hint">
-        Creates libraries/{libraryName || '…'}.json — no dots (the address syntax reads "." as a
-        separator).
-      </p>
-      <div class="create-actions">
-        <button type="button" class="ok" onclick={submitLibrary}>Create</button>
-        <button type="button" class="cancel" onclick={cancelLibraryDialog}>Cancel</button>
-      </div>
-      {#if errorMsg}<p class="err">{errorMsg}</p>{/if}
-    </div>
-  {/if}
-
   <!-- Two sections, always visible (empty ones show a hint so the user learns
        where content goes). Ordered Scenes then Libraries. Connected → cloud docs
-       via CloudFileTree; disconnected → local draft via FileTree. -->
+       via CloudFileTree; disconnected → local draft via FileTree.
+
+       Romain 2026-07-13: creation is no longer one ambiguous global toolbar
+       ("+ New folder" — of a scene, or under libraries/?"). Each section owns
+       its OWN creation actions, in its OWN header — a scene action can only
+       ever create a scene, a library action can only ever create a library. -->
   {#if session.session}
     <section class="tree-section">
-      <h3 class="section-title">Scenes</h3>
+      <div class="section-header">
+        <h3 class="section-title">Scenes</h3>
+        <div class="section-actions">
+          <button
+            type="button"
+            class="new-btn-sm"
+            onclick={openSceneFileDialog}
+            title="New scene file (name.ext)">+ file</button
+          >
+          <button
+            type="button"
+            class="new-btn-sm"
+            onclick={() => openFolderDialog('scenes')}
+            title="New folder for scenes (created once it holds a file)">+ folder</button
+          >
+        </div>
+      </div>
+      {#if creating}
+        <div class="create">
+          <input
+            bind:this={inputEl}
+            bind:value={newName}
+            oninput={() => (errorMsg = null)}
+            onkeydown={onKey}
+            type="text"
+            placeholder="drums/kick.bps, scratch.strudel…"
+            spellcheck="false"
+            autocomplete="off"
+          />
+          <p class="hint">Use / to place it in a folder, e.g. drums/kick.bps</p>
+          <div class="create-actions">
+            <button type="button" class="ok" onclick={submit}>Create</button>
+            <button type="button" class="cancel" onclick={cancelDialog}>Cancel</button>
+          </div>
+          {#if errorMsg}<p class="err">{errorMsg}</p>{/if}
+        </div>
+      {/if}
+      {#if creatingFolder && folderTarget === 'scenes'}
+        <div class="create">
+          <input
+            bind:this={folderInputEl}
+            bind:value={folderName}
+            oninput={() => (errorMsg = null)}
+            onkeydown={onFolderKey}
+            type="text"
+            placeholder="folder name, e.g. drums"
+            spellcheck="false"
+            autocomplete="off"
+          />
+          <p class="hint">A folder becomes visible once you create a file inside it.</p>
+          <div class="create-actions">
+            <button type="button" class="ok" onclick={submitFolder}>Next: add a file</button>
+            <button type="button" class="cancel" onclick={cancelFolderDialog}>Cancel</button>
+          </div>
+          {#if errorMsg}<p class="err">{errorMsg}</p>{/if}
+        </div>
+      {/if}
       {#if cloudScenesTree.length === 0}
         <p class="section-empty">No scenes yet.</p>
       {:else}
@@ -355,16 +347,141 @@
       {/if}
     </section>
     <section class="tree-section">
-      <h3 class="section-title">Libraries</h3>
+      <div class="section-header">
+        <h3 class="section-title">Libraries</h3>
+        <div class="section-actions">
+          <button
+            type="button"
+            class="new-btn-sm"
+            onclick={openLibraryDialog}
+            title="New personal library (a typed JSON catalog under libraries/)">+ library</button
+          >
+          <button
+            type="button"
+            class="new-btn-sm"
+            onclick={() => openFolderDialog('libraries')}
+            title="New folder under libraries/ (created once it holds a library)">+ folder</button
+          >
+        </div>
+      </div>
+      {#if creatingLibrary}
+        <div class="create">
+          <label class="field-label" for="library-domain">Domain</label>
+          <select id="library-domain" class="domain-select" bind:value={libraryDomain}>
+            {#each LIBRARY_DOMAINS as d (d)}
+              <option value={d}>{d}</option>
+            {/each}
+          </select>
+          <label class="field-label" for="library-name">Name</label>
+          <input
+            id="library-name"
+            bind:this={libraryInputEl}
+            bind:value={libraryName}
+            oninput={() => (errorMsg = null)}
+            onkeydown={onLibraryKey}
+            type="text"
+            placeholder="mes-svaras"
+            spellcheck="false"
+            autocomplete="off"
+          />
+          <p class="hint">
+            Creates libraries/{libraryName || '…'}.json — no dots (the address syntax reads "." as a
+            separator).
+          </p>
+          <div class="create-actions">
+            <button type="button" class="ok" onclick={submitLibrary}>Create</button>
+            <button type="button" class="cancel" onclick={cancelLibraryDialog}>Cancel</button>
+          </div>
+          {#if errorMsg}<p class="err">{errorMsg}</p>{/if}
+        </div>
+      {/if}
+      {#if creatingFolder && folderTarget === 'libraries'}
+        <div class="create">
+          <input
+            bind:this={folderInputEl}
+            bind:value={folderName}
+            oninput={() => (errorMsg = null)}
+            onkeydown={onFolderKey}
+            type="text"
+            placeholder="folder name, e.g. ragas"
+            spellcheck="false"
+            autocomplete="off"
+          />
+          <p class="hint">
+            A folder becomes visible once you create a library inside it (under libraries/).
+          </p>
+          <div class="create-actions">
+            <button type="button" class="ok" onclick={submitFolder}>Next: add a library</button>
+            <button type="button" class="cancel" onclick={cancelFolderDialog}>Cancel</button>
+          </div>
+          {#if errorMsg}<p class="err">{errorMsg}</p>{/if}
+        </div>
+      {/if}
       {#if cloudLibrariesTree.length === 0}
-        <p class="section-empty">No libraries yet. Use “+ New library”.</p>
+        <p class="section-empty">No libraries yet. Use “+ library”.</p>
       {:else}
         <CloudFileTree nodes={cloudLibrariesTree} />
       {/if}
     </section>
   {:else}
     <section class="tree-section">
-      <h3 class="section-title">Scenes</h3>
+      <div class="section-header">
+        <h3 class="section-title">Scenes</h3>
+        <div class="section-actions">
+          <button
+            type="button"
+            class="new-btn-sm"
+            onclick={openSceneFileDialog}
+            title="New scene file (name.ext)">+ file</button
+          >
+          <button
+            type="button"
+            class="new-btn-sm"
+            onclick={() => openFolderDialog('scenes')}
+            title="New folder for scenes (created once it holds a file)">+ folder</button
+          >
+        </div>
+      </div>
+      {#if creating}
+        <div class="create">
+          <input
+            bind:this={inputEl}
+            bind:value={newName}
+            oninput={() => (errorMsg = null)}
+            onkeydown={onKey}
+            type="text"
+            placeholder="drums/kick.bps, scratch.strudel…"
+            spellcheck="false"
+            autocomplete="off"
+          />
+          <p class="hint">Use / to place it in a folder, e.g. drums/kick.bps</p>
+          <div class="create-actions">
+            <button type="button" class="ok" onclick={submit}>Create</button>
+            <button type="button" class="cancel" onclick={cancelDialog}>Cancel</button>
+          </div>
+          {#if errorMsg}<p class="err">{errorMsg}</p>{/if}
+        </div>
+      {/if}
+      {#if creatingFolder && folderTarget === 'scenes'}
+        <div class="create">
+          <input
+            bind:this={folderInputEl}
+            bind:value={folderName}
+            oninput={() => (errorMsg = null)}
+            onkeydown={onFolderKey}
+            type="text"
+            placeholder="folder name, e.g. drums"
+            spellcheck="false"
+            autocomplete="off"
+          />
+          <p class="hint">A folder becomes visible once you create a file inside it.</p>
+          <div class="create-actions">
+            <button type="button" class="ok" onclick={submitFolder}>Next: add a file</button>
+            <button type="button" class="cancel" onclick={cancelFolderDialog}>Cancel</button>
+          </div>
+          {#if errorMsg}<p class="err">{errorMsg}</p>{/if}
+        </div>
+      {/if}
       {#if localScenesTree.length === 0}
         <p class="section-empty">No scenes yet.</p>
       {:else}
@@ -372,9 +489,78 @@
       {/if}
     </section>
     <section class="tree-section">
-      <h3 class="section-title">Libraries</h3>
+      <div class="section-header">
+        <h3 class="section-title">Libraries</h3>
+        <div class="section-actions">
+          <button
+            type="button"
+            class="new-btn-sm"
+            onclick={openLibraryDialog}
+            title="New personal library (a typed JSON catalog under libraries/)">+ library</button
+          >
+          <button
+            type="button"
+            class="new-btn-sm"
+            onclick={() => openFolderDialog('libraries')}
+            title="New folder under libraries/ (created once it holds a library)">+ folder</button
+          >
+        </div>
+      </div>
+      {#if creatingLibrary}
+        <div class="create">
+          <label class="field-label" for="library-domain">Domain</label>
+          <select id="library-domain" class="domain-select" bind:value={libraryDomain}>
+            {#each LIBRARY_DOMAINS as d (d)}
+              <option value={d}>{d}</option>
+            {/each}
+          </select>
+          <label class="field-label" for="library-name">Name</label>
+          <input
+            id="library-name"
+            bind:this={libraryInputEl}
+            bind:value={libraryName}
+            oninput={() => (errorMsg = null)}
+            onkeydown={onLibraryKey}
+            type="text"
+            placeholder="mes-svaras"
+            spellcheck="false"
+            autocomplete="off"
+          />
+          <p class="hint">
+            Creates libraries/{libraryName || '…'}.json — no dots (the address syntax reads "." as a
+            separator).
+          </p>
+          <div class="create-actions">
+            <button type="button" class="ok" onclick={submitLibrary}>Create</button>
+            <button type="button" class="cancel" onclick={cancelLibraryDialog}>Cancel</button>
+          </div>
+          {#if errorMsg}<p class="err">{errorMsg}</p>{/if}
+        </div>
+      {/if}
+      {#if creatingFolder && folderTarget === 'libraries'}
+        <div class="create">
+          <input
+            bind:this={folderInputEl}
+            bind:value={folderName}
+            oninput={() => (errorMsg = null)}
+            onkeydown={onFolderKey}
+            type="text"
+            placeholder="folder name, e.g. ragas"
+            spellcheck="false"
+            autocomplete="off"
+          />
+          <p class="hint">
+            A folder becomes visible once you create a library inside it (under libraries/).
+          </p>
+          <div class="create-actions">
+            <button type="button" class="ok" onclick={submitFolder}>Next: add a library</button>
+            <button type="button" class="cancel" onclick={cancelFolderDialog}>Cancel</button>
+          </div>
+          {#if errorMsg}<p class="err">{errorMsg}</p>{/if}
+        </div>
+      {/if}
       {#if localLibrariesTree.length === 0}
-        <p class="section-empty">No libraries yet. Use “+ New library”.</p>
+        <p class="section-empty">No libraries yet. Use “+ library”.</p>
       {:else}
         <FileTree nodes={localLibrariesTree} />
       {/if}
@@ -386,26 +572,33 @@
   .files-view {
     padding: 6px 4px;
   }
-  .toolbar {
+  .section-header {
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
     gap: 6px;
-    padding: 0 6px 6px;
+    margin: 0 2px 4px 6px;
   }
-  .new-btn {
-    flex: 1 1 30%;
-    padding: 6px 8px;
+  .section-header .section-title {
+    margin: 0;
+  }
+  .section-actions {
+    display: flex;
+    gap: 4px;
+  }
+  .new-btn-sm {
+    padding: 3px 7px;
     background: transparent;
     border: 1px dashed var(--border-dim);
     color: var(--text-muted);
     font-family: var(--font-mono);
-    font-size: 11px;
-    text-align: left;
+    font-size: 10px;
     border-radius: 3px;
     cursor: pointer;
     transition: all 0.15s;
+    white-space: nowrap;
   }
-  .new-btn:hover {
+  .new-btn-sm:hover {
     color: var(--amber);
     border-color: var(--amber);
     border-style: solid;
