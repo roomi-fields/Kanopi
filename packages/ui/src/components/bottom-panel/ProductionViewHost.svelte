@@ -30,7 +30,22 @@
     }
     const input: ProductionInput = {
       structure: cachedStructure,
-      transport: { mode: kronosCursor.state, cursor: kronosCursor.active }
+      transport: {
+        mode: kronosCursor.state,
+        cursor: kronosCursor.active,
+        // Q2 seek (archi [724], Kronos cee7339/transport.ts:397) : PASSE-PLAT de `playFrom(sec)`.
+        // La vue signale le geste « lire depuis ce point » (clic règle) ; Kronos COMPOSE pose+lance
+        // en interne — l'hôte ne fait que PORTER l'unique méthode (PORTER ≠ RÉSOUDRE), zéro
+        // composition, zéro conversion (`sec` = domaine de `cursor.position()`). Aucun handle
+        // actif → no-op propre (canal ouvert mais geste ignoré, cf contrat TransportView).
+        // PONT DE TYPE (routé à Kronos) : `playFrom` EXISTE au runtime (impl cee7339 + tests verts)
+        // mais le type `Transport` EXPORTÉ par @kronos/core (dist/index.d.ts) ne la déclare pas encore
+        // → on forwarde via une forme locale étroite. À retirer dès que le type exporté porte playFrom.
+        playFrom: (sec: number) =>
+          (
+            kronosCursor.active?.transport as { playFrom?(sec: number): void } | undefined
+          )?.playFrom?.(sec)
+      }
     };
     view.update(input);
     // DEV probe (window.kanopi.inspect.lastViewInput) — record what the render layer receives,
