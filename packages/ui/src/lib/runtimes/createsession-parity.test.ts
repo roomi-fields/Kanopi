@@ -22,8 +22,8 @@ import type { TimedToken } from 'bpx';
 const DUAL_ACTORS = `@core
 @controls
 
-@actor lead  alphabet:western  transport:webaudio
-@actor bass  alphabet:western  transport:webaudio
+@actor lead  @alphabet.western  transport:webaudio
+@actor bass  @alphabet.western  transport:webaudio
 
 S -> {Lead, Low}
 

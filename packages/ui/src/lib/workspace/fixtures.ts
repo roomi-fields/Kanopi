@@ -7,9 +7,9 @@ const raw: { path: string; contents: string }[] = [
     contents: `// main session — 3 voix-code, sélectionnables par scène (intro/drop/break).
 @library.strudel "dirt-samples"
 
-@actor drums   transport.audio  eval.tidal
-@actor visuals transport.video  eval.hydra
-@actor bass    transport.audio  eval.strudel
+@actor drums   transport:audio  eval.tidal
+@actor visuals transport:video  eval.hydra
+@actor bass    transport:audio  eval.strudel
 
 @flag scene: intro:1, drop:2, break:3
 
@@ -25,7 +25,7 @@ bass -> \`note("c2 c2 eb2 g2").s("sawtooth").gain(0.4)\`
   {
     path: 'second.bps',
     contents: `// second session — démo minimale, 2 scènes nommées (a / b silence).
-@actor melody transport.audio eval.strudel
+@actor melody transport:audio eval.strudel
 
 @flag scene: a:1, b:2
 

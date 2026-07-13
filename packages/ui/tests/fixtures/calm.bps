@@ -1,5 +1,5 @@
 // Scène enfant "calm" — batterie seule (voix-code Strudel → audio).
-@actor drums  transport.audio  eval.strudel
+@actor drums  transport:audio  eval.strudel
 
 S -> drums
 

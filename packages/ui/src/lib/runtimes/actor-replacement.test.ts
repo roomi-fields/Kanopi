@@ -39,8 +39,8 @@ beforeEach(() => {
     0;
 });
 
-const ORCH = `@actor groove transport.audio eval.strudel
-@actor viz transport.video eval.hydra
+const ORCH = `@actor groove transport:audio eval.strudel
+@actor viz transport:video eval.hydra
 S -> { groove, viz }
 groove -> \`stack(note("c2*4"))\`
 viz -> \`osc(60).out()\`

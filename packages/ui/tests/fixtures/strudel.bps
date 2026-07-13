@@ -2,7 +2,7 @@
 // Banque d'échantillons liée au moteur strudel (partagée par ses voix).
 @library.strudel "dirt-samples"
 
-@actor beat  transport.audio  eval.strudel
+@actor beat  transport:audio  eval.strudel
 
 S -> beat
 
