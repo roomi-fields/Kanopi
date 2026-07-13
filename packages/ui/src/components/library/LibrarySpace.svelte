@@ -92,8 +92,10 @@
     await core.silenceRuntimes();
     openBlocks.disarmAll();
     const focusId = workspace.loadFiles(item.files, item.sessionFile);
-    // The library is a launcher: land back in the editor with the session open.
-    ui.activeActivityView = 'mine';
+    // The library is a launcher: on load, land on NOW — you open a scene to PLAY it
+    // (Romain, 2026-07-13). Mine is for managing your OWN files, not the landing spot
+    // after loading a bundled scene.
+    ui.activeActivityView = 'now';
     // Load = PRODUCE, not play (Romain's produce/play split): derive the scene so
     // its structure shows + the tempo (`@mm`) is adopted, and arm it so Play
     // sounds it — but do NOT start the transport on load. `await tick()` flushes
