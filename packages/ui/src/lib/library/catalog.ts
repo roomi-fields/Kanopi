@@ -56,40 +56,41 @@ export interface LibraryItem {
   files: LibraryFile[];
 }
 
-// Category display metadata — label (fr) + one-line hint for the category rail.
+// Category display metadata — label (en) + one-line hint for the category rail.
+// Proper content names (musical traditions, runtime names) are kept as-is.
 export const CATEGORIES: { id: LibraryCategory; label: string; hint: string }[] = [
-  { id: 'learn', label: 'Apprendre', hint: 'Tutoriels guidés, dans l’ordre 1→10' },
+  { id: 'learn', label: 'Learn', hint: 'Guided tutorials, in order 1→10' },
   {
     id: 'basics',
-    label: 'Bases',
-    hint: 'Gestes fondamentaux : gammes, arpèges, silences, liaisons'
+    label: 'Basics',
+    hint: 'Fundamental gestures: scales, arpeggios, rests, ties'
   },
-  { id: 'tuning', label: 'Accordages', hint: 'Tempéraments et références (12-TET, juste, A=442…)' },
-  { id: 'world', label: 'Traditions du monde', hint: 'Maqâm, gamelan, râga, shakuhachi, solfège…' },
+  { id: 'tuning', label: 'Tunings', hint: 'Temperaments and references (12-TET, just, A=442…)' },
+  { id: 'world', label: 'World traditions', hint: 'Maqâm, gamelan, râga, shakuhachi, solfège…' },
   {
     id: 'synthesis',
-    label: 'Synthèse & timbre',
-    hint: 'Formes d’onde, filtres, enveloppes, panoramique'
+    label: 'Synthesis & timbre',
+    hint: 'Waveforms, filters, envelopes, panning'
   },
-  { id: 'cv', label: 'Modulation (CV)', hint: 'Enveloppes, LFO et courbes de modulation' },
-  { id: 'polymetric', label: 'Polymétrie & rythme', hint: 'Polymètre et polyrythmie superposés' },
+  { id: 'cv', label: 'Modulation (CV)', hint: 'Envelopes, LFOs and modulation curves' },
+  { id: 'polymetric', label: 'Polymeter & rhythm', hint: 'Layered polymeter and polyrhythm' },
   {
     id: 'generative',
-    label: 'Génératif',
-    hint: 'Réécriture, choix aléatoire, drapeaux et compteurs'
+    label: 'Generative',
+    hint: 'Rewriting, random choice, flags and counters'
   },
-  { id: 'midi', label: 'MIDI', hint: 'Scènes routées vers une sortie MIDI' },
+  { id: 'midi', label: 'MIDI', hint: 'Scenes routed to a MIDI output' },
   {
     id: 'orchestrator',
-    label: 'Orchestrateur',
-    hint: 'Sessions multi-acteurs à travers les runtimes'
+    label: 'Orchestrator',
+    hint: 'Multi-actor sessions across runtimes'
   },
   {
     id: 'codevoice',
-    label: 'Voix de code',
+    label: 'Code voices',
     hint: 'Strudel, Hydra, Tidal, Mercury, p5, Csound, JS…'
   },
-  { id: 'bp3', label: 'BP3', hint: 'Grammaires Bol Processor (.gr) qui jouent' }
+  { id: 'bp3', label: 'BP3', hint: 'Bol Processor grammars (.gr) that play' }
 ];
 
 // Filter axes the library space exposes. Each is independent; an item matches a

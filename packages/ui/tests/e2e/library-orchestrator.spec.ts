@@ -14,8 +14,8 @@ test('a BPScript orchestrator plays its WebAudio voice', async ({ page }) => {
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   await page.locator('.ab-btn[title="Factory"]').click();
-  // Category label is French after the 12-theme restructure (89e59c7): « Orchestrateur ».
-  await page.locator('.cat', { hasText: 'Orchestrateur' }).click();
+  // Category label (English, all-English UI rule): « Orchestrator ».
+  await page.locator('.cat', { hasText: 'Orchestrator' }).click();
   // The all-audio orchestrator demo `dual-actors-audio` is displayed « Twin synth
   // voices — all audio » (renamed in the restructure). Target it by NAME.
   await page.locator('.search').fill('twin');
