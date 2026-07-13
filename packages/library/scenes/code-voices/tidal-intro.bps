@@ -16,8 +16,8 @@
 @library.strudel "dirt-samples"
 @flag scene: intro:1, full:2
 
-@actor drums  transport.audio  eval.tidal
-@actor bass   transport.audio  eval.strudel
+@actor drums  transport:audio  eval.tidal
+@actor bass   transport:audio  eval.strudel
 
 [scene==intro] S -> drums
 [scene==full]  S -> { drums, bass }

@@ -13,8 +13,8 @@
 @core
 @controls
 
-@actor melody  alphabet:western  transport:midi(ch:1)
-@actor bass    alphabet:western  transport:webaudio
+@actor melody  @alphabet.western  transport:midi(ch:1)
+@actor bass    @alphabet.western  transport:webaudio
 
 S -> {Mel, Low}
 

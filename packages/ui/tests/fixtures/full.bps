@@ -1,6 +1,6 @@
 // Scène enfant "full" — batterie + lead (deux voix-code Strudel → audio).
-@actor drums  transport.audio  eval.strudel
-@actor lead   transport.audio  eval.strudel
+@actor drums  transport:audio  eval.strudel
+@actor lead   transport:audio  eval.strudel
 
 S -> { drums, lead }
 

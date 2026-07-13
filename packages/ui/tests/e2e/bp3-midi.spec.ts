@@ -19,7 +19,7 @@ const EXPECTED_NOTES = [60, 62, 64, 67, 72];
 // every event carries `payload.actor: 'melody'`, which the per-actor router sends to
 // the MIDI transport.
 const MIDI_SCENE = `@core
-@actor melody  alphabet:western  transport:midi
+@actor melody  @alphabet.western  transport:midi
 
 S -> melody.C4 melody.D4 melody.E4 melody.G4 melody.C5 melody.G4 melody.E4 melody.C4
 `;
@@ -123,7 +123,7 @@ test('an EXPLICIT transport:midi actor routes BPx tokens to runtime-midi (NoteOn
 });
 
 // Per-actor MIDI channel AND inline per-note override travel to the bytes. `lead` declares
-// `transport.midi(ch:1)`, `bass` declares `ch:2`, and the note `lead.E4(ch:5)` carries an inline
+// `transport:midi(ch:1)`, `bass` declares `ch:2`, and the note `lead.E4(ch:5)` carries an inline
 // channel override. From ONE scene: three distinct channels reach the wire. Proves the migrated
 // MIDI runtime (runtime-midi, Phase 2 frontière hôte↔runtimes) resolves the channel from the
 // graven output layer (`output.channel`) — the HOST reshapes nothing (its midi wrapper + vel/127
@@ -135,8 +135,8 @@ test('an EXPLICIT transport:midi actor routes BPx tokens to runtime-midi (NoteOn
 // output isn't graven and it drops from MIDI; the prefix names the actor and Kairos graves ch:5.
 const TWO_CHANNEL_SCENE = `@core
 @tempo:120
-@actor lead  alphabet.western  transport.midi(ch:1)
-@actor bass  alphabet.western  transport.midi(ch:2)
+@actor lead  @alphabet.western  transport:midi(ch:1)
+@actor bass  @alphabet.western  transport:midi(ch:2)
 
 S -> Lead Low
 

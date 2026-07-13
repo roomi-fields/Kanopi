@@ -15,7 +15,7 @@
 @core
 @tempo:120
 
-@actor visuals  eval.hydra  transport.audio
+@actor visuals  eval.hydra  transport:audio
 
 S -> visuals visuals
 

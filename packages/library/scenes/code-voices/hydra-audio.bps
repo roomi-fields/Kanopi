@@ -15,8 +15,8 @@
 @library.strudel "dirt-samples"
 @flag scene: a:1, b:2
 
-@actor drums   transport.audio  eval.tidal
-@actor visuals transport.video  eval.hydra
+@actor drums   transport:audio  eval.tidal
+@actor visuals transport:video  eval.hydra
 
 [scene==a] S -> drums
 [scene==b] S -> { drums, visuals }

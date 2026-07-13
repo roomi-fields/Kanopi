@@ -1,6 +1,6 @@
 // @name: MIDI channel override
 // @tagline: address in the language, per-note override
-// @description: Two MIDI actors declare their channel in BPScript (transport.midi(ch:N)); one note carries an inline (ch:5) override. The output address travels in the scene, not via any host routing map (KAI-9 test scene).
+// @description: Two MIDI actors declare their channel in BPScript (transport:midi(ch:N)); one note carries an inline (ch:5) override. The output address travels in the scene, not via any host routing map (KAI-9 test scene).
 // @language: bpscript
 // @outputs: midi
 // @level: advanced
@@ -8,7 +8,7 @@
 //
 // KAN KAI-9 — test scene: address-in-the-language + inline channel override.
 //
-// Both actors declare their OUTPUT ADDRESS in BPScript (transport.midi(ch:N)) — the
+// Both actors declare their OUTPUT ADDRESS in BPScript (transport:midi(ch:N)) — the
 // host invents no routing. `lead` plays on MIDI channel 1, `bass` on channel 2.
 // The note `lead.E4(ch:5)` carries an INLINE CHANNEL OVERRIDE: that single note jumps
 // to channel 5, the rest of `lead` stays on its declared channel 1.
@@ -33,8 +33,8 @@
 @core
 @tempo:120
 
-@actor lead  alphabet.western  transport.midi(ch:1)
-@actor bass  alphabet.western  transport.midi(ch:2)
+@actor lead  @alphabet.western  transport:midi(ch:1)
+@actor bass  @alphabet.western  transport:midi(ch:2)
 
 S -> Lead Low
 
