@@ -1,0 +1,20 @@
+// @name: 2. Sequence
+// @tagline: A melody: multiple notes in order
+// @language: bpscript
+// @outputs: audio
+// @level: didactic
+// @tags: tutorial
+// @order: 2
+//
+// Tutorial 2 — A sequence of notes
+//
+// Put multiple notes after -> to create a melody.
+// Each note lasts 1 beat (1 second at 60 BPM).
+//
+// Try: change some notes and click Produce again.
+
+@core
+@controls
+@alphabet.western:browser
+
+S -> C4 D4 E4 F4 G4

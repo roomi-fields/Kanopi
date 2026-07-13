@@ -4,17 +4,17 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../../helpers';
 
-// Starter session 01 (packages/library/bundled/01-strudel-solo.bps) — the
-// "no regression vs strudel.cc" demo, now a self-contained `.bps`: the Strudel
-// code voice is inlined as a backtick and routed to audio by the lot-4
-// cross-runtime path (compileBPS → BPx → backtick sink → strudel adapter).
-// Loads the bundled `.bps`, evaluates the whole session, asserts audio comes
-// through. This doubles as the lot-4 backtick-routing acceptance test for 01.
+// Starter session 01 (packages/library/scenes/code-voices/01-strudel-solo.bps)
+// — the "no regression vs strudel.cc" demo, a self-contained `.bps`: the
+// Strudel code voice is inlined as a backtick and routed to audio by the
+// lot-4 cross-runtime path (compileBPS → BPx → backtick sink → strudel
+// adapter). Loads the bundled `.bps`, evaluates the whole session, asserts
+// audio comes through. This doubles as the lot-4 backtick-routing acceptance
+// test for 01.
 //
-// Bundled sessions are loaded from disk here (no in-app loader scans the
-// bundled/ dir yet; the LibraryView lists `STARTERS` from
-// packages/ui/src/lib/library/starters.ts).
-const BUNDLED = fileURLToPath(new URL('../../../../library/bundled', import.meta.url));
+// Bundled sessions are loaded from disk here (the in-app Factory browser
+// parses them straight off packages/library/scenes/**/*.{bps,gr}).
+const BUNDLED = fileURLToPath(new URL('../../../../library/scenes/code-voices', import.meta.url));
 
 test('session 01 - strudel solo evaluates and produces audio', async ({ page }) => {
   const audio = await setupAudioCapture(page);

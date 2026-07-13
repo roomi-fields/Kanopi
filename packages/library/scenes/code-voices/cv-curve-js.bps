@@ -1,0 +1,25 @@
+// @name: CV curve in JS — code voice
+// @tagline: a reusable modulation curve wired at a param point
+// @description: A CV modulation in JS: the cv keyword types the role (modulation) and the js: tag types the language. The curve (0..1 over the note duration) is declared once, reusable, and wired at a parameter point (C4(cutoff:sweep)).
+// @language: js
+// @outputs: audio
+// @level: intermediate
+// @tags: cv, modulation, js
+// @showcase
+//
+// Voix de code — COURBE CV en JS (modulation custom).
+// Forme CV : `cv NAME : `tag: code`` — `cv` type le RÔLE (modulation), le tag `js:`
+// type le LANGAGE (obligatoire, orphelin). La courbe (0..1 sur la durée) est
+// déclarée, réutilisable. Branchement AU POINT DE PARAMÈTRE : `C4(cutoff:sweep)`.
+// Décision hub 2026-07-04-cv-curve-syntaxe-backtick-type.md.
+
+@core
+@controls
+@alphabet.western:browser
+@tempo:100
+
+cv sweep : `js: (t, dur) => { return 0.5 + 0.5 * Math.sin(2 * Math.PI * t / dur); }`
+
+S -> Lead Lead Lead Lead
+
+Lead -> C4(cutoff:sweep) E4 G4(cutoff:sweep) _ (wave:sawtooth, vel:90)

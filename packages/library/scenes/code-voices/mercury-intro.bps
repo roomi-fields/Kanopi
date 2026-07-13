@@ -1,0 +1,21 @@
+// @name: Mercury intro
+// @tagline: declarative patterns from Amsterdam
+// @description: One self-contained `.bps`: a single Mercury voice playing a two-synth pattern → audio. Mercury is a readable, Tone.js-based live-coding language (Timo Hoogland). Put the cursor in the session and Ctrl+Enter to evaluate; Ctrl+. to silence.
+// @language: mercury
+// @outputs: audio
+// @level: didactic
+// @tags: mercury
+//
+// Mercury intro (migré de mercury-intro.kanopi).
+// Une voix de code Mercury → audio. Mercury est un langage déclaratif et
+// lisible (Timo Hoogland), bâti sur Tone.js. Évaluer la voix `patch` ; Ctrl+.
+
+@actor patch  transport.audio  eval.mercury
+
+S -> patch
+
+patch -> `set tempo 110
+set scale minor
+
+new synth saw time(1/8) note(0 0) shape(1 1/16 0.5) gain(0.5)
+new synth square time(1/4) note(-7 0) shape(1 1/8 0.4) gain(0.4)`

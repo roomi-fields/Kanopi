@@ -1,0 +1,22 @@
+// @name: Hydra — code voice
+// @tagline: video synth, not every voice makes sound
+// @description: A code voice for visuals: the actor (eval.hydra) types the language and the flow backtick inherits Hydra. A code voice need not be audible — Hydra renders image, routed by its runtime; the start/stop/loop container stays driven by Kronos.
+// @language: hydra
+// @outputs: visual
+// @level: didactic
+// @tags: hydra, visuals
+// @showcase
+//
+// Voix de code — HYDRA (synthé vidéo / visuels).
+// L'acteur `visuals eval.hydra` type le langage ; le backtick de flux hérite de hydra.
+// Une voix de code n'est pas forcément sonore : hydra rend de l'image, routée par
+// son runtime. Le container (début/fin/boucle) reste piloté par Kronos.
+
+@core
+@tempo:120
+
+@actor visuals  eval.hydra  transport.audio
+
+S -> visuals visuals
+
+visuals -> `osc(10, 0.1, 0.8).rotate(0.5).out()`

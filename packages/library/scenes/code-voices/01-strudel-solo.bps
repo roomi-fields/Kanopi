@@ -1,0 +1,18 @@
+// @name: 01 — Strudel solo
+// @tagline: single actor, zero regression vs strudel.cc
+// @description: One self-contained `.bps`: an actor whose Strudel code voice is inlined as a backtick and transported to audio. Put the cursor in the session and Ctrl+Enter to evaluate; Ctrl+. to hush.
+// @language: strudel
+// @outputs: audio
+// @level: didactic
+// @tags: drums, strudel
+// @showcase
+//
+// 01 — Strudel solo (migré de 01-strudel-solo.kanopi).
+// Une voix de code : Strudel (eval) → sortie audio (transport).
+// Évaluer la voix `drums`, puis couper.
+
+@actor drums  transport.audio  eval.strudel
+
+S -> drums
+
+drums -> `note("c3 e3 g3 c4").s("sine").gain(0.7)`

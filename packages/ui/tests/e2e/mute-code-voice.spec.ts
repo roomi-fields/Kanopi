@@ -22,7 +22,7 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helper
 // <actor> (mixer)"` when off, `title="unmute <actor>"` when on. Clicking calls
 // `mixer.toggleActorMuted(a.name)` — the exact gesture a performer uses at the
 // desk, so we drive it via a real click rather than the mixer store directly.
-const BUNDLED = fileURLToPath(new URL('../../../library/bundled', import.meta.url));
+const BUNDLED = fileURLToPath(new URL('../../../library/scenes/code-voices', import.meta.url));
 
 // The mute route (mixer.svelte.ts:92-100) gates on `isOrchestratedActor(name)`
 // — the actor must be a registered live voice in bpx-adapter's

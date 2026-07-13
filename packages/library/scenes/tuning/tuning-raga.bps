@@ -1,0 +1,20 @@
+// @name: Raga Sargam
+// @tagline: Pentatonic in sargam notation (sa re ga pa dha)
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: tuning
+//
+// Tuning: Raga Mohanam (pentatonic) in sargam notation
+// sa re ga pa dha — ascending and descending
+
+@core
+@controls
+@alphabet.sargam:browser
+@tempo:80
+
+S -> Aroh Avroh Ending
+
+Aroh -> sa re ga pa dha (wave:triangle, vel:90)
+Avroh -> dha pa ga re sa
+Ending -> sa _ _ _ (vel:70)

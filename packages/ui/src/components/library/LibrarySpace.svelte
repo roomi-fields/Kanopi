@@ -5,7 +5,7 @@
   import { openBlocks } from '../../stores/blocks.svelte';
   import { core } from '../../lib/core';
   import { tick } from 'svelte';
-  import { CATEGORIES, type LibraryItem, type LibraryCategory } from '../../lib/library/catalog';
+  import type { LibraryItem, LibraryCategory } from '../../lib/library/catalog';
   import { RESOURCE_GROUPS, type ResourceEntry } from '../../lib/library/resources';
 
   const OUTPUTS = ['audio', 'midi', 'text', 'visual'] as const;
@@ -207,12 +207,11 @@
           <span class="cat-label">All</span>
           <span class="cat-count">{library.counts.all}</span>
         </button>
-        {#each CATEGORIES as c (c.id)}
+        {#each library.categories as c (c.id)}
           <button
             class="cat"
             class:active={library.filters.category === c.id}
             type="button"
-            title={c.hint}
             onclick={() => pickCategory(c.id)}
           >
             <span class="cat-label">{c.label}</span>

@@ -1,0 +1,23 @@
+// @name: Detune Chorus
+// @tagline: Chorus effect from two detuned voices
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: synthesis
+//
+// Detune — désaccordage progressif
+// Démo : (detune:N) en cents (100 cents = 1 demi-ton)
+
+@core
+@controls
+@alphabet.western:browser
+@tempo:80
+
+S -> D0 D15 D30 D50 D100 End
+
+D0 -> C3 E3 G3 (wave:sawtooth, vel:80, detune:0)
+D15 -> C3 E3 G3 (detune:15)
+D30 -> C3 E3 G3 (detune:30)
+D50 -> C3 E3 G3 (detune:50)
+D100 -> C3 E3 G3 (detune:100)
+End -> C3 _ _ (detune:0)

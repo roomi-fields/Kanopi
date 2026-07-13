@@ -1,0 +1,20 @@
+// @name: Solfège
+// @tagline: French note names: do re mi fa sol la si
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: world
+//
+// Solfège — French notation: do re mi fa sol la si
+// Gamme majeure ascendante et descendante
+
+@core
+@controls
+@alphabet.solfege:browser
+@tempo:100
+
+S -> Montee Descente Fin
+
+Montee -> do re mi fa sol la si (wave:sine, vel:85)
+Descente -> si la sol fa mi re do (vel:70)
+Fin -> do _ _ _ (vel:60)

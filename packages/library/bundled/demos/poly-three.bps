@@ -1,7 +1,0 @@
-// Three Layers — trois voix polymétriques
-
-@core
-@controls
-@alphabet.western:browser
-
-S -> {C5 E5 G5 C6 (vel:100), E4 G4 B4 E4 G4 B4 (vel:70), C3 _ _ G3 _ _ (vel:50)}

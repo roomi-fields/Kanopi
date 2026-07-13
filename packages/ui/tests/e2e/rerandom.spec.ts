@@ -26,7 +26,7 @@ interface KanopiHatch {
 
 /** Load cv-lfo.bps into the workspace and focus its editor. Returns its source. */
 async function loadCvLfo(page: Page): Promise<string> {
-  const bundledDir = fileURLToPath(new URL('../../../library/bundled/demos', import.meta.url));
+  const bundledDir = fileURLToPath(new URL('../../../library/scenes/cv', import.meta.url));
   const program = readFileSync(join(bundledDir, 'cv-lfo.bps'), 'utf8');
   // Sanity: the fixture must actually carry the random rule we rely on.
   expect(program).toContain('@mode:random');

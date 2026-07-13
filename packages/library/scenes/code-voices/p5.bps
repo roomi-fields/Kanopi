@@ -1,0 +1,18 @@
+// @name: p5 — code voice
+// @tagline: an explicit tag, no actor needed
+// @description: A code voice via the explicit tag form (p5: …): no code-voice actor is declared, the tag gives the language directly. Equivalent to an eval.p5 actor by inheritance. The sketch draws to the p5 canvas, placed in time by the dispatcher.
+// @language: p5
+// @outputs: visual
+// @level: didactic
+// @tags: p5, creative-coding
+//
+// Voix de code — P5 (p5.js, creative coding / dessin).
+// Forme TAG explicite (`p5: …`) : ici pas d'acteur voix-code déclaré, le tag donne
+// le langage directement. Équivaut à un acteur `eval.p5` par héritage.
+
+@core
+@tempo:120
+
+S -> Sketch Sketch
+
+Sketch -> `p5: background(20); ellipse(width/2, height/2, 80 + 40*sin(millis()/300))`

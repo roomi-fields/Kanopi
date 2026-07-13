@@ -1,0 +1,23 @@
+// @name: Twin synth voices — all audio
+// @tagline: lead + bass, one synth
+// @description: A BPScript orchestrator with a lead and a bass actor, both routed to the in-browser synth and voiced together from one scene. Arm/disarm silences one voice while the other plays on.
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: orchestration, multi-actor
+// @showcase
+//
+// Dual actors, all audio — two voices voiced together from one scene, BOTH on the
+// in-browser synth. The orchestrated kronos path drives notes + CV for each actor;
+// arm/disarm silences one voice while the other plays on (no MIDI hardware needed).
+
+@core
+@controls
+
+@actor lead  alphabet:western  transport:webaudio
+@actor bass  alphabet:western  transport:webaudio
+
+S -> {Lead, Low}
+
+Lead -> lead.C5 lead.E5 lead.G5 lead.E5 lead.C5 lead.E5 lead.G5 lead.E5
+Low  -> bass.C2(wave:sawtooth)(vel:90) - bass.G2 - bass.A2 - bass.F2 -

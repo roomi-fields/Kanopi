@@ -1,0 +1,34 @@
+// @name: Hydra + audio
+// @tagline: reactive visuals over a drum loop
+// @description: One self-contained `.bps`: a Tidal drums voice → audio and a Hydra visual → video, both inlined as backticks. Two named scenes guarded by a flag — `a` (drums only) and `b` (drums + visuals). Open it and look at the code to see how the flag picks which scene derives. Hydra renders behind the editor. Ctrl+. to hush.
+// @language: hydra
+// @outputs: audio, visual
+// @level: didactic
+// @tags: visuals, hydra, scenes
+//
+// Hydra + audio (migré de hydra-audio.kanopi).
+// Deux voix de code : batterie en Tidal (eval.tidal) → audio, et visuel en
+// Hydra (eval.hydra) → vidéo. Deux scènes nommées gardées par un drapeau :
+// `a` (batterie seule) et `b` (batterie + visuel). Ouvrir, puis basculer les
+// scènes dans la barre transport (ou Alt+1 / Alt+2). Ctrl+. pour couper.
+// La batterie joue des échantillons (bd/sd/hh) : on lie la banque dirt-samples.
+@library.strudel "dirt-samples"
+@flag scene: a:1, b:2
+
+@actor drums   transport.audio  eval.tidal
+@actor visuals transport.video  eval.hydra
+
+[scene==a] S -> drums
+[scene==b] S -> { drums, visuals }
+
+drums -> `stack(
+  s("bd ~ bd ~").gain(0.9),
+  s("~ sd").room(0.4),
+  s("hh*8").gain(0.4)
+)`
+
+visuals -> `osc(20, 0.1, 1.2)
+  .kaleid(4)
+  .modulate(noise(2), 0.3)
+  .rotate(() => time / 6)
+  .out()`

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { parseBP3, parseSeFile } from 'bp3-frontend';
 import { createBPx } from 'bpx';
 import { BUNDLED_SE } from './bp3-aux';
-import bpAcceleration from '../../../../library/bundled/bp-acceleration.gr?raw';
+import bpAcceleration from '../../../../library/scenes/bp3/bp-acceleration.gr?raw';
 
 // The -se recipe (bp3-frontend a5da5b8): a grammar references its engine timing
 // in a `-se.<name>` file (surfaced by parseBP3().fileRefs). Without it the beat

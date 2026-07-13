@@ -1,0 +1,16 @@
+// @name: 12-TET Chromatic
+// @tagline: Chromatic scale in equal temperament (A=440)
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: tuning
+//
+// Tuning: Equal Temperament (12-TET, default)
+// Reference A4 = 440 Hz — standard Western tuning
+
+@core
+@controls
+@alphabet.western:browser
+@tempo:120
+
+S -> C4 C#4 D4 D#4 E4 F4 F#4 G4 G#4 A4 A#4 B4 C5 (wave:sine, vel:80)

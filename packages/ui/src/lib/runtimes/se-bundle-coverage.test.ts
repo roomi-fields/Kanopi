@@ -12,7 +12,7 @@ import { BUNDLED_SE } from './bp3-aux';
 import { resolveSeSettings } from './bpx-adapter';
 
 // Les grammaires natives bundlées, en brut (même profondeur de glob que demos.ts).
-const GR = import.meta.glob('../../../../library/bundled/*.gr', {
+const GR = import.meta.glob('../../../../library/scenes/bp3/*.gr', {
   query: '?raw',
   import: 'default',
   eager: true

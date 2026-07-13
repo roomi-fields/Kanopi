@@ -99,7 +99,7 @@ test('cv-adsr renders the CV: oscillators + cutoff automations + audible output'
   const audio = await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
-  const bundledDir = fileURLToPath(new URL('../../../library/bundled/demos', import.meta.url));
+  const bundledDir = fileURLToPath(new URL('../../../library/scenes/cv', import.meta.url));
   const program = readFileSync(join(bundledDir, 'cv-adsr.bps'), 'utf8');
   // Sanity: the fixture is the ADSR→cutoff CV scene we mean to guard.
   expect(program).toContain('mod.adsr');

@@ -1,0 +1,22 @@
+// @name: Dual actors — MIDI + audio
+// @tagline: two voices, two transports
+// @description: A BPScript orchestrator: a melody actor routed to a MIDI synth and a bass actor routed to the in-browser synth, voiced together from one scene. The bass sounds even without MIDI hardware.
+// @language: bpscript
+// @outputs: midi, audio
+// @level: intermediate
+// @tags: orchestration, multi-actor, midi
+// @showcase
+//
+// Actors — dual output via @actor
+// Mélodie sur synthé MIDI (ch1), basse en WebAudio (navigateur)
+
+@core
+@controls
+
+@actor melody  alphabet:western  transport:midi(ch:1)
+@actor bass    alphabet:western  transport:webaudio
+
+S -> {Mel, Low}
+
+Mel -> melody.C4 melody.E4 melody.G4 melody.C5 melody.B4 melody.G4 melody.E4 melody.C4
+Low -> bass.C2(wave:sawtooth)(vel:80) - bass.G2 - bass.C2 - bass.E2 -

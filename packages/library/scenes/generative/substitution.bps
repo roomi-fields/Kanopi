@@ -1,0 +1,24 @@
+// @name: Substitution
+// @tagline: Chained rewriting across sub-grammars
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: generative
+//
+// Substitution — réécriture en chaîne
+
+@core
+@controls
+@alphabet.western:browser
+
+// Structure
+S -> Phrase1 Phrase2
+
+-----
+
+// Expansion
+@mode:random
+Phrase1 -> C4 D4 E4 F4 (vel:90)
+Phrase1 -> E4 F4 G4 A4 (vel:80)
+Phrase2 -> G4 F4 E4 D4 C4 _ _ (vel:100)
+Phrase2 -> A4 G4 F4 E4 D4 C4 _ (vel:70)

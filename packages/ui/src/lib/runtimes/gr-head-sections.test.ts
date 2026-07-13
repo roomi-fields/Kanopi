@@ -14,12 +14,12 @@ import { describe, it, expect } from 'vitest';
 import { parseBP3 } from 'bp3-frontend';
 import { headSectionNamesFromAst } from './head-sections-ast';
 
-import acceleration from '../../../../library/bundled/bp-acceleration.gr?raw';
-import ames from '../../../../library/bundled/bp-ames.gr?raw';
-import notReich from '../../../../library/bundled/bp-not-reich.gr?raw';
-import rotateScales from '../../../../library/bundled/bp-rotate-scales.gr?raw';
-import transposition from '../../../../library/bundled/bp-transposition.gr?raw';
-import visser5 from '../../../../library/bundled/bp-visser5.gr?raw';
+import acceleration from '../../../../library/scenes/bp3/bp-acceleration.gr?raw';
+import ames from '../../../../library/scenes/bp3/bp-ames.gr?raw';
+import notReich from '../../../../library/scenes/bp3/bp-not-reich.gr?raw';
+import rotateScales from '../../../../library/scenes/bp3/bp-rotate-scales.gr?raw';
+import transposition from '../../../../library/scenes/bp3/bp-transposition.gr?raw';
+import visser5 from '../../../../library/scenes/bp3/bp-visser5.gr?raw';
 
 const WESTERN_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 

@@ -30,7 +30,12 @@ import {
 // flake on starter 01 across consecutive runs (transport-tick-driven LED
 // color shift). Reduce if false negatives become a problem.
 
-const BUNDLED = fileURLToPath(new URL('../../../../library/bundled', import.meta.url));
+const CODE_VOICES = fileURLToPath(
+  new URL('../../../../library/scenes/code-voices', import.meta.url)
+);
+const ORCHESTRATOR = fileURLToPath(
+  new URL('../../../../library/scenes/orchestrator', import.meta.url)
+);
 const SNAPSHOT_OPTS = { maxDiffPixels: 600 } as const;
 
 // Selector for the live bar.beat readout in Statusbar.svelte:35. Mask wraps
@@ -182,7 +187,7 @@ test('starter 01 (Strudel solo) loaded and evaluated', async ({ page }) => {
   await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
-  const session = readFileSync(join(BUNDLED, '01-strudel-solo.bps'), 'utf8');
+  const session = readFileSync(join(CODE_VOICES, '01-strudel-solo.bps'), 'utf8');
 
   await page.goto('');
   await waitForShell(page);
@@ -228,7 +233,7 @@ test('starter 02 (Strudel + Hydra) loaded and evaluated', async ({ page }) => {
   await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
-  const session = readFileSync(join(BUNDLED, '02-strudel-hydra.bps'), 'utf8');
+  const session = readFileSync(join(CODE_VOICES, '02-strudel-hydra.bps'), 'utf8');
 
   await page.goto('');
   await waitForShell(page);
@@ -304,7 +309,7 @@ test('starter 03 (sequenced sections) loaded and evaluated', async ({ page }) =>
   await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
-  const session = readFileSync(join(BUNDLED, '03-scenes-A-B.bps'), 'utf8');
+  const session = readFileSync(join(ORCHESTRATOR, '03-scenes-A-B.bps'), 'utf8');
 
   await page.goto('');
   await waitForShell(page);

@@ -1,0 +1,22 @@
+// @name: Polymetric rhythm
+// @tagline: 3 against 4 against 5
+// @description: A didactic study in polymeter — three voices in 3, 4 and 5 over a shared pulse.
+// @language: bpscript
+// @outputs: audio
+// @level: didactic
+// @tags: polymeter, rhythm
+// @showcase
+//
+// Polymetric Rhythm — 3 contre 4 contre 5
+// Démo : polymétrie avec speed, vélocités par voix
+
+@core
+@controls
+@alphabet.western:browser
+@tempo:90
+
+S -> {
+  C4 C4 C4 (vel:100),
+  E4 E4 E4 E4 (vel:70),
+  G4 G4 G4 G4 G4 (vel:50)
+}

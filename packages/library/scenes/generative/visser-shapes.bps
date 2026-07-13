@@ -1,0 +1,61 @@
+// @name: Visser: Shapes
+// @tagline: Harm Visser's "Shapes" (1998) — rotations, expansions, trills and velocity contours. MIDI output — select a MIDI device in Hardware to hear it
+// @language: bpscript
+// @outputs: midi
+// @level: intermediate
+// @tags: generative
+//
+// visser-shapes.bps — Harm Visser "Shapes" (1998)
+// Translated from bp3-engine/library/experimental/visser-shapes/grammar.gr
+//
+// Solo piano piece — rotations, expansions, trills, velocity contours
+// New controls: rotate(), keyxpand(), velcont
+
+@core
+@controls
+@alphabet.western:midi
+@tempo:60
+@striated
+
+// --- Sub-grammar 1 @mode:ord — structure ---
+
+@mode:ord
+S -> Shapes !(staccato:50)
+Shapes -> Part1 {![rotate:20] Part1 !(transpose:200c)} Part2 Part3 {![tempo:0.7] Part3} Part4
+
+-----
+
+// --- Sub-grammar 2 @mode:ord — parts ---
+
+@mode:ord
+Part1 -> {M1 Trill1 M2 Trill2 Int1 Int2 Trill3 Int3 1/4}
+Part2 -> {M3 M4 M5 1/4 Trill4 1/4 Trill4 Trill4 1/4 Trill5 M6 1/4 Trill6 Trill7 Trill8 1/4 Trill9 Trill10 1/4 M5 M4 M3 M6 {![rotate:6] M6 !(transpose:2300c)} 1/4 Int3 Int2 ![rotate:23] Int1 Part1} Trill3
+Part3 -> {1 {M3,M4} 2, Trill1 !(transpose:1200c)}(transpose:-1100c) {1 {M3,M4} 2, Trill1 !(transpose:1200c)}
+Part4 -> {Trill12,Trill11} {Trill10,Trill1} {Trill9 Trill10,Trill2} {{M3,Trill2} !(transpose:1100c)} {M3, Trill3 !(transpose:1200c)} {Trill10,Trill1} {Trill9 Trill10,Trill2} {![tempo:2/3] Trill10} {M3,M4} {![tempo:1/2] Trill10} 1/4 Trill9 !(transpose:1200c)
+
+-----
+
+// --- Sub-grammar 3 @mode:ord — materials ---
+
+@mode:ord
+M1 -> {![tempo:7] C0 C2 C4 C6(vel:60) ![tempo:6] Bb4 G3 F2 B2(vel:80) ![tempo:8] G3 A2 B1 F#1 G2 A3 C#4 E3(vel:40) ![tempo:6] G2 Bb1 C#1 ![tempo:5] G0 G#1 A2 A3 Bb4(vel:90) !(velcont, vel:40, transpose:1200c)}
+M2 -> {![keyxpand: C4 -1] M1}
+M3 -> {![tempo:7] C0 C2 {C4,C6}(vel:100) ![tempo:6] Bb4 G3 F2 {B2,G3}(vel:80) ![tempo:8] A2 B1 F#1 G2 A3 C#4 {E3,G2}(vel:50) ![tempo:6] Bb1 C#1 ![tempo:5] G0 G#1 A2 {A3,Bb4}(vel:70) !(velcont, vel:40, transpose:1200c)}
+M4 -> {![tempo:0.7, rotate:5] M3 !(transpose:300c)}
+M5 -> {![tempo:0.7, rotate:12] M4 !(transpose:600c)}
+M6 -> {![tempo:2] M1}
+Int1 -> {![tempo:12] D2 C#3(transpose:600c) D2 C#3(transpose:900c) D2 C#3 !(vel:40, transpose:300c)}
+Int2 -> {Int1 !(transpose:1100c)}
+Int3 -> {Int2 !(transpose:1100c)}
+Trill1 -> {![tempo:12] Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:80) Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:10) !(velcont, vel:10)}
+Trill2 -> {![keyxpand: C5 -1] Trill1 !(transpose:-3600c)}
+Trill3 -> {Trill1 !(transpose:-1200c)}
+Trill4 -> {![tempo:14] Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:80) !(velcont, vel:10)}
+Trill5 -> {![tempo:12] Bb4 A6 Bb4 A4 Bb6 A5 Bb3 A6 Bb4 A5(vel:80) Bb4 A6 Bb4 A4 Bb6 A5 Bb3 A6 Bb4 A5(vel:10) !(velcont, vel:10)}
+Trill6 -> {Trill5 !(transpose:-1900c)}
+Trill7 -> Trill4(transpose:-2200c) Trill4(transpose:-900c) Trill4
+Trill8 -> {![tempo:14] Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4(transpose:-1200c) A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:10) !(velcont, vel:80)}
+Trill9 -> {![tempo:14] Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:10) !(velcont, vel:80, transpose:-1200c)}
+Trill10 -> {![tempo:2/3] Trill8 1/4 Trill9 !(transpose:-2300c)}
+Trill11 -> {![tempo:14] Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:80) !(velcont, vel:10, transpose:-2300c)}
+Trill12 -> {![tempo:2] Bb4 A5 Bb4 A5 ![tempo:3] Bb4 A5 Bb4 A5 Bb4 A5 ![tempo:4] Bb4 A5 Bb4 A5 ![tempo:5] Bb4 A5 Bb4 A5 Bb4 A5(vel:80) ![tempo:6] Bb4 A5 Bb4 A5 ![tempo:7] Bb4 A5 Bb4 A5 ![tempo:8] Bb4 A5 Bb4 A5 ![tempo:8] Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:10) !(velcont, vel:10)}

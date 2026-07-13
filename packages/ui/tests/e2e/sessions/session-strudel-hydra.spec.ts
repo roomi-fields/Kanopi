@@ -17,7 +17,7 @@ import {
 // non-black pixels after one evaluation of the whole session. This is the
 // "first ooh moment" demo - one transport, two runtimes - and doubles as the
 // lot-4 backtick-routing acceptance test for 02.
-const BUNDLED = fileURLToPath(new URL('../../../../library/bundled', import.meta.url));
+const BUNDLED = fileURLToPath(new URL('../../../../library/scenes/code-voices', import.meta.url));
 
 test('session 02 - strudel + hydra produce audio and visuals on a shared clock', async ({
   page

@@ -9,25 +9,25 @@
 // Keyed by the `-se` reference name (the `name` in `fileRefs`). Bundled as raw
 // text so the upstream parser does the interpretation — no values duplicated.
 
-import seVisser2 from '../../../../library/bundled/se.Visser2.json?raw';
-import seAmes from '../../../../library/bundled/se.Ames.json?raw';
-import seNotReich from '../../../../library/bundled/se.NotReich.json?raw';
-import seTryRotate from '../../../../library/bundled/se.tryRotate.json?raw';
-import seTransposition3 from '../../../../library/bundled/se.transposition3.json?raw';
-import seVisser5 from '../../../../library/bundled/se.Visser5.json?raw';
-import se765432 from '../../../../library/bundled/se.765432.json?raw';
-import seAlan from '../../../../library/bundled/se.Alan.json?raw';
-import seBeatrix from '../../../../library/bundled/se.Beatrix.json?raw';
-import seDjinns from '../../../../library/bundled/se.Djinns.json?raw';
-import seDoeslittle from '../../../../library/bundled/se.doeslittle.json?raw';
-import seKss from '../../../../library/bundled/se.kss.json?raw';
-import seLivecode1 from '../../../../library/bundled/se.livecode1.json?raw';
-import seLivecode2 from '../../../../library/bundled/se.livecode2.json?raw';
-import seMozart from '../../../../library/bundled/se.Mozart.json?raw';
-import seMyMelody from '../../../../library/bundled/se.MyMelody.json?raw';
-import seRajeev from '../../../../library/bundled/se.Rajeev.json?raw';
-import seRuwet from '../../../../library/bundled/se.Ruwet.json?raw';
-import seVisser3 from '../../../../library/bundled/se.Visser3.json?raw';
+import seVisser2 from '../../../../library/scenes/bp3/se.Visser2.json?raw';
+import seAmes from '../../../../library/scenes/bp3/se.Ames.json?raw';
+import seNotReich from '../../../../library/scenes/bp3/se.NotReich.json?raw';
+import seTryRotate from '../../../../library/scenes/bp3/se.tryRotate.json?raw';
+import seTransposition3 from '../../../../library/scenes/bp3/se.transposition3.json?raw';
+import seVisser5 from '../../../../library/scenes/bp3/se.Visser5.json?raw';
+import se765432 from '../../../../library/scenes/bp3/se.765432.json?raw';
+import seAlan from '../../../../library/scenes/bp3/se.Alan.json?raw';
+import seBeatrix from '../../../../library/scenes/bp3/se.Beatrix.json?raw';
+import seDjinns from '../../../../library/scenes/bp3/se.Djinns.json?raw';
+import seDoeslittle from '../../../../library/scenes/bp3/se.doeslittle.json?raw';
+import seKss from '../../../../library/scenes/bp3/se.kss.json?raw';
+import seLivecode1 from '../../../../library/scenes/bp3/se.livecode1.json?raw';
+import seLivecode2 from '../../../../library/scenes/bp3/se.livecode2.json?raw';
+import seMozart from '../../../../library/scenes/bp3/se.Mozart.json?raw';
+import seMyMelody from '../../../../library/scenes/bp3/se.MyMelody.json?raw';
+import seRajeev from '../../../../library/scenes/bp3/se.Rajeev.json?raw';
+import seRuwet from '../../../../library/scenes/bp3/se.Ruwet.json?raw';
+import seVisser3 from '../../../../library/scenes/bp3/se.Visser3.json?raw';
 
 // reference name (as it appears in the .gr `-se.<name>` line) → raw -se text
 export const BUNDLED_SE: Record<string, string> = {

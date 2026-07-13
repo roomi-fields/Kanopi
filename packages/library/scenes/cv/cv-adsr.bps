@@ -1,0 +1,32 @@
+// @name: Acid Bass — envelope levels
+// @tagline: group vs per-note vs terminal, 3 envelopes
+// @description: A full bench of cutoff-envelope expression levels, combined: per-note (*:cutoff), GROUP (cutoff:env1, one envelope over the whole phrase), terminal (C2:cutoff), and three envelopes of distinct character (dark pluck / open pad / mid wah) — plus a panning LFO.
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: cv, bass, modulation, adsr
+// @showcase
+//
+// CV: Acid Bass — ADSR filter envelope on resonant sawtooth
+// TB-303 style: short attack, sharp decay, low sustain
+// The filter opens on each phrase then closes
+
+@mod
+@core
+@controls
+@alphabet.western:browser
+@tempo:138
+
+// Modulateur descriptif : env1 EST une enveloppe adsr (sortie 0..1)
+cv env1 : mod.adsr(attack:5, decay:150, sustain:0.2, release:400)
+
+S -> Bass Bass Bass Bass
+
+-----
+
+@mode:random
+
+// Branchement au point de paramètre : env1 module la coupure (cutoff) de CHAQUE note (sujet *)
+Bass -> C2 C2 C3 C2 - C2 Eb2 C2 (*:cutoff: env1, wave:sawtooth, vel:100, filterQ:8) [weight:50]
+Bass -> C2 - Eb2 F2 F#2 F2 Eb2 - (*:cutoff: env1, wave:sawtooth, vel:100, filterQ:8) [weight:30]
+Bass -> C2 C2 C2 - G2 - Eb2 C2 (*:cutoff: env1, wave:sawtooth, vel:100, filterQ:8)
