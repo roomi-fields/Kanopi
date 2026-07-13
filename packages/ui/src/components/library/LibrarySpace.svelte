@@ -34,6 +34,12 @@
     return [...seen];
   })();
 
+  // With ONE file per domain today, the per-domain rail is just singletons — noise.
+  // Show only "All" (Romain 2026-07-13), and AUTO-reactivate the domain buttons the
+  // day a domain groups several files (i.e. fewer distinct domains than files) — no
+  // manual flag to flip, the rail comes back exactly when it becomes useful.
+  const SHOW_DOMAIN_RAIL = DOMAINS.length < RESOURCE_FILES.length;
+
   // Display label for a domain key ('alphabet' → 'Alphabet'); title-cased only,
   // no renaming — the key IS the declared domain.
   function domainLabel(d: string): string {
@@ -153,17 +159,19 @@
           <span class="cat-label">All</span>
           <span class="cat-count">{resourceCounts.all}</span>
         </button>
-        {#each DOMAINS as d (d)}
-          <button
-            class="cat"
-            class:active={resourceDomain === d}
-            type="button"
-            onclick={() => pickResourceDomain(d)}
-          >
-            <span class="cat-label">{domainLabel(d)}</span>
-            <span class="cat-count">{resourceCounts[d]}</span>
-          </button>
-        {/each}
+        {#if SHOW_DOMAIN_RAIL}
+          {#each DOMAINS as d (d)}
+            <button
+              class="cat"
+              class:active={resourceDomain === d}
+              type="button"
+              onclick={() => pickResourceDomain(d)}
+            >
+              <span class="cat-label">{domainLabel(d)}</span>
+              <span class="cat-count">{resourceCounts[d]}</span>
+            </button>
+          {/each}
+        {/if}
       </nav>
 
       <!-- Main: filter bar + results grid — no onboarding banner (read-only catalogs). -->
