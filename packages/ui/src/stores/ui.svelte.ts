@@ -1,12 +1,4 @@
-export type ActivityView =
-  | 'now'
-  | 'factory'
-  | 'mine'
-  | 'resources'
-  | 'search'
-  | 'hardware'
-  | 'docs'
-  | 'account';
+export type ActivityView = 'now' | 'factory' | 'mine' | 'search' | 'hardware' | 'docs' | 'account';
 export type BottomPanelTab = 'console' | 'text' | 'structure';
 export type Theme = 'dark' | 'light';
 

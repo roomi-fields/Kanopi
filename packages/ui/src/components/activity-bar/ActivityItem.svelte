@@ -3,7 +3,6 @@
   import IconNow from '../../lib/icons/IconNow.svelte';
   import IconFiles from '../../lib/icons/IconFiles.svelte';
   import IconLibrary from '../../lib/icons/IconLibrary.svelte';
-  import IconResources from '../../lib/icons/IconResources.svelte';
   import IconSearch from '../../lib/icons/IconSearch.svelte';
   import IconHardware from '../../lib/icons/IconHardware.svelte';
   import IconDocs from '../../lib/icons/IconDocs.svelte';
@@ -32,7 +31,6 @@
   {#if id === 'now'}<IconNow />
   {:else if id === 'mine'}<IconFiles />
   {:else if id === 'factory'}<IconLibrary />
-  {:else if id === 'resources'}<IconResources />
   {:else if id === 'search'}<IconSearch />
   {:else if id === 'hardware'}<IconHardware />
   {:else if id === 'docs'}<IconDocs />

@@ -8,7 +8,7 @@
 // Anything else, parse errors, or compile throws → empty list (graceful).
 
 import { compileBps } from '../runtimes/compile-cache';
-import { runtimeFromExt } from '../workspace/types';
+import { runtimeFromExt, isNonProgramFile } from '../workspace/types';
 
 export interface ReferencedLib {
   /** resource type, matching RESOURCE_GROUPS.type where applicable. */
@@ -214,9 +214,14 @@ interface BpsError {
 export function programCompileStatus(
   fileName: string | undefined,
   contents: string | undefined,
-  derive?: DeriveOutcomeView | null
+  derive?: DeriveOutcomeView | null,
+  path?: string
 ): CompileStatus {
   if (!fileName || contents === undefined) return { applicable: false, ok: true, errors: [] };
+  // A data file (`libraries/…` personal catalog OR `resources/…` factory catalog
+  // entry) is never a program — no BPScript parse, no compile chip (decision
+  // 2026-07-13-invocation-librairies-factory-mine.md).
+  if (isNonProgramFile(path)) return { applicable: false, ok: true, errors: [] };
   const runtime = runtimeFromExt(fileName);
   if (runtime !== 'bpscript') {
     return { applicable: false, ok: true, errors: [] };

@@ -4,17 +4,17 @@
 
   type Item = { id: ActivityView; title: string; badge?: number; disabled?: boolean };
   // Groups per the DAW-style origin model (ESPACE_PERSO_SPEC §10.1): Content
-  // (Now/Factory/Mine, primary axis = origin) — Lenses (Hardware/Resources,
-  // read-only references) — Utilities (Docs/Search/Account) pinned to the bottom.
+  // (Now/Factory/Mine, primary axis = origin) — Lenses (Hardware, a read-only
+  // reference) — Utilities (Docs/Search/Account) pinned to the bottom. The
+  // former standalone "Resources" lens was dropped (redundant with Factory ›
+  // Libraries, which already renders ResourcesView — same catalog, one entry
+  // point).
   const content: Item[] = [
     { id: 'now', title: 'Now' },
     { id: 'factory', title: 'Factory' },
     { id: 'mine', title: 'Mine' }
   ];
-  const lenses: Item[] = [
-    { id: 'hardware', title: 'Hardware', badge: 2 },
-    { id: 'resources', title: 'Resources' }
-  ];
+  const lenses: Item[] = [{ id: 'hardware', title: 'Hardware', badge: 2 }];
   const bottom: Item[] = [
     { id: 'docs', title: 'Docs' },
     { id: 'search', title: 'Search — coming soon', disabled: true },

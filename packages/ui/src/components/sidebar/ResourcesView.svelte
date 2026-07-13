@@ -1,18 +1,17 @@
 <script lang="ts">
   import { RESOURCE_GROUPS, type ResourceEntry } from '../../lib/library/resources';
   import { workspace } from '../../stores/workspace.svelte';
-  import { ui } from '../../stores/ui.svelte';
 
   // Open a resource entry as a read-only JSON file in the editor, the same way
-  // a game file is opened (workspace.openFile + switch to the Files view).
-  // The VirtualFile is created in memory and reused on subsequent clicks
-  // (addFile dedupes by path), so re-opening doesn't pile up tabs.
+  // a game file is opened (workspace.openFile). The VirtualFile is created in
+  // memory and reused on subsequent clicks (addFile dedupes by path), so
+  // re-opening doesn't pile up tabs. Stays on whatever activity view the user
+  // is on (Factory › Libraries) — opening a resource must not jump to Mine.
   function openResource(type: string, entry: ResourceEntry) {
     const path = `resources/${type}/${entry.id}.json`;
     const contents = JSON.stringify(entry.data, null, 2);
     const id = workspace.addFile(path, contents, true);
     workspace.openFile(id);
-    ui.activeActivityView = 'mine';
   }
 </script>
 

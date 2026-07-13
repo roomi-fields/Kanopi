@@ -25,7 +25,9 @@
   // Fold the eval pipeline's DERIVATION outcome (msg [598]) into the chip so a
   // scene that parses but throws at derive reads red, not a misleading "compiles".
   const derive = $derived(deriveStatus.for(workspace.activeTabId, activeFile?.contents));
-  const compile = $derived(programCompileStatus(activeFile?.name, activeFile?.contents, derive));
+  const compile = $derived(
+    programCompileStatus(activeFile?.name, activeFile?.contents, derive, activeFile?.path)
+  );
 
   // ————— Enregistrement (ESPACE_PERSO_SPEC §4.3/§5, lot A1) —————
   // « Enregistrer chez moi » promeut une copie de bibliothèque / un brouillon local en doc

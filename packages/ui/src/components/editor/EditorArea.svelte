@@ -1,6 +1,7 @@
 <script lang="ts">
   import { workspace } from '../../stores/workspace.svelte';
   import { cloudDocs } from '../../stores/cloud-docs.svelte';
+  import { isNonProgramFile } from '../../lib/workspace/types';
   import TabBar from './TabBar.svelte';
   import CMEditor from './CMEditor.svelte';
   import { core } from '../../lib/core';
@@ -22,6 +23,7 @@
       <CMEditor
         docId={file?.id}
         fileName={file?.name}
+        path={file?.path}
         doc={file?.contents}
         runtime={file?.runtime}
         readOnly={file?.readOnly ?? false}
@@ -32,8 +34,13 @@
           // commande d'écriture débouncée. Fichier local (déconnecté/brouillon) : inchangé.
           if (cloudDocs.isCloudDoc(file.id)) cloudDocs.setContent(file.id, text);
         }}
-        onEval={(code, docOffset, actorId) =>
-          file && core.evaluateBlock(file.runtime, code, file.name, docOffset, actorId)}
+        onEval={(code, docOffset, actorId) => {
+          // A data file (`libraries/…` or `resources/…` JSON catalog) is never a
+          // program — Ctrl+Enter must not attempt to derive/play it (decision
+          // 2026-07-13-invocation-librairies-factory-mine.md).
+          if (!file || isNonProgramFile(file.path)) return;
+          return core.evaluateBlock(file.runtime, code, file.name, docOffset, actorId);
+        }}
       />
     {:else}
       <p class="hint">Open a file from the sidebar.</p>

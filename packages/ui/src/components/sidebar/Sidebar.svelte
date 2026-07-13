@@ -4,7 +4,6 @@
   import FilesView from './FilesView.svelte';
   import HardwareView from './HardwareView.svelte';
   import NowView from './NowView.svelte';
-  import ResourcesView from './ResourcesView.svelte';
 
   // 'factory' is NOT routed here — App.svelte swaps the whole body for the
   // dedicated full-width LibrarySpace when it's active (see App.svelte), so
@@ -13,7 +12,6 @@
     now: 'Now',
     mine: 'Mine',
     factory: 'Factory',
-    resources: 'Resources',
     search: 'Search',
     hardware: 'Hardware',
     docs: 'Docs',
@@ -32,8 +30,6 @@
       <FilesView />
     {:else if ui.activeActivityView === 'hardware'}
       <HardwareView />
-    {:else if ui.activeActivityView === 'resources'}
-      <ResourcesView />
     {:else if ui.activeActivityView === 'account'}
       <AccountView />
     {:else}

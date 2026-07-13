@@ -10,7 +10,11 @@
 
   // Allowed extensions pulled from the single `EXTENSION_TO_RUNTIME`
   // table in lib/workspace/types. Leaving the extension off defaults to
-  // .bps to match the typical "new scratch program" flow.
+  // .bps to match the typical "new scratch program" flow. `.json` is not a
+  // program language (no adapter declares it), but a personal library IS a
+  // `.json` catalog file (decision 2026-07-13-invocation-librairies-factory-
+  // mine.md) — accepted under the reserved `libraries/` prefix only (see
+  // `submit()` below).
   const exts = KNOWN_EXTENSIONS;
 
   // Secondary split INSIDE the Mine origin (ESPACE_PERSO_SPEC §10.3): a personal
@@ -48,9 +52,23 @@
   let folderName = $state('');
   let folderInputEl: HTMLInputElement | undefined = $state();
 
+  // A personal library is a `libraries/…` JSON catalog that DECLARES its own
+  // domain inside the file (decision 2026-07-13-invocation-librairies-factory-
+  // mine.md point 0/1) — no more axis inferred from a fixed list. The five
+  // domains a personal library can declare (kairos
+  // `src/projection/libs-provenance.ts:32-37`, `CATALOGUE_PAR_DOMAINE`).
+  const LIBRARY_DOMAINS = ['alphabet', 'tuning', 'temperament', 'scale', 'octaves'] as const;
+  type LibraryDomain = (typeof LIBRARY_DOMAINS)[number];
+
+  let creatingLibrary = $state(false);
+  let libraryDomain = $state<LibraryDomain>('alphabet');
+  let libraryName = $state('');
+  let libraryInputEl: HTMLInputElement | undefined = $state();
+
   function openDialog() {
     creating = true;
     creatingFolder = false;
+    creatingLibrary = false;
     newName = '';
     errorMsg = null;
     tick().then(() => inputEl?.focus());
@@ -65,6 +83,7 @@
   function openFolderDialog() {
     creatingFolder = true;
     creating = false;
+    creatingLibrary = false;
     folderName = '';
     errorMsg = null;
     tick().then(() => folderInputEl?.focus());
@@ -76,19 +95,80 @@
     errorMsg = null;
   }
 
-  /** "New library" is a "New file" whose path is pre-seeded with the reserved
-   * `libraries/` prefix (same mechanism as "New folder" pre-filling a folder):
-   * whatever the user names lands under `libraries/`, so it shows up in the
-   * Libraries section. No new storage concept — just a path convention. */
+  /** "New library" opens a dedicated small form (domain + name), NOT the
+   * generic "+ New file" dialog: a personal library is a typed `.json`
+   * catalog, not a scratch program, and its content must scaffold the exact
+   * schema kairos reads (`{"domain": "<domain>", "<name>": {}}` — the entry
+   * is a top-level key next to `domain`, never a wrapping `entries` field). */
   function openLibraryDialog() {
-    openDialog();
-    newName = LIB_PREFIX;
-    tick().then(() => {
-      inputEl?.focus();
-      // Caret after the prefix so the user types the library name, not over it.
-      const len = inputEl?.value.length ?? 0;
-      inputEl?.setSelectionRange(len, len);
-    });
+    creatingLibrary = true;
+    creating = false;
+    creatingFolder = false;
+    libraryDomain = 'alphabet';
+    libraryName = '';
+    errorMsg = null;
+    tick().then(() => libraryInputEl?.focus());
+  }
+
+  function cancelLibraryDialog() {
+    creatingLibrary = false;
+    libraryName = '';
+    errorMsg = null;
+  }
+
+  /** A library name/path may nest in folders (`ragas/mine`), but no segment
+   * may contain a dot: `@mine.<path>.<entry>` uses `.` as its sole separator
+   * (decision 2026-07-13-invocation-librairies-factory-mine.md point 1), so a
+   * dot inside a segment would be read as an extra path/entry boundary. */
+  function libraryNameError(raw: string): string | null {
+    if (!raw) return 'name is empty';
+    const segments = raw.split('/');
+    for (const seg of segments) {
+      if (!seg) return 'empty path segment';
+      if (seg.includes('.'))
+        return 'name cannot contain a dot — "." separates @mine.<path>.<entry> segments';
+    }
+    return null;
+  }
+
+  function submitLibrary() {
+    const raw = libraryName.trim().replace(/^\/+|\/+$/g, '');
+    const nameErr = libraryNameError(raw);
+    if (nameErr) {
+      errorMsg = nameErr;
+      return;
+    }
+    const path = `${LIB_PREFIX}${raw}.json`;
+    const entryName = raw.split('/').pop()!;
+    // Scaffold = the EXACT schema kairos parses: `domain` + one entry keyed by
+    // the file's own name, empty for the user to fill in. No `entries` wrapper.
+    const scaffold = JSON.stringify({ domain: libraryDomain, [entryName]: {} }, null, 2);
+    if (session.session) {
+      if (cloudDocs.docs.some((d) => d.path === path)) {
+        errorMsg = `${path} already exists`;
+        return;
+      }
+      cancelLibraryDialog();
+      void cloudDocs.createDoc(path, scaffold);
+      return;
+    }
+    if (workspace.files.some((f) => f.path === path)) {
+      errorMsg = `${path} already exists`;
+      return;
+    }
+    const id = workspace.addFile(path, scaffold);
+    workspace.openFile(id);
+    cancelLibraryDialog();
+  }
+
+  function onLibraryKey(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      submitLibrary();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelLibraryDialog();
+    }
   }
 
   /** "New folder" doesn't create a folder entity (none exists server-side) — it
@@ -126,7 +206,11 @@
     const hasExt = /\.[a-z0-9]+$/i.test(raw);
     const path = hasExt ? raw : raw + '.bps';
     const ext = '.' + path.split('.').pop()!.toLowerCase();
-    if (!exts.includes(ext)) {
+    // `.json` is only accepted under the reserved `libraries/` prefix (a
+    // personal library catalog, not a program) — everywhere else it stays
+    // rejected like any other unknown extension.
+    const isLibraryJson = isLibraryPath(path) && ext === '.json';
+    if (!exts.includes(ext) && !isLibraryJson) {
       errorMsg = `unknown extension ${ext}. use one of: ${exts.join(', ')}`;
       return;
     }
@@ -180,7 +264,7 @@
       type="button"
       class="new-btn"
       onclick={openLibraryDialog}
-      title="New library (a doc filed under libraries/)">+ New library</button
+      title="New personal library (a typed JSON catalog under libraries/)">+ New library</button
     >
   </div>
 
@@ -221,6 +305,38 @@
       <div class="create-actions">
         <button type="button" class="ok" onclick={submitFolder}>Next: add a file</button>
         <button type="button" class="cancel" onclick={cancelFolderDialog}>Cancel</button>
+      </div>
+      {#if errorMsg}<p class="err">{errorMsg}</p>{/if}
+    </div>
+  {/if}
+
+  {#if creatingLibrary}
+    <div class="create">
+      <label class="field-label" for="library-domain">Domain</label>
+      <select id="library-domain" class="domain-select" bind:value={libraryDomain}>
+        {#each LIBRARY_DOMAINS as d (d)}
+          <option value={d}>{d}</option>
+        {/each}
+      </select>
+      <label class="field-label" for="library-name">Name</label>
+      <input
+        id="library-name"
+        bind:this={libraryInputEl}
+        bind:value={libraryName}
+        oninput={() => (errorMsg = null)}
+        onkeydown={onLibraryKey}
+        type="text"
+        placeholder="mes-svaras"
+        spellcheck="false"
+        autocomplete="off"
+      />
+      <p class="hint">
+        Creates libraries/{libraryName || '…'}.json — no dots (the address syntax reads "." as a
+        separator).
+      </p>
+      <div class="create-actions">
+        <button type="button" class="ok" onclick={submitLibrary}>Create</button>
+        <button type="button" class="cancel" onclick={cancelLibraryDialog}>Cancel</button>
       </div>
       {#if errorMsg}<p class="err">{errorMsg}</p>{/if}
     </div>
@@ -314,6 +430,32 @@
     box-sizing: border-box;
   }
   .create input:focus {
+    border-color: var(--amber);
+  }
+  .field-label {
+    display: block;
+    margin: 6px 0 3px;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .field-label:first-child {
+    margin-top: 0;
+  }
+  .domain-select {
+    width: 100%;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border-dim);
+    border-radius: 2px;
+    padding: 5px 7px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    outline: none;
+    box-sizing: border-box;
+  }
+  .domain-select:focus {
     border-color: var(--amber);
   }
   .hint {

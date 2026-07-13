@@ -1,4 +1,5 @@
 import { workspace } from './workspace.svelte';
+import { isNonProgramFile } from '../lib/workspace/types';
 import { extractBlocks, qualifyBlock } from '../lib/blocks/extract-blocks';
 import type { CodeBlock } from '../lib/blocks/extract-blocks';
 import type { Runtime } from '../lib/core';
@@ -138,7 +139,10 @@ class OpenBlocksStore {
    */
   blocksForFile(fileId: string): OpenBlock[] {
     const file = workspace.fileById(fileId);
-    if (!file) return [];
+    // A data file (`libraries/…` or `resources/…` JSON catalog) is never a
+    // program — no blocks to derive/eval/arm (decision
+    // 2026-07-13-invocation-librairies-factory-mine.md).
+    if (!file || isNonProgramFile(file.path)) return [];
     const out: OpenBlock[] = [];
     const seenNames = new Set<string>();
     for (const b of extractBlocks(file.contents, file.runtime)) {
@@ -345,7 +349,9 @@ function computeOpenBlocks(): OpenBlock[] {
     if (seenTabs.has(tabId)) continue;
     seenTabs.add(tabId);
     const file = workspace.fileById(tabId);
-    if (!file) continue;
+    // Same data-file exclusion as `blocksForFile` — a `libraries/…` or
+    // `resources/…` JSON catalog never contributes blocks to the panel/eval pipeline.
+    if (!file || isNonProgramFile(file.path)) continue;
     const blocks = extractBlocksMemo(file.id, file.contents, file.runtime);
     for (const b of blocks) {
       const key = `${file.id}:${b.name}`;

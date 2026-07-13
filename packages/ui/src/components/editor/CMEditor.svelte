@@ -34,17 +34,31 @@
   } from 'runtime-codevoices';
   import { extractBlocks, qualifyBlock } from '../../lib/blocks/extract-blocks';
   import { openBlocks } from '../../stores/blocks.svelte';
+  import { isNonProgramFile } from '../../lib/workspace/types';
 
   type Props = {
     docId: string;
     fileName: string;
+    /** Full workspace path (not just the basename) — used ONLY to recognize a
+     * data file (`libraries/…` or `resources/…` JSON catalog) and skip the
+     * BPScript language/lint extension on it (not a program; see `makeState`). */
+    path?: string;
     doc: string;
     runtime: Runtime;
     readOnly?: boolean;
     onChange: (text: string) => void;
     onEval?: (code: string, docOffset: number, actorId?: string) => void | Promise<boolean | void>;
   };
-  const { docId, fileName, doc, runtime, readOnly = false, onChange, onEval }: Props = $props();
+  const {
+    docId,
+    fileName,
+    path,
+    doc,
+    runtime,
+    readOnly = false,
+    onChange,
+    onEval
+  }: Props = $props();
 
   let host: HTMLDivElement;
   let canvas: HTMLCanvasElement | undefined = $state();
@@ -91,6 +105,13 @@
   function makeState(initial: string, lang: Runtime): EditorState {
     const strudel = strudelExtras(lang);
     strudelInstall = strudel.install;
+    // A data file (`libraries/…` personal catalog OR `resources/…` factory
+    // catalog entry) is a JSON catalog, not a program: no extension declares
+    // `.json`, so `runtime` falls back to 'bpscript' — but running the BPScript
+    // language/lint extension on it would underline the JSON as parse errors
+    // (decision 2026-07-13-invocation-librairies-factory-mine.md). Skip the
+    // language extension there; plain-text editing only.
+    const isDataFile = isNonProgramFile(path);
     const extensions: Extension[] = [
       lineNumbers(),
       history(),
@@ -99,7 +120,7 @@
       highlightSelectionMatches(),
       bracketMatching(),
       indentOnInput(),
-      languageFor(lang),
+      ...(isDataFile ? [] : [languageFor(lang)]),
       // Completion popup engine. Languages opt in via `languageData.autocomplete`
       // (BPScript wires its reference-backed source in lang-resolver). Without this
       // extension that source is never consulted and no popup ever shows.
@@ -142,7 +163,7 @@
             key: 'Mod-Enter',
             preventDefault: true,
             run: (v) => {
-              if (!onEval) return false;
+              if (!onEval || isDataFile) return false;
               const sel = v.state.selection.main;
               const docText = v.state.doc.toString();
               // Prefer the block-level detector: it knows about `$:`, assignments
@@ -176,7 +197,7 @@
             key: 'Shift-Enter',
             preventDefault: true,
             run: (v) => {
-              if (!onEval) return false;
+              if (!onEval || isDataFile) return false;
               const sel = v.state.selection.main;
               const line = v.state.doc.lineAt(sel.head);
               const code = line.text.trim();
