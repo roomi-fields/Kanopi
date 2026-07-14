@@ -563,12 +563,20 @@ function librariesFromAst(a: SceneAstView | null): Libraries {
   return out;
 }
 
-// Backtick (code-voice) table from the AST: DFS for `BacktickInline` nodes →
-// `{ [_btName]: { interp, code } }`. Each node carries `_btName` (the BT token the
-// derivation emits), `code`, and the RESOLVED `interp` (its `tag`, or — untagged —
-// the owning actor's `eval`, resolved by bpscript on the node: the one genuine
-// language-semantic). Replaces compileBPS's `backticks` sidecar — single source
-// of truth = the tree (BPscript 94c6f53, compileToBPxAST).
+// Backtick (code-voice) table from the AST: DFS for backtick nodes → `{ [_btName]:
+// { interp, code } }`. bpscript emits TWO node types for the same backtick concept:
+// `BacktickInline` (the backtick IS an actor's whole rule body, e.g. `groove -> `…``)
+// and `BacktickStandalone` (a backtick sitting as ONE terminal among several in a
+// rule's flow, e.g. `S -> C4 `strudel: …` E4` — confirmed on the AST dump, both carry
+// `_btName`/`tag`/`code` identically). Missing the second type here left `backticks`
+// empty for any scene using a standalone backtick terminal, so `codeVoicesRuntime`
+// was never built and Kronos never got a 'code' sink for it (regression: silent
+// standalone Strudel/Hydra/… backtick terminals, Romain 2026-07-14, corpus A/B diag).
+// Each node carries `_btName` (the BT token the derivation emits), `code`, and the
+// RESOLVED `interp` (its `tag`, or — untagged — the owning actor's `eval`, resolved by
+// bpscript on the node: the one genuine language-semantic). Replaces compileBPS's
+// `backticks` sidecar — single source of truth = the tree (BPscript 94c6f53, compileToBPxAST).
+const BACKTICK_NODE_TYPES = new Set(['BacktickInline', 'BacktickStandalone']);
 function backticksFromAst(ast: unknown): BacktickTable {
   const out: BacktickTable = {};
   const seen = new Set<unknown>();
@@ -576,7 +584,7 @@ function backticksFromAst(ast: unknown): BacktickTable {
     if (!n || typeof n !== 'object' || seen.has(n)) return;
     seen.add(n);
     const node = n as Record<string, unknown>;
-    if (node.type === 'BacktickInline' && typeof node._btName === 'string') {
+    if (BACKTICK_NODE_TYPES.has(node.type as string) && typeof node._btName === 'string') {
       out[node._btName] = {
         interp: String(node.interp ?? node.tag ?? ''),
         code: String(node.code ?? '')
