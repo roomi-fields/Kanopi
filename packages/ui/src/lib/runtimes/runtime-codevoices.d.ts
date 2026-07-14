@@ -100,6 +100,24 @@ export declare function loadSampleBank(source: string): Promise<void>;
 // (soundfonts GM, samples Mercury) en lazy. Défaut paquet = store.roomi-fields.com (sans /assets).
 export declare function setAssetBaseUrl(url: string): void;
 
+// --- Registre des bibliothèques des moteurs invités (bundling [764]/(d), paquet 7f3f499) ---
+// Surfacé dans la section 'libraries' de l'UI (au rang des domaines BPScript). L'hôte CONSOMME ce
+// registre — AUCUNE liste en dur côté hôte (règle anti-hardcode).
+export type GuestLibraryKind = 'tuning' | 'soundfonts' | 'samples';
+export interface GuestLibrary {
+  readonly engine: string;
+  /** Identifiant : la valeur de `@library.<engine> "<id>"` (pour les entrées `declarable`). */
+  readonly id: string;
+  readonly kind: GuestLibraryKind;
+  readonly label: string;
+  readonly description: string;
+  readonly selfHosted: boolean;
+  /** Activable par l'auteur via `@library.<engine> "<id>"` ; `false` = gérée par le moteur (listée). */
+  readonly declarable: boolean;
+}
+export declare const guestLibraries: readonly GuestLibrary[];
+export declare function librariesForEngine(engine: string): readonly GuestLibrary[];
+
 // --- PRÉCHAUFFAGE au chargement (design ratifié archi [589]) ---
 // Entrée de PAQUET idempotente : résout les interps EN INTERNE + warme leurs moteurs. Interface
 // FIGÉE. PAS ENCORE livrée par le pair → déclarée POSSIBLEMENT ABSENTE (`| undefined`) pour que

@@ -7,6 +7,18 @@
   import { buildTree } from '../../lib/workspace/build-tree';
   import FileTree from './FileTree.svelte';
   import CloudFileTree from './CloudFileTree.svelte';
+  import { guestLibraries } from 'runtime-codevoices';
+
+  // (d) [764] — bibliothèques standard des moteurs invités (microtonal Strudel, soundfonts GM,
+  // samples Mercury, …), surfacées ici au rang des libs BPScript. Registre CONSOMMÉ du paquet
+  // runtime-codevoices (aucune liste en dur). L'auteur active les `declarable` via
+  // `@library.<engine> "<id>"`. Groupées par moteur pour la lecture.
+  const guestLibsByEngine = Object.entries(
+    guestLibraries.reduce<Record<string, (typeof guestLibraries)[number][]>>((acc, lib) => {
+      (acc[lib.engine] ??= []).push(lib);
+      return acc;
+    }, {})
+  );
 
   // Allowed extensions pulled from the single `EXTENSION_TO_RUNTIME`
   // table in lib/workspace/types. Leaving the extension off defaults to
@@ -564,6 +576,30 @@
       {:else}
         <FileTree nodes={localLibrariesTree} />
       {/if}
+
+      {#if guestLibsByEngine.length > 0}
+        <div class="guest-libs">
+          <p class="guest-libs-title">Bundled — guest engines</p>
+          {#each guestLibsByEngine as [engine, libs] (engine)}
+            <p class="guest-engine">{engine}</p>
+            <ul class="guest-list">
+              {#each libs as lib (lib.id)}
+                <li class="guest-lib" title={lib.description}>
+                  <span class="guest-lib-label">{lib.label}</span>
+                  <span class="guest-lib-kind">{lib.kind}</span>
+                  {#if lib.declarable}
+                    <code class="guest-lib-decl">@library.{engine} "{lib.id}"</code>
+                  {:else}
+                    <span class="guest-lib-managed" title="chargée par le moteur lui-même"
+                      >engine</span
+                    >
+                  {/if}
+                </li>
+              {/each}
+            </ul>
+          {/each}
+        </div>
+      {/if}
     </section>
   {/if}
 </div>
@@ -703,6 +739,62 @@
   .section-empty {
     margin: 0 0 0 8px;
     font-size: 10.5px;
+    color: var(--text-faint);
+    font-style: italic;
+  }
+
+  /* (d) [764] — bibliothèques des moteurs invités (registre runtime-codevoices). */
+  .guest-libs {
+    margin: 8px 0 0;
+    padding: 6px 0 0;
+    border-top: 1px solid var(--border-dim);
+  }
+  .guest-libs-title {
+    margin: 0 0 4px 8px;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .guest-engine {
+    margin: 6px 0 2px 8px;
+    font-size: 9.5px;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .guest-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .guest-lib {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 2px 8px 2px 16px;
+    font-size: 11px;
+  }
+  .guest-lib-label {
+    color: var(--text);
+  }
+  .guest-lib-kind {
+    font-size: 9px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .guest-lib-decl {
+    margin-left: auto;
+    font-family: var(--font-code);
+    font-size: 10px;
+    color: var(--sc);
+    white-space: nowrap;
+  }
+  .guest-lib-managed {
+    margin-left: auto;
+    font-size: 9px;
     color: var(--text-faint);
     font-style: italic;
   }
