@@ -16,9 +16,17 @@ import { production } from './stores/production.svelte';
 import { transport } from './stores/transport.svelte';
 import { installKanopiApi } from './lib/pilot/kanopi-api';
 import { personalPitchLibSnapshot } from './stores/personal-pitch-lib.svelte';
+import { setAssetBaseUrl } from 'runtime-codevoices';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('#app root not found');
+
+// BUNDLING [764]/[765] — les bibliothèques standard des moteurs invités (soundfonts GM Strudel,
+// samples Mercury) sont auto-hébergées sur NOTRE VPS, servies en lazy. L'hôte POSE l'URL de base au
+// démarrage (le défaut du paquet est `store.roomi-fields.com` SANS `/assets`) : l'architecte monte le
+// répertoire statique sous `/assets/` (strudel-soundfonts/ + mercury-samples/ dessous, décision [765]).
+// ASSET_PATHS y ajoute les sous-chemins → `…/assets/strudel-soundfonts/sound`, `…/assets/mercury-samples`.
+setAssetBaseUrl('https://store.roomi-fields.com/assets');
 
 // KAN-UX5 — le snapshot global d'avant les comptes devient l'espace du compte
 // par défaut (migration une fois, rien n'est perdu), AVANT la restauration.

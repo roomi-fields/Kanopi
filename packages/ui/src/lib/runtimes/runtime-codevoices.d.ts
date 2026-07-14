@@ -95,6 +95,11 @@ export declare function unregisterStrudelEditorView(fileId: string): void;
 // --- Sample bank loading (driven by bpx-adapter from `@sound` banks) ---
 export declare function loadSampleBank(source: string): Promise<void>;
 
+// --- Assets auto-hébergés VPS (bundling [764]/[765]) ---
+// L'hôte POSE l'URL de base au démarrage (main.ts) ; le paquet en dérive les sous-chemins
+// (soundfonts GM, samples Mercury) en lazy. Défaut paquet = store.roomi-fields.com (sans /assets).
+export declare function setAssetBaseUrl(url: string): void;
+
 // --- PRÉCHAUFFAGE au chargement (design ratifié archi [589]) ---
 // Entrée de PAQUET idempotente : résout les interps EN INTERNE + warme leurs moteurs. Interface
 // FIGÉE. PAS ENCORE livrée par le pair → déclarée POSSIBLEMENT ABSENTE (`| undefined`) pour que
