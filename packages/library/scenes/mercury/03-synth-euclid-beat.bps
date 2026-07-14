@@ -21,4 +21,4 @@
 
 S -> v
 
-v -> `new synth square note(sine(8 5.512 0 12)) play(euclid(8 5)) time(1/16)`
+v -> `new synth square note(sine(8 5.512 0 12)) play(euclid(8 5)) time(1/16)`:4

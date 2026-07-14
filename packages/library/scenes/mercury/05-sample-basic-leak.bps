@@ -28,4 +28,4 @@
 S -> v
 
 v -> `new sample kick_909 time(1/4)
-new sample hat_909 time(1/4 1/8) gain(0.6)`
+new sample hat_909 time(1/4 1/8) gain(0.6)`:4

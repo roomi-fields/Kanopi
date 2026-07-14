@@ -22,4 +22,4 @@
 
 S -> v
 
-v -> `new synth [ sine saw ] time(1/4 1/8) note(7 1) shape(1 300) beat(0.8) add_fx(reverb 0.9 11)`
+v -> `new synth [ sine saw ] time(1/4 1/8) note(7 1) shape(1 300) beat(0.8) add_fx(reverb 0.9 11)`:4

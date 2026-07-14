@@ -20,4 +20,4 @@
 
 S -> v
 
-v -> `sound("bd hh sd oh")`
+v -> `sound("bd hh sd oh")`:4

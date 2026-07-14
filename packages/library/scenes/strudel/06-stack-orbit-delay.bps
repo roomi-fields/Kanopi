@@ -20,4 +20,4 @@
 
 S -> v
 
-v -> `stack(s("hh*6").delay(.5).delaytime(.25).orbit(1), s("~ sd ~ sd").delay(.5).delaytime(.125).orbit(2))`
+v -> `stack(s("hh*6").delay(.5).delaytime(.25).orbit(1), s("~ sd ~ sd").delay(.5).delaytime(.125).orbit(2))`:4

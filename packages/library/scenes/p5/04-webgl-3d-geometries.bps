@@ -101,4 +101,4 @@ function rotateWithFrameCount() {
   rotateX(frameCount);
   rotateY(frameCount);
 }
-`
+`:4

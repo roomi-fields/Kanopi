@@ -23,4 +23,4 @@
 
 S -> v
 
-v -> `note("48 67 63 [62, 58]").sound("piano, gm_electric_guitar_muted")`
+v -> `note("48 67 63 [62, 58]").sound("piano, gm_electric_guitar_muted")`:4

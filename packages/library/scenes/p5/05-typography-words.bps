@@ -62,4 +62,4 @@ function drawWords(x) {
   text('san', x, 220);
   text('shi', x, 290);
 }
-`
+`:4
