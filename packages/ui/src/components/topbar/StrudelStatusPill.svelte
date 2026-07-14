@@ -1,12 +1,14 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { onStrudelStatus, type StrudelStatus } from 'runtime-codevoices';
-  import { workspace } from '../../stores/workspace.svelte';
 
   let status = $state<StrudelStatus>('idle');
   let unsub: (() => void) | undefined;
 
   onMount(() => {
+    // onStrudelStatus() calls back synchronously with the CURRENT status on
+    // subscription (runtime-codevoices strudel.ts:151), so this also covers
+    // mounting after Strudel already loaded earlier in the session.
     unsub = onStrudelStatus((s) => (status = s));
   });
   onDestroy(() => unsub?.());
@@ -18,22 +20,13 @@
     error: 'error'
   };
 
-  // Only surface the Strudel status when the open scene actually involves Strudel
-  // — otherwise "strudel ready" sits in the corner of a plain BPScript scene that
-  // never touches it (Romain). A scene uses Strudel if an open file IS a Strudel
-  // file, or a `.bps`/`.gr` carries a `strudel:` backtick voice. An error is always
-  // shown (it needs attention regardless of the current scene).
-  const usesStrudel = $derived.by(() => {
-    for (const id of workspace.openTabIds) {
-      const f = workspace.fileById(id);
-      if (!f) continue;
-      if (f.runtime === 'strudel') return true;
-      if ((f.runtime === 'bpscript' || f.runtime === 'bp3') && /\bstrudel\s*:/.test(f.contents))
-        return true;
-    }
-    return false;
-  });
-  const visible = $derived(status === 'error' || (usesStrudel && status !== 'idle'));
+  // Visibility tracks the Strudel RUNTIME's own status only (loading/ready/error),
+  // never which tab happens to be open — status is monotonic and session-wide
+  // (idle → loading → ready|error, runtime-codevoices strudel.ts:142-153), so a
+  // gate on "the current tab uses strudel" made the pill flicker away mid-session
+  // whenever focus left a strudel tab, even though the voice was still loaded and
+  // playing in the background (Romain 2026-07-14: "s'affiche parfois, incohérent").
+  const visible = $derived(status !== 'idle');
 </script>
 
 {#if visible}
