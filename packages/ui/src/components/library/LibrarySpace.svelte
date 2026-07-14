@@ -215,9 +215,11 @@
     </section>
   {:else}
     <section class="space">
-      <!-- Left rail: the five fixed categories + counts, then the auxiliary shelves. -->
+      <!-- Left rail: the five fixed categories + counts, then the auxiliary shelves.
+           No rail-title h2 here — the section-toggle button above already reads
+           "Scenes"; a second "Library" label directly under it was redundant/confusing
+           (Romain 2026-07-14). -->
       <nav class="rail">
-        <h2 class="rail-title">Library</h2>
         <button
           class="cat"
           class:active={library.filters.category === 'all'}
