@@ -48,11 +48,28 @@ const SNAPSHOT_OPTS = { maxDiffPixels: 600 } as const;
 // (it drove a ~3450-px flake on starter 03, dominated by this panel). Masking
 // it hides ONLY that noise; the transport cluster, LEDs and structural chrome
 // stay asserted.
+//
+// `.beat-counter` (TransportCluster.svelte:top readout `001·01.00`) is the SECOND
+// live position readout — the top-bar twin of the footer `bar.beat`. A scene that
+// hushes (not stops) leaves it at a run-dependent position (004·03…), which drove
+// the starter-02 flake. Masked here so BOTH position readouts are hidden (KAN-29).
 function maskTargets(page: import('@playwright/test').Page) {
   return [
     page.locator('[title="bar.beat (Ableton-style, 1-indexed)"]'),
-    page.locator('[data-testid="console-panel"]')
+    page.locator('[data-testid="console-panel"]'),
+    page.locator('.beat-counter')
   ];
+}
+
+// The bottom-panel body (`.bp-body`) hosts the STRUCTURE timeline whose viewport
+// (scroll/zoom/auto-fit width + playhead) is non-deterministic run-to-run even when
+// the transport is stopped — the KAN-29 root: the timeline AUTO-FOLLOWS the cursor
+// (voulu, Romain 2026-07-13) and the auto-fit re-adjusts to the real panel width
+// (runtime-ui 417a166). We mask this region for the starter sessions (which load a
+// scene → a live timeline); the editor, transport chrome, actors panel and — for
+// starter 02 — the 'strudel ready' pill (top-right, OUTSIDE this box) stay asserted.
+function maskWithTimeline(page: import('@playwright/test').Page) {
+  return [...maskTargets(page), page.locator('.bp-body')];
 }
 
 // Arrête le transport AVANT une capture pour figer un ÉTAT STABLE (archi [731]). Évaluer une
@@ -193,13 +210,12 @@ test('Library panel screenshot shows the bundled starters and Bol Processor show
   noErrors();
 });
 
-// QUARANTAINE KAN-29 — couverture visuelle RETIRÉE, pas un faux vert. Ce snapshot
-// échoue 100% sur le viewport timeline STRUCTURE (scroll/zoom/playhead auto-fit non
-// figé avant capture), non-régression prouvée à l'image (éditeur/AST/transport = baseline,
-// rouge uniquement dans la timeline). Stabilisation propre = masque Playwright de la région
-// timeline OU figeage du viewport, qui EXIGENT de régénérer la baseline (re-baseline interdite
-// dans cette passe). Reste ouvert : KAN-29. Re-activer dès la stabilisation faite.
-test.skip('starter 01 (Strudel solo) loaded and evaluated', async ({ page }) => {
+// KAN-29 RÉSOLU (archi [761]) — le viewport timeline STRUCTURE (scroll/zoom/playhead
+// auto-fit) est non-déterministe au pixel même transport arrêté. Fix propre : on MASQUE
+// cette région (`.bp-body`, via maskWithTimeline) PUIS on re-baseline avec le masque — la
+// couverture reste sur l'éditeur/AST/transport/actors, seule la zone qui flake est masquée.
+// Plus de quarantaine `.skip` : le test tourne à nouveau, stable.
+test('starter 01 (Strudel solo) loaded and evaluated', async ({ page }) => {
   await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
@@ -233,7 +249,7 @@ test.skip('starter 01 (Strudel solo) loaded and evaluated', async ({ page }) => 
 
   await expect(page).toHaveScreenshot('__screenshots__/starter-01-strudel-solo.png', {
     fullPage: true,
-    mask: maskTargets(page),
+    mask: maskWithTimeline(page),
     ...SNAPSHOT_OPTS
   });
 
@@ -319,7 +335,10 @@ test('starter 02 (Strudel + Hydra) loaded and evaluated', async ({ page }) => {
   // generous enough that the stability check always converges.
   await expect(page).toHaveScreenshot('__screenshots__/starter-02-strudel-hydra.png', {
     fullPage: true,
-    mask: maskTargets(page),
+    // maskWithTimeline: both position readouts (KAN-29 counter) + the STRUCTURE
+    // timeline viewport. The 'strudel ready' pill (top-right, legitimate change
+    // from the pill-coherence fix) sits OUTSIDE these masks and stays asserted.
+    mask: maskWithTimeline(page),
     timeout: 30_000,
     ...SNAPSHOT_OPTS
   });
@@ -329,11 +348,10 @@ test('starter 02 (Strudel + Hydra) loaded and evaluated', async ({ page }) => {
   noErrors();
 });
 
-// QUARANTAINE KAN-29 — couverture visuelle RETIRÉE, pas un faux vert. Même cause que starter 01 :
-// le viewport timeline STRUCTURE (scroll/zoom/playhead) n'est pas figé avant capture, non-régression
-// prouvée à l'image. Stabilisation (masque/figeage) exige une re-baseline (interdite ici). Reste
-// ouvert : KAN-29. Re-activer dès la stabilisation faite.
-test.skip('starter 03 (sequenced sections) loaded and evaluated', async ({ page }) => {
+// KAN-29 RÉSOLU (archi [761]) — même cause/fix que starter 01 : la région timeline STRUCTURE
+// non-déterministe est MASQUÉE (`.bp-body`, maskWithTimeline) puis re-baselinée avec le masque.
+// Plus de quarantaine `.skip` : le test tourne à nouveau, stable.
+test('starter 03 (sequenced sections) loaded and evaluated', async ({ page }) => {
   await setupAudioCapture(page);
   const noErrors = expectNoConsoleErrors(page);
 
@@ -361,7 +379,7 @@ test.skip('starter 03 (sequenced sections) loaded and evaluated', async ({ page 
 
   await expect(page).toHaveScreenshot('__screenshots__/starter-03-scenes-A-B.png', {
     fullPage: true,
-    mask: maskTargets(page),
+    mask: maskWithTimeline(page),
     ...SNAPSHOT_OPTS
   });
 
