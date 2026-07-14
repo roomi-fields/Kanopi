@@ -127,6 +127,22 @@ With Playwright MCP available, Claude navigates to `localhost:5173`, takes scree
 
 Forbidden answers: "c'est fait, recharge", "ça devrait marcher maintenant", "tu peux tester ?" without having verified or having explicitly flagged the inability to verify.
 
+## Hygiène de banc — guard anti-orphelins Playwright (RÈGLE DURE, Romain 2026-07-14)
+
+Les runs e2e/gate (`npm run verify`, Playwright) et le banc écran (Playwright MCP) laissent, quand ils
+sont **interrompus** (push tué, SIGTERM, MCP déconnecté), des **processus orphelins** — navigateurs
+Chromium du cache `ms-playwright`/`headless_shell` et webServers `vite --port 4321` — qui **s'accumulent
+et pourrissent les perfs de la machine** (constaté par Romain, 2026-07-14).
+
+**Obligation :** lancer le guard **`bash scripts/kill-orphan-benches.sh` AVANT et APRÈS chaque run e2e /
+gate / banc Playwright.** Il ne tue QUE les orphelins réels (`ppid == 1`, parent mort) : jamais un run
+vivant, jamais le serveur dev 5173, jamais un projet tiers (l'aperçu astro `viasophia` squatte aussi
+4321 — ne PAS le tuer). En fin de session, un dernier passage du guard.
+
+Rappels liés : ne pas tuer un `vite --port 4321` **pendant** un push (c'est le hook e2e VIVANT) ; tuer les
+serveurs dans un **appel shell séparé** (piège `pkill` auto-match). Ne pas confondre l'astro viasophia
+(tiers, sur 4321) avec un orphelin à moi.
+
 ## Skills (project scope)
 
 Located in `.claude/skills/`:
