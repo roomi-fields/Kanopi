@@ -27,13 +27,16 @@ const CATEGORY_ORDER = [
   'midi',
   'orchestrator',
   'code-voices',
-  'bp3',
-  'corpus-ab'
+  'strudel',
+  'p5',
+  'mercury',
+  'csound',
+  'bp3'
 ];
 
 // A handful of folder names are abbreviations that read badly title-cased
 // word-by-word ("Bp3", "Cv", "Midi") — spelled out for display only.
-const ACRONYMS: Record<string, string> = { bp3: 'BP3', cv: 'CV', midi: 'MIDI', ab: 'A/B' };
+const ACRONYMS: Record<string, string> = { bp3: 'BP3', cv: 'CV', midi: 'MIDI' };
 
 function prettifyCategory(id: string): string {
   return id
