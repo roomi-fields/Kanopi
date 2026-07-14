@@ -28,9 +28,11 @@ interface BpsDirective {
 }
 
 // Directive `@name` → how to read its referenced resource name + display label.
-// Dot canon (`.` names a component, `:` assigns a value): `@alphabet.<x>` /
-// `@tuning.<x>` / `@octaves.<x>` / `@sound.<x>` / `transport.<device>` put <x> in
-// `subkey`. A tolerated `:value` form (`@scale:<x>`) lands <x> in `runtime`.
+// Universal dot canon (`.` names a component, `:` assigns a value; bpscript
+// f35d069 rejects `:` on every component axis): `@alphabet.<x>` / `@tuning.<x>` /
+// `@scale.<x>` / `@octaves.<x>` / `@sound.<x>` / `transport.<device>` put <x> in
+// `subkey`. The `runtime` slot carries a `:value` (an output target like
+// `@alphabet.western:browser` → `browser`), never a resource name.
 // `@devices` (no subkey) means "the whole device library".
 const DIRECTIVE_TYPES: Record<string, { type: string; typeLabel: string }> = {
   alphabet: { type: 'alphabet', typeLabel: 'alphabet' },
@@ -56,8 +58,9 @@ const DIRECTIVE_TYPES: Record<string, { type: string; typeLabel: string }> = {
 const SELF_NAMED = new Set(['core', 'controls', 'filter']);
 
 function nameOfDirective(d: BpsDirective): string | null {
-  // Prefer subkey (`@alphabet.arabic`, `@tuning.sargam_22shruti`, `transport.midi`),
-  // fall back to runtime (the tolerated `:value` form, e.g. `@scale:bilaval`).
+  // Prefer subkey (`@alphabet.arabic`, `@tuning.sargam_22shruti`, `@scale.bilaval`,
+  // `transport.midi`); the runtime fallback is defensive — under the universal dot
+  // canon a resource name always lands in subkey, never the value slot.
   if (typeof d.subkey === 'string' && d.subkey.length > 0) return d.subkey;
   if (typeof d.runtime === 'string' && d.runtime.length > 0) return d.runtime;
   // A bare module directive (`@core`, `@controls`) names itself.

@@ -20,7 +20,7 @@ a -> do re mi`;
   it('reads scale, octaves and the audio-bank library table', () => {
     const code = `@core
 @library.strudel "dirt-samples"
-@scale:bilaval
+@scale.bilaval
 @octaves.western
 
 S -> a
