@@ -1,0 +1,65 @@
+// @name: Words
+// @tagline: preload()/loadFont() + textAlign/textFont/textSize — trois colonnes de texte
+// @description: Exemple canonique tiré de la galerie officielle p5.js (Imported Media). Test de
+// preload() (asset externe: 'assets/SourceSansPro-Regular.otf', ABSENT de ce dépôt → échec de
+// chargement attendu, INDÉPENDANT du runtime) — utile pour observer le comportement de l'adaptateur
+// p5 quand preload() échoue/reste pendant (setup()/draw() ne démarrent qu'après résolution de
+// preload() chez p5 ; p5 2.x a réécrit le chargement d'assets en async/await sous le capot, cf.
+// notes de rupture 1.x→2.x). À comparer côte à côte avec l'original:
+// https://p5js.org/examples/Imported-Media-Words/.
+// @language: p5
+// @outputs: visual
+// @level: intermediate
+// @tags: p5, ab-corpus, typography, preload
+// @source: https://github.com/processing/p5.js-example/blob/main/examples/03_Imported_Media/00_Words/code.js
+//
+// A/B — p5 — Words. Original: https://p5js.org/examples/Imported-Media-Words/.
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original.
+
+@core
+@tempo:120
+
+@actor v  eval.p5  transport.visual
+
+S -> v
+
+v -> `
+// Define global variables: font and fontSize.
+let font;
+let fontsize = 40;
+
+function preload() {
+  // Preload the font's file in the canvas's assets directory.
+  // loadFont() accepts .ttf or .otf files.
+  font = loadFont('assets/SourceSansPro-Regular.otf');
+}
+
+function setup() {
+  describe(
+    'Three columns of the words "ichi," "ni," "san," and "shi" on a white background. The first column is right aligned, the middle column is center aligned, and the left column is left aligned.'
+  );
+
+  createCanvas(710, 400);
+  background(250);
+
+  textFont(font);
+  textSize(fontsize);
+
+  textAlign(RIGHT, CENTER);
+  drawWords(width * 0.25);
+
+  textAlign(CENTER, CENTER);
+  drawWords(width * 0.5);
+
+  textAlign(LEFT, CENTER);
+  drawWords(width * 0.75);
+}
+
+function drawWords(x) {
+  fill(80);
+  text('ichi', x, 80);
+  text('ni', x, 150);
+  text('san', x, 220);
+  text('shi', x, 290);
+}
+`

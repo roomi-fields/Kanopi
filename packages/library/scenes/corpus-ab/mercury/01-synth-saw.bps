@@ -1,0 +1,24 @@
+// @name: Synth saw — basic
+// @tagline: single `new synth saw` voice — must sound with zero external assets
+// @description: The smallest Mercury patch that produces sound: one sawtooth synth voice on a
+//   repeating time grid, shaped with an envelope. Adapted from the "Evaluate a mercury code file"
+//   usage snippet in the mercury-engine README (synth line only, sample lines stripped — this
+//   file is the SYNTH half of that example, on purpose: it does not touch the sample set at all).
+// @language: mercury
+// @outputs: audio
+// @level: didactic
+// @tags: mercury, ab-corpus, synth, no-samples
+// @source: https://github.com/tmhglnd/mercury-engine/blob/main/README.md#resume-evaluate-and-silence
+//
+// A/B — mercury — Synth saw (basic). Original: https://github.com/tmhglnd/mercury-engine/blob/main/README.md
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original (mercury.timohoogland.com).
+// Test de robustesse : synthèse pure — DOIT sonner même si le jeu de samples n'est pas chargé.
+
+@core
+@tempo:120
+
+@actor v  eval.mercury  transport.audio
+
+S -> v
+
+v -> `new synth saw note(0 0) time(1/16) shape(1 80)`

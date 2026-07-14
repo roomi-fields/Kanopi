@@ -1,0 +1,23 @@
+// @name: Stack + Orbit + Delay
+// @tagline: stack() superposant deux voix, chacune sur son propre orbit, avec delay/delaytime indépendants
+// @description: Exemple canonique tiré de la section « Orbit » de la documentation officielle « Audio
+// effects » de Strudel. Démontre stack() (superposition) combiné à orbit() (bus d'effets séparés) —
+// chaque voix a son propre delay/delaytime sans interférer avec l'autre. À comparer côte à côte avec
+// l'original: https://strudel.cc/learn/effects/ (section Orbit).
+// @language: strudel
+// @outputs: audio
+// @level: intermediate
+// @tags: strudel, ab-corpus, stack, orbit, delay, samples
+// @source: https://strudel.cc/learn/effects/
+//
+// A/B — strudel — Stack + Orbit + Delay. Original: https://strudel.cc/learn/effects/.
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original.
+
+@core
+@tempo:120
+
+@actor v  eval.strudel  transport.audio
+
+S -> v
+
+v -> `stack(s("hh*6").delay(.5).delaytime(.25).orbit(1), s("~ sd ~ sd").delay(.5).delaytime(.125).orbit(2))`

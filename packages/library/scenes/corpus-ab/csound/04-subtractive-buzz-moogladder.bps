@@ -1,0 +1,53 @@
+// @name: Subtractive synthesis — buzz + moogladder
+// @tagline: harmonic buzz source through a Moog-style 4-pole lowpass, sweeping cutoff and resonance
+// @description: Exemple canonique tiré de la page manuel officielle de l'opcode `moogladder`. Une
+// source `buzz` (jeu de partiels harmoniques) filtrée par un moogladder dont la fréquence de coupure
+// balaie de façon exponentielle et dont la résonance monte vers l'auto-oscillation. Synthèse pure,
+// pas de fichier externe. À comparer côte à côte avec l'original:
+// https://csound.com/docs/manual/moogladder.html.
+// @language: csound
+// @outputs: audio
+// @level: intermediate
+// @tags: csound, ab-corpus, subtractive, filter
+// @source: https://csound.com/docs/manual/moogladder.html
+//
+// A/B — csound — Subtractive (buzz + moogladder). Original: https://csound.com/docs/manual/moogladder.html.
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original.
+// Le moteur DOIT booter sur ce backtick en entier (CSD complet).
+
+@core
+@tempo:120
+
+@actor v  eval.csound  transport.audio
+
+S -> v
+
+v -> `<CsoundSynthesizer>
+<CsOptions>
+-odac
+</CsOptions>
+<CsInstruments>
+
+sr = 44100
+ksmps = 32
+nchnls = 2
+0dbfs  = 1
+
+instr 1
+
+kfe  expseg 500, p3*0.9, 1800, p3*0.1, 3000
+asig buzz  1, 100, 20, 1
+kres line .1, p3, .99	;increase resonance
+afil moogladder asig, kfe, kres
+     outs afil, afil
+
+endin
+</CsInstruments>
+<CsScore>
+; f 0 3600 garde le moteur vivant 1 h — requis en live coding.
+f 0 3600
+f 1 0 4096 10 1
+
+i 1 0 10
+</CsScore>
+</CsoundSynthesizer>`

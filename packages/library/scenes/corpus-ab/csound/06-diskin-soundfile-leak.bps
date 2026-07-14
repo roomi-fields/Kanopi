@@ -1,0 +1,58 @@
+// @name: diskin2 soundfile read — filesystem leak test
+// @tagline: diskin2 "beats.wav" — reads a soundfile from disk, exactly as the canonical manual example does
+// @description: Exemple canonique tiré de la page manuel officielle de l'opcode `diskin2`. TEST DE
+// FUITE CIBLÉ : `diskin2` lit "beats.wav" depuis le système de fichiers virtuel WASI/Emscripten de
+// Csound (surface `CsoundObj.fs`, un memfs façon Node `fs`, cf. tutoriel officiel « Tutorial 4 -
+// FileSystem », kunstmusik.github.io/icsc2022-csound-web/tutorial4-filesystem/ : il faut appeler
+// `await csound.fs.writeFile(path, data)` avec les octets du fichier AVANT de démarrer csound). Notre
+// adaptateur (src/voices/csound.ts) ne wire PAS cette surface — le commentaire du type `CsoundInstance`
+// dit explicitement "Upstream ships a much richer API (channels, tables, fs, UGEN plugins) that v1
+// Kanopi doesn't wire". Aucun octet n'est jamais écrit dans le memfs : "beats.wav" n'existe pas.
+// Attendu : compileCSD peut réussir (le parse est valide), mais à l'exécution de l'instrument diskin2
+// échoue à ouvrir le fichier — message d'erreur remonté via le flux `instance.on('message')` (heuristique
+// "error" dans la ligne), pas de silence trompeur mais pas de son non plus. À comparer côte à côte avec
+// l'original (qui, lui, trouve beats.wav sur le disque local): https://csound.com/docs/manual/diskin2.html.
+// @language: csound
+// @outputs: audio
+// @level: advanced
+// @tags: csound, ab-corpus, diskin2, soundfile, filesystem, leak
+// @source: https://csound.com/docs/manual/diskin2.html
+//
+// A/B — csound — diskin2 soundfile leak test. Original: https://csound.com/docs/manual/diskin2.html.
+// Coller/évaluer la voix : attendu = erreur d'ouverture de fichier (pas de son), car rien n'a jamais
+// écrit "beats.wav" dans le memfs de l'engine — voir @description pour la source du trou.
+// Le moteur DOIT booter sur ce backtick en entier (CSD complet).
+
+@core
+@tempo:120
+
+@actor v  eval.csound  transport.audio
+
+S -> v
+
+v -> `<CsoundSynthesizer>
+<CsOptions>
+-odac
+</CsOptions>
+<CsInstruments>
+
+sr     = 44100
+ksmps  = 32
+nchnls = 2
+0dbfs  = 1
+
+instr 1
+
+ktrans linseg 1, 5, 2, 10, -2
+a1     diskin2 "beats.wav", ktrans, 0, 1, 0, 32
+       outs a1, a1
+
+endin
+
+</CsInstruments>
+<CsScore>
+; f 0 3600 garde le moteur vivant 1 h — requis en live coding.
+f 0 3600
+i 1 0 15
+</CsScore>
+</CsoundSynthesizer>`

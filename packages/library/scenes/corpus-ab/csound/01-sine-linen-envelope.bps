@@ -1,0 +1,59 @@
+// @name: Sine oscillator + linen envelope
+// @tagline: poscil shaped by a linen (line-segment) amplitude envelope — the canonical linen manual example
+// @description: Exemple canonique tiré de la page manuel officielle de l'opcode `linen`. Synthèse
+// pure (poscil sur une table sinus GEN10), pas de fichier externe. Cinq notes déclenchées avec des
+// couples attaque/relâche différents pour entendre l'effet du linen. À comparer côte à côte avec
+// l'original: https://csound.com/docs/manual/linen.html.
+// @language: csound
+// @outputs: audio
+// @level: didactic
+// @tags: csound, ab-corpus, envelope, sine, oscillator
+// @source: https://csound.com/docs/manual/linen.html
+//
+// A/B — csound — Sine + linen envelope. Original: https://csound.com/docs/manual/linen.html.
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original (csound --odac fichier.csd).
+// Le moteur DOIT booter sur ce backtick en entier (CSD complet) — voir contrat de l'adaptateur
+// (compileCSD exige <CsoundSynthesizer> avant tout compileOrc/readScore incrémental).
+
+@core
+@tempo:120
+
+@actor v  eval.csound  transport.audio
+
+S -> v
+
+v -> `<CsoundSynthesizer>
+<CsOptions>
+-odac
+</CsOptions>
+<CsInstruments>
+
+sr = 44100
+ksmps = 32
+nchnls = 2
+0dbfs  = 1
+
+instr 1
+; p4=amp
+; p5=freq
+; p6=attack time
+; p7=release time
+ares linen  p4, p6, p3, p7
+asig poscil ares, p5, 1
+     outs   asig, asig
+
+endin
+</CsInstruments>
+<CsScore>
+; f 0 3600 garde le moteur vivant 1 h — requis en live coding (cf. csound-intro.bps).
+f 0 3600
+f1   0    4096 10 1      ; sine wave
+
+;ins strt dur amp  freq attack release
+i1   0    1   .5   440   0.5    0.7
+i1   1.5  1   .2   440   0.9    0.1
+i1   3    1   .2   880   0.02   0.99
+i1   4.5  1   .2   880   0.7    0.01
+i1   6    3   .7   220   0.5    0.5
+</CsScore>
+</CsoundSynthesizer>`

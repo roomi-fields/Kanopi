@@ -1,0 +1,24 @@
+// @name: Synth euclidean rhythm
+// @tagline: `play(euclid(8 5))` + a sine-LFO'd pitch — no samples
+// @description: A synth voice gated by an euclidean rhythm generator (`euclid(pulses steps)` fed
+//   into `play()`), pitch modulated by `sine()`. Verbatim pattern from the official mercury-lang
+//   grammar test corpus (`test-grammar.txt`), which is the canonical reference for rhythmic
+//   pattern functions in the language. Still synth-only — no sample-set dependency.
+// @language: mercury
+// @outputs: audio
+// @level: intermediate
+// @tags: mercury, ab-corpus, synth, euclid, rhythm, no-samples
+// @source: https://github.com/tmhglnd/mercury-lang/blob/main/test/test-grammar.txt
+//
+// A/B — mercury — Synth euclidean rhythm. Original: https://github.com/tmhglnd/mercury-lang/blob/main/test/test-grammar.txt
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original (mercury.timohoogland.com).
+// Test de robustesse : rythmique euclidienne (`euclid`/`play`) — DOIT sonner sans samples.
+
+@core
+@tempo:120
+
+@actor v  eval.mercury  transport.audio
+
+S -> v
+
+v -> `new synth square note(sine(8 5.512 0 12)) play(euclid(8 5)) time(1/16)`

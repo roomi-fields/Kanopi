@@ -1,0 +1,23 @@
+// @name: First Sounds — Basic Rhythm
+// @tagline: mini-notation rythmique de base — bd/hh/sd/oh, échantillons de la banque par défaut
+// @description: Exemple canonique tiré du workshop officiel Strudel « First Sounds ». Un motif de
+// batterie en mini-notation pure, sans effet — le point de départ de tout tutoriel Strudel.
+// À comparer côte à côte avec l'original: https://strudel.cc/workshop/first-sounds/.
+// @language: strudel
+// @outputs: audio
+// @level: didactic
+// @tags: strudel, ab-corpus, mini-notation, samples
+// @source: https://strudel.cc/workshop/first-sounds/
+//
+// A/B — strudel — First Sounds (rhythm). Original: https://strudel.cc/workshop/first-sounds/.
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original.
+// Dépend de la banque d'échantillons par défaut (dirt-samples, chargée via @library) pour bd/hh/sd/oh.
+
+@core
+@tempo:120
+
+@actor v  eval.strudel  transport.audio
+
+S -> v
+
+v -> `sound("bd hh sd oh")`

@@ -1,0 +1,26 @@
+// @name: Xenharmonic tuning (hexany15) — targeted leak test
+// @tagline: i().tune("hexany15").freq() — accordage microtonal via @strudel/xen
+// @description: Exemple canonique tiré de la documentation officielle « Xenharmonic Functions » de
+// Strudel. TEST DE FUITE CIBLÉ : .tune() et le mapping d'échelles microtonales (hexany15) sont fournis
+// par le module @strudel/xen, qui N'EST PAS embarqué chez nous — absent des dépendances de
+// @strudel/web (core, webaudio, transpiler, mini, tonal uniquement) et absent de node_modules.
+// Attendu : `.tune is not a function` (TypeError) ou équivalent, capturé par l'IIFE du slot composite
+// et remonté comme erreur de slot — pas de crash du composite entier. Patch 100% synthé (freq()),
+// aucun échantillon réseau. À comparer côte à côte avec l'original: https://strudel.cc/learn/xen/.
+// @language: strudel
+// @outputs: audio
+// @level: advanced
+// @tags: strudel, ab-corpus, xen, microtonal, missing-module
+// @source: https://strudel.cc/learn/xen/
+//
+// A/B — strudel — Xenharmonic tuning leak test. Original: https://strudel.cc/learn/xen/.
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original (où hexany15 s'entend, microtonal).
+
+@core
+@tempo:120
+
+@actor v  eval.strudel  transport.audio
+
+S -> v
+
+v -> `i("0 1 2 3 4 5").tune("hexany15").mul("220").freq()`

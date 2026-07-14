@@ -1,0 +1,29 @@
+// @name: Sample drum pattern — polyrhythm + degrade/delay (leak test)
+// @tagline: `timediv()` polyrhythm over a randomized drum sample list + fx chain — sample-set leak test
+// @description: Verbatim from the official mercury-engine `examples/basic/index.html` demo patch
+//   (the bundled getting-started example shipped in the npm package itself). `choose()` picks a
+//   random drum name each step from `hat_808`/`kick_808`/`snare_808` (all default sample-set
+//   entries, confirmed present in mercury-engine's embedded `samples.json` map), `timediv([1 1 1
+//   2])` staggers the polyrhythm, and `fx(degrade …)` / `fx(delay …)` chain two Tone.js effects
+//   after it. Heaviest leak test of the corpus: 3 distinct remote .wav fetches must all have
+//   landed for the pattern to sound as designed; a partial load reads as a broken/missing beat,
+//   not silence — harder to notice than file 05's silence.
+// @language: mercury
+// @outputs: audio
+// @level: advanced
+// @tags: mercury, ab-corpus, sample, leak-test, polyrhythm, fx, sample-set
+// @source: https://github.com/tmhglnd/mercury-engine/blob/main/examples/basic/index.html
+//
+// A/B — mercury — Sample drum pattern (polyrhythm + fx, leak test). Original: https://github.com/tmhglnd/mercury-engine/blob/main/examples/basic/index.html
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original (mercury.timohoogland.com).
+// Test de fuite : 3 samples distincts du jeu par défaut + polyrythme (timediv) — dégradé si chargement partiel.
+
+@core
+@tempo:110
+
+@actor v  eval.mercury  transport.audio
+
+S -> v
+
+v -> `list drums choose(17 [hat_808 kick_808 snare_808])
+new sample drums time(1/8) gain(0.7) fx(degrade 0.7) fx(delay 3/16 5/16 0.9) timediv([1 1 1 2])`

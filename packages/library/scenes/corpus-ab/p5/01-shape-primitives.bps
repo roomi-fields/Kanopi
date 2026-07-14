@@ -1,0 +1,57 @@
+// @name: Shape Primitives
+// @tagline: formes 2D de base — square/rect/ellipse/circle/arc/line/triangle/quad
+// @description: Exemple canonique tiré de la galerie officielle p5.js (Shapes And Color). Dessine
+// un jeu complet de primitives 2D en une seule passe setup() (pas de draw() — image statique).
+// À comparer côte à côte avec l'original: https://p5js.org/examples/Shapes-And-Color-Shape-Primitives/.
+// @language: p5
+// @outputs: visual
+// @level: didactic
+// @tags: p5, ab-corpus, shapes-2d
+// @source: https://github.com/processing/p5.js-example/blob/main/examples/01_Shapes_And_Color/00_Shape_Primitives/code.js
+//
+// A/B — p5 — Shape Primitives. Original: https://p5js.org/examples/Shapes-And-Color-Shape-Primitives/.
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original.
+
+@core
+@tempo:120
+
+@actor v  eval.p5  transport.visual
+
+S -> v
+
+v -> `
+function setup() {
+  // Create screen reader accessible description
+  textOutput();
+
+  createCanvas(720, 400);
+
+  // Use degrees as units for angles
+  // The arc() function uses angles
+  angleMode(DEGREES);
+
+  // Draw a light gray background
+  background(220);
+
+  // Draw square
+  // x, y, size
+  square(20, 20, 100);
+
+  // Draw rectangle on top of square
+  rect(100, 40, 200, 100);
+
+  // Draw eye shape with ellipse, circle, and arc
+  ellipse(540, 100, 300, 100);
+  circle(560, 100, 100);
+  arc(540, 100, 300, 100, 180, 360, CHORD);
+
+  // Draw line
+  line(20, 200, 200, 350);
+
+  // Draw triangle
+  triangle(250, 350, 350, 200, 450, 350);
+
+  // Draw quadrilateral
+  quad(500, 250, 550, 200, 700, 300, 650, 350);
+}
+`

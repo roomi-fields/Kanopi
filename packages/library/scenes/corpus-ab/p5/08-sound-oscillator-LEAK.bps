@@ -1,0 +1,95 @@
+// @name: Oscillator Waveform (p5.sound) — TEST DE FUITE
+// @tagline: new p5.SinOsc()/new p5.FFT() — classes p5.sound, ABSENTES du bundle coeur importé ici
+// @description: Exemple canonique de la galerie officielle p5.sound (processing/p5.js-sound), utilisant
+// les classes p5.SinOsc/p5.Oscillator et p5.FFT. TEST DE FUITE CIBLÉ : l'adaptateur `src/voices/p5.ts`
+// importe UNIQUEMENT le coeur `p5` (default export de npm 'p5') — confirmé par lecture du bundle
+// (dist/app.js n'enregistre QUE shape/accessibility/color/data/dom/events/image/io/math/utilities/
+// webgl/type/strands ; aucune trace de p5.sound/Oscillator/SoundFile). p5.sound est un paquet
+// distinct non installé/importé ici. ATTENDU : échec à `new p5.SinOsc(freq)` — probablement
+// "p5.SinOsc is not a constructor" (ou équivalent), levé DANS le setup() utilisateur, donc catché
+// par le try/catch de evaluate() de l'adaptateur (log runtime:'p5', level:'error'). Les createSlider/
+// createP/createButton (p5.dom) fonctionnent normalement — dom est bundlé au coeur en p5 2.x, donc
+// SEULE la ligne p5.sound doit échouer, isolant précisément la fuite. À comparer côte à côte avec
+// l'original: https://github.com/processing/p5.js-sound/tree/main/examples/oscillatorWaveform.
+// @language: p5
+// @outputs: visual
+// @level: advanced
+// @tags: p5, ab-corpus, sound, leak-test, p5-sound-missing
+// @source: https://github.com/processing/p5.js-sound/blob/main/examples/oscillatorWaveform/sketch.js
+//
+// A/B — p5 — Oscillator Waveform (p5.sound). Original: https://github.com/processing/p5.js-sound/tree/main/examples/oscillatorWaveform.
+// TEST DE FUITE : coller/évaluer la voix — attendu: erreur `p5.SinOsc is not a constructor`
+// (ou équivalent) car p5.sound n'est pas embarqué dans cette voix de code.
+
+@core
+@tempo:120
+
+@actor v  eval.p5  transport.visual
+
+S -> v
+
+v -> `
+let freqSlider, freqLabel, ampLabel, ampSlider, button;
+
+let osc;
+let freq = 220;
+let amp = 0.5;
+let fft;
+
+let oscOn = false;
+
+function setup() {
+  createCanvas(800, 400);
+  noFill();
+
+  freqLabel = createP('Frequency: ');
+  freqSlider = createSlider(1, 700, freq);
+
+  ampLabel = createP('Amplitude: ' + amp);
+  ampSlider = createSlider(0.0, 100.0, amp * 100);
+
+  button = createButton('start');
+  button.mousePressed(toggleOsc);
+
+  // POINT DE FUITE ATTENDU : p5.SinOsc n'existe pas sans le paquet p5.sound.
+  osc = new p5.SinOsc(freq);
+  osc.amp(amp);
+
+  fft = new p5.FFT();
+}
+
+function draw() {
+  background(30);
+
+  amp = ampSlider.value() / 100;
+  osc.amp(amp);
+  ampLabel.html('Amplitude: ' + amp + '/ 1.0');
+
+  freq = freqSlider.value();
+  osc.freq(freq);
+  freqLabel.html('Frequency: ' + freq + ' Hz');
+
+  let waveform = fft.waveform();
+
+  stroke(255);
+  strokeWeight(10);
+  beginShape();
+  for (let i = 0; i < waveform.length; i++) {
+    let x = map(i, 0, waveform.length, 0, width);
+    let y = map(waveform[i], -1, 1, -height / 2, height / 2);
+    vertex(x, y + height / 2);
+  }
+  endShape();
+}
+
+function toggleOsc() {
+  if (oscOn) {
+    osc.stop();
+    button.html('start');
+  } else {
+    osc.start();
+    button.html('stop');
+  }
+  oscOn = !oscOn;
+}
+`

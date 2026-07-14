@@ -1,0 +1,70 @@
+// @name: Animation With Events
+// @tagline: mouseX/mouseY-adjacent — mousePressed toggle loop()/noLoop(), keyPressed déclenche redraw()
+// @description: Exemple canonique tiré de la galerie officielle p5.js (Animation And Variables).
+// Boucle draw() continue par défaut chez nous (adaptateur en loopsNatively) — noLoop()/loop()
+// pilotés par l'utilisateur se superposent au pause()/resume() du transport Kronos (qui appellent
+// aussi noLoop()/loop() en interne : à surveiller comme collision d'état).
+// À comparer côte à côte avec l'original: https://p5js.org/examples/Animation-And-Variables-Animation-With-Events/.
+// @language: p5
+// @outputs: visual
+// @level: intermediate
+// @tags: p5, ab-corpus, interaction, mouse-events
+// @source: https://github.com/processing/p5.js-example/blob/main/examples/02_Animation_And_Variables/01_Animation_With_Events/code.js
+//
+// A/B — p5 — Animation With Events. Original: https://p5js.org/examples/Animation-And-Variables-Animation-With-Events/.
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original.
+
+@core
+@tempo:120
+
+@actor v  eval.p5  transport.visual
+
+S -> v
+
+v -> `
+// Declare variable for the horizontal position of the circle
+let x = 25;
+
+function setup() {
+  createCanvas(720, 400);
+
+  // Set the color mode to hue-saturation-brightness (HSB)
+  colorMode(HSB);
+
+  textSize(20);
+
+  // No animation to start
+  noLoop();
+}
+
+function draw() {
+  background(0);
+
+  // Draw a circle, with hue determined by frameCount
+  fill(x / 3, 90, 90);
+  circle(x, height / 2, 50);
+
+  x += 5;
+
+  // Reset the circle position after it moves off the right side
+  if (x > width + 25) {
+    x = -25;
+  }
+
+  describe('circle moving to the right');
+}
+
+function mousePressed() {
+  // Start/stop the animation loop
+  if (isLooping()) {
+    noLoop();
+  } else {
+    loop();
+  }
+}
+
+function keyPressed() {
+  // Draw one frame
+  redraw();
+}
+`

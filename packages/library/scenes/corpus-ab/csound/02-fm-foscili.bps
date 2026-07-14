@@ -1,0 +1,58 @@
+// @name: FM synthesis — foscili
+// @tagline: frequency modulation via foscili (interpolating FM oscillator) — the canonical foscili manual example
+// @description: Exemple canonique tiré de la page manuel officielle de l'opcode `foscili`. Quatre
+// notes qui balaient l'indice de modulation (kndx en rampe linéaire) pour entendre l'élargissement
+// des bandes latérales FM, du "vibrato" au timbre "gong". Synthèse pure, pas de fichier externe.
+// À comparer côte à côte avec l'original: https://csound.com/docs/manual/foscili.html.
+// @language: csound
+// @outputs: audio
+// @level: intermediate
+// @tags: csound, ab-corpus, fm, oscillator
+// @source: https://csound.com/docs/manual/foscili.html
+//
+// A/B — csound — FM (foscili). Original: https://csound.com/docs/manual/foscili.html.
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original.
+// Le moteur DOIT booter sur ce backtick en entier (CSD complet).
+
+@core
+@tempo:120
+
+@actor v  eval.csound  transport.audio
+
+S -> v
+
+v -> `<CsoundSynthesizer>
+<CsOptions>
+-odac
+</CsOptions>
+<CsInstruments>
+
+sr = 44100
+ksmps = 32
+nchnls = 2
+0dbfs  = 1
+
+instr 1
+
+kcps = 440
+kcar = 1
+kmod = p4
+kndx line 0, p3, 20	;intensivy sidebands
+
+asig foscili .5, kcps, kcar, kmod, kndx, 1
+     outs asig, asig
+
+endin
+</CsInstruments>
+<CsScore>
+; f 0 3600 garde le moteur vivant 1 h — requis en live coding.
+f 0 3600
+; sine
+f 1 0 16384 10 1
+
+i 1 0  9 .01	;vibrato
+i 1 10 .  1
+i 1 20 . 1.414	;gong-ish
+i 1 30 5 2.05	;with "beat"
+</CsScore>
+</CsoundSynthesizer>`

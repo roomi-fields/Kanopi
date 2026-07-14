@@ -1,0 +1,146 @@
+// @name: Connected Particles
+// @tagline: classes Path/Particle, tableau d'objets, mouseDragged, p5.Vector.sub
+// @description: Exemple canonique tiré de la galerie officielle p5.js (Classes And Objects). Deux
+// classes JS (Path, Particle) + mouseDragged() qui pousse dans un tableau. Contient
+// 'createVector()' SANS argument (ligne 'previousParticlePosition = createVector();') — l'exemple
+// OFFICIEL actuel utilise encore cette forme alors que la doc de rupture p5 2.x déconseille
+// explicitement createVector() vide (« always provide parameters ») : rupture potentielle
+// documentée mais pas encore appliquée dans cet exemple officiel — bon test de compat 1.x/2.x réel.
+// À comparer côte à côte avec l'original: https://p5js.org/examples/Classes-And-Objects-Connected-Particles/.
+// @language: p5
+// @outputs: visual
+// @level: advanced
+// @tags: p5, ab-corpus, particles, classes, interaction
+// @source: https://github.com/processing/p5.js-example/blob/main/examples/13_Classes_And_Objects/02_Connected_Particles/code.js
+//
+// A/B — p5 — Connected Particles. Original: https://p5js.org/examples/Classes-And-Objects-Connected-Particles/.
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original.
+
+@core
+@tempo:120
+
+@actor v  eval.p5  transport.visual
+
+S -> v
+
+v -> `
+// Array of path objects, each containing an array of particles
+let paths = [];
+
+let framesBetweenParticles = 5;
+let nextParticleFrame = 0;
+
+let previousParticlePosition;
+
+let particleFadeFrames = 300;
+
+function setup() {
+  createCanvas(720, 400);
+  colorMode(HSB);
+
+  // NB: createVector() sans argument — forme désormais déconseillée en p5
+  // 2.x (voir @description) mais encore utilisée dans l'exemple officiel.
+  previousParticlePosition = createVector();
+  describe(
+    'When the cursor drags along the black background, it draws a pattern of multicolored circles outlined in white and connected by white lines. The circles and lines fade out over time.'
+  );
+}
+
+function draw() {
+  background(0);
+
+  for (let path of paths) {
+    path.update();
+    path.display();
+  }
+}
+
+function mousePressed() {
+  nextParticleFrame = frameCount;
+  paths.push(new Path());
+  previousParticlePosition.set(mouseX, mouseY);
+  createParticle();
+}
+
+function mouseDragged() {
+  if (frameCount >= nextParticleFrame) {
+    createParticle();
+  }
+}
+
+function createParticle() {
+  let mousePosition = createVector(mouseX, mouseY);
+  let velocity = p5.Vector.sub(mousePosition, previousParticlePosition);
+  velocity.mult(0.05);
+
+  let lastPath = paths[paths.length - 1];
+  lastPath.addParticle(mousePosition, velocity);
+
+  nextParticleFrame = frameCount + framesBetweenParticles;
+  previousParticlePosition.set(mouseX, mouseY);
+}
+
+class Path {
+  constructor() {
+    this.particles = [];
+  }
+
+  addParticle(position, velocity) {
+    let particleHue = (this.particles.length * 30) % 360;
+    this.particles.push(new Particle(position, velocity, particleHue));
+  }
+
+  update() {
+    for (let particle of this.particles) {
+      particle.update();
+    }
+  }
+
+  connectParticles(particleA, particleB) {
+    let opacity = particleA.framesRemaining / particleFadeFrames;
+    stroke(255, opacity);
+    line(
+      particleA.position.x,
+      particleA.position.y,
+      particleB.position.x,
+      particleB.position.y
+    );
+  }
+
+  display() {
+    for (let i = this.particles.length - 1; i >= 0; i -= 1) {
+      if (this.particles[i].framesRemaining <= 0) {
+        this.particles.splice(i, 1);
+      } else {
+        this.particles[i].display();
+        if (i < this.particles.length - 1) {
+          this.connectParticles(this.particles[i], this.particles[i + 1]);
+        }
+      }
+    }
+  }
+}
+
+class Particle {
+  constructor(position, velocity, hue) {
+    this.position = position.copy();
+    this.velocity = velocity.copy();
+    this.hue = hue;
+    this.drag = 0.95;
+    this.framesRemaining = particleFadeFrames;
+  }
+
+  update() {
+    this.position.add(this.velocity);
+    this.velocity.mult(this.drag);
+    this.framesRemaining = this.framesRemaining - 1;
+  }
+
+  display() {
+    let opacity = this.framesRemaining / particleFadeFrames;
+    noStroke();
+    fill(this.hue, 80, 90, opacity);
+    circle(this.position.x, this.position.y, 24);
+  }
+}
+`

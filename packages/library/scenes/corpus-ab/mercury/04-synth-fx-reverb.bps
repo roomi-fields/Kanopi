@@ -1,0 +1,25 @@
+// @name: Synth with effects — reverb + shape
+// @tagline: two detuned synths + `add_fx(reverb)` + envelope `shape()` — no samples
+// @description: Two synth voices (sine + saw) with an amplitude envelope (`env`/its `shape` alias)
+//   and a reverb effect chained via `add_fx(reverb amount time)`. Verbatim from the official
+//   mercury-lang test corpus. Effects in Mercury are DSP nodes computed locally by the bundled
+//   Tone.js graph — this file checks that effects sound correctly with zero external assets,
+//   isolating "effects work" from "the sample set loaded".
+// @language: mercury
+// @outputs: audio
+// @level: intermediate
+// @tags: mercury, ab-corpus, synth, fx, reverb, shape, no-samples
+// @source: https://github.com/tmhglnd/mercury-lang/blob/main/test/test-synth.txt
+//
+// A/B — mercury — Synth + fx (reverb, shape). Original: https://github.com/tmhglnd/mercury-lang/blob/main/test/test-synth.txt
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original (mercury.timohoogland.com).
+// Test de robustesse : chaîne d'effets (add_fx reverb) + enveloppe (shape) — DOIT sonner sans samples.
+
+@core
+@tempo:120
+
+@actor v  eval.mercury  transport.audio
+
+S -> v
+
+v -> `new synth [ sine saw ] time(1/4 1/8) note(7 1) shape(1 300) beat(0.8) add_fx(reverb 0.9 11)`

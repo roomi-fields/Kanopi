@@ -1,0 +1,26 @@
+// @name: Synth melody — scale + note()
+// @tagline: `set scale` + `note()` scale-degree melody — no samples
+// @description: A melodic synth voice using Mercury's scale system: `set scale` picks the mode,
+//   `note()` addresses scale degrees rather than raw pitches. Adapted from the official Mercury
+//   language reference/test corpus (mercury-lang), which pairs `set scale minor_pentatonic d`
+//   with `new synth saw note(...)` patterns. Still zero dependency on the sample set.
+// @language: mercury
+// @outputs: audio
+// @level: didactic
+// @tags: mercury, ab-corpus, synth, melody, scale, no-samples
+// @source: https://github.com/tmhglnd/mercury-lang/blob/main/test/test-synth.txt
+//
+// A/B — mercury — Synth melody (scale + note()). Original: https://github.com/tmhglnd/mercury-lang/blob/main/test/test-synth.txt
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original (mercury.timohoogland.com).
+// Test de robustesse : synthèse pure + résolution de gamme (`set scale`) — DOIT sonner sans samples.
+
+@core
+@tempo:120
+
+@actor v  eval.mercury  transport.audio
+
+S -> v
+
+v -> `set scale minor_pentatonic d
+
+new synth saw note(0 3 5 7) time(1/8) shape(1 200)`

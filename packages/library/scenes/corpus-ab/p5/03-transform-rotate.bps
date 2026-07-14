@@ -1,0 +1,66 @@
+// @name: Rotate
+// @tagline: translate()/rotate()/push()/pop() — segments statiques + un segment animé par frameCount
+// @description: Exemple canonique tiré de la galerie officielle p5.js (Transformation). Combine
+// translate/rotate/push/pop, et anime une ligne avec rotate(frameCount) — bon test de la continuité
+// de frameCount à travers les cycles d'évaluation (dédup 50ms de l'adaptateur, remove()/new instance
+// à chaque re-eval → frameCount repart de 0 à chaque évaluation, contrairement à l'original hébergé
+// en continu). À comparer côte à côte avec l'original: https://p5js.org/examples/Transformation-Rotate/.
+// @language: p5
+// @outputs: visual
+// @level: intermediate
+// @tags: p5, ab-corpus, transform
+// @source: https://github.com/processing/p5.js-example/blob/main/examples/05_Transformation/01_Rotate/code.js
+//
+// A/B — p5 — Rotate. Original: https://p5js.org/examples/Transformation-Rotate/.
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original.
+
+@core
+@tempo:120
+
+@actor v  eval.p5  transport.visual
+
+S -> v
+
+v -> `
+function setup() {
+  createCanvas(720, 400);
+
+  angleMode(DEGREES);
+
+  fill(255);
+  textSize(20);
+  textAlign(CENTER, CENTER);
+
+  colorMode(HSB);
+
+  describe('line segments rotated around center of canvas');
+}
+
+function draw() {
+  background(0);
+
+  // Loop through angles 0, 30, 60, 90 degrees
+  for (let angle = 0; angle <= 90; angle += 30) {
+    push();
+
+    translate(width / 2, height / 2);
+    rotate(angle);
+
+    stroke(angle + 100, 100, 100);
+    strokeWeight(5);
+    line(0, 0, 150, 0);
+
+    strokeWeight(1);
+    text(angle, 170, 0);
+
+    pop();
+  }
+
+  // Draw the animated line
+  translate(width / 2, height / 2);
+  rotate(frameCount);
+  stroke(255);
+  strokeWeight(5);
+  line(0, 0, 150, 0);
+}
+`

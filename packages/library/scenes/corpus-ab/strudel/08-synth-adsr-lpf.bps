@@ -1,0 +1,24 @@
+// @name: Synth ADSR + Low-pass Filter
+// @tagline: note().sound("sawtooth").lpf().attack/decay/sustain/release — 100% synthé, zéro échantillon
+// @description: Exemple canonique tiré du workshop officiel Strudel « First Effects ». Patch purement
+// synthétisé (oscillateur sawtooth interne à superdough) avec filtre passe-bas et enveloppe ADSR
+// complète — ne dépend d'AUCUNE banque d'échantillons réseau, donc insensible à la fuite de mémoire
+// documentée sur samples() (pas de déchargement possible). Bon témoin « chemin sain » du corpus.
+// À comparer côte à côte avec l'original: https://strudel.cc/workshop/first-effects/.
+// @language: strudel
+// @outputs: audio
+// @level: didactic
+// @tags: strudel, ab-corpus, synth, adsr, lpf, no-samples
+// @source: https://strudel.cc/workshop/first-effects/
+//
+// A/B — strudel — Synth ADSR + LPF. Original: https://strudel.cc/workshop/first-effects/.
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original.
+
+@core
+@tempo:120
+
+@actor v  eval.strudel  transport.audio
+
+S -> v
+
+v -> `note("c3 bb2 f3 eb3").sound("sawtooth").lpf(600).attack(.1).decay(.1).sustain(.25).release(.2)`

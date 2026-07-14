@@ -1,0 +1,24 @@
+// @name: Euclidean Rhythm — bd(3,8)
+// @tagline: rythme euclidien bd(3,8) superposé à hh cp — notation (beats,segments)
+// @description: Exemple canonique tiré de la documentation officielle « Mini Notation » de Strudel.
+// Démontre la notation parenthétique euclidienne bd(3,8) combinée à une deuxième voix mini-notation
+// sur la même ligne (virgule = superposition). À comparer côte à côte avec l'original:
+// https://strudel.cc/learn/mini-notation/.
+// @language: strudel
+// @outputs: audio
+// @level: didactic
+// @tags: strudel, ab-corpus, euclidean, mini-notation, samples
+// @source: https://strudel.cc/learn/mini-notation/
+//
+// A/B — strudel — Euclidean Rhythm. Original: https://strudel.cc/learn/mini-notation/.
+// Coller/évaluer la voix, puis comparer au rendu de l'outil original.
+// Dépend de la banque d'échantillons par défaut (dirt-samples) pour bd/hh/cp.
+
+@core
+@tempo:120
+
+@actor v  eval.strudel  transport.audio
+
+S -> v
+
+v -> `s("bd(3,8), hh cp")`
