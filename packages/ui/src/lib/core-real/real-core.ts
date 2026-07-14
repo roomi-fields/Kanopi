@@ -181,14 +181,12 @@ class RealCore implements CoreApi {
   }
 
   private async handleSceneActivate(scene: Scene) {
-    // Activating a scene arms its actors AND starts the transport if it was
-    // stopped — the intent is "play this scene," not just "arm these LEDs."
-    // Start the clock first so the actor toggles that follow can eval through
-    // handleActorToggle (which only evaluates when the clock is running). This
-    // site does NOT rely on any clock subscriber: a file-scene evals its child
-    // `.bps` explicitly below (the eval builds the Kronos handle = transport running), and
-    // an actor-set scene evals via the actor toggles it triggers (each orchestrated toggle
-    // self-starts from stopped). No host clock to flip — Kronos starts via the eval.
+    // Activating a scene BY ACTOR SET only ARMS its actors (LEDs) — it does NOT
+    // start the transport (Romain 2026-07-14: arm ≠ play, beta issue 5 self-start
+    // removed; see `handleActorToggle`). A file-scene (below) is a DIFFERENT,
+    // unaffected gesture: it explicitly evaluates the referenced child `.bps`,
+    // which DOES build/play a Kronos handle — loading a file-scene table entry
+    // has always been an explicit "play this file" action.
 
     // `.bps` file-scene (`@scene calm "calm.bps"`): the scene references a child
     // `.bps` program instead of arming in-session actors. Load its source and
@@ -277,21 +275,18 @@ class RealCore implements CoreApi {
   }
 
   private async handleActorToggle(a: Actor, willBeActive: boolean) {
-    // Orchestrator `.bps` actor: arm/disarm its voice LIVE on the running
-    // orchestrator. Disarm silences this voice (code stopped, notes gated) while
-    // the others keep playing; arm restores it. If the transport was stopped,
-    // start it so the orchestrator (and this voice) sounds.
+    // Orchestrator `.bps` actor: arm/disarm sets ONLY the "ready" intent (the LED
+    // + the voice's mute flag) for this actor — it NEVER starts the transport
+    // (Romain 2026-07-14: arm ≠ play; the old "arm = play" self-start, beta issue
+    // 5, is retired). `setOrchestratedActorMuted` is safe to call regardless of
+    // transport state: Kronos gates emission on its OWN running state, so
+    // unmuting an actor while stopped routes no sound (confirmed
+    // orchestrator-actors.test.ts "unmute on a STOPPED transport ... does not
+    // fire sound"). The Play button (`playback.play()` → `replayActiveScene` /
+    // `replayArmed`) is the sole gesture that starts Kronos, and re-projects this
+    // same arm/mute intent onto the freshly-(re)built scene.
     if (isOrchestratedActor(a.name)) {
       if (willBeActive) {
-        if (kronosCursor.state !== 'running') {
-          // Play-from-stopped on an orchestrated voice: eval the active scene's armed blocks
-          // EXPLICITLY. That single scene eval derives + builds the Kronos handle (= transport
-          // running) and sounds the orchestrator including this just-armed voice; no per-voice
-          // eval here, no host clock to flip. The `openBlocks` store is imported lazily to
-          // avoid a module cycle (store → core → real-core).
-          void import('../../stores/blocks.svelte').then((m) => m.openBlocks.replayArmed());
-          return;
-        }
         // An actor armed while mixer-muted stays silent — the mixer layer wins (KAN-UX3).
         if (!mixerMutedFor(a.name)) setOrchestratedActorMuted(a.name, false);
         this.log({ runtime: a.runtime, level: 'info', msg: `arm [${a.name}]` });

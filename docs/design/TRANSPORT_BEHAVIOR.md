@@ -17,6 +17,15 @@
 - **B5** **Re-random** : le toggle **en cours de lecture** re-tire au tour suivant ; off = rejoue. ✅
 - **B6** **Tempo warp live** : changer le BPM en lecture warpe son+curseur, **sans** re-dériver, **sans saut**. ✅
 
+## Armement (panneau Actors)
+- **B17** Armer/désarmer une piste ne règle **que l'état « prêt » (LED)** — **ne démarre
+  jamais le transport**, qu'il soit à l'arrêt ou en cours. Play (`replayActiveScene` /
+  `replayArmed`) est le **SEUL** geste qui sonne l'ensemble ARMÉ ; un acteur désarmé
+  AVANT Play reste muet APRÈS Play (couche d'armement rejouée déterministe). (Romain
+  2026-07-14 : l'ancien « arm = play » — beta issue 5 — était un bug, pas une
+  fonctionnalité ; retiré de `handleActorToggle`, `real-core.ts`.) ✅ test Node
+  (`arm-no-autostart.test.ts`), 👁 vérifié écran (`seek-hydra.bps`, acteur `viz`).
+
 ## Pause
 - **B7** ⚠️ **Pause N'EST PAS nette : elle s'applique à la FIN du temps en cours.** On
   appuie sur Pause au milieu du temps B → le temps B **finit de jouer**, puis ça gèle au
@@ -46,7 +55,7 @@
 - **B16** **Stop** : remet à zéro (lastBeat=-1, curseur effacé, audio coupé), depuis tout mode. ✅
 
 ## Règle d'or
-Avant de committer un changement transport : **relire B1–B16** et confirmer qu'aucun n'a
+Avant de committer un changement transport : **relire B1–B17** et confirmer qu'aucun n'a
 régressé (les ✅ par les tests Node ; les 👁 par un smoke court si touché). Ajouter un test
 pour tout comportement 👁-seul qui se fait casser une 2ᵉ fois.
 
