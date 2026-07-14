@@ -17,9 +17,9 @@ describe('interp tag → Runtime resolves via the registry', () => {
     }
   });
 
-  it('the canonical 7 code voices are all present', () => {
+  it('the canonical 6 code voices are all present', () => {
     const ids = codeVoiceAdapters.map((a) => a.id).sort();
-    expect(ids).toEqual(['csound', 'hydra', 'js', 'mercury', 'p5', 'strudel', 'tidal'].sort());
+    expect(ids).toEqual(['csound', 'hydra', 'js', 'mercury', 'p5', 'strudel'].sort());
   });
 
   it('the registry runtime list contains every code voice id', () => {

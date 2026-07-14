@@ -267,7 +267,7 @@ let currentCodeVoicesGain: AudioGainControl | null = null;
 /** Même contrat gain que `audioGainControl()`, porté par l'instance runtime-codevoices VIVANTE
  *  (`opts.codeVoicesRuntime`, bpx-adapter.ts — construite par createCodeVoicesRuntime, transmise
  *  telle quelle). `null` quand la scène n'a aucun backtick (pas de voix de code). Diffusé en
- *  interne à TOUS les adaptateurs de voix (paquet, [73]) ; seuls strudel/tidal/csound réagissent
+ *  interne à TOUS les adaptateurs de voix (paquet, [73]) ; seuls strudel/csound réagissent
  *  réellement (mercury/hydra/p5/js n'implémentent pas la méthode → no-op silencieux côté paquet). */
 export function codeVoicesGainControl(): AudioGainControl | null {
   return currentCodeVoicesGain;

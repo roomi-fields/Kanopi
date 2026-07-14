@@ -1,5 +1,5 @@
 // CHANTIER voix-code-transport (S2, [523]) — VOIE B (KR-13) : le transport Kronos des voix
-// de code AUTONOMES (.strudel/.hydra/.tidal/.p5/.js — fichiers évalués seuls, sans scène BPx).
+// de code AUTONOMES (.strudel/.hydra/.p5/.js — fichiers évalués seuls, sans scène BPx).
 //
 // PLUS AUCUNE VOIX HORS TRANSPORT : ce module tient UN transport Kronos partagé (« la tête de
 // lecture des voix autonomes »), créé à la première éval, sur lequel l'adaptateur uniforme de

@@ -9,7 +9,7 @@
  * real source (see `vite.config.ts` resolve.alias). Only the exports Kanopi
  * consumes are declared.
  *
- * runtime-codevoices OWNS the code voices (strudel/tidal/hydra/p5/mercury/csound/js)
+ * runtime-codevoices OWNS the code voices (strudel/hydra/p5/mercury/csound/js)
  * as `RuntimeAdapter`s pulled by Kronos at the backtick token onset. The natives
  * bp3/bpscript stay in Kanopi (BPx path). The package's `RuntimeAdapter.id` is a
  * strict subset of Kanopi's `Runtime`, so its adapters stay assignable to the
@@ -42,7 +42,7 @@ export interface CodeVoicesRuntime {
   setActorMuted(actor: string, muted: boolean): void;
   /** MIXAGE (hote-runtimes-sortie.md:51, amendement 2026-07-09, arbitrage [73]) — même contrat
    *  gain 0..1 linéaire que runtime-audio/midi/osc, diffusé en interne à TOUS les adaptateurs de
-   *  voix ; seuls strudel/tidal/csound l'implémentent réellement sur leur adaptateur individuel. */
+   *  voix ; seuls strudel/csound l'implémentent réellement sur leur adaptateur individuel. */
   setActorGain(actor: string, gain: number): void;
   setMasterGain(gain: number): void;
   setMasterMuted(muted: boolean): void;
@@ -58,16 +58,15 @@ export interface CodeVoicesRuntime {
 /** Fabrique de la sortie voix-de-code (parallèle à createAudioRuntime/createMidiRuntime/createOscRuntime). */
 export declare function createCodeVoicesRuntime(opts: CodeVoicesRuntimeOptions): CodeVoicesRuntime;
 
-// --- The 7 code-voice adapters ---
+// --- The 6 code-voice adapters ---
 export declare const strudelAdapter: RuntimeAdapter;
-export declare const tidalAdapter: RuntimeAdapter;
 export declare const hydraAdapter: RuntimeAdapter;
 export declare const p5Adapter: RuntimeAdapter;
 export declare const mercuryAdapter: RuntimeAdapter;
 export declare const csoundAdapter: RuntimeAdapter;
 export declare const jsAdapter: RuntimeAdapter;
 
-/** The 7 voices, ready to spread into the Kanopi registry. */
+/** The 6 voices, ready to spread into the Kanopi registry. */
 export declare const codeVoiceAdapters: readonly RuntimeAdapter[];
 
 // --- DOM attaches (canvas / container handed by the Svelte visual components) ---

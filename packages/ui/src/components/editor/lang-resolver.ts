@@ -30,7 +30,6 @@ export function languageFor(runtime: Runtime): Extension {
       // `.gr` native grammar: upstream CM6 highlighting (autocomplete is bps-only).
       return bp3Language;
     case 'strudel':
-    case 'tidal':
     case 'hydra':
     case 'js':
       return javascript();

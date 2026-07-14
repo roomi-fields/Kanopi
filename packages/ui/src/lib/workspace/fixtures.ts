@@ -7,7 +7,7 @@ const raw: { path: string; contents: string }[] = [
     contents: `// main session — 3 voix-code, sélectionnables par scène (intro/drop/break).
 @library.strudel "dirt-samples"
 
-@actor drums   transport.audio  eval.tidal
+@actor drums   transport.audio  eval.strudel
 @actor visuals transport.video  eval.hydra
 @actor bass    transport.audio  eval.strudel
 

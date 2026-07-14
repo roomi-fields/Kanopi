@@ -1,6 +1,6 @@
 import type { Runtime } from '../core-mock';
 import type { RuntimeAdapter } from './adapter';
-// The 7 code voices (strudel/tidal/hydra/p5/mercury/csound/js) live in the
+// The 6 code voices (strudel/hydra/p5/mercury/csound/js) live in the
 // `runtime-codevoices` package and are pulled by Kronos at the backtick token
 // onset. The natives bp3/bpscript stay in Kanopi (BPx path).
 import { codeVoiceAdapters } from 'runtime-codevoices';
@@ -29,7 +29,7 @@ export function getAdapter(runtime: Runtime): RuntimeAdapter | undefined {
   return adapters.get(runtime);
 }
 
-// Code-voice runtimes (strudel/tidal/hydra/p5/mercury/csound/js). Their MASTER TEMPO
+// Code-voice runtimes (strudel/hydra/p5/mercury/csound/js). Their MASTER TEMPO
 // arrives via Kronos's bus (`onTempo` → runtime-codevoices `reslaveTempo`, M2 [261]),
 // NOT a parallel host tempo fan-out — `clock.svelte.ts` skips them so the guest engine
 // has a single tempo authority (Kronos). bp3/bpscript are NOT here: their `setBpm`

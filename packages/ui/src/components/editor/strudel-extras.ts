@@ -14,7 +14,7 @@ export function strudelExtras(runtime: Runtime): {
 } {
   const c = new Compartment();
   const ext = c.of([]);
-  const needs = runtime === 'strudel' || runtime === 'tidal';
+  const needs = runtime === 'strudel';
   const install = async (view: EditorView) => {
     if (!needs) return;
     try {

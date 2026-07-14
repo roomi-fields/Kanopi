@@ -39,21 +39,6 @@ describe('extractBlocks — Strudel', () => {
   });
 });
 
-describe('extractBlocks — Tidal', () => {
-  it('names d1..d16 slots', () => {
-    const code = `d1 $ sound "bd"\n\nd12 $ sound "cp"`;
-    const b = extractBlocks(code, 'tidal');
-    expect(b.map((x) => x.name)).toEqual(['d1', 'd12']);
-    expect(b.every((x) => x.kind === 'slot')).toBe(true);
-  });
-
-  it('ignores d17+ (out of range)', () => {
-    const code = `d17 $ sound "bd"`;
-    const b = extractBlocks(code, 'tidal');
-    expect(b[0].name).toBe('#1');
-  });
-});
-
 describe('extractBlocks — Hydra', () => {
   it('detects .out(o0..o3) as slot name', () => {
     const code = `osc(10).out(o0)\n\nnoise().out(o2)`;

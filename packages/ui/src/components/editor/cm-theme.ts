@@ -15,7 +15,7 @@ export const kanopiHighlight = HighlightStyle.define([
   { tag: t.comment, color: 'var(--text-faint)', fontStyle: 'italic' },
   { tag: t.string, color: 'var(--green)' },
   { tag: t.number, color: 'var(--cyan)' },
-  { tag: t.atom, color: 'var(--tidal)' },
+  { tag: t.atom, color: 'var(--strudel)' },
   { tag: t.operator, color: 'var(--text-muted)' },
   { tag: [t.propertyName, t.function(t.variableName)], color: 'var(--sc)' },
   { tag: t.variableName, color: 'var(--text)' },

@@ -30,7 +30,7 @@ export interface LibraryItem {
   description: string;
   category: LibraryCategory;
   /** the primary language/runtime, for the language filter and the card badge */
-  language: string; // 'bp3' | 'bpscript' | 'strudel' | 'hydra' | 'tidal' | 'mercury' | 'p5' | 'csound'
+  language: string; // 'bp3' | 'bpscript' | 'strudel' | 'hydra' | 'mercury' | 'p5' | 'csound'
   outputs: OutputKind[];
   level: Level;
   /** free style/genre tags (e.g. 'minimalism', 'generative', 'drums') */

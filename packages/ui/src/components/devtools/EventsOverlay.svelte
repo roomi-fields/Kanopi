@@ -68,7 +68,6 @@
       <option value="strudel">strudel</option>
       <option value="hydra">hydra</option>
       <option value="js">js</option>
-      <option value="tidal">tidal</option>
     </select>
     <button onclick={() => (paused = !paused)} class:paused>
       {paused ? 'resume' : 'pause'}

@@ -12,13 +12,13 @@ const f = (id: string, path: string): VirtualFile => ({
 
 describe('buildTree', () => {
   it('flat files', () => {
-    const t = buildTree([f('1', 'a.bps'), f('2', 'b.tidal')]);
-    expect(t.map((n) => n.name)).toEqual(['a.bps', 'b.tidal']);
+    const t = buildTree([f('1', 'a.bps'), f('2', 'b.strudel')]);
+    expect(t.map((n) => n.name)).toEqual(['a.bps', 'b.strudel']);
     expect(t.every((n) => n.type === 'file')).toBe(true);
   });
 
   it('nested dirs', () => {
-    const t = buildTree([f('1', 'src/a.bps'), f('2', 'src/sub/b.tidal')]);
+    const t = buildTree([f('1', 'src/a.bps'), f('2', 'src/sub/b.strudel')]);
     expect(t.length).toBe(1);
     expect(t[0].type).toBe('dir');
     expect(t[0].name).toBe('src');

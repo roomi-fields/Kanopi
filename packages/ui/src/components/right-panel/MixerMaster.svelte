@@ -8,7 +8,7 @@
   // applyMixerGains calls setMasterGain/setMasterMuted on each). A NATIVE actor reaches
   // one when its declared transport (Actor.outputTransport, BPx's `output.runtime`) is
   // audio/midi/osc; a CODE-VOICE actor (strudel/hydra/…) reaches one only for
-  // strudel/tidal/csound (`codeVoiceReachesGainBus` — the sole adapters implementing the
+  // strudel/csound (`codeVoiceReachesGainBus` — the sole adapters implementing the
   // gain API in the package). A native actor routed dmx (API not yet confirmed) or a
   // hydra/p5/mercury/js voice touch none of these buses. Only disable the master when NO
   // live actor genuinely reaches a gain bus; if even one does, the master stays live.

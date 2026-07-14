@@ -11,7 +11,6 @@ export type Runtime =
   | 'csound'
   | 'bp3'
   | 'bpscript'
-  | 'tidal'
   | 'sc'
   | 'python'
   | 'js'

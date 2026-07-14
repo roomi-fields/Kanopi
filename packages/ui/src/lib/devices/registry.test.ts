@@ -65,7 +65,7 @@ describe('isCompatible accept/reject', () => {
 
   it('rejects notes → video (the documented .bps gate case)', () =>
     expect(isCompatible('notes', 'video')).toBe(false));
-  it('rejects notes → dmx (Tidal/notes → lumieres example, §3)', () =>
+  it('rejects notes → dmx (notes → lumieres example, §3)', () =>
     expect(isCompatible('notes', 'dmx')).toBe(false));
   it('rejects visual → audio', () => expect(isCompatible('visual', 'audio')).toBe(false));
   it('rejects signal → midi', () => expect(isCompatible('signal', 'midi')).toBe(false));

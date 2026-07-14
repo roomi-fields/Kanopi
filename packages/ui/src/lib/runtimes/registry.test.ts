@@ -5,7 +5,6 @@ describe('runtime registry', () => {
   it('lists all known runtimes', () => {
     const r = listRuntimes();
     expect(r).toContain('strudel');
-    expect(r).toContain('tidal');
     expect(r).toContain('hydra');
     expect(r).toContain('js');
   });
@@ -36,7 +35,6 @@ describe('runtime registry', () => {
 
   it('declares beta output types per §1bis guidance', () => {
     expect(getAdapter('strudel')?.outputType).toBe('notes');
-    expect(getAdapter('tidal')?.outputType).toBe('notes');
     expect(getAdapter('hydra')?.outputType).toBe('visual');
     expect(getAdapter('p5')?.outputType).toBe('visual');
     expect(getAdapter('bpscript')?.outputType).toBe('notes');

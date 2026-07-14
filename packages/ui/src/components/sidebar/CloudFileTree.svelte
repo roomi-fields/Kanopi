@@ -200,9 +200,6 @@
     flex-shrink: 0;
     background: var(--text-faint);
   }
-  .ext-tidal {
-    background: var(--tidal);
-  }
   .ext-scd {
     background: var(--sc);
   }
@@ -210,7 +207,7 @@
     background: var(--hydra);
   }
   .ext-strudel {
-    background: var(--tidal);
+    background: var(--strudel);
   }
   .ext-py {
     background: var(--python);

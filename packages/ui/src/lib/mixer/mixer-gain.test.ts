@@ -125,9 +125,8 @@ describe('applyMixerGains (KAN-UX3 / KAN-UX3-B)', () => {
 });
 
 describe('codeVoiceReachesGainBus (KAN-UX3-B)', () => {
-  it('is true for strudel, tidal and csound — the only adapters implementing the gain API', () => {
+  it('is true for strudel and csound — the only adapters implementing the gain API', () => {
     expect(codeVoiceReachesGainBus('strudel')).toBe(true);
-    expect(codeVoiceReachesGainBus('tidal')).toBe(true);
     expect(codeVoiceReachesGainBus('csound')).toBe(true);
   });
 

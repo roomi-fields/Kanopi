@@ -6,7 +6,7 @@ import { csdLanguage } from '@hlolli/codemirror-lang-csound';
  * The panel Actors lists one entry per block detected in every open file.
  *
  * Detection rules (in priority order):
- *  1. Native slot syntax (Strudel `$:`, Tidal `dN`, Hydra `oN`, SC `~x`).
+ *  1. Native slot syntax (Strudel `$:`, Hydra `oN`, SC `~x`).
  *  2. Top-level assignment (`const foo = …`, `let foo = …`, `foo = …`).
  *  3. Positional fallback — the block is delimited by blank lines and gets
  *     a stable index name like `#1`, `#2`.
@@ -14,7 +14,7 @@ import { csdLanguage } from '@hlolli/codemirror-lang-csound';
  * Kanopi does NOT add directives, magic comments, or any non-native syntax
  * to the source: every detection rule is valid pure syntax of the target
  * runtime, so a file written for Kanopi still runs verbatim in its native
- * environment (strudel.cc, atom-tidalcycles, hydra-editor, scide…).
+ * environment (strudel.cc, hydra-editor, scide…).
  */
 export interface CodeBlock {
   /** Short name: `drums`, `$0`, `d1`, `o2`, `#1`. NOT prefixed by the file. */
@@ -49,8 +49,7 @@ export function qualifyBlock(fileName: string, block: CodeBlock): string {
 export function extractBlocks(code: string, runtime: Runtime): CodeBlock[] {
   switch (runtime) {
     case 'strudel':
-    case 'tidal':
-      return extractStrudelOrTidal(code, runtime);
+      return extractStrudel(code);
     case 'hydra':
       return extractHydra(code);
     case 'p5':
@@ -141,12 +140,9 @@ function extractPositional(code: string): CodeBlock[] {
 // Strudel `$:` slot markers — the canonical "play this" convention in the
 // Strudel REPL. Lines starting with `$:` are numbered `$0`, `$1`, …
 // Assignments: `const x = …`, `let x = …`, `var x = …`, `x = …` at column 0.
-function extractStrudelOrTidal(code: string, runtime: Runtime): CodeBlock[] {
+function extractStrudel(code: string): CodeBlock[] {
   const blocks = splitBlocks(code);
   let slotIdx = 0;
-  const isTidal = runtime === 'tidal';
-  // Tidal: `d1 $ sound "bd"` → name = d1.
-  const tidalRe = /^\s*(d(?:[1-9]|1[0-6]))\b/;
   const strudelSlotRe = /^\s*\$\s*:/;
   const assignRe = /^\s*(?:const|let|var)?\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=/;
 
@@ -155,10 +151,6 @@ function extractStrudelOrTidal(code: string, runtime: Runtime): CodeBlock[] {
     if (strudelSlotRe.test(first)) {
       const name = `$${slotIdx++}`;
       return { name, kind: 'slot' as const, from: b.from, to: b.to };
-    }
-    if (isTidal) {
-      const m = tidalRe.exec(first);
-      if (m) return { name: m[1], kind: 'slot' as const, from: b.from, to: b.to };
     }
     const a = assignRe.exec(first);
     if (a && !RESERVED.has(a[1])) {

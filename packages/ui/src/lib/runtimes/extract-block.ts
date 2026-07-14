@@ -10,7 +10,7 @@ import type { Runtime } from '../core-mock';
  *   or isolates a single score event line inside `<CsScore>…</CsScore>`.
  * - All other runtimes fall back to paragraph-based extraction (blank-
  *   line delimiters), which is the v1 convention shared by Strudel,
- *   Tidal, Hydra, SC, JS.
+ *   Hydra, SC, JS.
  *
  * If `from !== to`, the user has an explicit selection — it wins over
  * any block detection.

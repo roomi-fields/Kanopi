@@ -196,9 +196,6 @@
     font-weight: 500;
     font-size: 9px;
   }
-  .rt-tidal {
-    color: var(--tidal);
-  }
   .rt-sc {
     color: var(--sc);
   }
@@ -206,7 +203,7 @@
     color: var(--hydra);
   }
   .rt-strudel {
-    color: var(--tidal);
+    color: var(--strudel);
   }
   .rt-python {
     color: var(--python);

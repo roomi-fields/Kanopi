@@ -21,9 +21,9 @@
   // The slider moves whichever live gain bus owns the actor (`applyMixerGains` →
   // audioGainControl()/midiGainControl()/oscGainControl()/codeVoicesGainControl()). Two
   // families of actor can fail to reach a bus:
-  //  - a code voice (strudel/hydra/p5/mercury/csound/tidal/js — anything backed by
+  //  - a code voice (strudel/hydra/p5/mercury/csound/js — anything backed by
   //    `eval.<interp>`, `isCodeVoiceRuntime`, registry.ts) only reaches a bus for
-  //    strudel/tidal/csound (`codeVoiceReachesGainBus`) — the package's individual
+  //    strudel/csound (`codeVoiceReachesGainBus`) — the package's individual
   //    adapters are the only ones implementing the gain API; hydra/p5/mercury/js
   //    render their own graph with no such hook;
   //  - a NATIVE actor (notes, not a code voice) routed to dmx/a custom @devices name

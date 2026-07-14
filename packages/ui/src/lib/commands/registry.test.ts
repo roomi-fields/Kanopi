@@ -5,8 +5,8 @@ const cmds: Command[] = [
   { id: 'a', title: 'Play', category: 'Clock', run: () => {} },
   { id: 'b', title: 'Stop', category: 'Clock', run: () => {} },
   { id: 'c', title: 'Switch to scene: drop', category: 'Scenes', run: () => {} },
-  { id: 'd', title: 'Toggle actor: drums', category: 'Actors', hint: 'tidal', run: () => {} },
-  { id: 'e', title: 'Open file: drums.tidal', category: 'Files', run: () => {} }
+  { id: 'd', title: 'Toggle actor: drums', category: 'Actors', hint: 'strudel', run: () => {} },
+  { id: 'e', title: 'Open file: drums.strudel', category: 'Files', run: () => {} }
 ];
 
 describe('filterCommands', () => {

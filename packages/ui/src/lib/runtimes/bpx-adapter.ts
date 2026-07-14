@@ -1250,7 +1250,7 @@ function srcKey(s: EvalSource): string {
   return s.actorId ?? s.fileId;
 }
 
-// Map a backtick interpreter tag (`strudel`, `hydra`, `tidal`, `js`, …) to a
+// Map a backtick interpreter tag (`strudel`, `hydra`, `js`, …) to a
 // The set of code-voice runtimes the registry is built from (`registry.ts` keys
 // its adapter map off this same `codeVoiceAdapters` list). Derived here — NOT a
 // second hand-maintained table — so adding a code voice to `codeVoiceAdapters`

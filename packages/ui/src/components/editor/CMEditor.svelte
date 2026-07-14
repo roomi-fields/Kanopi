@@ -70,7 +70,7 @@
   let registeredFileName: string | undefined;
   let strudelInstall: ((view: EditorView) => Promise<void>) | undefined;
 
-  const isStrudelLike = $derived(runtime === 'strudel' || runtime === 'tidal');
+  const isStrudelLike = $derived(runtime === 'strudel');
 
   // Wrapped as a pure Promise chain (no async/await touching $props — Svelte 5
   // mangles those). onEval now throws on any eval error; we catch and mark err.
@@ -127,7 +127,7 @@
       autocompletion(),
       syntaxHighlighting(kanopiHighlight, { fallback: true }),
       strudel.ext,
-      ...(lang === 'strudel' || lang === 'tidal' ? [miniOverlay, ...widgetPlugin] : []),
+      ...(lang === 'strudel' ? [miniOverlay, ...widgetPlugin] : []),
       flashField,
       flashTheme,
       Prec.highest(
@@ -236,7 +236,7 @@
     // Register this view as the target for Strudel's inline widgets
     // (_pianoroll, _scope, _spectrum). Keyed by fileName so the dispatch
     // lands on the right editor when several Strudel files are open.
-    if (runtime === 'strudel' || runtime === 'tidal') {
+    if (runtime === 'strudel') {
       registerStrudelEditorView(fileName, view);
       registeredFileName = fileName;
     }
@@ -265,7 +265,7 @@
         unregisterStrudelEditorView(registeredFileName);
         registeredFileName = undefined;
       }
-      if (runtime === 'strudel' || runtime === 'tidal') {
+      if (runtime === 'strudel') {
         registerStrudelEditorView(fileName, view);
         registeredFileName = fileName;
       }

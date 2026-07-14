@@ -1,22 +1,22 @@
-// @name: Tidal intro
+// @name: Strudel intro
 // @tagline: drums + bass, two named scenes
-// @description: One self-contained `.bps`: a Tidal drums voice and a Strudel bass voice, both inlined as backticks → audio. Two named scenes guarded by a flag — `intro` (drums only) and `full` (drums + bass). Open it and look at the code to see how the flag picks which scene derives. Ctrl+. to hush.
-// @language: tidal
+// @description: One self-contained `.bps`: a Strudel drums voice and a Strudel bass voice, both inlined as backticks → audio. Two named scenes guarded by a flag — `intro` (drums only) and `full` (drums + bass). Open it and look at the code to see how the flag picks which scene derives. Ctrl+. to hush.
+// @language: strudel
 // @outputs: audio
 // @level: didactic
-// @tags: tidal, scenes, multi-actor
+// @tags: strudel, scenes, multi-actor
 //
-// Tidal intro (migré de tidal-intro.kanopi).
-// Deux voix de code : batterie en Tidal (eval.tidal) et basse en Strudel
-// (eval.strudel), toutes deux → audio. Deux scènes nommées gardées par un
-// drapeau : `intro` (batterie seule) et `full` (batterie + basse). Ouvrir,
-// puis basculer les scènes dans la barre transport (ou Alt+1 / Alt+2) ;
-// chaque clic réarme la scène choisie. Ctrl+. pour couper.
+// Strudel intro.
+// Deux voix de code, toutes deux en Strudel (eval.strudel) : batterie et
+// basse, → audio. Deux scènes nommées gardées par un drapeau : `intro`
+// (batterie seule) et `full` (batterie + basse). Ouvrir, puis basculer les
+// scènes dans la barre transport (ou Alt+1 / Alt+2) ; chaque clic réarme la
+// scène choisie. Ctrl+. pour couper.
 // La batterie joue des échantillons (bd/cp/hh) : on lie la banque dirt-samples.
 @library.strudel "dirt-samples"
 @flag scene: intro:1, full:2
 
-@actor drums  transport.audio  eval.tidal
+@actor drums  transport.audio  eval.strudel
 @actor bass   transport.audio  eval.strudel
 
 [scene==intro] S -> drums

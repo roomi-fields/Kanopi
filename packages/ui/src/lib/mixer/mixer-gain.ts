@@ -26,8 +26,8 @@ import {
 } from '../runtimes/kronos-audio';
 
 /** Every currently-live gain control (audio/midi/osc/codevoices — dmx awaiting upstream, per the
- *  same contract). The codevoices control is a SINGLE object diffusing internally to all 7 voice
- *  adapters; only strudel/tidal/csound actually react (see `codeVoiceReachesGainBus`). */
+ *  same contract). The codevoices control is a SINGLE object diffusing internally to all 6 voice
+ *  adapters; only strudel/csound actually react (see `codeVoiceReachesGainBus`). */
 function liveGainControls(): AudioGainControl[] {
   return [audioGainControl(), midiGainControl(), oscGainControl(), codeVoicesGainControl()].filter(
     (g): g is AudioGainControl => g !== null
@@ -65,13 +65,13 @@ export function reachesGainBus(outputTransport: string | undefined): boolean {
   );
 }
 
-/** Mirror of `reachesGainBus`, for CODE-VOICE runtimes. Only strudel/tidal/csound actually
+/** Mirror of `reachesGainBus`, for CODE-VOICE runtimes. Only strudel/csound actually
  *  implement `setActorGain`/`setMasterGain`/`setMasterMuted` on their individual adapter (the
  *  runtime-codevoices package diffuses with `adapter.setActorGain?.(...)` — hydra/p5/mercury/js
  *  have no such method, so the call is a silent no-op for them: no API, not a "not confirmed yet"
  *  gap like dmx). */
 export function codeVoiceReachesGainBus(runtime: string): boolean {
-  return runtime === 'strudel' || runtime === 'tidal' || runtime === 'csound';
+  return runtime === 'strudel' || runtime === 'csound';
 }
 
 /** One message, parameterized by what the actor is instead routed to — covers both the
@@ -84,7 +84,7 @@ export function mixerSliderDisabledTitle(kind: string): string {
 /** Title for an ACTIVE (non-disabled) slider. csound's gain lands on a control channel
  *  (`gain_<acteur>`/`gain_master`) the AUTHOR's orchestra must read via `chnget` — without that
  *  read, moving the slider has no audible effect, so its title says so explicitly. Every other
- *  runtime (including strudel/tidal, whose gain reaches a real bus) gets the generic label. */
+ *  runtime (including strudel, whose gain reaches a real bus) gets the generic label. */
 export function mixerSliderActiveTitle(name: string, runtime: string): string {
   if (runtime === 'csound') {
     return `volume ${name} — effectif seulement si l'orchestre lit le canal gain_${name} (chnget)`;
