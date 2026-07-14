@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "postinstall": "simple-git-hooks",
+    "postinstall": "simple-git-hooks && patch-package",
     "arch": "node scripts/deps-fraicheur.mjs && depcruise \"packages/ui/src/**/*.{ts,svelte}\" \"packages/core/src/**/*.js\" --config .dependency-cruiser.cjs --output-type err && node scripts/arch-hote-runtimes.mjs",
     "verify": "cd packages/ui && npm run verify"
   },
@@ -15,5 +15,8 @@
     "pre-push": "npm run arch && npm run verify"
   },
   "author": "roomi-fields",
-  "license": "AGPL-3.0-or-later"
+  "license": "AGPL-3.0-or-later",
+  "devDependencies": {
+    "patch-package": "^8.0.1"
+  }
 }
