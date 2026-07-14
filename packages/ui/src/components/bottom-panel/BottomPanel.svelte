@@ -20,7 +20,12 @@
     { id: 'console', label: 'Console' }
   ];
 
-  const activeView = $derived(productionViews.find((v) => v.id === ui.bottomPanelTab) ?? null);
+  // KAN-751 : les 3 vues restent MONTEES tant que le panneau est ouvert — on ne
+  // demonte plus au changement d'onglet (perte de zoom/defilement/couches). Le
+  // `view` de chaque host est FIXE (structure/text), plus besoin de {#key}. Seule
+  // la fermeture reelle du panneau (repli) demonte via le {#if !collapsed} racine.
+  const structureView = productionViews.find((v) => v.id === 'structure') ?? null;
+  const textView = productionViews.find((v) => v.id === 'text') ?? null;
 </script>
 
 <section class="bottom-panel" class:collapsed={ui.bottomPanelCollapsed}>
@@ -47,12 +52,18 @@
   </header>
   {#if !ui.bottomPanelCollapsed}
     <div class="bp-body">
-      {#if ui.bottomPanelTab === 'console'}
+      <div class="bp-slot" class:hidden={ui.bottomPanelTab !== 'console'}>
         <ConsolePanel />
-      {:else if activeView}
-        {#key ui.bottomPanelTab}
-          <ProductionViewHost view={activeView} />
-        {/key}
+      </div>
+      {#if structureView}
+        <div class="bp-slot" class:hidden={ui.bottomPanelTab !== 'structure'}>
+          <ProductionViewHost view={structureView} />
+        </div>
+      {/if}
+      {#if textView}
+        <div class="bp-slot" class:hidden={ui.bottomPanelTab !== 'text'}>
+          <ProductionViewHost view={textView} />
+        </div>
       {/if}
     </div>
   {/if}
@@ -107,5 +118,12 @@
     flex: 1;
     overflow-y: auto;
     min-height: 0;
+  }
+  .bp-slot {
+    width: 100%;
+    height: 100%;
+  }
+  .bp-slot.hidden {
+    display: none;
   }
 </style>
