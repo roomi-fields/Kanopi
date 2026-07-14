@@ -1,5 +1,6 @@
 import type { RuntimeAdapter, EvalSource, LogPush } from './adapter';
 import type { Runtime } from '../core-mock';
+import { compileBps } from './compile-cache';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
 import {
@@ -698,6 +699,27 @@ function buildOrchestration(a: SceneAstView | null): Orchestration | undefined {
     })),
     synthetic
   };
+}
+
+/**
+ * PRÉCHAUFFAGE À L'OUVERTURE ([762]/#755.1) — les interprètes voix-de-code qu'une scène DÉCLARE,
+ * lus sur l'AST COMPILÉ via les MÊMES extracteurs que le produce (`buildOrchestration` +
+ * `backticksFromAst` → `codeVoiceInterps`) : AUCUNE re-dérivation texte côté hôte (l'AST est la
+ * source). Vide pour une scène sans voix de code. L'hôte s'en sert pour appeler `preload` DÈS
+ * l'ouverture (pas seulement au produce/play) : quand l'utilisateur joue, le moteur est déjà chargé
+ * (seul l'unlock du contexte audio attend le geste, règle autoplay). `compileBps` est mémoïsé →
+ * appeler ceci à chaque changement de fichier actif est bon marché (même compile que la puce d'état).
+ */
+export function interpsForScene(text: string): string[] {
+  let c: { ast?: unknown };
+  try {
+    c = compileBps(text) as typeof c;
+  } catch {
+    return [];
+  }
+  const a = (c.ast ?? null) as SceneAstView | null;
+  if (!a) return [];
+  return codeVoiceInterps(buildOrchestration(a), backticksFromAst(c.ast));
 }
 
 // `.bps` — BPScript compiles to a SceneAST (`compileBPS().ast`) that BPx derives

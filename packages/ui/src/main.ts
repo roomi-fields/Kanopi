@@ -17,6 +17,7 @@ import { transport } from './stores/transport.svelte';
 import { installKanopiApi } from './lib/pilot/kanopi-api';
 import { personalPitchLibSnapshot } from './stores/personal-pitch-lib.svelte';
 import { setAssetBaseUrl } from 'runtime-codevoices';
+import { installPreloadOnOpen } from './lib/runtimes/preload-on-open.svelte';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('#app root not found');
@@ -33,6 +34,10 @@ setAssetBaseUrl('https://store.roomi-fields.com/assets');
 migrateLegacyWorkspace();
 restoreWorkspace();
 installSlotErrorBridge();
+// PRÉCHAUFFAGE À L'OUVERTURE ([762]/#755.1) — préchauffe les moteurs voix-de-code dès qu'une scène
+// qui en embarque devient le fichier actif (pas au 1er play), pour que Play sonne sans délai de
+// chargement (seul l'unlock du contexte audio attend le geste).
+installPreloadOnOpen();
 const app = mount(App, { target });
 
 // Generic, engine-agnostic audio tap (DEV only) — taps the FINAL destination of every
