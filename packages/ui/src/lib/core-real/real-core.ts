@@ -27,6 +27,7 @@ import {
 import { createCodeVoicesRuntime, type CodeVoicesRuntime } from 'runtime-codevoices';
 import type { LogPush } from '../runtimes/adapter';
 import { installConsoleBridge } from '../runtimes/console-bridge';
+import { ensureCsoundSoundfiles } from '../runtimes/csound-soundfiles';
 import { enableMidi, type MidiEvent } from '../midi/midi-input';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
@@ -341,6 +342,9 @@ class RealCore implements CoreApi {
     // (capture §3.1 — il résout l'interprète et tire le moteur), pas via la registry hôte. Les
     // natifs bp3/bpscript passent par leur adaptateur BPx. (Une voix de code n'a pas de produceOnly.)
     if (runtime !== 'bp3' && runtime !== 'bpscript') {
+      // [764](e) — un CSD lit ses soundfiles depuis le FS virtuel Csound ; l'hôte les fournit AVANT
+      // l'éval (fetch depuis le store auto-hébergé -> writeCsoundFile). Best-effort, ne throw jamais.
+      if (runtime === 'csound') await ensureCsoundSoundfiles(code, this.log);
       await autonomousCodeVoices(this.log).evaluate(
         code,
         { actorId: slotId, fileId: sourceId, docOffset, flags },

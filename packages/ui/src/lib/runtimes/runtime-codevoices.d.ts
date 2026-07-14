@@ -118,6 +118,21 @@ export interface GuestLibrary {
 export declare const guestLibraries: readonly GuestLibrary[];
 export declare function librariesForEngine(engine: string): readonly GuestLibrary[];
 
+// Sous-chemins d'assets auto-hébergés (VPS) — dérivés de la base posée par `setAssetBaseUrl`.
+export declare const ASSET_PATHS: {
+  readonly strudelSoundfonts: () => string;
+  readonly mercurySamples: () => string;
+  readonly csoundSamples: () => string;
+};
+
+// --- Csound soundfile ([764](e)) — écrit des octets dans le FS virtuel (memfs) que le CSD lit via
+// `diskin`/`diskin2`/`loscil "path"`. À appeler AVANT l'éval du CSD. L'hôte fournit les octets (VPS). ---
+export declare function writeCsoundFile(
+  path: string,
+  data: Uint8Array | string,
+  log: LogPush
+): Promise<boolean>;
+
 // --- PRÉCHAUFFAGE au chargement (design ratifié archi [589]) ---
 // Entrée de PAQUET idempotente : résout les interps EN INTERNE + warme leurs moteurs. Interface
 // FIGÉE. PAS ENCORE livrée par le pair → déclarée POSSIBLEMENT ABSENTE (`| undefined`) pour que
