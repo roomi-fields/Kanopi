@@ -143,8 +143,15 @@ export default defineConfig({
       // que le dev sonne (rupture ISO dev/prod constatée 2026-07-04). Le dedupe épingle la
       // résolution sur la copie de Kanopi dans les DEUX modes.
       '@strudel/web',
+      // Nouveaux peers optionnels bundlés (checklist runtime-codevoices [764] 22e9730) :
+      // microtonal Strudel (@strudel/xen), soundfonts GM (@strudel/soundfonts) et p5.sound.
+      // Même impératif de pin BUILD [572] que ci-dessus : sans dedupe+include, Rollup/vite
+      // substitue un stub vide → voix microtonale/soundfont/p5-audio MUETTE.
+      '@strudel/xen',
+      '@strudel/soundfonts',
       'hydra-synth',
       'p5',
+      'p5.sound',
       'mercury-engine',
       '@csound/browser'
     ]
@@ -172,6 +179,11 @@ export default defineConfig({
       // here (exactly like @strudel/* + mercury-engine above) pins them to Kanopi's copy.
       'hydra-synth',
       'p5',
+      // Nouveaux peers bundlés (checklist [764] 22e9730) — pré-bundlés comme les autres
+      // peers de runtime-codevoices pour éviter le stub vide (voix muette) en dev/--force.
+      '@strudel/xen',
+      '@strudel/soundfonts',
+      'p5.sound',
       '@csound/browser',
       // The BPScript editor mode (`bpscript/public/editor/bpscript-lang.js`, a symlinked
       // source dep consumed AS-IS) imports these CM6/Lezer packages, but the BPscript repo
