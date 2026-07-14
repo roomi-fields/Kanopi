@@ -27,6 +27,51 @@ restoreWorkspace();
 installSlotErrorBridge();
 const app = mount(App, { target });
 
+// Generic, engine-agnostic audio tap (DEV only) — taps the FINAL destination of every
+// AudioContext the page creates, whichever engine owns it (Kanopi's native runtime-audio
+// OR a code voice's own context, e.g. Strudel/superdough). We do NOT read any engine's
+// internal state (would mean reaching into runtime-codevoices, out of host scope) — we
+// intercept the standard `AudioNode.connect(destination)` call every engine must make to
+// be audible, and splice a read-only AnalyserNode in front of `context.destination`. This
+// gives an empirical "is real audio actually reaching the speakers" measurement per engine,
+// independent of which package produced the graph (Romain 2026-07-14, corpus A/B strudel
+// regression diagnosis — no tap existed to discriminate host wiring vs engine silence).
+const audioTapAnalysers = new Map<AudioContext, AnalyserNode>();
+if (import.meta.env.DEV) {
+  const origConnect = AudioNode.prototype.connect as (
+    this: AudioNode,
+    dest: AudioNode
+  ) => AudioNode;
+  AudioNode.prototype.connect = function (this: AudioNode, dest: unknown, ...rest: unknown[]) {
+    try {
+      if (dest instanceof AudioDestinationNode) {
+        const ctx = this.context as AudioContext;
+        let analyser = audioTapAnalysers.get(ctx);
+        if (!analyser) {
+          analyser = ctx.createAnalyser();
+          analyser.fftSize = 2048;
+          origConnect.call(analyser, dest);
+          audioTapAnalysers.set(ctx, analyser);
+        }
+        origConnect.call(this, analyser);
+        return dest;
+      }
+    } catch {
+      /* best-effort probe — never break real audio routing on a tap failure */
+    }
+    // @ts-expect-error — forwarding the original overloaded call.
+    return origConnect.apply(this, [dest, ...rest]);
+  };
+}
+
+function measureRms(analyser: AnalyserNode): number {
+  const buf = new Float32Array(analyser.fftSize);
+  analyser.getFloatTimeDomainData(buf);
+  let sum = 0;
+  for (const v of buf) sum += v * v;
+  return Math.sqrt(sum / buf.length);
+}
+
 // Dev-only: expose raw stores on `window.__kanopi` for Playwright-based verification.
 // Not used in prod code — purely a testing hatch. Kept guarded by `import.meta.env.DEV`
 // so tree-shaking drops it from the production bundle.
@@ -49,7 +94,19 @@ if (import.meta.env.DEV) {
     // Last-built `pitchLibMine` catalog (personal pitch libraries composed from
     // `libraries/<domain>/…`), read by the e2e proving population before/after creating
     // a personal library doc. Function (not a value) so each call reads the CURRENT catalog.
-    personalPitchLib: personalPitchLibSnapshot
+    personalPitchLib: personalPitchLibSnapshot,
+    // Generic per-AudioContext RMS tap (see audioTapAnalysers above) — one entry per
+    // distinct AudioContext currently connected to a destination (native runtime-audio,
+    // Strudel/superdough, Hydra has no audio context, …).
+    audioTap: {
+      contextCount: (): number => audioTapAnalysers.size,
+      measureAll: (): { state: string; sampleRate: number; rms: number }[] =>
+        [...audioTapAnalysers.entries()].map(([ctx, an]) => ({
+          state: ctx.state,
+          sampleRate: ctx.sampleRate,
+          rms: measureRms(an)
+        }))
+    }
   };
 }
 
