@@ -14,7 +14,7 @@
 @core
 @tempo:110
 
-@actor lead  eval.mercury  transport:audio
+@actor lead  eval.mercury  transport.audio
 
 S -> lead lead
 

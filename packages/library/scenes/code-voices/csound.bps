@@ -14,7 +14,7 @@
 @core
 @tempo:96
 
-@actor synth  eval.csound  transport:audio
+@actor synth  eval.csound  transport.audio
 
 S -> synth synth synth synth
 

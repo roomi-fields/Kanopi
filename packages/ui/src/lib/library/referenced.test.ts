@@ -2,16 +2,19 @@ import { describe, it, expect } from 'vitest';
 import { referencedLibraries, programCompileStatus } from './referenced';
 
 describe('referencedLibraries — bpscript directives', () => {
-  it('reads alphabet (subkey) and tuning (runtime)', () => {
+  it('reads alphabet and tuning directives (dot-canon names from the subkey)', () => {
+    // `@tuning.sargam_22shruti` is a REAL tuning (lib/tunings.json). The former
+    // fixture named `maqam_rast`, which is a SCALE (lib/scales.json), not a tuning —
+    // a dishonest fixture (architecte [745]). Dot canon: the tuning name is the subkey.
     const code = `@core
 @alphabet.arabic:browser
-@tuning:maqam_rast
+@tuning.sargam_22shruti
 
 S -> a
 a -> do re mi`;
     const libs = referencedLibraries('arabic.bps', code);
     expect(libs).toContainEqual({ type: 'alphabet', typeLabel: 'alphabet', name: 'arabic' });
-    expect(libs).toContainEqual({ type: 'tuning', typeLabel: 'tuning', name: 'maqam_rast' });
+    expect(libs).toContainEqual({ type: 'tuning', typeLabel: 'tuning', name: 'sargam_22shruti' });
   });
 
   it('reads scale, octaves and the audio-bank library table', () => {

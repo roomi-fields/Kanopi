@@ -22,8 +22,8 @@ import type { TimedToken } from 'bpx';
 const DUAL_ACTORS = `@core
 @controls
 
-@actor lead  @alphabet.western  transport:webaudio
-@actor bass  @alphabet.western  transport:webaudio
+@actor lead  @alphabet.western  transport.webaudio
+@actor bass  @alphabet.western  transport.webaudio
 
 S -> {Lead, Low}
 
@@ -34,7 +34,7 @@ Low  -> bass.C2(wave:sawtooth)(vel:90) - bass.G2 - bass.A2 - bass.F2 -
 const ARABIC = `@core
 @controls
 @alphabet.arabic:browser
-@tuning:maqam_rast
+@tuning.maqam_rast
 @mm:70
 
 S -> Sayr Rujoo Qarar

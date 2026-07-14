@@ -15,7 +15,7 @@
 @core
 @tempo:120
 
-@actor beat  eval.tidal  transport:audio
+@actor beat  eval.tidal  transport.audio
 
 S -> beat beat beat `sc: Synth.new(\ping)`
 

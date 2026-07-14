@@ -21,12 +21,12 @@
 // madhya (middle) is the DEFAULT (bare svara), taar one octave up ("taar_sa").
 // The alphabet's base register is madhya sa ≈ 240 Hz (taar ≈ 480 Hz); the scene
 // @transpose below shifts the whole frame two octaves down (see there). Pitches
-// stay sargam-microtonal (@tuning:sargam_22shruti unchanged).
+// stay sargam-microtonal (@tuning.sargam_22shruti unchanged).
 
 @core
 @controls
 @alphabet.sargam:browser
-@tuning:sargam_22shruti
+@tuning.sargam_22shruti
 @tempo:90
 
 // The browser synth defaults to a triangle voice (runtime-audio), so no per-note

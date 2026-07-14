@@ -28,8 +28,9 @@ interface BpsDirective {
 }
 
 // Directive `@name` → how to read its referenced resource name + display label.
-// `@alphabet.<x>` puts <x> in `subkey`; `@tuning:<x>` / `@scale:<x>` put <x> in
-// `runtime`; `@octaves.<x>` / `@sound.<x>` / `transport.<device>` use `subkey`.
+// Dot canon (`.` names a component, `:` assigns a value): `@alphabet.<x>` /
+// `@tuning.<x>` / `@octaves.<x>` / `@sound.<x>` / `transport.<device>` put <x> in
+// `subkey`. A tolerated `:value` form (`@scale:<x>`) lands <x> in `runtime`.
 // `@devices` (no subkey) means "the whole device library".
 const DIRECTIVE_TYPES: Record<string, { type: string; typeLabel: string }> = {
   alphabet: { type: 'alphabet', typeLabel: 'alphabet' },
@@ -55,8 +56,8 @@ const DIRECTIVE_TYPES: Record<string, { type: string; typeLabel: string }> = {
 const SELF_NAMED = new Set(['core', 'controls', 'filter']);
 
 function nameOfDirective(d: BpsDirective): string | null {
-  // Prefer subkey (`@alphabet.arabic`, `@octaves.western`, `transport.midi`),
-  // fall back to runtime (`@tuning:maqam_rast`, `@scale:bilaval`).
+  // Prefer subkey (`@alphabet.arabic`, `@tuning.sargam_22shruti`, `transport.midi`),
+  // fall back to runtime (the tolerated `:value` form, e.g. `@scale:bilaval`).
   if (typeof d.subkey === 'string' && d.subkey.length > 0) return d.subkey;
   if (typeof d.runtime === 'string' && d.runtime.length > 0) return d.runtime;
   // A bare module directive (`@core`, `@controls`) names itself.
@@ -88,7 +89,7 @@ function directivesFromText(contents: string): ReferencedLib[] {
       out.push({ type: 'audio-bank', typeLabel: 'audio bank', name: bank[1] });
       continue;
     }
-    // `@name(.subkey)?(:value)?` — e.g. `@alphabet.western:browser`, `@tuning:maqam_rast`.
+    // `@name(.subkey)?(:value)?` — e.g. `@alphabet.western:browser`, `@tuning.sargam_22shruti`.
     const m = /^@(\w+)(?:\.([\w-]+))?(?::\s*(\S+))?/.exec(line);
     if (!m) continue;
     const meta = DIRECTIVE_TYPES[m[1]];

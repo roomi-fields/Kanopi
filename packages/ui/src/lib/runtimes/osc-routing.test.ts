@@ -99,10 +99,10 @@ describe('OSC branchement (OSC-5b)', () => {
 describe('OSC address-in-the-tree (consumed bpscript/bpx copies — stale-dep guard)', () => {
   // The whole OSC path is dead if the consumed `bpscript`/`bpx` copies lack the KAI-9
   // address-in-the-tree (the stale `file:`-dep trap that left OSC inert until the copy was
-  // rsynced). The address now travels via `transport:osc(device:…, ch:…)` →
+  // rsynced). The address now travels via `transport.osc(device:…, ch:…)` →
   // `metadata.actors` → per-event `event.output`, NOT via the old host-read `.binding`. This
   // derives a real OSC scene and asserts BOTH layers — so a future stale copy fails loudly.
-  const osc = `@actor bass transport:osc(device:bridge1, ch:5)\nS -> bass.C4 bass.E4`;
+  const osc = `@actor bass transport.osc(device:bridge1, ch:5)\nS -> bass.C4 bass.E4`;
 
   it('the actor→output table carries `{runtime:osc, params:{device, ch}}` (OSC enumeration)', () => {
     const ast = compileToBPxAST(osc, { tempo: 120 }).ast;

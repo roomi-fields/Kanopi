@@ -1,5 +1,5 @@
 // p5 fixture (migré de p5.kanopi) — voix-code p5 → vidéo.
-@actor sketch  transport:video  eval.p5
+@actor sketch  transport.video  eval.p5
 
 S -> sketch
 

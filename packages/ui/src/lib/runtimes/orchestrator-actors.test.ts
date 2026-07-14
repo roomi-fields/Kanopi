@@ -52,8 +52,8 @@ beforeEach(() => {
     0;
 });
 
-const SRC = `@actor groove  transport:audio  eval.strudel
-@actor viz     transport:video  eval.hydra
+const SRC = `@actor groove  transport.audio  eval.strudel
+@actor viz     transport.video  eval.hydra
 S -> { groove, viz }
 groove -> \`stack(note("c2*4"))\`
 viz -> \`osc(60).out()\`
@@ -64,8 +64,8 @@ viz -> \`osc(60).out()\`
 // arm/disarm must work on. Kept inline (multi-line backticks + comments) so the
 // mapping is exercised against the REAL rule shape, not a simplified fixture.
 const BUNDLED = `// 02 — Strudel + Hydra synchronisés sur le transport Kanopi.
-@actor groove  transport:audio  eval.strudel
-@actor viz     transport:video  eval.hydra
+@actor groove  transport.audio  eval.strudel
+@actor viz     transport.video  eval.hydra
 
 S -> { groove, viz }
 
@@ -119,8 +119,8 @@ describe('orchestrator actor publication', () => {
 const MIDI_PLUS_WEBAUDIO = `@core
 @controls
 
-@actor melody  @alphabet.western  transport:midi(ch:1)
-@actor bass    @alphabet.western  transport:webaudio
+@actor melody  @alphabet.western  transport.midi(ch:1)
+@actor bass    @alphabet.western  transport.webaudio
 
 S -> {Mel, Low}
 
@@ -153,8 +153,8 @@ describe('orchestrator MIDI gate scope (one actor MIDI-unavailable must not sile
 
     // outputTransport reflects the DECLARED transport per actor (BPx's
     // `tree.metadata.actors[name].runtime`, decision [624]) — the field the mixer
-    // gates its slider on: melody (transport:midi) must read 'midi', bass
-    // (transport:webaudio) must read the webaudio family so its slider stays live.
+    // gates its slider on: melody (transport.midi) must read 'midi', bass
+    // (transport.webaudio) must read the webaudio family so its slider stays live.
     const transportByName = Object.fromEntries(published.map((p) => [p.name, p.outputTransport]));
     expect(transportByName.melody).toBe('midi');
     expect(transportByName.bass).toBe('webaudio');

@@ -19,7 +19,7 @@ import { BP3_PITCH_CATALOG, bp3AlphabetKey } from 'bp3-frontend/src/emit/bp3-alp
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 // bpscript's musical catalogs, imported AS-IS (same path as
 // lib/library/resources.ts). A `.bps` that declares `@alphabet.X` (+ optional
-// `@tuning:Y`) resolves its pitches through these — bohlen-pierce, gamelan, etc.
+// `@tuning.Y`) resolves its pitches through these — bohlen-pierce, gamelan, etc.
 import alphabetsJson from 'bpscript/lib/alphabets.json';
 import tuningsJson from 'bpscript/lib/tunings.json';
 import temperamentsJson from 'bpscript/lib/temperaments.json';
@@ -1859,8 +1859,8 @@ function makeBpxAdapter(
         // up-front for all actors so a later voice's rejection doesn't leave the
         // earlier ones already playing.
         // A `.gr` (like any mono scene) plays AUDIO by default: its synthetic `default`
-        // actor keeps `transport:audio` and MUST be audible. MIDI is an EXPLICIT choice
-        // (`@actor … transport:midi`) — never auto-routed off a granted Web MIDI port,
+        // actor keeps `transport.audio` and MUST be audible. MIDI is an EXPLICIT choice
+        // (`@actor … transport.midi`) — never auto-routed off a granted Web MIDI port,
         // which used to make every `.gr` SILENT on a machine that simply HAS a MIDI port.
         const devices = new Map<string, Device>();
         for (const actor of orchestration.actors) {
@@ -1884,7 +1884,7 @@ function makeBpxAdapter(
         // — invariant « un sink existe pour la clé routée », contrat hote-runtimes-sortie.md:121,
         // tranché archi [624]). PAS `devices.type` : l'appareil @devices est l'ADRESSE (canal/
         // port) DANS le runtime, un concern SÉPARÉ (KAI-9, bpscript-bpx.md:32). Un `@actor
-        // transport:midi` grave `runtime='midi'` → même clé, même sink que tout futur
+        // transport.midi` grave `runtime='midi'` → même clé, même sink que tout futur
         // `@alphabet.X:midi` qui convergera vers `runtime='midi'` à la source.
         // État UI de branchement par-acteur, reconstruit à CHAQUE éval (donc courant :
         // une ré-éval réussie republie sans erreur → le badge disparaît). Rempli par le

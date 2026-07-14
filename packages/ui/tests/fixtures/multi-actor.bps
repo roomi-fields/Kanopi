@@ -2,8 +2,8 @@
 // dirt-samples liée au moteur) + Hydra (vidéo), les deux armées dans une scène.
 @library.strudel "dirt-samples"
 
-@actor beat  transport:audio  eval.strudel
-@actor viz   transport:video  eval.hydra
+@actor beat  transport.audio  eval.strudel
+@actor viz   transport.video  eval.hydra
 
 S -> { beat, viz }
 

@@ -11,7 +11,7 @@
 // (Barry Vercoe, 1986, ~1700 opcodes). Évaluer la voix `synth` : le moteur
 // démarre et les notes de la partition jouent. Ctrl+. pour couper.
 
-@actor synth  transport:audio  eval.csound
+@actor synth  transport.audio  eval.csound
 
 S -> synth
 

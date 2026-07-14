@@ -14,8 +14,8 @@
 // de scènes nommées). Deux voix Strudel : la tête de règle (drums/lead) attache
 // chaque bloc de code à sa voix.
 
-@actor drums  transport:audio  eval.strudel
-@actor lead   transport:audio  eval.strudel
+@actor drums  transport.audio  eval.strudel
+@actor lead   transport.audio  eval.strudel
 
 S -> calm full
 calm -> drums

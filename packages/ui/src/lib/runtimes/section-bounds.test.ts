@@ -11,7 +11,7 @@ import type { ProductionTree } from '../../stores/production.svelte';
 // bounds must instead land on the actual leaf spans (Qarar visibly shorter — it
 // is one onset followed by a sustain, not a third of the notes).
 const ARABIC = `@alphabet.arabic:browser
-@tuning:maqam_rast
+@tuning.maqam_rast
 @mm:70
 S -> Sayr Rujoo Qarar
 Sayr -> rast dukah sikah jaharkah nawa husayni awj (wave:sine, vel:85)
