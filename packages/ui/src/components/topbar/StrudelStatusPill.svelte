@@ -1,17 +1,31 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { onStrudelStatus, type StrudelStatus } from 'runtime-codevoices';
+  import {
+    onStrudelStatus,
+    strudelHasLiveVoices,
+    onStrudelLive,
+    type StrudelStatus
+  } from 'runtime-codevoices';
+  import { interpsForScene } from '../../lib/runtimes/bpx-adapter';
+  import { workspace } from '../../stores/workspace.svelte';
 
   let status = $state<StrudelStatus>('idle');
-  let unsub: (() => void) | undefined;
+  let unsubStatus: (() => void) | undefined;
+  let strudelLive = $state(strudelHasLiveVoices());
+  let unsubLive: (() => void) | undefined;
 
   onMount(() => {
     // onStrudelStatus() calls back synchronously with the CURRENT status on
     // subscription (runtime-codevoices strudel.ts:151), so this also covers
     // mounting after Strudel already loaded earlier in the session.
-    unsub = onStrudelStatus((s) => (status = s));
+    unsubStatus = onStrudelStatus((s) => (status = s));
+    // onStrudelLive() also calls back synchronously with the current value.
+    unsubLive = onStrudelLive((live) => (strudelLive = live));
   });
-  onDestroy(() => unsub?.());
+  onDestroy(() => {
+    unsubStatus?.();
+    unsubLive?.();
+  });
 
   const labels: Record<StrudelStatus, string> = {
     idle: 'idle',
@@ -20,13 +34,25 @@
     error: 'error'
   };
 
-  // Visibility tracks the Strudel RUNTIME's own status only (loading/ready/error),
-  // never which tab happens to be open — status is monotonic and session-wide
-  // (idle → loading → ready|error, runtime-codevoices strudel.ts:142-153), so a
-  // gate on "the current tab uses strudel" made the pill flicker away mid-session
-  // whenever focus left a strudel tab, even though the voice was still loaded and
-  // playing in the background (Romain 2026-07-14: "s'affiche parfois, incohérent").
-  const visible = $derived(status !== 'idle');
+  // Visibility rule — OPTION 3 (arbitrage archi, honore les 2 exigences Romain [785/789]) :
+  // le bandeau est visible SSI (la scène ACTIVE utilise strudel) OU (strudel joue une voix
+  // vivante, même en fond). D'abord un gate "scène active" pur ([785] : une scène p5 sans
+  // strudel affichait quand même le bandeau — mensonge sur la voix chargée) ; corrigé plus tard
+  // (Romain 2026-07-14 : "s'affiche parfois, incohérent") en gate "statut moteur" pur — mais ça
+  // faisait DISPARAÎTRE le bandeau dès qu'on quittait l'onglet strudel alors que la voix jouait
+  // toujours en fond. Option 3 combine les deux signaux au lieu de choisir : `activeSceneUsesStrudel`
+  // (analyse texte→interps de l'onglet actif, projection pure, aucun état inventé) OU
+  // `strudelHasLiveVoices()` (signal amont runtime-codevoices, par-vie-de-voix, ≠ statut moteur).
+  // `status !== 'idle'` reste la garde de base : rien à montrer tant que strudel n'a jamais chargé.
+  const activeSceneUsesStrudel = $derived(
+    workspace.activeTabId
+      ? interpsForScene(workspace.fileById(workspace.activeTabId)?.contents ?? '').includes(
+          'strudel'
+        )
+      : false
+  );
+
+  const visible = $derived(status !== 'idle' && (activeSceneUsesStrudel || strudelLive));
 </script>
 
 {#if visible}

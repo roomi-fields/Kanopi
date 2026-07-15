@@ -84,6 +84,10 @@ export type StrudelStatus = 'idle' | 'loading' | 'ready' | 'error';
 export type StrudelErrorListener = (err: unknown) => void;
 export declare function strudelStatus(): StrudelStatus;
 export declare function onStrudelStatus(cb: (s: StrudelStatus) => void): () => void;
+/** Strudel a-t-il au moins une voix armée en train de jouer (≠ statut moteur) ? Lecture immédiate. */
+export declare function strudelHasLiveVoices(): boolean;
+/** S'abonne au signal « voix vivantes » ; rappelle immédiatement l'état courant. Rend le désabonnement. */
+export declare function onStrudelLive(cb: (live: boolean) => void): () => void;
 export declare function onStrudelError(cb: StrudelErrorListener): () => void;
 export declare function onSlotErrorChange(cb: () => void): () => void;
 export declare function getSlotErrors(): ReadonlyMap<string, Error>;
