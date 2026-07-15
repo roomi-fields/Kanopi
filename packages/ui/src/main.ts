@@ -18,6 +18,8 @@ import { installKanopiApi } from './lib/pilot/kanopi-api';
 import { personalPitchLibSnapshot } from './stores/personal-pitch-lib.svelte';
 import { setAssetBaseUrl, onStrudelError } from 'runtime-codevoices';
 import { installPreloadOnOpen } from './lib/runtimes/preload-on-open.svelte';
+import { interpsForScene, assetsForScene } from './lib/runtimes/bpx-adapter';
+import { warmUp } from './lib/runtimes/code-voice-warmup';
 
 const target = document.getElementById('app');
 if (!target) throw new Error('#app root not found');
@@ -125,7 +127,12 @@ if (import.meta.env.DEV) {
     // "sound not found") actually reaches the host — proof [777]/[112] of the
     // getTrigger→emitError fix (fa46874), independent of the compile chip's own signal-3
     // aggregation (`openBlocks.errored`, a separate mechanism keyed by slot id).
-    onStrudelError
+    onStrudelError,
+    // [788] — introspection READ-ONLY sur le préchauffage à l'ouverture : mêmes fonctions PURES
+    // que `installPreloadOnOpen` appelle en interne (aucune 2e voie, aucun état inventé). Un e2e
+    // de latence s'en sert pour DÉCLENCHER + ATTENDRE déterministement le préfetch d'assets d'une
+    // scène (au lieu de deviner un délai fixe), afin de comparer play→1er son AVANT/APRÈS préfetch.
+    codeVoicePreload: { interpsForScene, assetsForScene, warmUp }
   };
 }
 

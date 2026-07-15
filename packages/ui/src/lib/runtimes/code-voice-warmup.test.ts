@@ -28,7 +28,7 @@ describe('warmUp — mémoïsation par interprète', () => {
     expect(p1).toBe(p2);
     await Promise.all([p1, p2]);
     expect(preload).toHaveBeenCalledTimes(1);
-    expect(preload).toHaveBeenCalledWith(['strudel-t1']);
+    expect(preload).toHaveBeenCalledWith(['strudel-t1'], undefined);
   });
 
   it('groupe les NOUVEAUX interprètes en un seul appel `preload`, ignore les déjà lancés', async () => {
@@ -38,8 +38,23 @@ describe('warmUp — mémoïsation par interprète', () => {
     await warmUp(['a-t2', 'b-t2', 'c-t2']);
 
     expect(preload).toHaveBeenCalledTimes(2);
-    expect(preload).toHaveBeenNthCalledWith(1, ['a-t2']);
-    expect(preload).toHaveBeenNthCalledWith(2, ['b-t2', 'c-t2']);
+    expect(preload).toHaveBeenNthCalledWith(1, ['a-t2'], undefined);
+    expect(preload).toHaveBeenNthCalledWith(2, ['b-t2', 'c-t2'], undefined);
+  });
+
+  it('[788] transmet les `assets` du 1er appel réel à `preload` (préfetch à l’ouverture)', async () => {
+    preload.mockResolvedValue(undefined);
+    const assets = { strudel: { banks: ['gm'], gmInstruments: ['gm_piano'] } };
+
+    await warmUp(['strudel-t3'], assets);
+
+    expect(preload).toHaveBeenCalledTimes(1);
+    expect(preload).toHaveBeenCalledWith(['strudel-t3'], assets);
+
+    // Un 2e appel pour le MÊME interprète (ex. le gate play de real-core.ts, sans assets) réutilise
+    // la promesse mémoïsée : pas de 2e `preload`, donc pas de perte du préfetch déjà en vol.
+    await warmUp(['strudel-t3']);
+    expect(preload).toHaveBeenCalledTimes(1);
   });
 
   it('un interprète en échec (preload rejette) ne bloque/rejette jamais l’appelant', async () => {

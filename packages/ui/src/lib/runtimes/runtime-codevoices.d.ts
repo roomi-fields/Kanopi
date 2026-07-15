@@ -136,9 +136,18 @@ export declare function writeCsoundFile(
 ): Promise<boolean>;
 
 // --- PRÉCHAUFFAGE au chargement (design ratifié archi [589]) ---
-// Entrée de PAQUET idempotente : résout les interps EN INTERNE + warme leurs moteurs. Interface
-// FIGÉE. PAS ENCORE livrée par le pair → déclarée POSSIBLEMENT ABSENTE (`| undefined`) pour que
-// l'appel hôte soit optional-chained (`preload?.(…)`) = no-op tant qu'elle n'est pas exportée
-// (au runtime elle est réellement `undefined`). Additif : quand le pair l'exporte comme fonction,
-// le type reste satisfait et l'appel hôte s'active sans changement.
-export declare const preload: ((interps: string[]) => Promise<void>) | undefined;
+// Entrée de PAQUET idempotente : résout les interps EN INTERNE + warme leurs moteurs, PUIS pré-tire
+// les assets (chantier latence [788], source runtime-codevoices/src/preload.ts d47cb0a) — banques
+// `@library.strudel` déclarées + instruments GM utilisés (`sound("gm_…")`) — pour que le fetch+décode
+// (~1s) soit payé À L'OUVERTURE, hors du chemin play. `assets` est optionnel : un appel `preload(interps)`
+// sans 2e argument reste valide (warmup moteur seul, comportement pré-[788] inchangé). Interface FIGÉE.
+// PAS ENCORE livrée par le pair → déclarée POSSIBLEMENT ABSENTE (`| undefined`) pour que l'appel hôte
+// soit optional-chained (`preload?.(…)`) = no-op tant qu'elle n'est pas exportée (au runtime elle est
+// réellement `undefined`). Additif : quand le pair l'exporte comme fonction, le type reste satisfait et
+// l'appel hôte s'active sans changement.
+export interface PreloadAssets {
+  strudel?: { banks?: readonly string[]; gmInstruments?: readonly string[] };
+}
+export declare const preload:
+  | ((interps: string[], assets?: PreloadAssets) => Promise<void>)
+  | undefined;

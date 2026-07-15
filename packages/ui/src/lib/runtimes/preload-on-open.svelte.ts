@@ -4,8 +4,11 @@
 // résiduel est l'unlock du contexte audio (règle autoplay navigateur), qui reste au 1er geste Play.
 //
 // L'hôte NE fait que TRANSPORTER la liste d'interprètes (lus sur l'AST compilé par `interpsForScene`,
-// mêmes extracteurs que le produce — aucune re-dérivation texte) vers l'entrée paquet `preload` de
-// runtime-codevoices, idempotente (optional-chained : no-op tant que le pair ne l'exporte pas).
+// mêmes extracteurs que le produce — aucune re-dérivation texte) + les assets qu'elle déclare
+// (`assetsForScene` : banques `@library.strudel` + instruments `gm_*` utilisés) vers l'entrée paquet
+// `preload` de runtime-codevoices, idempotente (optional-chained : no-op tant que le pair ne l'exporte
+// pas). [788] — le préfetch d'assets (fetch+décode GM, ~1s) est ainsi payé à l'ouverture, hors du
+// chemin play.
 //
 // [786] — le lancement reste fire-and-forget ICI (l'ouverture ne doit pas geler l'UI), mais la
 // promesse est désormais MÉMOÏSÉE par interprète via `warmUp` (code-voice-warmup.ts) : le play
@@ -14,7 +17,7 @@
 
 import { workspace } from '../../stores/workspace.svelte';
 import { runtimeFromExt } from '../workspace/types';
-import { interpsForScene } from './bpx-adapter';
+import { interpsForScene, assetsForScene } from './bpx-adapter';
 import { warmUp } from './code-voice-warmup';
 import { ensureCsoundSoundfiles } from './csound-soundfiles';
 import { core } from '../core';
@@ -44,7 +47,8 @@ export function installPreloadOnOpen(): void {
       if (runtime !== 'bpscript' && runtime !== 'bp3') return;
       const interps = interpsForScene(f.contents);
       if (interps.length === 0) return;
-      void warmUp(interps);
+      const assets = assetsForScene(f.contents);
+      void warmUp(interps, assets);
       if (interps.includes('csound')) {
         void ensureCsoundSoundfiles(f.contents, (e) => core.console.push(e));
       }

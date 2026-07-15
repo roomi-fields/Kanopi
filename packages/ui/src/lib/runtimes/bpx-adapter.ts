@@ -726,6 +726,93 @@ export function interpsForScene(text: string): string[] {
   return codeVoiceInterps(buildOrchestration(a), backticksFromAst(c.ast));
 }
 
+// Extracts the `gm_*` soundfont names a strudel backtick's code USES, by regex over its
+// `sound(...)` / `.sound(...)` call arguments — no re-derivation, just a text scan of the code the
+// AST already carries verbatim (same status as `interpsForScene`'s AST read: the host TRANSPORTS
+// names, never resolves them — `runtime-codevoices/prefetchStrudelAssets` does the resolution).
+const SOUND_CALL_RE = /\.?sound\(\s*(['"`])([\s\S]*?)\1/g;
+const GM_TOKEN_RE = /gm_[a-zA-Z0-9_]+/g;
+function gmInstrumentsFromCode(code: string): string[] {
+  const out = new Set<string>();
+  let call: RegExpExecArray | null;
+  SOUND_CALL_RE.lastIndex = 0;
+  while ((call = SOUND_CALL_RE.exec(code))) {
+    const arg = call[2];
+    let tok: RegExpExecArray | null;
+    GM_TOKEN_RE.lastIndex = 0;
+    while ((tok = GM_TOKEN_RE.exec(arg))) out.add(tok[0]);
+  }
+  return [...out];
+}
+
+// Which backtick TOKENS are strudel, for a scene. A tagged backtick (`` `strudel: …` ``) carries
+// its own resolved `interp` already (`backticksFromAst`). An UNTAGGED backtick — the common case,
+// e.g. `v -> \`stack(…)\`` under `@actor v eval.strudel` — carries no `interp`/`tag` on the AST
+// node itself (verified against the live `compileToBPxAST` output, 2026-07-15): its language comes
+// from the OWNING ACTOR's `eval.<lang>`, paired to the backtick token via `btTokenByActor` — the
+// same actor→token pairing `codeVoiceInterps`'s caller already builds for arm/disarm. Reused here,
+// not re-derived: both `btTokenByActor` and `actorTableFromAst` are existing pure AST readers.
+function strudelBtTokens(
+  a: SceneAstView | null,
+  ast: unknown,
+  backticks: BacktickTable
+): Set<string> {
+  const out = new Set<string>();
+  for (const [token, bt] of Object.entries(backticks)) {
+    if (bt.interp === 'strudel') out.add(token);
+  }
+  const actorTable = actorTableFromAst(a);
+  const btByActor = btTokenByActor(ast);
+  for (const [actorName, token] of Object.entries(btByActor)) {
+    if (actorTable[actorName]?.eval === 'strudel') out.add(token);
+  }
+  return out;
+}
+
+/**
+ * PRÉ-TIRAGE DES ASSETS À L'OUVERTURE (chantier latence [788], design [789] : préfetch APRÈS le
+ * warmup moteur, `runtime-codevoices/src/preload.ts`). Énumère ce qu'une scène DÉCLARE — banques
+ * `@library.strudel "<id>"` (`librariesFromAst`, même lecture que `loadDeclaredLibraries`) +
+ * instruments `gm_*` utilisés dans les backticks strudel (`backticksFromAst` + `strudelBtTokens` +
+ * scan regex du code déjà porté par l'AST) — pour les passer tels quels à `preload(interps, assets)`.
+ * AUCUNE résolution ici (pas de fetch, pas de lookup de police) : l'hôte TRANSPORTE des noms, le
+ * paquet les résout. `{}` si la scène ne déclare/n'utilise rien. `compileBps` est mémoïsé → appel bon
+ * marché au même rythme que `interpsForScene` (même geste d'ouverture, `preload-on-open.svelte.ts`).
+ */
+export function assetsForScene(text: string): {
+  strudel?: { banks?: string[]; gmInstruments?: string[] };
+} {
+  let c: { ast?: unknown };
+  try {
+    c = compileBps(text) as typeof c;
+  } catch {
+    return {};
+  }
+  const a = (c.ast ?? null) as SceneAstView | null;
+  if (!a) return {};
+  // PRÉFETCH = uniquement les banques AUTO-HÉBERGÉES (VPS, fiables). Une banque DISTANTE (github,
+  // `selfHosted:false` comme dirt-samples) déclenche, si son fetch échoue à l'ouverture (réseau/gate),
+  // un `console.error` INTERNE de strudel `samples()` (que le best-effort de `prefetchStrudelAssets`
+  // ne peut pas ravaler) — et ce n'est PAS le goulot de latence (le gain mesuré = soundfonts GM du VPS).
+  // Les banques distantes restent en chargement PARESSEUX à l'éval (inchangé). Filtre via le flag
+  // `selfHosted` de `guestLibraries` (résolu par `resolveStrudelLibrary`). Préfetch banques distantes =
+  // à réactiver une fois l'amont robuste au fetch de banque qui échoue (routé runtime-codevoices).
+  const banks = (librariesFromAst(a).strudel ?? []).filter(
+    (id) => resolveStrudelLibrary(id)?.selfHosted
+  );
+  const backticks = backticksFromAst(c.ast);
+  const strudelTokens = strudelBtTokens(a, c.ast, backticks);
+  const gmInstruments = new Set<string>();
+  for (const [token, bt] of Object.entries(backticks)) {
+    if (!strudelTokens.has(token)) continue;
+    for (const inst of gmInstrumentsFromCode(bt.code)) gmInstruments.add(inst);
+  }
+  const strudel: { banks?: string[]; gmInstruments?: string[] } = {};
+  if (banks && banks.length > 0) strudel.banks = banks;
+  if (gmInstruments.size > 0) strudel.gmInstruments = [...gmInstruments];
+  return Object.keys(strudel).length > 0 ? { strudel } : {};
+}
+
 // `.bps` — BPScript compiles to a SceneAST (`compileBPS().ast`) that BPx derives
 // directly. The front-end view (tempo, flagStates, libraries, actorTable,
 // sections) is read from THAT AST — the single source of truth — not the

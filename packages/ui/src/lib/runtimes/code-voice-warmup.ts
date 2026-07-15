@@ -9,7 +9,7 @@
 // second `preload()`. Best-effort de bout en bout (comme `preload` lui-même) : un warmup en échec
 // ne rejette jamais côté appelant, il ne bloque donc jamais un play.
 
-import { preload } from 'runtime-codevoices';
+import { preload, type PreloadAssets } from 'runtime-codevoices';
 
 /** Promesse en vol ou résolue, par interprète (ex. 'strudel', 'csound', 'hydra'). Une entrée
  *  présente = un warmup a déjà été lancé pour cet interprète (en vol ou terminé) ; l'appelant
@@ -17,19 +17,28 @@ import { preload } from 'runtime-codevoices';
 const warmups = new Map<string, Promise<void>>();
 
 /**
- * Préchauffe les `interps` donnés. Idempotent + dédupliqué : les interprètes déjà en vol/chauds
- * ne redéclenchent pas `preload`, seuls les nouveaux sont groupés en UN appel `preload(nouveaux)`
- * (le paquet dédup/résout lui-même en interne). Best-effort : ne rejette jamais, un `preload`
- * absent (pair pas encore livré) ou en échec résout silencieusement.
+ * Préchauffe les `interps` donnés, PUIS pré-tire les `assets` déclarés par la scène qui a
+ * déclenché cet appel (chantier latence [788] : banques `@library.strudel` + instruments `gm_*`
+ * — voir `bpx-adapter.ts:assetsForScene`). Idempotent + dédupliqué PAR INTERPRÈTE : les
+ * interprètes déjà en vol/chauds ne redéclenchent pas `preload`, seuls les nouveaux sont groupés
+ * en UN appel `preload(nouveaux, assets)`. Best-effort : ne rejette jamais, un `preload` absent
+ * (pair pas encore livré) ou en échec résout silencieusement.
+ *
+ * Choix de dédup : la clé reste l'INTERPRÈTE (inchangé), pas l'interprète+assets. Une scène
+ * n'a qu'UNE seule ouverture par interprète (garde par fileId dans `preload-on-open.svelte.ts`),
+ * donc les assets d'une scène accompagnent TOUJOURS le 1er appel qui lance réellement `preload`
+ * pour ses interprètes — un 2e appel pour un interprète déjà chaud (ex. le gate play de
+ * `real-core.ts`, qui n'a que l'interprète, pas les assets) réutilise la promesse mémoïsée sans
+ * relancer `preload`, donc sans jamais perdre le préfetch déjà fait/en vol à l'ouverture.
  */
-export function warmUp(interps: readonly string[]): Promise<void> {
+export function warmUp(interps: readonly string[], assets?: PreloadAssets): Promise<void> {
   const wanted = [...new Set(interps.filter((i) => i && i.length > 0))];
   if (wanted.length === 0) return Promise.resolve();
 
   const toLaunch = wanted.filter((i) => !warmups.has(i));
   if (toLaunch.length > 0) {
     const shared = Promise.resolve()
-      .then(() => preload?.(toLaunch))
+      .then(() => preload?.(toLaunch, assets))
       .catch(() => undefined)
       .then(() => undefined);
     for (const i of toLaunch) warmups.set(i, shared);
