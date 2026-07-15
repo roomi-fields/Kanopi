@@ -828,7 +828,16 @@ export function assetsForScene(text: string): {
   if (gmInstruments.size > 0) strudel.gmInstruments = [...gmInstruments];
   const result: { strudel?: typeof strudel; mercury?: { samples?: string[] } } = {};
   if (Object.keys(strudel).length > 0) result.strudel = strudel;
-  if (mercurySamples.size > 0) result.mercury = { samples: [...mercurySamples] };
+  if (mercurySamples.size > 0) {
+    result.mercury = { samples: [...mercurySamples] };
+  } else if (mercuryTokens.size > 0) {
+    // Scène MERCURY (≥1 backtick mercury) mais AUCUN `new sample` référencé (synthé pur) : le
+    // tableau VIDE est le SENTINEL "déclaré vide" (≠ absence de `mercury`), distinct de "pas de
+    // backtick mercury du tout" — `setMercurySampleAllowlist` (runtime-codevoices) le préserve via
+    // `Array.isArray` et pose le global à `[]`, que le patch mercury-engine lit pour charger
+    // STRICTEMENT 0 sample au lieu du jeu entier (~428 requêtes) [797/799].
+    result.mercury = { samples: [] };
+  }
   return result;
 }
 
