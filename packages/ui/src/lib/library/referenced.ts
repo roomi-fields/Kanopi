@@ -180,13 +180,17 @@ export function referencedLibraries(
 export interface CompileStatus {
   /** Whether this file type is one we compile (bps/bp3); false → no indicator. */
   applicable: boolean;
-  /** True when the program PARSES and DERIVES with no errors. */
+  /** True when the program PARSES, DERIVES, its declared RESOURCES resolve, and no
+   *  voice is currently erroring at RUNTIME — the 3-signal health voyant (decision
+   *  2026-07-15-voyant-sante-niveau3.md). */
   ok: boolean;
   /** Errors (line + message), empty when ok. */
   errors: { line?: number; message: string }[];
-  /** Which stage failed: parse errors, or a derivation throw at eval time. Lets
-   *  the chip say "derive error" — fail-loud, not a misleading green "compiles". */
-  phase?: 'parse' | 'derive';
+  /** Which stage failed: parse errors, a derivation throw at eval time, an unresolved
+   *  declared resource (bank/…), or a live runtime error from a code voice. Lets the
+   *  chip say "derive error" / "resource error" / "runtime error" — fail-loud, never
+   *  a misleading green "compiles". */
+  phase?: 'parse' | 'derive' | 'resource' | 'runtime';
 }
 
 /** The last derivation outcome of the file, as recorded by the eval pipeline
@@ -194,6 +198,13 @@ export interface CompileStatus {
 export interface DeriveOutcomeView {
   ok: boolean;
   error?: { line?: number; message: string };
+}
+
+/** The last resource-resolution outcome of the file, as recorded by the eval pipeline
+ *  (`resourceStatus.for(...)`). `null` = never checked or stale since the last edit. */
+export interface ResourceOutcomeView {
+  ok: boolean;
+  errors: { message: string }[];
 }
 
 // Loosely-typed compile error from compileToBPxAST.
@@ -214,12 +225,21 @@ interface BpsError {
  * chip must be fail-loud, not a green "compiles" over a scene that never sounds. So
  * a passing parse + a failed derive → not ok. `null`/undefined derive (never
  * evaluated, or stale since the last edit) leaves the status at parse-only.
+ *
+ * `resource` (signal 2) and `runtimeErrors` (signal 3) extend the same fail-loud
+ * contract (decision 2026-07-15-voyant-sante-niveau3.md): a scene that parses AND
+ * derives can still declare a resource the host's catalog doesn't know (`@library.
+ * strudel "typo"`) or have a code voice currently throwing at runtime ("sound not
+ * found"). Priority when several signals fail: parse, then derive, then resource,
+ * then runtime — parse always wins (nothing downstream is trustworthy without it).
  */
 export function programCompileStatus(
   fileName: string | undefined,
   contents: string | undefined,
   derive?: DeriveOutcomeView | null,
-  path?: string
+  path?: string,
+  resource?: ResourceOutcomeView | null,
+  runtimeErrors?: { message: string }[]
 ): CompileStatus {
   if (!fileName || contents === undefined) return { applicable: false, ok: true, errors: [] };
   // A data file (`libraries/…` personal catalog OR `resources/…` factory catalog
@@ -247,6 +267,19 @@ export function programCompileStatus(
         errors: [derive.error ?? { message: 'derivation failed' }],
         phase: 'derive'
       };
+    // Signal 2 — a declared resource (audio bank, …) the host's catalog can't
+    // resolve. Recorded by the SAME eval attempt as `derive` (blocks.svelte.ts).
+    if (resource && !resource.ok)
+      return {
+        applicable: true,
+        ok: false,
+        errors: resource.errors.length > 0 ? resource.errors : [{ message: 'resource unresolved' }],
+        phase: 'resource'
+      };
+    // Signal 3 — a code voice of THIS file is currently erroring at runtime
+    // (openBlocks.errored, continuously reactive — not tied to the last eval).
+    if (runtimeErrors && runtimeErrors.length > 0)
+      return { applicable: true, ok: false, errors: runtimeErrors, phase: 'runtime' };
     return { applicable: true, ok: true, errors: [] };
   } catch (e) {
     return { applicable: true, ok: false, errors: [{ message: String(e) }], phase: 'parse' };

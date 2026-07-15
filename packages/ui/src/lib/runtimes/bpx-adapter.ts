@@ -1368,6 +1368,39 @@ export function resolveStrudelLibrary(bankId: string) {
   return guestLibraries.find((l) => l.engine === 'strudel' && l.declarable && l.id === bankId);
 }
 
+/**
+ * Resource-resolution check for a scene's TEXT, independent of a live eval attempt —
+ * signal 2 of the compile chip's 3-signal health voyant (decision 2026-07-15-voyant-
+ * sante-niveau3.md). `loadDeclaredLibraries` below performs the SAME check during a
+ * real eval, but only sees the event-bus source key (a display name), not the
+ * workspace file id the chip's `resourceStatus` store keys on (same convention as
+ * `deriveStatus`) — so this pure sibling is exposed for callers that DO have the
+ * workspace id (blocks.svelte.ts's produce/replay sites) to report from. Reuses
+ * `resolveStrudelLibrary` (single source of truth against `guestLibraries`) — no
+ * duplicated resolution logic, only the AST read is repeated (cheap: `compileBps` is
+ * memoized, same pattern as `interpsForScene`/`referencedLibraries`). Non-'strudel'
+ * engines are informational only (no loader) — never a resource error, matching
+ * `loadDeclaredLibraries`'s own info-vs-error split.
+ */
+export function resourceResolutionErrors(text: string): { message: string }[] {
+  let c: { ast?: unknown };
+  try {
+    c = compileBps(text) as typeof c;
+  } catch {
+    return [];
+  }
+  const a = (c.ast ?? null) as SceneAstView | null;
+  if (!a) return [];
+  const libs = librariesFromAst(a);
+  const out: { message: string }[] = [];
+  for (const bankId of libs.strudel ?? []) {
+    if (!resolveStrudelLibrary(bankId)) {
+      out.push({ message: `banque inconnue: ${bankId}` });
+    }
+  }
+  return out;
+}
+
 function loadDeclaredLibraries(libraries: Libraries, id: Runtime, log: LogPush): void {
   for (const [engine, ids] of Object.entries(libraries)) {
     if (engine !== 'strudel') {

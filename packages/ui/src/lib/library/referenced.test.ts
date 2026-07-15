@@ -127,4 +127,75 @@ describe('programCompileStatus', () => {
     expect(programCompileStatus('ok.bps', code, null).ok).toBe(true);
     expect(programCompileStatus('ok.bps', code, undefined).ok).toBe(true);
   });
+
+  // 3-signal health voyant (decision 2026-07-15-voyant-sante-niveau3.md): parse and
+  // derive can both be clean while signal 2 (resource) or signal 3 (runtime) fail —
+  // the chip must still read red in either case, not a misleading green "compiles".
+  const okCode = `@core\n@controls\n@alphabet.western:browser\n@mm:120\nS -> Bass\nBass -> C2 C2 (wave:sawtooth)`;
+
+  it('(a) a resource-resolution error → not ok, phase "resource"', () => {
+    const s = programCompileStatus('ok.bps', okCode, { ok: true }, undefined, {
+      ok: false,
+      errors: [{ message: 'banque inconnue: zzz-nonexistent' }]
+    });
+    expect(s.ok).toBe(false);
+    expect(s.phase).toBe('resource');
+    expect(s.errors[0].message).toContain('zzz-nonexistent');
+  });
+
+  it('(b) a runtime error → not ok, phase "runtime"', () => {
+    const s = programCompileStatus(
+      'ok.bps',
+      okCode,
+      { ok: true },
+      undefined,
+      { ok: true, errors: [] },
+      [{ message: 'sound not found: bd' }]
+    );
+    expect(s.ok).toBe(false);
+    expect(s.phase).toBe('runtime');
+    expect(s.errors[0].message).toContain('sound not found');
+  });
+
+  it('(c) parse + derive + resource + runtime all ok → ok', () => {
+    const s = programCompileStatus(
+      'ok.bps',
+      okCode,
+      { ok: true },
+      undefined,
+      { ok: true, errors: [] },
+      []
+    );
+    expect(s.ok).toBe(true);
+    expect(s.errors).toEqual([]);
+    expect(s.phase).toBeUndefined();
+  });
+
+  it('(d) a parse error always wins, even with resource/runtime errors too', () => {
+    const badCode = `@core\n@controls\n@alphabet.western:browser\n@mm:120\nS -> Bass\nBass -> C2 C2 (wave:triangle123)`;
+    const s = programCompileStatus(
+      'bad.bps',
+      badCode,
+      { ok: false, error: { message: 'derive too' } },
+      undefined,
+      { ok: false, errors: [{ message: 'banque inconnue: zzz' }] },
+      [{ message: 'sound not found' }]
+    );
+    expect(s.ok).toBe(false);
+    expect(s.phase).toBe('parse');
+    expect(s.errors[0].message).toContain('triangle123');
+  });
+
+  it('a derive error wins over resource/runtime errors (priority: parse > derive > resource > runtime)', () => {
+    const s = programCompileStatus(
+      'mohanam.bps',
+      okCode,
+      { ok: false, error: { message: 'transposeToken: unresolved pitch' } },
+      undefined,
+      { ok: false, errors: [{ message: 'banque inconnue: zzz' }] },
+      [{ message: 'sound not found' }]
+    );
+    expect(s.ok).toBe(false);
+    expect(s.phase).toBe('derive');
+  });
 });

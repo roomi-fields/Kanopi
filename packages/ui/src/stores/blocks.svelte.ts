@@ -8,6 +8,8 @@ import { getAdapter } from '../lib/runtimes/registry';
 import { onSlotErrorChange, getSlotErrors } from 'runtime-codevoices';
 import { playback } from './playback.svelte';
 import { deriveStatus, type DeriveError } from './derive-status.svelte';
+import { resourceStatus } from './resource-status.svelte';
+import { resourceResolutionErrors } from '../lib/runtimes/bpx-adapter';
 
 // The thrown-error shape carries a message; pull a line if BPx tagged one.
 function toDeriveError(err: unknown): DeriveError {
@@ -242,7 +244,14 @@ class OpenBlocksStore {
         if (!deriveError) deriveError = toDeriveError(err);
       }
     }
-    if (derivedAny) deriveStatus.report(fileId, file.contents, !deriveError, deriveError);
+    if (derivedAny) {
+      deriveStatus.report(fileId, file.contents, !deriveError, deriveError);
+      // Signal 2 (resource resolution, decision 2026-07-15-voyant-sante-niveau3.md):
+      // ALWAYS report, ok or not — a scene just fixed must repaint green, not stay
+      // stuck on a stale red from a previous produce.
+      const resErrors = resourceResolutionErrors(file.contents);
+      resourceStatus.report(fileId, file.contents, resErrors.length === 0, resErrors);
+    }
   }
 
   /**
@@ -299,8 +308,28 @@ class OpenBlocksStore {
       }
     }
     const activeFile = activeTab ? workspace.fileById(activeTab) : undefined;
-    if (derivedAny && activeFile)
+    if (derivedAny && activeFile) {
       deriveStatus.report(activeTab!, activeFile.contents, !deriveError, deriveError);
+      const resErrors = resourceResolutionErrors(activeFile.contents);
+      resourceStatus.report(activeTab!, activeFile.contents, resErrors.length === 0, resErrors);
+    }
+  }
+
+  /**
+   * Signal 3 of the compile chip (decision 2026-07-15-voyant-sante-niveau3.md):
+   * currently-errored blocks of `fileId`, with their live message. Reads `errored`
+   * ($state, refreshed by `_refreshErrored()` on every Strudel per-slot error change)
+   * so a caller wrapping this in `$derived` re-renders CONTINUOUSLY as voices error or
+   * recover — not frozen to the moment of the last eval, unlike signals 1/2.
+   */
+  runtimeErrorsForFile(fileId: string): { message: string }[] {
+    const out: { message: string }[] = [];
+    for (const b of this.blocksForFile(fileId)) {
+      if (!this.errored.has(b.qualifiedName)) continue;
+      const err = getSlotErrors().get(b.qualifiedName);
+      out.push({ message: err?.message ?? `${b.qualifiedName}: erreur d'exécution` });
+    }
+    return out;
   }
 }
 

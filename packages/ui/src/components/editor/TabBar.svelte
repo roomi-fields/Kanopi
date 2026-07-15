@@ -6,6 +6,8 @@
   import { ui } from '../../stores/ui.svelte';
   import { programCompileStatus } from '../../lib/library/referenced';
   import { deriveStatus } from '../../stores/derive-status.svelte';
+  import { resourceStatus } from '../../stores/resource-status.svelte';
+  import { openBlocks } from '../../stores/blocks.svelte';
   import Tab from './Tab.svelte';
 
   function onDropEnd(e: DragEvent) {
@@ -25,8 +27,23 @@
   // Fold the eval pipeline's DERIVATION outcome (msg [598]) into the chip so a
   // scene that parses but throws at derive reads red, not a misleading "compiles".
   const derive = $derived(deriveStatus.for(workspace.activeTabId, activeFile?.contents));
+  // Signal 2 (resource resolution) — same eval-pipeline-recorded contract as `derive`.
+  const resource = $derived(resourceStatus.for(workspace.activeTabId, activeFile?.contents));
+  // Signal 3 (runtime errors) — CONTINUOUSLY reactive (openBlocks.errored is $state,
+  // refreshed on every Strudel per-slot error change), not frozen to the last eval —
+  // decision 2026-07-15-voyant-sante-niveau3.md.
+  const runtimeErrors = $derived(
+    workspace.activeTabId ? openBlocks.runtimeErrorsForFile(workspace.activeTabId) : []
+  );
   const compile = $derived(
-    programCompileStatus(activeFile?.name, activeFile?.contents, derive, activeFile?.path)
+    programCompileStatus(
+      activeFile?.name,
+      activeFile?.contents,
+      derive,
+      activeFile?.path,
+      resource,
+      runtimeErrors
+    )
   );
 
   // ————— Enregistrement (ESPACE_PERSO_SPEC §4.3/§5, lot A1) —————
@@ -165,6 +182,10 @@
         <span class="compile-label">compiles</span>
       {:else if compile.phase === 'derive'}
         <span class="compile-label">derive error</span>
+      {:else if compile.phase === 'resource'}
+        <span class="compile-label">resource error</span>
+      {:else if compile.phase === 'runtime'}
+        <span class="compile-label">runtime error</span>
       {:else}
         <span class="compile-label"
           >{compile.errors.length} error{compile.errors.length > 1 ? 's' : ''}</span
