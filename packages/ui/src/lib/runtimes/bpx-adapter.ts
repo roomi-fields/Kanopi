@@ -2052,8 +2052,19 @@ function makeBpxAdapter(
         // actor keeps `transport.audio` and MUST be audible. MIDI is an EXPLICIT choice
         // (`@actor … transport.midi`) — never auto-routed off a granted Web MIDI port,
         // which used to make every `.gr` SILENT on a machine that simply HAS a MIDI port.
+        //
+        // Only voices that route through ONE OF OUR transports get device-gated: the
+        // implicit-`js` default and the symbolic alphabet→`sound` voices. An `eval.<X>`
+        // producer (strudel/hydra/p5/csound/mercury AND explicit `eval.js`) SORT EN NATIF —
+        // « on ne route pas sa sortie native » (décision 2026-07-14 producteur/canal, §Modèle
+        // axe 1 + §Conséquences 1/3 ; parser bpscript rejette désormais tout `transport` sur un
+        // `eval.*`). Ces voix N'ONT PAS de transport → rien à résoudre/valider ici. Sans ce
+        // saut, le défaut `transportKey ?? 'audio'` (l.701) device-gaterait une voix visuelle
+        // hydra contre l'appareil audio → rejet à tort. Le `devices` map ne sert QU'à cette
+        // validation (write-only) ; le routage réel est par `event.output.runtime` (Kairos).
         const devices = new Map<string, Device>();
         for (const actor of orchestration.actors) {
+          if (actor.evalInterp) continue; // producteur eval = natif, hors transport
           devices.set(
             actor.name,
             await gateVoiceDevice(actor.name, actor.transportKey, actor.evalInterp, id, log)

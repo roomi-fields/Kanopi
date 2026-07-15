@@ -59,7 +59,7 @@ test('an unresolved @library.strudel bank turns the compile chip RED (signal 2, 
   // a bank absent from the guestLibraries catalog — the ONLY thing wrong with it.
   const broken = `@library.strudel "zzz-nonexistent"
 
-@actor beat  transport.audio  eval.strudel
+@actor beat  eval.strudel
 
 S -> beat
 

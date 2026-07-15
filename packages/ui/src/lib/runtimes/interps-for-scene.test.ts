@@ -8,7 +8,7 @@ import { interpsForScene } from './bpx-adapter';
 describe('interpsForScene — engines a scene declares (for on-open preload)', () => {
   it('detects a single strudel voice', () => {
     const code =
-      '@core\n@tempo:120\n\n@actor v  eval.strudel  transport.audio\n\nS -> v\n\nv -> `sound("bd hh sd oh")`';
+      '@core\n@tempo:120\n\n@actor v  eval.strudel\n\nS -> v\n\nv -> `sound("bd hh sd oh")`';
     const interps = interpsForScene(code);
     expect(interps.length).toBeGreaterThan(0);
     expect(interps.some((i) => /strudel/.test(i))).toBe(true);
@@ -16,7 +16,7 @@ describe('interpsForScene — engines a scene declares (for on-open preload)', (
 
   it('detects BOTH engines of a strudel + hydra scene', () => {
     const code =
-      '@actor groove  transport.audio  eval.strudel\n@actor viz     transport.video  eval.hydra\n\nS -> { groove, viz }\n\ngroove -> `sound("bd")`\n\nviz -> `osc(60).out()`';
+      '@actor groove  eval.strudel\n@actor viz  eval.hydra\n\nS -> { groove, viz }\n\ngroove -> `sound("bd")`\n\nviz -> `osc(60).out()`';
     const interps = interpsForScene(code);
     expect(interps.some((i) => /strudel/.test(i))).toBe(true);
     expect(interps.some((i) => /hydra/.test(i))).toBe(true);

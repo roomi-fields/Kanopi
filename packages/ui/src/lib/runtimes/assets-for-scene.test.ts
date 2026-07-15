@@ -37,7 +37,7 @@ describe('assetsForScene — declared strudel banks + used gm_* instruments (for
 
   it('returns {} for a strudel scene that declares no bank and uses no gm_* instrument', () => {
     const code =
-      '@core\n@tempo:120\n\n@actor v  eval.strudel  transport.audio\n\nS -> v\n\nv -> `sound("bd hh sd oh")`';
+      '@core\n@tempo:120\n\n@actor v  eval.strudel\n\nS -> v\n\nv -> `sound("bd hh sd oh")`';
     expect(assetsForScene(code)).toEqual({});
   });
 

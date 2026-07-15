@@ -157,7 +157,7 @@ test('seek Hydra: l’horloge propre de la voix (synth.time) se recale sur le po
   await loadScene(
     page,
     'seek-hydra.bps',
-    '@actor viz transport.video eval.hydra\n' +
+    '@actor viz eval.hydra\n' +
       'S -> viz viz viz viz viz viz viz viz\n' +
       'viz -> `osc(10,0.1,0.8).out()`\n'
   );
@@ -215,8 +215,8 @@ test('seek Strudel: repli best-effort — le motif redémarre depuis le début d
   await loadScene(
     page,
     'seek-strudel.bps',
-    '@actor drums transport.audio eval.strudel\n' +
-      '@actor lead  transport.audio eval.strudel\n' +
+    '@actor drums eval.strudel\n' +
+      '@actor lead eval.strudel\n' +
       'S -> calm full\n' +
       'calm -> drums\n' +
       'full -> { drums, lead }\n' +

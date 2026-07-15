@@ -153,12 +153,12 @@ test("son inexistant (ASYNC) → onStrudelError remonte ET le chip passe ROUGE '
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
   // Skeleton minimal validé par l'oracle BPScript (0 échec structurel) — un seul acteur
-  // eval.strudel + transport.audio pour que le scheduler démarre réellement, jouant un nom
-  // de son inexistant. Le seul défaut de la scène est ce son.
+  // eval.strudel (sort en NATIF, sans transport : modèle producteur/canal [809]) qui schedule
+  // un pattern jouant un nom de son inexistant. Le seul défaut de la scène est ce son.
   const broken = `@core
 @tempo:120
 
-@actor v  transport.audio  eval.strudel
+@actor v  eval.strudel
 
 S -> v
 
@@ -224,7 +224,7 @@ test('une erreur JS synchrone dans un acteur eval.strudel fait passer le chip ro
   const syncThrow = `@core
 @tempo:120
 
-@actor v  transport.audio  eval.strudel
+@actor v  eval.strudel
 
 S -> v
 
