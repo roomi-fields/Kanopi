@@ -1,13 +1,15 @@
 // @name: Melody with Scale (tonal)
-// @tagline: n() + .scale("C:minor") — fonctions tonales (@strudel/tonal), échantillon "piano"
+// @tagline: n() + .scale("C:minor") — fonctions tonales (@strudel/tonal), soundfont gm_piano
 // @description: Exemple canonique tiré du workshop officiel Strudel « First Notes ». Exerce le
 // module tonal (résolution de degrés de gamme via .scale()) — PRÉSENT dans notre bundle via
-// @strudel/tonal (ré-exporté par @strudel/web). "piano" est un dossier de la banque dirt-samples,
-// pas un soundfont GM. À comparer côte à côte avec l'original: https://strudel.cc/workshop/first-notes/.
+// @strudel/tonal (ré-exporté par @strudel/web). Le TIMBRE est le piano General MIDI (soundfont
+// gm_piano, banque @library.strudel "gm", servi depuis notre VPS) : garanti audible. L'objet de
+// la démo est la MÉLODIE et la GAMME ; le timbre du piano y est incident (la vitrine GM, c'est la
+// scène 09). À comparer côte à côte avec l'original: https://strudel.cc/workshop/first-notes/.
 // @language: strudel
 // @outputs: audio
 // @level: intermediate
-// @tags: strudel, ab-corpus, tonal, scale, samples
+// @tags: strudel, ab-corpus, tonal, scale, gm, soundfont
 // @source: https://strudel.cc/workshop/first-notes/
 //
 // A/B — strudel — Melody with Scale. Original: https://strudel.cc/workshop/first-notes/.
@@ -15,9 +17,10 @@
 
 @core
 @tempo:120
+@library.strudel "gm"
 
 @actor v  eval.strudel
 
 S -> v
 
-v -> `n("0 2 4 <[6,8] [7,9]>").scale("C:minor").sound("piano")`:4
+v -> `n("0 2 4 <[6,8] [7,9]>").scale("C:minor").sound("gm_piano")`:4

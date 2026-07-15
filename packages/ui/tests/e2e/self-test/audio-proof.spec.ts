@@ -83,6 +83,35 @@ test('gm sonne : sound("gm_piano"/"gm_marimba"/"gm_flute") produit un RMS > 0 me
   noErrors();
 });
 
+// [809] point 2 — (B) dirt-samples testée d'abord (règle archi [811] : le son tranche, l'A/B
+// départage) → MUETTE dans le banc (RMS=0 tous retries ; banque distante github, inapte au gate).
+// Bascule sur (A) : @library.strudel "gm" + sound("gm_piano") (soundfont GM self-hosté VPS,
+// garanti audible). L'objet de la démo (mélodie + gamme via .scale()) est préservé ; le timbre GM
+// y est incident (vitrine GM = scène 09).
+test('strudel/03 sonne : n(...).scale("C:minor").sound("gm_piano") produit un RMS > 0 mesuré [809]', async ({
+  page
+}) => {
+  const audio = await setupAudioCapture(page);
+  const noErrors = expectNoConsoleErrors(page);
+
+  const program = readFileSync(join(libraryStrudelDir, '03-melody-scale-tonal.bps'), 'utf8');
+
+  await page.goto('');
+  await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
+
+  await loadAndFocus(page, '03-melody-scale-tonal.bps', program);
+  await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
+
+  await evalBlockAt(page, 1);
+
+  const rms = await audio.getMaxRMS(3000);
+  expect(rms).toBeGreaterThan(0.001);
+
+  await page.keyboard.press('ControlOrMeta+Period');
+  await page.waitForTimeout(500);
+  noErrors();
+});
+
 // FIXME [787.2a] — NON-MESURABLE en e2e headless, EN ATTENTE d'une confirmation À L'OREILLE (Romain,
 // 5173). PAS un faux vert : le diagnostic est complet (décision archi [807] : stop la chasse e2e,
 // rendements décroissants). 3 couches amont corrigées (chaînabilité 7be15a2 + réveil 5dafaf0/3d80901 +
