@@ -17,7 +17,7 @@
 @core
 @tempo:120
 
-@actor v  eval.p5  transport.video
+@actor v  eval.p5
 
 S -> v
 

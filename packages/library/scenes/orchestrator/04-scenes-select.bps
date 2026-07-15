@@ -10,8 +10,8 @@
 // Sélecteur de scènes A5 — règles gardées par drapeau nommé.
 @flag scene: calm:1, full:2
 
-@actor drums  transport.audio  eval.strudel
-@actor lead   transport.audio  eval.strudel
+@actor drums  eval.strudel
+@actor lead  eval.strudel
 
 [scene==calm] S -> drums
 [scene==full] S -> { drums, lead }

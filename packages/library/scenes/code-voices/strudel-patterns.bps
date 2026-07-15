@@ -15,7 +15,7 @@
 @core
 @tempo:120
 
-@actor beat  eval.strudel  transport.audio
+@actor beat  eval.strudel
 
 S -> beat beat beat `sc: Synth.new(\ping)`
 

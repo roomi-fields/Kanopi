@@ -21,7 +21,7 @@
 @core
 @tempo:110
 
-@actor v  eval.mercury  transport.audio
+@actor v  eval.mercury
 
 S -> v
 

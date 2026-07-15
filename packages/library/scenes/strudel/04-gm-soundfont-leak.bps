@@ -19,7 +19,7 @@
 @core
 @tempo:120
 
-@actor v  eval.strudel  transport.audio
+@actor v  eval.strudel
 
 S -> v
 

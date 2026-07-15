@@ -11,7 +11,7 @@
 // Une voix de code : Strudel (eval) → sortie audio (transport).
 // Évaluer la voix `drums`, puis couper.
 
-@actor drums  transport.audio  eval.strudel
+@actor drums  eval.strudel
 
 S -> drums
 

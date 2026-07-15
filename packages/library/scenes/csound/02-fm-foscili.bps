@@ -17,7 +17,7 @@
 @core
 @tempo:120
 
-@actor v  eval.csound  transport.audio
+@actor v  eval.csound
 
 S -> v
 

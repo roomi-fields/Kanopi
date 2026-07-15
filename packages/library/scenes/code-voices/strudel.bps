@@ -17,7 +17,7 @@
 @core
 @tempo:120
 
-@actor bass  eval.strudel  transport.audio
+@actor bass  eval.strudel
 
 S -> bass bass bass bass
 
