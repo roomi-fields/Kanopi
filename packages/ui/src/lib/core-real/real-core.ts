@@ -28,6 +28,7 @@ import { createCodeVoicesRuntime, type CodeVoicesRuntime } from 'runtime-codevoi
 import type { LogPush } from '../runtimes/adapter';
 import { installConsoleBridge } from '../runtimes/console-bridge';
 import { ensureCsoundSoundfiles } from '../runtimes/csound-soundfiles';
+import { warmUp } from '../runtimes/code-voice-warmup';
 import { enableMidi, type MidiEvent } from '../midi/midi-input';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
@@ -344,7 +345,13 @@ class RealCore implements CoreApi {
     if (runtime !== 'bp3' && runtime !== 'bpscript') {
       // [764](e) — un CSD lit ses soundfiles depuis le FS virtuel Csound ; l'hôte les fournit AVANT
       // l'éval (fetch depuis le store auto-hébergé -> writeCsoundFile). Best-effort, ne throw jamais.
+      // Mémoïsé par nom (csound-soundfiles.ts) : no-op si `preload-on-open` les a déjà chargés.
       if (runtime === 'csound') await ensureCsoundSoundfiles(code, this.log);
+      // [786] — préchauffage GATÉ (plus fire-and-forget) : si l'ouverture a déjà lancé/fini le
+      // warmup de cet interprète, cette attente est immédiate (promesse mémoïsée déjà résolue) ;
+      // sinon on le lance+attend ICI (best-effort, ne throw jamais, ne bloque donc jamais le play
+      // au-delà du temps réel de warmup — même patron que le produce, bpx-adapter.ts:1530).
+      await warmUp([runtime]);
       await autonomousCodeVoices(this.log).evaluate(
         code,
         { actorId: slotId, fileId: sourceId, docOffset, flags },
