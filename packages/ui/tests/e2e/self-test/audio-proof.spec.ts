@@ -117,7 +117,7 @@ test.fixme('xen sonne : .tune("hexany15") (pont @strudel/xen) produit un RMS > 0
   await page.waitForTimeout(500);
 });
 
-test("son inexistant → l'erreur getTrigger remonte via onStrudelError (fix BUG 2)", async ({
+test("son inexistant (ASYNC) → onStrudelError remonte ET le chip passe ROUGE 'runtime error' (VOYANT-N3 async)", async ({
   page
 }) => {
   await page.goto('');
@@ -161,6 +161,18 @@ v -> \`sound("nawak_pas_un_son")\`:4
 
   const gotError = await gotErrorPromise;
   expect(gotError).toBe(true);
+
+  // VOYANT-N3 async (FINDING B, runtime-codevoices 1f53746) : l'erreur ASYNC (`sound not found`
+  // au 1er scheduling, HORS evaluate) est désormais imputée au dernier slot évalué via
+  // `pushAsyncStrudelError` → `slotErrors.set` + `notifySlotErrors` → `getSlotErrors()` non vide →
+  // `openBlocks.errored` (onSlotErrorChange) → `runtimeErrorsForFile` (fallback préfixe `${nom}::`)
+  // → le chip rougit. AVANT 1f53746, l'async ne partait QUE par onStrudelError (jamais le chip).
+  // Combiné au cas SYNCHRONE (test suivant), le signal 3 du voyant est clos à 100%.
+  const chip = page.locator('.compile-chip').first();
+  await expect(chip).toBeVisible({ timeout: 5_000 });
+  await expect(chip).toHaveClass(/fail/, { timeout: 6_000 });
+  await expect(chip).not.toHaveClass(/ok/);
+  await expect(chip.locator('.compile-label')).toHaveText('runtime error');
 
   await page.keyboard.press('ControlOrMeta+Period');
   await page.waitForTimeout(300);
