@@ -16,7 +16,7 @@ import { production } from './stores/production.svelte';
 import { transport } from './stores/transport.svelte';
 import { installKanopiApi } from './lib/pilot/kanopi-api';
 import { personalPitchLibSnapshot } from './stores/personal-pitch-lib.svelte';
-import { setAssetBaseUrl } from 'runtime-codevoices';
+import { setAssetBaseUrl, onStrudelError } from 'runtime-codevoices';
 import { installPreloadOnOpen } from './lib/runtimes/preload-on-open.svelte';
 
 const target = document.getElementById('app');
@@ -119,7 +119,13 @@ if (import.meta.env.DEV) {
           sampleRate: ctx.sampleRate,
           rms: measureRms(an)
         }))
-    }
+    },
+    // Re-exposes `runtime-codevoices`' `onStrudelError` (App.svelte already subscribes to it
+    // for the CM6 red flash) so an e2e can assert a live Strudel voice's runtime error (e.g.
+    // "sound not found") actually reaches the host — proof [777]/[112] of the
+    // getTrigger→emitError fix (fa46874), independent of the compile chip's own signal-3
+    // aggregation (`openBlocks.errored`, a separate mechanism keyed by slot id).
+    onStrudelError
   };
 }
 

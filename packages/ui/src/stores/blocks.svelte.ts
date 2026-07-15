@@ -324,10 +324,29 @@ class OpenBlocksStore {
    */
   runtimeErrorsForFile(fileId: string): { message: string }[] {
     const out: { message: string }[] = [];
+    const seen = new Set<string>();
     for (const b of this.blocksForFile(fileId)) {
       if (!this.errored.has(b.qualifiedName)) continue;
+      seen.add(b.qualifiedName);
       const err = getSlotErrors().get(b.qualifiedName);
       out.push({ message: err?.message ?? `${b.qualifiedName}: erreur d'exécution` });
+    }
+    // A `.bps` scene's `@actor … eval.strudel` sinks are fired by the dispatcher, which
+    // keys `getSlotErrors()` as `${fileName}::${actorName}` (bpx-adapter.ts `slotForActor`)
+    // — a DIFFERENT convention from `qualifyBlock` above, which only ever sees a single
+    // `wholeFile` block for `.bps` (no per-actor granularity). Without this, a live Strudel
+    // actor inside a compiled BPScript scene could throw "sound not found" forever and the
+    // chip would stay a misleading green — the qualifiedName loop above never matches. Catch
+    // those keys directly by file-scoped prefix so signal 3 covers BOTH standalone code-voice
+    // files (matched above) AND actors dispatched from a compiled scene.
+    const file = workspace.fileById(fileId);
+    if (file) {
+      const prefix = `${file.name}::`;
+      for (const [key, err] of getSlotErrors()) {
+        if (!key.startsWith(prefix) || seen.has(key)) continue;
+        seen.add(key);
+        out.push({ message: err.message });
+      }
     }
     return out;
   }
