@@ -108,6 +108,8 @@ export interface GuestLibrary {
   readonly engine: string;
   /** Identifiant : la valeur de `@library.<engine> "<id>"` (pour les entrées `declarable`). */
   readonly id: string;
+  /** Valeur EXACTE passée à `loadSampleBank(source)` pour charger cette bibliothèque. */
+  readonly source: string;
   readonly kind: GuestLibraryKind;
   readonly label: string;
   readonly description: string;

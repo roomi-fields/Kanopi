@@ -115,11 +115,15 @@ import type {
 // name opaque.
 import { resolveDevice, isCompatible, type Device } from '../devices/registry';
 import type { VoiceOutputType } from './adapter';
-// `@library.<engine>` bank loading: resolve a declared bank id to its source and
-// load it through the Strudel `samples()` path. Consumed AS-IS — the adapter
-// only maps ids → loader.
-import { findBank } from '../library/audio-banks';
-import { loadSampleBank, codeVoiceAdapters, createCodeVoicesRuntime } from 'runtime-codevoices';
+// `@library.<engine>` bank loading: resolve a declared bank id against the
+// upstream guestLibraries registry (SOURCE OF TRUTH — no host-side catalog) and
+// load it through the Strudel `samples()` path. The adapter only maps ids → loader.
+import {
+  loadSampleBank,
+  codeVoiceAdapters,
+  createCodeVoicesRuntime,
+  guestLibraries
+} from 'runtime-codevoices';
 // Préchauffage au CHARGEMENT (design ratifié archi [589]) : entrée de PAQUET `preload` (résout les
 // interps + warme les moteurs voix-de-code). Namespace import DÉFENSIF : `preload` n'est pas encore
 // exportée → `codevoices.preload` = undefined → `?.()` no-op (un `import { preload }` casserait le
@@ -1356,6 +1360,14 @@ async function gateVoiceDevice(
  * first cycle is silent — acceptable, and the common case (dirt-samples) is
  * cached after the first eval.
  */
+/** Resolve a declared `@library.strudel "<bankId>"` against the upstream
+ *  `guestLibraries` registry (SOURCE OF TRUTH, [773] — no host-side catalog).
+ *  Exported as a pure function so the resolution can be proven in Node/vitest
+ *  without exercising the whole adapter/logging pipeline. */
+export function resolveStrudelLibrary(bankId: string) {
+  return guestLibraries.find((l) => l.engine === 'strudel' && l.declarable && l.id === bankId);
+}
+
 function loadDeclaredLibraries(libraries: Libraries, id: Runtime, log: LogPush): void {
   for (const [engine, ids] of Object.entries(libraries)) {
     if (engine !== 'strudel') {
@@ -1367,8 +1379,8 @@ function loadDeclaredLibraries(libraries: Libraries, id: Runtime, log: LogPush):
       continue;
     }
     for (const bankId of ids) {
-      const bank = findBank(bankId);
-      if (!bank) {
+      const lib = resolveStrudelLibrary(bankId);
+      if (!lib) {
         log({
           runtime: id,
           level: 'error',
@@ -1376,8 +1388,8 @@ function loadDeclaredLibraries(libraries: Libraries, id: Runtime, log: LogPush):
         });
         continue;
       }
-      void loadSampleBank(bank.source)
-        .then(() => log({ runtime: id, level: 'info', msg: `library loaded: ${bank.name}` }))
+      void loadSampleBank(lib.source)
+        .then(() => log({ runtime: id, level: 'info', msg: `library loaded: ${lib.label}` }))
         .catch((err) =>
           log({ runtime: id, level: 'error', msg: `library ${bankId}: ${String(err)}` })
         );

@@ -23,7 +23,7 @@ import modJson from 'bpscript/lib/mod.json';
 // browsable bpscript library file, same as the others above.
 import digitalJson from 'bpscript/lib/digital.json';
 
-import { catalog as audioBanks } from './audio-banks';
+import { guestLibraries } from 'runtime-codevoices';
 import { visualsCatalog } from './visuals';
 import { listDevices } from '../devices/registry';
 // Kanopi's own bundled catalogs — real files, read AS-IS (not the `listDevices()`
@@ -134,7 +134,9 @@ export const RESOURCE_GROUPS: ResourceGroup[] = [
   {
     type: 'audio-bank',
     title: 'Audio banks',
-    entries: audioBanks.items.map((b) => ({ id: b.id, label: b.source ?? b.name, data: b }))
+    entries: guestLibraries
+      .filter((l) => l.declarable)
+      .map((l) => ({ id: l.id, label: l.source || l.label, data: l }))
   },
   {
     type: 'visual',
@@ -171,12 +173,13 @@ export const RESOURCE_GROUPS: ResourceGroup[] = [
 //     function catalogs), all physically the same directory in the `bpscript`
 //     dependency.
 //   - `Kanopi library`   — the catalogs Kanopi itself ships (devices, OSC
-//     routing, audio banks, visuals). These are NOT all in one physical
-//     folder (`packages/library/*.json` for devices/routing,
-//     `lib/library/*/catalog.json` for audio-banks/visuals) — grouped by WHO
-//     ships the file (Kanopi vs. the bpscript language), not by invented
-//     content domains. Two groups only: honest given how few real sources
-//     there are.
+//     routing, visuals) plus the audio banks CONSUMED from `runtime-codevoices`'s
+//     `guestLibraries` (the source of truth — no host-side catalog, [773]). These
+//     are NOT all in one physical location (`packages/library/*.json` for
+//     devices/routing, `lib/library/visuals/catalog.json`, the upstream dep for
+//     audio banks) — grouped by WHO ships the file (Kanopi vs. the bpscript
+//     language), not by invented content domains. Two groups only: honest given
+//     how few real sources there are.
 export interface LibraryFile {
   /** file id (no extension) — also the card title and the path segment. */
   id: string;
@@ -251,6 +254,11 @@ export const RESOURCE_FILES: LibraryFile[] = [
   libraryFile('digital', digitalJson),
   libraryFile('devices', devicesJson, 'device'),
   libraryFile('routing', routingJson, 'routing'),
-  libraryFile('audio-banks', audioBanks, 'sound'),
+  // guestLibraries is an ARRAY (not `{ items }` like the deleted host duplicate) —
+  // describeFile/readDomain tolerate it: describeFile finds no description/type on
+  // an array and returns undefined (card shows just the name, same as any file
+  // without those fields); readDomain is never reached since domainOverride='sound'
+  // short-circuits it. Verified against describeFile/readDomain above, not assumed.
+  libraryFile('audio-banks', guestLibraries, 'sound'),
   libraryFile('visuals', visualsCatalog, 'visual')
 ];
