@@ -83,11 +83,16 @@ test('gm sonne : sound("gm_piano"/"gm_marimba"/"gm_flute") produit un RMS > 0 me
   noErrors();
 });
 
-// FIXME [787.2a] — quarantaine HONNÊTE : RMS=0 mesuré. Discriminé sur pièces = le contexte audio de
-// p5.sound reste SUSPENDU (p5.ts n'appelle aucun userStartAudio/resume ; un AudioContext frais démarre
-// suspendu, créé à l'éval APRÈS le geste → non auto-réveillé). Même piège « réveil du contexte dans le
-// geste » que runtime-codevoices a corrigé pour csound (fb14fe1). Trou d'adaptateur p5 côté amont —
-// routé runtime-codevoices. À repasser en test(...) quand le contexte p5.sound est réveillé au geste.
+// FIXME [787.2a] — NON-MESURABLE en e2e headless, EN ATTENTE d'une confirmation À L'OREILLE (Romain,
+// 5173). PAS un faux vert : le diagnostic est complet (décision archi [807] : stop la chasse e2e,
+// rendements décroissants). 3 couches amont corrigées (chaînabilité 7be15a2 + réveil 5dafaf0/3d80901 +
+// épingle contexte f403f22) MAIS RMS reste 0 dans mon banc. Discriminé sur pièces : un oscillateur
+// p5.sound créé MANUELLEMENT sonne ET est capté par setupAudioCapture (RMS 0.348) → mon banc ET l'API
+// marchent ; seul l'oscillateur du SKETCH (mode INSTANCE) rend sur un contexte SÉPARÉ que le tap headless
+// n'atteint pas. `tone` est dupliqué en versions INCOMPATIBLES (racine 14.9.17 pour mercury / p5.sound
+// 15.1.22) → dédup impossible sans casser l'un des deux. Verdict à trancher par Romain sur 5173 : SONNE
+// → limitation de mesure e2e (on garde ce fixme documenté) ; MUET → runtime-codevoices finit le fix
+// instance-mode (hook debug du contexte réel du sketch). Ne PAS réactiver sans preuve audio réelle.
 test.fixme('p5 sonne : new p5.Oscillator("sine") produit un RMS > 0 mesuré (220 Hz) [787.2a]', async ({
   page
 }) => {
@@ -101,9 +106,9 @@ test.fixme('p5 sonne : new p5.Oscillator("sine") produit un RMS > 0 mesuré (220
   await loadAndFocus(page, '09-sound-oscillator-audible.bps', program);
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
 
-  // evalBlockAt clique (lève l'autoplay-gate) puis Ctrl+Enter : setup() construit l'oscillateur
-  // p5.sound et l'.start() dans le contexte audio de l'instance p5 (tapé par setupAudioCapture, qui
-  // patche tout AudioContext connecté à destination). LA 220 Hz → RMS>0.
+  // evalBlockAt clique (lève l'autoplay-gate) puis Ctrl+Enter : setup() construit l'oscillateur p5.sound
+  // et l'.start(). NB (cf. FIXME ci-dessus) : le sketch en mode instance rend sur un contexte que le tap
+  // headless n'atteint pas → RMS=0 en e2e (non-mesurable), à confirmer à l'oreille sur 5173.
   await evalBlockAt(page, 1);
 
   const rms = await audio.getMaxRMS(3000);
