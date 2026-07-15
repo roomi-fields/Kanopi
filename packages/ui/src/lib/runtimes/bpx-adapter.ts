@@ -122,7 +122,8 @@ import {
   loadSampleBank,
   codeVoiceAdapters,
   createCodeVoicesRuntime,
-  guestLibraries
+  guestLibraries,
+  mercurySamplesInPatch
 } from 'runtime-codevoices';
 // Préchauffage au CHARGEMENT (design ratifié archi [589]) : entrée de PAQUET `preload` (résout les
 // interps + warme les moteurs voix-de-code). Namespace import DÉFENSIF : `preload` n'est pas encore
@@ -745,42 +746,48 @@ function gmInstrumentsFromCode(code: string): string[] {
   return [...out];
 }
 
-// Which backtick TOKENS are strudel, for a scene. A tagged backtick (`` `strudel: …` ``) carries
-// its own resolved `interp` already (`backticksFromAst`). An UNTAGGED backtick — the common case,
-// e.g. `v -> \`stack(…)\`` under `@actor v eval.strudel` — carries no `interp`/`tag` on the AST
-// node itself (verified against the live `compileToBPxAST` output, 2026-07-15): its language comes
-// from the OWNING ACTOR's `eval.<lang>`, paired to the backtick token via `btTokenByActor` — the
-// same actor→token pairing `codeVoiceInterps`'s caller already builds for arm/disarm. Reused here,
-// not re-derived: both `btTokenByActor` and `actorTableFromAst` are existing pure AST readers.
-function strudelBtTokens(
+// Which backtick TOKENS carry a given interp (`strudel`, `mercury`, …), for a scene. A tagged
+// backtick (`` `strudel: …` ``) carries its own resolved `interp` already (`backticksFromAst`). An
+// UNTAGGED backtick — the common case, e.g. `v -> \`stack(…)\`` under `@actor v eval.strudel` —
+// carries no `interp`/`tag` on the AST node itself (verified against the live `compileToBPxAST`
+// output, 2026-07-15): its language comes from the OWNING ACTOR's `eval.<lang>`, paired to the
+// backtick token via `btTokenByActor` — the same actor→token pairing `codeVoiceInterps`'s caller
+// already builds for arm/disarm. Reused here, not re-derived: both `btTokenByActor` and
+// `actorTableFromAst` are existing pure AST readers. Generalized (was `strudelBtTokens`) to serve
+// both strudel (`gm_*` instrument scan) and mercury (`mercurySamplesInPatch`) asset extraction.
+function btTokensForInterp(
   a: SceneAstView | null,
   ast: unknown,
-  backticks: BacktickTable
+  backticks: BacktickTable,
+  interp: string
 ): Set<string> {
   const out = new Set<string>();
   for (const [token, bt] of Object.entries(backticks)) {
-    if (bt.interp === 'strudel') out.add(token);
+    if (bt.interp === interp) out.add(token);
   }
   const actorTable = actorTableFromAst(a);
   const btByActor = btTokenByActor(ast);
   for (const [actorName, token] of Object.entries(btByActor)) {
-    if (actorTable[actorName]?.eval === 'strudel') out.add(token);
+    if (actorTable[actorName]?.eval === interp) out.add(token);
   }
   return out;
 }
 
 /**
- * PRÉ-TIRAGE DES ASSETS À L'OUVERTURE (chantier latence [788], design [789] : préfetch APRÈS le
- * warmup moteur, `runtime-codevoices/src/preload.ts`). Énumère ce qu'une scène DÉCLARE — banques
- * `@library.strudel "<id>"` (`librariesFromAst`, même lecture que `loadDeclaredLibraries`) +
- * instruments `gm_*` utilisés dans les backticks strudel (`backticksFromAst` + `strudelBtTokens` +
- * scan regex du code déjà porté par l'AST) — pour les passer tels quels à `preload(interps, assets)`.
- * AUCUNE résolution ici (pas de fetch, pas de lookup de police) : l'hôte TRANSPORTE des noms, le
- * paquet les résout. `{}` si la scène ne déclare/n'utilise rien. `compileBps` est mémoïsé → appel bon
- * marché au même rythme que `interpsForScene` (même geste d'ouverture, `preload-on-open.svelte.ts`).
+ * PRÉ-TIRAGE DES ASSETS À L'OUVERTURE (chantier latence [788]/[791]/[795], design [789] : préfetch
+ * APRÈS le warmup moteur, `runtime-codevoices/src/preload.ts`). Énumère ce qu'une scène DÉCLARE —
+ * banques `@library.strudel "<id>"` (`librariesFromAst`, même lecture que `loadDeclaredLibraries`) +
+ * instruments `gm_*` utilisés dans les backticks strudel + samples mercury utilisés dans les
+ * backticks mercury (`backticksFromAst` + `btTokensForInterp` + scan du code déjà porté par l'AST,
+ * `mercurySamplesInPatch` pour la syntaxe mercury `new sample <nom>`) — pour les passer tels quels à
+ * `preload(interps, assets)`. AUCUNE résolution ici (pas de fetch, pas de lookup) : l'hôte TRANSPORTE
+ * des noms, le paquet les résout. `{}` si la scène ne déclare/n'utilise rien. `compileBps` est
+ * mémoïsé → appel bon marché au même rythme que `interpsForScene` (même geste d'ouverture,
+ * `preload-on-open.svelte.ts`).
  */
 export function assetsForScene(text: string): {
   strudel?: { banks?: string[]; gmInstruments?: string[] };
+  mercury?: { samples?: string[] };
 } {
   let c: { ast?: unknown };
   try {
@@ -801,16 +808,28 @@ export function assetsForScene(text: string): {
     (id) => resolveStrudelLibrary(id)?.selfHosted
   );
   const backticks = backticksFromAst(c.ast);
-  const strudelTokens = strudelBtTokens(a, c.ast, backticks);
+  const strudelTokens = btTokensForInterp(a, c.ast, backticks, 'strudel');
   const gmInstruments = new Set<string>();
   for (const [token, bt] of Object.entries(backticks)) {
     if (!strudelTokens.has(token)) continue;
     for (const inst of gmInstrumentsFromCode(bt.code)) gmInstruments.add(inst);
   }
+  // Mercury : samples RÉFÉRENCÉS (`new sample <nom>`) par les backticks mercury de la scène — best
+  // effort (une extraction ratée laisse simplement `mercury` absent → comportement eager d'origine,
+  // jamais de crash).
+  const mercuryTokens = btTokensForInterp(a, c.ast, backticks, 'mercury');
+  const mercurySamples = new Set<string>();
+  for (const [token, bt] of Object.entries(backticks)) {
+    if (!mercuryTokens.has(token)) continue;
+    for (const name of mercurySamplesInPatch(bt.code)) mercurySamples.add(name);
+  }
   const strudel: { banks?: string[]; gmInstruments?: string[] } = {};
   if (banks && banks.length > 0) strudel.banks = banks;
   if (gmInstruments.size > 0) strudel.gmInstruments = [...gmInstruments];
-  return Object.keys(strudel).length > 0 ? { strudel } : {};
+  const result: { strudel?: typeof strudel; mercury?: { samples?: string[] } } = {};
+  if (Object.keys(strudel).length > 0) result.strudel = strudel;
+  if (mercurySamples.size > 0) result.mercury = { samples: [...mercurySamples] };
+  return result;
 }
 
 // `.bps` — BPScript compiles to a SceneAST (`compileBPS().ast`) that BPx derives

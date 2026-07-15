@@ -151,7 +151,16 @@ export declare function writeCsoundFile(
 // l'appel hôte s'active sans changement.
 export interface PreloadAssets {
   strudel?: { banks?: readonly string[]; gmInstruments?: readonly string[] };
+  /** Samples Mercury utilisés par le patch (énumérés par `mercurySamplesInPatch`), posés en
+   *  allowlist AVANT `new Mercury` — le patch mercury-engine filtre son jeu de samples au
+   *  sous-ensemble déclaré au lieu de charger la bibliothèque entière (~428 .wav). */
+  mercury?: { samples?: readonly string[] };
 }
 export declare const preload:
   | ((interps: string[], assets?: PreloadAssets) => Promise<void>)
   | undefined;
+
+// --- Extraction Mercury ([791]/[795]) : la SYNTAXE des samples (`new sample <nom>`) vit dans le
+// backtick, opaque à l'hôte — seul l'adaptateur qui connaît mercury peut l'énumérer. L'hôte
+// TRANSPORTE ces noms vers `preload(interps, { mercury: { samples } })`, il ne les résout pas. ---
+export declare function mercurySamplesInPatch(code: string): string[];
