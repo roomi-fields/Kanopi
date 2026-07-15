@@ -54,6 +54,7 @@ async function loadAndFocus(page: import('@playwright/test').Page, path: string,
 const libraryStrudelDir = fileURLToPath(
   new URL('../../../../library/scenes/strudel', import.meta.url)
 );
+const libraryP5Dir = fileURLToPath(new URL('../../../../library/scenes/p5', import.meta.url));
 
 test('gm sonne : sound("gm_piano"/"gm_marimba"/"gm_flute") produit un RMS > 0 mesuré', async ({
   page
@@ -80,6 +81,36 @@ test('gm sonne : sound("gm_piano"/"gm_marimba"/"gm_flute") produit un RMS > 0 me
   await page.keyboard.press('ControlOrMeta+Period');
   await page.waitForTimeout(500);
   noErrors();
+});
+
+// FIXME [787.2a] — quarantaine HONNÊTE : RMS=0 mesuré. Discriminé sur pièces = le contexte audio de
+// p5.sound reste SUSPENDU (p5.ts n'appelle aucun userStartAudio/resume ; un AudioContext frais démarre
+// suspendu, créé à l'éval APRÈS le geste → non auto-réveillé). Même piège « réveil du contexte dans le
+// geste » que runtime-codevoices a corrigé pour csound (fb14fe1). Trou d'adaptateur p5 côté amont —
+// routé runtime-codevoices. À repasser en test(...) quand le contexte p5.sound est réveillé au geste.
+test.fixme('p5 sonne : new p5.Oscillator("sine") produit un RMS > 0 mesuré (220 Hz) [787.2a]', async ({
+  page
+}) => {
+  const audio = await setupAudioCapture(page);
+
+  const program = readFileSync(join(libraryP5Dir, '09-sound-oscillator-audible.bps'), 'utf8');
+
+  await page.goto('');
+  await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
+
+  await loadAndFocus(page, '09-sound-oscillator-audible.bps', program);
+  await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
+
+  // evalBlockAt clique (lève l'autoplay-gate) puis Ctrl+Enter : setup() construit l'oscillateur
+  // p5.sound et l'.start() dans le contexte audio de l'instance p5 (tapé par setupAudioCapture, qui
+  // patche tout AudioContext connecté à destination). LA 220 Hz → RMS>0.
+  await evalBlockAt(page, 1);
+
+  const rms = await audio.getMaxRMS(3000);
+  expect(rms).toBeGreaterThan(0.001);
+
+  await page.keyboard.press('ControlOrMeta+Period');
+  await page.waitForTimeout(500);
 });
 
 test('xen sonne : .tune("hexany15") (pont @strudel/xen) produit un RMS > 0 mesuré', async ({

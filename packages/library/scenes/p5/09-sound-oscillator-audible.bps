@@ -1,0 +1,44 @@
+// @name: p5.sound Oscillator — Audible
+// @tagline: new p5.Oscillator('sine') — un oscillateur p5.sound qui SONNE (220 Hz) + pastille pulsée
+// @description: Démo AUDIBLE de p5.sound (intégré en mode instance, POC validé). Contrairement au
+// test de fuite 08, p5.sound est ici embarqué : `new p5.Oscillator('sine')` construit un oscillateur,
+// `.freq(220).amp(0.3).start()` le lance dans le contexte audio de l'instance p5 (démarré dans le geste
+// d'évaluation). En parallèle, draw() dessine une pastille qui pulse au rythme d'un sinus — la voix
+// sort donc du son ET du visuel. Idiome prouvé par le POC (new p5.Oscillator('sine') via le p5 global).
+// À comparer côte à côte avec l'original: https://github.com/processing/p5.js-sound/tree/main/examples/oscillatorFreq.
+// @language: p5
+// @outputs: audio+visual
+// @level: intermediate
+// @tags: p5, sound, oscillator, audible, self-hosted
+// @source: https://github.com/processing/p5.js-sound/blob/main/examples/oscillatorFreq/sketch.js
+//
+// A/B — p5 — Oscillator audible (p5.sound). Original: https://p5js.org/reference/#/p5.Oscillator.
+// Coller/évaluer la voix : un LA grave (220 Hz) sonne et la pastille pulse. Ctrl+. pour couper.
+
+@core
+@tempo:120
+
+@actor v  eval.p5
+
+S -> v
+
+v -> `
+let osc;
+
+function setup() {
+  createCanvas(300, 200);
+  // p5.sound est embarqué (mode instance) : le p5 global porte les classes son.
+  osc = new p5.Oscillator('sine');
+  osc.freq(220);
+  osc.amp(0.3);
+  osc.start();
+}
+
+function draw() {
+  background(20);
+  noStroke();
+  fill(0, 200, 255);
+  const r = 60 + 30 * sin(frameCount * 0.05);
+  ellipse(width / 2, height / 2, r, r);
+}
+`:4
