@@ -82,12 +82,7 @@ test('gm sonne : sound("gm_piano"/"gm_marimba"/"gm_flute") produit un RMS > 0 me
   noErrors();
 });
 
-// FIXME [777] — quarantaine HONNÊTE : xen est GÉNUINEMENT cassé en amont (runtime-codevoices),
-// pas un flake. La scène jette "i is not defined" (voir le commentaire dans le corps). On NE
-// fake PAS le vert (interdit) et on NE bloque PAS le gate sur un bug hors-périmètre hôte : `fixme`
-// documente le gap dans le code + le route à runtime-codevoices. À repasser en `test(...)` quand
-// le global `i` de @strudel/xen est exposé dans le sandbox d'éval (fix runtime-codevoices).
-test.fixme('xen sonne : .tune("hexany15") (pont @strudel/xen) produit un RMS > 0 mesuré', async ({
+test('xen sonne : .tune("hexany15") (pont @strudel/xen) produit un RMS > 0 mesuré', async ({
   page
 }) => {
   const audio = await setupAudioCapture(page);
@@ -102,15 +97,13 @@ test.fixme('xen sonne : .tune("hexany15") (pont @strudel/xen) produit un RMS > 0
 
   await evalBlockAt(page, 1);
 
+  // FINDING A résolu ([781], corps corrigé par runtime-codevoices) : la scène jetait
+  // "i is not defined" — `i` n'existe nulle part dans @strudel/xen (bug de SCÈNE, pas de moteur).
+  // Corps corrigé : (1) déclare `@library.strudel "xen"` (sinon loadXen() ne ponte jamais `.tune()`),
+  // (2) mini-notation reifiée "0 1 2 3 4 5" au lieu de i(...), (3) `.freq()` sans `.mul` (tune.note()
+  // rend déjà des Hz) + `.s("sawtooth")` pour un oscillateur audible. RMS>0 prouve le pont microtonal
+  // (bundle-dépendant, comme gm). NE PAS ASSOUPLIR CE SEUIL.
   const rms = await audio.getMaxRMS(3000);
-  // NE PAS ASSOUPLIR CE SEUIL. Finding [777] : ce test est actuellement ROUGE — la scène jette
-  // "i is not defined" à la construction du pattern (ReferenceError synchrone, capturée par
-  // `openBlocks.errored` — voir le test "erreur JS synchrone" plus bas pour la preuve du
-  // mécanisme). `i(...)` est la fonction pattern-factory canonique de la doc officielle
-  // https://strudel.cc/learn/xen/ (confirmée par fetch de la page). Le fix fa46874 a bien
-  // réenregistré `.tune()` (méthode Pattern.prototype — ne jette plus), mais PAS le global `i`
-  // exposé par @strudel/xen dans le sandbox d'éval de `runtime-codevoices`. À router
-  // runtime-codevoices : la fuite xen n'est que partiellement colmatée.
   expect(rms).toBeGreaterThan(0.001);
 
   await page.keyboard.press('ControlOrMeta+Period');

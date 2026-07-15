@@ -1,26 +1,27 @@
-// @name: Xenharmonic tuning (hexany15) — targeted leak test
-// @tagline: i().tune("hexany15").freq() — accordage microtonal via @strudel/xen
-// @description: Exemple canonique tiré de la documentation officielle « Xenharmonic Functions » de
-// Strudel. TEST DE FUITE CIBLÉ : .tune() et le mapping d'échelles microtonales (hexany15) sont fournis
-// par le module @strudel/xen, qui N'EST PAS embarqué chez nous — absent des dépendances de
-// @strudel/web (core, webaudio, transpiler, mini, tonal uniquement) et absent de node_modules.
-// Attendu : `.tune is not a function` (TypeError) ou équivalent, capturé par l'IIFE du slot composite
-// et remonté comme erreur de slot — pas de crash du composite entier. Patch 100% synthé (freq()),
-// aucun échantillon réseau. À comparer côte à côte avec l'original: https://strudel.cc/learn/xen/.
+// @name: Xenharmonic tuning (hexany15) — microtonal audible
+// @tagline: "0 1 2 3 4 5".tune("hexany15").freq().s("sawtooth") — accordage microtonal via @strudel/xen
+// @description: Démo AUDIBLE des fonctions xénharmoniques de Strudel (@strudel/xen), servies depuis
+// notre bundle. La scène DÉCLARE `@library.strudel "xen"` : à l'évaluation, loadSampleBank('xen') ponte
+// `.tune()` sur le Pattern de l'instance @strudel/web (register xen/tuning/tune), et la gamme microtonale
+// hexany15 (tune.js) mappe chaque degré à sa fréquence juste. La mini-notation "0 1 2 3 4 5" est reifiée
+// en degrés numériques nus que `.tune()` consomme ; `.freq()` sort des Hz (pas de .mul, tune.note() rend
+// déjà la fréquence) et `.s("sawtooth")` garantit un oscillateur audible. Attendu : ça sonne, microtonal.
+// À comparer côte à côte avec l'original: https://strudel.cc/learn/xen/.
 // @language: strudel
 // @outputs: audio
 // @level: advanced
-// @tags: strudel, ab-corpus, xen, microtonal, missing-module
+// @tags: strudel, ab-corpus, xen, microtonal, self-hosted
 // @source: https://strudel.cc/learn/xen/
 //
-// A/B — strudel — Xenharmonic tuning leak test. Original: https://strudel.cc/learn/xen/.
+// A/B — strudel — Xenharmonic tuning (hexany15 audible). Original: https://strudel.cc/learn/xen/.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original (où hexany15 s'entend, microtonal).
 
 @core
 @tempo:120
+@library.strudel "xen"
 
-@actor v  eval.strudel  transport.audio
+@actor v  eval.strudel
 
 S -> v
 
-v -> `i("0 1 2 3 4 5").tune("hexany15").mul("220").freq()`:4
+v -> `"0 1 2 3 4 5".tune("hexany15").freq().s("sawtooth")`:4
