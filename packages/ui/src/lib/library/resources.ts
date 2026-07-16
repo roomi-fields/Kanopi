@@ -23,13 +23,18 @@ import modJson from 'bpscript/lib/mod.json';
 // browsable bpscript library file, same as the others above.
 import digitalJson from 'bpscript/lib/digital.json';
 
-import { guestLibraries } from 'runtime-codevoices';
+import { guestLibraries, type GuestLibrary } from 'runtime-codevoices';
 import { visualsCatalog } from './visuals';
+import type { VisualItem } from './visuals';
 import { listDevices } from '../devices/registry';
 // Kanopi's own bundled catalogs — real files, read AS-IS (not the `listDevices()`
 // merge, which adds a computed default-midi entry not present in the file).
 import devicesJson from '../../../../library/devices.json';
 import routingJson from '../../../../library/routing.json';
+// BP3 auxiliary settings files (-se.<name>), bundled + keyed by reference name —
+// the SAME source the bp3 adapter reads for engine timing (bp3-aux.ts). Reused
+// here verbatim for Factory's Libraries browser, never re-copied.
+import { BUNDLED_SE } from '../runtimes/bp3-aux';
 
 export interface ResourceEntry {
   /** id/name as referenced in source (e.g. `arabic`, `maqam_rast`, `dirt-samples`). */
@@ -154,7 +159,7 @@ export const RESOURCE_GROUPS: ResourceGroup[] = [
   }
 ];
 
-// --- Real library FILES (Romain 2026-07-13: end of the per-ENTRY split) ---
+// --- Real library FILES, grouped BY LANGUAGE (Romain/architecte 2026-07-16) ---
 //
 // RESOURCE_GROUPS above splits each catalog file into one card per NAMED entry
 // inside it (`western`, `sargam`… are entries INSIDE alphabets.json) — kept
@@ -162,103 +167,118 @@ export const RESOURCE_GROUPS: ResourceGroup[] = [
 // scene actually references (`@alphabet.western` → just that sub-object).
 //
 // Factory's "Libraries" browser is a different concern: it lists the real
-// FILES on disk. "One alphabet file contains every alphabet — a real library
-// file is one entry point; opening it opens the library" (Romain). So a card
-// here = one whole file, opened verbatim (no meta-key stripping, no per-entry
-// split).
-//
-// Grouping (the rail): by REAL ownership, the only fact that doesn't require
-// inventing a taxonomy —
-//   - `bpscript/lib`     — the upstream BPScript language libraries (pitch +
-//     function catalogs), all physically the same directory in the `bpscript`
-//     dependency.
-//   - `Kanopi library`   — the catalogs Kanopi itself ships (devices, OSC
-//     routing, visuals) plus the audio banks CONSUMED from `runtime-codevoices`'s
-//     `guestLibraries` (the source of truth — no host-side catalog, [773]). These
-//     are NOT all in one physical location (`packages/library/*.json` for
-//     devices/routing, `lib/library/visuals/catalog.json`, the upstream dep for
-//     audio banks) — grouped by WHO ships the file (Kanopi vs. the bpscript
-//     language), not by invented content domains. Two groups only: honest given
-//     how few real sources there are.
+// FILES/entries a language ships. Previous cut grouped by "who ships the file"
+// (bpscript/lib vs Kanopi's own) — two groups, too coarse once bp3/strudel/
+// mercury/hydra/p5 each got their own real, separately-browsable entries.
+// Grouping is now by LANGUAGE: which language's catalog a card belongs to —
+// a real fact per source (which import/registry it came from), same class of
+// "this is our own data, we may name it" reasoning the old `domainOverride`
+// already used for Kanopi's own catalogs ([726]):
+//   - `bpscript` — the upstream BPScript pitch/function catalogs (one card per
+//     whole file, as before).
+//   - `bp3`      — one card per `-se.<name>` auxiliary settings file bundled
+//     for the BP3 grammars (BUNDLED_SE, reused verbatim from bp3-aux.ts).
+//   - `strudel` / `mercury` — one card per `guestLibraries` entry, grouped by
+//     the entry's own `engine` field (a real declared fact, not invented).
+//   - `hydra` / `p5` / `mercury` / `csound` — one card per visualsCatalog
+//     item, grouped by the item's own `runtimes` field. The catalog turns out
+//     to carry snippets for four runtimes, not just hydra/p5 — csound wasn't
+//     anticipated going in; it gets its own honest group rather than being
+//     folded into an existing one.
+//   - `kanopi`   — the catalogs Kanopi itself ships (devices, OSC routing).
 export interface LibraryFile {
-  /** file id (no extension) — also the card title and the path segment. */
+  /** file/entry id (no extension) — also the card title and the path segment. */
   id: string;
-  /** display name, same as `id` (kept distinct in case a nicer label is ever warranted). */
+  /** display name — the id for whole-file cards, a nicer label when the source has one (guestLibraries/visualsCatalog). */
   name: string;
-  /** short description, read from the file's own `description`/`type`/`_comment` — absent if the file carries none (shows just the name then). */
+  /** short description, read from the source's own `description`/`type`/`_comment`/`header` — absent if it carries none (shows just the name then). */
   description?: string;
-  /** rail grouping key = the DOMAIN the file DECLARES inside itself (`domain`
-   *  field), or `'uncategorized'` when the file declares none. Romain 2026-07-13:
-   *  the category comes from the file itself (a real declared fact), NEVER an
-   *  invented taxonomy nor "who ships it". Files missing `domain` (a real upstream
-   *  data hole, routed to bpscript) surface honestly as uncategorized. */
-  domain: string;
-  /** the file's entire parsed content — opened read-only, verbatim. */
+  /** rail grouping key = the LANGUAGE this card belongs to (bpscript, bp3, strudel, mercury, hydra, p5, csound, kanopi) — a real fact per source, never an invented taxonomy. */
+  language: string;
+  /** the entry's parsed content — opened read-only, verbatim. */
   data: unknown;
 }
 
 /** Pulls a one-line description straight from the file's own content, in order
  * of preference: a `description` string, the first line of an array
- * `_comment`, a string `_comment`, else the `type` field. No invented prose —
- * a file carrying none of these shows just its name. */
+ * `_comment`, a string `_comment`, the first line of a `header` string (BP3
+ * `-se` files), else the `type` field. No invented prose — a file carrying
+ * none of these shows just its name. */
 function describeFile(json: unknown): string | undefined {
   const j = json as
-    | { description?: unknown; type?: unknown; _comment?: unknown }
+    | { description?: unknown; type?: unknown; _comment?: unknown; header?: unknown }
     | null
     | undefined;
   if (!j || typeof j !== 'object') return undefined;
   if (typeof j.description === 'string') return j.description;
   if (Array.isArray(j._comment) && typeof j._comment[0] === 'string') return j._comment[0];
   if (typeof j._comment === 'string') return j._comment;
+  if (typeof j.header === 'string') return j.header.split('\n')[0];
   if (typeof j.type === 'string') return j.type;
   return undefined;
 }
 
-/** The domain a file DECLARES about itself — its `domain` field, read verbatim.
- *  No inference from the filename, no invented default: a file that declares
- *  nothing is `'uncategorized'` (honest — the data hole shows, routed upstream). */
-function readDomain(json: unknown): string {
-  const j = json as { domain?: unknown } | null | undefined;
-  return j && typeof j === 'object' && typeof j.domain === 'string' ? j.domain : 'uncategorized';
+/** A whole-file card (bpscript catalogs, Kanopi's own catalogs): id doubles as
+ *  the display name, description read straight off the file's own content. */
+function libraryFile(id: string, data: unknown, language: string): LibraryFile {
+  return { id, name: id, description: describeFile(data), language, data };
 }
 
-// `domainOverride` : ONLY for Kanopi's OWN catalogs (devices/routing/audio-banks/
-// visuals), which carry no `domain` field of their own — the architecte ratified
-// "tes propres catalogues = à toi de catégoriser" ([726]). We declare OUR data's
-// domain here (legitimate: it's ours), NEVER a bpscript file's (those declare it
-// themselves or bpscript adds it — L26, we don't invent for others).
-function libraryFile(id: string, data: unknown, domainOverride?: string): LibraryFile {
-  return {
-    id,
-    name: id,
-    description: describeFile(data),
-    domain: domainOverride ?? readDomain(data),
-    data
-  };
+/** One card per bundled BP3 `-se.<name>` auxiliary settings file — same source
+ *  the bp3 adapter reads (BUNDLED_SE), reused verbatim, never re-copied. Most
+ *  bundled files are JSON; a few (`Djinns`, `doeslittle`, `MyMelody`, `Rajeev`,
+ *  `tryRotate`) are the legacy BP2.8 plain-text settings format (one value per
+ *  line, `.json` extension kept only as bp3-aux's lookup key) — parseable by
+ *  the upstream BP3 parser, not by `JSON.parse`. Card shows the parsed object
+ *  when the source IS JSON; falls back to the raw text verbatim otherwise
+ *  (never invented structure). */
+function bp3AuxFile(refName: string, rawJson: string): LibraryFile {
+  const id = `se.${refName}`;
+  try {
+    const data = JSON.parse(rawJson);
+    return { id, name: id, description: describeFile(data), language: 'bp3', data };
+  } catch {
+    const firstLine = rawJson.split('\n')[0];
+    const description = firstLine.startsWith('//') ? firstLine.slice(2).trim() : undefined;
+    return { id, name: id, description, language: 'bp3', data: rawJson };
+  }
 }
 
-/** One card per REAL library file (Factory › Libraries browser). Grouped by the
- *  `domain` each file DECLARES (readDomain), never by an invented taxonomy.
- *  `core.json` is EXCLUDED (architecte [726]) : it is the LANGUAGE SCHEMA (@core :
- *  base defaults + reserved vocabulary), NOT a browsable library — excluding a
- *  non-library is not inventing a domain (L26). It stays in RESOURCE_GROUPS below
- *  for NowView (a scene that references @core still surfaces it as "used"). */
+/** One card per `guestLibraries` entry — grouped by its own `engine` field
+ *  (`strudel`/`mercury`), a real declared fact from the source of truth. */
+function guestLibraryFile(l: GuestLibrary): LibraryFile {
+  return { id: l.id, name: l.label, description: l.description, language: l.engine, data: l };
+}
+
+/** One card per `visualsCatalog` item — grouped by its own `runtimes` field
+ *  (hydra/p5/mercury/csound today). Items in the catalog target exactly one
+ *  runtime each; if a future item targets several, it groups under the first. */
+function visualFile(v: VisualItem): LibraryFile {
+  return { id: v.id, name: v.name, description: v.description, language: v.runtimes[0], data: v };
+}
+
+/** One card per REAL library file/entry (Factory › Libraries browser), grouped
+ *  by LANGUAGE. `core.json` is EXCLUDED (architecte [726]): it is the LANGUAGE
+ *  SCHEMA (@core: base defaults + reserved vocabulary), NOT a browsable
+ *  library. It stays in RESOURCE_GROUPS below for NowView (a scene that
+ *  references @core still surfaces it as "used"). */
 export const RESOURCE_FILES: LibraryFile[] = [
-  libraryFile('alphabets', alphabetsJson),
-  libraryFile('tunings', tuningsJson),
-  libraryFile('temperaments', temperamentsJson),
-  libraryFile('scales', scalesJson),
-  libraryFile('octaves', octavesJson),
-  libraryFile('controls', controlsJson),
-  libraryFile('mod', modJson),
-  libraryFile('digital', digitalJson),
-  libraryFile('devices', devicesJson, 'device'),
-  libraryFile('routing', routingJson, 'routing'),
-  // guestLibraries is an ARRAY (not `{ items }` like the deleted host duplicate) —
-  // describeFile/readDomain tolerate it: describeFile finds no description/type on
-  // an array and returns undefined (card shows just the name, same as any file
-  // without those fields); readDomain is never reached since domainOverride='sound'
-  // short-circuits it. Verified against describeFile/readDomain above, not assumed.
-  libraryFile('audio-banks', guestLibraries, 'sound'),
-  libraryFile('visuals', visualsCatalog, 'visual')
+  // bpscript — language pitch/function catalogs.
+  libraryFile('alphabets', alphabetsJson, 'bpscript'),
+  libraryFile('tunings', tuningsJson, 'bpscript'),
+  libraryFile('temperaments', temperamentsJson, 'bpscript'),
+  libraryFile('scales', scalesJson, 'bpscript'),
+  libraryFile('octaves', octavesJson, 'bpscript'),
+  libraryFile('controls', controlsJson, 'bpscript'),
+  libraryFile('mod', modJson, 'bpscript'),
+  libraryFile('digital', digitalJson, 'bpscript'),
+  // bp3 — one card per bundled `-se.<name>` auxiliary settings file.
+  ...Object.entries(BUNDLED_SE).map(([name, raw]) => bp3AuxFile(name, raw)),
+  // strudel + mercury — one card per guestLibraries entry (engine = language).
+  ...guestLibraries.map(guestLibraryFile),
+  // hydra + p5 + mercury + csound — one card per visualsCatalog item.
+  ...visualsCatalog.items.map(visualFile),
+  // kanopi — the host's own catalogs.
+  libraryFile('devices', devicesJson, 'kanopi'),
+  libraryFile('routing', routingJson, 'kanopi')
 ];

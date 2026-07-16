@@ -21,27 +21,27 @@
   type Section = 'scenes' | 'libraries';
   let section = $state<Section>('scenes');
 
-  // --- Libraries section state (1 card = 1 REAL library file, Romain
-  // 2026-07-13: end of the per-entry split — see resources.ts header). Rail
-  // groups by the DOMAIN each file DECLARES inside itself (`domain` field),
-  // derived from the file list itself — no fixed category list, no invented
-  // taxonomy (same pattern as the Scenes rail deriving categories from real
-  // folders). A file declaring no `domain` groups under 'uncategorized'
-  // (honest — the upstream data hole shows, routed to bpscript).
+  // --- Libraries section state (1 card = 1 REAL library file/entry, restructure
+  // 2026-07-16: rail by LANGUAGE — see resources.ts header). Rail groups by the
+  // LANGUAGE each card belongs to (`language` field: bpscript/bp3/strudel/
+  // mercury/hydra/p5/csound/kanopi), derived from the file list itself — no
+  // fixed category list, no invented taxonomy (same pattern as the Scenes rail
+  // deriving categories from real folders). Variable/function names below kept
+  // as `DOMAINS`/`resourceDomain`/`domainLabel` (mechanism reused as-is, only
+  // the field it reads changed).
   const DOMAINS: string[] = (() => {
     const seen = new Set<string>();
-    for (const f of RESOURCE_FILES) seen.add(f.domain);
+    for (const f of RESOURCE_FILES) seen.add(f.language);
     return [...seen];
   })();
 
-  // With ONE file per domain today, the per-domain rail is just singletons — noise.
-  // Show only "All" (Romain 2026-07-13), and AUTO-reactivate the domain buttons the
-  // day a domain groups several files (i.e. fewer distinct domains than files) — no
-  // manual flag to flip, the rail comes back exactly when it becomes useful.
+  // Several languages now group multiple cards each (bp3 alone has ~19) — the
+  // per-language rail is no longer singleton noise, so it shows automatically
+  // (kept auto: reappears/disappears with the real distribution, no manual flag).
   const SHOW_DOMAIN_RAIL = DOMAINS.length < RESOURCE_FILES.length;
 
-  // Display label for a domain key ('alphabet' → 'Alphabet'); title-cased only,
-  // no renaming — the key IS the declared domain.
+  // Display label for a language key ('bpscript' → 'Bpscript'); title-cased
+  // only, no renaming — the key IS the language.
   function domainLabel(d: string): string {
     return d.charAt(0).toUpperCase() + d.slice(1);
   }
@@ -52,7 +52,7 @@
   function matchesResourceQuery(file: LibraryFile, q: string): boolean {
     const needle = q.trim().toLowerCase();
     if (!needle) return true;
-    const hay = [file.id, file.description ?? '', file.domain].join(' ').toLowerCase();
+    const hay = [file.id, file.description ?? '', file.language].join(' ').toLowerCase();
     return hay.includes(needle);
   }
 
@@ -65,7 +65,7 @@
     for (const file of RESOURCE_FILES) {
       if (!matchesResourceQuery(file, resourceQuery)) continue;
       counts.all++;
-      counts[file.domain]++;
+      counts[file.language]++;
     }
     return counts;
   });
@@ -73,7 +73,7 @@
   const filteredResourceFiles = $derived(
     RESOURCE_FILES.filter(
       (file) =>
-        (resourceDomain === 'all' || file.domain === resourceDomain) &&
+        (resourceDomain === 'all' || file.language === resourceDomain) &&
         matchesResourceQuery(file, resourceQuery)
     )
   );
@@ -93,8 +93,12 @@
   // (Now) like loading a scene does (Romain 2026-07-13: opening something to
   // look at it shouldn't stay hidden behind Factory's full-screen panel).
   function openLibraryFile(file: LibraryFile) {
-    const path = `resources/${file.domain}/${file.id}.json`;
-    const contents = JSON.stringify(file.data, null, 2);
+    const path = `resources/${file.language}/${file.id}.json`;
+    // Most cards carry a parsed object (pretty-printed on open); a few bp3 `-se`
+    // files are the legacy BP2.8 plain-text format and carry the raw text
+    // verbatim (resources.ts bp3AuxFile) — shown as-is rather than re-encoded
+    // as a JSON string literal.
+    const contents = typeof file.data === 'string' ? file.data : JSON.stringify(file.data, null, 2);
     const id = workspace.addFile(path, contents, true);
     workspace.openFile(id);
     ui.activeActivityView = 'now';
@@ -149,7 +153,6 @@
     <section class="space">
       <!-- Left rail: the DOMAIN each file DECLARES + counts — SAME pattern as the Scenes rail. -->
       <nav class="rail">
-        <h2 class="rail-title">Libraries</h2>
         <button
           class="cat"
           class:active={resourceDomain === 'all'}
@@ -195,14 +198,14 @@
           </div>
         {:else}
           <div class="grid">
-            {#each filteredResourceFiles as file (file.domain + ':' + file.id)}
+            {#each filteredResourceFiles as file (file.language + ':' + file.id)}
               <article class="card">
                 <header class="card-head">
                   <span class="name">{file.name}</span>
                 </header>
                 {#if file.description}<p class="tagline">{file.description}</p>{/if}
                 <div class="meta">
-                  <span class="chip lang">{domainLabel(file.domain)}</span>
+                  <span class="chip lang">{domainLabel(file.language)}</span>
                 </div>
                 <button class="load" type="button" onclick={() => openLibraryFile(file)}
                   >open</button
@@ -382,13 +385,6 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-  }
-  .rail-title {
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin: 0 6px 12px;
   }
   .cat {
     display: flex;
