@@ -13,13 +13,16 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helper
 // path doesn't surface a measurable RMS for such low frequencies (see
 // docs/plan/BACKLOG.md BP-1). For those we assert the grammar loads + derives +
 // evaluates cleanly; the other four additionally assert peak RMS audio.
+// Rotate scales / Transposition / Visser5 left the showcase with the
+// iso-proven-only ruling [827] (not on the iso-100 scoreboard); their `.gr`
+// live on in library/unpublished/bp3. Phase B [826] additions are covered by
+// bp3-bel-phase-b.test.ts (derivation) — the audible ones keep the RMS proof here.
 const SHOWCASE = [
-  { cardName: 'BP — Rotate scales', grFile: 'bp-rotate-scales.gr', audibleHeadless: true },
   { cardName: 'BP — NotReich', grFile: 'bp-not-reich.gr', audibleHeadless: true },
   { cardName: 'BP — Acceleration', grFile: 'bp-acceleration.gr', audibleHeadless: false },
-  { cardName: 'BP — Transposition', grFile: 'bp-transposition.gr', audibleHeadless: false },
   { cardName: 'BP — Ames', grFile: 'bp-ames.gr', audibleHeadless: true },
-  { cardName: 'BP — Visser5', grFile: 'bp-visser5.gr', audibleHeadless: true }
+  { cardName: 'BP — Graphics', grFile: 'bp-graphics.gr', audibleHeadless: true },
+  { cardName: 'BP — Harmony', grFile: 'bp-harmony.gr', audibleHeadless: true }
 ];
 
 for (const { cardName, grFile, audibleHeadless } of SHOWCASE) {

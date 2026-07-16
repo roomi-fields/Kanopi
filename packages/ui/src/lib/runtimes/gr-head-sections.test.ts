@@ -17,9 +17,12 @@ import { headSectionNamesFromAst } from './head-sections-ast';
 import acceleration from '../../../../library/scenes/bp3/bp-acceleration.gr?raw';
 import ames from '../../../../library/scenes/bp3/bp-ames.gr?raw';
 import notReich from '../../../../library/scenes/bp3/bp-not-reich.gr?raw';
-import rotateScales from '../../../../library/scenes/bp3/bp-rotate-scales.gr?raw';
-import transposition from '../../../../library/scenes/bp3/bp-transposition.gr?raw';
-import visser5 from '../../../../library/scenes/bp3/bp-visser5.gr?raw';
+// Ces trois-là ont quitté la vitrine (iso-proven-only [827]) mais restent au
+// dépôt sous library/unpublished/bp3 — toujours valables comme FIXTURES du
+// lecteur de sections de tête (elles ne testent pas la bibliothèque).
+import rotateScales from '../../../../library/unpublished/bp3/bp-rotate-scales.gr?raw';
+import transposition from '../../../../library/unpublished/bp3/bp-transposition.gr?raw';
+import visser5 from '../../../../library/unpublished/bp3/bp-visser5.gr?raw';
 
 const WESTERN_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 

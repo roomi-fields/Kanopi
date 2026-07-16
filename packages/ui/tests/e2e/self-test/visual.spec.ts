@@ -187,12 +187,9 @@ test('Library panel screenshot shows the bundled starters and Bol Processor show
     '01 — Strudel solo',
     '02 — Strudel + Hydra',
     '03 — Sequenced sections',
-    'BP — Rotate scales',
     'BP — NotReich',
     'BP — Acceleration',
-    'BP — Transposition',
-    'BP — Ames',
-    'BP — Visser5'
+    'BP — Ames'
   ];
   for (const name of starterNames) {
     await expect(
