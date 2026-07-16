@@ -30,6 +30,13 @@ import scalesJson from 'bpscript/lib/scales.json';
 // shape live here (declarative segments), consumed AS-IS — Kanopi's transport
 // renders the curve generically, no built-in modulator. See CV.md.
 import modLibJson from 'bpscript/lib/mod.json';
+// Registre des VOIX (`lib/voices.json`, domaine 'voice' — LANG-SONS-3, résolution voix Kairos
+// 79118df) : jumelle de `pitchLib`/`digitalLib`, donnée read-only fournie par l'hôte (L26).
+// Kairos RÉSOUT terminal→voix (réf de l'acteur / binding d'alphabet), cascade `for:<device>`,
+// et grave `content.voice`. ABSENT ⇒ pas de facette voix (rétro-compat : oscillateur du runtime).
+// L'hôte TRANSPORTE le registre, il ne l'interprète pas. Le RENDU du backtick de voix (aval,
+// runtime-audio) est tenu jusqu'à l'étude son [828] — ici c'est la plomberie de l'injection.
+import voicesJson from 'bpscript/lib/voices.json';
 // Lib de FONCTIONS DIGITALES fournie (KAI-B03) — jumelle de `mod.json` (CV) : Kairos applique
 // ces fonctions TS déterministes (ex. `transpose`) à la projection. Donnée read-only fournie par
 // l'hôte (3 provenances, comme PITCH_LIB) ; sans elle Kairos retombe sur un repli hérité hardcodé.
@@ -1830,6 +1837,9 @@ function makeBpxAdapter(
             // sibling of `pitchLib`. Kairos applies it at projection; without it the sound transpose
             // falls back to Kairos's legacy hardcode (decision tout-par-librairies, 2026-06-29).
             digitalLib: DIGITAL_LIB,
+            // LANG-SONS-3 — the voices registry (sibling of pitchLib/digitalLib). Kairos resolves
+            // terminal→voice and graves `content.voice`; absent ⇒ no voice facet (backward-compat).
+            voicesLib: voicesJson,
             // KRO-24 — hand Kairos the CV registry (hoisted, cycle-invariant) + the
             // `exprSource` factory so `projeter` COMPOSES the modulations AT FLATTEN and
             // carries them on `content.modulations` (+ scene span) for the audio runtime
@@ -1852,6 +1862,7 @@ function makeBpxAdapter(
           pitchLib: PITCH_LIB,
           pitchLibMine: personalPitchLib,
           digitalLib: DIGITAL_LIB,
+          voicesLib: voicesJson,
           modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
         } as unknown as Parameters<Kairos['charger']>[1];
         // BPx authority for the scene's compiled length (includes any trailing rest);
@@ -2205,6 +2216,8 @@ function makeBpxAdapter(
                   pitchLibMine: personalPitchLib,
                   // KAI-B03 — same provided digital lib on every re-derive (transpose &c.).
                   digitalLib: DIGITAL_LIB,
+                  // LANG-SONS-3 — same voices registry on every re-derive (cycle-invariant).
+                  voicesLib: voicesJson,
                   // KAI-10 — sound transpose in Kairos; host lends no transposeToken.
                   modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
                 } as unknown as Parameters<Kairos['charger']>[1]
