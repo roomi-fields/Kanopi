@@ -83,7 +83,7 @@ export interface KronosAudioOptions {
   loop: boolean;
   /** Per-runtime OUTPUT SINKS built by the host (e.g. the per-actor MIDI transport), keyed
    *  by the runtime name Kairos emits in `event.output.runtime` ('midi', …). The AUDIO
-   *  ('audio'/'webaudio') and OSC sinks are built HERE (they need the shared clock); a key
+   *  ('audio') and OSC sinks are built HERE (they need the shared clock); a key
    *  present here OVERRIDES the built-in (tests inject capture sinks this way). */
   sinks?: Record<string, TransportLike>;
   /** The derived scene's actor→output table (`tree.metadata.actors`, BPx authority). Used
@@ -330,9 +330,9 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     intervalMs: 25
   });
 
-  // 2b. AUDIO OUTPUT = the runtime-audio AudioRuntime (the 'audio'/'webaudio' SINK). KAI-10 — it
+  // 2b. AUDIO OUTPUT = the runtime-audio AudioRuntime (the 'audio' SINK). KAI-10 — it
   //     reads `content.pitch.hz` off each event (graven by Kairos) and renders `content.modulations`.
-  //     A host-provided `sinks.webaudio`/`sinks.audio` (tests inject capture) OVERRIDES it.
+  //     A host-provided `sinks.audio` (tests inject capture) OVERRIDES it.
   // CANAL (B) — CÂBLÉ ([485]→[494], archi tranché + openDAW) : le time-view du sink (musicalNow/
   //    audioTimeFor pour placer les CV) NE PASSE PAS par l'hôte — sinon l'hôte pourrait reconstruire
   //    la position. KRONOS l'injecte lui-même : à `addAdapter`, il appelle `adapter.bindClock?.(clock)`
@@ -343,10 +343,10 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // le sien (new AudioContext), et le RÉVEILLE lui-même (via le bus de cycle de vie, à la transition
   // replay/resume portée par la pile du geste). L'hôte ne fabrique plus, ne réveille plus, ne met
   // plus en forme (pitch/vel/modulations = DANS le paquet). La vue horloge arrive par bindClock.
-  // Gardé derrière l'override de sink : si un `sinks.webaudio` est fourni (tests de capture /
+  // Gardé derrière l'override de sink : si un `sinks.audio` est fourni (tests de capture /
   // headless), on ne crée PAS le runtime — sinon il ferait un `new AudioContext()` inutile (et
   // impossible en jsdom). En prod (pas d'override), createAudioRuntime crée+possède son contexte.
-  const audioRuntime = opts.sinks?.webaudio ? null : createAudioRuntime({ sounds: undefined });
+  const audioRuntime = opts.sinks?.audio ? null : createAudioRuntime({ sounds: undefined });
   // PRÉCHAUFFAGE au CHARGEMENT (design ratifié archi [589]) : à un PRODUCE/LOAD (`buildOnly`, dans
   // la chaîne du geste : clic library / Ctrl+Enter), on RÉVEILLE le contexte audio de runtime-audio
   // MAINTENANT (`warmup()` = resume one-shot, 16933ca) au lieu d'attendre la 1ʳᵉ transition de play →
@@ -364,7 +364,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // se fait aux points d'accroche de real-core, publish + replay). Nul sous sink de test.
   currentAudioGain = audioRuntime as unknown as AudioGainControl | null;
   const audioSink: TransportLike | null =
-    opts.sinks?.webaudio ?? opts.sinks?.audio ?? (audioRuntime as unknown as TransportLike | null);
+    opts.sinks?.audio ?? (audioRuntime as unknown as TransportLike | null);
 
   // MIDI OUTPUT = the host-built per-actor MidiTransport, handed in as `sinks.midi`.
   const midiSink: TransportLike | null = opts.sinks?.midi ?? null;
@@ -396,7 +396,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // 3. PER-RUNTIME adapters. Each ScheduledEvent already carries its `output.runtime` route
   //    key (graven by Kairos); the scheduler selects the adapter on that key alone
   //    (`addAdapter(runtime, …)`). Kanopi reads NO actor→transport map and chooses no sink:
-  //    'midi' → MidiTransport (channel = ev.output.channel), 'audio'/'webaudio' →
+  //    'midi' → MidiTransport (channel = ev.output.channel), 'audio' →
   //    AudioRuntime, 'osc' → OscAdapter (device/channel ride ev.output), 'code' → the
   //    backtick sink (interpreter = ev.output.device). There is NO default adapter — an
   //    event whose runtime has no sink is surfaced by Kronos's `unknown-output-runtime`
@@ -442,7 +442,6 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // Kronos câble l'horloge lui-même à l'enregistrement).
   if (audioSink) {
     kronos.addAdapter('audio', audioSink as unknown as RuntimeAdapter);
-    kronos.addAdapter('webaudio', audioSink as unknown as RuntimeAdapter);
   }
   // L'adaptateur uniforme de runtime-MIDI est enregistré DIRECTEMENT (il expose send(ev)/bindClock ;
   // Kronos appelle bindClock lui-même à l'enregistrement — vue horloge + bus de cycle de vie).
@@ -533,7 +532,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       // de la courbe → 1er tour FIGÉ (bug Model C, CVA-INIT). Appelé AVANT `driver.start()` —
       // synchrone, zéro tick entre les deux — donc aucun événement n'atteint le graphe périmé.
       // Sur une toute première lecture (jamais rien joué), le graphe est déjà vide : no-op.
-      // `audioRuntime` est `null` sous un `sinks.webaudio` de test (pas d'AudioRuntime construit,
+      // `audioRuntime` est `null` sous un `sinks.audio` de test (pas d'AudioRuntime construit,
       // cf. plus haut) — chaîné en optionnel AVANT le cast (sinon accès direct sur `null`).
       (audioRuntime as { reset?: () => void } | null)?.reset?.();
     }

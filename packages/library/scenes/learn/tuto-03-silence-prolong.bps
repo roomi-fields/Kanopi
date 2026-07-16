@@ -16,6 +16,6 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 
 S -> C4 _ _ D4 - E4 _ F4 G4 _ _ _

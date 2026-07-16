@@ -18,7 +18,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 
 // Sub-grammar 1: structure (ORD by default)
 S -> A B A

@@ -12,7 +12,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 @tempo:90
 
 S -> {

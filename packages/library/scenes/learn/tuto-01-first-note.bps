@@ -11,7 +11,7 @@
 // Every BPscript file needs:
 //   @core           — core library
 //   @controls       — control definitions (vel, chan...)
-//   @alphabet.western:browser — which notes to use
+//   @alphabet.western:audio — which notes to use
 //
 // Then write a rule: S -> followed by notes.
 // S is the start symbol. The engine rewrites S into the notes.
@@ -20,6 +20,6 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 
 S -> C4

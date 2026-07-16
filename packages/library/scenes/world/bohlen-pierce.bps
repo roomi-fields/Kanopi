@@ -13,7 +13,7 @@
 
 @core
 @controls
-@alphabet.bohlen_pierce:browser
+@alphabet.bohlen_pierce:audio
 @tempo:80
 
 S -> Montee Retour Tenue

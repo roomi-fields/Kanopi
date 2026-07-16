@@ -9,7 +9,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 
 S -> {Motif Motif (vel:90), - - Motif Motif (vel:70)}
 

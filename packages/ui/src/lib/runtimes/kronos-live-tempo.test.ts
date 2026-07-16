@@ -29,7 +29,7 @@ describe('Kronos audio handle — live tempo retune warps the heard tempo', () =
     const handle = startKronosAudio({
       durationSec: 100,
       now: () => now.t,
-      sinks: { webaudio: { send() {} } },
+      sinks: { audio: { send() {} } },
       derivedTempo: 60, // events derived at 60 bpm → rate 1 at 60 bpm live
       loop: false,
       startSceneSec: 0,

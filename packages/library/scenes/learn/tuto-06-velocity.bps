@@ -15,7 +15,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 
 S -> Soft Loud Soft
 

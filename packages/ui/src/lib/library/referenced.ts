@@ -32,7 +32,7 @@ interface BpsDirective {
 // f35d069 rejects `:` on every component axis): `@alphabet.<x>` / `@tuning.<x>` /
 // `@scale.<x>` / `@octaves.<x>` / `@sound.<x>` / `transport.<device>` put <x> in
 // `subkey`. The `runtime` slot carries a `:value` (an output target like
-// `@alphabet.western:browser` → `browser`), never a resource name.
+// `@alphabet.western:audio` → `audio`), never a resource name.
 // `@devices` (no subkey) means "the whole device library".
 const DIRECTIVE_TYPES: Record<string, { type: string; typeLabel: string }> = {
   alphabet: { type: 'alphabet', typeLabel: 'alphabet' },
@@ -92,7 +92,7 @@ function directivesFromText(contents: string): ReferencedLib[] {
       out.push({ type: 'audio-bank', typeLabel: 'audio bank', name: bank[1] });
       continue;
     }
-    // `@name(.subkey)?(:value)?` — e.g. `@alphabet.western:browser`, `@tuning.sargam_22shruti`.
+    // `@name(.subkey)?(:value)?` — e.g. `@alphabet.western:audio`, `@tuning.sargam_22shruti`.
     const m = /^@(\w+)(?:\.([\w-]+))?(?::\s*(\S+))?/.exec(line);
     if (!m) continue;
     const meta = DIRECTIVE_TYPES[m[1]];

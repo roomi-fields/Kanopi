@@ -13,7 +13,7 @@
 
 @core
 @controls
-@alphabet.gamelan_slendro:browser
+@alphabet.gamelan_slendro:audio
 @tempo:60
 
 S -> Patet Balungan End

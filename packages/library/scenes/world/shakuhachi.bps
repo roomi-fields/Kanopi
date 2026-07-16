@@ -12,7 +12,7 @@
 
 @core
 @controls
-@alphabet.shakuhachi:browser
+@alphabet.shakuhachi:audio
 @tempo:50
 
 S -> Phrase1 Phrase2 End

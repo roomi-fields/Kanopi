@@ -36,7 +36,7 @@ function oldReduceMax(events: DispatchEvent[]): number {
 function loopDurationViaPrimitive(events: DispatchEvent[]): number {
   const handle = startKronosAudio({
     now: () => 0,
-    sinks: { webaudio: { send() {} } },
+    sinks: { audio: { send() {} } },
     derivedTempo: 120,
     loop: true,
     startSceneSec: 0,

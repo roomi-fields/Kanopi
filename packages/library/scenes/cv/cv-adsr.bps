@@ -14,7 +14,7 @@
 @mod
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 @tempo:138
 
 // Modulateur descriptif : env1 EST une enveloppe adsr (sortie 0..1)

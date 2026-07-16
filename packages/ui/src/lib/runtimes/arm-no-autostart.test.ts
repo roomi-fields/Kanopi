@@ -98,10 +98,10 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// Two native (webaudio) orchestrated actors — no Strudel/Hydra code voices needed to
+// Two native (audio) orchestrated actors — no Strudel/Hydra code voices needed to
 // exercise the arm/mute channel, which is uniform across actor kinds ([673]).
-const SRC = `@actor lead transport.webaudio
-@actor bass transport.webaudio
+const SRC = `@actor lead transport.audio
+@actor bass transport.audio
 
 S -> {Lead, Bass}
 

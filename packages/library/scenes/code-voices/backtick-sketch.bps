@@ -14,7 +14,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 
 S -> Intro SC_Part Outro
 

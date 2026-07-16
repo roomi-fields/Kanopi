@@ -19,7 +19,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 @tempo:90
 
 S -> Phrase1 Phrase2 Phrase1

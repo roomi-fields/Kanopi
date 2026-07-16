@@ -15,7 +15,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 @tempo:100
 
 cv sweep : `js: (t, dur) => { return 0.5 + 0.5 * Math.sin(2 * Math.PI * t / dur); }`

@@ -15,7 +15,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 @tempo:96
 
 cv envGroup : mod.adsr(attack:600, decay:500, sustain:0.5, release:700)

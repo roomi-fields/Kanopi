@@ -17,7 +17,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 @mode:random
 
 S -> Motif Motif Motif Motif End

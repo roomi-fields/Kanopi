@@ -18,7 +18,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 
 S -> Loop [count=4]
 

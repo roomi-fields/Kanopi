@@ -86,7 +86,7 @@ afterEach(() => {
 
 // One note at the scene start — within the driver's lookahead window (0.12s default) so the
 // very first pump sends it deterministically (fixed `now: () => 0` seam, no real-timer race).
-// `output.runtime: 'webaudio'` (KAI-9 routing label) — WITHOUT it the scheduler has no route key
+// `output.runtime: 'audio'` (KAI-9 routing label) — WITHOUT it the scheduler has no route key
 // (no `actor`, no default adapter registered) and silently drops the event, never reaching the
 // AudioRuntime's `send()` the spy watches.
 const EVENTS: DispatchEvent[] = [
@@ -96,7 +96,7 @@ const EVENTS: DispatchEvent[] = [
     durSec: 4,
     type: 'note',
     payload: null,
-    output: { runtime: 'webaudio' }
+    output: { runtime: 'audio' }
   } as unknown as DispatchEvent
 ];
 

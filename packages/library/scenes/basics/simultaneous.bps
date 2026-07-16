@@ -10,7 +10,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 @tempo:60
 
 S -> Chord1 Chord2 Chord3 Chord1 _ _

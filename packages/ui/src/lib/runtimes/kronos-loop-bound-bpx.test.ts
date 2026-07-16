@@ -40,7 +40,7 @@ function reduceMax(events: DispatchEvent[]): number {
 function loopBound(events: DispatchEvent[], durationSec?: number): number {
   const handle = startKronosAudio({
     now: () => 0,
-    sinks: { webaudio: { send() {} } },
+    sinks: { audio: { send() {} } },
     derivedTempo: 120,
     loop: true,
     startSceneSec: 0,
@@ -120,7 +120,7 @@ describe('KAN-C02/C03 (SUITE) — loop bound projects BPx totalDurationBeats, no
 // divergence is injected here (mutating the authority field) to break the circularity.
 
 const SCENE_TRAILING_RESTS = `@core
-@alphabet.western:browser
+@alphabet.western:audio
 @mm:120
 S -> Phrase
 Phrase -> C4 D4 E4 _ _ _ _

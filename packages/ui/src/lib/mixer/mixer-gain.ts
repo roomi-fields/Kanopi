@@ -52,14 +52,13 @@ export function applyMixerGains(): void {
 // KAN-UX3-B — `applyMixerGains` now reaches audio/midi/osc. An actor whose declared output
 // transport (`Actor.outputTransport`, read off BPx's `output.runtime`) is anything else (dmx or
 // a custom @devices name not yet confirmed) has NOTHING wired to a slider move. Absent/undeclared
-// transport = the AST's implicit default, 'audio' (the webaudio bus) — reaches, not gated. A code
+// transport = the AST's implicit default, 'audio' (the audio bus) — reaches, not gated. A code
 // voice does NOT go through this check — see `codeVoiceReachesGainBus` below, gated in the
 // components by `isCodeVoiceRuntime(a.runtime)` before either predicate applies.
 export function reachesGainBus(outputTransport: string | undefined): boolean {
   return (
     outputTransport === undefined ||
     outputTransport === 'audio' ||
-    outputTransport === 'webaudio' ||
     outputTransport === 'midi' ||
     outputTransport === 'osc'
   );

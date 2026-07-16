@@ -20,7 +20,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 @tempo:60
 
 cv env1 : mod.adsr(attack:8, decay:750, sustain:0.1, release:300)

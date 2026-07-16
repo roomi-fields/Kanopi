@@ -31,7 +31,7 @@ describe('assetsForScene — declared strudel banks + used gm_* instruments (for
 
   it('returns {} for a scene with no code voice at all', () => {
     const code =
-      '@core\n@controls\n@alphabet.western:browser\n@mm:120\nS -> Bass\nBass -> C2 C2 (wave:sawtooth)';
+      '@core\n@controls\n@alphabet.western:audio\n@mm:120\nS -> Bass\nBass -> C2 C2 (wave:sawtooth)';
     expect(assetsForScene(code)).toEqual({});
   });
 

@@ -11,7 +11,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 @tuning.western_just
 @tempo:60
 

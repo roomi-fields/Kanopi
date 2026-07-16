@@ -227,7 +227,7 @@ type Frontend = (code: string) => {
   // else renders as text. Empty for all-note grammars (they sound by default).
   soundingSymbols?: string[];
   // Multi-voice orchestration (BPScript `@actor`): each actor owns an alphabet
-  // and a transport (midi / webaudio). Present only for orchestrator `.bps`.
+  // and a transport (midi / audio). Present only for orchestrator `.bps`.
   orchestration?: Orchestration;
   // Standalone backtick voices (lot 4, ADAPTER_SPEC §1bis): each `BT<interp><id>`
   // token placed in the derivation maps to `{ interp, code }`. The adapter routes
@@ -1244,7 +1244,7 @@ export interface PublishedActor {
    * .runtime` (`tree.metadata.actors`, BPx authority — the SAME `output.runtime` key
    * Kronos routes events on, decision [624], see the `routesToMidi` read a few hundred
    * lines above this publish loop). Absent declaration ⇒ the AST's implicit default,
-   * 'audio' (the webaudio bus) — mirrors the `default`/mono-scene default documented at
+   * 'audio' (the audio bus) — mirrors the `default`/mono-scene default documented at
    * the `startKronosAudio` call site. Host-UI concern only (gates the mixer slider);
    * Kanopi performs no routing decision off this field.
    */
@@ -1439,7 +1439,7 @@ async function voiceOutputType(evalInterp: string | undefined): Promise<VoiceOut
 // typed device and verify compatibility BEFORE routing. Two clear, thrown errors
 // (never a silent skip): unknown device, or output type the device rejects.
 // Returns the resolved device so the caller drives transport selection off
-// `device.type` (so `audio`/`webaudio` both map to WebAudio, `midi` to MIDI).
+// `device.type` (so `audio` maps to WebAudio, `midi` to MIDI).
 async function gateVoiceDevice(
   actorName: string,
   transportKey: string,
@@ -2125,7 +2125,7 @@ function makeBpxAdapter(
             // Scope au(x) SEUL(S) acteur(s) MIDI (Object.values(actorOutputs) au-dessus
             // ne dit que "au moins un" — on redérive les noms ici pour le message).
             // Le CRI reste (contrat kanopi-runtime-midi.md §3, [619]) mais NE THROW PLUS :
-            // un acteur webaudio de la même scène (ex. `bass` dans midi-actors.bps) n'a
+            // un acteur audio de la même scène (ex. `bass` dans midi-actors.bps) n'a
             // rien à voir avec MIDI et doit continuer à dériver/publier/jouer — throw ici
             // abortait `evaluate()` en ENTIER avant startKronosAudio + la publication des
             // acteurs, rendant TOUTE la scène silencieuse et « derive error » pour un
@@ -2236,7 +2236,7 @@ function makeBpxAdapter(
           // "does this sound" — every terminal is dispatched as a note and the RESOLUTION
           // decides (an unresolved token is silent at the sink). Routing is by each event's
           // OWN `output.runtime` (graven by Kairos from `metadata.actors`): Kanopi only
-          // REGISTERS the per-runtime sinks ('midi' here, 'audio'/'webaudio'/'osc'/'code'
+          // REGISTERS the per-runtime sinks ('midi' here, 'audio'/'osc'/'code'
           // built inside startKronosAudio) — it chooses no route and keeps no actor→transport
           // map. The `default`/mono case carries `output.runtime='audio'` from the AST.
           kronosAudio = startKronosAudio({
@@ -2256,7 +2256,7 @@ function makeBpxAdapter(
                 : undefined,
             loop: looping,
             // Per-runtime OUTPUT SINKS the host builds: only MIDI (per-actor resolver). The
-            // 'audio'/'webaudio' (AudioRuntime) and 'osc' (OscAdapter) sinks are built inside
+            // 'audio' (AudioRuntime) and 'osc' (OscAdapter) sinks are built inside
             // startKronosAudio (they need the shared clock).
             sinks: midi
               ? ({ midi } as unknown as Parameters<typeof startKronosAudio>[0]['sinks'])

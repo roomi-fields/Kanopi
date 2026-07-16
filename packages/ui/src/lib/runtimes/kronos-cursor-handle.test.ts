@@ -25,7 +25,7 @@ describe('Kronos audio handle — playing cursor forwarding', () => {
     const handle = startKronosAudio({
       durationSec: 1.0,
       now: () => now.t,
-      sinks: { webaudio: { send() {} } },
+      sinks: { audio: { send() {} } },
       derivedTempo: 120,
       loop: true,
       startSceneSec: 0,
@@ -58,7 +58,7 @@ describe('Kronos audio handle — playing cursor forwarding', () => {
     const handle = startKronosAudio({
       durationSec: 1.0,
       now: () => now.t,
-      sinks: { webaudio: { send() {} } },
+      sinks: { audio: { send() {} } },
       derivedTempo: 120,
       loop: true,
       startSceneSec: 0,
@@ -86,7 +86,7 @@ describe('Kronos audio handle — playing cursor forwarding', () => {
     const handle = startKronosAudio({
       durationSec: 1.0,
       now: () => now.t,
-      sinks: { webaudio: { send() {} } },
+      sinks: { audio: { send() {} } },
       derivedTempo: 120,
       loop: true,
       startSceneSec: 0,

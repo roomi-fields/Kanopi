@@ -19,9 +19,10 @@ describe('resolveDevice', () => {
     expect(resolveDevice('audio')?.type).toBe('audio');
   });
 
-  it('resolves webaudio as an alias of the default audio device (§5)', () => {
-    const d = resolveDevice('webaudio');
+  it("resolves 'audio' directly — no webaudio alias exists (§5 purge)", () => {
+    const d = resolveDevice('audio');
     expect(d?.type).toBe('audio');
+    expect(resolveDevice('webaudio')).toBeUndefined();
   });
 
   it('resolves osc / text / video / dmx bundled devices', () => {

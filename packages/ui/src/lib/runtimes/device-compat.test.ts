@@ -37,8 +37,8 @@ describe('voice↔device compat gate (orchestrator .bps)', () => {
     expect(gate('strudel', 'audio')).toEqual({ ok: true });
   });
 
-  it('a strudel voice → transport.webaudio PASSES (alias → audio)', () => {
-    expect(gate('strudel', 'webaudio')).toEqual({ ok: true });
+  it('a strudel voice → transport.audio PASSES — no alias, audio is direct', () => {
+    expect(gate('strudel', 'audio')).toEqual({ ok: true });
   });
 
   it('a strudel (notes) voice → transport.video is REJECTED with a clear error', () => {

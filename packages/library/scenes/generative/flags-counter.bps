@@ -12,7 +12,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 
 // Init : compteur à 4
 S -> Phrase [count=4]

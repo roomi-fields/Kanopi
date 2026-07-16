@@ -12,7 +12,7 @@
 
 @core
 @controls
-@alphabet.gamelan_pelog:browser
+@alphabet.gamelan_pelog:audio
 @tempo:55
 
 S -> Patutan Phrase End

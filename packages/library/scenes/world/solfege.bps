@@ -10,7 +10,7 @@
 
 @core
 @controls
-@alphabet.solfege:browser
+@alphabet.solfege:audio
 @tempo:100
 
 S -> Montee Descente Fin

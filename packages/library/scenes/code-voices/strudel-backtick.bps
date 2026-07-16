@@ -14,6 +14,6 @@
 // rendered opaquely. Here it triggers a kick pattern between two notes.
 
 @core
-@alphabet.western:browser
+@alphabet.western:audio
 
 S -> C4 `strudel: s("bd*4")` E4

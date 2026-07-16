@@ -13,7 +13,7 @@
 
 @core
 @controls
-@alphabet.arabic:browser
+@alphabet.arabic:audio
 @tuning.arabic_24TET
 @tempo:70
 

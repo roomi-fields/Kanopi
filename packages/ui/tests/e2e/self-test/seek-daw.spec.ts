@@ -112,7 +112,7 @@ test('seek notes: cliquer la règle fait REPARTIR la lecture depuis ce point (po
   await loadScene(
     page,
     'seek-notes.bps',
-    '@actor voice @alphabet.sargam transport.browser\nS -> sa re ga ma pa dha ni sa\n'
+    '@actor voice @alphabet.sargam transport.audio\nS -> sa re ga ma pa dha ni sa\n'
   );
   await evalWholeSession(page);
   await bottomTab(page, /structure/);

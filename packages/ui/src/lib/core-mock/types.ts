@@ -38,13 +38,13 @@ export interface Actor {
   active: boolean;
   muted?: boolean;
   /**
-   * The actor's declared OUTPUT TRANSPORT family — 'audio'/'webaudio' | 'midi' | 'osc' |
+   * The actor's declared OUTPUT TRANSPORT family — 'audio' | 'midi' | 'osc' |
    * 'code' | a custom @devices name, read VERBATIM off BPx's `tree.metadata.actors[name]
    * .runtime` (the same `output.runtime` key Kronos routes events on — contrat
    * hote-runtimes-sortie.md, décision archi [624]; see `PublishedActor.outputTransport`
    * in bpx-adapter.ts for the exact read site). Undeclared transport ⇒ the AST's implicit
-   * default, 'audio' (the webaudio bus). Used ONLY to gate host-side UI (the per-actor
-   * mixer slider only reaches the webaudio bus) — NEVER for event routing, which Kronos
+   * default, 'audio' (the audio bus). Used ONLY to gate host-side UI (the per-actor
+   * mixer slider only reaches the audio bus) — NEVER for event routing, which Kronos
    * alone performs off the SAME upstream field.
    */
   outputTransport?: string;

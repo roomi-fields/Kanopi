@@ -13,7 +13,7 @@
 @mod
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 @tempo:100
 
 // Modulateur descriptif : sweep EST un LFO sinus lent

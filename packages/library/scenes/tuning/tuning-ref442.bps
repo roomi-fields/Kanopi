@@ -13,7 +13,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 @tuning.western_12TET
 @diapason:442
 @tempo:90

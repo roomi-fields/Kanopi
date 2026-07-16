@@ -9,7 +9,7 @@
 
 @core
 @controls
-@alphabet.sargam:browser
+@alphabet.sargam:audio
 @tuning.sargam_22shruti
 @tempo:40
 

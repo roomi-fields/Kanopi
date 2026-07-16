@@ -14,7 +14,7 @@ import { effectiveTempoBpm } from './bpx-adapter';
 // le défaut moteur, quel que soit le tempo passé ; jamais un host 128.
 
 const SCENE_NO_MM = `@core
-@alphabet.western:browser
+@alphabet.western:audio
 S -> C4 D4 E4
 `;
 

@@ -10,7 +10,7 @@ import type { ProductionTree } from '../../stores/production.svelte';
 // 1/3 and 2/3 of the duration regardless of the real onsets; the tree-derived
 // bounds must instead land on the actual leaf spans (Qarar visibly shorter — it
 // is one onset followed by a sustain, not a third of the notes).
-const ARABIC = `@alphabet.arabic:browser
+const ARABIC = `@alphabet.arabic:audio
 @tuning.maqam_rast
 @mm:70
 S -> Sayr Rujoo Qarar

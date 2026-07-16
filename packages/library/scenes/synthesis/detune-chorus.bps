@@ -10,7 +10,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 @tempo:80
 
 S -> D0 D15 D30 D50 D100 End

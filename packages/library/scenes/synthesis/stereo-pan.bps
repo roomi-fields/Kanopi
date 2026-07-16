@@ -10,7 +10,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 
 S -> PanL PanC PanR Sweep
 

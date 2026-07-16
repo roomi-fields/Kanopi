@@ -11,7 +11,7 @@ import { effectiveTempoBpm } from './bpx-adapter';
 // at 128 » bug). These tests pin the projection used by the adapter at eval.
 
 const SCENE_MM70 = `@core
-@alphabet.western:browser
+@alphabet.western:audio
 @mm:70
 S -> Sayr
 Sayr -> C4 D4 E4 F4 G4 A4 B4

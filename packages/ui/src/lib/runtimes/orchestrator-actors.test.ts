@@ -120,7 +120,7 @@ const MIDI_PLUS_WEBAUDIO = `@core
 @controls
 
 @actor melody  @alphabet.western  transport.midi(ch:1)
-@actor bass    @alphabet.western  transport.webaudio
+@actor bass    @alphabet.western  transport.audio
 
 S -> {Mel, Low}
 
@@ -129,7 +129,7 @@ Low -> bass.C2(wave:sawtooth)(vel:80) - bass.G2 - bass.C2 - bass.E2 -
 `;
 
 describe('orchestrator MIDI gate scope (one actor MIDI-unavailable must not silence the whole scene)', () => {
-  it('publishes + plays the webaudio actor even when the MIDI actor has no device', async () => {
+  it('publishes + plays the audio actor even when the MIDI actor has no device', async () => {
     let published: PublishedActor[] = [];
     setActorsSink((a) => {
       published = a;
@@ -147,17 +147,17 @@ describe('orchestrator MIDI gate scope (one actor MIDI-unavailable must not sile
       )
     ).resolves.not.toThrow();
 
-    // Both actors published — bass (webaudio) is NOT collateral damage of melody's
+    // Both actors published — bass (audio) is NOT collateral damage of melody's
     // (midi) missing hardware.
     expect(published.map((p) => p.name).sort()).toEqual(['bass', 'melody']);
 
     // outputTransport reflects the DECLARED transport per actor (BPx's
     // `tree.metadata.actors[name].runtime`, decision [624]) — the field the mixer
     // gates its slider on: melody (transport.midi) must read 'midi', bass
-    // (transport.webaudio) must read the webaudio family so its slider stays live.
+    // (transport.audio) must read 'audio' so its slider stays live.
     const transportByName = Object.fromEntries(published.map((p) => [p.name, p.outputTransport]));
     expect(transportByName.melody).toBe('midi');
-    expect(transportByName.bass).toBe('webaudio');
+    expect(transportByName.bass).toBe('audio');
 
     // The cry still happens, scoped to the MIDI actor, with the established
     // no-webmidi actionable text (contract kanopi-runtime-midi.md §3, [619]).

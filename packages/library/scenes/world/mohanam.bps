@@ -13,7 +13,7 @@
 //
 // AUDIO exposure for the in-browser synth: the original fixture targets MIDI
 // (@alphabet.raga:midi, a velocity-sensitive flute). Here only the OUTPUT is
-// adapted — the sargam alphabet routed to the browser synth (:browser) with a
+// adapted — the sargam alphabet routed to the WebAudio synth (:audio) with a
 // triangle voice — the generative musical structure is untouched.
 //
 // NOTATION: native saptak — sargam's canonical register convention (the alphabet
@@ -25,7 +25,7 @@
 
 @core
 @controls
-@alphabet.sargam:browser
+@alphabet.sargam:audio
 @tuning.sargam_22shruti
 @tempo:90
 

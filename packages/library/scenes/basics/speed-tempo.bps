@@ -16,7 +16,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 @tempo:72
 
 // Normal, then group at frame 2, then at frame 1/2, then per-note durations

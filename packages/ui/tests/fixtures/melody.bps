@@ -3,6 +3,6 @@
 // (C4..C5) that Kanopi plays through the same WebAudio chain as a .gr.
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 
 S -> C4 D4 E4 G4 C5 G4 E4 C4

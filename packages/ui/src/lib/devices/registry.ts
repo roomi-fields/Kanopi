@@ -49,9 +49,10 @@ export function acceptedOutputTypes(type: DeviceType): ReadonlySet<VoiceOutputTy
 // bundled JSON or a user overlay omits it.
 const DEFAULT_MIDI: Device = { name: 'midi', type: 'midi', label: 'MIDI (default)' };
 
-// `webaudio` is the retro-compat synonym of the default `audio` device (§5): old
-// `.bps`/sessions written `transport.webaudio` resolve to the same audio device.
-const ALIASES: Record<string, string> = { webaudio: 'audio' };
+// No device-name aliases: `audio` is the sole canonical transport name (§5 purge,
+// decision 2026-07-16) — `webaudio`/`browser` are rejected fail-loud by the parser
+// upstream and never reach this resolver.
+const ALIASES: Record<string, string> = {};
 
 function parseBundled(raw: string): Device[] {
   try {
@@ -88,10 +89,9 @@ function deviceMap(): Map<string, Device> {
 }
 
 /**
- * Resolve `transport.<name>` → the typed device, applying the `webaudio`→`audio`
- * alias and guaranteeing the default `midi`. Unknown name → `undefined`; the
- * caller throws a clear error (DEVICES_SPEC §4: "appareil inconnu : <name>",
- * NEVER a silent skip).
+ * Resolve `transport.<name>` → the typed device, guaranteeing the default `midi`.
+ * Unknown name → `undefined`; the caller throws a clear error (DEVICES_SPEC §4:
+ * "appareil inconnu : <name>", NEVER a silent skip).
  */
 export function resolveDevice(name: string): Device | undefined {
   const map = deviceMap();
