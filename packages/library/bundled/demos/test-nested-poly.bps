@@ -3,7 +3,7 @@
 
 @core
 @controls
-@alphabet.western:browser
+@alphabet.western:audio
 @tempo:100
 
 // Niveau 1: melodie vs basse
