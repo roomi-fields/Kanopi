@@ -1,0 +1,10 @@
+// @name: BP — Test NC1
+// @tagline: a negative-context check, same six notes as Graphics
+// @description: A compact Bol Processor test grammar (test-data corpus) from Bernard Bel checking "negative context" rewriting — it reuses the exact `_legato`/`_staccato` rule from the Graphics grammar (six notes across three simultaneous voices) as a minimal fixture, with the sequence order varying between polymetric runs. Derived by BPx and played through Kanopi's WebAudio transport. Ctrl+Enter to derive, Ctrl+. to hush.
+// @language: bp3
+// @outputs: audio
+// @level: didactic
+// @tags: articulation, negative-context
+
+RND
+gram#1[1] S --> {_legato(20) C4 D4 E4, _staccato(10) F#5 G3, - G4}

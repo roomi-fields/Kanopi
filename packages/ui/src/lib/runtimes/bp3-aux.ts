@@ -28,6 +28,16 @@ import seMyMelody from '../../../../library/scenes/bp3/se.MyMelody.json?raw';
 import seRajeev from '../../../../library/scenes/bp3/se.Rajeev.json?raw';
 import seRuwet from '../../../../library/scenes/bp3/se.Ruwet.json?raw';
 import seVisser3 from '../../../../library/scenes/bp3/se.Visser3.json?raw';
+// KAN-GRAMMAIRES-SCENES (GO archi [822], Phase B [826]): 7 grammaires publiées
+// FIDÈLES du corpus Bernard Bel (cf. bp-flags.gr…bp-ticks.gr headers for
+// provenance/dates). asymmetric/vina/csound-objects/nadaka-essai triaged OUT of
+// Phase B (respectively: off the iso-native list ×2, mute — sound-objects with
+// no rendering, and mute — A8 not resolved to a pitch; gate 'joue vraiment' [825]).
+import seTryGraphics from '../../../../library/scenes/bp3/se.tryGraphics.json?raw';
+import seTryHarmony from '../../../../library/scenes/bp3/se.tryHarmony.json?raw';
+import seCheckNegativeContext from '../../../../library/scenes/bp3/se.checkNegativeContext.json?raw';
+import seTryrepeat from '../../../../library/scenes/bp3/se.tryrepeat.json?raw';
+import seTryTicks from '../../../../library/scenes/bp3/se.tryTicks.json?raw';
 
 // reference name (as it appears in the .gr `-se.<name>` line) → raw -se text
 export const BUNDLED_SE: Record<string, string> = {
@@ -49,18 +59,27 @@ export const BUNDLED_SE: Record<string, string> = {
   MyMelody: seMyMelody,
   Rajeev: seRajeev,
   Ruwet: seRuwet,
-  Visser3: seVisser3
+  Visser3: seVisser3,
+  tryGraphics: seTryGraphics,
+  tryHarmony: seTryHarmony,
+  checkNegativeContext: seCheckNegativeContext,
+  tryrepeat: seTryrepeat,
+  tryTicks: seTryTicks
 };
 
 // Sound-object aux files (-so/-mi/-cs) → which alphabet symbols carry a sound,
 // for per-symbol routing (decision routage-texte-son-par-symbole). Keyed by the
 // reference name in the grammar's `-so.<name>` line, raw text for parseSoundObjects.
-// Empty for now: every bundled grammar is all-notes (notes sound by default) or
-// all-text (bols with no prototype). Add an entry when a mixed grammar ships.
+// Phase B publishes none of these: bp-csound-objects.gr (the only scene that
+// carried a `-mi`/`-cs` sound-object prototype) was triaged OUT (mute — gate
+// 'joue vraiment' [825]). Empty until a future published scene references one.
 export const BUNDLED_SOUND: Record<string, string> = {};
 
 // Alphabet aux files (-al). A sound-bearing grammar reaches its prototype through
 // the alphabet (-gr → -al → -so/-mi/-cs), so the adapter loads the -al to follow
 // the chain. Keyed by the `-al.<name>` reference, raw text for parseAlFile /
-// alphabetSoundRef. Empty until a sound-object grammar is bundled.
+// alphabetSoundRef.
+// Phase B publishes none of these: bp-asymmetric.gr (the only scene that
+// referenced `-al.asymmetric1`) was triaged OUT (off the iso-native list).
+// Empty until a future published scene references one.
 export const BUNDLED_AL: Record<string, string> = {};

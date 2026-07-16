@@ -1,0 +1,28 @@
+// @name: BP — Flags
+// @tagline: counting flags to balance a and b
+// @description: A compact Bol Processor grammar (2022) from Bernard Bel's corpus demonstrating rule flags: it builds a string of 'a', tallies it, then rewrites 'a' into 'b' until the two counts are equal — a text/structure demo, no sound prototype attached. Derived by BPx inside Kanopi. Ctrl+Enter to derive, Ctrl+. to hush.
+// @language: bp3
+// @outputs: text
+// @level: didactic
+// @tags: flags, generative
+//
+// Bol Processor BP3 compatible with version BP2.9.8
+// Grammar file saved as "-gr.tryFlags". Date: 2022-02-20 14:51:48
+-ho.abc
+
+// First create string of ‘a’
+
+gram#1[1] S --> X /Num_total = 20/
+gram#1[2] /Num_total - 1/ X --> a X
+
+-----
+
+// Create flags counting 'a' and 'b'
+
+gram#2[1] X --> lambda /Num_a = 20/ /Num_b = 0/
+
+-----
+
+// Now replace 'a' with 'b' until they are in equal numbers
+
+gram#3[1] /Num_a > Num_b/ a --> b /Num_b + 1/ /Num_a - 1/
