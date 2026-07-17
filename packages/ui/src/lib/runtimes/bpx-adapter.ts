@@ -130,7 +130,15 @@ import {
   codeVoiceAdapters,
   createCodeVoicesRuntime,
   guestLibraries,
-  mercurySamplesInPatch
+  mercurySamplesInPatch,
+  // Catalogue des modules son (LANG-SONS §8-9) — SOURCE DE VÉRITÉ UNIQUE que l'hôte injecte à Kairos
+  // dans `ActionLib`, via les deux aplatisseurs AUTORITAIRES du catalogue (demandes [155]/[156], pas de
+  // 2e source hôte) : `catalogPortTypes()` = `{module:{port:type}}` (classe les actions) ;
+  // `sinkRuntimeMap()` = `{module PUITS → runtime}` (route l'arm/cut). `moduleCatalog` sert seulement à
+  // l'expansion des ALIAS (saw/sawtooth, tri/triangle). PORTER≠RÉSOUDRE : on transporte, Kairos résout.
+  moduleCatalog,
+  catalogPortTypes,
+  sinkRuntimeMap
 } from 'runtime-codevoices';
 // Préchauffage au CHARGEMENT (design ratifié archi [589]) : entrée de PAQUET `preload` (résout les
 // interps + warme les moteurs voix-de-code). Namespace import DÉFENSIF : `preload` n'est pas encore
@@ -209,6 +217,36 @@ const PITCH_LIB: PitchLib = {
 // function itself. Without it Kairos falls back to its legacy hardcoded transpose. `_comment` doc
 // keys → cast through `unknown`. Personal/community digital libs overlay here later (3 provenances).
 const DIGITAL_LIB: DigitalLib = BPSCRIPT_LIBS.digital as unknown as DigitalLib;
+
+// ActionLib (LANG-SONS §4/§8/§9) — deux vues AUTORITAIRES du catalogue runtime-codevoices, injectées
+// pour Kairos (PORTER≠RÉSOUDRE : on transporte, Kairos résout). Source de vérité UNIQUE = les
+// aplatisseurs du catalogue (demandes [155]/[156]), pas une ré-implémentation hôte :
+//  • `modules` = `catalogPortTypes()` (`{module:{port:type}}`) → Kairos classe l'appel-composant opaque
+//    en `content.action`. On ajoute par-dessus les ALIAS (saw/sawtooth, tri/triangle) en clés-modules
+//    jumelles : Kairos fait un lookup BRUT `modules[module]?.[port]` (aucune résolution d'alias chez
+//    lui) → sans expansion, un `tri.freq` émis crierait à tort (les alias sont dans le catalogue même).
+//  • `runtimeParModule` = `sinkRuntimeMap()` (`{module PUITS → runtime déclaré}`, arbitrage [414]) →
+//    Kairos grave `output.runtime` sur l'arm/cut d'une voix persistante (le module TERMINAL du câblage
+//    `saw>>lpf>>audio` = `audio` décide OÙ router). ZÉRO nom de runtime en dur (ni hôte ni Kairos : le
+//    runtime est DÉCLARÉ par le sink au catalogue, runtime-codevoices f694701) ; module PUITS sans
+//    runtime ⇒ `content.controlError` fail-loud côté Kairos, jamais un drop silencieux (bug [414]).
+const ACTION_LIB = {
+  modules: (() => {
+    const modules: Record<string, Record<string, string>> = catalogPortTypes();
+    for (const m of moduleCatalog) for (const a of m.aliases ?? []) modules[a] = modules[m.name];
+    return modules;
+  })(),
+  runtimeParModule: sinkRuntimeMap()
+};
+
+// HomomorphismLib (`lib/homomorphism`, fonction `substitute`) — jumelle structurelle de `digital` :
+// on consomme `LIBS.homomorphism` (AVEC le `body` TS capté depuis `lib/homomorphism/substitute.ts`
+// par libs-bundle, PAS le JSON nu qui n'a que la description). Kairos APPLIQUE la substitution de
+// symbole à la résolution (HOST-HOMOLIB-INJECT). SÛR à injecter : BPx NE SUBSTITUE PLUS au niveau
+// feuille (ex-`applyImage` retiré, session.ts:1155 / node.ts:495 de BPx e339dec ; bascule PROUVÉE
+// anti-double-substitution par l'e2e ISO HZ 75/75 de kairos 63f38b2). Le `Image()` de TEMPLATE reste
+// un mécanisme BPx séparé et inchangé, non concerné par cette lib.
+const HOMOMORPHISM_LIB = BPSCRIPT_LIBS.homomorphism;
 
 // Noms de TOKENISATION anglais par défaut (quels noms nus sont des terminaux de note au parse
 // d'une `.gr`), SOURCÉS du catalogue BP3-fidèle — plus de liste occidentale EN DUR (nettoyage L26
@@ -1840,6 +1878,12 @@ function makeBpxAdapter(
             // LANG-SONS-3 — the voices registry (sibling of pitchLib/digitalLib). Kairos resolves
             // terminal→voice and graves `content.voice`; absent ⇒ no voice facet (backward-compat).
             voicesLib: voicesJson,
+            // LANG-SONS §4/§8 — action catalog (flattened runtime-codevoices ports) + §homomorphism
+            // lib. Kairos graves `content.action` (opaque module.port classed from the catalog) and
+            // applies symbol substitution at resolution; runtime-audio renders the patchbay. Siblings
+            // of pitchLib/voicesLib — host transports DATA, resolves nothing.
+            actionLib: ACTION_LIB,
+            homomorphismeLib: HOMOMORPHISM_LIB,
             // KRO-24 — hand Kairos the CV registry (hoisted, cycle-invariant) + the
             // `exprSource` factory so `projeter` COMPOSES the modulations AT FLATTEN and
             // carries them on `content.modulations` (+ scene span) for the audio runtime
@@ -1863,6 +1907,8 @@ function makeBpxAdapter(
           pitchLibMine: personalPitchLib,
           digitalLib: DIGITAL_LIB,
           voicesLib: voicesJson,
+          actionLib: ACTION_LIB,
+          homomorphismeLib: HOMOMORPHISM_LIB,
           modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
         } as unknown as Parameters<Kairos['charger']>[1];
         // BPx authority for the scene's compiled length (includes any trailing rest);
@@ -2218,6 +2264,9 @@ function makeBpxAdapter(
                   digitalLib: DIGITAL_LIB,
                   // LANG-SONS-3 — same voices registry on every re-derive (cycle-invariant).
                   voicesLib: voicesJson,
+                  // LANG-SONS §4/§8 — same action catalog + homomorphism lib every re-derive.
+                  actionLib: ACTION_LIB,
+                  homomorphismeLib: HOMOMORPHISM_LIB,
                   // KAI-10 — sound transpose in Kairos; host lends no transposeToken.
                   modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
                 } as unknown as Parameters<Kairos['charger']>[1]

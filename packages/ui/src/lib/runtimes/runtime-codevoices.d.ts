@@ -164,3 +164,29 @@ export declare const preload:
 // backtick, opaque à l'hôte — seul l'adaptateur qui connaît mercury peut l'énumérer. L'hôte
 // TRANSPORTE ces noms vers `preload(interps, { mercury: { samples } })`, il ne les résout pas. ---
 export declare function mercurySamplesInPatch(code: string): string[];
+
+// --- Catalogue de PORTS des modules son (LANG-SONS §8, 9bc1766) — SOURCE de vérité des ports
+// typés que l'hôte aplatit en `ActionLib` pour Kairos (HOST-ACTIONLIB-FLATTEN). Seule la forme
+// consommée par l'aplatissement est déclarée (name/aliases/ports{name,type}). ---
+export type PortType = 'cv' | 'gate' | 'trig';
+export type PortDirection = 'in' | 'out';
+export interface ModulePort {
+  readonly name: string;
+  readonly direction: PortDirection;
+  readonly type: PortType;
+  readonly description: string;
+}
+export interface ModuleDef {
+  readonly name: string;
+  readonly aliases?: readonly string[];
+  readonly kind: string;
+  /** Runtime propriétaire d'un module PUITS (`kind:'sink'`) — clé de routage `output.runtime`. */
+  readonly runtime?: string;
+  readonly ports: readonly ModulePort[];
+  readonly description: string;
+}
+export declare const moduleCatalog: readonly ModuleDef[];
+/** Vue aplatie AUTORITAIRE `{module:{port:type}}` — source unique injectée en `ActionLib.modules` ([155]). */
+export declare function catalogPortTypes(): Record<string, Record<string, PortType>>;
+/** Carte AUTORITAIRE `{module PUITS → runtime déclaré}` — injectée en `ActionLib.runtimeParModule` ([156]/[414]). */
+export declare function sinkRuntimeMap(): Record<string, string>;
