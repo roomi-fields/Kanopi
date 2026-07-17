@@ -1,0 +1,27 @@
+// @name: Patchbay
+// @tagline: Persistent wiring + live one-shot actions on a sound patch
+// @language: bpscript
+// @outputs: audio
+// @level: advanced
+// @tags: synthesis, patchbay, macro
+//
+// Patchbay — le modèle son modulaire (LANG-SONS §9).
+// Une VOIX-CÂBLAGE persistante (`lead`) arme un patch saw → filtre → audio ;
+// des ACTIONS mono-étage (`open`/`close`/`glide`) reconfigurent le patch VIVANT
+// entre deux notes (pose de valeur sur un port : `lpf.cutoff: 12000`). Les
+// modules (saw/lpf/audio) sont OPAQUES au langage ; Kairos les CLASSE depuis le
+// catalogue de ports (runtime-codevoices) et grave `content.action` / route
+// l'arm par le module PUITS ; runtime-audio REND le patchbay. Ctrl+. pour couper.
+@core
+@controls
+
+// Voix PERSISTANTE = câblage multi-étage : jouer `lead` arme le patch. Le filtre
+// est modulé par un LFO câblé en backtick (cv sur le port cutoff).
+@macro lead  = saw.freq: pitch >> lpf.cutoff: `js: lfo(2)*0.7` >> audio
+
+// Actions MONO-ÉTAGE (appel-composant opaque, one-shot) sur le patch armé :
+@macro open  = lpf.cutoff: 12000   // cv-set — ouvre grand le filtre
+@macro close = lpf.cutoff: 700     // cv-set — le referme
+@macro glide = saw.freq: pitch     // cv-set — re-cible la hauteur du générateur
+
+S -> lead open lead close lead glide lead close

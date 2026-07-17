@@ -112,6 +112,39 @@ test('strudel/03 sonne : n(...).scale("C:minor").sound("gm_piano") produit un RM
   noErrors();
 });
 
+// (d) patchbay sonne [829] — le modèle son LANG-SONS bout-en-bout DANS L'APP : une voix-câblage
+// persistante `@macro lead = saw.freq: pitch >> lpf.cutoff: BT >> audio` arme un patch dont l'ARM
+// (kind:'control') porte `output.runtime='audio'` (gravé par kairos DEPUIS `actionLib.runtimeParModule`
+// = `sinkRuntimeMap()` du catalogue, [414]/[829]) → routé à runtime-audio → patch armé → RMS>0. Verrou
+// anti-régression du bug [414] (l'arm droppé faute d'output → muet). Scène library synthesis/patchbay.bps.
+const librarySynthesisDir = fileURLToPath(
+  new URL('../../../../library/scenes/synthesis', import.meta.url)
+);
+test('patchbay sonne : un @macro saw>>lpf>>audio armé produit un RMS > 0 mesuré [829]', async ({
+  page
+}) => {
+  const audio = await setupAudioCapture(page);
+  const noErrors = expectNoConsoleErrors(page);
+
+  const program = readFileSync(join(librarySynthesisDir, 'patchbay.bps'), 'utf8');
+
+  await page.goto('');
+  await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
+
+  await loadAndFocus(page, 'patchbay.bps', program);
+  await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
+
+  await evalBlockAt(page, 1);
+
+  // Le patch persistant (saw→lpf→audio) rend en continu une fois armé — fenêtre large.
+  const rms = await audio.getMaxRMS(2500);
+  expect(rms).toBeGreaterThan(0.001);
+
+  await page.keyboard.press('ControlOrMeta+Period');
+  await page.waitForTimeout(500);
+  noErrors();
+});
+
 // FIXME [787.2a] — NON-MESURABLE en e2e headless, EN ATTENTE d'une confirmation À L'OREILLE (Romain,
 // 5173). PAS un faux vert : le diagnostic est complet (décision archi [807] : stop la chasse e2e,
 // rendements décroissants). 3 couches amont corrigées (chaînabilité 7be15a2 + réveil 5dafaf0/3d80901 +
