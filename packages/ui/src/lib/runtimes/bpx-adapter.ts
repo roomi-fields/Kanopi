@@ -137,9 +137,10 @@ import {
   sinkRuntimeMap
 } from 'runtime-codevoices';
 // Préchauffage au CHARGEMENT (design ratifié archi [589]) : entrée de PAQUET `preload` (résout les
-// interps + warme les moteurs voix-de-code). Namespace import DÉFENSIF : `preload` n'est pas encore
-// exportée → `codevoices.preload` = undefined → `?.()` no-op (un `import { preload }` casserait le
-// build tant que non exporté). Voir runtime-codevoices.d.ts.
+// interps + warme les moteurs voix-de-code). Namespace import DÉFENSIF (historique : `preload`
+// n'était pas encore exportée à l'écriture de ce module → `codevoices.preload` pouvait être
+// `undefined` → `?.()` no-op) ; conservé tel quel, la fabrique publie désormais un type de
+// surface réel (`runtime-codevoices` — plus de copie locale `.d.ts`).
 import * as codevoices from 'runtime-codevoices';
 // Helper hôte : énumération des interprètes voix-de-code d'une scène + réveil défensif du contexte
 // audio des sorties (no-op tant que runtime-audio n'expose pas `warmup`).

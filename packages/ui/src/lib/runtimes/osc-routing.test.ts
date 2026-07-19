@@ -64,9 +64,9 @@ describe('OSC branchement (OSC-5b)', () => {
       profile: new OscBridgeProfile(),
       now: () => 0
     });
-    // setBindings pre-loads the enumerated device surfaces (async, setup path);
+    // prepareSurfaces pre-loads the enumerated device surfaces (async, setup path);
     // the per-event device/channel come from `event.output` (KAI-9 routing).
-    await adapter.setBindings({ sh_4d: { device: 'sh_4d' } });
+    await adapter.prepareSurfaces(['sh_4d']);
 
     adapter.send({
       onset: 0,

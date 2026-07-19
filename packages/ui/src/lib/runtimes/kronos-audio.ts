@@ -83,8 +83,8 @@ export interface KronosAudioOptions {
   sinks?: Record<string, TransportLike>;
   /** The derived scene's actor→output table (`tree.metadata.actors`, BPx authority). Used
    *  ONLY to ENUMERATE the OSC devices at setup (actors whose `runtime==='osc'`) so
-   *  runtime-OSC can pre-fetch their surfaces (`setBindings`, sync hot path). The per-event
-   *  device/channel still travels on `event.output`. Absent ⇒ no OSC. */
+   *  runtime-OSC can pre-fetch their surfaces (`prepareSurfaces`/`setActorTable`). The
+   *  per-event device/channel still travels on `event.output`. Absent ⇒ no OSC. */
   actors?: Record<string, { runtime: string; params?: Record<string, unknown> }>;
   /** OSC output: the osc-bridge WS→UDP relay endpoint the OscAdapter's WebSocket
    *  transport connects to (from `library/routing.json`). */

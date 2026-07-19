@@ -1,8 +1,17 @@
 /**
- * Local type surface for the cross-tree `runtime-osc` dependency (ESM-only JS, no
- * shipped `.d.ts`), mapped via `tsconfig.paths` — same pattern as
- * `runtime-audio.d.ts` / `runtime-midi.d.ts`. Only the exports Kanopi consumes are
- * declared.
+ * Local type surface for the cross-tree `runtime-osc` dependency, mapped via
+ * `tsconfig.paths`. UNLIKE runtime-audio/runtime-midi/runtime-codevoices (migrated to
+ * their PUBLISHED types, chantier single-source 2026-07-19 — cf.
+ * hub/decisions/2026-07-19-copies-de-surface-cross-repo-single-source-ou-declaree-outillee.md),
+ * this ONE copy stays: runtime-OSC's own generated `types/create-runtime.d.ts` DROPS
+ * `oscWsUrl`/`actors`/`profile` from `createOscRuntime`'s options type (tsc's
+ * `--declaration --allowJs --emitDeclarationOnly` fails to carry destructured
+ * parameters that have no inline default into the emitted object type, even though
+ * they're `@param`-documented in `src/create-runtime.js`) — confirmed by regenerating
+ * the package's own types fresh. Kanopi's `kronos-audio.ts` genuinely calls
+ * `createOscRuntime({ oscWsUrl, actors, log })`, so the published surface is
+ * insufficient here; reported upstream (runtime-OSC), not routed around. Only the
+ * exports Kanopi consumes are declared.
  *
  * runtime-OSC OWNS OSC output: a pluggable output PROFILE turns a Kronos
  * `ScheduledEvent` into addressed OSC emissions, an interchangeable TRANSPORT
@@ -10,12 +19,6 @@
  * builds the adapter on the shared clock, names the actor→'osc' route, and hands
  * up the per-actor `{device, channel}` bindings at setup. It resolves no address.
  */
-
-/** Per-actor binding (scene data: `@actor X device:<name> ch:<n>`). */
-export interface OscBinding {
-  device?: string;
-  channel?: number;
-}
 
 /** The graven output address (KAI-9): Kairos stamps it per event; the runtime ROUTES
  *  on `runtime` and reads `device`/`channel` here — never a host actor binding. */
@@ -58,7 +61,6 @@ export interface OscOutputProfile {
   map(event: OscScheduledEvent): Array<{ offsetSec: number; address: string; args: unknown[] }>;
   /** Pre-load the enumerated device surfaces at setup (sync hot path after). */
   prepareSurfaces?(deviceNames?: string[]): Promise<void>;
-  setBindings?(bindings: Record<string, OscBinding>): Promise<void>;
 }
 
 /** osc-bridge output profile: resolves opaque control names to device addresses. */
@@ -75,7 +77,6 @@ export declare class OscBridgeProfile implements OscOutputProfile {
   map(event: OscScheduledEvent): Array<{ offsetSec: number; address: string; args: unknown[] }>;
   /** Pre-load the enumerated device surfaces at setup (the sync hot path follows). */
   prepareSurfaces(deviceNames?: string[]): Promise<void>;
-  setBindings(bindings: Record<string, OscBinding>): Promise<void>;
 }
 
 /** The OSC RuntimeAdapter: schedules profile emissions on the injected clock. */
@@ -88,8 +89,14 @@ export declare class OscAdapter {
     now?: () => number;
   });
   readonly latency: number;
-  /** Declare actor→device bindings (scene setup, off the hot path). */
-  setBindings(bindings: Record<string, OscBinding>): Promise<void>;
+  /** Pre-load the enumerated device surfaces at setup (sync hot path after). */
+  prepareSurfaces(deviceNames?: Iterable<string>): Promise<void>;
+  /** FRONTIÈRE-OSC #5 : reçoit la table acteur→sortie BRUTE (`metadata.actors`) et en
+   *  DÉRIVE les appareils OSC à pré-charger (remplace l'ancien `setBindings`, qui prenait
+   *  des bindings déjà résolus côté hôte — l'hôte ne dérive plus rien). */
+  setActorTable(
+    actors: Record<string, { runtime: string; params?: Record<string, unknown> }>
+  ): Promise<void>;
   /** Emit one already-timed event (onset in t_audio). */
   send(event: OscScheduledEvent): void;
   /** Cancel scheduled-but-unsent emissions (transport stop). */
