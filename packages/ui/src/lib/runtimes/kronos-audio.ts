@@ -384,9 +384,11 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
       });
   // MIXAGE : même garde que `currentAudioGain` — l'instance RÉELLE (`oscRuntime`, pas
   // `oscSink` qui peut être un test override), nulle en `buildOnly`/sans acteur OSC.
-  currentOscGain = oscRuntime as unknown as AudioGainControl | null;
-  const oscSink: TransportLike | null =
-    opts.sinks?.osc ?? (oscRuntime as unknown as TransportLike | null);
+  // `createOscRuntime` rend `OscAdapter | null` (surface publiée, plus de copie de pont) :
+  // `OscAdapter` porte structurellement `setMasterGain`/`setMasterMuted`/`setActorGain` et
+  // `send`, donc aucun cast n'est nécessaire — le `| null` circule tel quel.
+  currentOscGain = oscRuntime;
+  const oscSink: TransportLike | null = opts.sinks?.osc ?? oscRuntime;
 
   // 3. PER-RUNTIME adapters. Each ScheduledEvent already carries its `output.runtime` route
   //    key (graven by Kairos); the scheduler selects the adapter on that key alone

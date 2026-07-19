@@ -17,8 +17,7 @@
       "bpx": ["./src/lib/runtimes/bp3-deps.d.ts"],
       "bp3-frontend": ["./src/lib/runtimes/bp3-deps.d.ts"],
       "bpscript/src/transpiler/index.js": ["./src/lib/runtimes/bp3-deps.d.ts"],
-      "bpscript/src/transpiler/orderTokens.js": ["./src/lib/text-order/order-tokens.d.ts"],
-      "runtime-osc/browser": ["./src/lib/runtimes/runtime-osc.d.ts"]
+      "bpscript/src/transpiler/orderTokens.js": ["./src/lib/text-order/order-tokens.d.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.svelte", "src/**/*.svelte.ts", "vite.config.ts"],

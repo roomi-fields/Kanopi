@@ -40,8 +40,9 @@ export function restoreWorkspace(): boolean {
   workspace.activeTabId = w.activeTabId && workspace.fileById(w.activeTabId) ? w.activeTabId : null;
 
   // KAN-C17 — on ne restaure PAS le tempo depuis le snapshot : pas de source
-  // amont, le tempo redécoule de la ré-évaluation de la scène (`@mm`). Un ancien
-  // snapshot peut encore porter `w.bpm` ; on l'ignore.
+  // amont, le tempo redécoule de la ré-évaluation de la scène (`@mm`). Le champ
+  // `bpm` n'existe plus dans `PersistedWorkspace` ([868]) ; un ancien snapshot
+  // qui en porte encore un est ignoré par `JSON.parse` (champ en trop, silencieux).
   if (typeof w.sidebarWidth === 'number') ui.setSidebarWidth(w.sidebarWidth);
   if (typeof w.rightPanelWidth === 'number') ui.setRightPanelWidth(w.rightPanelWidth);
   if (typeof w.bottomPanelHeight === 'number') ui.setBottomPanelHeight(w.bottomPanelHeight);
