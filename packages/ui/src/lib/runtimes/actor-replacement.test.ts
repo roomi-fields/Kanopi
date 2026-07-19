@@ -93,32 +93,22 @@ describe('outgoing code-voice teardown (Hydra canvas leak)', () => {
     await bpscriptAdapter.stop({ actorId: '__hush__', fileId: 's.bps' }, () => {});
   });
 
-  it('stops the OUTGOING orchestrator dispatcher (kills the re-firing loop)', async () => {
+  it('tears down the OUTGOING orchestrator voice (kills the re-firing loop)', async () => {
     setActorsSink(() => {});
-    const { Dispatcher } = await import('../../../../core/src/dispatcher/dispatcher.js');
-    type DispatcherInstance = InstanceType<typeof Dispatcher>;
-    const dispatcherStops: DispatcherInstance[] = [];
-    const origStop = (Dispatcher.prototype as unknown as { stop: () => void }).stop;
-    vi.spyOn(Dispatcher.prototype as unknown as { stop: () => void }, 'stop').mockImplementation(
-      function (this: DispatcherInstance) {
-        dispatcherStops.push(this);
-        return origStop.call(this);
-      }
-    );
+    const hydra = registry.getAdapter('hydra')!;
+    const stopSpy = vi.spyOn(hydra, 'stop').mockResolvedValue(undefined);
 
-    // Load orchestrator d1.bps — its dispatcher loops and re-fires viz/groove.
+    // Load orchestrator d1.bps — its hydra (viz) voice loops and re-fires each cycle.
     await bpscriptAdapter.evaluate(ORCH, { actorId: 'd1.bps', fileId: 'd1.bps' }, () => {});
     await new Promise((r) => setTimeout(r, 20));
-    const d1Dispatcher = dispatcherStops.length; // record nothing-stopped baseline
-    dispatcherStops.length = 0;
+    stopSpy.mockClear();
 
-    // Load a DIFFERENT orchestrator d2.bps: the d1 dispatcher MUST be stopped so it
-    // stops re-firing d1's hydra/strudel voices (the 19-re-fire leak this fixes).
+    // Load a DIFFERENT orchestrator d2.bps: the outgoing d1 voice must be torn down
+    // so it stops re-firing d1's hydra/strudel voices (the 19-re-fire leak this fixes).
     await bpscriptAdapter.evaluate(ORCH, { actorId: 'd2.bps', fileId: 'd2.bps' }, () => {});
     await new Promise((r) => setTimeout(r, 20));
-    // At least one dispatcher (d1's) was stopped on the d2 load.
-    expect(dispatcherStops.length).toBeGreaterThan(0);
-    void d1Dispatcher;
+    expect(stopSpy).toHaveBeenCalled();
+    expect(stopSpy.mock.calls[0][0]).toMatchObject({ actorId: 'd1.bps::viz' });
 
     await bpscriptAdapter.stop({ actorId: '__hush__', fileId: 'd2.bps' }, () => {});
   });

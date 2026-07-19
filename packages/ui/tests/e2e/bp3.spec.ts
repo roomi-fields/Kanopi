@@ -6,7 +6,7 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helper
 
 // PRIMARY vertical slice: a Bol Processor grammar (.gr) produces audible
 // WebAudio output through the full chain
-//   parseBP3 → createBPx → derive() → Dispatcher.load() → WebAudioTransport.
+//   parseBP3 → createBPx → derive() → Kairos (projection) → Kronos → runtime-audio.
 // The fixture derives 8 pitched terminals (C4..C5) over ~4s at tempo 120.
 test('bp3 grammar evaluates and produces audio', async ({ page }) => {
   const audio = await setupAudioCapture(page);

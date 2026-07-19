@@ -1,10 +1,7 @@
 // Kronos AUDIO driver — Kronos drives the REAL sound (the ONLY engine; legacy removed).
 //
-// Replaces Kanopi's old dispatcher on the audio path: the Kronos scheduler
-// produces the timed events and a thin RuntimeAdapter bridges each one to the
-// EXISTING WebAudio synthesis (`core/dispatcher/transports/webaudio.js`). The old
-// dispatcher never schedules sound — Kronos alone does (it is kept only as the
-// inert structure of transports/resolvers that Kronos reads, never as an emitter).
+// The Kronos scheduler produces the timed events and a thin RuntimeAdapter bridges
+// each one to the EXISTING WebAudio synthesis. Kronos alone schedules sound.
 //
 // Coverage: NOTE + per-note CV (cutoff/pan/…) + actor routing + backtick/code
 // voices (via the backtick sink) + per-actor MIDI (MidiTransport). The one
@@ -14,8 +11,8 @@
 // Integration rule: `@kronos/core` and the WebAudio transport are consumed
 // AS-IS. This file is glue — the PLAYED timeline is the Kairos projection (bound on the
 // Transport via `bindStructureSource`); this maps each Kronos `ScheduledEvent` → the event
-// shape `WebAudioTransport.send(event, absTime)` expects, reusing the dispatcher's own
-// `coerceControlValues` and the transport already configured with the scene's resolver.
+// shape `WebAudioTransport.send(event, absTime)` expects, reusing the transport already
+// configured with the scene's resolver (control-value coercion lives in the runtime now).
 
 // Chantier transport-SM [471-482] : Kanopi ne CONSTRUIT plus le moteur (garantie ARCHITECTURALE).
 // La FABRIQUE `createTransport` assemble clock+scheduler+cursor+driver EN INTERNE et ne rend qu'un
@@ -49,8 +46,6 @@ import { createAudioRuntime } from 'runtime-audio';
 // subpath exposes only the browser-safe surface (OscAdapter/OscBridgeProfile/
 // WebSocketTransport) — deterministic under both Vite and vitest.
 import { createOscRuntime } from 'runtime-osc/browser';
-// Reused AS-IS from the core dispatcher: coerces numeric-string controls to
-// numbers (vel/filterQ/…) while leaving strings (wave) untouched.
 import { DEFAULT_BEATS_PER_BAR } from './meter';
 // Relais lifecycle voix de code (chantier voix-code-transport S2) : suit l'état RÉEL du
 // Transport (pause quantifiée comprise) et relaie gel réel / reprise resynchronisée /

@@ -4,7 +4,7 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helper
 // Bol Processor showcase: each authentic .gr grammar from Bernard Bel's corpus
 // is loaded through the SAME UI flow a user walks — Library panel → click the
 // card's `load` → confirm — then evaluated, asserting the keystone chain
-//   parseBP3 → createBPx → derive → Dispatcher → WebAudioTransport
+//   parseBP3 → createBPx → derive → Kairos (projection) → Kronos → runtime-audio
 // runs with no console errors. Always hush (Ctrl+.) at the end (audio rule).
 //
 // `audibleHeadless: false` marks the two low-register grammars (Acceleration,

@@ -8,7 +8,7 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helper
 // WebAudio output through the SAME chain as the .gr keystone, with one extra
 // stage up front:
 //   compileBPS → BP3 grammar text → parseBP3 → createBPx → derive()
-//   → Dispatcher.load() → WebAudioTransport.
+//   → Kairos (projection) → Kronos → runtime-audio.
 // The fixture compiles to 8 pitched terminals (C4..C5) over a short loop.
 test('bps program evaluates and produces audio', async ({ page }) => {
   const audio = await setupAudioCapture(page);

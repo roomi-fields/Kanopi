@@ -51,9 +51,6 @@ import { createSession, type Session, type TimedToken as BpxTimedToken } from 'b
 // `startKronosAudio`. Kairos is the SOLE projection source — no parallel host-side flattener.
 import { Kairos } from '@kairos/core';
 import { BUNDLED_SE, BUNDLED_SOUND, BUNDLED_AL } from './bp3-aux';
-// Core runtime, reused AS-IS (no port): the dispatcher carries the per-actor
-// transport/resolver structure Kronos reads (it never emits sound itself).
-import { Dispatcher } from '../../../../core/src/dispatcher/dispatcher.js';
 // Audio output lives in runtime-audio: it provides the CV-curve factory `exprSource`
 // (compiles a backtick curve → ModulationSource), injected into Kronos's composition
 // so Kanopi NEVER compiles/renders CV. The AudioRuntime itself is built in kronos-audio.
@@ -87,8 +84,7 @@ import { type PitchLib, type DigitalLib } from '@kairos/core';
 import { type ModLib, type ExprSource } from '@kairos/core';
 // Kronos drives the REAL audio (the only engine; legacy removed). The Kronos
 // scheduler produces the timed events; a thin adapter bridges each to the existing
-// WebAudio synth. The old dispatcher is NEVER started for sound — it survives only
-// as the inert structure of transports/resolvers that Kronos reads.
+// WebAudio synth.
 import { startKronosAudio, type KronosAudioHandle } from './kronos-audio';
 import { DEFAULT_BEATS_PER_BAR, type MeterLike } from './meter';
 // EX4 phase 2: surface the ACTIVE Kronos cursor to the UI so the timeline draws
@@ -105,8 +101,8 @@ import { productionFeed } from '../../stores/production-feed.svelte';
 // visualizer read.
 import { production } from '../../stores/production.svelte';
 // Session-global transport toggles (loop on/off, re-random per cycle on/off).
-// Read FRESH at each `dispatcher.start(...)` so the user's transport setting at
-// play time decides looping + whether the grammar re-derives each cycle.
+// Read FRESH at each play so the user's transport setting at play time decides
+// looping + whether the grammar re-derives each cycle.
 import { transport } from '../../stores/transport.svelte';
 import type {
   ProductionToken,
@@ -160,7 +156,7 @@ import { headSectionNamesFromAst, sectionLeafCounts } from './head-sections-ast'
  * BPx language adapters (PRIMARY vertical slice).
  *
  * Two languages reach audible WebAudio output through the SAME upstream BPx
- * engine and Kanopi's own dispatcher — only the front-end differs:
+ * engine — only the front-end differs:
  *
  *   .gr  : source → parseBP3 ──────────────┐
  *   .bps : source → compileToBPxAST ────────┤  (SceneAST direct, voie AST propre)
@@ -169,9 +165,9 @@ import { headSectionNamesFromAst, sectionLeafCounts } from './head-sections-ast'
  *     → tree (+ payload par nœud) → Kairos (projection) → Kronos timeline
  *     → routage PAR ACTEUR (payload.actor) → WebAudioTransport (+ MIDI sink)
  *
- * Glue only. Les frontaux (bp3-frontend, bpscript), le moteur (bpx) et le
- * dispatcher / transport / resolver (core) sont consommés tels quels. SOURCE
- * UNIQUE = l'arbre : `.bps` passe par `compileToBPxAST` (AST direct, plus
+ * Glue only. Les frontaux (bp3-frontend, bpscript) et le moteur (bpx) sont
+ * consommés tels quels. SOURCE UNIQUE = l'arbre : `.bps` passe par
+ * `compileToBPxAST` (AST direct, plus
  * d'aller-retour par le texte BP3 ni de tables parallèles) ; `.gr` par parseBP3
  * (le `.gr` EST du texte natif). Toute la structure (acteurs, scènes, drapeaux,
  * bibliothèques, sections, backticks) est lue DEPUIS l'arbre.
@@ -962,29 +958,27 @@ const bpsFrontend: Frontend = (code) => {
 };
 
 interface BP3Voice {
-  dispatcher: InstanceType<typeof Dispatcher>;
-  /** Source file this dispatcher was evaluated from. Lets a new program stop the
-   *  OUTGOING program's dispatcher (whose `loop:true` keeps re-firing its code
+  /** Source file this voice was evaluated from. Lets a new program tear down the
+   *  OUTGOING program's voice (whose `loop:true` keeps re-firing its code
    *  voices — Hydra/Strudel — each cycle) without depending on the per-actor
    *  handle map. Undefined for legacy entries (treated as "current file"). */
   file?: string;
-  /** True when this dispatcher is an orchestrator (`@actor` voices). Only these
+  /** True when this voice is an orchestrator (`@actor` voices). Only these
    *  loop-and-re-fire foreign code; a plain mono grammar is left alone so a
    *  sibling re-eval doesn't cut it. */
   orchestrator?: boolean;
   /** The code interpreters this orchestrator's voices use (`hydra`, `strudel`,
-   *  …) + their slot ids. Stopping the dispatcher kills the re-firing, but a
+   *  …) + their slot ids. Tearing down the voice kills the re-firing, but a
    *  fire ALREADY in flight at stop time can still paint one more frame; we hush
    *  these runtimes right after to guarantee the outgoing canvas/audio is cleared,
    *  independent of the per-actor handle map (which `__hush__` may have emptied). */
   codeSlots?: Array<{ runtime: Runtime; actorId: string }>;
   /** Kronos audio driver for this scene (the engine that actually sounds it).
-   *  Stopped alongside the dispatcher; the dispatcher's own stop closes the
-   *  transports that cut the scheduled sound. */
+   *  Its own `stop()` closes the transport that cuts the scheduled sound. */
   kronosAudio?: KronosAudioHandle;
   /** MIDI runtime (runtime-MIDI's uniform adapter) for this scene — POSSÈDE son propre
-   *  MidiTransport. Disposé au teardown de scène (remplace la fermeture par le dispatcher :
-   *  plus de `dispatcher.addTransport('midi', …)`). */
+   *  MidiTransport. Disposé au teardown de scène (le paquet possède son propre cycle
+   *  de vie de transport). */
   midi?: ReturnType<typeof createMidiRuntime>;
   /** MISE À JOUR VIVANTE (re-éval same-file) : refs REUTILISÉES au lieu de teardown+recreate —
    *  le handle Kairos (re-charger la nouvelle dérivation sur le transport qui TOURNE), l'adaptateur
@@ -1515,7 +1509,7 @@ async function gateVoiceDevice(
  * declared id with no catalog entry is an explicit error, not a quiet skip.
  *
  * Fire-and-forget per bank (de-duped inside `loadSampleBank`): the backtick
- * voice that uses the samples is itself fired in time by the dispatcher, and the
+ * voice that uses the samples is itself fired in time by Kronos, and the
  * Strudel sound map is global, so a bank that lands a beat late simply means the
  * first cycle is silent — acceptable, and the common case (dirt-samples) is
  * cached after the first eval.
@@ -1603,13 +1597,13 @@ function makeBpxAdapter(
   frontend: Frontend
 ): RuntimeAdapter {
   const adapterEvents: EventBus = createEventBus();
-  // One dispatcher per source (file or actor block). Re-evaluating a source
-  // stops its previous dispatcher before scheduling the new derivation.
+  // One voice entry per source (file or actor block). Re-evaluating a source
+  // tears down its previous voice before scheduling the new derivation.
   const voices = new Map<string, BP3Voice>();
 
   // Live loop/re-random updates reach THIS adapter's currently-playing voices via
-  // the ACTIVE Kronos handle (it, not the inert dispatcher, drives the audio + owns
-  // the scheduler). A voice with no kronos handle just skips the optional call.
+  // the ACTIVE Kronos handle (it drives the audio + owns the scheduler). A voice
+  // with no kronos handle just skips the optional call.
   transportLiveUpdaters.push((reRandom, loop) => {
     for (const v of voices.values()) {
       if (reRandom !== null) v.kronosAudio?.setReRandom(reRandom);
@@ -2015,33 +2009,31 @@ function makeBpxAdapter(
       if (prev) {
         prev.kronosAudio?.stop();
         prev.midi?.dispose(); // le runtime MIDI possède son transport → on le ferme ici
-        prev.dispatcher.stop();
       }
-      // Loading a DIFFERENT program: stop the previous ORCHESTRATOR's dispatcher.
+      // Loading a DIFFERENT program: tear down the previous ORCHESTRATOR's voice.
       // Its `loop:true` keeps re-firing its code voices (re-evaluating the Hydra
       // patch each cycle), so hushing the canvas once is useless — the next cycle
       // re-lights it. The fix that the per-actor disarm relies on is to STOP THE
-      // RE-FIRING, i.e. stop the dispatcher. We read the source `file` straight off
-      // each `voices` entry (self-contained — no dependency on the per-actor handle
-      // map, which the previous attempt relied on and which can be empty here). Only
-      // orchestrator dispatchers are stopped: a plain mono grammar from another
-      // file is left alone so a sibling re-eval / a multi-actor `.bps` doesn't cut
-      // unrelated voices. A re-eval of the SAME
-      // file keeps its own dispatcher (it was already replaced via `prev` above).
+      // RE-FIRING, i.e. stop its Kronos audio driver. We read the source `file`
+      // straight off each `voices` entry (self-contained — no dependency on the
+      // per-actor handle map, which the previous attempt relied on and which can
+      // be empty here). Only orchestrator voices are torn down: a plain mono
+      // grammar from another file is left alone so a sibling re-eval / a
+      // multi-actor `.bps` doesn't cut unrelated voices. A re-eval of the SAME
+      // file keeps its own voice (it was already replaced via `prev` above).
       const outgoingCodeSlots: Array<{ runtime: Runtime; actorId: string }> = [];
       for (const [vKey, v] of voices) {
         if (vKey === key) continue;
         if (v.orchestrator && v.file !== undefined && v.file !== src.fileId) {
           v.kronosAudio?.stop();
           v.midi?.dispose(); // ferme le transport que le runtime MIDI possède
-          v.dispatcher.stop();
           if (v.codeSlots) outgoingCodeSlots.push(...v.codeSlots);
           voices.delete(vKey);
         }
       }
       // Hush the outgoing orchestrator's code runtimes (Hydra canvas/rAF, Strudel
-      // audio) AFTER its dispatcher is stopped — so a fire that was in flight at
-      // stop time can't leave the canvas lit with nothing left to clear it.
+      // audio) AFTER its Kronos audio driver is stopped — so a fire that was in
+      // flight at stop time can't leave the canvas lit with nothing left to clear it.
       if (outgoingCodeSlots.length > 0) {
         const { getAdapter } = await import('./registry');
         for (const slot of outgoingCodeSlots) {
@@ -2054,9 +2046,6 @@ function makeBpxAdapter(
       // BUILD-ONLY (produce/load) must NOT wake the audio: take the context WITHOUT resuming
       // it (`peekCtx`). A real play resumes via `getCtx()`. The built handle stays silent until
       // the first Play's `replay` resumes the context (the `__replay__` sentinel does so).
-      // Le Dispatcher ne reçoit plus de contexte hôte (il ne l'utilisait pas — structure inerte de
-      // résolveurs ; le seul transport qu'il portait, MIDI, a migré). runtime-audio possède le sien.
-      const dispatcher = new Dispatcher();
 
       // Orchestrator-only: BT token → owning actor (rule LHS). Per-eval — a
       // re-eval rebuilds it. A code voice evaluates into a distinct slot
@@ -2070,7 +2059,7 @@ function makeBpxAdapter(
       const slotForActor = (actor: string) => `${src.fileId}::${actor}`;
 
       // Backtick voices (lot 4): route each `BT<interp><id>` terminal to its
-      // interpreter, fired in time by the dispatcher. Registered before load so
+      // interpreter, fired in time by Kronos. Registered before load so
       // both the orchestrated and the simple path place backticks correctly.
       // La sortie voix-de-code : l'adaptateur uniforme de runtime-codevoices (send = sink backtick
       // tiré à l'onset, evaluate = capture d'une voix autonome, bindClock = abonnement au bus de
@@ -2095,8 +2084,8 @@ function makeBpxAdapter(
           : undefined;
 
       // Orchestrator `.bps`: each `@actor` owns an alphabet and a transport
-      // (an @devices appliance). The dispatcher routes each note by its OWN
-      // `payload.actor` (off the tree) → actor → transport; there is no flat
+      // (an @devices appliance). Kronos routes each event by its OWN
+      // `output.runtime` (graven by Kairos off the tree); there is no flat
       // symbol→actor map. MIDI is silent-but-safe without hardware.
       if (orchestration && orchestration.actors.length > 0) {
         // Device GATE (DEVICES_SPEC §3/§4, ADAPTER_SPEC §1bis b): resolve every
@@ -2130,10 +2119,10 @@ function makeBpxAdapter(
 
         // MIDI SINK — built ONCE and handed to Kronos as the 'midi' sink. The host NAMES no
         // route and chooses no sink: each event carries its `output.runtime` (graven by Kairos
-        // from `metadata.actors`), and Kronos routes on it. The MidiTransport stays registered
-        // on the dispatcher for LIFECYCLE only (`dispatcher.stop()` closes it) — never read for
-        // routing. AUDIO + OSC sinks are built inside `startKronosAudio` (they need the shared
-        // clock); the OSC device enumeration is derived there from `metadata.actors`.
+        // from `metadata.actors`), and Kronos routes on it. The MidiTransport's lifecycle is
+        // owned by this `midi` runtime itself (`midi.dispose()` closes it on teardown) — never
+        // read for routing. AUDIO + OSC sinks are built inside `startKronosAudio` (they need the
+        // shared clock); the OSC device enumeration is derived there from `metadata.actors`.
         // KAI-10 — no host resolver: the MIDI sink reads `event.pitch.hz` (graven by Kairos)
         // and derives note+bend from it; its own token→Hz resolver is now only a stand-in.
         let midi: ReturnType<typeof createMidiRuntime> | undefined;
@@ -2210,17 +2199,15 @@ function makeBpxAdapter(
         // routes to DISTINCT sinks via its own `output`; Kanopi reads no actor→transport
         // map and chooses no sink.
         //
-        // The dispatcher is now ONLY the inert resolver structure (per-actor pitch
-        // resolvers) + the MIDI transport's lifecycle owner; it NEVER emits, carries no
-        // timeline, and is NOT read for routing. The PLAYED timeline is the Kairos
-        // projection (bound on the Transport). Live mute for EVERY actor kind routes
-        // through `kairos.demande` → Kronos's own registry (no host event
-        // pre-filtering, [673]). Code voices (Strudel/Hydra backticks) fire via the
-        // Kronos adapter's `'code'` sink (interpreter from `output.device`).
+        // The PLAYED timeline is the Kairos projection, bound on the Transport: Kronos
+        // reads it directly and is NOT told a separate routing table. Live mute for
+        // EVERY actor kind routes through `kairos.demande` → Kronos's own registry (no
+        // host event pre-filtering, [673]). Code voices (Strudel/Hydra backticks) fire
+        // via the Kronos adapter's `'code'` sink (interpreter from `output.device`).
         let kronosAudio: KronosAudioHandle | undefined;
         // Kronos is the ONLY engine (legacy removed): it drives notes + CV + the code
-        // voices, routing each event on its own `output.runtime`. The dispatcher is NEVER
-        // started as an emitter — it remains purely the inert resolver structure.
+        // voices, routing each event on its own `output.runtime`, reading straight off
+        // the Kairos projection bound on the Transport.
         {
           // KAN-orchestration P1 — RE-RANDOM re-derive on the Kairos path. This closure is
           // what Kronos fires at each loop edge (`StructureSource.auBord` → `cb`): it
@@ -2373,11 +2360,10 @@ function makeBpxAdapter(
           productionFeed.set(kairos ?? null);
         }
         // Code-voice slots of THIS orchestrator (hydra/strudel + their per-actor
-        // slot id), recorded on the dispatcher entry so a LATER program can hush
-        // them after stopping this dispatcher (covers a fire in flight at stop).
+        // slot id), recorded on the voice entry so a LATER program can hush
+        // them after tearing down this voice (covers a fire in flight at stop).
         const codeSlots: Array<{ runtime: Runtime; actorId: string }> = [];
         voices.set(key, {
-          dispatcher,
           file: src.fileId,
           orchestrator: true,
           codeSlots,
@@ -2479,10 +2465,10 @@ function makeBpxAdapter(
       if (key === '__stop_in_place__') {
         for (const voice of voices.values()) {
           voice.kronosAudio?.stopInPlace();
-          // NOTE: dispatcher.stop() is NOT called — it would `close()` the WebAudio transport
-          // and clear its node map; `stopInPlace` already cut the sounding nodes via
-          // `transport.stop()`, and the dispatcher must stay the inert resolver/transport
-          // structure Kronos reads on replay. The code voices are cut inside `stopInPlace`.
+          // NOTE: no further teardown call is made here — `stopInPlace` already cut
+          // the sounding nodes via `transport.stop()` and the handle must stay ALIVE
+          // for the Kairos projection Kronos reads on replay. The code voices are cut
+          // inside `stopInPlace`.
         }
         log({ runtime: id, level: 'info', msg: 'stop in place (handle kept)' });
         emitLifecycle('stop', src.fileId);
@@ -2506,7 +2492,7 @@ function makeBpxAdapter(
       }
       // `__hush__` is the core's "stop everything" sentinel (transport stop,
       // Ctrl+. panic): no single voice matches it, so we tear down every live
-      // dispatcher. Without this, stopping the transport left playback looping.
+      // voice. Without this, stopping the transport left playback looping.
       if (key === '__hush__') {
         // EXPLICIT stop → cut the sustained code voices (Strudel/Hydra). This is the
         // single place a transport Stop kills them; the per-handle stop does NOT (a
@@ -2515,7 +2501,6 @@ function makeBpxAdapter(
         for (const h of orchestratedVoices.values()) void h.stopCode?.();
         for (const voice of voices.values()) {
           voice.kronosAudio?.stop();
-          voice.dispatcher.stop();
         }
         voices.clear();
         // Stop everything → no live handle, so the kronos-cursor store reads `null`
@@ -2523,7 +2508,7 @@ function makeBpxAdapter(
         kronosCursor.set(null);
         productionFeed.set(null);
         // "Stop everything" also FORGETS the live orchestrated-voice handles: every
-        // dispatcher is down and the core hushes every code runtime alongside this
+        // voice is down and the core hushes every code runtime alongside this
         // call, so a lingering handle would only let a stale voice be torn down /
         // re-armed later. Clearing keeps the global map honest (and stops it
         // leaking handles across re-evals).
@@ -2539,7 +2524,6 @@ function makeBpxAdapter(
           productionFeed.set(null);
         }
         voice.kronosAudio?.stop();
-        voice.dispatcher.stop();
         voices.delete(key);
       }
       log({ runtime: id, level: 'info', msg: `stop [${key}]` });
@@ -2549,7 +2533,6 @@ function makeBpxAdapter(
       for (const voice of voices.values()) {
         try {
           voice.kronosAudio?.stop();
-          voice.dispatcher.stop();
         } catch {
           /* engine may already be torn down */
         }
