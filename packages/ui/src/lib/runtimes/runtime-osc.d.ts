@@ -13,6 +13,15 @@
  * insufficient here; reported upstream (runtime-OSC), not routed around. Only the
  * exports Kanopi consumes are declared.
  *
+ * ⚠️ COPIE TEMPORAIRE — dernier recours DÉCLARÉ (décision single-source 2026-07-19,
+ * arbitrage architecte [866]), PAS une copie permanente. Elle existe UNIQUEMENT le temps
+ * que runtime-OSC corrige la génération de ses types (défaut inline / interface annotée
+ * sur `createOscRuntime` pour que `oscWsUrl`/`actors`/`profile` survivent à l'émission).
+ * DÈS leur correctif poussé : SUPPRIMER ce fichier + son entrée `tsconfig.paths` et importer
+ * le vrai type publié (`from 'runtime-osc/browser'`), comme audio/midi/codevoices. Correctif
+ * exact envoyé à runtime-osc (courrier tour). Ne rien AJOUTER ici : le seul mouvement permis
+ * est la suppression.
+ *
  * runtime-OSC OWNS OSC output: a pluggable output PROFILE turns a Kronos
  * `ScheduledEvent` into addressed OSC emissions, an interchangeable TRANSPORT
  * carries the bytes (browser → WebSocket → osc-bridge relay → UDP). Kanopi only

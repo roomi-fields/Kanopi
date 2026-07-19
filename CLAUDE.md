@@ -24,6 +24,26 @@ Ce n'est pas un garde-fou de plus en prose : c'est un **réflexe par défaut**. 
 doit jamais se propager de plus d'un saut. Vaut aussi pour CE mandat : le confronter à sa décision
 avant de l'appliquer. Source : `hub/decisions/2026-07-19-confronter-via-oracle-et-restaurer-tous-les-guards.md`.
 
+## ⚠️ INTERDICTION RÉTROCOMPAT — remplacer = supprimer dans le MÊME mouvement (Romain, ordre 2026-07-19)
+
+**JAMAIS de migration douce, de voie de rétrocompat, de code « legacy au cas où / le temps de
+migrer », de fallback, de voie parallèle.** Remplacer X par Y = **SUPPRIMER X dans le même
+mouvement**. Cause de cauchemar récurrent : du code « voué au retrait » gardé en parallèle est
+RÉUTILISÉ, fait ÉVOLUER, et des mesures tournent dessus = bifurcation silencieuse.
+
+- Un code marqué legacy/deprecated/voué-au-retrait qui a **le moindre appelant vivant** n'est PAS
+  en train d'être retiré = il est **réutilisé** = **INTERDIT**.
+- **Suppression directe, pas d'inventaire-qui-attend** : migrer les appelants vers la VRAIE voie,
+  supprimer le legacy, prouver la non-régression (gate vert), dans un seul chantier. Je possède ma
+  boucle ; j'escalade UNIQUEMENT si une suppression exige une coordination cross-repo ou une vraie
+  décision bloquante.
+- **Copie de surface `.d.ts` à la main = voie parallèle INTERDITE** : défaut = single-source (importer
+  le vrai type de l'amont), jamais recopier. Décisions :
+  `hub/decisions/2026-07-19-confronter-via-oracle-et-restaurer-tous-les-guards.md` (amendée) +
+  `hub/decisions/2026-07-19-copies-de-surface-cross-repo-single-source-ou-declaree-outillee.md`.
+- **Enforcement** : un garde anti-rétrocompat au gate échoue si du code marqué legacy/deprecated a un
+  appelant vivant (mordant prouvé par injection, comme le méta-garde anti-bypass).
+
 ## Architecture — LOI NON NÉGOCIABLE (lire AVANT de coder)
 
 Contrats contraignants, à respecter sans dérogation (les contourner = bug, pas « choix sain ») :
