@@ -5,6 +5,22 @@
 > produit la position, qui la consomme, à quelle fréquence, et les optimisations
 > en place. À tenir à jour avec le code.
 
+> ⚠️ **PÉRIMÉ — modèle obsolète, à réécrire (non fait dans cette passe).** Le
+> diagramme et les §1-3 ci-dessous décrivent le modèle **pré-Kronos** :
+> `MockClock` (boucle rAF) lisant `Dispatcher.musicalBeatPosition()`
+> (`packages/core/dispatcher.js`, husk éliminé [842] — `packages/core/src` ne
+> contient plus que `index.js`, vide) via `getDispatcherBeat` (bpx-adapter).
+> Aucun de ces trois symboles n'existe plus dans le code (`grep` négatif :
+> `musicalBeatPosition`, `getDispatcherBeat`, `MockClock`). La position est
+> désormais l'autorité **Kronos** (`Transport.beatPosition()`/
+> `absoluteBeatPosition()`), échantillonnée par frame dans
+> `packages/ui/src/stores/kronos-cursor.svelte.ts` (`KronosCursorStore`,
+> dont le commentaire dit explicitement « it replaces the old MockClock
+> render loop ») — PAS par `clock.svelte.ts`/`MockClock`. Le contenu ci-dessous
+> (invariants d'émission, clamp monotone par `gen`) n'a pas été revérifié
+> contre `kronos-cursor.svelte.ts` ; ne pas s'y fier tel quel. Une réécriture
+> complète du modèle (hors mandat « purge Dispatcher ») est nécessaire.
+
 ## 1. Vue d'ensemble — une source de position, plusieurs consommateurs
 
 ```

@@ -52,7 +52,7 @@ flowchart TD
     UI["UI<br/>(48 f, 50 liens)"]
     STORES["stores<br/>(22 f, 21) — projections"]
     ADAPT["adaptateur<br/>(40 f, 48) — bpx-adapter = LE hub"]
-    COEUR["coeur<br/>(13 f, 22) — branchement + dispatcher inerte"]
+    COEUR["coeur<br/>(13 f, 22) — branchement (core/index.js vide, husk Dispatcher éliminé [842])"]
     LIB["bibliotheque (12 f)"]
     PERS["persistance (8 f)"]
     CMD["commandes (3 f)"]
@@ -116,7 +116,7 @@ flowchart TD
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | **adaptateur**   | branche l'arbre BPx → Kairos → Kronos → puits ; `bpx-adapter.ts` = hub (2115 l.)                                                                     | BPx (arbre), Kairos, Kronos                      |
 | **stores**       | projections réactives Svelte (position, acteurs, scènes, vues de prod)                                                                               | Kronos (position), core (acteurs), Kairos (vues) |
-| **coeur**        | `core/index.js` + `lib/core*` : registry d'adaptateurs + dispatcher **inerte** (structure de transports lue par Kronos, jamais démarrée pour le son) | scène compilée                                   |
+| **coeur**        | `core/index.js` (vide — le husk Dispatcher inerte a été éliminé, [842]) + `lib/core*` : branchement runtimes via `runtimes/registry` | scène compilée                                   |
 | **UI**           | Svelte 5 + CodeMirror 6 : panneaux, éditeur, monte les vues runtime-ui                                                                               | les stores                                       |
 | **bibliotheque** | catalogue de contenu groupé (démos, ressources, starters) pour le navigateur                                                                         | listing réel                                     |
 | **persistance**  | espace de travail + fichiers réels (jamais auto-créés)                                                                                               | workspace réel                                   |
@@ -255,7 +255,7 @@ flowchart TD
   setbpm --> kah
 ```
 
-- **makeBpxAdapter** — FABRIQUE du hub : construit un RuntimeAdapter clos sur (id, extensions, frontend), avec son propre EventBus, sa map `voices` (un Dispatcher par source) et l'enregistrement d'un updater de toggles live. Retourne l'objet {evaluate, setBpm, stop, dispose}. Source unique des deux jumeaux bp3/bpscript.
+- **makeBpxAdapter** — FABRIQUE du hub : construit un RuntimeAdapter clos sur (id, extensions, frontend), avec son propre EventBus, sa map `voices` (une entrée `BP3Voice` par source — plus de Dispatcher, husk éliminé [842]) et l'enregistrement d'un updater de toggles live. Retourne l'objet {evaluate, setBpm, stop, dispose}. Source unique des deux jumeaux bp3/bpscript.
 - **evaluate** — HUB du cycle. Frontal→AST, charge les banques déclarées, sème le seed, dérive via BPx, réconcilie le tempo, construit le registre CV, projette dans Kairos, publie la production, monte le routage par acteur (gate device, sink MIDI, startKronosAudio), enregistre les poignées d'arm/disarm. Gère les modes produce-only (build silencieux) et STEP. Conforme dans l'intention (assemble/route) mais porte BEAUCOUP de décisions hôte (voir natureComplexite).
 - **grFrontend** — Frontal .gr : parseWithSound (BP3 natif) → lit sections et orchestration depuis l'AST. Glue de frontal.
 - **bpsFrontend** — Frontal .bps : compileToBPxAST puis LIT tout (tempo @mm, flagStates, libraries, backticks, sections, orchestration) DEPUIS l'AST, source unique. Glue de frontal.
@@ -316,6 +316,15 @@ NON-CONFORMITÉS au principe dur (l'hôte ne résout/compose/rend rien, ne porte
    Aucun rendu sonore/visuel n'est fait par l'hôte (sinks audio/CV délégués à runtime-audio/Kronos, voix-code à leurs adaptateurs) — la frontière de rendu est respectée. Les manquements réels sont C1 (catalogues+alphabet portés) et la résolution d'aux .gr pilotée par l'hôte.
 
 ### B — `kronos-audio.ts` : la frontière transport audio (22 fonctions)
+
+> ⚠️ **PÉRIMÉ, non réécrit dans cette passe (hors mandat purge Dispatcher).** Cette
+> famille B (diagramme + prose ci-dessous, y compris `COERCE`/`prep`/`coerceControlValues`
+> et les fonctions `getCtx`/`peekCtx`/`pauseAudioContext`/`resumeAudioContext` citées en
+> §A) décrit un état antérieur à la migration « la sortie audio quitte l'hôte » : le fichier
+> réel (`kronos-audio.ts:391-437`) indique explicitement « Plus de `warnMissing` ni de
+> `prep`/coerce hôte » et ces fonctions/`audioAdapter`/`midiAdapter`/`oscRuntimeAdapter` sont
+> absentes du code actuel (vérifié par grep). Distinct de la purge Dispatcher [842] traitée
+> ici — nécessite un audit/re-cartographie dédié.
 
 Frontière hôte↔moteur côté transport audio (`packages/ui/src/lib/runtimes/kronos-audio.ts`). Deux fonctions de module (deriveOscBindings, startKronosAudio) ; startKronosAudio est un GROS builder qui (1) assemble la machine Kronos sur l'horloge AudioContext partagée, (2) construit ou récupère les sinks de sortie (audio/MIDI/OSC/code), (3) déclare 5 RuntimeAdapters qui reshapent chaque ScheduledEvent vers la forme attendue par le sink, (4) câble Kronos↔Kairos (bindStructureSource, setReDerive) et (5) retourne un handle de ~16 closures projetant les commandes transport + lifecycle Model C. Toute la logique réelle vit dans des closures internes (prep, warnMissing, applyReDerive, les .send d'adaptateurs, les méthodes du handle).
 

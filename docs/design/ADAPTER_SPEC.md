@@ -18,20 +18,33 @@ le même contrat :
 | Famille | Contrat | Où ça vit | Exemples |
 | --- | --- | --- | --- |
 | **Adapter de langage** | `RuntimeAdapter` (cette spec) | `packages/ui/src/lib/runtimes/` (in-repo) | Strudel, Hydra, Mercury, p5, Csound |
-| **Transport de sortie** | transport du dispatcher | `packages/core/src/dispatcher/transports/` | WebAudio, MIDI, OSC, DMX |
+| **Transport de sortie** | `RuntimeAdapter` (Kronos, `scheduler.addAdapter`) | `runtime-audio`/`runtime-midi`/`runtime-osc`/`runtime-codevoices` (dépôts frères) | WebAudio, MIDI, OSC, DMX |
 
 Un adapter de langage est de la **glue vers un moteur amont** : il n'est
 vérifiable qu'en lançant Kanopi entier (éditeur + transport + e2e), n'a
 qu'un seul consommateur (cette app) et pas d'oracle externe. Il vit donc
 dans ce dépôt, et s'ajoute via la procédure du §5.
 
-Un transport de sortie consomme les événements résolus du dispatcher
-(contrôles déjà interprétés — vel, chan, transpose, etc.) et les émet vers
+> **PÉRIMÉ (retiré [842])** : cette section décrivait un « dispatcher » hôte
+> (`packages/core/src/dispatcher/`) qui interprétait les contrôles et plaçait
+> les événements résolus vers le `transport`. Ce husk a été éliminé —
+> `packages/core/src` ne contient plus que `index.js`, vide. Réalité actuelle
+> (KAI-9) : chaque événement porte son adresse (`event.output.runtime`,
+> gravée par Kairos) ; **Kronos** route directement vers le `RuntimeAdapter`
+> enregistré pour ce nom (`scheduler.addAdapter`, aucun défaut) — Kanopi
+> **branche** les runtimes sur Kronos, il ne s'intercale plus entre eux.
+> Chaque transport de sortie reçoit désormais l'événement quasi-verbatim et
+> **interprète lui-même** ses contrôles (coercition string→nombre incluse,
+> R2, `output-runtime-contract.ts:8`) — plus un dispatcher hôte central.
+
+Un transport de sortie consomme les événements ordonnancés par Kronos
+(`ScheduledEvent`, routés sur `event.output.runtime`) et les émet vers
 une cible matérielle ou logicielle. Il a sa propre méthode de validation et
-peut être maintenu comme un chantier séparé. **Il n'implémente pas
-`RuntimeAdapter`** ; sa frontière est la signature des transports du
-dispatcher. Règle commune aux deux familles : le dispatcher est le seul
-interpréteur des contrôles — un transport ne relit jamais la charge brute.
+peut être maintenu comme un chantier séparé (dépôt frère). **Il n'implémente
+pas `RuntimeAdapter`** au sens langage (§1) mais la forme `RuntimeAdapter`
+de Kronos (`send`, `dispose`, …) ; sa frontière est la signature Kronos.
+Règle commune aux deux familles : chaque transport interprète ses PROPRES
+contrôles — Kanopi ne relit ni ne coerce plus la charge brute.
 
 ---
 
@@ -96,8 +109,10 @@ consomment la liste dérivée.
 
 Un langage encapsulé (Strudel, Hydra, Tidal, …) n'est PAS rendu « en place » de
 façon opaque par son moteur natif : sa sortie est **captée à l'interprétation**,
-puis **placée dans le temps par le dispatcher** vers le `transport` (appareil) de
-la voix. « Le code est toujours transporté. » Deux clauses en découlent.
+puis **placée dans le temps par Kronos** vers le `transport` (appareil) de
+la voix — routage sur `event.output.runtime` (gravé par Kairos), plus de
+dispatcher hôte intermédiaire (husk éliminé [842]). « Le code est toujours
+transporté. » Deux clauses en découlent.
 
 ### (a) Comment j'expose ma sortie pour transport (capture)
 
@@ -105,12 +120,13 @@ L'adapter DOIT exposer un point de capture de sa sortie — il ne se contente pa
 faire jouer son moteur. Selon la nature du moteur :
 
 - **Sortie événementielle** (notes/contrôles datés) : l'adapter fournit les
-  événements résolus au dispatcher (comme bp3 : tokens horodatés), qui les place
-  vers le transport. C'est la voie « native Kanopi ».
+  événements résolus (comme bp3 : tokens horodatés) que Kronos ordonnance et
+  route vers le transport. C'est la voie « native Kanopi ».
 - **Sortie continue / moteur autonome** (Strudel cyclist, Hydra rAF, canvas) :
-  l'adapter expose un **hook de capture** (callback / flux) que le dispatcher lit
-  — pas un rendu direct au matériel. Le moteur ne s'adresse JAMAIS directement à
-  l'appareil : il passe par la capture → dispatcher → transport.
+  l'adapter expose un **hook de capture** (callback / flux) que Kronos/le sink
+  lit — pas un rendu direct au matériel. Le moteur ne s'adresse JAMAIS directement
+  à l'appareil : il passe par la capture → Kronos (routage `output.runtime`) →
+  transport.
 
 Cette clause est la contrepartie adapter du mécanisme **capture-pour-retransport**
 (backlog B4). Tant qu'un moteur ne sait que se rendre lui-même de façon opaque,
@@ -121,7 +137,8 @@ sa fiche d'adapter, pas à masquer).
 
 L'adapter DÉCLARE son `outputType: VoiceOutputType` (§1). C'est ce que la **voix
 produit** — distinct du `DeviceType` que l'**appareil accepte** (`DEVICES_SPEC.md`).
-Le dispatcher **vérifie la compatibilité avant de router** : une voix dont
+Kanopi **vérifie la compatibilité avant de router** (`gateVoiceDevice`,
+`bpx-adapter.ts` — plus de dispatcher hôte, husk éliminé [842]) : une voix dont
 l'`outputType` n'est pas accepté par l'appareil ciblé est **refusée** à l'éval
 (erreur claire), jamais silencieusement ignorée.
 

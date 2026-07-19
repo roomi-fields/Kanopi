@@ -156,7 +156,8 @@ par nom de runtime. Il ne tient ni machine d'état, ni compteur de position, ni 
 - `kronos/src/runtime/runtime-adapter.ts` (forme cœur `ScheduledEvent`/`OutputRef`/`RuntimeAdapter`),
   décision `kronos/decisions/2026-06-26-kai9-adresse-dans-arbre.md`.
   Code hôte : `packages/ui/src/stores/{transport,playback,clock,kronos-cursor}.svelte.ts` +
-  `packages/ui/src/lib/runtimes/kronos-audio.ts` + `packages/core/src/dispatcher/dispatcher.js`.
+  `packages/ui/src/lib/runtimes/kronos-audio.ts` (husk `packages/core/src/dispatcher/dispatcher.js`
+  éliminé [842] : `packages/core/src` ne contient plus que `index.js`, vide).
 
 | #   | Direction / champ                                    | Propriétaire                | Sens                | Type / forme exacte                                                       | Invariant                                                                            |
 | --- | ---------------------------------------------------- | --------------------------- | ------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
@@ -200,8 +201,12 @@ Fichiers porteurs (chemins absolus) :
 - `/home/romi/dev/bp/kanopi/packages/ui/src/lib/runtimes/bpx-adapter.ts` — construit le
   `MidiTransport` par-acteur, le backtick sink (`registerBacktickSink`), appelle
   `startKronosAudio`, gère mute/cut/refire des voix.
-- `/home/romi/dev/bp/kanopi/packages/core/src/dispatcher/dispatcher.js` — conteneur INERTE
-  de transports (lifecycle seul) + `coerceControlValues`.
+- `/home/romi/dev/bp/kanopi/packages/core/src/dispatcher/dispatcher.js` — SUPPRIMÉ [842] : le
+  conteneur INERTE de transports (lifecycle seul) + `coerceControlValues` étaient morts (zéro
+  appelant vif) ; `packages/core/src` ne contient plus que `index.js`, vide. Teardown = `voice.
+  kronosAudio?.stop()` + `runtime.dispose()` (ex. `midi.dispose()`) + `stopCode` pour les voix-code
+  (`bpx-adapter.ts`) ; coercition string→nombre désormais dans les runtimes de sortie (R2,
+  `output-runtime-contract.ts:8`).
 - `/home/romi/dev/bp/kanopi/packages/ui/src/lib/runtimes/{adapter,registry}.ts` — forme
   `RuntimeAdapter` des voix de code + registre des adaptateurs (7 voix + bp3/bpscript).
 - Surfaces consommées (stubs de types locaux, ce que l'hôte VOIT du voisin aval) :
@@ -218,7 +223,7 @@ Fichiers porteurs (chemins absolus) :
 | P6    | codevoices `RuntimeAdapter` (`evaluate/stop/…`)       | runtime-codevoices | Kanopi **branche** 7 voix + tire à l'onset                | `codeVoiceAdapters: readonly RuntimeAdapter[]` ; tirage via `backtickSink(token, info, interp)`                                                       | voix = sink soutenu tiré à l'onset du jeton `BT…` par Kronos ; l'hôte garde le câblage `registerBacktickSink` ; interpréteur = `event.output.device`                                            |
 | P7    | `setBindings(bindings)` (setup OSC)                   | runtime-osc        | Kanopi → puits OSC (hors hot-path)                        | `Record<actor, {device?, channel?}>` dérivé de `metadata.actors` (`deriveOscBindings`)                                                                | ÉNUMÉRATION seule (pré-charge des surfaces) ; le device/channel par-événement reste sur `event.output`                                                                                          |
 | P8    | Cycle de vie : `stop()` / `close()` / `setActorMuted` | Kronos / sinks     | Kanopi commande                                           | `handle.stop()`→`transport.stop`+`driver.stop`+`oscAdapter.close()` ; mute→`kairos.demande({type:'mute'})` ; code→`stopCodeVoices`/`refireCodeVoices` | l'hôte ne tient ni FSM ni position ; mute des notes passe par la porte d'écriture Kairos, pas par `adapter.setActorMuted`                                                                       |
-| P9    | Lifecycle MIDI via dispatcher inerte                  | Kanopi             | détention locale                                          | `dispatcher.addTransport('midi', midi)` ; `dispatcher.stop()`→`transport.close()`                                                                     | le dispatcher n'émet RIEN (post-KAI-9) : registre `transports` pour fermer les voix au re-eval ; jamais lu pour router                                                                          |
+| P9    | Lifecycle MIDI — teardown direct (dispatcher éliminé [842]) | Kanopi        | détention locale                                          | `midi.dispose()` (le runtime MIDI possède son transport, fermé au re-eval/stop)                                                                       | plus de conteneur intermédiaire : le runtime MIDI ferme lui-même son transport ; jamais lu pour router                                                                                          |
 | P10   | Portillon de compatibilité voix↔appareil              | Kanopi             | validation amont                                          | `gateVoiceDevice(actor, transportKey, evalInterp)` → `isCompatible(VoiceOutputType, DeviceType)`                                                      | refus à l'éval d'une voix incompatible (erreur claire, jamais drop silencieux) ; lecture de type, pas de résolution/rendu                                                                       |
 
 #### Frontière RUNTIME-UI — montage des vues de production
@@ -492,7 +497,7 @@ les **catalogues** ; c'est exactement le modèle KAI-9 (l'adresse voyage dans la
 - `retune(bpm): void` — tempo live via `kairos.demande({type:'tempo', bpm, quand:'immediat'})` (PAS `transport.setTempo`).
 - `setActorMuted(actor, muted): void` — via `kairos.demande({type:'mute', acteur, muet, quand:'immediat'})`.
 
-**K15 — store `transport.svelte.ts`** : `loop=$state(true)`, `reRandom=$state(false)` ; `setLoopSink/setReRandomSink` câblés par bpx-adapter pour atteindre le dispatcher EN COURS (effectif au prochain cycle) ; `toggleLoop/toggleReRandom`.
+**K15 — store `transport.svelte.ts`** : `loop=$state(true)`, `reRandom=$state(false)` ; `setLoopSink/setReRandomSink` câblés par bpx-adapter pour atteindre la voix Kronos EN COURS (handle `kronosAudio`, effectif au prochain cycle — plus de dispatcher, husk éliminé [842]) ; `toggleLoop/toggleReRandom`.
 
 **Câblage commandes (boutons) → Transport** : `playback.svelte.ts` mappe les gestes boutons →
 commandes Transport et PROJETTE `mode` depuis `kronosCursor.state` (aucune FSM hôte) :
@@ -649,9 +654,10 @@ interface MidiSinkOptions {
 }
 ```
 
-Câblage réel (bpx-adapter.ts:1744-1749) : un seul `new MidiTransport({})` pour la scène,
-`await midi.init().catch(()=>{})`, `dispatcher.addTransport('midi', midi)` (lifecycle seul),
-puis passé en `sinks: { midi }` à `startKronosAudio`.
+Câblage réel (bpx-adapter.ts:~2146-2161, `createMidiRuntime({})` — a remplacé `new MidiTransport({})`,
+staleness adjacente non traitée ici) : un seul runtime MIDI pour la scène, `await midi.init().catch(()=>{})`,
+teardown direct `midi.dispose()` (plus de `dispatcher.addTransport`, husk éliminé [842] : le paquet MIDI
+possède désormais le cycle de vie de son transport), puis passé en `sinks: { midi }` à `startKronosAudio`.
 
 ##### Puits OSC — `runtime-osc/browser` (surface consommée)
 
@@ -803,22 +809,16 @@ Tirage à l'onset (`registerBacktickSink`, bpx-adapter.ts:1179) :
 `./registry` (casse le cycle bp3↔registry) → `getAdapter(runtime).evaluate(entry.code, {actorId, fileId}, log)` ;
 interpréteur inconnu / pas d'adaptateur → log erreur (jamais silencieux), fire-and-forget.
 
-##### Dispatcher inerte (lifecycle MIDI) — `dispatcher.js`
+##### Dispatcher inerte (lifecycle MIDI) — SUPPRIMÉ [842], historique
 
-```ts
-class Dispatcher {
-  constructor(audioCtx: AudioContext);
-  transports: Record<string, { close(): void }>; // name → transport (ouvert par l'hôte pour le lifecycle)
-  addTransport(name: string, transport): void;
-  stop(): void; // ferme chaque transport (re-eval / swap de scène)
-}
-function coerceControlValues(
-  controls: Record<string, unknown> | null | undefined,
-): Record<string, unknown>;
-```
-
-En-tête du fichier : « INERT TRANSPORT CONTAINER ONLY (post-RA-6 / post-KAI-9) » — n'ordonnance
-ni n'émet plus rien ; pas de table `_actors` ; le routage est par `event.output.runtime`.
+Le conteneur `class Dispatcher` (`packages/core/src/dispatcher/dispatcher.js`) — un `transports:
+Record<string, {close()}>` par nom pour fermer chaque transport au re-eval, plus `coerceControlValues`
+(string→number) — était un husk post-Kronos sans appelant vif (« INERT TRANSPORT CONTAINER ONLY »,
+post-RA-6/post-KAI-9). Éliminé entièrement (classe + fonction + `bp3-core.d.ts`) ; `packages/core/src`
+ne contient plus que `index.js`, vide. Remplacé par : teardown MIDI direct `midi.dispose()` (le paquet
+runtime-MIDI possède son transport) ; coercition string→number désormais dans les runtimes de sortie
+(R2, `output-runtime-contract.ts:8`), jamais côté hôte. Le routage reste par `event.output.runtime`
+(inchangé — c'était déjà vrai avant la suppression du husk).
 
 #### Frontière RUNTIME-UI — signatures (code réel runtime-ui `src/contract/`)
 
@@ -1015,10 +1015,12 @@ pitchLib, modulation })` — `pitchLib` et `modulation` sont des champs **frère
 
 **Écarts / non-conformités signalés :**
 
-- **É1 (🔶, mineur) — coercition des contrôles côté hôte.** `coerceControlValues` (`dispatcher.js:23`,
-  réutilisé par `prep()` l.368) convertit string→number (`vel:'80'`→80) DANS l'hôte. L'étalon
-  `kanopi-runtime-midi.md` exige les contrôles VERBATIM, la coercition CHEZ le runtime. C'est une légère
-  transformation de charge côté hôte (chemin audio legacy). Candidat à pousser vers les runtimes. _Cf. écart C3 du §5._
+- **É1 (✅ RÉSOLU [842], anciennement 🔶) — coercition des contrôles côté hôte.** L'ancien
+  `coerceControlValues` (`dispatcher.js:23`, réutilisé par un `prep()` depuis lui aussi retiré —
+  cf. note adjacente au §5) convertissait string→number (`vel:'80'`→80) DANS l'hôte. Le husk
+  `dispatcher.js` a été éliminé [842] : la coercition vit désormais DANS les runtimes de sortie
+  (R2, `output-runtime-contract.ts:8`), conforme à `kanopi-runtime-midi.md`. _Cf. écart C3 du §5
+  (à réviser en cohérence)._
 
 - **É2 (⚙️, divergence étalon↔réalité, NON-bug) — tempo/mute live ne passent PAS par `Transport`.**
   L'étalon `kronos-transport.md` liste `setTempo(bpm)`/`setRate(r)`/`setLoop(...)` comme commandes
@@ -1076,11 +1078,11 @@ pitchLib, modulation })` — `pitchLib` et `modulation` sont des champs **frère
   câblage admis (l'hôte est l'auteur de l'adaptateur Kronos pour audio/midi/osc), ou doivent-ils
   rétrécir à un pur passe-plat (le sink lisant directement la forme Kronos) ? Escalade Romain.
 
-- **E2 — `coerceControlValues` coerce côté hôte (écart C3 du §5, confirmé).**
-  `dispatcher.js:coerceControlValues` (réutilisé par `prep`) convertit string→number côté hôte,
-  alors que kanopi-runtime-midi.md MAJ 2026-06-20 stipule « verbatim (string OU number, **jamais
-  coercé** — la coercition est CHEZ runtime-midi) ». Mécanique, candidat à pousser vers
-  runtime-audio/midi.
+- **E2 — `coerceControlValues` RÉSOLU [842] (écart C3 du §5, à réviser).** L'ancien
+  `dispatcher.js:coerceControlValues` (réutilisé par un `prep()` lui aussi retiré) convertissait
+  string→number côté hôte, contraire à kanopi-runtime-midi.md MAJ 2026-06-20 (« verbatim… la
+  coercition est CHEZ runtime-midi »). Le husk `dispatcher.js` a été supprimé [842] : la coercition
+  vit désormais dans les runtimes de sortie, conforme à l'étalon.
 
 - **E3 — la glu n'implémente pas `stop`/`setActorMuted`/`close`/`latency`.** Le contrat
   RuntimeAdapter offre ces hooks optionnels (§7.2) ; les 4 adaptateurs-glu ne portent que `send`.
@@ -1210,8 +1212,8 @@ ajoutés ici pour que le contrat soit auto-suffisant (un lecteur n'a pas à rouv
   lecture autorisée (projection), écriture interdite ailleurs.
 - **stores** = projections pures (lecture amont → état réactif UI). Aucune écriture d'autorité, aucun
   effet de recopie store→store.
-- **coeur** = registry d'adaptateurs + dispatcher **inerte** (structure de transports lue par Kronos,
-  jamais démarrée pour le son).
+- **coeur** = `core/index.js` (vide — husk Dispatcher éliminé [842]) + branchement runtimes via
+  `runtimes/registry`.
 - **UI** ne parle qu'aux stores + monte runtime-ui ; ne touche jamais Kairos/Kronos en direct.
 - **bibliotheque / persistance / commandes / texte / midi** : gestion locale (contenu groupé,
   workspace réel, palette/raccourcis, formats d'affichage, saisie clavier MIDI entrante).
@@ -1339,18 +1341,21 @@ transport dans le builder.
   légitime) ou la structure de lecture (interdit) ? Indice favorable : les acteurs viennent de
   `core.actors`, pas du texte.
 
-### 🔶 C3 — micro-composition à la frontière transport (`kronos-audio.ts` + dispatcher)
+### 🔶 C3 — micro-composition à la frontière transport (`kronos-audio.ts` + ex-dispatcher) — coercition RÉSOLUE [842], reste À VÉRIFIER
 
-- **Preuve** : `kronos-audio.ts:388` et `:414` calculent `velocity = velRaw/127` (conversion d'unité
-  MIDI 0..127→0..1 = rendu/normalisation, dans `audioAdapter` ET `midiAdapter`) ; `prep` (l.~372)
-  coerce les contrôles string→nombre, **élague** les contrôles à valeur-objet (descripteurs CV) et
-  applique un repli `velRaw` sur `rq.vel` — l'hôte **massage** le payload au lieu de le router
-  verbatim. La coercition vient AS-IS du dispatcher (`core/src/dispatcher.js`), contraire à
-  `kanopi-runtime-midi.md` (« contrôles verbatim, jamais coercés — coercition CHEZ le runtime »).
-- **Cible** : conversion vel et coercition/élagage → faits par les **sinks/Kairos**, pas par la
-  frontière hôte. Mineur mais réel (chemin audio hôte legacy).
-- **Confirmé par les frontières** : KRONOS É1 (coercition) + É4 (remap de charge `vel/127`, élagage
-  des descripteurs CV) ; PUITS E1 (composition de payload, principale tension) + E2 (coercition).
+- **Volet coercition (RÉSOLU [842])** : la coercition string→nombre venait AS-IS du husk `dispatcher.js`
+  (`core/src/dispatcher.js`), contraire à `kanopi-runtime-midi.md` (« contrôles verbatim, jamais
+  coercés — coercition CHEZ le runtime »). Le husk a été supprimé ; la coercition vit désormais dans
+  les runtimes de sortie (R2, `output-runtime-contract.ts:8`), conforme à l'étalon.
+- **Volet velocity/`prep()` (NON vérifié dans ce passage — À TRANCHER)** : ce finding citait aussi
+  `kronos-audio.ts:388/:414` (`velocity = velRaw/127` dans `audioAdapter`/`midiAdapter`) et un `prep()`
+  (l.~372) qui élaguait les descripteurs CV. Une lecture du fichier actuel (post-migration « audio
+  quitte l'hôte ») montre que `prep`/`warnMissing`/`audioAdapter`/`midiAdapter`/`oscRuntimeAdapter` n'y
+  figurent plus du tout (cf. commentaire `kronos-audio.ts:399` « Plus de warnMissing ni de prep/coerce
+  hôte »). Ce volet semble donc lui aussi obsolète, mais c'est une migration SÉPARÉE (browser/webaudio→
+  audio) hors mandat de cette passe — non réécrit ici, à confirmer et clore par un audit dédié.
+- **Confirmé par les frontières** : KRONOS É1 (coercition, RÉSOLU) ; PUITS E2 (coercition, RÉSOLU).
+  É4/E1 (remap `vel/127`, élagage CV) restent À VÉRIFIER (même réserve que ci-dessus).
 
 ### 🔶 C4 — code/doc mort (rendu déménagé) + calcul d'affichage hôte
 

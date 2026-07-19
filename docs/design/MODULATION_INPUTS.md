@@ -1,9 +1,21 @@
 # Entrées de modulation (CV) du runtime webaudio
 
+> ⚠️ **PÉRIMÉ (localisation code) — non réécrit dans cette passe.** Le fichier cité
+> ci-dessous (`packages/core/src/dispatcher/transports/webaudio.js`, `MOD_SCALE` +
+> `send()`) n'existe plus : `packages/core/src` ne contient plus que `index.js`, vide
+> (husk Dispatcher éliminé [842] ; le répertoire `dispatcher/transports/` avait déjà
+> disparu à une migration antérieure — la sortie audio a quitté l'hôte pour
+> `runtime-audio`). `MOD_SCALE`/`_applyMod`/`setModulators` : zéro occurrence dans ce
+> dépôt (`grep` négatif). Le rendu CV est aujourd'hui porté par `runtime-audio`
+> (dépôt frère) via la factory `ctx.modulation.exprSource`, PASSÉE par l'hôte, jamais
+> compilée par lui (`carte-reel.md` §A `setExprSource`). Le CONTENU technique
+> ci-dessous (registre d'entrées §2, modèle par-note §3) n'a pas été revérifié contre
+> `runtime-audio` — à confirmer avant de s'y fier ; seule la localisation/l'artefact
+> `dispatcher` est corrigée ici.
+
 > **Kanopi est la source de vérité des noms d'entrées de modulation** exposés par
 > sa sortie de synthèse webaudio. Le transpileur BPScript fige ce registre et
-> valide les noms écrits dans un branchement contre lui. À tenir aligné avec
-> `packages/core/src/dispatcher/transports/webaudio.js` (`MOD_SCALE` + `send()`).
+> valide les noms écrits dans un branchement contre lui.
 >
 > Côté langage (BPScript), la forme CV est : une **déclaration** du modulateur
 > `cv env1 : mod.adsr(attack:5, …)` (lib `mod` = mod.json) et un **branchement** au
@@ -17,8 +29,9 @@
 - **Kanopi échantillonne la courbe ET mappe `0..1` → la plage de l'entrée.** Chaque
   entrée connaît sa plage ; le modulateur reste générique.
 - Flux : `cvInstances` (déclarations) → `modulatorsFromAst()` (bpx-adapter) = un
-  **registre** `{ env1: {objectType, params, curve} }`, transmis aux transports
-  (`dispatcher.setModulators` → `transport.setModulators`). Le **branchement**
+  **registre** `{ env1: {objectType, params, curve} }`, transmis au runtime de sortie
+  (plus de dispatcher hôte intermédiaire, husk éliminé [842] — mécanisme de transport
+  actuel non revérifié dans cette passe, cf. bandeau ci-dessus). Le **branchement**
   `(cutoff: env1)` arrive sur la note via `leaf.controls` (`{cutoff:'env1'}`) ;
   `send()` reconnaît qu'une valeur de contrôle est un **nom de modulateur** et
   applique sa courbe (`_applyMod` → `cv-curve.js`) au paramètre de la note.

@@ -52,17 +52,20 @@ Règles :
 ## 2 · Params de connexion par type
 
 Le `type` détermine les params attendus. Tous optionnels (un défaut sain par type) ;
-le dispatcher/transport correspondant les consomme. Forme **minimale bêta** ci-dessous
+le **runtime de sortie** correspondant les consomme — plus de dispatcher/`transports/`
+intermédiaire (`packages/core/src/dispatcher/`, husk éliminé [842] ; le répertoire
+`transports/` n'existe plus). Kronos route directement sur `event.output.runtime`
+vers le runtime enregistré. Forme **minimale bêta** ci-dessous
 (extensible — un type peut gagner des params sans casser le format) :
 
-| type    | params (clés)                         | défaut             | transport dispatcher       |
+| type    | params (clés)                         | défaut             | runtime de sortie          |
 | ------- | ------------------------------------- | ------------------ | -------------------------- |
-| `midi`  | `port` (nom\|index), `ch` (1-16)      | 1er port, ch 1     | `transports/midi.js`       |
-| `audio` | `out` (sortie), `gain`                | sortie par défaut  | `transports/webaudio.js`   |
-| `osc`   | `host`, `port`, `addr` (préfixe)      | 127.0.0.1:57120    | `transports/osc.js`        |
+| `midi`  | `port` (nom\|index), `ch` (1-16)      | 1er port, ch 1     | `runtime-midi`              |
+| `audio` | `out` (sortie), `gain`                | sortie par défaut  | `runtime-audio`             |
+| `osc`   | `host`, `port`, `addr` (préfixe)      | 127.0.0.1:57120    | `runtime-osc`                |
 | `dmx`   | `universe`, `channel`                 | univers 0          | (greffe runtime-dmx)       |
 | `video` | `target` (canvas/sortie)              | canvas principal   | (greffe runtime-video)     |
-| `text`  | —                                     | —                  | `transports/text.js`       |
+| `text`  | —                                     | —                  | pas de sink câblé (compatibilité seule, `devices/registry.ts:39`) |
 
 Les params `runtime` d'une voix (`transport.midi(ch:10)`) **surchargent** ceux de
 l'appareil pour cette voix (cascade de sortie, cf. ACTOR.md §4) — l'appareil porte
