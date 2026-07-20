@@ -44,7 +44,6 @@ export default defineConfig({
   // inutilisable sur l'autre). `strictPort` transforme cette dérive muette en refus immédiat :
   // Vite s'arrête et dit que le port est occupé. Un serveur qui démarre sur une origine que le
   // service refuse est un faux vert — mieux vaut pas de serveur du tout.
-  server: { port: 5173, strictPort: true },
   plugins: [
     svelte(),
     VitePWA({
@@ -222,7 +221,12 @@ export default defineConfig({
     // que si la RÉPONSE porte cet en-tête. Posé aussi sur le preview (bundle prod local).
     headers: { 'Document-Policy': 'js-profiling' },
     port: 5173,
-    strictPort: false,
+    // VERROU (architecte 2026-07-20, cause mesurée) : le service de stockage n'autorise en
+    // CORS que `localhost:5173`. Si 5173 est pris, Vite bascule SANS RIEN DIRE sur 5174 →
+    // l'app se charge mais tout appel au stockage est bloqué par le navigateur, sans message
+    // compréhensible (Romain a cru son COMPTE cassé). Échouer bruyamment vaut mieux que
+    // servir une app muette sur une origine refusée.
+    strictPort: true,
     // `bpx` and `bp3-frontend` are sibling repos linked via `file:` (npm
     // symlinks them into node_modules → their real paths live under
     // /home/romi/dev/bp, outside this project root). Vite's dev server
