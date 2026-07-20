@@ -38,6 +38,19 @@ const CATEGORY_ORDER = [
 // word-by-word ("Bp3", "Cv", "Midi") — spelled out for display only.
 const ACRONYMS: Record<string, string> = { bp3: 'BP3', cv: 'CV', midi: 'MIDI' };
 
+/** Rank of a category folder in the curated arc; folders absent from
+ * CATEGORY_ORDER rank last (and tie-break alphabetically among themselves).
+ * ONE definition, used by BOTH the rail and the grid — before, the rail
+ * followed the arc while the grid followed the glob's alphabetical order, so
+ * a folder starting with a capital letter (`BP3-tests/`, arrived with the
+ * conformance corpus [873]) sorted its 208 test files AHEAD of every curated
+ * scene in the default "All" view. Ranking both views the same way is what
+ * keeps the curated scenes in front, whatever a folder is named. */
+function categoryRank(id: string): number {
+  const i = CATEGORY_ORDER.indexOf(id);
+  return i === -1 ? CATEGORY_ORDER.length : i;
+}
+
 function prettifyCategory(id: string): string {
   return id
     .split('-')
@@ -54,14 +67,20 @@ class LibraryStore {
   readonly items: LibraryItem[] = LIBRARY_ITEMS;
 
   get filtered(): LibraryItem[] {
-    // Filter, then sort by `order` WITHIN each category (only tutorials carry an
-    // order → the `learn` rail renders 1→10). Category groups keep their original
-    // relative position; a stable index tie-break preserves order elsewhere.
+    // Filter, then order category GROUPS by the curated arc (same ranking as the
+    // rail — see categoryRank), and sort by `order` WITHIN each category (only
+    // tutorials carry an order → the `learn` rail renders 1→10). A stable index
+    // tie-break preserves the on-disk order everywhere else.
     return this.items
       .filter((i) => matchesFilters(i, this.filters))
       .map((item, i) => ({ item, i }))
       .sort((a, b) => {
-        if (a.item.category !== b.item.category) return a.i - b.i;
+        if (a.item.category !== b.item.category) {
+          const ra = categoryRank(a.item.category);
+          const rb = categoryRank(b.item.category);
+          if (ra !== rb) return ra - rb;
+          return a.item.category.localeCompare(b.item.category) || a.i - b.i;
+        }
         return (a.item.order ?? 0) - (b.item.order ?? 0) || a.i - b.i;
       })
       .map((x) => x.item);
@@ -76,14 +95,7 @@ class LibraryStore {
   get categories(): { id: string; label: string }[] {
     const seen = new Set(this.items.map((i) => i.category));
     return [...seen]
-      .sort((a, b) => {
-        const ia = CATEGORY_ORDER.indexOf(a);
-        const ib = CATEGORY_ORDER.indexOf(b);
-        if (ia === -1 && ib === -1) return a.localeCompare(b);
-        if (ia === -1) return 1;
-        if (ib === -1) return -1;
-        return ia - ib;
-      })
+      .sort((a, b) => categoryRank(a) - categoryRank(b) || a.localeCompare(b))
       .map((id) => ({ id, label: prettifyCategory(id) }));
   }
 
