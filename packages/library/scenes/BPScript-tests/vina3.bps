@@ -1,0 +1,85 @@
+// vina3.bps — Pallavi of "Maayaatiita Svaruupini" in raga mayamaalavagaula
+// Traduit de bp3-engine/library/tabla/vina3/grammar.gr
+//
+// Gamakas (ornements) de la vina : pulls, slides, spuritam
+// Polymétrie avec taalam (mesure de temps)
+
+@core
+@controls
+@alphabet.western:midi
+@tempo:60
+
+// --- Sous-grammaire 1 @mode:random — structure ---
+
+@mode:random
+S -> ![scale: just_intonation 0] {Taalam4 Taalam4,Pallavi Pallavi}(volumecont, volume: 64) Taalam(volume: 0) - !(ins: Vina, volume: 40)
+
+Pallavi -> {Maa Yaa Tii . Ta {Sva Ruu Pi}:2 . {Ni}:2 {Nan Nu}:1 . Bro {Va Ve}:2}
+
+Maa -> C3
+Yaa -> LongSpuritam C3 Slide1
+Tii -> {StartSlidePull C3 Slide1 _ _ Slide1 Pull0 _ Slide4 . Pull1 _ Pull0 _ . Pull0 _ Pull1 - StopSlidePull}:1
+Ta -> F3
+Sva -> {G3}:3
+Ruu -> {StartSlidePull G3 SlideBack2 _ SlideBack3 . Pull0 _ Pull1 - - - StopSlidePull}:3
+Pi -> {F3}:2
+Ni -> G3
+
+Nan -> G3
+Nu -> {StartPull Pull1 G3 Pull0 _ Pull1 - StopPull}:1
+
+Bro -> {GamakaHold F3 Pull2}:1 [pullVa]
+[slideVa==1] Va -> StartSlide G3 SlideBack2 StopSlide
+[pullVa==1] Va -> StartPull Pull2 F3 Pull0 StopPull
+
+Ve -> {Ve1 Ve2 Ve3}:3
+Ve1 -> {GamakaOscil E3 Pull1}:5
+Ve2 -> StartSlide C#3 SlideBack1 _ StopSlide
+Ve3 -> StartPull B2 Pull1 StopPull
+
+-----
+
+// --- Sous-grammaire 2 @mode:random — taalam ---
+
+@mode:random
+Taalam4 -> Taalam Taalam Taalam Taalam
+Taalam -> {C3,G3,C4}:3
+
+-----
+
+// --- Sous-grammaire 3 @mode:sub1 — structures intermédiaires ---
+
+@mode:sub1
+LongSpuritam ?1 ?2 -> {StartSlide ?1 _ Slide0 _ ?2 _}:1
+GamakaOscil ?1 ?2 -> {StartPull ?1 ?2 _ Pull0 _ ?2 _ Pull0 _ ?2 StopPull}
+GamakaHold ?1 ?2 -> {StartPull ?1 ?2 _ _ _ StopPull}:1
+
+-----
+
+// --- Sous-grammaire 4 @mode:sub1 ---
+
+@mode:sub1
+StartSlidePull -> StartSlide StartPull
+StopSlidePull -> StopSlide StopPull
+
+-----
+
+// --- Sous-grammaire 5 @mode:sub1 — contrôles bas niveau ---
+
+@mode:sub1
+Pull0 -> pitchbend(0)
+Pull1 -> pitchbend(100)
+Pull2 -> pitchbend(200)
+
+Slide0 -> value(slide,0)
+SlideBack1 -> value(slide,-101)
+SlideBack2 -> value(slide,-201)
+SlideBack3 -> value(slide,-301)
+Slide1 -> value(slide,101)
+Slide2 -> value(slide,201)
+Slide4 -> value(slide,401)
+
+StartSlide -> cont(slide) value(slide,0)
+StopSlide -> fixed(slide)
+StartPull -> pitchcont pitchrange(500) pitchbend(0)
+StopPull -> pitchfixed

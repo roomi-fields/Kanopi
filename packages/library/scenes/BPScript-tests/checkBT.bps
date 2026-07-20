@@ -1,0 +1,12 @@
+[@maxitems:20]   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
+                 // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
+                 // certaines grammaires ne rendent jamais la main.
+@tempo:400   // horloge du natif -se.koto3 : periode 150 ms par temps, soit 400 BPM.
+             // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
+             // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
+// checkBT.bps — Traduit de bp3-engine/test-data/-gr.checkBT (Bernard).
+// L'original référence l'alphabet abc1 (`-ho.abc1`, symboles a..h mono-caractère) :
+// la déclaration manquait à la traduction (drop silencieux du porteur, corrigé b309e22).
+@test_alphabets.abc1
+
+S -> a' a' c' b

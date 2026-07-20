@@ -1,0 +1,19 @@
+[@maxitems:25]   // MaxItemsProduce=25 dans le reglage natif : le moteur s'arrete
+                 // apres 25 items. Sans ce plafond l'enumeration part vers 100000 et
+                 // certaines grammaires ne rendent jamais la main.
+// tryflags3.bps — Traduit de bp3-engine/test-data/-gr.tryflags3 (Bernard, 1998).
+//
+// Produit toutes les chaînes de longueur 8 faites de a et b, avec des c en
+// positions 4 et 6, chaque chaîne contenant au moins deux a. Les quatre règles
+// à poids infini sont prioritaires ; si plusieurs sont candidates, la première
+// l'emporte. L'original référence l'alphabet abc (a..z mono-caractère).
+@test_alphabets.abc
+
+@mode:random
+S -> X [pos=1, done=0]
+X -> a X [pos+1, done+1]
+X -> b X [pos+1]
+[pos>8]           X -> lambda        [weight:inf]
+[pos>=7] [done<2] X -> a X [pos+1, done+1] [weight:inf]
+[pos==4]           X -> c X [pos+1]   [weight:inf]
+[pos==6]           X -> c X [pos+1]   [weight:inf]

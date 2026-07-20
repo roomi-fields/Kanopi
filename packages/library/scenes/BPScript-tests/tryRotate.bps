@@ -1,0 +1,16 @@
+// tryRotate.bps — Demo of _rotate() tool
+// Traduit de bp3-engine/test-data/-gr.tryRotate (Bernard, 1998)
+
+@core
+@controls
+@alphabet.western:midi
+
+@mode:random
+S -> ![/6] {![rotate:K1=2] M} 1/2 N
+N -> N ![rotate:K1] {N 1/2} [weight:5-1]
+
+-----
+
+@mode:random
+M -> C4 D4 E4 F4 G4
+N -> C5 D5 E5 F5 G5 A5 B5 C6 D6 E6

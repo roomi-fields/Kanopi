@@ -1,0 +1,52 @@
+// kss2.bps — Composition de Kumar S. Subramanian (juin 1995)
+// Traduit de bp3-engine/library/experimental/kss2/grammar.gr
+//
+// Raga pentatonique avec réécriture de patterns X/Y.
+// Sous-grammaire 1: transformations structurelles (poids décroissants)
+// Sous-grammaire 2: résolution en notes indiennes
+
+@core
+@controls
+@alphabet.sargam:midi
+// La convention d'octave par défaut de sargam est saptak ; `@octaves.western` la SURCHARGE (comme
+// mohanam/nadaka, mêmes grammaires sargam Bernard). Sans elle, sa6/re6… résolvent mal l'octave sous
+// saptak (routage kairos [402]/[521] ; pendant du renversement de verrou octave kairos 95cd748).
+@octaves.western
+@tempo:60
+@striated
+
+// --- Sous-grammaire 1 @mode:random — transformations structurelles ---
+
+@mode:random
+S -> !(chromashift:-7) ![/5] X Y X X Y Y X
+X Y -> Y X [weight:20-4]
+X Y -> X Y Y X [weight:10-2]
+Y X -> X Y [weight:20-4]
+Y X -> Y X X Y [weight:10-2]
+X X -> Y Y [weight:5-1]
+X X -> X Y X Y [weight:3-1]
+Y Y -> X X [weight:5-1]
+Y Y -> Y X Y X [weight:3-1]
+
+-----
+
+// --- Sous-grammaire 2 @mode:random — résolution en notes ---
+
+@mode:random
+X -> sa6 re6 [weight:8-2]
+X -> re6 ga6 [weight:8-2]
+X Y -> ga6 pa6 dha6 X X [weight:8-1]
+X X -> sa7 dha6 pa6 [weight:8-1]
+X X -> vel(110) sa7 vel(64) dha6 pa6 Y X [weight:8-2]
+Y -> re7 sa7 [weight:8-1]
+Y -> sa7 dha6 [weight:8-2]
+Y X -> pa6 ga6 re6 Y Y [weight:8-1]
+Y X -> vel(110) pa6 vel(64) ga6 re6 X X [weight:8-2]
+Y Y -> ga6 dha6 pa6 [weight:8-1]
+Y Y -> vel(110) ga6 vel(64) dha6 pa6 [weight:8-2]
+X -> _ X [weight:6-1]
+Y -> _ Y [weight:6-1]
+X X -> _ _ Y Y [weight:6-1]
+Y Y -> _ _ vel(110) X Y vel(64) [weight:6-1]
+X Y -> _ Y X [weight:6-1]
+Y X -> _ _ X X [weight:6-1]

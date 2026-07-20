@@ -1,0 +1,14 @@
+// Bol Processor BP3 compatible with version BP2.9.8
+// Grammar file saved as "-gr.tryConsoleMaxTime". Date: 2020-11-08 10:00:29
+-se.tryConsoleMaxTime
+
+// This grammar is a control of the device which terminates computation if it exceeds a given time
+// Max computation time is specified in the settings file (see above)
+// If not specified it is internally set to 120 seconds in the console
+// Note also that this interface may interrupt the process at an earlier stage (15 seconds by default)
+
+ORD
+
+gram#1[1] S --> X Y
+gram#1[2] X --> C4 D4 E4 [Let us at least produce this!]
+gram#1[3] Y --> Y [This rule makes the grammar loop forever]

@@ -1,0 +1,12 @@
+// tryrepeat.bps — migré de bp3-engine/test-data/-gr.tryrepeat (porter bp3ToScene, 2026-07-17)
+// Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
+
+@controls
+@mode:ord
+S -> X Y Z
+X -> a X repeat(K1=3) [weight:1-1]
+Y -> b Y repeat(K1) [weight:1-1]
+Z -> c Z repeat(K1) [weight:1-1]
+X -> 
+Y -> 
+Z -> 

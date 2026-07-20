@@ -1,0 +1,36 @@
+// negative-context.bps — test des contextes négatifs #
+// Traduit de bp3-engine/library/examples/negative-context/grammar.gr
+//
+// Résultat attendu : A A A A2 A3 A1
+//
+// Le # devant un symbole dans le contexte signifie "PAS ce symbole ici".
+// #A1 #A2 #A3 A A = "A A qui n'est précédé ni de A1 ni de A2 ni de A3"
+//
+// Note : en BPscript, #() est documenté avec des parenthèses pour des
+// groupes de contexte. Pour un seul symbole, #X est suffisant (comme BP3).
+
+@core
+@test_alphabets.structural
+
+// Tous les symboles ici sont des non-terminaux sauf dans le résultat final.
+// Le résultat "A A A A2 A3 A1" contient des terminaux qui ne sont pas
+// liés à un runtime — c'est un test de grammaire pure, pas de production sonore.
+
+// --- Sous-grammaire 1 @mode:random ---
+
+// Règle 1 : crée la séquence initiale + flag
+@mode:random
+S -> A A2 A3 A1 A A [times=5]
+
+// Règle 2 : tant que times > 0, déplace les A devant les marqueurs
+// #A1 #A2 #A3 = contexte négatif triple : A A pas précédé de A1, A2, A3
+[times>0] #A1 #A2 #A3 A A -> #A1 #A2 A A #A3 [times-1]
+
+// Règle 3 : poids 0 (réservée goto), scan depuis la gauche
+#A2 #A1 A -> B B [weight:0, scan:left]
+
+// Règle 4 : poids 0
+S -> A [weight:0]
+
+// Règle 5 : poids 0, contexte négatif simple
+#B A -> A #B [weight:0]

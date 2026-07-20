@@ -1,0 +1,52 @@
+@tempo:360   // horloge du natif -se.hamsad : periode 167 ms par temps, soit 360 BPM.
+             // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
+             // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
+// Nadaka-1er-essai.bps — migré de bp3-engine/test-data/-gr.Nadaka-1er-essai (porter bp3ToScene, 2026-07-17)
+// Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
+
+@mode:random
+S -> A32
+A32 -> A8 A8 A8 A8
+A32 -> G _ _ P N S N P N G _ P G R S N P N _ _ R _ _ G _ _ _ _ 4 [weight:0]
+A32 -> G G G P P P N N N R R R G _ S _ G G G P P P N N N R R R G _ S _ [weight:0]
+A32 -> G _ P _ N _ R _ G _ G P N R G S G P N R G S G P N R G S R G S R [weight:0]
+-----
+@mode:lin
+#? G -> #? ga4 [weight:inf]
+ga3 G -> ga3 ga3 [weight:inf]
+ga4 G -> ga4 ga4 [weight:inf]
+ga5 G -> ga5 ga5 [weight:inf]
+re5 G -> re5 ga5 [weight:inf]
+re5 _ G -> re5 _ ga5 [weight:inf]
+#re5 G -> #re5 ga4
+re3 R -> re3 re3 [weight:inf]
+re4 R -> re4 re4 [weight:inf]
+sa5 R -> sa5 re5 [weight:inf]
+re5 R -> re5 re5 [weight:inf]
+ni4 R -> ni4 re5 [weight:inf]
+ni4 _ R -> ni4 _ re5 [weight:inf]
+#ni4 R -> #ni4 re4
+ga4 P -> ga4 pa4 [weight:inf]
+ga4 _ P -> ga4 _ pa4 [weight:inf]
+pa4 P -> pa4 pa4 [weight:inf]
+pa3 P -> pa3 pa3 [weight:inf]
+ni4 P -> ni4 pa4 [weight:inf]
+ni5 P -> ni5 pa4 [weight:inf]
+ni3 P -> ni3 pa3 [weight:inf]
+P ga4 -> pa4 ga4 [weight:inf]
+P ni4 -> pa4 ni4 [weight:inf]
+ni3 N -> ni3 ni3 [weight:inf]
+ni4 N -> ni4 ni4 [weight:inf]
+pa3 N -> pa3 ni3 [weight:inf]
+pa4 N -> pa4 ni4 [weight:inf]
+pa4 _ N -> pa4 _ ni4 [weight:inf]
+sa4 N -> sa4 ni3 [weight:inf]
+#sa4 N -> #sa4 ni4
+sa3 S -> sa3 sa3 [weight:inf]
+sa4 S -> sa4 sa4 [weight:inf]
+re4 S -> re4 sa4 [weight:inf]
+ni3 S -> ni3 sa4 [weight:inf]
+re5 S -> re5 sa5 [weight:inf]
+ni4 S -> ni4 sa5 [weight:inf]
+ga5 S -> ga5 sa5 [weight:inf]
+ga5 _ S -> ga5 _ sa5 [weight:inf]

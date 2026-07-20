@@ -1,0 +1,364 @@
+// Alarm.bps — migré de bp3-engine/test-data/-gr.Alarm (porter bp3ToScene, 2026-07-17)
+// Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
+
+@mode:lin
+S -> do3 1000 {2, B7 B8} 300 {2, B7 B8}
+-----
+@mode:lin
+A1 -> T96 [weight:K1=1]
+A1 -> T32 [weight:K2=2]
+A1 -> T69 [weight:K3=3]
+A1 -> T40 [weight:K4=4]
+A1 -> T148 [weight:K5=5]
+A1 -> T104 [weight:K6=6]
+A1 -> T152 [weight:K7=5]
+A1 -> T119 [weight:K8=4]
+A1 -> T98 [weight:K9=3]
+A1 -> T3 [weight:K10=2]
+A1 -> T54 [weight:K11=1]
+-----
+@mode:lin
+A2 -> T22 [weight:K1]
+A2 -> T6 [weight:K2]
+A2 -> T95 [weight:K3]
+A2 -> T17 [weight:K4]
+A2 -> T74 [weight:K5]
+A2 -> T157 [weight:K6]
+A2 -> T60 [weight:K7]
+A2 -> T84 [weight:K8]
+A2 -> T142 [weight:K9]
+A2 -> T87 [weight:K10]
+A2 -> T130 [weight:K11]
+-----
+@mode:lin
+A3 -> T141 [weight:K1]
+A3 -> T128 [weight:K2]
+A3 -> T158 [weight:K3]
+A3 -> T113 [weight:K4]
+A3 -> T163 [weight:K5]
+A3 -> T27 [weight:K6]
+A3 -> T171 [weight:K7]
+A3 -> T114 [weight:K8]
+A3 -> T42 [weight:K9]
+A3 -> T165 [weight:K10]
+A3 -> T10 [weight:K11]
+-----
+@mode:lin
+A4 -> T41 [weight:K1]
+A4 -> T63 [weight:K2]
+A4 -> T13 [weight:K3]
+A4 -> T85 [weight:K4]
+A4 -> T45 [weight:K5]
+A4 -> T167 [weight:K6]
+A4 -> T53 [weight:K7]
+A4 -> T50 [weight:K8]
+A4 -> T156 [weight:K9]
+A4 -> T61 [weight:K10]
+A4 -> T103 [weight:K11]
+-----
+@mode:lin
+A5 -> T105 [weight:K1]
+A5 -> T146 [weight:K2]
+A5 -> T153 [weight:K3]
+A5 -> T161 [weight:K4]
+A5 -> T80 [weight:K5]
+A5 -> T154 [weight:K6]
+A5 -> T99 [weight:K7]
+A5 -> T140 [weight:K8]
+A5 -> T75 [weight:K9]
+A5 -> T135 [weight:K10]
+A5 -> T28 [weight:K11]
+-----
+@mode:lin
+A6 -> T122 [weight:K1]
+A6 -> T46 [weight:K2]
+A6 -> T55 [weight:K3]
+A6 -> T2 [weight:K4]
+A6 -> T97 [weight:K5]
+A6 -> T68 [weight:K6]
+A6 -> T133 [weight:K7]
+A6 -> T86 [weight:K8]
+A6 -> T129 [weight:K9]
+A6 -> T47 [weight:K10]
+A6 -> T37 [weight:K11]
+-----
+@mode:lin
+A7 -> T11 [weight:K1]
+A7 -> T134 [weight:K2]
+A7 -> T110 [weight:K3]
+A7 -> T159 [weight:K4]
+A7 -> T36 [weight:K5]
+A7 -> T118 [weight:K6]
+A7 -> T21 [weight:K7]
+A7 -> T169 [weight:K8]
+A7 -> T62 [weight:K9]
+A7 -> T147 [weight:K10]
+A7 -> T106 [weight:K11]
+-----
+@mode:lin
+A8 -> T5
+A'8 -> T'5
+-----
+@mode:lin
+B1 -> T70 [weight:K1]
+B1 -> T117 [weight:K2]
+B1 -> T66 [weight:K3]
+B1 -> T90 [weight:K4]
+B1 -> T25 [weight:K5]
+B1 -> T138 [weight:K6]
+B1 -> T16 [weight:K7]
+B1 -> T120 [weight:K8]
+B1 -> T65 [weight:K9]
+B1 -> T102 [weight:K10]
+B1 -> T35 [weight:K11]
+-----
+@mode:lin
+B2 -> T121 [weight:K1]
+B2 -> T39 [weight:K2]
+B2 -> T139 [weight:K3]
+B2 -> T176 [weight:K4]
+B2 -> T143 [weight:K5]
+B2 -> T71 [weight:K6]
+B2 -> T155 [weight:K7]
+B2 -> T88 [weight:K8]
+B2 -> T77 [weight:K9]
+B2 -> T4 [weight:K10]
+B2 -> T20 [weight:K11]
+-----
+@mode:lin
+B3 -> T26 [weight:K1]
+B3 -> T126 [weight:K2]
+B3 -> T15 [weight:K3]
+B3 -> T7 [weight:K4]
+B3 -> T64 [weight:K5]
+B3 -> T150 [weight:K6]
+B3 -> T57 [weight:K7]
+B3 -> T48 [weight:K8]
+B3 -> T19 [weight:K9]
+B3 -> T31 [weight:K10]
+B3 -> T108 [weight:K11]
+-----
+@mode:lin
+B4 -> T9 [weight:K1]
+B4 -> T56 [weight:K2]
+B4 -> T132 [weight:K3]
+B4 -> T34 [weight:K4]
+B4 -> T125 [weight:K5]
+B4 -> T29 [weight:K6]
+B4 -> T175 [weight:K7]
+B4 -> T166 [weight:K8]
+B4 -> T82 [weight:K9]
+B4 -> T164 [weight:K10]
+B4 -> T92 [weight:K11]
+-----
+@mode:lin
+B5 -> T112 [weight:K1]
+B5 -> T174 [weight:K2]
+B5 -> T73 [weight:K3]
+B5 -> T67 [weight:K4]
+B5 -> T76 [weight:K5]
+B5 -> T101 [weight:K6]
+B5 -> T43 [weight:K7]
+B5 -> T51 [weight:K8]
+B5 -> T137 [weight:K9]
+B5 -> T144 [weight:K10]
+B5 -> T12 [weight:K11]
+-----
+@mode:lin
+B6 -> T49 [weight:K1]
+B6 -> T18 [weight:K2]
+B6 -> T58 [weight:K3]
+B6 -> T160 [weight:K4]
+B6 -> T136 [weight:K5]
+B6 -> T162 [weight:K6]
+B6 -> T168 [weight:K7]
+B6 -> T115 [weight:K8]
+B6 -> T38 [weight:K9]
+B6 -> T59 [weight:K10]
+B6 -> T124 [weight:K11]
+-----
+@mode:lin
+B7 -> T109 [weight:K1]
+B7 -> T116 [weight:K2]
+B7 -> T145 [weight:K3]
+B7 -> T52 [weight:K4]
+B7 -> T1 [weight:K5]
+B7 -> T23 [weight:K6]
+B7 -> T89 [weight:K7]
+B7 -> T72 [weight:K8]
+B7 -> T149 [weight:K9]
+B7 -> T173 [weight:K10]
+B7 -> T44 [weight:K11]
+-----
+@mode:lin
+B8 -> T8 [weight:K1]
+B8 -> T78 [weight:K2]
+B8 -> T8 [weight:K3]
+B8 -> T8 [weight:K4]
+B8 -> T8 [weight:K5]
+B8 -> T8 [weight:K6]
+B8 -> T8 [weight:K7]
+B8 -> T8 [weight:K8]
+B8 -> T8 [weight:K9]
+B8 -> T8 [weight:K10]
+B8 -> T8 [weight:K11]
+-----
+@mode:sub1
+T1 -> {fa3 re3 sol3, fa5 re5 sol5}
+T2 -> {{2, si2, sol3} -, la4 {2, fa#4 sol4 si4 sol5}}
+T3 -> {{2, do3, mi3} -, sol5 do5 mi5}
+T4 -> {{1, sol2 si2} sol3 si2, sol5 re5_}
+T5 -> {sol2 {2, sol3 fa3 mi3 re3}, {2, sol4, si4, re5, sol5} -}
+T'5 -> {sol2 {2, si3 sol3 fa#3 mi3}, {2, sol4, si4, re5, sol5} -}
+T6 -> {{2, do3, mi3} -, sol4 do5 mi5}
+T7 -> {{2, do3, sol3} -, mi5 do5 mi5 sol5 do6 sol5}
+T8 -> {do3 sol2 do2, do5_ -}
+T9 -> {sol3_ sol2, {do5, mi5} {si4, re5} -}
+T10 -> {sol3_ -, si4 la4 si4 do5 re5 si4}
+T11 -> {do3 re3 re2, mi5 do5 si4 la4 sol4 fa#4}
+T12 -> {do3 do3 do3, {mi4 mi4 mi4}, {do5 do5 do5}}
+T13 -> {{2, mi3, sol3} -, do5 sol4 mi4}
+T15 -> {{2, do3, sol3} {do3, mi3}, mi5 {1, sol5 mi5} do5}
+T16 -> {{2, re3, fa#3} {do3, fa#3}, la5 fa#5 re5}
+T17 -> {{2, mi3, sol3} -, do5 sol4 do5 mi5 sol4 do5}
+T18 -> {{2, do3, mi3} {do3, sol3}, sol4 do5 mi5}
+T19 -> {{2, do3, sol3} {do3, mi3}, {1, mi5 do5} mi5 sol5}
+T20 -> {si2_ -, sol5 {1, si5 re6} re5}
+T21 -> {do3 re3 re2, do5 mi5 sol5 re5 la4 fa#5}
+T22 -> {do3_ -, mi5 do5 sol4}
+T23 -> {{3, fa3 mi3 re3 mi3 fa3 sol3}, fa5 mi5 re5 mi5 fa5 sol5}
+T25 -> {re3_ do3, re4 fa#4 la4 re5 fa#5 la5}
+T26 -> {{3, do3 mi3 sol3 mi3 do4 do3}, {do5, mi5} {do5, mi5} {do5, mi5}}
+T27 -> {{2, sol3, si3} -, fa5 mi5 fa5 re5 do5 si4}
+T28 -> {{2, do3, la3} -, fa#5 re5 la4 la5 fa#5 re5}
+T29 -> {sol3_ sol2, {2, si4 re5 sol5 re5} si4}
+T31 -> {{2, do3, sol3} {do3, sol3}, {1, mi5 do5} sol4 mi5}
+T32 -> {{2, do3, mi3} -, sol4 do5 mi5}
+T34 -> {sol3_ -, {2, mi5 do5 re5 si4} sol4}
+T35 -> {{2, re3, fa#3} {do3, la3}, la4 re5 fa#5}
+T36 -> {do3 re3 re2, la4 mi5 re5 sol5 fa#5 la5}
+T37 -> {{2, si2, re3} -, {2, sol5 si5 sol5 re5} si4}
+T38 -> {{1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_}, do5 sol4 mi5}
+T39 -> {{3, si2 re3 sol3 re3 si2 sol2}, sol5 sol4 sol4}
+T40 -> {{2, do3, mi3} -, do5 si4 do5 mi5 sol4 do5}
+T41 -> {{2, do3, mi3} -, {2, do5 si4 do5 mi5} sol4}
+T42 -> {sol2_ -, si4 do5 re5 si4 la4 sol4}
+T43 -> {{2, do3, mi3} -, sol5 {2, fa5 mi5 re5 do5}}
+T44 -> {fa3_ sol3, la4 {2, fa5 re5 la4 si4}}
+T45 -> {{2, mi3, sol3} -, do5 si4 do5 sol4 mi4 do4}
+T46 -> {{2, si2, re3} -, sol5 {2, si5 sol5 re5 si4}}
+T47 -> {{2, si2, re3} -, sol5 {1, sol5 re5} si5}
+T48 -> {{2, do3, sol3} {do3, mi3}, mi5 {2, do5 mi5 sol5 do6}}
+T49 -> {{1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_}, mi5 do5 sol4}
+T50 -> {{2, mi3, sol3} -, do5 {1, mi5 do5} sol4}
+T51 -> {{2, do3, mi3} -, do5 sol4 mi5 do5 sol5 mi5}
+T52 -> {fa3_ sol3, re5 do#5 re5 fa5 sol4 si4}
+T53 -> {do3_ -, {do5, mi5} {1, do5 re5, mi5 fa5} {mi5, sol5}}
+T54 -> {do3 do3 do3, {mi4, do5} {mi4, do5} {mi4, do5}}
+T55 -> {{2, si2, re3} -, sol5 si5 re5}
+T56 -> {{2, sol2, sol3} sol3, {1, re5 si4} sol4 -}
+T57 -> {{1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_}, mi5 do5 sol4}
+T58 -> {{1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_}, sol5 mi5 do5}
+T59 -> {{1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_}, sol5 do5 mi5}
+T60 -> {{2, do3, mi3} -, sol5 {2, fa5 mi5 re5 do5}}
+T61 -> {{2, mi3, sol3} -, do5 {1, mi5 do5} sol5}
+T62 -> {do3 re3 re2, mi5 do5 si4 sol4 la4 fa#4}
+T63 -> {do3_ -, {2, mi5 do5 si4 do5} sol4}
+T64 -> {{2, do3, sol3} {do3, sol3}, mi5 sol5 do6 sol5 mi5 do5}
+T65 -> {{2, re3 fa#3} -, {1, re5 la4} re5 fa#5}
+T66 -> {{re3, la3} {re3, fa#3} {do3, re3}, fa#5 la5 fa#5}
+T67 -> {{2, do3, mi3} {mi3, sol3}, do5 si4 do5 mi5 sol4 do5}
+T68 -> {si2_ -, sol5 {2, si5 sol5 re5 sol5}}
+T69 -> {{2, do3, mi3} -, sol5 mi5 do5}
+T70 -> {re3_ do3, fa#5 {2, la5 fa#5 re5 fa#5}}
+T71 -> {{2, si2, re3} {si2, re3}, {2, sol5 si5 re6 si5} sol5}
+T72 -> {fa3_ sol3, fa5 mi5 re5 do5 si4 re5}
+T73 -> {{1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_}, sol5 mi5 do5}
+T74 -> {{2, do3, mi3} -, do6 si5 do6 sol5 mi5 do5}
+T75 -> {do3 do3 do3, {re5, fa#5} {re5, fa#5} {re5, fa#5}}
+T76 -> {{2, do3, mi3} {do3, sol3}, do6 si5 do6 sol5 mi5 do5}
+T77 -> {{2, si2, re3} {si2, sol3}, {1, sol5 si5} sol5 re5}
+T78 -> {do3_ do2, do5 do4 -}
+T80 -> {do3_ -, re5 la4 fa#5}
+T82 -> {{2, si2, sol3} {si2, re3}, {1, re5 si4} sol4 sol5}
+T84 -> {{2, do3, mi3} -, do5 sol4 mi5 do5 sol5 mi5}
+T85 -> {{2, mi3, sol3} -, do5 mi5 sol4}
+T86 -> {{2, si2, sol3} -, re5 {1, re5 sol5} si5}
+T87 -> {{2, do3, mi3} {do3, sol3}, sol5 do5 mi5}
+T88 -> {{2, si2, re3} {si2, re3}, sol5 re5 sol5 si5 sol5 re5}
+T89 -> {{1, fa3 mi3} re3 sol3, {1, fa5 mi5} re5 sol5}
+T90 -> {{2, do3, la3} {do3, la3}, fa#5 la5 re6 la5 fa#5 la5}
+T92 -> {{2, sol2, sol3} sol3, {si4, re5} {1, sol5 si5} re5}
+T95 -> {{2, do3, mi3} -, sol5 mi5 do5}
+T96 -> {do3_ -, mi5 do5 sol4}
+T97 -> {{2, si2, re3} {si2, sol3}, sol5 fa#5 sol5 re5 si4 sol4}
+T98 -> {{1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_}, do5 sol4 mi5}
+T99 -> {{2, do3, la3} {do3, la3}, fa#5 la5 re5}
+T101 -> {{2, do3, sol3} {do3, mi3}, mi5 re5 mi5 sol5 do6 sol5}
+T102 -> {{2, do3, la3} {do3, la3}, {1, fa#5 re5} la4 fa#5}
+T103 -> {{2, mi3, sol3} -, {2, do5 mi5 do5 sol4} mi4}
+T104 -> {do3_ -, mi5 re5 mi5 sol5 do6 sol5}
+T105 -> {do3_ -, fa#5 {2, la5 fa#5 re5 fa#5}}
+T106 -> {do3 re3 re2, la4 {2, re5 do5 si4 la4}}
+T108 -> {{2, do3, sol3} {do3, mi3}, mi5 sol5 do6}
+T109 -> {{2, fa3, la3} {sol3, re4}, re5 fa5 re5 fa5 si4 re5}
+T110 -> {do3 re3 re2, si4 la4 la4 sol4 sol4 fa#4, re5 do5 do5 si4 si4 la4}
+T112 -> {{1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_}, mi5 do5 sol4}
+T113 -> {{2, sol3, si3} -, fa5 re5 si4}
+T114 -> {sol3 sol3 sol3, {si4, re5} {si4, re5} {si4, re5}}
+T115 -> {{2, do3, mi3} -, do5 sol4 mi5 do5 sol5 mi5}
+T116 -> {fa3_ sol3, re5 fa5 la5 fa5 re5 si4}
+T117 -> {{2, re3, fa#3} -, re5 la4 re5 fa#5 la5 fa#5}
+T118 -> {do3 re3 re2, mi5 la5 sol5 si5 fa#5 la5}
+T119 -> {{2, do3, mi3} -, mi5 do5 sol5 mi5 do6 sol5}
+T120 -> {{2, re3, fa#3} {do3, fa#3}, re6 {2, la5 fa#5 re5 la4}}
+T121 -> {{2, si2, sol3} -, sol5 {1, si5 sol5} re5}
+T122 -> {{si2, re3} {si2, re3} {si2, re3}, {2, sol5 fa#5 sol5 si5} re5}
+T124 -> {do3 do3 do3, {mi4, do5} {mi4, do5} {mi4, do5}}
+T125 -> {sol3 sol2 -, {2, sol5 mi5 re5 si4} sol4}
+T126 -> {mi3_ {1, mi3 do3}, do5 sol4 do5 mi5 sol5 {do5, mi5}}
+T128 -> {sol2_ -, si4 re5 sol5}
+T129 -> {{si2, re3} {si2, re3} {si2, sol3}, {2, la5 sol5 fa#5 sol5} re5}
+T130 -> {do3 do3 do3, mi4 mi4 mi4, do5 do5 do5}
+T132 -> {sol3 sol2 -, {do5, mi5} {1, si4 sol4, re5 si4} sol4}
+T133 -> {{2, si2, sol3} -, re5 {2, sol5 re5 si4 re5}}
+T134 -> {do3 re3 re2, la4 mi5 {si4, re5} {la4, do5} {sol4, si4} {fa#4, la4}}
+T135 -> {{do3, re3} {do3, re3} {do3, re3}, fa#5 {1, fa#5 re5} la5}
+T136 -> {{2, do3, mi3} -, do6 si5 do6 sol5 mi5 do5}
+T137 -> {{1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_}, do5 sol4 mi5}
+T138 -> {{3, re2 re3 do#3 re3 do3 re3}, {la4, re5, fa#5} fa#5_}
+T139 -> {si2_ -, {2, sol5 si5 sol5 si5} re5}
+T140 -> {{do3, fa#3} {do3, fa#3} {do3, la3}, la4 {1, la4 re5} fa#5}
+T141 -> {{2, si2, sol3} sol2, re5 mi5 fa5 re5 do5 si4}
+T142 -> {{2, do3, mi3} -, do5 sol4 mi5}
+T143 -> {{2, si2, re3} {si2, re3}, sol5 {1, re5 si4} sol4}
+T144 -> {{1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_}, sol5 do5 mi5}
+T145 -> {fa3_ sol3, re5 fa5 la4 re5 si4 re5}
+T146 -> {do3 do3 do3, {fa#4, re5} {re5, fa#5} {fa#5, la5}}
+T147 -> {do3 re3 re2, mi5 do6 si5 sol5 la5 fa#5}
+T148 -> {{2, do3, mi3} -, do6 si5 do6 sol5 mi5 do5}
+T149 -> {fa3_ sol3, {1, fa5 re5} la4 si4}
+T150 -> {{3, do3 si2 do3 re3 mi3 fa#3}, {sol4, do5, mi5} mi5_}
+T152 -> {{2, do3, mi3} -, sol5 {2, fa5 mi5 re5 do5}}
+T153 -> {do3_ -, re5 la4 fa#5 re5 la5 fa#5}
+T154 -> {do3_ -, re5 do#5 re5 fa#5 la5 fa#5}
+T155 -> {{2, si2, re3} -, sol5 si5 sol5 re5 si4 sol4}
+T156 -> {{2, mi3, sol3} -, {2, do5 sol4 mi5 do5} sol5}
+T157 -> {do3_ -, mi5 re5 mi5 sol5 do6 sol5}
+T158 -> {sol2_ -, si4 {2, re5 si4 la4 sol4}}
+T159 -> {do3 re3 re2, mi5 sol5 re5 do5 si4 la4}
+T160 -> {{2, do3, mi3} {do3, mi3}, do5 si4 do5 mi5 sol4 do5}
+T161 -> {do3 do3 do3, {fa#4, re5} {fa#4, re5} {fa#4, re5}}
+T162 -> {{2, do3, sol3} {do3, mi3}, mi5 re5 mi5 sol5 do6 sol5}
+T163 -> {{2, si2, re3} -, sol5 fa#5 sol5 re5 si4 sol4}
+T164 -> {{3, sol3 fa#3 sol3 re3 si2 sol3}, re5 sol4_}
+T165 -> {si2_ -, re5 si4 sol4}
+T166 -> {{2, sol3, si3} -, {2, re5 si5 sol5 re5} si4}
+T167 -> {{2, do3, mi3} -, do5 {1, do5 re5} mi5}
+T168 -> {{2, do3, mi3} {mi3, sol3}, sol5 {2, fa5 mi5 re5 do5}}
+T169 -> {do3 re3 re3, mi5 sol5 re5 sol5 la4 fa#5}
+T171 -> {{2, sol2, sol3} {si2, sol3}, si4 do5 re5 mi5 fa5 re5}
+T173 -> {fa3_ sol3, {1, fa5 la5} la4 {1, si4 re5}}
+T174 -> {{1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_} {1, {do3, mi3} sol3_}, sol4 do5 mi5}
+T175 -> {sol3 sol2 -, {2, mi5 do5 si4 re5} sol5}
+T176 -> {{2, si2, re3} {si2, re3}, la5 sol5 si5 sol5 re5 sol5}

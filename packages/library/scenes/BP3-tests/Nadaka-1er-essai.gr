@@ -1,0 +1,55 @@
+// Bol Processor version BP2.7.2
+// Grammar file saved as '-gr.hamsad'. Date: Sun, Jul 6, 1997 -- 6:21 PM
+-se.hamsad
+
+RND
+gram#1[1] S --> A32
+gram#1[2] A32 --> A8 A8 A8 A8
+
+gram#1[3] <0> A32 --> G __ P N S N P N G _ P G R S N P N __ R __ G ____ 4
+gram#1[4] <0> A32 --> G G G P P P N N N R R R G _ S _ G G G P P P N N N R R R G _ S _
+gram#1[5] <0> A32 --> G _ P _ N _ R _ G _ G P N R G S  G P N R G S  G P N R G   S R G S R
+--------------------
+LIN
+gram#2[1] <inf> #? G --> #? ga4
+gram#2[2] <inf> ga3 G --> ga3 ga3
+gram#2[3] <inf> ga4 G --> ga4 ga4
+gram#2[4] <inf> ga5 G --> ga5 ga5
+gram#2[5] <inf> re5 G --> re5 ga5
+gram#2[6] <inf> re5 _ G --> re5 _ ga5
+gram#2[7] #re5 G --> #re5 ga4
+
+gram#2[8] <inf> re3 R --> re3 re3
+gram#2[9] <inf> re4 R --> re4 re4
+gram#2[10] <inf> sa5 R --> sa5 re5
+gram#2[11] <inf> re5 R --> re5 re5
+gram#2[12] <inf> ni4 R --> ni4 re5
+gram#2[13] <inf> ni4 _ R --> ni4 _ re5
+gram#2[14] #ni4 R --> #ni4 re4
+
+gram#2[15] <inf> ga4 P --> ga4 pa4
+gram#2[16] <inf> ga4 _ P --> ga4 _ pa4
+gram#2[17] <inf> pa4 P --> pa4 pa4
+gram#2[18] <inf> pa3 P --> pa3 pa3
+gram#2[19] <inf> ni4 P --> ni4 pa4
+gram#2[20] <inf> ni5 P --> ni5 pa4
+gram#2[21] <inf> ni3 P --> ni3 pa3
+gram#2[22] <inf> P ga4 --> pa4 ga4
+gram#2[23] <inf> P ni4 --> pa4 ni4
+
+gram#2[24] <inf> ni3 N --> ni3 ni3
+gram#2[25] <inf> ni4 N --> ni4 ni4
+gram#2[26] <inf> pa3 N --> pa3 ni3
+gram#2[27] <inf> pa4 N --> pa4 ni4
+gram#2[28] <inf> pa4 _ N --> pa4 _ ni4
+gram#2[29] <inf> sa4 N --> sa4 ni3
+gram#2[30] #sa4 N --> #sa4 ni4
+
+gram#2[31] <inf> sa3 S --> sa3 sa3
+gram#2[32] <inf> sa4 S --> sa4 sa4
+gram#2[33] <inf> re4 S --> re4 sa4
+gram#2[34] <inf> ni3 S --> ni3 sa4
+gram#2[35] <inf> re5 S --> re5 sa5
+gram#2[36] <inf> ni4 S --> ni4 sa5
+gram#2[37] <inf> ga5 S --> ga5 sa5
+gram#2[38] <inf> ga5 _ S --> ga5 _ sa5

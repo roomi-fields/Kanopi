@@ -1,0 +1,31 @@
+@transcription.dhati
+
+@mode:random
+S <> $A16 $V8 $A'8 * &A16 &V8 $A8 [meter:4+4+4+4/4]
+S <> $V16 $A'16 * &V16 $A16 [meter:4+4+4+4/4]
+S <> $V24 $A'8 * &V24 $A8 [meter:4+4+4+4/4]
+-----
+@mode:random
+V8 <> V V V V V V V V
+V16 <> V V V V V V V V V V V V V V V V
+V24 <> V V V V V V V V V V V V V V V V V V V V V V V V
+-----
+@mode:lin
+V <> V1
+V V <> trkt
+V V V <> V3
+-----
+@mode:lin
+#dha V1 <> #dha dha
+V3 <> dhagena
+#- V1 <> #- -
+dha V1 #tr <> dha ti #tr
+na V1 #tr <> na ti #tr
+- V1 #tr <> - ti #tr
+$ V1 #tr <> $ ti #tr
+-----
+@mode:ord
+A8 <> dhatidhagedheenagena
+A'8 <> dhatidhageteenakena
+A16 <> dhatidhagenadhatrktdhatidhagedheenagena
+A'16 <> dhatidhagenadhatrktdhatidhageteenakena

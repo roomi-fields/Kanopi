@@ -1,0 +1,13 @@
+@controls
+@mode:ord
+KishoriAmonkar1 -> Scale _ {2, dhak3 sa4 ni3 sa4} {7, rek4} _ {2, dhak3 sa4 ni3 dhak3} {2, dhak3 _ ni3 sa4} {5, rek4}
+KishoriAmonkar2 -> Scale {137/100, sa4 rek4 gak4 rek4} {31/10, rek4} {18/10, gak4} {75/100, rek4} {44/10, sa4}
+Scale -> scale(todi_ka_4,0)
+KishoriAmonkar3 -> scale(todi_ka_3,0) 11/10 {19/20, ma#3 pa3} {66/10, dhak3} {24/10, ni3 dhak3 pa3 _} {27/10, dhak3} 12/10 {48/100, dhak3} {17/10, ni3} {49/10, dhak3}
+KishoriAmonkar4 -> scale(todi_ka_4,0) 4/10 {17/10, ni3} {26/100, sa4} {75/100, rek4} {22/100, gak4} {17/10, ma#4} {16/100, gak4} {34/100, rek4} {56/100, sa4} {12/100, rek4} {84/100, gak4} {27/100, rek4} {12/10, sa4}
+KishoriAmonkar5 -> scale(todi_ka_4,0) 13/10 {16/10, ma#4} {13/10, gak4} {41/100, ma#4} {72/100, ma#4 dhak4 ma#4 gak4 ma#4} {18/10, dhak4} {63/100, sa4} {90/100, rek4} {30/100, gak4} {60/100, rek4} {25/100, sa4} {3/2, rek4}
+KishoriAmonkar6 -> scale(todi_ka_4,0) 28/100 {29/100, ma#4} {40/100, dhak4} {63/100, ni4 sa5 ni4} {122/100, dhak4} {64/100, pa4} {83/100, ma#4} {44/100, pa4} {79/100, dhak4}
+AsadAliKhan1 -> scale(todi_aak_2,0) 45/100 {69/10, sa3} {256/100, dhak2} {78/10, dhak2} {12/10, sa3 ni2 rek3~} {48/10, ~rek3} {98/100, sa3 ni2 sa3~} {27/10, ~sa3}
+AsadAliKhan2 -> scale(todi_aak_2,0) volume(64) pitchrange(500) pitchcont 93/100 {81/10, pa2} {38/10, pa2 gak2 pa2 dhak2 _ pa2 _} {19/10, gak2} {43/10, pitchbend(0) rek2 pitchbend(-100) rek2~} volumecont volume(64) {2, pitchbend(-100) ~rek2} volume(0) volume(64) {23/10, ni2 _ _ dhak2} {103/100, sa3~} {4, ~sa3} 15/10 volume(64) {38/10, sa3} volume(0)
+S -> AsadAliKhan3
+AsadAliKhan3 -> scale(todi_aak_3,0) 94/100 {26/10, sa3} {23/10, sa3 rek3 gak3} {195/100, ma#3} {111/100, rek3} {24/10, rek3 sa3} {33/10, sa3 sa3} {71/100, rek3} {76/100, gak3} {71/100, dhak3 ma#3} {176/100, dhak3} {75/100, sa4} {27/10, dhak3 _ _ sa4} {620/100, sa4 dhak3 ma#3 dhak3 ma#3 gak3 _ ma#3 dhak3 dhak3~} {266/100, ~dhak3} {672/100, pa3 _ _ _ _ pa3_ pa3 pa3 pa3 _ _} {210/100, pa3 ma#3 pa3 dhak3} {222/100, dhak3} {163/100, gak3 ma#3} {426/100, gak3_ rek3 _ _ _ _} {346/100, sa3}

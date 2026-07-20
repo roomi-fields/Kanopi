@@ -1,0 +1,68 @@
+// Bol Processor BP3 compatible with version BP2.9.8
+// Grammar file saved as "-gr.tryCsoundObjects". Date: 2022-02-18 14:55:34
+-mi.tryCsoundObjects
+-cs.tryCsoundObjects
+-se.tryCsoundObjects
+-ho.tryCsoundObjects
+
+// Check the production of Csound scores using sound-objects whose prototypes contain Csound scores.
+// Productions of these rules are listed and fully explained on article Csound objects (https://bolprocessor.org/csound-objects/).
+
+// Play the following musical items and look at the Csound scores BP2/BP3 has produced, in comparison with the ones contained in sound-object prototypes 'a', 'b', 'c', 'midiobject'.
+
+// To play an item, set to <1> the rule weight and click "PRODUCE ITEM(s)"
+
+ORD
+
+gram#1[1] <0> S --> a
+
+// Note that this score is more complete than the one contained in sound-object 'a'
+// The reason is that Bol Processor completes missing arguments with default values of the parameters they represent. Here for instance '90' is the default volume. Zeros represent default pitchbend or function table indexes.
+// You can't play this example with the supplied "BP2test.orc" because the latter contains only the default instrument numbered 1 in this setup.
+
+// Here you must look at the graphic display to understand why events of 'a' are 160 ms delayed compared with 'b'
+
+gram#1[2] <1> S --> {a,b} c
+
+gram#1[3] <0> S --> b midiobject
+
+gram#1[4] <0> S --> {a b a, c midiobject}
+
+// Here we combine sound-objects (containing Csound scores) with simple notes that need to be converted to Csound. These note are played on (default) MIDI channel 1 which is assigned to instrument 1
+
+gram#1[5] <0> S --> a C4 D4 b c
+
+// A continuous control of pitchbend
+
+gram#1[6] <0> S --> _pitchrange(200) _pitchcont _pitchbend(0) c _pitchbend(100)
+
+// Volume control with effect on instruments 1 and 2, no effect on 3
+
+gram#1[7] <0> S --> _volumecont _volume(30) a _volume(127)
+
+// Here the continous pitchbend correction won't be applied because instrument 5, called by ‘d’, does not have a pitchbend parameter. However, the initial +100 cent value will be applied to the pitch parameter, thus yielding 466.16 Hz instead of 440 Hz.
+
+gram#1[8] <0> S --> _pitchrange(200) _pitchcont _pitchbend(100) d _pitchbend(0)
+
+// Here the continous pitchbend correction results in various adjustments of pitchbender parameters on instruments called by a, b, c. The simple notes C4 and D4 call instrument 1 because it is the one assigned to the (default) channel 1. Volume is also adjusted continuously.
+
+gram#1[9] <0> S --> _pitchrange(200) _pitchcont _volumecont _volume(30) _pitchbend(-10) a C4 D4 b c _pitchbend(100) _volume(127)
+
+// Checking an arbitrary parameter "burb" which affects arguments 9, 10 and 11 of instrument 2
+// In sound-object 'e', the 3d event (D3) already sets 'blurb' to start value 10 and to end value 30. These values are added to the ones interpolated on the 'blurb' variation, yielding 72.8 and 130 respectively.
+
+gram#1[10] <0> S --> _cont(blurb) _value(blurb,25.6) e _value(blurb,100)
+
+// Here the variation of 'blurb' is more complex, hence Bol Processor will describe it with function tables.
+
+gram#1[11] <0> S --> _cont(blurb) _value(blurb,12) e _value(blurb,110) _ _value(blurb,130) _ _ _value(blurb,80) _ _ _value(blurb,-20) _ _value(blurb,-10) _ _ _ _value(blurb,40)
+
+// In the Csound score of 'e', event 'D3' has non-zero initial values on arguments 9 and 10. These values are added to the ones determined by variations of the 'blurb' parameter, thus yielding 40 for argument 9 (the start value of 'blurb') and 70 for argument 10 (the end value). The same modification is applied to table f103. Consequently, the first and last values of a function table always reflect the start and end values of the parameter. This allows the Csound instrument to operate consistently, either interpolating start and end values, or looking at the attached function table.
+
+// Bol Processor combines Csound parameters either additively or multiplicatively. For the predefined parameters mapped to MIDI the combination mode is preset: all parameters are combined additively expect volume. For other parameters the user may choose both the default value and the combination mode. For instance, instrument 6 deals with a 'oops' parameter combining multiplicatively. Sound-object 'f' contains calls to this instrument, with values of 'oops' that are not the default ones.
+
+gram#1[12] <0> S --> f
+
+gram#1[13] <0> S --> _cont(oops) _value(oops,0) f _value(oops,4)
+
+// As expected, 'oops' start value in 'C3' is zero, and its end value in 'E3' is 10 = 4 * 2.5/1, where '1' is the default value.

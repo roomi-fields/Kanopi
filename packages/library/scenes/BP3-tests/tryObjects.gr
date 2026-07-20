@@ -1,0 +1,7 @@
+// Bol Processor BP3 compatible with version BP2.9.8
+// Grammar file saved as "-gr.tryObjects". Date: 2020-10-19 08:44:05
+-ho.abc1
+-se.koto3
+
+// gram#1[1] S --> a a bb a
+gram#1[1] S --> {a h a' b a' b a a a a a, cycle2 cycle1______}

@@ -1,0 +1,170 @@
+// ruwet.bps — Theme and variation (Nicolas Ruwet analysis)
+// Traduit de bp3-engine/library/western/ruwet/grammar.gr
+//
+// Modele theme-et-variation inspire par une analyse du musicologue Nicolas Ruwet.
+// Variables |x| preservees comme dans l'original (homomorphismes BP3).
+// Note: les homomorphismes "m1", "m2", "mineur" ne sont pas appliques
+// (BPscript ne supporte pas encore [sub:]).
+
+@core
+@controls
+[@improvize]
+@quantization:50
+@alphabet.solfege:midi
+@transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:678 fait key += (C4key - 60),
+                 // soit -12 demi-tons appliques a TOUTE touche. Image fidele = transposition
+                 // REELLE d'une octave vers le bas, qui preserve les noms ecrits.
+
+// --- Sous-grammaire 1 @mode:ord --- structure thematique
+@mode:ord
+S -> P1 P2 P3 [meter:4+4+4+4+4+4/4]
+P1 -> A8 B"8 C8 B'8
+P2 -> A8 B8 C8 B8
+P3 -> C'8 B'8 C'8 B'8
+A8 -> |a4| |b4|
+B"8 -> |c"4| |f4|
+B8 -> |c4| |f4|
+B'8 -> |c'4| |f4|
+C8 -> |d4| |e4|
+C'8 -> $ {|e4|} & {|e4|}
+
+-----
+
+// --- Sous-grammaire 2 @mode:lin --- decomposition des cellules
+
+@mode:lin
+|a4| -> |x| |z31|
+|b4| -> |y| |z5|
+|c4| -> |w| |z31|
+|c"4| -> |w| |z311|
+|c'4| -> |w| |z3|
+|d4| -> |miny| |z32|
+|e4| -> |y1| |z31|
+|f4| -> |o| |z1|
+
+-----
+
+// --- Sous-grammaire 3 @mode:lin --- variantes niveau 1
+
+@mode:lin
+|x| -> fa4 do5 [weight:4]
+|x| -> |x1| [weight:1]
+|x| -> |x2| [weight:1]
+|x| -> |x3| [weight:1]
+|x| -> |x4| [weight:1]
+
+|y| -> fa4 la4
+|y| -> |y1|
+|y| -> |y2|
+|y| -> |y3|
+|y| -> |y4|
+|y| -> |y5|
+|y| -> |y6|
+|y| -> |y7|
+|y| -> |y8|
+
+|w| -> la4 do5
+|w| -> |w1|
+|w| -> |w2|
+|w| -> |w3|
+|w| -> |w4|
+|w| -> |w5|
+
+|z1| -> fa4 fa4 [weight:4]
+|z1| |miny| -> |z12| |miny| [weight:1]
+|z1| |miny| -> |z13| |miny| [weight:1]
+
+|z3| -> la4 la4
+|z3| -> |z31|
+|z3| -> |z311|
+|z3| -> |z32|
+|z3| -> |z321|
+|z3| -> |z33|
+|z3| -> |z34|
+|z3| -> |z35|
+|z3| -> |z36|
+
+|z5| -> do5 do5
+|z5| -> |z51|
+|z5| -> |z511|
+|z5| -> |z52|
+|z5| -> |z521|
+|z5| -> |z53|
+|z5| -> |z54|
+|z5| -> |z55|
+|z5| -> |z56|
+|z5| -> |z57|
+
+|z31| -> sib4 la4
+|z32| -> sol4 la4
+|z311| -> sib4 {la4 la4}:1
+
+|o| -> sib4 {la4 sol4}:1 [weight:3]
+|o| |miny| -> |o1| |miny| [weight:1]
+|o| |miny| -> |o2| |miny| [weight:1]
+// NOTE: BP3 has right-context here: |o| (|z13|) --> |o3|
+// BPscript parser doesn't support |var| in context — omitting context for now
+|o| -> |o3| [weight:1]
+
+-----
+
+// --- Sous-grammaire 4 @mode:ord --- variantes niveau 2
+
+@mode:ord
+|x1| -> {fa4 la4}:1 do5
+|x2| -> fa4 {la4 do5}:1
+|x3| -> {fa4 sol4 la4 do5}:2
+|x4| -> {fa4 la4 sib4 do5}:2
+
+|y1| -> fa4 {sol4 la4}:1
+|y2| -> {fa4 sol4}:1 la4
+|y3| -> fa4 {la4 sib4}:1
+|y4| -> {fa4 sol4 la4 sib4}:2
+|y5| -> {fa4 la4 sol4 la4}:2
+|y6| -> {fa4 sol4 sib4 la4}:2
+|y7| -> {fa4 la4 sib4 la4}:2
+|y8| -> {fa4 sol4 fa4 la4}:2
+
+|w1| -> {la4 sib4}:1 do5
+|w2| -> la4 {sib4 do5}:1
+|w3| -> {la4 sib4 do5 sib4}:2
+|w4| -> {la4 sol4 la4 do5}:2
+|w5| -> {la4 sib4 la4 do5}:2
+
+|z11| -> {fa4 mi4}:1 fa4
+|z12| -> {fa4 sol4}:1 fa4
+|z13| -> sol4 fa4
+|z14| -> mi4 fa4
+
+|z31| -> sib4 la4
+|z311| -> sib4 {la4 la4}:1
+|z32| -> sol4 la4
+|z321| -> sol4 {la4 la4}:1
+|z33| -> {la4 sol4}:1 la4
+|z34| -> {la4 sib4}:1 la4
+|z35| -> {la4 sol4 sib4 la4}:2
+|z36| -> {sib4 la4 sol4 la4}:2
+
+|z51| -> re5 do5
+|z511| -> re5 {do5 do5}:1
+|z52| -> sib4 do5
+|z521| -> sib4 {do5 do5}:1
+|z53| -> {do5 sib4}:1 do5
+|z54| -> {do5 re5}:1 do5
+|z55| -> {do5 sib4 re5 do5}:2
+|z56| -> {re5 do5 sib4 do5}:2
+|z57| -> {do5 re5 do5 sib4}:2
+
+|o1| -> {do5 sib4 la4 sol4}:2
+|o2| -> {sib4 sib4 la4 sol4}:2
+|o3| -> {sib4 do5 sib4 la4}:2
+
+// Homomorphisme: mineur (= |y|) — pas applique, BPscript n'a pas [sub:] encore
+|miny| -> $ {|y|}
+
+-----
+
+// --- Sous-grammaire 5 @mode:ord --- resolution finale
+
+@mode:ord
+|y| -> fa4 la4

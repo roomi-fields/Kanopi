@@ -1,0 +1,6 @@
+// testNC1.bps — migré de bp3-engine/test-data/-gr.testNC1 (porter bp3ToScene, 2026-07-17)
+// Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
+
+@controls
+@mode:random
+S -> {legato(20) C4 D4 E4, staccato(10) F#5 G3, - G4}

@@ -1,0 +1,53 @@
+// TRANSCRIPTION : le natif ecrit le /N ESPACE = forme LEGACY PERSISTANTE (decision
+// hub 2026-07-16-tempo-slash-n-nu-legacy-persistant, RATIFIEE). En BPScript elle s ecrit
+// ![/N], PAS le suffixe colle [/N] qui est la forme CANONIQUE SCOPEE (enter/exit) — deux
+// semantiques distinctes que j avais confondues.
+// templates.bps — test des templates $/ &
+// Traduit de bp3-engine/library/examples/templates/grammar.gr
+//
+// 6 règles bidirectionnelles (<>) testant les templates avec
+// différents opérateurs temporels. Chaque règle produit le même
+// résultat structurel (A A ... A) mais avec des variations de tempo.
+
+@core
+[@maxitems:20]   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
+                 // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
+                 // certaines grammaires ne rendent jamais la main.
+@controls
+@alphabet.western:midi
+[@allitems]
+
+// Settings
+@tempo:60
+@striated
+
+// Non-terminaux : S, A
+// Terminal : C4 (gate:midi via @western)
+
+// --- Sous-grammaire 1 — templates bidirectionnels @mode:random ---
+
+@mode:random
+// Règle 1 : A A avec scale 1/2 sur le dernier A (*1/2 en BP3)
+S <> A A A [*1/2]
+
+// Règle 2 : A A avec tempo doublé sur le dernier A
+S <> A A[tempo:2] A
+
+// Règle 3 : A A avec speed doublé sur le dernier A (/2 en BP3)
+S <> A A ![/2] A
+
+// Règle 4 : A A avec deux silences de durées rationnelles
+S <> A A 1 3/2 A
+
+// Règle 5 : template pur — $A définit le motif, &A le référence
+S <> $A &A
+
+// Règle 6 : template avec period notation
+S <> A . A A . A A A . A
+
+-----
+
+// --- Sous-grammaire 2 — résolution terminale @mode:random ---
+
+@mode:random
+A <> C4

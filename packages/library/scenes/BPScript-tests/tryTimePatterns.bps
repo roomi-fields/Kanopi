@@ -1,0 +1,7 @@
+// tryTimePatterns.bps — migré de bp3-engine/test-data/-gr.tryTimePatterns (porter bp3ToScene, 2026-07-17)
+// Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
+
+@mode:random(mm:120)
+S -> {10, t1 t2, Part1 Part2}
+Part1 -> {t1 t3 t4, C4 D4 E4 F4 - A4}
+Part2 -> {t3 t1, B4 C5 _ E5}

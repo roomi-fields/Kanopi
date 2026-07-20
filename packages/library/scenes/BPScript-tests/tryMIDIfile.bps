@@ -1,0 +1,10 @@
+// tryMIDIfile.bps — Test MIDI file output with volume control
+// Traduit de bp3-engine/test-data/-gr.tryMIDIfile (Bernard, 1997)
+
+@core
+@controls
+@alphabet.western:midi
+
+@mode:random
+S -> A4 G4 C5 A5 A4 G4 C5 A5 (volume:127) [weight:1-1]
+S -> A4 G4 C5 A5 A4 G4 C5 A5 (volume:64) [weight:1-1]

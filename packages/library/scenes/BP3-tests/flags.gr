@@ -1,0 +1,20 @@
+// Bol Processor BP3 compatible with version BP2.9.8
+// Grammar file saved as "-gr.tryFlags". Date: 2022-02-20 14:51:48
+-ho.abc
+
+// First create string of ‘a’
+
+gram#1[1] S --> X /Num_total = 20/
+gram#1[2] /Num_total - 1/ X --> a X
+
+-----
+
+// Create flags counting 'a' and 'b'
+
+gram#2[1] X --> lambda /Num_a = 20/ /Num_b = 0/
+
+-----
+
+// Now replace 'a' with 'b' until they are in equal numbers
+
+gram#3[1] /Num_a > Num_b/ a --> b /Num_b + 1/ /Num_a - 1/

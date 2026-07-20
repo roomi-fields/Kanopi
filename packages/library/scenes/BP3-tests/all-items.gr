@@ -1,0 +1,20 @@
+// Bol Processor BP3
+// Grammar saved as "-gr.tryAllItems". Date: 2024-10-16 08:00:17
+-se.tryAllItems
+
+RND
+
+gram#1[1] S --> X Y /Flag = 2/ /Choice = 1/
+----
+RND
+gram#2[1] /Choice = 1/ /Flag - 1/ X --> C1 X
+gram#2[2] /Choice = 2/ X --> C2 X _repeat(1)
+gram#2[3] <100-50> /Choice = 3/ X --> C3 X
+gram#2[4] X --> C4 _goto(3,1)
+gram#2[5] Y --> D3
+gram#2[6] X --> T
+
+-----
+
+gram#3[1] T --> C5 _failed(3,2)
+gram#3[2] Y --> D6

@@ -1,0 +1,27 @@
+[@maxitems:20]   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
+                 // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
+                 // certaines grammaires ne rendent jamais la main.
+@tempo:400   // horloge du natif -se.koto3 : periode 150 ms par temps, soit 400 BPM.
+             // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
+             // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
+@mode:random
+S -> X X X X X X X X [K1]
+[K2] X -> a [K1]
+[K1] X -> b [K2]
+-----
+@mode:sub
+#? ?1 -> #? ?1
+?1 #? -> ?1 #?
+a -> a [weight:5]
+a b a -> a a [weight:30]
+b -> b [weight:5]
+b a b -> b b [weight:30]
+#a b -> #a c b [weight:100-10]
+c c c -> c a c
+c a c -> b a b
+?1 ?1 ?2 ?3 ?4 ?4 -> ?2 ?3
+?1 ?1 ?1 -> ?1 [weight:10]
+?1 ?1 -> ?1 [weight:10]
+-----
+@mode:ord
+? #? -> d #? [weight:1-1]

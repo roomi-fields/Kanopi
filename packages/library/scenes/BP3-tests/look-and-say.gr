@@ -1,0 +1,24 @@
+// Bol Processor BP3 compatible with version BP2.9.8
+// Grammar file saved as "-gr.look-and-say". Date: 2021-03-28 09:34:59
+// https://en.wikipedia.org/wiki/Look-and-say_sequence
+
+-se.look-and-say
+
+ORD
+
+gram#1[1] S --> '1' /steps=100/
+-----
+
+SUB
+
+gram#2[1] LEFT /steps-1/ '1' --> '1' '1'
+gram#2[2] LEFT /steps-1/ '1' '1' --> '2' '1'
+gram#2[5] LEFT /steps-1/ '1' '1' '1' --> '3' '1'
+gram#2[3] LEFT /steps-1/ '2' --> '1' '2'
+gram#2[3] LEFT /steps-1/ '2' '2' --> '2' '2'
+
+gram#2[5] LEFT /steps-1/ '1' '1' '1' --> '3' '1'
+
+gram#2[5] LEFT /steps-1/ '1' '1' '1' '2' '2' '1' --> '3' '1' '2' '2' '1' '1'
+
+gram#2[4] LEFT /steps-1/ '1' '2' '1' '1' --> '1' '1' '1' '2' '2' '1'

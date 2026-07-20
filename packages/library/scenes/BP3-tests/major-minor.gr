@@ -1,0 +1,17 @@
+// Bol Processor BP3 compatible with version BP2.9.8
+// Grammar file saved as "-gr.tryMajorMinor". Date: 2020-12-27 08:50:02
+-se.tryMajorMinor
+-cs.Mozart
+
+_mm(60) _striated
+
+ORD
+
+// S --> _tempo(2) _scale(Cmaj,0) do3 re3 mi3 sol3 _scale(Gmaj_minus,0) sol3 si2 re3 _scale(Cmaj,0) do3 _tempo(1/2) {do3, mi3, sol3} _scale(Gmaj_minus,0) {sol2, si2, re3} _scale(Cmaj,0) {do3, mi3, sol3} - _tempo(2) _scale(Cmaj,0) do3 re3 mi3 sol3 _scale(Gmaj,0) sol3 si2 re3 _scale(Cmaj,0) do3 _tempo(1/2) {do3, mi3, sol3} _scale(Gmaj,0) {sol2, si2, re3} _scale(Cmaj,0) {do3, mi3, sol3}
+
+S --> Cmaj {2,C3,E3,G3,C4} _scale(Cmin_minus,0) {2,C3,Eb3,G3,C4} Cmaj {2,C3,E3,G3,C4} - Cmaj {2,C3,E3,G3,C4} Cmin {2,C3,Eb3,G3,C4} Cmaj {2,C3,E3,G3,C4}
+S --> Seq1 -- Seq2
+Seq1 --> {2,C3,E3,G3,C4} {2,C3,Eb3,G3,C4} {2,C3,E3,G3,C4} {2,C3,Eb3,G3,C4} {2,C3,E3,G3,C4}
+Seq2 --> Cmaj {2,C3,E3,G3,C4} Cmin {2,C3,Eb3,G3,C4} Cmaj {2,C3,E3,G3,C4} Cmin {2,C3,Eb3,G3,C4} Cmaj {2,C3,E3,G3,C4}
+Cmaj --> _scale(Cmaj,0)
+Cmin --> _scale(Cmin,0)

@@ -1,0 +1,21 @@
+// checkSUB1.bps — Choix des règles candidates en mode SUB1 (argument gauche le plus long).
+// Traduit de bp3-engine/test-data/-gr.checkSUB1 (Bernard, 1999).
+// L'original référence l'alphabet abc (`-ho.abc`, a..z mono-caractère) : les LHS
+// concaténés `bcd`/`ab`/`bc`/`cd` se tokenisent en runs de bols longueur-1
+// (GetBols/SEARCHTERMINAL2). La déclaration manquait à la traduction (défaut
+// corrigé 2026-07-03, flip Palier 4 étape B — sortie attendue : `i j`).
+@test_alphabets.abc
+
+@mode:random(tempo:60.0000,striated)
+S -> a b c d
+-----
+@mode:sub1
+a -> i
+bcd -> j
+ab -> k
+bc -> l
+b -> m
+c -> n
+cd -> o
+c -> p
+d -> q

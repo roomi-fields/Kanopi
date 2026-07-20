@@ -1,0 +1,17 @@
+// one-scale.bps — Test gammes et just intonation
+// Traduit de bp3-engine/library/examples/one-scale/grammar.gr
+//
+// Notes C4/A4/G4 = variantes just intonation de C4/A4/G4
+// Poids <0> = jamais sélectionné aléatoirement, <1> = seul candidat
+
+@core
+@controls
+
+// --- Sous-grammaire 1 @mode:ord ---
+
+@mode:ord
+S -> C4 A4 G4 [weight:0]
+S -> ![scale: just_intonation C4] C4 A4 G4 [weight:0]
+S -> ![scale: just_intonation A4] C4 A4 G4 [weight:0]
+S -> ![scale: 0 0] C4 A4 G4 [weight:0]
+S -> ![scale: just_intonation C4] C4 A4 G4 D4 F4 E4 [weight:1]

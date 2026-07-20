@@ -1,0 +1,14 @@
+[@maxitems:25]   // MaxItemsProduce=25 dans le reglage natif : le moteur s'arrete
+                 // apres 25 items. Sans ce plafond l'enumeration part vers 100000 et
+                 // certaines grammaires ne rendent jamais la main.
+// tryLIN.bps — migré de bp3-engine/test-data/-gr.tryLIN (porter bp3ToScene, 2026-07-17)
+// Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
+
+@mode:ord
+S -> X X X X X X X X X X X X X X X X X X
+-----
+@mode:lin
+X -> a
+#b X -> #b b
+X ? -> c Y ?
+Y X -> c

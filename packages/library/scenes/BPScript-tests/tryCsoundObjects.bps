@@ -1,0 +1,18 @@
+[@maxitems:20]   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
+                 // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
+                 // certaines grammaires ne rendent jamais la main.
+@controls
+@mode:ord
+S -> a [weight:0]
+S -> {a, b} c [weight:1]
+S -> b midiobject [weight:0]
+S -> {a b a, c midiobject} [weight:0]
+S -> a C4 D4 b c [weight:0]
+S -> pitchrange(200) pitchcont pitchbend(0) c pitchbend(100) [weight:0]
+S -> volumecont volume(30) a volume(127) [weight:0]
+S -> pitchrange(200) pitchcont pitchbend(100) d pitchbend(0) [weight:0]
+S -> pitchrange(200) pitchcont volumecont volume(30) pitchbend(-10) a C4 D4 b c pitchbend(100) volume(127) [weight:0]
+S -> cont(blurb) value(blurb,25.6) e value(blurb,100) [weight:0]
+S -> cont(blurb) value(blurb,12) e value(blurb,110) _ value(blurb,130) _ _ value(blurb,80) _ _ value(blurb,-20) _ value(blurb,-10) _ _ _ value(blurb,40) [weight:0]
+S -> f [weight:0]
+S -> cont(oops) value(oops,0) f value(oops,4) [weight:0]

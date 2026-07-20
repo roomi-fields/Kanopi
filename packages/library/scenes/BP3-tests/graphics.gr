@@ -1,0 +1,8 @@
+// Bol Processor BP3 compatible with version BP2.9.8
+// Grammar file saved as "-gr.tryGraphics". Date: 2020-10-17 02:51:08
+-se.tryGraphics
+
+gram#1[1] S --> {_legato(20) C4 D4 E4, _staccato(10) F#5 G3, - G4}
+
+// Legato will not be applied to E4 because it is the last note in the sequence.
+// Try this grammar with settings piano roll and not piano roll…

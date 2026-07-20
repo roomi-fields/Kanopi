@@ -1,0 +1,19 @@
+// transposition3.bps — Autotransposer with _repeat and K-params
+// Traduit de bp3-engine/test-data/-gr.transposition3 (Harm Visser, 1997)
+// _transpose = runtime (dispatcher), _repeat = engine
+
+@core
+@controls
+@alphabet.western:midi
+
+@mode:random
+S -> A [numtimes=5]
+A -> {E1, A#1 F#1} {D}(chromashift:2)
+B -> {A}(chromashift:2)
+C -> {B}(chromashift:4)
+[numtimes-1] D -> - {C {1,B}}(chromashift:6) {1,C} [repeat:4]
+
+-----
+
+@mode:sub1
+D -> lambda

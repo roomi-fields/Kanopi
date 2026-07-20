@@ -1,0 +1,11 @@
+@tempo:120   // horloge du natif -se.tryTicks : periode 500 ms par temps, soit 120 BPM.
+             // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
+             // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
+// tryTicks.bps — migré de bp3-engine/test-data/-gr.tryTicks (porter bp3ToScene, 2026-07-17)
+// Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
+
+@transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:678 fait key += (C4key - 60),
+                 // soit -12 demi-tons appliques a TOUTE touche. Image fidele = transposition
+                 // REELLE d'une octave vers le bas, qui preserve les noms ecrits.
+@mode:random
+S -> C5 D5 E5 F5 E5 G5 F5 E5 F5 D5 E5 G5 D5 F5 E5 C5 [weight:1]

@@ -1,0 +1,257 @@
+// 765432.bps — Polyrhythmic piece for Cronos dance production
+// Traduit de bp3-engine/library/experimental/765432/grammar.gr
+//
+// Composed by Andrine Bel for the Cronos dance production (1994).
+// Performed by Suresh, Smriti, Olivier, Vijayshree, Arindam, Andreine.
+// A polyrhythmic piece using undetermined silences (...)
+// Glossaries had not yet been implemented when this grammar was designed.
+// The last subgrammar could be replaced with "-gl.D50"
+
+@core
+@quantization:50
+@qclock:3
+@controls
+@alphabet.solfege:midi
+@transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:678 fait key += (C4key - 60),
+                 // soit -12 demi-tons appliques a TOUTE touche. Image fidele = transposition
+                 // REELLE d'une octave vers le bas, qui preserve les noms ecrits.
+
+// --- Sous-grammaire 1 @mode:ord ---
+
+@mode:ord
+S -> Internal C47 Part1 Canon C46(vel:90) Part2
+Part1 -> {Suresh1,... Smriti1,... Olivier1,... Vijayshree1,... Arindam1,... Andreine1}
+Part2 -> {Suresh2,Smriti2 ...,Olivier2 ...,Vijayshree2 ...,Arindam2 ...,Andreine2 ...}
+
+-----
+
+// --- Sous-grammaire 2 @mode:ord ---
+
+@mode:ord
+Suresh1 -> SuMov7x7 SuSil7x7 SuMov6x7 SuSil6x7 SuMov5x7 SuSil5x7 SuMov4x7 SuSil4x7 SuMov3x7 SuSil3x7 SuMov2x7 SuSil2x7 SuMov1x7 SuSil1x7
+Smriti1 -> SmMov6x6 SmSil6x6 SmMov5x6 SmSil5x6 SmMov4x6 SmSil4x6 SmMov3x6 SmSil3x6 SmMov2x6 SmSil2x6 SmMov1x6 SmSil1x6
+Olivier1 -> OlMov5x5 OlSil5x5 OlMov4x5 OlSil4x5 OlMov3x5 OlSil3x5 OlMov2x5 OlSil2x5 OlMov1x5 OlSil1x5
+Vijayshree1 -> ViMov4x4 ViSil4x4 ViMov3x4 ViSil3x4 ViMov2x4 ViSil2x4 ViMov1x4 ViSil1x4
+Arindam1 -> ArMov3x3 ArSil3x3 ArMov2x3 ArSil2x3 ArMov1x3 ArSil1x3
+Andreine1 -> AnMov2x2 AnSil2x2 AnMov1x2 AnSil1x2
+
+-----
+
+// --- Sous-grammaire 3 @mode:ord ---
+
+@mode:ord
+Suresh2 -> SuMov7x7 SuMov6x6 SuMov5x5 SuMov4x4 SuMov3x3 SuMov2x2 SuMov1x1
+Smriti2 -> SmMov6x6 SmMov5x5 SmMov4x4 SmMov3x3 SmMov2x2 SmMov1x1
+Olivier2 -> OlMov5x5 OlMov4x4 OlMov3x3 OlMov2x2 OlMov1x1
+Vijayshree2 -> ViMov4x4 ViMov3x3 ViMov2x2 ViMov1x1
+Arindam2 -> ArMov3x3 ArMov2x2 ArMov1x1
+Andreine2 -> AnMov2x2 AnMov1x1
+
+-----
+
+// --- Sous-grammaire 4 @mode:ord — Suresh cycles x7 and descending ---
+
+@mode:ord
+SuMov1x7 -> SuCycle7
+SuSil1x7 -> SuMov1x7
+SuMov2x7 -> SuCycle7 SuCycle7
+SuSil2x7 -> SuMov2x7
+SuMov3x7 -> SuCycle7 SuCycle7 SuCycle7
+SuSil3x7 -> SuMov3x7
+SuMov4x7 -> SuCycle7 SuCycle7 SuCycle7 SuCycle7
+SuSil4x7 -> SuMov4x7
+SuMov5x7 -> SuCycle7 SuCycle7 SuCycle7 SuCycle7 SuCycle7
+SuSil5x7 -> SuMov5x7
+SuMov6x7 -> SuCycle7 SuCycle7 SuCycle7 SuCycle7 SuCycle7 SuCycle7
+SuSil6x7 -> SuMov6x7
+SuMov7x7 -> SuCycle7 SuCycle7 SuCycle7 SuCycle7 SuCycle7 SuCycle7 SuCycle7
+SuSil7x7 -> SuMov7x7
+
+SuMov1x1 -> SuCycle1
+SuSil1x1 -> SuMov1x1
+SuMov2x2 -> SuCycle2 SuCycle2
+SuSil2x2 -> SuMov2x2
+SuMov3x3 -> SuCycle3 SuCycle3 SuCycle3
+SuSil3x3 -> SuMov3x3
+SuMov4x4 -> SuCycle4 SuCycle4 SuCycle4 SuCycle4
+SuSil4x4 -> SuMov4x4
+SuMov5x5 -> SuCycle5 SuCycle5 SuCycle5 SuCycle5 SuCycle5
+SuSil5x5 -> SuMov5x5
+SuMov6x6 -> SuCycle6 SuCycle6 SuCycle6 SuCycle6 SuCycle6 SuCycle6
+SuSil6x6 -> SuMov6x6
+
+-----
+
+// --- Sous-grammaire 5 @mode:ord — Smriti cycles ---
+
+@mode:ord
+SmMov1x6 -> SmCycle6
+SmSil1x6 -> SmMov1x6
+SmMov2x6 -> SmCycle6 SmCycle6
+SmSil2x6 -> SmMov2x6
+SmMov3x6 -> SmCycle6 SmCycle6 SmCycle6
+SmSil3x6 -> SmMov3x6
+SmMov4x6 -> SmCycle6 SmCycle6 SmCycle6 SmCycle6
+SmSil4x6 -> SmMov4x6
+SmMov5x6 -> SmCycle6 SmCycle6 SmCycle6 SmCycle6 SmCycle6
+SmSil5x6 -> SmMov5x6
+SmMov6x6 -> SmCycle6 SmCycle6 SmCycle6 SmCycle6 SmCycle6 SmCycle6
+SmSil6x6 -> SmMov6x6
+
+SmMov1x1 -> SmCycle1
+SmSil1x1 -> SmMov1x1
+SmMov2x2 -> SmCycle2 SmCycle2
+SmSil2x2 -> SmMov2x2
+SmMov3x3 -> SmCycle3 SmCycle3 SmCycle3
+SmSil3x3 -> SmMov3x3
+SmMov4x4 -> SmCycle4 SmCycle4 SmCycle4 SmCycle4
+SmSil4x4 -> SmMov4x4
+SmMov5x5 -> SmCycle5 SmCycle5 SmCycle5 SmCycle5 SmCycle5
+SmSil5x5 -> SmMov5x5
+
+-----
+
+// --- Sous-grammaire 6 @mode:ord — Olivier cycles ---
+
+@mode:ord
+OlMov1x5 -> OlCycle5
+OlSil1x5 -> OlMov1x5
+OlMov2x5 -> OlCycle5 OlCycle5
+OlSil2x5 -> OlMov2x5
+OlMov3x5 -> OlCycle5 OlCycle5 OlCycle5
+OlSil3x5 -> OlMov3x5
+OlMov4x5 -> OlCycle5 OlCycle5 OlCycle5 OlCycle5
+OlSil4x5 -> OlMov4x5
+OlMov5x5 -> OlCycle5 OlCycle5 OlCycle5 OlCycle5 OlCycle5
+OlSil5x5 -> OlMov5x5
+
+OlMov1x1 -> OlCycle1
+OlSil1x1 -> OlMov1x1
+OlMov2x2 -> OlCycle2 OlCycle2
+OlSil2x2 -> OlMov2x2
+OlMov3x3 -> OlCycle3 OlCycle3 OlCycle3
+OlSil3x3 -> OlMov3x3
+OlMov4x4 -> OlCycle4 OlCycle4 OlCycle4 OlCycle4
+OlSil4x4 -> OlMov4x4
+
+-----
+
+// --- Sous-grammaire 7 @mode:ord — Vijayshree cycles ---
+
+@mode:ord
+ViMov1x4 -> ViCycle4
+ViSil1x4 -> ViMov1x4
+ViMov2x4 -> ViCycle4 ViCycle4
+ViSil2x4 -> ViMov2x4
+ViMov3x4 -> ViCycle4 ViCycle4 ViCycle4
+ViSil3x4 -> ViMov3x4
+ViMov4x4 -> ViCycle4 ViCycle4 ViCycle4 ViCycle4
+ViSil4x4 -> ViMov4x4
+
+ViMov1x1 -> ViCycle1
+ViSil1x1 -> ViMov1x1
+ViMov2x2 -> ViCycle2 ViCycle2
+ViSil2x2 -> ViMov2x2
+ViMov3x3 -> ViCycle3 ViCycle3 ViCycle3
+ViSil3x3 -> ViMov3x3
+
+-----
+
+// --- Sous-grammaire 8 @mode:ord — Arindam cycles ---
+
+@mode:ord
+ArMov1x3 -> ArCycle3
+ArSil1x3 -> ArMov1x3
+ArMov2x3 -> ArCycle3 ArCycle3
+ArSil2x3 -> ArMov2x3
+ArMov3x3 -> ArCycle3 ArCycle3 ArCycle3
+ArSil3x3 -> ArMov3x3
+
+ArMov1x1 -> ArCycle1
+ArSil1x1 -> ArMov1x1
+ArMov2x2 -> ArCycle2 ArCycle2
+ArSil2x2 -> ArMov2x2
+
+-----
+
+// --- Sous-grammaire 9 @mode:ord — Andreine cycles ---
+
+@mode:ord
+AnMov1x2 -> AnCycle2
+AnSil1x2 -> AnMov1x2
+AnMov2x2 -> AnCycle2 AnCycle2
+AnSil2x2 -> AnMov2x2
+
+AnMov1x1 -> AnCycle1
+AnSil1x1 -> AnMov1x1
+
+-----
+
+// --- Sous-grammaire 10 @mode:ord — Canon ---
+
+@mode:ord
+Canon -> Twist Walk Stretch Bend Jump Turn
+Twist -> Sm Tik Tik Tik Tik Tik Su Tik Tik Tik Tik Ol Tik Tik Tik Ar Tik Tik Vi Tik An
+Walk -> Sm Su Tik Ol Tik Tik Ar Tik Tik Tik Vi Tik Tik Tik Tik An Tik Tik Tik Tik Tik
+Stretch -> Twist
+Bend -> Walk
+Jump -> Twist
+Turn -> Walk
+
+-----
+
+// --- Sous-grammaire 11 @mode:sub1 — Cycle definitions ---
+
+@mode:sub1
+SuCycle7 -> Su Tik Tik Tik Tik Tik Tik
+SuCycle6 -> Su Tik Tik Tik Tik Tik
+SuCycle5 -> Su Tik Tik Tik Tik
+SuCycle4 -> Su Tik Tik Tik
+SuCycle3 -> Su Tik Tik
+SuCycle2 -> Su Tik
+SuCycle1 -> Su
+SmCycle6 -> Sm - - - - -
+SmCycle5 -> Sm - - - -
+SmCycle4 -> Sm - - -
+SmCycle3 -> Sm - -
+SmCycle2 -> Sm -
+SmCycle1 -> Sm
+OlCycle5 -> Ol - - - -
+OlCycle4 -> Ol - - -
+OlCycle3 -> Ol - -
+OlCycle2 -> Ol -
+OlCycle1 -> Ol
+ViCycle4 -> Vi - - -
+ViCycle3 -> Vi - -
+ViCycle2 -> Vi -
+ViCycle1 -> Vi
+ArCycle3 -> Ar - -
+ArCycle2 -> Ar -
+ArCycle1 -> Ar
+AnCycle2 -> An -
+AnCycle1 -> An
+
+-----
+
+// --- Sous-grammaire 12 @mode:sub1 — Notes (simultaneous with 1) ---
+
+@mode:sub1
+Su -> {1,do4-}
+Sm -> {1,mi4-}
+Ol -> {1,sol4-}
+Vi -> {1,do5-}
+Ar -> {1,mi5-}
+An -> {1,sol5-}
+
+Tik -> {1,do7-}
+
+-----
+
+// --- Sous-grammaire 13 @mode:ord — D-50 MIDI setup ---
+
+@mode:ord
+Internal -> script(MIDI program 1) script(MIDI controller #98 = 0 channel 1)
+C46 -> script(MIDI program 94)
+C47 -> script(MIDI program 95)
+PedalOn -> switchon(64,1)
+PedalOff -> switchoff(64,1)

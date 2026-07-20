@@ -1,0 +1,28 @@
+// Bol Processor BP3 compatible with version BP2.9.8
+// Grammar file saved as "-gr.tryScales". Date: 2020-12-22 17:22:18
+-se.tryScales
+-cs.tryScales
+
+ORD
+
+gram#1[1] <0> S --> _scale(piano,dop4) fap3 _scale(just intonation,69) C4 rep4
+
+gram#1[2] <0> S --> _scale(just intonation,69) C4 D4 E4 {C4,E4,G4,C5}{2,{C4,E4,G4,C5}} F4 A4 G4 C5 {2,{C4,F4,D4,C5}}{3,{C4,F4,D4,C5}}
+gram#1[3] <0> S --> A4 _scale(just intonation,62) A4 _scale(just intonation,64) A4 _scale(just intonation,65) A4 _scale(0,0) A4 _scale(just intonation,69) A4
+
+gram#1[4] <0> S --> _tempo(1/2) C4 G4 A4 _scale(just intonation,A4) C4 G4 A4 _scale(piano,A4) C4 G4 A4
+
+gram#1[5] <1> S --> C4 E4 A4 {8,{C4,E4,G4,C5}}{8,{C4,Eb4,G4,C5}} - _scale(piano,C4) C4 E4 A4 {8,{C4,E4,G4,C5}}{8,{C4,Eb4,G4,C5}} - _scale(just intonation,C4)C4 E4 A4 {8,{C4,E4,G4,C5}}{8,{C4,Eb4,G4,C5}}
+
+gram#1[6] <0> S --> _tempo(2) _legato(20) Version3
+gram#1[7] Version1 --> _scale(just intonation,A4) Phrase -- _scale(0,A4) Phrase
+gram#1[8] Version2 --> Phrase -- _scale(piano,A4) Phrase
+gram#1[9] Version3 --> _scale(meantone1,A4) Phrase -- _scale(just intonation,A4) Phrase
+gram#1[10] Phrase --> {Cmajor} {Aminor} {Fmajor} {Gseventh} {Cmajor}
+gram#1[11] Cmajor --> {C4___,-E4__,--G4_,---C5}{E4___,-G4__,--C5_}
+gram#1[12] Cminor --> {C4___,-Eb4__,--G4_,---C5}{Eb4___,-G4__,--C5_}
+gram#1[13] Cseventh --> {C4___,-E4__,--Bb4_,---C5}{E4___,-Bb4__,--C5_}
+gram#1[14] Aminor --> _transpose(-3) Cminor
+gram#1[15] Fmajor --> _transpose(-7) Cmajor
+gram#1[16] Gmajor --> _transpose(-5) Cmajor
+gram#1[17] Gseventh --> _transpose(-5) Cseventh

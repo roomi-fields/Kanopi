@@ -1,0 +1,279 @@
+// shapes-rhythm.bps — "ShapesInRhythm" for Cronos dance production
+// Traduit de bp3-engine/library/experimental/shapes-rhythm/grammar.gr
+//
+// Composed by choreographer Andreine Bel. Part of the material is taken
+// from kathak compositions. The piece comprises 9 parts using very different
+// sound "patches". Will not make sense unless played on Roland D-50 with
+// Musitronics extension card.
+//
+// Les contrôles MIDI du corpus D-50 étaient écrits en valeurs de FIL (14 bits).
+// BPScript les exprime dans leur convention propre : mod = CC1, 7 bits (0..127) ;
+// pitchbend = signé, centre 0 (-8192..8191), cf. docs/design/SOUNDS.md:448 et
+// runtime-MIDI/src/transports/midi.js:362. Converti : mod 16383→127, et
+// pitchbend signé = fil − 8192 (8192→0 centre, 12000→3808, 0→-8192).
+//
+// Production and time-setting take 14mn on old Mac IIci.
+// Needs about 4500 Kbytes RAM. Needs 30ms quantization (K=222, 2536 sound-objects).
+//
+// Uses time patterns because the dancers wanted initial sections to be
+// "a little slower". Composition starts at metronom 60 and continues at metronom 88.
+//
+@core
+@tempo:88   // horloge du natif -se.ShapesInRhythm.QTM : periode 682 ms par temps, soit 88 BPM.
+             // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
+             // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
+@controls
+@alphabet.solfege:midi
+@timepatterns: t1=88/60, t2=88/80, t3=1/1
+
+// --- Sous-grammaire 1 @mode:ord — Structure principale ---
+
+@mode:ord
+S -> Route script(Beep) Part1 Gap12 Part2 Gap23 Part3 Gap34 Part4 Gap45 Part5 Gap56 Part6 Gap67 Part7 Gap78 Part8 Gap89 Part9
+
+Part1 -> script(Tick cycle OFF) Route -(vel:127) script(Tick cycle ON) script(Reset tick cycle) {Tp1 Tp1 Tp1 Tp1 Tp1 Tp1 Tp1 Tp1,P1} {Tp1,Accord5,sol4 15}
+Part2 -> Sablier(vel:127) {Tp2 Tp2 Tp2 Tp2 Tp2,P2} {Tp3,Dha1 15}
+Part3 -> Maison(vel:35) {Tp3 Tp3 Tp3 Tp3,P3}(vel:45) {Tp3,Dha5}
+Part4 -> Toit(vel:127) {Tp3 Tp3 Tp3 Tp3 Tp3 Tp3,P4}
+Part5 -> Drapeau(vel:70) {Tp3 Tp3 Tp3 Tp3,P5} {Tp3,Chhe 15}
+Part6 -> CerfVolant(vel:127) {Tp3 Tp3 Tp3 Tp3,P6} {Tp3,Tin ---}
+Part7 -> Guimbarde(vel:127) {Tp3 Tp3 Tp3 Tp3,P7} PedalOn {Tp3,Dha4 15}
+Part8 -> Hippocampe(vel:90) {Tp3 Tp3 Tp3,P8} {Tp3,la5 31}
+Part9 -> VaisseauVolant(vel:90) {Tp3 Tp3 Tp3 Tp3 Tp3 Tp3 Tp3 Tp3 Tp3 Tp3 Tp3 Tp3 Tp3 Tp3 Tp3 Tp3 t3 t3 t3 t3,P9}
+
+Gap12 -> Conque {Tp2,-(pitchbend:-8192, pitchcont, mod:0, modcont) si3_____(mod:127, pitchbend:0) Sablier -}(mod:0) (vel:80)
+Gap23 -> Maison {Tp3,16,-(vel:2, velcont) fa3 _ _ mi3 fa#3 fa3 mi3 sol3 fa3 sol#3 do3 _ _ _ _(vel:40)}
+Gap34 -> Toit(vel:100) {Tp3,- sol#2 sol#2 sol#2}
+Gap45 -> Toit(vel:100) {Tp3 Tp3,- sol2 - sol2 sol2 - sol2 Drapeau -}
+// NOTE: BP3 original uses [{...}] out-time synchronization bracket
+Gap56 -> CerfVolant(vel:60) {Tp3,- {6,do4,- do5} -} {Tp3,PedalOn(vel:50, velcont) do2 sol#2 fa#2 do#3 PedalOff -(vel:90)}
+Gap67 -> Guimbarde {Tp3,{do3___(vel:40),-fa3(vel:40, velcont) fa3_(vel:60),---fa2}}
+Gap78 -> {Tp3,7 PedalOff -}
+Gap89 -> Michiko {Tp3,- PedalOn(press:0, presscont, pitchbend:0, pitchcont) re5______(press:127, pitchbend:3808) - PedalOff}(pitchbend:0, press:0) (vel:110)
+
+-----
+
+// --- Sous-grammaire 2 @mode:sub1 — Part 1 voices ---
+
+@mode:sub1
+P1 -> {16,8 Vi4,Accord1} {16,{8,So8} {8,Ar12},Accord2} {16,{8,Sm16} {8,Su24}} {16,{8,Ol32} {8,An48}}
+Accord1 -> do2
+Accord2 -> do2
+Accord5 -> do2
+
+-----
+
+// --- Sous-grammaire 3 @mode:sub1 — Part 2 (scales up/down) ---
+
+@mode:sub1
+P2 -> Down12345 S5 Up12345 S5 Down12345 S5 Up12345 S5 Down12345 S3 Up12345 S3 Down12345 S3 Up12345 S3 Down12345 - Up12345 - Down12345 - Up12345 - Down12345 Up12345 Down12345 Up12345 Dha1 - Down12345 Up12345 Down12345 Up12345 Dha1 - Down12345 Up12345 Down12345 Up12345
+Down12345 -> si5 sol5 fa#5 mi5 re#5
+Up12345 -> si4 re#5 mi5 fa#5 sol5
+S5 -> -----
+S3 -> ---
+
+-----
+
+// --- Sous-grammaire 4 @mode:sub1 — Part 3 ---
+
+@mode:sub1
+P3 -> P3T1 Dha3 P3T2 Dha4 {P3T1,P3T3}
+
+P3T1 -> {3,do4 do5 do3 do3 do3 do3} {3,do#3 re3 la3 la#4 sol3 sol#4 do#4 do5 do3} {3,do#3 fa3 re#4 la#4 fa#3 sol4 mi4 la4 la#3 do5 re3 fa#3} {1,sol4 fa4}
+Dha3 -> sol#4
+P3T2 -> {3,do#4 do5 do#3 fa3 mi4 la4} {3,si3 do5 do3 do#3 re#3 si3 do5 do#3 re3} {3,sol#3 la#4 sol#3 la4 la#3 si4 re3 sol#3 la#4 sol#3 la#4 sol#3} {1,la#4 la4}
+Dha4 -> do5
+P3T3 -> {3,sol#3 la4 la#3 do5 re3 fa#3} {3,fa#4 fa4 sol4 re#4 do5 fa#3 fa#4 la4 do4} {3,do5 do3 do3 re#3 re#4 do5 re#3 do4 do5 do3 re#3 do4} {1,do5 do3}
+Dha5 -> sol#4
+
+-----
+
+// --- Sous-grammaire 5 @mode:sub1 — Part 4 (trio/quatuor) ---
+
+@mode:sub1
+P4 -> {12,Trio Trio Trio Trio} {12,Trio Trio Trio Trio,Quatuor Quatuor Quatuor Quatuor} {24,Trio Trio Trio Trio Trio Trio Trio Trio,Quatuor Quatuor Quatuor Quatuor Quatuor Quatuor Quatuor Quatuor,OlSeul32}
+Trio -> {1,Sm,An,So} Tik Tik
+Quatuor -> {1,Ar,Ol,Su,Vi} {1,mi6---,do6---}
+OlSeul32 -> OlSeul4 OlSeul4 OlSeul4 OlSeul4 OlSeul4 OlSeul4 OlSeul4 OlSeul4
+OlSeul4 -> Ol Ol Ol Ol
+
+-----
+
+// --- Sous-grammaire 6 @mode:sub1 — Part 5 (tihai with Chhe) ---
+
+@mode:sub1
+P5 -> {Tick32,Tihai5 Chhe Tihai5 Chhe Tihai5}
+Tihai5 -> {4,Cinq2 Chhe Cinq2 Chhe} {6,Cinq2 Cinq2 Cinq2}
+
+-----
+
+// --- Sous-grammaire 7 @mode:sub1 — Part 6 (tihai with Tin) ---
+
+@mode:sub1
+P6 -> {Tick32,Tihai6 Tin Tihai6 Tin Tihai6}
+Tihai6 -> {2,Huit} {2,Six} {2,Cinq} {2,Quatre} {2,- - Ek - - Do - -}
+
+-----
+
+// --- Sous-grammaire 8 @mode:sub1 — Part 7 (tihai with Dha4) ---
+
+@mode:sub1
+P7 -> {Tick32,Tihai7 Dha4 Tihai7 Dha4 Tihai7}
+Tihai7 -> {2,Huit2} {2,Sept2} {2,Six2} {2,Cinq2} {2,Quatre2}
+
+-----
+
+// --- Sous-grammaire 9 @mode:sub1 — Part 8 ---
+
+@mode:sub1
+P8 -> Tihai8 Gap8 Tihai8 Gap8 Tihai8
+Tihai8 -> {fa4,do5} - fa5 do6 la5 la#5 sol5 do6 la5 - {fa4,do5} fa5 - do6 la5 la#5 sol5 do6 la5 - {fa4,do5} fa5 do6 - la5 la#5 sol5 do6
+Gap8 -> la5 - - - - -
+
+-----
+
+// --- Sous-grammaire 10 @mode:sub1 — Part 9 (progressive layering) ---
+
+@mode:sub1
+P9 -> {M1 M1 M1 M1 M2 M2 M2 M2 M2 M2 M2 M2 M3 M3 M3 M3 M3 M3 M3 M3 M4 M4 M4 M4 M4 M4 M4 M4 M5 M5 M5 M5 M5 M5 M5 M5 M6 M6 M6 M6 M6 M6 M6 M6,{re3,mi3,fa3}(vel:10)}
+M1 -> Smriti
+M2 -> {Smriti,Olivier}
+M3 -> {Smriti,Olivier,Vijayshree}
+M4 -> {Smriti,Olivier,Vijayshree,Arindam}
+M5 -> {Smriti,Olivier,Vijayshree,Arindam,Somenath}
+M6 -> {Smriti,Olivier,Vijayshree,Arindam,Somenath,Suresh(vel:127)}
+
+-----
+
+// --- Sous-grammaire 11 @mode:ord — Time patterns ---
+// Using time patterns: t1=88/60 t2=88/80 t3=1/1
+
+@mode:ord
+Tp1 -> t1 t1 t1 t1 t1 t1 t1 t1
+Tp2 -> t2 t2 t2 t2 t2 t2 t2 t2
+Tp3 -> t3 t3 t3 t3 t3 t3 t3 t3
+
+-----
+
+// --- Sous-grammaire 12 @mode:sub1 — Part 1 voice subdivisions ---
+
+@mode:sub1
+Vi4 -> {4,Vi1 Vi1 Vi1 Vi1}
+So8 -> {8,So1 So1 So1 So1 So1 So1 So1 So1}
+Ar12 -> {12,Ar1 Ar1 Ar1 Ar1 Ar1 Ar1 Ar1 Ar1 Ar1 Ar1 Ar1 Ar1}
+Sm16 -> {16,Sm1 Sm1 Sm1 Sm1 Sm1 Sm1 Sm1 Sm1 Sm1 Sm1 Sm1 Sm1 Sm1 Sm1 Sm1 Sm1}
+Su24 -> {24,Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1 Su1}
+Ol32 -> {32,Ol4 Ol4 Ol4 Ol4 Ol4 Ol4 Ol4 Ol4}
+An48 -> An16 An16 An16
+An16 -> An4 An4 An4 An4
+An4 -> {4,An1 An1 An1 An1}
+Ol4 -> Ol1 Ol1 Ol1 Ol1
+Vi1 -> fa3 -
+So1 -> {mi3,fa#3} -
+Ar1 -> {sol3,la#3} -
+Sm1 -> do4 -
+Su1 -> {do#4,fa4} -
+Ol1 -> sol3 -
+An1 -> sol4 -
+
+-----
+
+// --- Sous-grammaire 13 @mode:sub1 — Dancer instruments & rhythm ---
+
+@mode:sub1
+Smriti -> {3,Sm Sm Sm}
+Olivier -> {5,Ol Ol Ol Ol Ol}
+Vijayshree -> {2,Vi Vi}
+Arindam -> {4,Ar Ar Ar Ar}
+Somenath -> {6,So So So So So So}
+Suresh -> {12,Su Su Su Su Su Su Su Su Su Su Su Su}
+
+-----
+
+// --- Sous-grammaire 14 @mode:sub1 — Rhythm patterns ---
+
+@mode:sub1
+Huit -> BigTik Tik Tik Tik Tik Tik Tik Tik
+Six -> BigTik Tik Tik Tik Tik Tik
+Cinq -> BigTik Tik Tik Tik Tik
+Cinq2 -> BigTik Tik3 Tik3 Tik3 Tik3
+Quatre -> BigTik Tik Tik Tik
+Huit2 -> BigTik2 Tik2 Tik2 Tik2 Tik2 Tik2 Tik2 Tik2
+Sept2 -> BigTik2 Tik2 Tik2 Tik2 Tik2 Tik2 Tik2
+Six2 -> BigTik2 Tik2 Tik2 Tik2 Tik2 Tik2
+Cinq2 -> BigTik2 Tik2 Tik2 Tik2 Tik2
+Quatre2 -> BigTik2 Tik2 Tik2 Tik2
+Ek -> Tik
+Do -> Tik
+Tin -> Tik
+Chhe -> BigTik
+
+-----
+
+// --- Sous-grammaire 15 @mode:sub1 — Terminal sound objects ---
+// Typical cases where _staccato() should be used
+
+@mode:sub1
+Dha1 -> {1,{si3,si4} ---}
+Su -> do6---
+Sm -> fa5---
+Ol -> mi6---
+So -> la5---
+Vi -> re6-
+Ar -> mi5---
+An -> fa6---
+Dha4 -> {fa2,do4}
+Tick32 -> do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 do3 (vel:40)
+Tik -> do7
+Tik2 -> {do5,do6}
+Tik3 -> {sol6(vel:15),do7(vel:110)}
+BigTik -> {do6,do8}
+BigTik2 -> {fa3,fa4}
+
+-----
+
+// --- Sous-grammaire 16 @mode:sub1 — Patch routing ---
+
+@mode:sub1
+Route -> X87
+Sablier -> X76
+Maison -> C13
+Toit -> X76
+Drapeau -> X36
+CerfVolant -> X63
+Guimbarde -> X86
+Hippocampe -> X72
+VaisseauVolant -> X36
+Conque -> I66
+Michiko -> X75
+
+-----
+
+// --- Sous-grammaire 17 @mode:ord — D-50 MIDI setup ---
+
+@mode:ord
+Xcard -> script(MIDI controller #98 = 1 channel 1)
+Internal -> script(MIDI controller #98 = 0 channel 1)
+X13 -> Xcard script(MIDI program 5)
+X24 -> Xcard script(MIDI program 12)
+X26 -> Xcard script(MIDI program 14)
+X27 -> Xcard script(MIDI program 15)
+X36 -> Xcard script(MIDI program 22)
+X63 -> Xcard script(MIDI program 43)
+X68 -> Xcard script(MIDI program 48)
+X72 -> Xcard script(MIDI program 50)
+X75 -> Xcard script(MIDI program 53)
+X76 -> Xcard script(MIDI program 54)
+X83 -> Xcard script(MIDI program 59)
+X85 -> Xcard script(MIDI program 61)
+X86 -> Xcard script(MIDI program 62)
+X87 -> Xcard script(MIDI program 63)
+I42 -> Internal script(MIDI program 26)
+I62 -> Internal script(MIDI program 42)
+I66 -> Internal script(MIDI program 46)
+C13 -> Internal script(MIDI program 67)
+C42 -> Internal script(MIDI program 90)
+C56 -> Internal script(MIDI program 102)
+C23 -> Internal script(MIDI program 75)
+PedalOn -> switchon(64,1)
+PedalOff -> switchoff(64,1)

@@ -1,0 +1,30 @@
+// TRANSCRIPTION : le natif ecrit le /N ESPACE = forme LEGACY PERSISTANTE (decision
+// hub 2026-07-16-tempo-slash-n-nu-legacy-persistant, RATIFIEE). En BPScript elle s ecrit
+// ![/N], PAS le suffixe colle [/N] qui est la forme CANONIQUE SCOPEE (enter/exit) — deux
+// semantiques distinctes que j avais confondues.
+// tryKeyMap.bps — Traduit de bp3-engine/test-data/-gr.tryKeyMap (Bernard, 1998).
+//
+// Démonstration de l'outil de MAPPAGE DE CLAVIER. keymap(a,b,c,d) fait correspondre
+// l'intervalle (a,b) à (c,d) : keymap(C3,C3,C5,C5) ne change rien et sert seulement
+// d'ancrage à l'interpolation, keymap(C3,C2,C5,C6) élargit les intervalles d'un
+// facteur 2 autour de C4, keymap(C3,C5,C5,C3) les inverse (C4 reste le pivot).
+// mapstep applique le mappage par pas, mapcont l'interpole en continu (y compris
+// À L'INTÉRIEUR d'un objet sonore qui accepte le mappage), mapfixed le fige.
+@core
+@controls
+@alphabet.western:midi
+
+@tempo:60
+@striated
+
+@mode:ord
+S -> vel(64) Part1 - vel(127) Part2 1/2 Part3 Part4 1/2 vel(64) retro Part1
+
+Part1 -> ![/8] mapstep keymap(C3,C3,C5,C5) M M M M M M keymap(C3,C2,C5,C6) M M M M M M keymap(C3,C3,C5,C5) M M M M M M M M M M M M keymap(C3,C5,C5,C3) mapfixed M M keymap(C3,C3,C5,C5) M ![/1] M
+
+M -> C4 C#4 D4 G4 F#4 F4 E4
+
+Part2 -> keymap(52,52,86,86) a a mapcont a a a a a a a a a a keymap(52,86,86,52) a b
+
+Part3 -> mapcont keymap(52,52,86,86) a _ _ a _ _ keymap(52,86,86,52)
+Part4 -> mapstep keymap(52,52,86,86) a _ _ a _ _ keymap(52,86,86,52)

@@ -1,0 +1,26 @@
+// acceleration.bps — "sawtooth rhythm" par Harm Visser (1997)
+// Traduit de bp3-engine/test-data/-gr.acceleration
+// _transpose = runtime, _vel = runtime — both via _script(CTn)
+
+@core
+@tempo:80   // horloge du natif -se.Visser2 : periode 750 ms par temps, soit 80 BPM.
+             // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
+             // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
+@controls
+@alphabet.western:midi
+
+@mode:ord
+S -> !(chromashift:12, vel:60) A B !(vel:65) C D !(vel:70) E F !(vel:75) G !(vel:77) H !(vel:80) I !(vel:85) J !(vel:87) K !(vel:90) L
+
+A -> E2 .
+B -> D2 A
+C -> B2 B
+D -> G2 C
+E -> F#2 D
+F -> A#2 E
+G -> C2 F
+H -> G#2 G
+I -> A2 H
+J -> D#2 I
+K -> C#2 J
+L -> F2 K

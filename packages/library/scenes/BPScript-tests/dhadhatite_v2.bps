@@ -1,0 +1,220 @@
+// dhadhatite_v2.bps — "dhadhatite" qa'ida (tabla)
+// Source: bp3-ctests/-gr.dhadhatite (2026-04-20)
+// Transposition status: PARTIAL — see UNSUPPORTED.md
+//
+// This is a beginner's tabla qa'ida with 6 sub-grammars.
+// Many BP3 features used here are NOT YET SUPPORTED in BPscript.
+// Supported features are translated below; unsupported ones are commented out
+// with explicit backlog markers.
+
+@core
+@controls
+
+// Production mode: text (bols are non-pitched syllables, not MIDI notes)
+// No @alphabet.western — bols are literal sound objects
+
+// =========================================================================
+// GRAM#1 — RND: top-level structure
+// =========================================================================
+// UNSUPPORTED: Time signature in LHS
+//   BP3 line: gram#1[1] <100> S <-> 4+4+4+4/4 S64
+//   "4+4+4+4/4" is a polymetric time signature annotation on the LHS.
+//   BPscript has no equivalent LHS time-signature syntax.
+//   NOT YET SUPPORTED in BPscript — backlog item: LHS time-signature annotation
+//
+// UNSUPPORTED: Bidirectional <-> rules
+//   BP3 uses <-> for bidirectional derivation (playback + analysis).
+//   BPscript uses <> for bidirectional (->  is L→R default, <> is bidirectional).
+//   Translation attempt: <-> → <> (best available approximation)
+
+@mode:random
+
+S <> S64 [weight:100]
+S64 <> S1F S2F S1V S2F E32 [weight:100]
+S64 <> S1V S2F S1F S2F E32 [weight:100]
+S64 <> S1F S2V S1F S2F E32 [weight:100]
+S64 <> S1V S2V S1F S2F E32 [weight:100]
+
+-----
+
+// =========================================================================
+// GRAM#2 — LIN: structural rules with templates and contexts
+// =========================================================================
+// UNSUPPORTED: Template markers (= ...) and (: ...) with ++ context prefixes
+//   BP3 syntax: (= V8 ) creates a "master bracket" in the template
+//               (: V8 ) creates a "slave bracket" that mirrors the master
+//               ++ prefixes tokens as context markers
+//   BPscript has an @template section with ($N ...) bracket syntax, BUT:
+//   - The BP3 (= ...) / (: ...) notation in rule bodies is the old template format
+//   - The ++ and + context markers on tokens have NO BPscript equivalent
+//   NOT YET SUPPORTED in BPscript:
+//     1. (= ... ) / (: ... ) template bracket syntax in rule bodies
+//     2. + and ++ context markers as token prefixes
+//     3. * separator between template groups in RHS
+//
+// The rules below strip all template/context syntax, keeping only the
+// non-terminal names. This loses all template structure and context disambiguation.
+
+@mode:lin
+
+// gram#2[1]: S1F S2F S1V S2F E32 <-> S1F +S2F (= V8 ) +S2F * (= S1F ++ S2F ) (: V8 ) S1F
+// Stripped: S1F S2F S1V S2F E32 -> S1F S2F V8 S2F S1F S2F V8 S1F
+S1F S2F S1V S2F E32 -> S1F S2F V8 S2F S1F S2F V8 S1F [weight:100]
+
+// gram#2[2]: S1V S2F S1F S2F E32 <-> (=++ A1 V7 ) +S2F S1F +S2F * (:++ A1 V7 ) * (= ++ S2F ) S1F S1F
+// Stripped: S1V S2F S1F S2F E32 -> A1 V7 S2F S1F S2F A1 V7 S2F S1F S1F
+S1V S2F S1F S2F E32 -> A1 V7 S2F S1F S2F A1 V7 S2F S1F S1F [weight:100]
+
+// gram#2[3]: S1V S2F S1F S2F E32 <-> (=++ A2 V6 ) +S2F S1F +S2F * (:++ A2 V6 ) * (= ++ S2F ) S1F S1F
+// Stripped: S1V S2F S1F S2F E32 -> A2 V6 S2F S1F S2F A2 V6 S2F S1F S1F
+// UNSUPPORTED: gram#2[2] and gram#2[3] have the same LHS. LIN mode uses the
+// first matching rule — the second would be unreachable in a strict LIN pass.
+// In BP3 LIN, all matching rules can be tried. BPscript LIN is first-match.
+// NOT YET SUPPORTED: multiple LIN rules with identical LHS (non-deterministic LIN)
+// S1V S2F S1F S2F E32 -> A2 V6 S2F S1F S2F A2 V6 S2F S1F S1F [weight:100]
+
+// gram#2[4]: S1F S2V S1F S2F E32 <-> S1F (= V6 + B2 ) S1F +S2F * (= S1F ) * (: V6 + B2 ) S1F S1F
+// Stripped: S1F S2V S1F S2F E32 -> S1F V6 B2 S1F S2F S1F V6 B2 S1F S1F
+S1F S2V S1F S2F E32 -> S1F V6 B2 S1F S2F S1F V6 B2 S1F S1F [weight:100]
+
+// gram#2[5..10]: All have same LHS S1V S2V S1F S2F E32 — only first is kept.
+// The others are commented out for the same reason as gram#2[2] vs [3].
+// gram#2[5]: (=++ A1 V11 + B4 ) S1F +S2F * (:++ A1 V11 + B4 ) S1F S1F
+S1V S2V S1F S2F E32 -> A1 V11 B4 S1F S2F A1 V11 B4 S1F S1F [weight:100]
+// gram#2[6..10] commented out — identical LHS, NOT YET SUPPORTED
+// S1V S2V S1F S2F E32 -> A2 V10 B4 S1F S2F A2 V10 B4 S1F S1F [weight:100]
+// S1V S2V S1F S2F E32 -> A1 V13 B2 S1F S2F A1 V13 B2 S1F S1F [weight:100]
+// S1V S2V S1F S2F E32 -> A2 V12 B2 S1F S2F A2 V12 B2 S1F S1F [weight:100]
+// S1V S2V S1F S2F E32 -> A1 V15 S1F S2F A1 V15 S1F S1F [weight:100]
+// S1V S2V S1F S2F E32 -> A2 V14 S1F S2F A2 V14 S1F S1F [weight:100]
+
+-----
+
+// =========================================================================
+// GRAM#3 — LIN: V-chain (variation cascade V2..V15 → T1/T2)
+// =========================================================================
+// This sub-grammar is fully translatable. V2..V15 are non-terminals chained
+// by LIN derivation. Weights <10> and <100> are mapped to [weight:N].
+
+@mode:lin
+
+V2 -> T2 [weight:100]
+V15 -> T1 V14 [weight:10]
+V15 -> T2 V13 [weight:100]
+V14 -> T1 V13 [weight:10]
+V14 -> T2 V12 [weight:100]
+V13 -> T1 V12 [weight:10]
+V13 -> T2 V11 [weight:100]
+V12 -> T1 V11 [weight:10]
+V12 -> T2 V10 [weight:100]
+V11 -> T1 V10 [weight:10]
+V11 -> T2 V9 [weight:100]
+V10 -> T1 V9 [weight:10]
+V10 -> T2 V8 [weight:100]
+V9 -> T1 V8 [weight:10]
+V9 -> T2 V7 [weight:100]
+V8 -> T1 V7 [weight:10]
+V8 -> T2 V6 [weight:100]
+V7 -> T1 V6 [weight:10]
+V7 -> T2 V5 [weight:100]
+V6 -> T1 V5 [weight:10]
+V6 -> T2 V4 [weight:100]
+V5 -> T1 V4 [weight:10]
+V5 -> T2 V3 [weight:100]
+V4 -> T1 V3 [weight:10]
+V4 -> T2 V2 [weight:100]
+V3 -> T1 V2 [weight:10]
+V3 -> T2 T1 [weight:100]
+V2 -> T1 T1 [weight:10]
+
+-----
+
+// =========================================================================
+// GRAM#4 — RND: terminal leaf rules (T1 → dha/-, T2 → dhadha/tite/dheena/teena)
+// =========================================================================
+// Fully translatable. '-' is the silence symbol (valid in both BP3 and BPscript).
+
+@mode:random
+
+T1 -> dha [weight:100]
+T1 -> - [weight:100]
+T2 -> dhadha [weight:100]
+T2 -> tite [weight:100]
+T2 -> dheena [weight:50]
+T2 -> teena [weight:50]
+
+-----
+
+// =========================================================================
+// GRAM#5 — ORD: context-sensitive terminal rules
+// =========================================================================
+// UNSUPPORTED: Context markers '+' and '++' as token prefixes
+//   BP3: gram#5[1] + B2 <-> +teena
+//   The '+' and '++' prefixes mark that this rule fires only in the context
+//   where the token was tagged with that prefix in gram#2.
+//   BPscript has no equivalent for '+'/'++'  context-prefix mechanism.
+//   NOT YET SUPPORTED in BPscript — backlog item: context-prefix propagation
+//
+// UNSUPPORTED: <-- special rule direction
+//   BP3: gram#5[8] ++ S2F <-- ++ dhadhatitedhadhadheena [This rule must be last]
+//   <-- means RIGHT→LEFT derivation AND the comment marks it as a constraint
+//   ("must be last" = ordering constraint within ORD sub-grammar).
+//   BPscript has <- for right-to-left, but no "must be last" ordering constraint.
+//   NOT YET SUPPORTED in BPscript — backlog item: ORD rule ordering constraint
+//
+// UNSUPPORTED: #+ prefix on LHS token
+//   BP3: gram#5[6] #+ S1F <-> #+ dhadhatitedhadhadheena
+//   '#' marks a "negative context" in Bernard's engine (not the same as
+//   BPscript's # comment). No BPscript equivalent.
+//   NOT YET SUPPORTED in BPscript — backlog item: negative-context marker '#+'
+//
+// The rules below strip context markers, translating only the non-terminal
+// names and terminal bols. The context disambiguation is completely lost.
+// In practice this means: S1F always → dhadhatitedhadhadheena (last rule wins),
+// S2F always → dhadhatitedhadhadheena (both gram#5[7] and gram#5[8] map to S2F).
+
+@mode:ord
+
+// gram#5[1]: + B2 <-> +teena  (context marker stripped)
+B2 -> teena [weight:100]
+
+// gram#5[2]: + B4 <-> +dhadhateena  (context marker stripped)
+// Note: 'dhadhateena' is NOT in gram#4 terminals — it is a composite bol
+// used only as a fixed terminal in gram#5 context. Added to alphabet.
+B4 -> dhadhateena [weight:100]
+
+// gram#5[3]: ++ A1 <-> ++dha  (context marker stripped)
+A1 -> dha [weight:100]
+
+// gram#5[4]: ++ A2 <-> ++dhadha  (context marker stripped)
+A2 -> dhadha [weight:100]
+
+// gram#5[5]: ++ A2 <-> ++dheena  (context marker stripped, duplicate LHS)
+// A2 -> dheena [weight:50]
+
+// gram#5[6]: #+ S1F <-> #+ dhadhatitedhadhadheena  (#+ marker stripped)
+S1F -> dhadhatitedhadhadheena [weight:100]
+
+// gram#5[7]: + S2F <-> + dhadhatitedhadhateena  (context marker stripped)
+S2F -> dhadhatitedhadhateena [weight:100]
+
+// gram#5[8]: ++ S2F <-- ++ dhadhatitedhadhadheena  [This rule must be last]
+// UNSUPPORTED: <-- direction (right-to-left) + ordering constraint
+// In original BP3, this rule fires ONLY when S2F is in a ++ context,
+// overriding gram#5[7]. Without context markers, we cannot express this.
+// The rule is commented out — if included, it would conflict with gram#5[7].
+// NOT YET SUPPORTED: <-- rule direction in BPscript ORD sub-grammar
+// S2F <- dhadhatitedhadhadheena
+
+// =========================================================================
+// TEMPLATES section
+// =========================================================================
+// UNSUPPORTED: The TEMPLATES: section in the original uses BP3's old (= ...)
+// bracket notation with '+' context markers and '++' positional markers.
+// The BPscript @template syntax uses ($N ...) and ? wildcards, but the
+// translation from the BP3 format is non-trivial and the context markers
+// cannot be represented.
+//
+// Original TEMPLATES (6 entries) — NOT TRANSLATED.
+// NOT YET SUPPORTED in BPscript — backlog item:
+//   Full BP3 TEMPLATES format with (=...)/(: ...) bracket notation.

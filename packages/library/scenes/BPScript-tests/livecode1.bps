@@ -1,0 +1,12 @@
+// livecode1.bps — test de live coding dense
+// Traduit de bp3-engine/library/experimental/livecode1/grammar.gr
+//
+// Une seule règle : polymétrie profondément imbriquée, 2 canaux MIDI,
+// ratios fractionnaires, silences. Tout sur une ligne.
+
+@core
+@controls
+@alphabet.western:midi
+[@improvize]
+
+S -> {!(vel:64, chan:1) {D6 A4 A4 {G5 Bb5}:1/2 {D6 C6 Bb5}:1/2,1 {Cb4,Eb4,F4,Ab4} {Bb3,D4,Gb4} -}:4, !(vel:64, chan:2) {D4 F3 E3 {G3 Bb3}:1/2 {D4 C4 Bb3}:1/2,1 {Db2,Ab2} {C2,G2} -}:4}

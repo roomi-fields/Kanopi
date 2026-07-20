@@ -1,0 +1,12 @@
+// TRANSCRIPTION : le natif ecrit le /N ESPACE = forme LEGACY PERSISTANTE (decision
+// hub 2026-07-16-tempo-slash-n-nu-legacy-persistant, RATIFIEE). En BPScript elle s ecrit
+// ![/N], PAS le suffixe colle [/N] qui est la forme CANONIQUE SCOPEE (enter/exit) — deux
+// semantiques distinctes que j avais confondues.
+@controls
+@mode:random(tempo:60.0000,striated,randomize)
+S -> ![/5] A B C D E
+A -> {C3 B3 E3 F3 G3}[shuffle]
+B -> ![@seed:1] {C4 B4 E4 F4 G4}[shuffle]
+C -> randomize {C4 B4 E4 F4 G4}[shuffle] {C5 B5 E5 F5 G5}[shuffle]
+D -> ![@seed:1] {C5 B5 E5 F5 G5}[shuffle]
+E -> {rndvel(50) vel(80) a a a a a b b b b b}

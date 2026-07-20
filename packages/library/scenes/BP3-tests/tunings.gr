@@ -1,0 +1,36 @@
+// Bol Processor BP3 compatible with version BP2.9.8
+// Grammar file saved as "-gr.tryTunings". Date: 2021-01-15 20:47:55
+-se.tryTunings
+-cs.tryTunings
+
+ORD
+
+// Asselin page 131
+
+// S --> _tempo(2) _scale(0,0) Up_Down - _scale(meantone_classic,0) Up_Down - {_scale(meantone_classic,0) Up_Down, _scale(0,0) Up_Down}
+// S --> _tempo(4) _scale(Zarlino_temp,0) Diatonic_scale_up Altered_scale_down
+// S --> _scale(meantone_classic,0) Cmaj Cmin _scale(0,0) Cmaj Cmin
+// S --> _scale(Cmaj,0) Cmaj _scale(Cmin,0) Cmin
+// S --> _scale(Dmaj,0) Dmaj _scale(Dmin,0) Dmin
+
+S --> _tempo(2) _scale(bach_temperament,0) Up_Down
+S --> _tempo(2) _scale(pure_minor-third_meantone,0) Up_Down
+S --> _tempo(2) _scale(meantone_classic,0) Up_Down
+S --> _tempo(2) Up_Down
+
+Up_Down --> Diatonic_scale_up Altered_scale_down
+Diatonic_scale_up --> C4 D4 E4 F4 G4 A4 B4 C5
+Diatonic_scale_down --> {_retro Diatonic_scale_up}
+Altered_scale_up --> C4 Db4 Eb4 F#4 G4 Ab4 Bb4 C5
+Altered_scale_down --> {_retro Altered_scale_up}
+
+Temp --> Cmaj Fmaj Dmin Gmaj Cmaj
+Just --> _scale(Cmaj,0) Cmaj _scale(Fmaj,0) Fmaj _scale(Dmin,0) Dmin _scale(Gmaj,0) Gmaj _scale(Cmaj,0) Cmaj
+
+Cmaj --> {C3,C4,E4,G4}
+Fmaj --> {F3,C4,F4,A4}
+Dmin --> {D3,D4,F4,A4}
+Gmaj --> {G3,B3,D4,G4}
+
+Dmaj --> {D3,D4,F#4,A4}
+Cmin --> {C3,C4,Eb4,G4}

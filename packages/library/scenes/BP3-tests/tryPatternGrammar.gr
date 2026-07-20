@@ -1,0 +1,17 @@
+// Bol Processor BP3
+// Grammar saved as "-gr.tryPatternGrammar". Date: 2026-02-28 16:51:23
+-se.tryPatternGrammar
+-al.tryPatternGrammar
+
+ORD
+gram#1[1] S --> Chakkardar
+gram#1[2] Chakkardar --> (= Tihai)(= G)(: Tihai)(: G)(: Tihai)
+gram#1[3] Tihai --> (= A)(= B)(: A)(: B)(: A)
+--------
+RND
+_destru
+gram#2[1] G --> g
+gram#2[2] G -->
+gram#2[3] A --> a
+gram#2[4] B --> b
+gram#2[5] B -->

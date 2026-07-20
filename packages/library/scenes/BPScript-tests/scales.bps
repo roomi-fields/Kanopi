@@ -1,0 +1,42 @@
+// scales.bps — test des gammes et accords
+// Traduit de bp3-engine/library/examples/scales/grammar.gr
+//
+// Utilise _scale() avec différents tempéraments (just intonation, piano, meantone1)
+// et des accords en polymétrie avec prolongations
+
+@core
+@controls
+@alphabet.western:midi
+
+// --- Sous-grammaire 1 @mode:ord ---
+
+// NOTE: _scale("just intonation", 69) contient un espace dans le nom.
+// En BPscript on utilise des underscores : [scale: just_intonation 69]
+// Le compilateur traduit en _scale(just intonation,69) pour BP3.
+
+@mode:ord
+S -> ![scale: piano C4] F3 ![scale: just_intonation 69] C4 D4 [weight:0]
+
+S -> ![scale: just_intonation 69] C4 D4 E4 {C4,E4,G4,C5} {C4,E4,G4,C5}:2 F4 A4 G4 C5 {C4,F4,D4,C5}:2 {C4,F4,D4,C5}:3 [weight:0]
+
+S -> A4 ![scale: just_intonation 62] A4 ![scale: just_intonation 64] A4 ![scale: just_intonation 65] A4 ![scale: 0 0] A4 ![scale: just_intonation 69] A4 [weight:0]
+
+S -> C4 G4 A4 ![scale: just_intonation A4] C4 G4 A4 ![scale: piano A4] C4 G4 A4 [weight:0, tempo:1/2]
+
+S -> C4 E4 A4 {C4,E4,G4,C5}:8 {C4,Eb4,G4,C5}:8 - ![scale: piano C4] C4 E4 A4 {C4,E4,G4,C5}:8 {C4,Eb4,G4,C5}:8 - ![scale: just_intonation C4] C4 E4 A4 {C4,E4,G4,C5}:8 {C4,Eb4,G4,C5}:8 [weight:1]
+
+S -> Version3 !(legato:20) [weight:0, tempo:2]
+Version1 -> ![scale: just_intonation A4] Phrase - - ![scale: 0 A4] Phrase
+Version2 -> Phrase - - ![scale: piano A4] Phrase
+Version3 -> ![scale: meantone1 A4] Phrase - - ![scale: just_intonation A4] Phrase
+
+Phrase -> {Cmajor} {Aminor} {Fmajor} {Gseventh} {Cmajor}
+
+// Accords avec prolongations et silences
+Cmajor -> {C4 _ _ _,- E4 _ _,- - G4 _,- - - C5} {E4 _ _ _,- G4 _ _,- - C5 _}
+Cminor -> {C4 _ _ _,- Eb4 _ _,- - G4 _,- - - C5} {Eb4 _ _ _,- G4 _ _,- - C5 _}
+Cseventh -> {C4 _ _ _,- E4 _ _,- - Bb4 _,- - - C5} {E4 _ _ _,- Bb4 _ _,- - C5 _}
+Aminor -> Cminor !(chromashift:-3)
+Fmajor -> Cmajor !(chromashift:-7)
+Gmajor -> Cmajor !(chromashift:-5)
+Gseventh -> Cseventh !(chromashift:-5)

@@ -1,0 +1,64 @@
+// Djinns.bps — récitation rythmique des « Djinns » de Victor Hugo
+// Traduit de bp3-engine/test-data/-gr.Djinns (BP2.8.0, 16 mars 1998)
+//
+// Motifs de tics pour réciter le poème contre l'ouverture de « La création du
+// monde » de Darius Milhaud. Conçue pour Roland D-50, patch C54 (percussions).
+// Les comptes 2, 3, … 10 se combinent en un motif très dense ; c'est la
+// quantification à 50 ms qui garde le coût de calcul raisonnable.
+//
+// Notes en solfège français (do2, do3, do4, sib5) — convention `french` de la
+// baseline. `-or.Djinns` n'est PAS transcrit : le type MIDI-orchestra est
+// désactivé côté moteur (wMIDIorchestra commenté dans -BP3.h).
+
+@core
+@tempo:38.02   // horloge du natif -se.Djinns : periode 1578 ms par temps, soit 38.02 BPM.
+             // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
+             // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
+@quantization:50
+@controls
+@alphabet.solfege:midi
+@transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:678 fait key += (C4key - 60),
+                 // soit -12 demi-tons appliques a TOUTE touche. Image fidele = transposition
+                 // REELLE d'une octave vers le bas, qui preserve les noms ecrits.
+
+// --- Sous-grammaire 1 ORD : la palissade, montée puis descente symétrique ---
+
+@mode:ord
+S -> A2 A3 A4 A5 A6 A7 A8 A10 A8 A7 A6 A5 A4 A3 A2
+
+-----
+
+// --- Sous-grammaire 2 SUB1 : chaque compte superpose la mélodie et son train de tics ---
+
+@mode:sub1
+A2 -> {M,T16}
+A3 -> {M,T24}
+A4 -> {M,T32}
+A5 -> {M,T40}
+A6 -> {M,T48}
+A7 -> {M,T56}
+A8 -> {M,T64}
+A10 -> {M,T80}
+
+-----
+
+// --- Sous-grammaire 3 ORD : les trains de tics, par décomposition en T8 ---
+
+@mode:ord
+T16 -> T8 T8
+T24 -> T8 T8 T8
+T32 -> T16 T16
+T40 -> T8 T8 T8 T8 T8
+T48 -> T16 T16 T16
+T56 -> T48 T8
+T64 -> T32 T32
+T80 -> T40 T40
+T8 -> Tik Tik Tik Tik Tik Tik Tik Tik
+
+-----
+
+// --- Sous-grammaire 4 SUB1 : la mélodie tenue, et le tic lui-même ---
+
+@mode:sub1
+M -> {1,do2,sib5} do3 do2 do3 do2 do3 do2 do3 do2 do3 do2 do3 do2 do3 do2 do3
+Tik -> do4

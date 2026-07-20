@@ -1,0 +1,47 @@
+// harmony.bps — test des accords et gammes
+// Traduit de bp3-engine/library/examples/harmony/grammar.gr
+//
+// Utilise _scale() pour activer des gammes (Cmaj, Cmin)
+// et des accords en polymétrie {durée, note1, note2, note3, note4}
+//
+// _scale(Cmaj, C4) = activer la gamme Cmaj à partir de C4
+// _scale(Cmaj, 0) = activer Cmaj sans transposition
+// _scale(Cmaj, A4) = activer Cmaj à partir de A4
+
+@core
+@controls
+@alphabet.western:midi
+
+// --- Sous-grammaire 1 @mode:ord ---
+
+// Règle 1 : test des gammes avec notes chromatiques
+// Cmaj_c/Cmin_c = gamme majeure/mineure depuis C
+// Cmaj_a/Cmin_a = gamme majeure/mineure depuis A
+@mode:ord
+S -> Cmaj_c C4 C#4 Db4 C#4 E4 E#4 F4 A4 Cmin_c C4 E4 F4 A4 Cmaj_a C4 E4 F4 A4 Cmin_a C4 E4 F4 A4
+
+// Règle 2 : gammes avec polymétrie et prolongation
+S -> Cmaj C4 Eb4 E4 F4 G4 A4 Bb4 C5 Cmin C4 Eb4 E4 F4 G4 A4 Bb4 C5 {Cmaj C4 Eb4 E4 F4 G4 A4 Bb4 C5 _ _,Cmin C4 Eb4 E4 F4 G4 A4 Bb4 C5 _ _}
+
+// Règle 3 : séquence d'accords
+S -> Seq1 - - Seq2
+
+// Règle 4 : accords en polymétrie avec speed
+// BP3 : {2, C3, E3, G3, C4} = ratio tempo 2 + 4 voix simultanées
+// BPS : {voix}:2 — durée collée, plus lisible, même résultat
+Seq1 -> {C3,E3,G3,C4}:2 {C3, Eb3, G3, C4}:2 {C3, E3, G3, C4}:2 {C3, Eb3, G3, C4}:2 {C3, E3, G3, C4}:2
+
+// Règle 5 : accords avec changement de gamme (Cmaj/Cmin)
+Seq2 -> Cmaj {C3,E3,G3,C4}:2 Cmin {C3, Eb3, G3, C4}:2 Cmaj {C3, E3, G3, C4}:2 Cmin {C3, Eb3, G3, C4}:2 Cmaj {C3, E3, G3, C4}:2
+
+// Règle 6 : même que 1 mais sans les chromatiques
+S -> Cmaj_c C4 E4 F4 A4 Cmin_c C4 E4 F4 A4 Cmaj_a C4 E4 F4 A4 Cmin_a C4 E4 F4 A4
+
+// Résolution des non-terminaux de gamme en contrôles @+
+Cmaj_c -> scale(Cmaj, C4)
+Cmaj_a -> scale(Cmaj, A4)
+Cmin_c -> scale(Cmin, C4)
+Cmin_a -> scale(Cmin, A4)
+
+Cmaj -> scale(Cmaj, 0)
+Cmin -> scale(Cmin, 0)

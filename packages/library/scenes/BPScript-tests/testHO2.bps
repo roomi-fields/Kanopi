@@ -1,0 +1,7 @@
+// testHO2.bps — Traduit de bp3-engine/test-data/-gr.testHO2 (Bernard).
+// Grammaire minimale : une seule règle produisant 4 symboles de l'alphabet abc
+// (a..z mono-caractère). Aucune note MIDI — production en mode texte.
+@test_alphabets.abc
+
+@mode:random
+S -> a b c d

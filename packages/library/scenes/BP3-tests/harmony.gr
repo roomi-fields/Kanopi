@@ -1,0 +1,22 @@
+// Bol Processor BP3 compatible with version BP2.9.8
+// Grammar file saved as "-gr.tryHarmony". Date: 2020-12-05 08:39:44
+-se.tryHarmony
+-cs.tryHarmony
+
+ORD
+
+gram#1[1] S --> Cmaj_c C4 C#4 Db4 C#4 E4 E#4 F4 A4 Cmin_c C4 E4 F4 A4 Cmaj_a C4 E4 F4 A4 Cmin_a C4 E4 F4 A4
+gram#1[2] S --> Cmaj C4 Eb4 E4 F4 G4 A4 Bb4 C5 Cmin C4 Eb4 E4 F4 G4 A4 Bb4 C5 {Cmaj C4 Eb4 E4 F4 G4 A4 Bb4 C5__, Cmin C4 Eb4 E4 F4 G4 A4 Bb4 C5__}
+
+gram#1[3] S --> Seq1 -- Seq2
+gram#1[4] Seq1 --> {2,C3,E3,G3,C4} {2,C3,Eb3,G3,C4} {2,C3,E3,G3,C4} {2,C3,Eb3,G3,C4} {2,C3,E3,G3,C4}
+gram#1[5] Seq2 --> Cmaj {2,C3,E3,G3,C4} Cmin {2,C3,Eb3,G3,C4} Cmaj {2,C3,E3,G3,C4} Cmin {2,C3,Eb3,G3,C4} Cmaj {2,C3,E3,G3,C4}
+
+gram#1[6] S --> Cmaj_c C4 E4 F4 A4 Cmin_c C4 E4 F4 A4 Cmaj_a C4 E4 F4 A4 Cmin_a C4 E4 F4 A4
+gram#1[7] Cmaj_c --> _scale(Cmaj,C4)
+gram#1[8] Cmaj_a --> _scale(Cmaj,A4)
+gram#1[9] Cmin_c --> _scale(Cmin,C4)
+gram#1[10] Cmin_a --> _scale(Cmin,A4)
+
+gram#1[11] Cmaj --> _scale(Cmaj,0)
+gram#1[12] Cmin --> _scale(Cmin,0)

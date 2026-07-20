@@ -1,0 +1,23 @@
+// ames.bps — Charles Ames, accord avec polymétrie et liaisons
+// Traduit de BP3 grammar format
+//
+// Polymétrie imbriquée avec ratios de durée, voix simultanées,
+// repos indéterminé (...), et liaisons (ties ~ / ~).
+
+@core
+@controls
+@alphabet.western:midi
+@tempo:60
+@striated
+
+// --- Sous-grammaire 1 @mode:ord ---
+
+@mode:ord
+S -> {PA,... PB}
+PA -> {2,- PA1,2 PA2} {4,PA3}
+PA1 -> {2,F#3}
+PA2 -> {1,F5,A5}
+PA3 -> PA31 PA32
+PA31 -> {1/2,G#3,E5,G5}
+PA32 -> {7/2,Bb4}
+PB -> {1/4,G#5~,C6,E6,B6~} {2,~G#5,~B6}

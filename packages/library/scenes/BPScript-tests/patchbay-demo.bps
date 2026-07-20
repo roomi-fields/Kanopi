@@ -1,0 +1,16 @@
+// patchbay-demo.bps — démo du modèle son (LANG-SONS §9) : voix-câblage (Wiring persistant),
+// actions mono-étage (trig, cv-set), débranchement (!>>). Pour l'e2e §4/§9 de kairos + runtime-audio.
+// PORTER≠RÉSOUDRE : les modules (saw/lpf/audio/drum/out) sont OPAQUES au parse ; la résolution
+// (Kairos, catalogue de ports) classe voix/action/persistance. Démo, pas d'oracle.
+@core
+@controls
+
+// Voix PERSISTANTE = câblage multi-étage (Wiring) : jouer 'lead' arme le patch.
+@macro lead  = saw.freq: pitch >> lpf.cutoff: `js: lfo(2)*0.7` >> audio
+// Actions MONO-ÉTAGE (appel-composant opaque, one-shot) :
+@macro open   = lpf.cutoff: 12000     // cv-set (valeur number)
+@macro glide  = saw.freq: pitch       // cv-set (valeur ref)
+@macro strike = drum.on               // trig (pas de valeur)
+@macro mute   = !>> out.in            // débranchement (Wiring cut)
+
+S -> lead strike open lead glide mute lead

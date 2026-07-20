@@ -1,0 +1,28 @@
+// flags.bps — test du système de flags
+// Traduit de bp3-engine/library/examples/flags/grammar.gr
+
+@core
+
+// Terminaux
+@gate a:midi
+@gate b:midi
+
+// Non-terminaux : S, X (variables de grammaire, pas déclarés)
+
+// --- Sous-grammaire 1 : créer une chaîne de 20 'a' ---
+
+S -> X [Num_total=20]
+[Num_total-1] X -> a X
+
+-----
+
+// --- Sous-grammaire 2 : initialiser les compteurs ---
+// X disparaît (lambda = symbole vide), on initialise Num_a et Num_b
+
+X -> lambda [Num_a=20, Num_b=0]
+
+-----
+
+// --- Sous-grammaire 3 : remplacer 'a' par 'b' jusqu'à l'équilibre ---
+
+[Num_a>Num_b] a -> b [Num_b+1, Num_a-1]

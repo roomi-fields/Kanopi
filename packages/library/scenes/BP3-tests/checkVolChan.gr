@@ -1,0 +1,77 @@
+// Fichier repare par bp3-engine, 2026-07-19.
+// (1) Les deux lignes d'en-tete BP2 (« V.2.4 » et « Date: … ») et la ligne « INIT: » vide
+//     ont ete retirees : le moteur BP3 les refuse (6 erreurs sur 12).
+// (2) « _vol( » renomme « _volume( », son nom en BP3 (BP3_help.txt:800).
+// RESTE 5 erreurs NON corrigees, volontairement : « _cresc »/« _decresc » n'existent plus
+// en BP3 et leur equivalent (_volumecont ?) est un choix de sens, pas une transcription ;
+// et deux « _script(…) » emploient la syntaxe BP2. A arbitrer, je ne devine pas.
+// (Verifie : en substituant _volumecont a _cresc/_decresc, on tombe a 3 erreurs.)
+-in.abc1
+-ho.Frenchnotes
+-se.checkVolChan
+
+
+RND
+GRAM#1[1] T --> _switchon(64,1) mi5 sol4 fa4 mi4 re4 do4 re4 mi4 fa4 --------------------------------------- _switchoff(64,1)
+GRAM#1[2] S --> Init {Part1 Part2} _script(Wait for g) {Part3} {_chan(K1=2) Part2,_volume(54) Part3} _script(MIDI all notes off channel 2)
+GRAM#1[3] Part1 --> _chan(K1) _volume(5) _cresc do4 re4 mi4 fa4 sol4 fa4 mi4 re4 do4 re4 mi4 fa4 _volume(127)
+GRAM#1[4] Part2 --> do4 _volume(30) mi4 re4 fa4
+GRAM#1[5] Part3 --> _chan(4) sol4 si4 do5
+GRAM#1[6] Init --> _script(MIDI program 0 channel 1) _script(MIDI controller #98 = 1 channel 1) - - - [X-11: The blue note jazz]
+
+GRAM#1[7] TryAlsoThis --> _chan(K1=2) _volume(1) _cresc do4 re4 mi4 fa4 sol4 fa4 mi4 re4 do4 re4 mi4 fa4 _volume(K9=127) do4 re4 _mod(127) mi4 fa4 sol4 fa4 mi4 re4 do4 re4 _mod(0) mi4 fa4 _decresc do4 re4 mi4 fa4 sol4 fa4 mi4 re4 do4 re4 mi4 fa4 _volume(0)
+GRAM#1[8] TryAlsoThis2 --> _chan(5) _volume(70) _press(0) _presstep do4 _ _ _ do4 _ _ _ do4 _ _ _ do4 _ _ _ do4 _ _ _ do4 _ _ _ do4 _ _ _ do4 _ _ _ do4 _ _ _ do4 _ _ _ do4 _ _ _ do4 _ _ _  _press(16383) 
+
+// Note that K9 is controlled by MIDI controller #0 channel 1 ifÉ
+// ÔInteractiveÕ is checked and Ô-in.abc1Õ has been loaded.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

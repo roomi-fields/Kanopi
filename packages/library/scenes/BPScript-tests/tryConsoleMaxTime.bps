@@ -1,0 +1,4 @@
+@mode:ord
+S -> X Y
+X -> C4 D4 E4
+Y -> Y

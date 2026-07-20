@@ -1,0 +1,58 @@
+// visser3.bps — Harm Visser, structure avec transpositions et vélocité
+// Traduit de BP3 grammar format
+//
+// 3 sous-grammaires :
+// 1. Structure macro (M1–M11) avec silences et periods
+// 2. Dérivation des motifs avec transpositions et polymétrie
+// 3. Résolution des symboles de transposition en contrôles
+
+@core
+@controls
+@qclock:2
+@alphabet.western:midi
+@tempo:120
+
+// --- Sous-grammaire 1 @mode:ord — structure ---
+
+@mode:ord
+S -> M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11
+M1 -> A -
+M2 -> B - M1
+M3 -> C - M2
+M4 -> D - M3
+M5 -> E . M4
+M6 -> F - M5
+M7 -> G - M6
+M8 -> H - . M7
+M9 -> I - M8
+M10 -> J - .
+M11 -> K
+
+-----
+
+// --- Sous-grammaire 2 @mode:ord — motifs avec transpositions ---
+
+@mode:ord
+A -> C3
+B -> {Tr11 A}
+C -> {Tr5 {A,B}}
+D -> {Tr1 A C}
+E -> {Tr7 {A -,D -}}
+F -> {Tr6 A E D}
+G -> {Tr11 {A B C D . E F E D C B A}}
+H -> {Tr-11 {G F E D C B A}}
+I -> {Tr11 G}
+J -> {G F,Tr5 G F}
+K -> {Tr-11 B C D}
+
+-----
+
+// --- Sous-grammaire 3 @mode:ord — résolution des transpositions ---
+
+@mode:ord
+Tr11 -> chromashift(11) vel(90)
+Tr5 -> chromashift(5) vel(80)
+Tr1 -> chromashift(1) vel(70)
+Tr7 -> chromashift(7) vel(60)
+Tr6 -> chromashift(6) vel(70)
+Tr-11 -> chromashift(-11) vel(90)
