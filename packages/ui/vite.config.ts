@@ -35,6 +35,16 @@ const BASE_PATH = process.env.VITE_BASE_PATH ?? '/';
 
 export default defineConfig({
   base: BASE_PATH,
+  // PORT VERROUILLÉ — ÉCHOUER FORT plutôt que glisser en silence (incident Romain 2026-07-20).
+  // Le service de stockage n'autorise QUE `localhost:5173` en CORS (voir storage-service.ts).
+  // Par défaut, si 5173 est pris, Vite bascule SANS RIEN DIRE sur 5174 : l'app se charge
+  // normalement, mais le navigateur bloque tout appel au stockage — connexion et inscription
+  // échouent sans message compréhensible, et on croit son COMPTE cassé alors que c'est l'origine
+  // qui est refusée. Romain a perdu du temps exactement là-dessus (compte créé sur un port,
+  // inutilisable sur l'autre). `strictPort` transforme cette dérive muette en refus immédiat :
+  // Vite s'arrête et dit que le port est occupé. Un serveur qui démarre sur une origine que le
+  // service refuse est un faux vert — mieux vaut pas de serveur du tout.
+  server: { port: 5173, strictPort: true },
   plugins: [
     svelte(),
     VitePWA({
