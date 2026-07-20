@@ -4,11 +4,24 @@
 //
 // Résultat attendu : A A A A2 A3 A1
 //
-// Le # devant un symbole dans le contexte signifie "PAS ce symbole ici".
-// #A1 #A2 #A3 A A = "A A qui n'est précédé ni de A1 ni de A2 ni de A3"
+// ⚠️ #X N'EST PAS UNE GARDE — il CONSOMME une position.
 //
-// Note : en BPscript, #() est documenté avec des parenthèses pour des
-// groupes de contexte. Pour un seul symbole, #X est suffisant (comme BP3).
+// Ce commentaire disait le contraire jusqu'au 2026-07-20 : « A A qui n'est précédé ni de
+// A1 ni de A2 ni de A3 ». C'était faux DEUX FOIS, et corrigé après mesure au moteur natif.
+//
+// 1) #X apparie EXACTEMENT UN symbole, qui doit différer de X, et OCCUPE sa position.
+//    Donc #A1 #A2 #A3 A A apparie CINQ symboles, pas deux. Mesuré : la règle
+//    #A1 #A2 #A3 A A --> Z1 Z2 Z3 A A appliquée à « A A2 A3 A1 A A » rend « A Z1 Z2 Z3 A A »
+//    — les trois créneaux négatifs ont AVALÉ A2, A3, A1, appariés dans l'ordre.
+//
+// 2) Le test est une DISJONCTION à l'échelle de la règle, pas un « ni…ni… ». Il suffit
+//    qu'UN SEUL créneau diffère de son nom pour que le test passe ; le seul cas bloquant
+//    est que TOUS égalent leur nom. Lire « aucun ne doit égaler » donne une règle qu'on
+//    croit à tort ne jamais devoir se déclencher.
+//
+// La qualité de CONTEXTE ne vient pas du # : elle vient d'un symbole écrit à la même place
+// des deux côtés de la flèche. Les deux propriétés sont indépendantes.
+// Détail : docs/spec/LANGUAGE.md de BPscript, section « #X n'est PAS une garde ».
 
 @core
 @test_alphabets.structural
