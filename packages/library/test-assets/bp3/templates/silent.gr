@@ -1,0 +1,13 @@
+// Bol Processor BP3
+// Generated from BPScript
+RND
+_mm(60) _striated
+gram#1[1] S <-> *1/2 A A A
+gram#1[2] S <-> A A _tempo(2) A
+gram#1[3] S <-> /2 A A A
+gram#1[4] S <-> A A 1 3/2 A
+gram#1[5] S <-> (=A) (:A)
+gram#1[6] S <-> A . A A . A A A . A
+------------
+RND
+gram#2[1] A <-> C4

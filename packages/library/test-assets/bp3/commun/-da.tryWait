@@ -1,0 +1,21 @@
+// Bol Processor BP3
+// Data saved as "-da.tryWait". Date: 2024-09-06 13:20:16
+-se.tryWait
+-to.tryWait
+
+G2 B2 _script(MIDI send Start) D2 _script(MIDI send Continue) _chan(2) E2 _script(MIDI send Stop)
+
+G2 B2 _script(Hold for 1500 milliseconds) D2 E2
+
+// D4 will never be played. Only the STOP button can finish.
+C4 _script(Wait forever) D4
+
+_script(wait for C3 channel 1) G2 B2 _script(MIDI send Start) _script(MIDI send Continue) D3 E3
+
+_script(wait for C3 channel 1) _script(wait for D3 channel 1) _transpose(12) • _vel(60) E2 • D2 E2 • _vel(65) B2 D2 E2 • G2 B2 D2 E2 • _script(wait for C4 channel 1) _vel(70) F#2 G2 B2 D2 E2 • Bb2 F#2 G2 B2 D2 E2 • _vel(75) C2 Bb2 F#2 G2 B2 D2 E2 • _vel(77) G#2 C2 Bb2 F#2 G2 B2 D2 E2 • _vel(80) A2 G#2 C2 Bb2 F#2 G2 B2 D2 E2 • _vel(85) Eb2 A2 G#2 C2 Bb2 F#2 G2 B2 D2 E2 • _vel(87) C#2 Eb2 A2 G#2 C2 Bb2 F#2 G2 B2 D2 E2 • _vel(90) F2 C#2 Eb2 A2 G#2 C2 Bb2 F#2 G2 B2 D2 E2
+
+_scale(meantone_try,69) _script(wait for C3 channel 1) key#60 key#62 key#69
+
+// Note that key#69 will be released after 1 second of waiting for C3
+
+_scale(zest24-supergoya17plus3_Db,0) key#60 key#62 key#69 _script(wait for C3 channel 1) _scale(meantone_try,69) key#60 key#62 key#69

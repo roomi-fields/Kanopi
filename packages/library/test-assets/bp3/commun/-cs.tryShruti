@@ -1,0 +1,12 @@
+; Csound resources for tryShruti
+; Minimal file - no instruments, just scale tables
+
+_begin tables
+
+"grama"
+/ sa_ r1_ r2_ r3_ r4_ g1_ g2_ g3_ g4_ m1_ m2_ m3p1_ m4p2_ p3_ p4_ d1_ d2_ d3_ d4_ n1_ n2_ n3_ /
+[ 1/1 256/243 16/15 10/9 9/8 32/27 6/5 5/4 81/64 4/3 27/20 45/32 729/512 3/2 128/81 8/5 5/3 27/16 16/9 9/5 15/8 243/128 ]
+| 4 |
+f 1 0 51 22 2.0 261.625 60
+
+_end tables

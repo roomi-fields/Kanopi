@@ -1,0 +1,16 @@
+// Bol Processor BP3
+// Generated from BPScript
+ORD
+gram#1[1] S --> _script(CT 0) A B _script(CT 1) C D _script(CT 2) E F _script(CT 3) G _script(CT 4) H _script(CT 5) I _script(CT 6) J _script(CT 7) K _script(CT 8) L
+gram#1[2] A --> E2 .
+gram#1[3] B --> D2 A
+gram#1[4] C --> B2 B
+gram#1[5] D --> G2 C
+gram#1[6] E --> F#2 D
+gram#1[7] F --> A#2 E
+gram#1[8] G --> C2 F
+gram#1[9] H --> G#2 G
+gram#1[10] I --> A2 H
+gram#1[11] J --> D#2 I
+gram#1[12] K --> C#2 J
+gram#1[13] L --> F2 K

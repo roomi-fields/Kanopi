@@ -1,0 +1,14 @@
+// Bol Processor BP3
+// Generated from BPScript
+ORD
+gram#1[1] S --> d1 /steps=100/
+------------
+SUB
+gram#2[1] LEFT /steps-1/ d1 --> d1 d1
+gram#2[2] LEFT /steps-1/ d1 d1 --> d2 d1
+gram#2[3] LEFT /steps-1/ d1 d1 d1 --> d3 d1
+gram#2[4] LEFT /steps-1/ d2 --> d1 d2
+gram#2[5] LEFT /steps-1/ d2 d2 --> d2 d2
+gram#2[6] LEFT /steps-1/ d1 d1 d1 --> d3 d1
+gram#2[7] LEFT /steps-1/ d1 d1 d1 d2 d2 d1 --> d3 d1 d2 d2 d1 d1
+gram#2[8] LEFT /steps-1/ d1 d2 d1 d1 --> d1 d1 d1 d2 d2 d1

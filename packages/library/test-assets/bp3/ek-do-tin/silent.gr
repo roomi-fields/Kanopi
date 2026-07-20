@@ -1,0 +1,10 @@
+// Bol Processor BP3
+// Generated from BPScript
+ORD
+_mm(88) _striated
+gram#1[1] S --> _script(CT 3) (=Tihai) _script(CT 0) (:Tihai) _script(CT 1) (:Tihai) _script(CT 2) _script(CT 3_e)
+gram#1[2] Tihai --> {2,Huit} {2,Six} {2,Cinq} {2,Quatre} - {3,- - ek - - do - - tin - - -}
+gram#1[3] Huit --> ek do tin char panch che sat at
+gram#1[4] Six --> ek do tin char panch che
+gram#1[5] Cinq --> ek do tin char panch
+gram#1[6] Quatre --> ek do tin char

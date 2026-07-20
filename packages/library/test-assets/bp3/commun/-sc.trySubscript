@@ -1,0 +1,4 @@
+// Bol Processor BP3
+// Script saved as "-sc.trySubscript". Date: 2024-07-08 19:25:03
+Load grammar -gr.Ames
+Produce items

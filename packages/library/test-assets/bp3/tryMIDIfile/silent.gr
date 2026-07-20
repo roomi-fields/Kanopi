@@ -1,0 +1,6 @@
+// tryMIDIfile — silent sound objects rewrite
+// Original: -gr.tryMIDIfile (Bernard, 1997)
+// _volume = runtime → _script(CTn)
+RND
+gram#1[1] <1-1> S --> _script(CT 0) A4 G4 C5 A5 A4 G4 C5 A5
+gram#1[2] <1-1> S --> _script(CT 1) A4 G4 C5 A5 A4 G4 C5 A5

@@ -1,0 +1,6 @@
+# Garde anti-re-corruption des fins de ligne (demande archi [206], 2026-07-18).
+# Le corpus de grammaires BP3 (-gr.*) doit rester en LF. -gr.transposition3 s'est re-corrompu
+# en CR-seul (Mac) deux fois (normalisé 2026-06-16, puis re-CR) : le natif lit alors tout le
+# fichier comme une seule ligne // commentée et ne produit qu'un token 'S' (artefact, pas moteur).
+# Ce garde force la normalisation LF au commit et au checkout.
+-gr.* text eol=lf

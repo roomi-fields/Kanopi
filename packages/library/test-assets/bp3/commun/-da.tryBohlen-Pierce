@@ -1,0 +1,16 @@
+// Bol Processor BP3
+// Data saved as "-da.tryBohlen-Pierce". Date: 2024-11-30 06:38:36
+-se.Bohlen-Pierce
+-to.tryScales
+-cs.Vina
+
+// The Bohlen-Pierce "just intonation" scale
+// https://en.wikipedia.org/wiki/Bohlen-Pierce_scale
+
+_scale(Bohlen-Pierce,0) _tempo(2) C4 Db4 D4 E4 F4 Gb4 G4 H4 Jb4 J4 A4 Bb4 B4 C5
+
+_scale(Bohlen-Pierce,H4) _tempo(2) C4 Db4 D4 E4 F4 Gb4 G4 H4 Jb4 J4 A4 Bb4 B4 C5
+
+_volume(0) C0 _script(wait forever) _scale(Bohlen-Pierce,0)
+
+_capture(99) _volume(0) C0 _script(wait forever) _scale(Bohlen-Pierce,0)

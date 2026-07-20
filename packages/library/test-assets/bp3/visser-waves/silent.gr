@@ -1,0 +1,50 @@
+// Bol Processor BP3
+// Generated from BPScript
+ORD
+_mm(60) _striated
+gram#1[1] S --> _tempo(0.8) Waves
+gram#1[2] Waves --> Frase1 1 Frase1 Frase2 1/2 {_retro Frase1 _script(CT 0)} {_rotate(2) Frase2 _script(CT 1)} {Frase3 _script(CT 2)} 1/4 {Frase1 _script(CT 3)} Frase4 {_retro Frase1 _script(CT 4)} {_rotate(3) Frase4 _script(CT 5)} 1 Frase1 { Frase1} 1/2 {2, M19 _script(CT 6),M24} 1/2 {2, M19 _script(CT 7),M24} 1/4 Frase5 { Frase5 _script(CT 8)} { Frase1} 1/2 {2, M19 _script(CT 9),M24} 1/2 {2, M19 _script(CT 10),M24} 1 Frase6 1 Frase6 F1 B3 1 {F1 B3 _script(CT 11)} 2 {6,F1 _script(CT 12)}
+gram#1[3] Frase1 --> {M1 M2 M3 M4 _script(CT 13) M5 M6 _script(CT 14) _script(CT 15)} _legato(100)
+gram#1[4] Frase2 --> {M7 M8 _script(CT 16) M9 M10 M11 M12 _script(CT 17) _script(CT 18)} _legato(100)
+gram#1[5] Frase3 --> {M13 M14 M15 _script(CT 19) M16 M17 M18 _script(CT 20) _script(CT 21)} _legato(100)
+gram#1[6] Frase4 --> {M19 M20 M21 M22 _script(CT 22) M23 M24 _script(CT 23) _script(CT 24)} _legato(100)
+gram#1[7] Frase5 --> {M25 _script(CT 25) M26 M27 M28 M29 M30 _script(CT 26) _script(CT 27)} _legato(100)
+gram#1[8] Frase6 --> {M31 _script(CT 28) M32 M33 M34 M35 M36 M37 M38 _script(CT 29) _script(CT 30)} _legato(100)
+gram#1[9] M1 --> {5, C3 F#3
+gram#1[10] M2 --> {3, C3 F#3 _script(CT 31)
+gram#1[11] M3 --> {3, C3 F#3 _script(CT 32)
+gram#1[12] M4 --> F2 B3 }
+gram#1[13] M5 --> F2 B3 }
+gram#1[14] M6 --> F1 B3 }
+gram#1[15] M7 --> {5, C3 F#3 _script(CT 33)
+gram#1[16] M8 --> {3, C3 F#3 _script(CT 34)
+gram#1[17] M9 --> {3, C3 {M8 M10} F#3 _script(CT 35)
+gram#1[18] M10 --> F2 B3 }
+gram#1[19] M11 --> F2 B3 }
+gram#1[20] M12 --> F1 B3 }
+gram#1[21] M13 --> {5, C3 F#3 _script(CT 36)
+gram#1[22] M14 --> {5, C3 {M13 M17 _script(CT 37)} F#3 _script(CT 38)
+gram#1[23] M15 --> {5, C3 {M14 M16} F#3 _script(CT 39)
+gram#1[24] M16 --> F2 B3 }
+gram#1[25] M17 --> F2 B3 }
+gram#1[26] M18 --> F4 B3 }
+gram#1[27] M19 --> {9, C3 F#3
+gram#1[28] M20 --> {9, C3 {M13 M17 _script(CT 40)} F#3 _script(CT 41)
+gram#1[29] M21 --> {9, C3 {M14 M16} F#3 _script(CT 42)
+gram#1[30] M22 --> F2 {18,M1 M2 M3 M4 M5 M6 _script(CT 43)} B3 }
+gram#1[31] M23 --> F2 B3 }
+gram#1[32] M24 --> F1 B3 }
+gram#1[33] M25 --> {15, C3 F#3 _script(CT 44)
+gram#1[34] M26 --> {15, C3 {M1 M5 _script(CT 45)} F#3 _script(CT 46)
+gram#1[35] M27 --> {15, C3 {M2 M4} F#3 _script(CT 47)
+gram#1[36] M28 --> F2 {30,M1 {30,M1 M5 M1 M5 M3 M6 _script(CT 48)} M2 M3 M4 M5 M6 _script(CT 49)} B3 }
+gram#1[37] M29 --> F2 B3 }
+gram#1[38] M30 --> F1 B3 }
+gram#1[39] M31 --> {6, C3 F#3
+gram#1[40] M32 --> {5, C3 F#3 _script(CT 50)
+gram#1[41] M33 --> {5, C3 F#3 _script(CT 51)
+gram#1[42] M34 --> {5, C3 F#3 _script(CT 52)
+gram#1[43] M35 --> F2 B3 }
+gram#1[44] M36 --> F2 B3 }
+gram#1[45] M37 --> F1 B3 }
+gram#1[46] M38 --> F1 B3 }

@@ -1,0 +1,13 @@
+// Bol Processor on-line test via PHP
+// Alphabet file saved as ‘-ho.tryCsoundObjects’. Date: 2022-02-18 14:55:25
+-mi.tryCsoundObjects
+
+// The following could be omitted since ‘-mi.tryCsoundObjects’
+// is also instructed to load ‘-cs.tryCsoundObjects’
+
+-cs.tryCsoundObjects
+
+// This is the alphabet of terminal symbols which are also
+// used as labels of sound-object instances
+
+a b c d e f midiobject

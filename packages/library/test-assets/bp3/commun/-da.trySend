@@ -1,0 +1,13 @@
+// Bol Processor BP3
+// Data saved as "-da.trySend". Date: 2024-09-21 04:51:56
+-se.trySend
+
+// This file contains data that should be sent to -da.tryReceive via a virtual port
+// (e.g. "Bus 2" on Mac)
+// Read https://bolprocessor.org/capture-midi-input/ for explanations
+
+C3 G3 D3 F3
+
+{_vel(0) <<C0>>} G3 _press(69) _mod(5430) D3 _pitchrange(200) _pitchbend(+100) E3
+
+_tempo(2) {_vel(64) _chan(1){4,{{2,F5 Bb4 C5 C4}{3/2,D4}{1/2,Eb4 Db4 D4},{F4,C5}{1/2,F4,G4}{1/2,F3,G3}{2,Gb3}}},_vel(64) _chan(2){4,{C4{1,Bb3 Bb2}{2,A2},{D3,A3}{1,Eb3 Eb2}{2,D2}}}}

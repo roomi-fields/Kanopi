@@ -1,0 +1,24 @@
+// checkVolChan — silent sound objects rewrite
+// Original: -gr.checkVolChan (1994, French notes via -ho.Frenchnotes)
+// Interactive controls (-in.abc1) not available → _script(Wait for g) kept as-is
+// _chan/_vol/_cresc/_decresc/_switchon/_switchoff/_mod/_press/_presstep → _script(CTn)
+// Only rules S and T tested (Init references external MIDI program)
+
+RND
+GRAM#1[1] T --> _script(CT 0) mi5 sol4 fa4 mi4 re4 do4 re4 mi4 fa4 --------------------------------------- _script(CT 1)
+GRAM#1[2] S --> Init {Part1 Part2} _script(Wait for g) {Part3} {_script(CT 7) Part2,_script(CT 8) Part3} _script(MIDI all notes off channel 2)
+GRAM#1[3] Part1 --> _script(CT 2) _script(CT 3) do4 re4 mi4 fa4 sol4 fa4 mi4 re4 do4 re4 mi4 fa4 _script(CT 4)
+GRAM#1[4] Part2 --> do4 _script(CT 5) mi4 re4 fa4
+GRAM#1[5] Part3 --> _script(CT 6) sol4 si4 do5
+GRAM#1[6] Init --> _script(MIDI program 0 channel 1) _script(MIDI controller #98 = 1 channel 1) - - -
+
+// controlTable:
+// CT0 = {switchon: "64,1"}
+// CT1 = {switchoff: "64,1"}
+// CT2 = {chan: 1, vol: 5}
+// CT3 = {cresc: 1}
+// CT4 = {vol: 127}
+// CT5 = {vol: 30}
+// CT6 = {chan: 4}
+// CT7 = {chan: 2}
+// CT8 = {vol: 54}

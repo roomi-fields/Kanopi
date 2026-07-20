@@ -1,0 +1,15 @@
+// Alphabet derive de « -ho.checkhomo » par bp3-engine, 2026-07-19.
+// Seul changement : les deux lignes d'en-tete BP2 (« V.2.5 » et la ligne « Date: »)
+// ont ete retirees. Le compilateur d'alphabet refuse le caractere ':' qu'elles contiennent
+// (« Can't accept character ":" in alphabet »). Le corps est inchange, a l'octet pres.
+// L'original -ho.checkhomo est conserve tel quel.
+
+*
+a --> a' --> a"
+b --> b' --> b
+--------------------
+H
+a --> c --> c' --> a"
+--------------------
+TR
+a' --> b' --> b

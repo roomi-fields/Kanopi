@@ -1,0 +1,16 @@
+// Bol Processor on-line test via PHP
+// Alphabet file saved as ‘-ho.abc1’. Date: 2020-10-19 05:13:42
+-mi.abc1
+*
+chik
+a --> a'
+b
+c --> c'
+d --> d'
+e
+f --> f'
+g --> g'
+h
+cycle1
+sync
+cycle2

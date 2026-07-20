@@ -1,0 +1,17 @@
+// blurb — silent sound objects rewrite
+// Original: -gr.blurb
+// Csound controls (_cont/_value/_ins/_step/_fixed) → _script(CTn)
+// -cs.tryCsound not loadable in WASM
+
+RND
+gram#1[1] S --> _script(CT 0) _script(CT 1) _script(CT 2) C4 D4 _script(CT 3) E4 F4 _script(CT 4) _script(CT 5) G4 A4 _script(CT 6) _script(CT 7) B4 C5
+
+// controlTable:
+// CT0 = {cont: "blurb"}
+// CT1 = {value: "blurb,123.42"}
+// CT2 = {ins: "Harpsichord"}
+// CT3 = {ins: "Flute"}
+// CT4 = {value: "blurb,-211"}
+// CT5 = {step: "blurb"}
+// CT6 = {value: "blurb,-34"}
+// CT7 = {fixed: "blurb"}

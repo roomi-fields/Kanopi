@@ -1,0 +1,1934 @@
+{
+ "pourquoi_ce_fichier_existe": [
+  "CETTE TABLE EST LA SEULE PORTEUSE DU COUPLE GRAMMAIRE <-> AUXILIAIRES. Ne pas la supprimer.",
+  "",
+  "Avant le versement, la correspondance survivait dans le nom partage : '-gr.trial.mohanam'",
+  "allait avec '-se.trial.mohanam'. Le renommage en 'mohanam.gr' — obligatoire pour que le scan",
+  "de la bibliotheque voie les fichiers — a DETRUIT cette correspondance. Plus rien dans les",
+  "fichiers ne dit lequel va avec lequel.",
+  "",
+  "ON POURRAIT CROIRE QUE LES .gr LE DISENT : ils s ouvrent sur des lignes comme '-ho.trial.mohanam',",
+  "'-cs.trial.mohanam', '-se.trial.mohanam'. C EST UN PIEGE. Le moteur BP3 LIT CES LIGNES POUR LES",
+  "SAUTER : source/BP3/CompileGrammar.c:251 porte le commentaire '/* Skip headers */' et chaque ligne",
+  "reconnue fait 'goto NEXTLINE' (l. 252-296). Ce sont des vestiges de l ancienne interface graphique.",
+  "La seule voie qui charge reellement un auxiliaire est le drapeau de ligne de commande",
+  "(ConsoleMain.c:951-963), dont le chemin est arbitraire.",
+  "",
+  "ET CES EN-TETES SONT PARFOIS FAUSSES — mesure du 2026-07-20 sur les 113 :",
+  "  · 7 grammaires declarent un reglage DIFFERENT du reglage reellement utilise",
+  "    (ex. 'MyMelody' declare '-se.MyMelody', le vrai est '-se.765432')",
+  "  · 13 grammaires utilisent une facette que leur en-tete ne mentionne pas du tout",
+  "  · soit 20 grammaires sur 113 ou l en-tete induit en erreur",
+  "Pire : les fichiers nommes par ces en-tetes EXISTENT. Reconstruire le couple depuis les en-tetes",
+  "donnerait donc une reponse plausible et silencieusement FAUSSE pour une grammaire sur six.",
+  "",
+  "AUTRE FAIT A NE PAS OUBLIER : l extension '.gr' n est PAS reconnue par le moteur BP3, dont la",
+  "table d extensions dit '.bpgr' (source/BP3/-BP3main.h:397). Un '.gr' passe en argument nu est",
+  "REFUSE. Tout appelant du binaire natif doit passer les drapeaux explicites ; la chaine Kanopi",
+  "passe par son propre frontal, donc ca ne la mord pas — mais c est le genre de fait qu on oublie.",
+  "",
+  "Chemins RELATIFS a packages/library, pour rester valides ou qu on clone.",
+  "Regenerer avec bp3-engine/scripts/table-correspondance.py (verifie chaque chemin avant d ecrire)."
+ ],
+ "produit_par": "bp3-engine/scripts/table-correspondance.py",
+ "source": "bp3-engine/baseline-native/baseline.json (baseline vv13, 2026-07-19)",
+ "moteur": "bp3 v3.4.7 (graphics-for-BP3)",
+ "racine_des_chemins": "packages/library",
+ "n": 113,
+ "n_references_auxiliaires": 177,
+ "grammaires": [
+  {
+   "nom": "765432",
+   "grammaire": "scenes/BP3-tests/765432.gr",
+   "nom_amont": "-gr.765432",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.765432",
+     "nom_amont": "-se.765432"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "Alarm",
+   "grammaire": "scenes/BP3-tests/Alarm.gr",
+   "nom_amont": "-gr.Alarm",
+   "auxiliaires": {
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-ho.Frenchnotes",
+     "nom_amont": "-ho.Frenchnotes"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "Djinns",
+   "grammaire": "scenes/BP3-tests/Djinns.gr",
+   "nom_amont": "-gr.Djinns",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Djinns",
+     "nom_amont": "-se.Djinns"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "Mozartexpression",
+   "grammaire": "scenes/BP3-tests/Mozartexpression.gr",
+   "nom_amont": "-gr.Mozartexpression",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Mozartexpression",
+     "nom_amont": "-se.Mozartexpression"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "MyMelody",
+   "grammaire": "scenes/BP3-tests/MyMelody.gr",
+   "nom_amont": "-gr.MyMelody",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.765432",
+     "nom_amont": "-se.765432"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-ho.Frenchnotes",
+     "nom_amont": "-ho.Frenchnotes"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "Nadaka-1er-essai",
+   "grammaire": "scenes/BP3-tests/Nadaka-1er-essai.gr",
+   "nom_amont": "-gr.Nadaka-1er-essai",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.hamsad",
+     "nom_amont": "-se.hamsad"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "Nadaka1",
+   "grammaire": "scenes/BP3-tests/Nadaka1.gr",
+   "nom_amont": "-gr.Nadaka1",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.hamsad",
+     "nom_amont": "-se.hamsad"
+    }
+   },
+   "produit": false,
+   "convention": "english"
+  },
+  {
+   "nom": "PP",
+   "grammaire": "scenes/BP3-tests/PP.gr",
+   "nom_amont": "-gr.PP",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.koto3",
+     "nom_amont": "-se.koto3"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "Rajeev",
+   "grammaire": "scenes/BP3-tests/Rajeev.gr",
+   "nom_amont": "-gr.Rajeev",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Rajeev",
+     "nom_amont": "-se.Rajeev"
+    }
+   },
+   "produit": false,
+   "convention": "english"
+  },
+  {
+   "nom": "a",
+   "grammaire": "scenes/BP3-tests/a.gr",
+   "nom_amont": "-gr.a",
+   "auxiliaires": {},
+   "produit": false,
+   "convention": "english"
+  },
+  {
+   "nom": "a.html",
+   "grammaire": "scenes/BP3-tests/a.html.gr",
+   "nom_amont": "-gr.a.html",
+   "auxiliaires": {},
+   "produit": false,
+   "convention": "english"
+  },
+  {
+   "nom": "acceleration",
+   "grammaire": "scenes/BP3-tests/acceleration.gr",
+   "nom_amont": "-gr.acceleration",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Visser2",
+     "nom_amont": "-se.Visser2"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "acceleration_v2",
+   "grammaire": "scenes/BP3-tests/acceleration_v2.gr",
+   "nom_amont": "-gr.acceleration",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Visser2",
+     "nom_amont": "-se.Visser2"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "alan-dice",
+   "grammaire": "scenes/BP3-tests/alan-dice.gr",
+   "nom_amont": "-gr.Alan",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Alan",
+     "nom_amont": "-se.Alan"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "all-items",
+   "grammaire": "scenes/BP3-tests/all-items.gr",
+   "nom_amont": "-gr.tryAllItems",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryAllItems",
+     "nom_amont": "-se.tryAllItems"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "all-items1",
+   "grammaire": "scenes/BP3-tests/all-items1.gr",
+   "nom_amont": "-gr.tryAllItems1",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryAllItems1",
+     "nom_amont": "-se.tryAllItems1"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "ames",
+   "grammaire": "scenes/BP3-tests/ames.gr",
+   "nom_amont": "-gr.Ames",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Ames",
+     "nom_amont": "-se.Ames"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "asymmetric",
+   "grammaire": "scenes/BP3-tests/asymmetric.gr",
+   "nom_amont": "-gr.asymmetric1",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.asymmetric1",
+     "nom_amont": "-se.asymmetric1"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.asymmetric1",
+     "nom_amont": "-al.asymmetric1"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "beatrix-dice",
+   "grammaire": "scenes/BP3-tests/beatrix-dice.gr",
+   "nom_amont": "-gr.Beatrix",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Beatrix",
+     "nom_amont": "-se.Beatrix"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "bells",
+   "grammaire": "scenes/BP3-tests/bells.gr",
+   "nom_amont": "-gr.bells",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.cloches",
+     "nom_amont": "-se.cloches"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-ho.cloches1",
+     "nom_amont": "-ho.cloches1"
+    }
+   },
+   "produit": true,
+   "convention": null
+  },
+  {
+   "nom": "blurb",
+   "grammaire": "scenes/BP3-tests/blurb.gr",
+   "nom_amont": "-gr.blurb",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.blurb",
+     "nom_amont": "-se.blurb"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.tryCsound",
+     "nom_amont": "-cs.tryCsound"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "check&",
+   "grammaire": "scenes/BP3-tests/check&.gr",
+   "nom_amont": "-gr.check&",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.765432",
+     "nom_amont": "-se.765432"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "checkAllCsound",
+   "grammaire": "scenes/BP3-tests/checkAllCsound.gr",
+   "nom_amont": "-gr.checkAllCsound",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.checkAllCsound",
+     "nom_amont": "-se.checkAllCsound"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.tryCsound",
+     "nom_amont": "-cs.tryCsound"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "checkBT",
+   "grammaire": "scenes/BP3-tests/checkBT.gr",
+   "nom_amont": "-gr.checkBT",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.koto3",
+     "nom_amont": "-se.koto3"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc1",
+     "nom_amont": "-al.abc1"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "checkHomo",
+   "grammaire": "scenes/BP3-tests/checkHomo.gr",
+   "nom_amont": "-gr.checkHomo",
+   "auxiliaires": {
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.checkhomo",
+     "nom_amont": "-al.checkhomo"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "checkSUB",
+   "grammaire": "scenes/BP3-tests/checkSUB.gr",
+   "nom_amont": "-gr.checkSUB",
+   "auxiliaires": {
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "checkSUB.new",
+   "grammaire": "scenes/BP3-tests/checkSUB.new.gr",
+   "nom_amont": "-gr.checkSUB.new",
+   "auxiliaires": {
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "checkSUB1",
+   "grammaire": "scenes/BP3-tests/checkSUB1.gr",
+   "nom_amont": "-gr.checkSUB1",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.checkSUB1",
+     "nom_amont": "-se.checkSUB1"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "checkVolChan",
+   "grammaire": "scenes/BP3-tests/checkVolChan.gr",
+   "nom_amont": "-gr.checkVolChan",
+   "auxiliaires": {
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-ho.Frenchnotes",
+     "nom_amont": "-ho.Frenchnotes"
+    }
+   },
+   "produit": false,
+   "convention": "english"
+  },
+  {
+   "nom": "checkVolMasterSlave",
+   "grammaire": "scenes/BP3-tests/checkVolMasterSlave.gr",
+   "nom_amont": "-gr.checkVolMasterSlave",
+   "auxiliaires": {},
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "checkcontext",
+   "grammaire": "scenes/BP3-tests/checkcontext.gr",
+   "nom_amont": "-gr.checkcontext",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.koto3",
+     "nom_amont": "-se.koto3"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": false,
+   "convention": "english"
+  },
+  {
+   "nom": "checkhomo2",
+   "grammaire": "scenes/BP3-tests/checkhomo2.gr",
+   "nom_amont": "-gr.checkhomo2",
+   "auxiliaires": {
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.checkhomo",
+     "nom_amont": "-al.checkhomo"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "checkrests",
+   "grammaire": "scenes/BP3-tests/checkrests.gr",
+   "nom_amont": "-gr.checkrests",
+   "auxiliaires": {},
+   "produit": false,
+   "convention": "english"
+  },
+  {
+   "nom": "cloches1",
+   "grammaire": "scenes/BP3-tests/cloches1.gr",
+   "nom_amont": "-gr.cloches1",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.cloches",
+     "nom_amont": "-se.cloches"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-ho.cloches1",
+     "nom_amont": "-ho.cloches1"
+    }
+   },
+   "produit": false,
+   "convention": "english"
+  },
+  {
+   "nom": "csound",
+   "grammaire": "scenes/BP3-tests/csound.gr",
+   "nom_amont": "-gr.tryCsound",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryCsound",
+     "nom_amont": "-se.tryCsound"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.tryCsound",
+     "nom_amont": "-cs.tryCsound"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "destru",
+   "grammaire": "scenes/BP3-tests/destru.gr",
+   "nom_amont": "-gr.tryDESTRU",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryDESTRU",
+     "nom_amont": "-se.tryDESTRU"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "dhadhatite",
+   "grammaire": "scenes/BP3-tests/dhadhatite.gr",
+   "nom_amont": "-gr.dhadhatite",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.dhadhatite",
+     "nom_amont": "-se.dhadhatite"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.dhadhatite",
+     "nom_amont": "-al.dhadhatite"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "dhadhatite1",
+   "grammaire": "scenes/BP3-tests/dhadhatite1.gr",
+   "nom_amont": "-gr.dhadhatite1",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.dhadhatite",
+     "nom_amont": "-se.dhadhatite"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.dhadhatite",
+     "nom_amont": "-al.dhadhatite"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "dhadhatite_v2",
+   "grammaire": "scenes/BP3-tests/dhadhatite_v2.gr",
+   "nom_amont": "-gr.dhadhatite",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.dhadhatite",
+     "nom_amont": "-se.dhadhatite"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.dhadhatite",
+     "nom_amont": "-al.dhadhatite"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "dhati",
+   "grammaire": "scenes/BP3-tests/dhati.gr",
+   "nom_amont": "-gr.dhati",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.dhati",
+     "nom_amont": "-se.dhati"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.dhati",
+     "nom_amont": "-al.dhati"
+    },
+    "-so": {
+     "role": "objets",
+     "chemin": "test-assets/bp3/commun/-so.dhati",
+     "nom_amont": "-so.dhati"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "dhati2",
+   "grammaire": "scenes/BP3-tests/dhati2.gr",
+   "nom_amont": "-gr.dhati2",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.dhati2",
+     "nom_amont": "-se.dhati2"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.dhati",
+     "nom_amont": "-al.dhati"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "dhati3",
+   "grammaire": "scenes/BP3-tests/dhati3.gr",
+   "nom_amont": "-gr.dhati3",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.dhati2",
+     "nom_amont": "-se.dhati2"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.dhati",
+     "nom_amont": "-al.dhati"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "dhin",
+   "grammaire": "scenes/BP3-tests/dhin.gr",
+   "nom_amont": "-gr.dhin--",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.dhin--",
+     "nom_amont": "-se.dhin--"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.dhin--",
+     "nom_amont": "-al.dhin--"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "dhin1",
+   "grammaire": "scenes/BP3-tests/dhin1.gr",
+   "nom_amont": "-gr.dhin1",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.dhin--",
+     "nom_amont": "-se.dhin--"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-ho.dhin--",
+     "nom_amont": "-ho.dhin--"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "doeslittle",
+   "grammaire": "scenes/BP3-tests/doeslittle.gr",
+   "nom_amont": "-gr.doeslittle",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.doeslittle",
+     "nom_amont": "-se.doeslittle"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "drum",
+   "grammaire": "scenes/BP3-tests/drum.gr",
+   "nom_amont": "-gr.drum",
+   "auxiliaires": {},
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "ek-do-tin",
+   "grammaire": "scenes/BP3-tests/ek-do-tin.gr",
+   "nom_amont": "-gr.12345678",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.EkDoTin",
+     "nom_amont": "-se.EkDoTin"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.EkDoTin",
+     "nom_amont": "-al.EkDoTin"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "flags",
+   "grammaire": "scenes/BP3-tests/flags.gr",
+   "nom_amont": "-gr.tryFlags",
+   "auxiliaires": {
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "gramgene1",
+   "grammaire": "scenes/BP3-tests/gramgene1.gr",
+   "nom_amont": "-gr.gramgene1",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.gramgene",
+     "nom_amont": "-se.gramgene"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.gramgene",
+     "nom_amont": "-al.gramgene"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "gramgene2",
+   "grammaire": "scenes/BP3-tests/gramgene2.gr",
+   "nom_amont": "-gr.gramgene2",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.gramgene",
+     "nom_amont": "-se.gramgene"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.gramgene",
+     "nom_amont": "-al.gramgene"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "graphics",
+   "grammaire": "scenes/BP3-tests/graphics.gr",
+   "nom_amont": "-gr.tryGraphics",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryGraphics",
+     "nom_amont": "-se.tryGraphics"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "harmony",
+   "grammaire": "scenes/BP3-tests/harmony.gr",
+   "nom_amont": "-gr.tryHarmony",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryHarmony",
+     "nom_amont": "-se.tryHarmony"
+    },
+    "-to": {
+     "role": "tonalite",
+     "chemin": "test-assets/bp3/commun/-to.tryHarmony",
+     "nom_amont": "-to.tryHarmony"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.tryHarmony",
+     "nom_amont": "-cs.tryHarmony"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "keys",
+   "grammaire": "scenes/BP3-tests/keys.gr",
+   "nom_amont": "-gr.keys",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.koto3",
+     "nom_amont": "-se.koto3"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-ho.keys",
+     "nom_amont": "-ho.keys"
+    }
+   },
+   "produit": false,
+   "convention": "english"
+  },
+  {
+   "nom": "koto1",
+   "grammaire": "scenes/BP3-tests/koto1.gr",
+   "nom_amont": "-gr.koto1",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.koto3",
+     "nom_amont": "-se.koto3"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc1",
+     "nom_amont": "-al.abc1"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "koto2",
+   "grammaire": "scenes/BP3-tests/koto2.gr",
+   "nom_amont": "-gr.koto2",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.koto3",
+     "nom_amont": "-se.koto3"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc1",
+     "nom_amont": "-al.abc1"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "koto3",
+   "grammaire": "scenes/BP3-tests/koto3.gr",
+   "nom_amont": "-gr.koto3",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.koto3",
+     "nom_amont": "-se.koto3"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc1",
+     "nom_amont": "-al.abc1"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "kss2",
+   "grammaire": "scenes/BP3-tests/kss2.gr",
+   "nom_amont": "-gr.kss2",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.kss",
+     "nom_amont": "-se.kss"
+    }
+   },
+   "produit": true,
+   "convention": "indian"
+  },
+  {
+   "nom": "livecode1",
+   "grammaire": "scenes/BP3-tests/livecode1.gr",
+   "nom_amont": "-gr.livecode1",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.livecode1",
+     "nom_amont": "-se.livecode1"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "livecode2",
+   "grammaire": "scenes/BP3-tests/livecode2.gr",
+   "nom_amont": "-gr.livecode2",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.livecode2",
+     "nom_amont": "-se.livecode2"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "look-and-say",
+   "grammaire": "scenes/BP3-tests/look-and-say.gr",
+   "nom_amont": "-gr.look-and-say",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.look-and-say",
+     "nom_amont": "-se.look-and-say"
+    }
+   },
+   "produit": false,
+   "convention": "english"
+  },
+  {
+   "nom": "major-minor",
+   "grammaire": "scenes/BP3-tests/major-minor.gr",
+   "nom_amont": "-gr.tryMajorMinor",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryMajorMinor",
+     "nom_amont": "-se.tryMajorMinor"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.Mozart",
+     "nom_amont": "-cs.Mozart"
+    }
+   },
+   "produit": true,
+   "convention": null
+  },
+  {
+   "nom": "mohanam",
+   "grammaire": "scenes/BP3-tests/mohanam.gr",
+   "nom_amont": "-gr.trial.mohanam",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.trial.mohanam",
+     "nom_amont": "-se.trial.mohanam"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.trial.mohanam",
+     "nom_amont": "-al.trial.mohanam"
+    },
+    "-to": {
+     "role": "tonalite",
+     "chemin": "test-assets/bp3/commun/-to.trial.mohanam",
+     "nom_amont": "-to.trial.mohanam"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.trial.mohanam",
+     "nom_amont": "-cs.trial.mohanam"
+    }
+   },
+   "produit": true,
+   "convention": "indian"
+  },
+  {
+   "nom": "mozart-dice",
+   "grammaire": "scenes/BP3-tests/mozart-dice.gr",
+   "nom_amont": "-gr.Mozart",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Mozart",
+     "nom_amont": "-se.Mozart"
+    },
+    "-to": {
+     "role": "tonalite",
+     "chemin": "test-assets/bp3/commun/-to.Mozart",
+     "nom_amont": "-to.Mozart"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.Mozart",
+     "nom_amont": "-cs.Mozart"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "nadaka",
+   "grammaire": "scenes/BP3-tests/nadaka.gr",
+   "nom_amont": "-gr.Nadaka",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.hamsad",
+     "nom_amont": "-se.hamsad"
+    },
+    "-to": {
+     "role": "tonalite",
+     "chemin": "test-assets/bp3/commun/-to.Nadaka",
+     "nom_amont": "-to.Nadaka"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.Nadaka",
+     "nom_amont": "-cs.Nadaka"
+    }
+   },
+   "produit": true,
+   "convention": "indian"
+  },
+  {
+   "nom": "negative-context",
+   "grammaire": "scenes/BP3-tests/negative-context.gr",
+   "nom_amont": "-gr.checkNegativeContext",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.checkNegativeContext",
+     "nom_amont": "-se.checkNegativeContext"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "not-reich",
+   "grammaire": "scenes/BP3-tests/not-reich.gr",
+   "nom_amont": "-gr.NotReich",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.NotReich",
+     "nom_amont": "-se.NotReich"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "one-scale",
+   "grammaire": "scenes/BP3-tests/one-scale.gr",
+   "nom_amont": "-gr.tryOneScale",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryOneScale",
+     "nom_amont": "-se.tryOneScale"
+    },
+    "-to": {
+     "role": "tonalite",
+     "chemin": "test-assets/bp3/commun/-to.tryOneScale",
+     "nom_amont": "-to.tryOneScale"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.tryOneScale",
+     "nom_amont": "-cs.tryOneScale"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "polyphony1",
+   "grammaire": "scenes/BP3-tests/polyphony1.gr",
+   "nom_amont": "-gr.polyphony1",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.polyphony1",
+     "nom_amont": "-se.polyphony1"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "repeat",
+   "grammaire": "scenes/BP3-tests/repeat.gr",
+   "nom_amont": "-gr.tryrepeat",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryrepeat",
+     "nom_amont": "-se.tryrepeat"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "ruwet",
+   "grammaire": "scenes/BP3-tests/ruwet.gr",
+   "nom_amont": "-gr.Ruwet",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Ruwet",
+     "nom_amont": "-se.Ruwet"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.Ruwet",
+     "nom_amont": "-al.Ruwet"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "scales",
+   "grammaire": "scenes/BP3-tests/scales.gr",
+   "nom_amont": "-gr.tryScales",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryScales",
+     "nom_amont": "-se.tryScales"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.tryScales",
+     "nom_amont": "-cs.tryScales"
+    }
+   },
+   "produit": false,
+   "convention": null
+  },
+  {
+   "nom": "shapes-rhythm",
+   "grammaire": "scenes/BP3-tests/shapes-rhythm.gr",
+   "nom_amont": "-gr.ShapesInRhythm",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.ShapesInRhythm.QTM",
+     "nom_amont": "-se.ShapesInRhythm.QTM"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "simpletemplates",
+   "grammaire": "scenes/BP3-tests/simpletemplates.gr",
+   "nom_amont": "-gr.simpletemplates",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.simpletemplates",
+     "nom_amont": "-se.simpletemplates"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "templates",
+   "grammaire": "scenes/BP3-tests/templates.gr",
+   "nom_amont": "-gr.checktemplates",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.checktemplates",
+     "nom_amont": "-se.checktemplates"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "testHO2",
+   "grammaire": "scenes/BP3-tests/testHO2.gr",
+   "nom_amont": "-gr.testHO2",
+   "auxiliaires": {
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "testNC1",
+   "grammaire": "scenes/BP3-tests/testNC1.gr",
+   "nom_amont": "-gr.testNC1",
+   "auxiliaires": {},
+   "produit": true,
+   "convention": null
+  },
+  {
+   "nom": "testTie7",
+   "grammaire": "scenes/BP3-tests/testTie7.gr",
+   "nom_amont": "-gr.testTie7",
+   "auxiliaires": {},
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "time-patterns",
+   "grammaire": "scenes/BP3-tests/time-patterns.gr",
+   "nom_amont": "-gr.tryTimePatterns",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryTimePatterns",
+     "nom_amont": "-se.tryTimePatterns"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "transposition",
+   "grammaire": "scenes/BP3-tests/transposition.gr",
+   "nom_amont": "-gr.tryTranspose",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryTranspose",
+     "nom_amont": "-se.tryTranspose"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.tryKeyMap",
+     "nom_amont": "-al.tryKeyMap"
+    }
+   },
+   "produit": false,
+   "convention": null
+  },
+  {
+   "nom": "transposition1",
+   "grammaire": "scenes/BP3-tests/transposition1.gr",
+   "nom_amont": "-gr.transposition1",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.transposition3",
+     "nom_amont": "-se.transposition3"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-ho.transposition",
+     "nom_amont": "-ho.transposition"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "transposition3",
+   "grammaire": "scenes/BP3-tests/transposition3.gr",
+   "nom_amont": "-gr.transposition3",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.transposition3",
+     "nom_amont": "-se.transposition3"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryAllItems0",
+   "grammaire": "scenes/BP3-tests/tryAllItems0.gr",
+   "nom_amont": "-gr.tryAllItems0",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryAllItems0",
+     "nom_amont": "-se.tryAllItems0"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryAllItems1",
+   "grammaire": "scenes/BP3-tests/tryAllItems1.gr",
+   "nom_amont": "-gr.tryAllItems1",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryAllItems1",
+     "nom_amont": "-se.tryAllItems1"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryConsoleMaxTime",
+   "grammaire": "scenes/BP3-tests/tryConsoleMaxTime.gr",
+   "nom_amont": "-gr.tryConsoleMaxTime",
+   "auxiliaires": {},
+   "produit": false,
+   "convention": "english"
+  },
+  {
+   "nom": "tryCsoundObjects",
+   "grammaire": "scenes/BP3-tests/tryCsoundObjects.gr",
+   "nom_amont": "-gr.tryCsoundObjects",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryCsoundObjects",
+     "nom_amont": "-se.tryCsoundObjects"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.tryCsoundObjects",
+     "nom_amont": "-al.tryCsoundObjects"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.tryCsoundObjects",
+     "nom_amont": "-cs.tryCsoundObjects"
+    },
+    "-so": {
+     "role": "objets",
+     "chemin": "test-assets/bp3/commun/-so.tryCsoundObjects",
+     "nom_amont": "-so.tryCsoundObjects"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryGOTO",
+   "grammaire": "scenes/BP3-tests/tryGOTO.gr",
+   "nom_amont": "-gr.tryGOTO",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryGOTO",
+     "nom_amont": "-se.tryGOTO"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryKeyMap",
+   "grammaire": "scenes/BP3-tests/tryKeyMap.gr",
+   "nom_amont": "-gr.tryKeyMap",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryKeyMap",
+     "nom_amont": "-se.tryKeyMap"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.tryKeyMap",
+     "nom_amont": "-al.tryKeyMap"
+    },
+    "-so": {
+     "role": "objets",
+     "chemin": "test-assets/bp3/commun/-so.tryKeyMap",
+     "nom_amont": "-so.tryKeyMap"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryKeyXpand",
+   "grammaire": "scenes/BP3-tests/tryKeyXpand.gr",
+   "nom_amont": "-gr.tryKeyXpand",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryKeyXpand",
+     "nom_amont": "-se.tryKeyXpand"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.tryKeyXpand",
+     "nom_amont": "-al.tryKeyXpand"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryLIN",
+   "grammaire": "scenes/BP3-tests/tryLIN.gr",
+   "nom_amont": "-gr.tryLIN",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryLIN",
+     "nom_amont": "-se.tryLIN"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryMIDIfile",
+   "grammaire": "scenes/BP3-tests/tryMIDIfile.gr",
+   "nom_amont": "-gr.tryMIDIfile",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.asymmetric1",
+     "nom_amont": "-se.asymmetric1"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryObjects",
+   "grammaire": "scenes/BP3-tests/tryObjects.gr",
+   "nom_amont": "-gr.tryObjects",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.koto3",
+     "nom_amont": "-se.koto3"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc1",
+     "nom_amont": "-al.abc1"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryPatternGrammar",
+   "grammaire": "scenes/BP3-tests/tryPatternGrammar.gr",
+   "nom_amont": "-gr.tryPatternGrammar",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryPatternGrammar",
+     "nom_amont": "-se.tryPatternGrammar"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.tryPatternGrammar",
+     "nom_amont": "-al.tryPatternGrammar"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryRagas",
+   "grammaire": "scenes/BP3-tests/tryRagas.gr",
+   "nom_amont": "-gr.tryRagas",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryRagas",
+     "nom_amont": "-se.tryRagas"
+    },
+    "-to": {
+     "role": "tonalite",
+     "chemin": "test-assets/bp3/commun/-to.raga",
+     "nom_amont": "-to.raga"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.raga",
+     "nom_amont": "-cs.raga"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryRotate",
+   "grammaire": "scenes/BP3-tests/tryRotate.gr",
+   "nom_amont": "-gr.tryRotate",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.asymmetric1",
+     "nom_amont": "-se.asymmetric1"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "trySerial",
+   "grammaire": "scenes/BP3-tests/trySerial.gr",
+   "nom_amont": "-gr.trySerial",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.trySerial",
+     "nom_amont": "-se.trySerial"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryShruti",
+   "grammaire": "scenes/BP3-tests/tryShruti.gr",
+   "nom_amont": "-gr.tryShruti",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryShruti",
+     "nom_amont": "-se.tryShruti"
+    },
+    "-to": {
+     "role": "tonalite",
+     "chemin": "test-assets/bp3/commun/-to.tryShruti",
+     "nom_amont": "-to.tryShruti"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.tryShruti",
+     "nom_amont": "-cs.tryShruti"
+    }
+   },
+   "produit": false,
+   "convention": "indian"
+  },
+  {
+   "nom": "trySrand",
+   "grammaire": "scenes/BP3-tests/trySrand.gr",
+   "nom_amont": "-gr.trySrand",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.trySrand",
+     "nom_amont": "-se.trySrand"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.tryKeyXpand",
+     "nom_amont": "-al.tryKeyXpand"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryTicks",
+   "grammaire": "scenes/BP3-tests/tryTicks.gr",
+   "nom_amont": "-gr.tryTicks",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryTicks",
+     "nom_amont": "-se.tryTicks"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryflags2",
+   "grammaire": "scenes/BP3-tests/tryflags2.gr",
+   "nom_amont": "-gr.tryflags2",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryflags2",
+     "nom_amont": "-se.tryflags2"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryflags3",
+   "grammaire": "scenes/BP3-tests/tryflags3.gr",
+   "nom_amont": "-gr.tryflags3",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryflags3",
+     "nom_amont": "-se.tryflags3"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tryflags3.html",
+   "grammaire": "scenes/BP3-tests/tryflags3.html.gr",
+   "nom_amont": "-gr.tryflags3.html",
+   "auxiliaires": {},
+   "produit": false,
+   "convention": "english"
+  },
+  {
+   "nom": "tryhomomorphism",
+   "grammaire": "scenes/BP3-tests/tryhomomorphism.gr",
+   "nom_amont": "-gr.tryhomomorphism",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryhomomorphism",
+     "nom_amont": "-se.tryhomomorphism"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.tryhomomorphism",
+     "nom_amont": "-al.tryhomomorphism"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "trytemplates",
+   "grammaire": "scenes/BP3-tests/trytemplates.gr",
+   "nom_amont": "-gr.trytemplates",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.trytemplates",
+     "nom_amont": "-se.trytemplates"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "french"
+  },
+  {
+   "nom": "trytemplates2",
+   "grammaire": "scenes/BP3-tests/trytemplates2.gr",
+   "nom_amont": "-gr.trytemplates2",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.trytemplates2",
+     "nom_amont": "-se.trytemplates2"
+    },
+    "-al": {
+     "role": "alphabet",
+     "chemin": "test-assets/bp3/commun/-al.abc",
+     "nom_amont": "-al.abc"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "tunings",
+   "grammaire": "scenes/BP3-tests/tunings.gr",
+   "nom_amont": "-gr.tryTunings",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.tryTunings",
+     "nom_amont": "-se.tryTunings"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.tryTunings",
+     "nom_amont": "-cs.tryTunings"
+    }
+   },
+   "produit": true,
+   "convention": null
+  },
+  {
+   "nom": "vina",
+   "grammaire": "scenes/BP3-tests/vina.gr",
+   "nom_amont": "-gr.vina",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Vina",
+     "nom_amont": "-se.Vina"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.Vina",
+     "nom_amont": "-cs.Vina"
+    }
+   },
+   "produit": true,
+   "convention": "indian"
+  },
+  {
+   "nom": "vina2",
+   "grammaire": "scenes/BP3-tests/vina2.gr",
+   "nom_amont": "-gr.vina2",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Vina",
+     "nom_amont": "-se.Vina"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.Vina",
+     "nom_amont": "-cs.Vina"
+    }
+   },
+   "produit": true,
+   "convention": "indian"
+  },
+  {
+   "nom": "vina3",
+   "grammaire": "scenes/BP3-tests/vina3.gr",
+   "nom_amont": "-gr.vina3",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Vina3",
+     "nom_amont": "-se.Vina3"
+    },
+    "-to": {
+     "role": "tonalite",
+     "chemin": "test-assets/bp3/commun/-to.Vina",
+     "nom_amont": "-to.Vina"
+    },
+    "-cs": {
+     "role": "csound",
+     "chemin": "test-assets/bp3/commun/-cs.Vina",
+     "nom_amont": "-cs.Vina"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "visser-shapes",
+   "grammaire": "scenes/BP3-tests/visser-shapes.gr",
+   "nom_amont": "-gr.Visser.Shapes",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Visser.Shapes",
+     "nom_amont": "-se.Visser.Shapes"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "visser-waves",
+   "grammaire": "scenes/BP3-tests/visser-waves.gr",
+   "nom_amont": "-gr.Visser.Waves",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Visser.Waves",
+     "nom_amont": "-se.Visser.Waves"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "visser3",
+   "grammaire": "scenes/BP3-tests/visser3.gr",
+   "nom_amont": "-gr.Visser3",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Visser3",
+     "nom_amont": "-se.Visser3"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "visser5",
+   "grammaire": "scenes/BP3-tests/visser5.gr",
+   "nom_amont": "-gr.Visser5",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Visser5",
+     "nom_amont": "-se.Visser5"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  },
+  {
+   "nom": "watch",
+   "grammaire": "scenes/BP3-tests/watch.gr",
+   "nom_amont": "-gr.Watch_What_Happens",
+   "auxiliaires": {
+    "-se": {
+     "role": "reglages",
+     "chemin": "test-assets/bp3/commun/-se.Watch_What_Happens",
+     "nom_amont": "-se.Watch_What_Happens"
+    }
+   },
+   "produit": true,
+   "convention": "english"
+  }
+ ]
+}

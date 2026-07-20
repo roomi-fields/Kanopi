@@ -1,0 +1,11 @@
+// Bol Processor BP3
+// Generated from BPScript
+ORD
+gram#1[1] S --> X /Num_total=20/
+gram#1[2] /Num_total-1/ X --> a X
+------------
+ORD
+gram#2[1] X --> lambda /Num_a=20/ /Num_b=0/
+------------
+ORD
+gram#3[1] /Num_a>Num_b/ a --> b /Num_b+1/ /Num_a-1/

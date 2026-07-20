@@ -1,0 +1,9 @@
+// Bol Processor BP3
+// Data saved as "-da.Beatrix". Date: 2024-08-02 10:46:45
+-se.da.Beatrix
+
+{2, C#4 Eb4 A4 G#4 C4 Bb4 F#4 G4 B4 D4 E4}
+
+_script(wait for E3 channel 1) _transpose(24) _vel(60) E2 • D2 E2 • _vel(65) B2 D2 E2 • G2 B2 D2 E2 • _vel(70) F#2 G2 B2 D2 E2 • Bb2 F#2 G2 B2 D2 E2 • _vel(75) C2 Bb2 F#2 G2 B2 D2 E2 • _vel(77) G#2 C2 Bb2 F#2 G2 B2 D2 E2 • _vel(80) A2 G#2 C2 Bb2 F#2 G2 B2 D2 E2 • _vel(85) Eb2 A2 G#2 C2 Bb2 F#2 G2 B2 D2 E2 • _vel(87) C#2 Eb2 A2 G#2 C2 Bb2 F#2 G2 B2 D2 E2 • _vel(90) F2 C#2 Eb2 A2 G#2 C2 Bb2 F#2 G2 B2 D2 E2
+
+_script(wait for Start) E4 D4 C4 _script(MIDI send Continue) _script(wait for Stop)

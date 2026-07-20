@@ -1,0 +1,4 @@
+// S3 silent grammar for checkHomo
+S --> (= X) * TR (: X) Y
+X --> a b
+Y --> (= a b) TR * (: b' b)

@@ -1,0 +1,38 @@
+// Bol Processor BP3
+// Generated from BPScript
+RND
+gram#1[1] S --> /4 Tune
+gram#1[2] Tune --> Canonic New B A D C X1234 End
+gram#1[3] Tune --> Canonic New B A C D X12 End
+gram#1[4] Tune --> Canonic New A C B D X23 End
+gram#1[5] Tune --> Canonic New A B D C X34 End
+------------
+LIN
+gram#2[1] <inf> A B C D ?1 End --> A B C D
+gram#2[2] #(?1 ?3 ?2 ?4) ?1 ?2 ?3 ?4 X1234 --> ?1 ?2 ?3 ?4 New ?1 ?3 ?2 ?4 X23
+gram#2[3] #(?2 ?1 ?4 ?3) ?1 ?2 ?3 ?4 X23 --> ?1 ?2 ?3 ?4 New ?2 ?1 ?4 ?3 X1234
+gram#2[4] #(?1 ?2 ?4 ?3) ?1 ?2 ?3 ?4 X12 --> ?1 ?2 ?3 ?4 New ?1 ?2 ?4 ?3 X34
+gram#2[5] #(?2 ?1 ?4 ?3) ?1 ?2 ?3 ?4 X12 --> ?1 ?2 ?3 ?4 New ?2 ?1 ?4 ?3 X1234
+gram#2[6] #(?2 ?1 ?4 ?3) ?1 ?2 ?3 ?4 X34 --> ?1 ?2 ?3 ?4 New ?2 ?1 ?4 ?3 X1234
+gram#2[7] #(?2 ?1 ?3 ?4) ?1 ?2 ?3 ?4 X34 --> ?1 ?2 ?3 ?4 New ?2 ?1 ?3 ?4 X12
+gram#2[8] #(?2 ?1 ?3 ?4) ?1 ?2 ?3 ?4 X1234 --> ?1 ?2 ?3 ?4 New ?2 ?1 ?3 ?4 X12
+gram#2[9] #(?1 ?2 ?4 ?3) ?1 ?2 ?3 ?4 X1234 --> ?1 ?2 ?3 ?4 New ?1 ?2 ?4 ?3 X34
+------------
+ORD
+gram#3[1] LEFT X12 --> lambda
+gram#3[2] LEFT X34 --> lambda
+gram#3[3] LEFT X23 --> lambda
+gram#3[4] LEFT X1234 --> lambda
+gram#3[5] LEFT End --> lambda
+gram#3[6] LEFT New --> lambda
+gram#3[7] LEFT Canonic --> A B C D
+------------
+ORD
+gram#4[1] A B --> do3 B
+gram#4[2] A #B --> do4 #B
+gram#4[3] B --> sol3
+gram#4[4] B --> sol4
+gram#4[5] C --> re4
+gram#4[6] C --> re5
+gram#4[7] D A --> mi4 A
+gram#4[8] D #A --> mi5 #A

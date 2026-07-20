@@ -1,0 +1,11 @@
+// Bol Processor BP3
+// Data saved as "-da.tryPart". Date: 2024-10-26 17:49:22
+-se.tryPart
+
+C3 D3
+
+G2 _part(5) C3 _part(2) D3
+
+G2 _part(5) C3 {D3 E3, _part(2) B2 _part(5) A2} F3 _part(2) G3
+
+C3 C4 D4

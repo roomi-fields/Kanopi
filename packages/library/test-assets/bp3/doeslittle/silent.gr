@@ -1,0 +1,8 @@
+// doeslittle — silent sound objects rewrite
+// Original: -gr.doeslittle (Bernard)
+// Encoding fix: ¥ → . (old Mac)
+// No MIDI controls — pure notes + periods + polymetry
+RND
+S --> C3 . C4 . D4 C4 F#3 . A3 . C4
+S --> G2 C3 _ B2 C3
+S --> {C4 D4 E4 F4, G4 D4 C5} -

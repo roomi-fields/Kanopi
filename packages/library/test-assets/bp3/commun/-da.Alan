@@ -1,0 +1,9 @@
+// Bol Processor BP3
+// Data saved as "-da.Alan". Date: 2024-12-22 17:29:04
+-se.da.Alan
+
+_script(wait for E4 channel 1) {2, - F3 C#3 Eb3 A3 G#3 C3 Bb3 F#3 G3 B3 D3 E3}
+
+_transpose(12) _vel(60) E2 • D2 E2 • _vel(65) B2 D2 E2 • G2 B2 D2 E2 • _vel(70) F#2 G2 B2 D2 E2 • Bb2 F#2 G2 B2 D2 E2 • _vel(75) C2 Bb2 F#2 G2 B2 D2 E2 • _vel(77) G#2 C2 Bb2 F#2 G2 B2 D2 E2 • _vel(80) A2 G#2 C2 Bb2 F#2 G2 B2 D2 E2 • _vel(85) Eb2 A2 G#2 C2 Bb2 F#2 G2 B2 D2 E2 • _vel(87) C#2 Eb2 A2 G#2 C2 Bb2 F#2 G2 B2 D2 E2 • _vel(90) F2 C#2 Eb2 A2 G#2 C2 Bb2 F#2 G2 B2 D2 E2
+
+E3 D3 C3 _script(MIDI send Start) _script(wait for Continue) A2 B2 C3 _script(MIDI send Stop)

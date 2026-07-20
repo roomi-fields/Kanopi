@@ -1,0 +1,17 @@
+// Bol Processor BP3
+// Grammar saved as "-gr.tryAllItems0". Date: 2025-03-15 14:05:31
+
+// See https://bolprocessor.org/produce-all-items/
+// In the settings, check "Produce all items"
+
+RND
+
+gram#1[1] S --> (= X) X (: X)
+gram#1[2] S --> X X
+
+-----
+RND
+_destru
+
+gram#2[1] X --> a
+gram#2[2] X --> b

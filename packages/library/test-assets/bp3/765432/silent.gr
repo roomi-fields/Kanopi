@@ -1,0 +1,184 @@
+// Bol Processor BP3
+// Generated from BPScript
+ORD
+gram#1[1] S --> Internal C47 Part1 Canon C46 _script(CT 0) Part2
+gram#1[2] Part1 --> {Suresh1,_rest Smriti1,_rest Olivier1,_rest Vijayshree1,_rest Arindam1,_rest Andreine1}
+gram#1[3] Part2 --> {Suresh2,Smriti2 _rest,Olivier2 _rest,Vijayshree2 _rest,Arindam2 _rest,Andreine2 _rest}
+------------
+ORD
+gram#2[1] Suresh1 --> SuMov7x7 SuSil7x7 SuMov6x7 SuSil6x7 SuMov5x7 SuSil5x7 SuMov4x7 SuSil4x7 SuMov3x7 SuSil3x7 SuMov2x7 SuSil2x7 SuMov1x7 SuSil1x7
+gram#2[2] Smriti1 --> SmMov6x6 SmSil6x6 SmMov5x6 SmSil5x6 SmMov4x6 SmSil4x6 SmMov3x6 SmSil3x6 SmMov2x6 SmSil2x6 SmMov1x6 SmSil1x6
+gram#2[3] Olivier1 --> OlMov5x5 OlSil5x5 OlMov4x5 OlSil4x5 OlMov3x5 OlSil3x5 OlMov2x5 OlSil2x5 OlMov1x5 OlSil1x5
+gram#2[4] Vijayshree1 --> ViMov4x4 ViSil4x4 ViMov3x4 ViSil3x4 ViMov2x4 ViSil2x4 ViMov1x4 ViSil1x4
+gram#2[5] Arindam1 --> ArMov3x3 ArSil3x3 ArMov2x3 ArSil2x3 ArMov1x3 ArSil1x3
+gram#2[6] Andreine1 --> AnMov2x2 AnSil2x2 AnMov1x2 AnSil1x2
+------------
+ORD
+gram#3[1] Suresh2 --> SuMov7x7 SuMov6x6 SuMov5x5 SuMov4x4 SuMov3x3 SuMov2x2 SuMov1x1
+gram#3[2] Smriti2 --> SmMov6x6 SmMov5x5 SmMov4x4 SmMov3x3 SmMov2x2 SmMov1x1
+gram#3[3] Olivier2 --> OlMov5x5 OlMov4x4 OlMov3x3 OlMov2x2 OlMov1x1
+gram#3[4] Vijayshree2 --> ViMov4x4 ViMov3x3 ViMov2x2 ViMov1x1
+gram#3[5] Arindam2 --> ArMov3x3 ArMov2x2 ArMov1x1
+gram#3[6] Andreine2 --> AnMov2x2 AnMov1x1
+------------
+ORD
+gram#4[1] SuMov1x7 --> SuCycle7
+gram#4[2] SuSil1x7 --> SuMov1x7
+gram#4[3] SuMov2x7 --> SuCycle7 SuCycle7
+gram#4[4] SuSil2x7 --> SuMov2x7
+gram#4[5] SuMov3x7 --> SuCycle7 SuCycle7 SuCycle7
+gram#4[6] SuSil3x7 --> SuMov3x7
+gram#4[7] SuMov4x7 --> SuCycle7 SuCycle7 SuCycle7 SuCycle7
+gram#4[8] SuSil4x7 --> SuMov4x7
+gram#4[9] SuMov5x7 --> SuCycle7 SuCycle7 SuCycle7 SuCycle7 SuCycle7
+gram#4[10] SuSil5x7 --> SuMov5x7
+gram#4[11] SuMov6x7 --> SuCycle7 SuCycle7 SuCycle7 SuCycle7 SuCycle7 SuCycle7
+gram#4[12] SuSil6x7 --> SuMov6x7
+gram#4[13] SuMov7x7 --> SuCycle7 SuCycle7 SuCycle7 SuCycle7 SuCycle7 SuCycle7 SuCycle7
+gram#4[14] SuSil7x7 --> SuMov7x7
+gram#4[15] SuMov1x1 --> SuCycle1
+gram#4[16] SuSil1x1 --> SuMov1x1
+gram#4[17] SuMov2x2 --> SuCycle2 SuCycle2
+gram#4[18] SuSil2x2 --> SuMov2x2
+gram#4[19] SuMov3x3 --> SuCycle3 SuCycle3 SuCycle3
+gram#4[20] SuSil3x3 --> SuMov3x3
+gram#4[21] SuMov4x4 --> SuCycle4 SuCycle4 SuCycle4 SuCycle4
+gram#4[22] SuSil4x4 --> SuMov4x4
+gram#4[23] SuMov5x5 --> SuCycle5 SuCycle5 SuCycle5 SuCycle5 SuCycle5
+gram#4[24] SuSil5x5 --> SuMov5x5
+gram#4[25] SuMov6x6 --> SuCycle6 SuCycle6 SuCycle6 SuCycle6 SuCycle6 SuCycle6
+gram#4[26] SuSil6x6 --> SuMov6x6
+------------
+ORD
+gram#5[1] SmMov1x6 --> SmCycle6
+gram#5[2] SmSil1x6 --> SmMov1x6
+gram#5[3] SmMov2x6 --> SmCycle6 SmCycle6
+gram#5[4] SmSil2x6 --> SmMov2x6
+gram#5[5] SmMov3x6 --> SmCycle6 SmCycle6 SmCycle6
+gram#5[6] SmSil3x6 --> SmMov3x6
+gram#5[7] SmMov4x6 --> SmCycle6 SmCycle6 SmCycle6 SmCycle6
+gram#5[8] SmSil4x6 --> SmMov4x6
+gram#5[9] SmMov5x6 --> SmCycle6 SmCycle6 SmCycle6 SmCycle6 SmCycle6
+gram#5[10] SmSil5x6 --> SmMov5x6
+gram#5[11] SmMov6x6 --> SmCycle6 SmCycle6 SmCycle6 SmCycle6 SmCycle6 SmCycle6
+gram#5[12] SmSil6x6 --> SmMov6x6
+gram#5[13] SmMov1x1 --> SmCycle1
+gram#5[14] SmSil1x1 --> SmMov1x1
+gram#5[15] SmMov2x2 --> SmCycle2 SmCycle2
+gram#5[16] SmSil2x2 --> SmMov2x2
+gram#5[17] SmMov3x3 --> SmCycle3 SmCycle3 SmCycle3
+gram#5[18] SmSil3x3 --> SmMov3x3
+gram#5[19] SmMov4x4 --> SmCycle4 SmCycle4 SmCycle4 SmCycle4
+gram#5[20] SmSil4x4 --> SmMov4x4
+gram#5[21] SmMov5x5 --> SmCycle5 SmCycle5 SmCycle5 SmCycle5 SmCycle5
+gram#5[22] SmSil5x5 --> SmMov5x5
+------------
+ORD
+gram#6[1] OlMov1x5 --> OlCycle5
+gram#6[2] OlSil1x5 --> OlMov1x5
+gram#6[3] OlMov2x5 --> OlCycle5 OlCycle5
+gram#6[4] OlSil2x5 --> OlMov2x5
+gram#6[5] OlMov3x5 --> OlCycle5 OlCycle5 OlCycle5
+gram#6[6] OlSil3x5 --> OlMov3x5
+gram#6[7] OlMov4x5 --> OlCycle5 OlCycle5 OlCycle5 OlCycle5
+gram#6[8] OlSil4x5 --> OlMov4x5
+gram#6[9] OlMov5x5 --> OlCycle5 OlCycle5 OlCycle5 OlCycle5 OlCycle5
+gram#6[10] OlSil5x5 --> OlMov5x5
+gram#6[11] OlMov1x1 --> OlCycle1
+gram#6[12] OlSil1x1 --> OlMov1x1
+gram#6[13] OlMov2x2 --> OlCycle2 OlCycle2
+gram#6[14] OlSil2x2 --> OlMov2x2
+gram#6[15] OlMov3x3 --> OlCycle3 OlCycle3 OlCycle3
+gram#6[16] OlSil3x3 --> OlMov3x3
+gram#6[17] OlMov4x4 --> OlCycle4 OlCycle4 OlCycle4 OlCycle4
+gram#6[18] OlSil4x4 --> OlMov4x4
+------------
+ORD
+gram#7[1] ViMov1x4 --> ViCycle4
+gram#7[2] ViSil1x4 --> ViMov1x4
+gram#7[3] ViMov2x4 --> ViCycle4 ViCycle4
+gram#7[4] ViSil2x4 --> ViMov2x4
+gram#7[5] ViMov3x4 --> ViCycle4 ViCycle4 ViCycle4
+gram#7[6] ViSil3x4 --> ViMov3x4
+gram#7[7] ViMov4x4 --> ViCycle4 ViCycle4 ViCycle4 ViCycle4
+gram#7[8] ViSil4x4 --> ViMov4x4
+gram#7[9] ViMov1x1 --> ViCycle1
+gram#7[10] ViSil1x1 --> ViMov1x1
+gram#7[11] ViMov2x2 --> ViCycle2 ViCycle2
+gram#7[12] ViSil2x2 --> ViMov2x2
+gram#7[13] ViMov3x3 --> ViCycle3 ViCycle3 ViCycle3
+gram#7[14] ViSil3x3 --> ViMov3x3
+------------
+ORD
+gram#8[1] ArMov1x3 --> ArCycle3
+gram#8[2] ArSil1x3 --> ArMov1x3
+gram#8[3] ArMov2x3 --> ArCycle3 ArCycle3
+gram#8[4] ArSil2x3 --> ArMov2x3
+gram#8[5] ArMov3x3 --> ArCycle3 ArCycle3 ArCycle3
+gram#8[6] ArSil3x3 --> ArMov3x3
+gram#8[7] ArMov1x1 --> ArCycle1
+gram#8[8] ArSil1x1 --> ArMov1x1
+gram#8[9] ArMov2x2 --> ArCycle2 ArCycle2
+gram#8[10] ArSil2x2 --> ArMov2x2
+------------
+ORD
+gram#9[1] AnMov1x2 --> AnCycle2
+gram#9[2] AnSil1x2 --> AnMov1x2
+gram#9[3] AnMov2x2 --> AnCycle2 AnCycle2
+gram#9[4] AnSil2x2 --> AnMov2x2
+gram#9[5] AnMov1x1 --> AnCycle1
+gram#9[6] AnSil1x1 --> AnMov1x1
+------------
+ORD
+gram#10[1] Canon --> Twist Walk Stretch Bend Jump Turn
+gram#10[2] Twist --> Sm Tik Tik Tik Tik Tik Su Tik Tik Tik Tik Ol Tik Tik Tik Ar Tik Tik Vi Tik An
+gram#10[3] Walk --> Sm Su Tik Ol Tik Tik Ar Tik Tik Tik Vi Tik Tik Tik Tik An Tik Tik Tik Tik Tik
+gram#10[4] Stretch --> Twist
+gram#10[5] Bend --> Walk
+gram#10[6] Jump --> Twist
+gram#10[7] Turn --> Walk
+------------
+SUB1
+gram#11[1] SuCycle7 --> Su Tik Tik Tik Tik Tik Tik
+gram#11[2] SuCycle6 --> Su Tik Tik Tik Tik Tik
+gram#11[3] SuCycle5 --> Su Tik Tik Tik Tik
+gram#11[4] SuCycle4 --> Su Tik Tik Tik
+gram#11[5] SuCycle3 --> Su Tik Tik
+gram#11[6] SuCycle2 --> Su Tik
+gram#11[7] SuCycle1 --> Su
+gram#11[8] SmCycle6 --> Sm - - - - -
+gram#11[9] SmCycle5 --> Sm - - - -
+gram#11[10] SmCycle4 --> Sm - - -
+gram#11[11] SmCycle3 --> Sm - -
+gram#11[12] SmCycle2 --> Sm -
+gram#11[13] SmCycle1 --> Sm
+gram#11[14] OlCycle5 --> Ol - - - -
+gram#11[15] OlCycle4 --> Ol - - -
+gram#11[16] OlCycle3 --> Ol - -
+gram#11[17] OlCycle2 --> Ol -
+gram#11[18] OlCycle1 --> Ol
+gram#11[19] ViCycle4 --> Vi - - -
+gram#11[20] ViCycle3 --> Vi - -
+gram#11[21] ViCycle2 --> Vi -
+gram#11[22] ViCycle1 --> Vi
+gram#11[23] ArCycle3 --> Ar - -
+gram#11[24] ArCycle2 --> Ar -
+gram#11[25] ArCycle1 --> Ar
+gram#11[26] AnCycle2 --> An -
+gram#11[27] AnCycle1 --> An
+------------
+SUB1
+gram#12[1] Su --> {1,do4-}
+gram#12[2] Sm --> {1,mi4-}
+gram#12[3] Ol --> {1,sol4-}
+gram#12[4] Vi --> {1,do5-}
+gram#12[5] Ar --> {1,mi5-}
+gram#12[6] An --> {1,sol5-}
+gram#12[7] Tik --> {1,do7-}
+------------
+ORD
+gram#13[1] Internal --> _script(CT 1) _script(CT 2)
+gram#13[2] C46 --> _script(CT 3)
+gram#13[3] C47 --> _script(CT 4)
+gram#13[4] PedalOn --> _script(CT 5)
+gram#13[5] PedalOff --> _script(CT 6)

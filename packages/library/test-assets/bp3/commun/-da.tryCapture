@@ -1,0 +1,35 @@
+// Bol Processor BP3
+// Data saved as "-da.tryCapture". Date: 2024-09-13 13:24:35
+-se.tryCapture
+-to.tryMPE
+
+// Explanations on the page https://bolprocessor.org/capture-midi-input/
+
+// We use quantization = 100 ms to simplify timings in the capture
+// Don't forget to set the input filter to treat+pass NoteOn/NoteOff
+
+// Input is only recorded during E4 F4 G4
+
+C4 D4 _capture(104) E4 F4 G4 _capture(0) A4 B4
+
+// Timings are compensated for the time spent waiting
+
+_script(wait for C3 channel 1) C4 D4 _capture(104) E4 F4 G4 _script(wait for D3 channel 1) _capture(0) A4 B4
+
+// Record an unlimited sequence of events while no event is played
+
+_capture(65) _vel(0) C0 _script(wait forever) C0
+
+// Here, both input and output receive microtonal corrections
+
+_scale(just intonation,0) C4 D4 _capture(104) E4 F4 G4 A4 _capture(0) B4
+
+// The pitchbend changes only the output
+
+_pitchrange(200) _pitchbend(+100) _scale(just intonation,0) C4 D4 _capture(104) E4 F4 G4 A4 _capture(0) B4
+
+// More examples with 'exotic' scales
+
+_scale(zest24-supergoya17plus3_Db,0) key#60 key#62 _capture(104) key#65 key#69 key#72 key#74 _capture(0) key#75 key#76
+
+_scale(meantone_try,69) key#60 key#62 _capture(104) key#65 key#69 key#72 key#74 _capture(0) key#75 key#76

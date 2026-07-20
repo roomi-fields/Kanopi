@@ -1,0 +1,30 @@
+// Bol Processor BP3
+// Data saved as "-da.checkBadDurations". Date: 2025-12-21 09:31:16
+-se.checkBadDurations
+
+// Examples of good/bad durations attributed to tied notes (concatenations)
+// Check GetSymbolicDuration() in FillPhaseDiagram.c
+
+[good] C4 D4& E4 &D4 F4
+
+[good] {C4 D4& E4 F4, C3 D3 &D4 F3}
+
+[good, orphan tie is ignored] {C4 D4& E4 F4, C3 D3 D4 F3}
+
+[not so good] {C3 D3 D4& F3, C4 &D4 E4 F4}
+
+[good] _tempo(2) {{4,{-{1,Bb3 Bb3}-{1,Bb3& &Bb3}}},{4},{4},{4}}
+
+[good] _tempo(2) {-{1,Bb3 Bb3}-{1,Bb3& &Bb3}}
+
+[good] _tempo(2) {{4,{-{1,Bb3 Bb3}-{1,Bb3 Bb3}}}, {4}, {4}, {4}}
+
+[bad 0.787] {_vel(64) _chan(1){4,{ 4,{107/480,Bb4}{213/160,G4 F4 Bb4}1/8{13/24,C4}{71/80,Bb4 C4}{427/480,Bb4&}1/480,- E4 Eb4 D4}},_vel(64) _chan(2){4,{{2/3,Ab4}{1/3,D4}--{1,- E3 F3},{2/3,A3,Bb4}{1/3,Ab3}---}}}
+
+[good] {_vel(64) _chan(1){4,{ 4,{107/480,Bb4}{213/160,G4 F4 Bb4}1/8{13/24,C4}{71/80,Bb4 C4}{427/480,Bb4}1/480,- E4 Eb4 D4}},_vel(64) _chan(2){4,{{2/3,Ab4}{1/3,D4}--{1,- E3 F3},{2/3,A3,Bb4}{1/3,Ab3}---}}}
+
+[bad 1.112] {_tempo(4/3) _vel(85){4,{1/16,C7 Db7}{1/16,F7}{31/8,Db7 E7 C7 Eb7 Cb7 D7 Bb6 Db7 A6 C7 Ab6 B6 Gb6 Bb6 Gb6 Ab6 E6 G6 Eb6 Gb6 D6 F6 Db6 E6 C6 Eb6 Cb6 D6 Bb5 Db6 A5}}} {_tempo(4/3) _vel(85){6,{19/4,C6 Ab5 B5 Gb5 Bb5 Gb5 A5 F5 Ab5 Eb5 G5 Eb5 Gb5 D5 F5 Db5 E5 C5 Eb5 Cb5 D5 Bb4 Db5 A4 C5 Ab4 B4 Gb4 Bb4 Gb4 A4 F4 Ab4 E4 G4 D4 F4 Db4}3/4 1/2}} {_tempo(4/3) _vel(85)} {_tempo(38/15) _vel(60){2,{2,C4 Bb4 Bb4 A4 A4 G4 G4 G#4}, 1/2{1/2,C3}{1/2,Bb3,E4}{1/2,C3}}} {_tempo(38/15) _vel(60){2,{1,A4 C4}{1,A4 Bb4 A4 Bb4 A4 Bb4},{1/2,A3,F4}{1/2,C3}{1/2,A3,F4}{1/2,C3}}}
+
+[bad 0.733] {_tempo(9/5) _vel(93) _part(1){4,{{341/1024,F5}{171/512,D4}{341/512,F5 F5}{171/512,D4}{341/512,Ab5 Ab5}{171/512,G5}{341/512,F5 F5}{171/512,Eb5}{341/1024,D5}}},_tempo(9/5) _vel(107) _part(2){4},_tempo(9/5) _vel(97) _part(3){4,{4,- Bb3& &Bb3 _legato(20) Bb3 _legato(0) B3 Ab4& &Ab4 G4}},_tempo(9/5) _vel(93) _part(4){4}}
+
+[good] {_tempo(18/5) _vel(93) _part(1) 2,_tempo(18/5) _vel(107) _part(2) 2,_tempo(18/5) _vel(93) _part(3){2,{2, _legato(20) Bb3 A3 D4 _legato(0) C4 _legato(20) C4 Bb3 C4 _legato(0) A3}},_tempo(18/5) _vel(93) _part(4){2,{F#2 Eb3}}} {_tempo(18/5) _vel(93) _part(1) 2,_tempo(18/5) _vel(107) _part(2){2,{1/2{3/2, _legato(20) D5 _legato(0) C5 _legato(20) C5 Bb4 C5 _legato(0) A4}}},_tempo(18/5) _vel(93) _part(3){2,{{1,Bb3 -}-}},_tempo(18/5) _vel(93) _part(4){2,{D3 F#2}}} {_tempo(18/5) _vel(93) _part(1){2,{1/2{3/2, _legato(20) F4 E4 D4 C4 D4 _legato(0) Bb3}}},_tempo(18/5) _vel(107) _part(2){2,{{1/2, _legato(20) A4 _legato(0) G4}1/2 -}},_tempo(18/5) _vel(93) _part(3) 2,_tempo(18/5) _vel(93) _part(4){2,{G2 E3}}} {_tempo(18/5) _vel(93) _part(1){3,{A3 --}},_tempo(18/5) _vel(107) _part(2) 3,_tempo(18/5) _vel(93) _part(3) 3,_tempo(18/5) _vel(93) _part(4){3,{_legato(0) F3 --}}} {_tempo(9/5) _vel(93) _part(1){4,{-{1,Bb3& &Bb3}-{1,Bb3& &Bb3}}},_tempo(9/5) _vel(40) _part(2){4},_tempo(9/5) _vel(93) _part(3){4},_tempo(9/5) _vel(93) _part(4){4}}

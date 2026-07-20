@@ -1,0 +1,51 @@
+// Bol Processor BP3
+// Data saved as "-da.tryRests". Date: 2025-12-01 17:04:15
+// Read page: https://bolprocessor.org/polymetric-structure/#undetermined-rests
+
+-se.tryRests
+
+{C4 D4 E4, … F4 G4}
+
+C4 D4 E4 • … F4 G4
+
+{… C4 D4 E4, F4 G4}
+
+{… C4 D4 E4 • F4 G4}
+
+{… C4 D4 … E4, A4 F4 G4}
+
+{… C4 D4 … E4 • A4 F4 G4}
+
+{… C4 D4 … E4, A4 F4 G4}
+
+{… C4 D4 … E4 • A4 F4 G4}
+
+{… C4 D4 … E4, F4 G4}
+
+{… C4 D4 … E4. F4 G4}
+
+{… C4 D4 E4, A4 B4 F4 … G4}
+
+{… C4 D4 E4 • A4 B4 F4 … G4}
+
+{C4 D4 E4, A4 B4 F4 … G4 A4, C5 … D5}
+
+{C4 D4 E4 • A4 B4 F4 … G4 A4 • C5 … D5}
+
+{C4 D4 E4, A4 B4 F4 … G4 A4, C5 … D5 E5}
+
+{C4 D4 E4. A4 B4 F4 … G4 A4 • C5 … D5 E5}
+
+{A3 … B3 C3, {C4 D4 E4, … F4 … G4}}
+
+{A3 … • B3 C3, {C4 D4 E4, … F4 … G4}}
+
+{C4 D4 E4, A4 B4 F4 … G4 … A4 …, C5 … D5 … E5 …}
+
+{C4 D4 E4 • A4 B4 F4 … G4 … A4 … • C5 … D5 … E5 …}
+
+-----
+
+// Ames' example
+
+{{2,-{2,F#3}, … {1,F5,A5}}{4,{ 1/2 ,G#3,E5,G5}{ 7/2 ,Bb4}}, … { 1/4 ,G#5&,C6,E6,B6&}{2,&G#5,&B6}}

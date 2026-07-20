@@ -1,0 +1,158 @@
+// Bol Processor BP3
+// Generated from BPScript
+ORD
+_mm(15)
+gram#1[1] <0> S --> 4+4+4+4/4 {16,Qaida}
+gram#1[2] S --> 4+4+4+4/4 {16,Lahra,Qaida}
+gram#1[3] S <-- Qaida
+gram#1[4] <1> Qaida <-> (=plus S64 fin)
+------------
+LIN
+gram#2[1] <500> S64 <-> L16 plus S48
+gram#2[2] <500> S64 <-> L14 S50
+gram#2[3] <100> S64 <-> L12 S52
+gram#2[4] <100> S64 <-> L24 S40
+gram#2[5] <500> S48 <-> M16 plus S32
+gram#2[6] <100> S48 <-> M14 S34
+gram#2[7] <100> S48 <-> M40 O8
+gram#2[8] <500> S50 <-> M18 plus S32
+gram#2[9] <100> S50 <-> M34 plus S16
+gram#2[10] <100> S50 <-> M18 plus (=plus N14) O18
+gram#2[11] <100> S16 <-> O16
+gram#2[12] <100> S50 <-> V10 A'8m2 (=N18 plus) plus O16
+gram#2[13] <100> S50 <-> M20 (=N14 plus) plus O16
+gram#2[14] <100> S52 <-> V28 A8m2 O18
+gram#2[15] <100> S52 <-> M20 plus S32
+gram#2[16] <100> S40 <-> M8 plus S32
+gram#2[17] <40> S32 <-> (=plus N16 plus) plus S16
+gram#2[18] <100> S32 <-> (={8,plus V12} A8 plus) plus O16
+gram#2[19] <100> S32 <-> (={8,plus A16} V8 plus) plus O16
+gram#2[20] <100> S32 <-> (={16,plus V24 plus}) plus O16
+gram#2[21] <100> S32 <-> (={16,plus N'16 plus A16 plus}) plus O16
+gram#2[22] <40> S32 <-> (=plus N14) O18
+gram#2[23] <100> S34 <-> O34
+gram#2[24] <100> S34 <-> (=N18 plus) plus S16
+gram#2[25] <5> S16 <-> {16,plus A16 O16 fin}
+------------
+ORD
+gram#3[1] <100> M16 <-- V16
+gram#3[2] <100> N18 <-- V18
+gram#3[3] <100> plus L16 <-- plus A16
+gram#3[4] <100> plus L16 <-- plus V16
+gram#3[5] <100> plus L14 <-- plus V10 A'6m2
+gram#3[6] <100> M14 <-- A'16m2
+gram#3[7] <100> plus L14 <-- plus A16m2
+gram#3[8] <100> plus L14 <-- plus A'16m2
+gram#3[9] <100> plus L12 <-- plus A16m4
+gram#3[10] <100> plus L24 <-- plus V24
+gram#3[11] <100> plus M16 plus star <-- plus V10 A'6 plus star
+gram#3[12] <100> plus M16 <-- plus A'16
+gram#3[13] <100> M8 plus star <-- A'8 plus star
+gram#3[14] <100> M16 plus star <-- V8 A'8 plus star
+gram#3[15] <100> M14 <-- V8 A'8m2
+gram#3[16] <100> M18 plus star <-- V10 A'8 plus star
+gram#3[17] <100> M18 plus star <-- V18 plus star
+gram#3[18] <100> M34 plus <-- V28 A'6 plus
+gram#3[19] <100> M34 plus <-- V26 A'8 plus
+gram#3[20] <100> M20 plus star <-- V12 A'8 plus star
+gram#3[21] <100> M20 <-- V20
+gram#3[22] <100> M40 <-- V8 A'8m2 V26
+gram#3[23] <100> N'16 <-- V16
+gram#3[24] <100> N'16 <-- N16
+gram#3[25] <100> N16 plus <-- V12 A4 plus
+gram#3[26] <100> N16 plus <-- V8 A8 plus
+gram#3[27] <100> N16 plus <-- V10 C6 plus
+gram#3[28] <100> N16 <-- A16
+gram#3[29] <100> M14 <-- V8 A8m2
+gram#3[30] <100> N14 <-- V8 A8m2
+gram#3[31] <100> N14 <-- A16m2
+gram#3[32] <100> N14 plus <-- V6 A8 plus
+gram#3[33] <100> O8 fin <-- A8 fin
+gram#3[34] <100> O34 fin <-- V26 A8 fin
+gram#3[35] <100> O18 fin <-- V10 A8 fin
+gram#3[36] <100> O16 fin <-- V8 A8 fin
+gram#3[37] <100> plus O16 fin <-- plus A16 fin
+------------
+LIN
+gram#4[1] <100> V30 <-> V V V28
+gram#4[2] <100> V28 <-> V V V26
+gram#4[3] <100> V26 <-> V V V24
+gram#4[4] <100> V24 <-> V V V V V20
+gram#4[5] <100> V20 <-> V V V18
+gram#4[6] <100> V18 <-> V V V16
+gram#4[7] <100> V16 <-> V V V V V12
+gram#4[8] <100> V12 <-> V V V10
+gram#4[9] <100> V10 <-> V V V8
+gram#4[10] <100> V8 <-> V V V6
+gram#4[11] <100> V6 <-> V V V V V V
+------------
+LIN
+gram#5[1] <100> ? V <-> ? -
+gram#5[2] <100> V <-> dha
+gram#5[3] <100> V V <-> trkt
+gram#5[4] <100> V V <-> dheena
+gram#5[5] <100> V V <-> teena
+gram#5[6] <100> V V <-> dhati
+gram#5[7] <100> V V <-> gena
+gram#5[8] <100> V V <-> dhage
+gram#5[9] <100> plus V V <-> plus tidha
+gram#5[10] <100> - V V <-> - tidha
+gram#5[11] <100> kt V V <-> kttidha
+gram#5[12] <100> na V V <-> natidha
+gram#5[13] <100> ge V V <-> getidha
+gram#5[14] <100> - V V <-> - ti -
+gram#5[15] <100> kt V V <-> ktti -
+gram#5[16] <100> ge V V <-> geti -
+gram#5[17] <100> na V V <-> nati -
+gram#5[18] <100> V V V <-> dhagena
+gram#5[19] <100> V V V <-> teenake
+gram#5[20] <100> V V V <-> dheenage
+gram#5[21] <100> V V V <-> dhatrkt
+gram#5[22] <100> V V V <-> trktdha
+gram#5[23] <100> V V V V <-> tidhagena
+gram#5[24] <100> V V V V <-> dhagedheena
+gram#5[25] <100> V V V V <-> teena - ta
+gram#5[26] <100> #ti V V V V <-> #ti tidhatrkt
+gram#5[27] <100> V V V V <-> dheenagena
+gram#5[28] <100> V V V V <-> teenakena
+gram#5[29] <100> V V V V V <-> dhagenadheena
+gram#5[30] <100> V V V V V <-> dhagenateena
+gram#5[31] <100> V V V V V <-> dhagenadhati
+gram#5[32] <100> V V V V V <-> dhatrktdhati
+gram#5[33] <100> V V V V V <-> dhatidhatrkt
+gram#5[34] <100> V V V V V <-> dhatidhagena
+gram#5[35] <100> V V V V V V <-> dheenagedhatrkt
+gram#5[36] <100> V V V V V V <-> genagedhatrkt
+gram#5[37] <100> V V V V V V <-> dhagedheenagena
+gram#5[38] <100> V V V V V V <-> dhageteenakena
+gram#5[39] <100> #ti V V V V V V <-> #ti tidhagedheenage
+gram#5[40] <100> V V V V V V <-> teenakegenage
+gram#5[41] <100> V V V V V V V V <-> dhagenagenanagena
+gram#5[42] <100> V V V V V V V V <-> dhatidhagedheenagena
+gram#5[43] <100> V V V V V V V V <-> dhatidhageteenakena
+gram#5[44] <100> V V V V V V V V A8 <-> dhatrktdhatidhatrkt A8
+gram#5[45] <100> V V V V V V V V A'8 <-> dhatrktdhatidhatrkt A'8
+------------
+ORD
+gram#6[1] plus ? ? ? ? ? ? ? ? ? ? A'6m2 <-- plus ? ? ? ? ? ? ? ? ? ? dhageteena
+gram#6[2] plus ? ? ? ? ? ? ? ? ? ? C6m2 <-- plus ? ? ? ? ? ? ? ? ? ? dhagedheena
+gram#6[3] plus ? ? ? ? ? ? ? ? ? ? A'6m2 <-- plus ? ? ? ? ? ? ? ? ? ? dhageteena
+gram#6[4] plus ? ? ? ? ? ? ? ? A8m2 <-- plus ? ? ? ? ? ? ? ? dhatidhagedheena
+gram#6[5] A8m2 ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? fin <-- dhatidhagedheena ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? fin
+gram#6[6] plus ? ? ? ? ? ? ? ? A'8m2 <-- plus ? ? ? ? ? ? ? ? dhatidhageteena
+gram#6[7] plus ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? A'8m2 <-- plus ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? dhatidhageteena
+gram#6[8] A'6 plus <-- dhageteenakena plus
+gram#6[9] A'8 plus <-- dhatidhageteenakena plus
+gram#6[10] A4 plus <-- dheenagena plus
+gram#6[11] C6 plus <-- dhagedheenagena plus
+gram#6[12] A8 plus <-- dhatidhagedheenagena plus
+gram#6[13] A8 fin <-- dhatidhagedheenagena fin
+gram#6[14] plus A16m4 <-- plus dhati dhagena dhatrkt dhati dhage
+gram#6[15] plus A16m2 <-- plus dhati dhagena dhatrkt dhati dhage dheena
+gram#6[16] plus A'16m2 #ke <-- plus dhati dhagena dhatrkt dhati dhage teena #ke
+gram#6[17] plus A16 <-- plus dhati dhagena dhatrkt dhati dhage dheenagena
+gram#6[18] plus A'16 <-- plus dhati dhagena dhatrkt dhati dhage teenakena
+------------
+LIN
+gram#7[1] Lahra --> do5 _ do5 do5 do5 _ do5 do5 si4 _ si4 do5 la4 _ la4 si4 lab4 _ lab4 _ la4 _ si4 mi5 do5 _ si4 do5 la4 _ lab4 la4
+gram#7[2] Lahra --> do5 do5 do5 do5 si4 la4 si4 do5 si4 la4 fa4 {1,mi4 do4} mi4 fa4 la4 si4

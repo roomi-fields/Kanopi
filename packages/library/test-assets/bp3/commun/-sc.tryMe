@@ -1,0 +1,14 @@
+// Bol Processor BP3
+// Script saved as "-sc.tryMe". Date: 2024-07-08 20:20:40
+// This is a script for Bol Processor BP3
+Show messages OFF -- avoid useless display
+Note convention = English
+Show graphics ON
+Load settings -se.Visser2
+Play - - {2,G4,E4,C4,- C5 - C5 {C5_-,A#4_ _}}
+Show messages ON
+Activate window Scrap
+Type <p>Welcome to <a target="_blank" href="https://bolprocessor.org/">Bol Processor BP3</a>...</p>
+Type <p>Hope you <big><i><font color="green">enjoyed</font></i></big> the music!</p>
+Run script -sc.trySubscript
+Type <p>That's all folks!</p>

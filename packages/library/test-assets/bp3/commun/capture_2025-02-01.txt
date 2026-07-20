@@ -1,0 +1,15 @@
+time	note	event	size	source	part	status	data1	data2	channel	cents correction	method
+2000	E4	NoteOn	3	0	0	144	64	64	1	0	note2
+2110	A3	NoteOn	3	104	0	145	57	49	2	0	note1
+2350	A3	NoteOff	3	104	0	129	57	0	2	0	note1
+2590	G3	NoteOn	3	104	0	145	55	34	2	0	note1
+2830	G3	NoteOff	3	104	0	129	55	0	2	0	note1
+2990	E4	NoteOff	3	0	0	128	64	0	1	0	note2
+2990	F4	NoteOn	3	0	0	144	65	64	1	0	note2
+3130	F3	NoteOn	3	104	0	145	53	36	2	0	note1
+3480	F3	NoteOff	3	104	0	129	53	0	2	0	note1
+3770	E3	NoteOn	3	104	0	145	52	47	2	0	note1
+3990	F4	NoteOff	3	0	0	128	65	0	1	0	note2
+3990	G4	NoteOn	3	0	0	144	67	64	1	0	note2
+4060	E3	NoteOff	3	104	0	129	52	0	2	0	note1
+4990	G4	NoteOff	3	0	0	128	67	0	1	0	note2

@@ -1,0 +1,14 @@
+// Bol Processor BP3
+// Data saved as "-da.tryReceive". Date: 2024-09-21 04:56:14
+-se.tryReceive
+
+// This data captures MIDI messages sent by -da.trySend via a virtual port
+// (e.g. "Bus 2" on Mac)
+// Read https://bolprocessor.org/capture-midi-input/ for explanations
+// Beware that the input filter allows to "treat" NoteOn/NoteOff, ControlChange, PitchBend, ChannelPressure messages
+
+_script(wait for C3 channel 1) _capture(104) C4 D4 E4 F4 G4 A4 _capture(0) B4
+
+_script(wait for C0 channel 1) _capture(111) D4 _pitchrange(200) _pitchbend(+50) _press(35) _mod(42) D4 _script(wait forever)
+
+_capture(99) _vel(0) C4 _script(wait forever)

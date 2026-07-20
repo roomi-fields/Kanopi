@@ -1,0 +1,37 @@
+// Bol Processor BP3
+// Generated from BPScript
+ORD
+_mm(120)
+gram#1[1] S --> M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11
+gram#1[2] M1 --> A -
+gram#1[3] M2 --> B - M1
+gram#1[4] M3 --> C - M2
+gram#1[5] M4 --> D - M3
+gram#1[6] M5 --> E . M4
+gram#1[7] M6 --> F - M5
+gram#1[8] M7 --> G - M6
+gram#1[9] M8 --> H - . M7
+gram#1[10] M9 --> I - M8
+gram#1[11] M10 --> J - .
+gram#1[12] M11 --> K
+------------
+ORD
+gram#2[1] A --> C3
+gram#2[2] B --> {Tr11 A}
+gram#2[3] C --> {Tr5 {A,B}}
+gram#2[4] D --> {Tr1 A C}
+gram#2[5] E --> {Tr7 {A -,D -}}
+gram#2[6] F --> {Tr6 A E D}
+gram#2[7] G --> {Tr11 {A B C D . E F E D C B A}}
+gram#2[8] H --> {Tr-11 {G F E D C B A}}
+gram#2[9] I --> {Tr11 G}
+gram#2[10] J --> {G F,Tr5 G F}
+gram#2[11] K --> {Tr-11 B C D}
+------------
+ORD
+gram#3[1] Tr11 --> _script(CT 0) _script(CT 1)
+gram#3[2] Tr5 --> _script(CT 2) _script(CT 3)
+gram#3[3] Tr1 --> _script(CT 4) _script(CT 5)
+gram#3[4] Tr7 --> _script(CT 6) _script(CT 7)
+gram#3[5] Tr6 --> _script(CT 8) _script(CT 9)
+gram#3[6] Tr-11 --> _script(CT 10) _script(CT 11)

@@ -1,0 +1,4 @@
+// Bol Processor BP3
+// Generated from BPScript
+ORD
+gram#1[1] S --> {_staccato(96) _script(CT 0) C8 - - -,_staccato(96) _script(CT 1) - C7 C7 C7,_staccato(92) _script(CT 2) E7 E7 E7 E7 E7 E7 E7 E7}

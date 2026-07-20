@@ -1,0 +1,27 @@
+#!//bin/bash
+
+../bp64 --version
+../bp64 --help
+../bp64 produce -gr.NotReich
+../bp64 produce -gr.NotReich -o NotReich.bpda
+../bp64 produce -gr.NotReich -d --csoundout -
+../bp64 produce -gr.NotReich -d --csoundout out.sco
+../bp64 produce -gr.NotReich -d --midiout NotReich.mid
+../bp64 templates -gr.checktemplates --traceout trace.txt
+../bp64 compile symbols.bpgr --traceout trace.txt
+../bp64 compile symbols.bpgr symbols.bpho --traceout trace.txt
+../bp64 produce symbols.bpgr symbols.bpho
+../bp64 produce symbols.bpgr symbols.bpho -o out.txt --traceout trace.txt --show-production
+../bp64 produce symbols.bpgr symbols.bpho -o out.txt --traceout trace.txt --trace-production
+../bp64 produce produce-all.bpgr
+../bp64 produce-all produce-all.bpgr
+../bp64 produce-all produce-all.bpgr -d --midiout out.mid
+../bp64 produce produce-all.bpgr -d --midiout out-type-0.mid --seed 0 --midiformat 0
+../bp64 produce produce-all.bpgr -d --midiout out-type-1.mid --seed 0 --midiformat 1
+../bp64 produce produce-all.bpgr -d --midiout out-type-2.mid --seed 0 --midiformat 2
+../bp64 compile -gr.Nadaka --traceout Nadaka-errors.txt
+../bp64 compile --indian -gr.Nadaka
+../bp64 produce --indian -gr.Nadaka
+../bp64 produce --indian -gr.Nadaka -d --rtmidi
+../bp64 produce -gr.Nadaka -se.hamsad
+../bp64 produce -gr.Nadaka -se.hamsad --midiout Nadaka.mid

@@ -1,0 +1,23 @@
+// Alphabet derive de « -ho.Rajeev » par bp3-engine, 2026-07-19.
+// Seul changement : les deux lignes d'en-tete BP2 (« V.2.5 » et la ligne « Date: »)
+// ont ete retirees. Le compilateur d'alphabet refuse le caractere ':' qu'elles contiennent
+// (« Can't accept character ":" in alphabet »). Le corps est inchange, a l'octet pres.
+// L'original -ho.Rajeev est conserve tel quel.
+
+-mi.Sargam
+S0
+S1
+S2
+n0
+d0
+g2
+g1
+g0
+M00
+M0
+M1
+n1
+d1 
+
+
+

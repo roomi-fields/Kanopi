@@ -1,0 +1,109 @@
+// Bol Processor BP3
+// Data saved as "-da.tryMPE". Date: 2024-10-04 17:40:27
+-se.tryMPE
+-to.tryMPE
+-al.abc1
+-so.abc1
+
+// These are short technical examples of how microtonality works in both Csound and real-time MIDI
+// Read explanations on https://bolprocessor.org/check-midi-microtonality/
+// The MIDI output device doesn't have to be MPE compatible. It should only be sensitive to pitchbend messages.
+// “Trace microtonality” is checked in the settings so that the details of microtonal adjustments are made visible
+// For a real test, play for instance "-da.Ombres_errantes" in the "imported_MusicXML" folder
+
+// 1) We start with plain pitchbend tests for the output MIDI device
+
+_chan(2) C4 _pitchrange(200) _pitchbend(+100) E4 _pitchbend(+200) C4 _pitchbend(-200) C4 _pitchbend(0) C4
+
+// 2) The "piano" scale with its stretched octave
+
+_scale(piano,0) _tempo(3) C4 C#4 D4 D#4 E4 F4 F#4 G4 G#4 A4 A#4 B4 C5
+
+// 3) The (so-called) "just intonation" scale. Check cent corrections in the trace
+
+_velcont _scale(just intonation,0) _vel(120) C4 C#4 D4 D#4 E4 F4 F#4 G4 G#4 A4 A#4 B4 C5 _vel(60)
+
+// 4) In this one you can hear perfect fifths C4/G4, E4/B4 and F4/C5, and a wolf's fifth D4/A4
+
+_scale(just intonation,0) {C4_ D4_ E4_ F4_, G4 A4 B4 C5}
+
+// 5) Listen to the beats between the "piano" and the equal temperament scales in the first part, then the perfect unison in the second part. "_scale(0,0)" resets the tuning to equal temperament
+
+_tempo(1/2) {_scale(piano,0) C2 C3 C4 C5 C6 C7 _scale(0,0) C2 C3 C4 C5 C6 C7 1/16, 1/16 C2 C3 C4 C5 C6 C7 C2 C3 C4 C5 C6 C7}
+
+// 6) This shows the difference between using the "A4" and "C4" block keys
+
+G3 A3 B3 {_scale(just intonation,A4) C4 D4 E4 A4, _scale(just intonation,C4) C5 D5 E5 A5}
+
+// 7) Let us try 'exotic' scales with arbitrary numbers of grades and notes labelled by key numbers
+// This one has 12 grades and 7 notes. "69" is A4, i.e. key#69
+
+_scale(meantone_try,69) key#60 key#62 key#65 key#69 key#72
+
+// 8) The same scale with base key = 64
+
+_scale(meantone_try2,73) key#64 key#66 key#69 key#73 key#76
+
+// 9) These ones retune the input notes and send them to the output MIDI device
+// You can check the corrections in the trace (and on PianoTeq)
+// Don't forget to set the input port filter to "treat & pass"
+// Try to change the base keys of these scales. It will transpose your input.
+
+_script(wait for C0 channel 1) _scale(just intonation,A4) _vel(0) C0
+
+// 10) Another one
+
+_vel(0) C0 _script(wait forever) _scale(piano,0)
+
+// 11) Check the combination of pitchbend and tonal adjustment. "_chan()" is ignored when MIDI microtonality is active, because channels 2-16 are used for tonal adjustments
+
+_scale(just intonation,0) _chan(3) _pitchrange(200) A4 _pitchbend(-100) A4
+
+// 12) This one has 20 grades and 12 notes. You need a MIDI device tuned for a 20-grade equal-tempered scale, but Csound will render it accurately.
+
+_scale(zest24-supergoya17plus3_Db,0) key#60 key#62 key#65 key#69 key#72
+
+// 13) The same one semitone higher via a pitchbend of +1 semitone
+
+_chan(4) _pitchrange(200) _scale(zest24-supergoya17plus3_Db,0) _pitchbend(+100) key#60 key#62 key#65 key#69 key#72 _pitchbend(0) key#72
+
+// 14) The pitchbend command will not be applied to notes preceding the microtonal phrase.
+
+_pitchrange(200) _pitchbend(+100) C4 D4 F4 _scale(zest24-supergoya17plus3_Db,0) key#60 key#62 key#65 key#69 key#72
+
+// 15) We combine the preceding phrases, each with its own scale
+
+_scale(zest24-supergoya17plus3_Db,0) key#60 key#62 key#65 key#69 key#72 _scale(meantone_try,69) key#60 key#62 key#65 key#69 key#72
+
+// 16) Another combination. Note the MIDI channel assignments for the first and last notes. Note key#62 is also split between two channels, therefore it can have different frequencies. Same result with Csound.
+
+{_scale(zest24-supergoya17plus3_Db,0) key#60 key#62 key#69 key#72, _scale(meantone_try,69) key#69 key#62 key#60 key#72}
+
+// 17) Play the same notes, one time without the scale therefore equal-tempered, and the second time with the scale. Check cent corrections. This works if the note convention is "English".
+
+C4 D4 A4 _scale(meantone_try,69) key#60 key#62 key#69
+
+// 18) A combination of notes played with/without pitchbend with and without microtonal corrections. Check cent corrections.
+
+C4 C4 _chan(3) _pitchrange(200) _pitchbend(+200) C4 _pitchbend(+100) _scale(just intonation,0) C4 E4 A4 _scale(0,0) C4 _pitchbend(0) C4
+
+// 19) The "grama" Indian scale modified to "22 shrutis" (despite its 23 grades) with a pramana shruti of 21 cents (arguably wrong)
+
+_scale(grama,d3_4) _tempo(4) sa_4 r1_4 r2_4 r3_4 r4_4 g1_4 g2_4 g3_4 g4_4 m1_4 m2_4 m3_4 p3_4 p4_4 d1_4 d2_4 d3_4 d4_4 n1_4 n2_4 n3_4 n4_4 sa_5
+
+// 20) The Bohlen-Pierce "just intonation" scale
+// https://en.wikipedia.org/wiki/Bohlen-Pierce_scale
+
+_scale(Bohlen-Pierce,0) C4 Db4 D4 E4 F4 Gb4 G4 H4 Jb4 J4 A4 Bb4 B4 C5
+
+// 21) Microtonality also applies to sound objects. The '0' means blockkey = 'C4' by default. Check cent corrections at the end of the trace.
+
+_scale(just intonation,0) a f b b
+
+// 22-23-24) Examples explained on https://bolprocessor.org/check-midi-microtonality/
+
+_pitchrange(200) C4 _pitchbend(100) C4 {_pitchbend(-100) C4, _pitchbend(200) C4} C4 _pitchbend(0) C4
+
+_pitchrange(200) C4 _pitchbend(100) C4 {_pitchbend(-100) C4, _chan(2) _pitchrange(200) _pitchbend(200) C4} C4 _pitchbend(0) C4
+
+_scale(0,0) _pitchrange(200) C4 _pitchbend(100) C4 {_pitchbend(-100) C4, _pitchbend(200) C4} C4 _pitchbend(0) C4

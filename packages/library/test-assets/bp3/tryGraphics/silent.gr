@@ -1,0 +1,5 @@
+// tryGraphics — silent sound objects rewrite
+// Original: -gr.tryGraphics (Bernard)
+// _legato(20) and _staccato(10) = engine controls (temporal)
+ORD
+gram#1[1] S --> {_legato(20) C4 D4 E4, _staccato(10) F#5 G3, - G4}

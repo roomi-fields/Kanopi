@@ -1,0 +1,5 @@
+// Bol Processor BP3
+// Data saved as "-da.tryStopContinue". Date: 2024-12-22 17:50:21
+-se.tryStopContinue
+
+_script(MIDI send Stop) _tempo(2) A2 G#2 C2 Bb2 F#2 G2 B2 _script(MIDI send Continue)
