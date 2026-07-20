@@ -1,3 +1,4 @@
+// @language: bpscript
 [@maxitems:25]   // MaxItemsProduce=25 dans le reglage natif : le moteur s'arrete
                  // apres 25 items. Sans ce plafond l'enumeration part vers 100000 et
                  // certaines grammaires ne rendent jamais la main.

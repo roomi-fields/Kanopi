@@ -1,3 +1,4 @@
+// @language: bpscript
 // all-items1.bps — Test _goto, _failed, _repeat avec AllItems=1
 // Traduit de bp3-engine/test-data/-gr.tryAllItems1 (Bernard)
 // Settings: AllItems=1, MaxItemsProduce=50

@@ -1,3 +1,4 @@
+// @language: bp3
 -ho.abc
 RND
 S --> X1 X2 X3

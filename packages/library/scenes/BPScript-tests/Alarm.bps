@@ -1,3 +1,4 @@
+// @language: bpscript
 // Alarm.bps — migré de bp3-engine/test-data/-gr.Alarm (porter bp3ToScene, 2026-07-17)
 // Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
 

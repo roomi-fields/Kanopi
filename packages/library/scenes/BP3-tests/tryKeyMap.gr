@@ -1,3 +1,4 @@
+// @language: bp3
 // Bol Processor version BP2.9.2
 // Grammar file saved as '-gr.tryKeyMap'. Date: Dim 18 oct 1998 -- 20:17
 // -or.cello  (BPE-4 : type MIDI-orchestra desactive, wMIDIorchestra commente dans -BP3.h)

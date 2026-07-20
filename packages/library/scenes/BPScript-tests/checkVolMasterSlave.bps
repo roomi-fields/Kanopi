@@ -1,3 +1,4 @@
+// @language: bpscript
 // checkVolMasterSlave.bps — Traduit de bp3-engine/test-data/-gr.checkVolMasterSlave
 // (Bernard, 1997). Teste le volume sur un couple gabarit maître / esclave.
 //

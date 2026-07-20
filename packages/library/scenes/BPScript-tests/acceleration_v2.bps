@@ -1,3 +1,4 @@
+// @language: bpscript
 // acceleration_v2.bps — "sawtooth rhythm" par Harm Visser (1997)
 // Source: bp3-ctests/-gr.acceleration (version avec poids <N> et direction <->)
 // _chromashift(12) → !(chromashift:12), _vel(N) → !(vel:N), <N> → [weight:N], <-> → <>

@@ -1,3 +1,4 @@
+// @language: bp3
 // Fichier repare par bp3-engine, 2026-07-19.
 // Le silence indetermine, ecrit '…' a l'origine, avait ete converti a tort en 'É'
 // (octet 0xC9 du jeu Mac lu comme du latin-1). Les 12 erreurs de compilation venaient

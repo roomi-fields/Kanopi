@@ -1,3 +1,4 @@
+// @language: bp3
 // Bol Processor version BP2.8.1
 // Grammar file saved as '-gr.tryKeyXpand'. Date: Dim 3 Mai 1998 -- 20:37
 // -or.allpianos  (BPE-4 : type MIDI-orchestra desactive, wMIDIorchestra commente dans -BP3.h)

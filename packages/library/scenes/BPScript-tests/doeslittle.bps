@@ -1,3 +1,4 @@
+// @language: bpscript
 // doeslittle.bps — A very simple grammar that does almost nothing
 // Traduit de bp3-engine/test-data/-gr.doeslittle (Bernard, 1998)
 // Encoding fix: ¥ → . (old Mac)

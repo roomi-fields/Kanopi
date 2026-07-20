@@ -1,3 +1,4 @@
+// @language: bpscript
 // look-and-say.bps — Look-and-Say sequence (Conway)
 // Traduit de bp3-engine/library/experimental/look-and-say/grammar.gr
 //

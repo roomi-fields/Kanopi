@@ -1,3 +1,4 @@
+// @language: bpscript
 // tryAllItems1.bps — Same as all-items but with Choice=3
 // Traduit de bp3-engine/test-data/-gr.tryAllItems1
 

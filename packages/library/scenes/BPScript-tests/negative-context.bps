@@ -1,3 +1,4 @@
+// @language: bpscript
 // negative-context.bps — test des contextes négatifs #
 // Traduit de bp3-engine/library/examples/negative-context/grammar.gr
 //

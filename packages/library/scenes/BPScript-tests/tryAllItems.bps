@@ -1,3 +1,4 @@
+// @language: bpscript
 // all-items.bps — Test _goto, _failed, _repeat, K-params
 // Traduit de bp3-engine/test-data/-gr.tryAllItems (Bernard)
 

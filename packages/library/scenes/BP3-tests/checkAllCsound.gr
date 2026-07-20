@@ -1,3 +1,4 @@
+// @language: bp3
 // En-tete redirige par bp3-engine, 2026-07-19 (BPE-19).
 // La grammaire declarait « -cs.checkAllCsound », fichier ABSENT du depot : les 30 erreurs
 // etaient toutes des recherches d'instruments dans un fichier inexistant. « -cs.tryCsound »

@@ -1,2 +1,3 @@
+// @language: bp3
 RND
 gram#1[1] S --> a b c d

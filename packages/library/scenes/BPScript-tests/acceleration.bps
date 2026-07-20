@@ -1,3 +1,4 @@
+// @language: bpscript
 // acceleration.bps — "sawtooth rhythm" par Harm Visser (1997)
 // Traduit de bp3-engine/test-data/-gr.acceleration
 // _transpose = runtime, _vel = runtime — both via _script(CTn)

@@ -1,3 +1,4 @@
+// @language: bpscript
 // checkHomo.bps — migré de bp3-engine/test-data/-gr.checkHomo (porter bp3ToScene, 2026-07-17)
 // Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
 // Homomorphisme INLINE du .gr d'origine (-ho.checkHomo) chargé via la table lib (sections *,H,TR) :

@@ -1,3 +1,4 @@
+// @language: bp3
 // Fichier repare par bp3-engine, 2026-07-19.
 // (1) Les deux lignes d'en-tete BP2 (« V.2.4 » et « Date: … ») et la ligne « INIT: » vide
 //     ont ete retirees : le moteur BP3 les refuse (6 erreurs sur 12).

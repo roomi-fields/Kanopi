@@ -1,3 +1,4 @@
+// @language: bpscript
 // repeat.bps — test des répétitions _repeat et poids <1-1>
 // Traduit de bp3-engine/library/examples/repeat/grammar.gr
 //

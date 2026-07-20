@@ -1,3 +1,4 @@
+// @language: bpscript
 // tryMIDIfile.bps — Test MIDI file output with volume control
 // Traduit de bp3-engine/test-data/-gr.tryMIDIfile (Bernard, 1997)
 

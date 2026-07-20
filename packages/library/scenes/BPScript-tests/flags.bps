@@ -1,3 +1,4 @@
+// @language: bpscript
 // flags.bps — test du système de flags
 // Traduit de bp3-engine/library/examples/flags/grammar.gr
 

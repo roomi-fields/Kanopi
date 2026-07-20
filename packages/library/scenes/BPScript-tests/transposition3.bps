@@ -1,3 +1,4 @@
+// @language: bpscript
 // transposition3.bps — Autotransposer with _repeat and K-params
 // Traduit de bp3-engine/test-data/-gr.transposition3 (Harm Visser, 1997)
 // _transpose = runtime (dispatcher), _repeat = engine
