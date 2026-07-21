@@ -7,6 +7,8 @@
   import { writeMmDirective } from '../../lib/runtimes/mm-directive';
   import { kronosCursor } from '../../stores/kronos-cursor.svelte';
   import { fmt2, fmt3 } from '../../lib/format/bar-beat';
+  import { isNonProgramFile } from '../../lib/workspace/types';
+  import { core } from '../../lib/core';
 
   // STEP lives in the transport cluster (beta issue 4 — transport buttons grouped).
   // Verdict (b) « battement ÉCRIT » ([496/499]) : step(1) avance d'UN temps d'écriture,
@@ -19,20 +21,36 @@
     workspace.activeTabId ? workspace.fileById(workspace.activeTabId) : undefined
   );
   const canStep = $derived(
-    !!activeFile && (activeFile.runtime === 'bpscript' || activeFile.runtime === 'bp3')
+    !!activeFile &&
+      !isNonProgramFile(activeFile.path) &&
+      (activeFile.runtime === 'bpscript' || activeFile.runtime === 'bp3')
   );
+
+  // Play/Produce both target the ACTIVE tab, which must be an actual scene — a
+  // library/data file (`libraries/…`, `resources/…`) is never playable; the
+  // buttons stay visible but grey out so they keep reading as "act on the
+  // active scene" rather than vanishing (Romain).
+  const canPlay = $derived(!!activeFile && !isNonProgramFile(activeFile.path));
 
   // PRODUCE: (re)derive the active scene and refresh its structure, leaving the
   // transport at REST (Romain's produce/play split — produce generates, Play
-  // plays). Same gesture as the produce-on-open. Stop first so Produce yields a
-  // clean, freshly-produced scene ready to play (and, with re-random on, a new
-  // variation). Available for any bp3/bpscript program in the active tab.
+  // plays). Only a bp3/bpscript program actually derives (Strudel/Hydra have no
+  // symbolic production).
   const canProduce = $derived(
-    !!activeFile && (activeFile.runtime === 'bpscript' || activeFile.runtime === 'bp3')
+    canPlay && !!activeFile && (activeFile.runtime === 'bpscript' || activeFile.runtime === 'bp3')
   );
+  // PRODUCE is also a bascule gesture (same "one live scene" rule as Play): producing
+  // a DIFFERENT tab than the currently-live one cuts the outgoing scene first; producing
+  // the SAME live tab again just stops it in place before re-deriving (the existing
+  // "clean re-produce" behavior, e.g. re-random on Produce).
   async function produce() {
     if (!activeFile) return;
-    playback.stop();
+    if (activeFile.id !== openBlocks.liveFileId) {
+      await core.silenceRuntimes();
+      openBlocks.disarmAll();
+    } else {
+      playback.stop();
+    }
     await openBlocks.produceLoadedProgram(activeFile.id);
   }
 
@@ -110,17 +128,18 @@
 
 <div class="transport-cluster">
   <div class="transport-buttons">
-    {#if canProduce}
-      <button
-        class="prod-btn"
-        type="button"
-        title="PRODUCE — (re)génère la scène (nouveau tirage aléatoire), au repos, prête à jouer"
-        onclick={produce}
-      >
-        PROD
-      </button>
-      <span class="btn-sep" aria-hidden="true"></span>
-    {/if}
+    <button
+      class="prod-btn"
+      type="button"
+      disabled={!canProduce}
+      title={canProduce
+        ? 'PRODUCE — (re)génère la scène (nouveau tirage aléatoire), au repos, prête à jouer'
+        : 'PRODUCE — indisponible (l’onglet actif n’est pas une scène bp3/bpscript)'}
+      onclick={produce}
+    >
+      PROD
+    </button>
+    <span class="btn-sep" aria-hidden="true"></span>
     <button class="tbtn" type="button" title="Stop" onclick={() => playback.stop()}>
       <svg viewBox="0 0 12 12" fill="currentColor"
         ><rect x="2" y="2" width="8" height="8" rx="0.5" /></svg
@@ -130,7 +149,12 @@
       class="tbtn"
       class:playing={playback.mode === 'playing'}
       type="button"
-      title={playback.mode === 'playing' ? 'Playing' : 'Play'}
+      disabled={!canPlay}
+      title={canPlay
+        ? playback.mode === 'playing'
+          ? 'Playing'
+          : 'Play'
+        : 'Play — indisponible (l’onglet actif n’est pas une scène)'}
       onclick={() => playback.play()}
     >
       <svg viewBox="0 0 12 12" fill="currentColor"><path d="M2.5 1.5 L10 6 L2.5 10.5 Z" /></svg>
@@ -152,21 +176,24 @@
         /></svg
       >
     </button>
-    {#if canStep && activeFile}
-      <button
-        class="step-btn"
-        type="button"
-        title="STEP — beat suivant"
-        onclick={() =>
-          playback.step({
-            runtime: activeFile.runtime,
-            name: activeFile.name,
-            contents: activeFile.contents
-          })}
-      >
-        STEP
-      </button>
-    {/if}
+    <button
+      class="step-btn"
+      type="button"
+      disabled={!canStep}
+      title={canStep
+        ? 'STEP — beat suivant'
+        : 'STEP — indisponible (l’onglet actif n’est pas une scène bp3/bpscript)'}
+      onclick={() => {
+        if (!activeFile) return;
+        playback.step({
+          runtime: activeFile.runtime,
+          name: activeFile.name,
+          contents: activeFile.contents
+        });
+      }}
+    >
+      STEP
+    </button>
     <button
       class="toggle-btn"
       class:on={transport.loop}
@@ -283,9 +310,13 @@
     border-radius: 3px;
     transition: all 0.15s;
   }
-  .step-btn:hover {
+  .step-btn:hover:not(:disabled) {
     color: var(--amber);
     border-color: var(--amber-dim);
+  }
+  .step-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
   }
 
   /* PRODUCE — the generative gesture; sits FIRST, set apart from the playback
@@ -300,9 +331,14 @@
     border-radius: 3px;
     transition: all 0.15s;
   }
-  .prod-btn:hover {
+  .prod-btn:hover:not(:disabled) {
     background: rgba(232, 156, 62, 0.12);
     border-color: var(--amber);
+  }
+  .prod-btn:disabled,
+  .tbtn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
   }
   .btn-sep {
     width: 1px;
@@ -353,7 +389,7 @@
     cursor: not-allowed;
   }
 
-  .tbtn:hover {
+  .tbtn:hover:not(:disabled) {
     color: var(--text);
     background: var(--elevated);
   }

@@ -6,16 +6,17 @@ import { clock } from './clock.svelte';
 
 // load→play regression guard (beta issues 3+5): a freshly-loaded program must
 // be playable immediately, WITHOUT waiting for the reactively-`$derived`
-// `openBlocks.list` to settle. The library `load` gesture stops the previous
-// scene (`hushAll`, which churns the reactive graph) THEN loads + plays the new
-// one; if the play path read the stale derived list, the new scene would arm
-// nothing and the transport would sit on "Playing" with no sound. `blocksForFile`
-// re-extracts the file's blocks straight from the workspace, so it is correct
-// the instant `loadFiles` returns.
+// `openBlocks.list` to settle. The Play bascule gesture (`playback.play()`)
+// silences the outgoing scene (`core.silenceRuntimes()`, which churns the
+// reactive graph) THEN arms + plays the newly-active tab; if the play path read
+// the stale derived list, the new scene would arm nothing and the transport
+// would sit on "Playing" with no sound. `blocksForFile` re-extracts the file's
+// blocks straight from the workspace, so it is correct the instant `openBundle`
+// returns.
 
 describe('openBlocks.blocksForFile — deterministic, not derived-list dependent', () => {
   it('returns a just-loaded program file blocks immediately', () => {
-    const id = workspace.loadFiles(
+    const id = workspace.openBundle(
       [{ path: 'beat.strudel', contents: 'sound("bd hh sd hh")' }],
       'beat.strudel'
     );
@@ -38,7 +39,7 @@ describe('openBlocks.blocksForFile — deterministic, not derived-list dependent
 // re-enter the replay.
 describe('Play-from-stopped — explicit armed-block eval, runs once, no recursion', () => {
   it('Play sounds the active scene armed blocks exactly once', async () => {
-    const id = workspace.loadFiles(
+    const id = workspace.openBundle(
       [{ path: 'reenter.strudel', contents: 'sound("bd hh")' }],
       'reenter.strudel'
     );
@@ -55,9 +56,9 @@ describe('Play-from-stopped — explicit armed-block eval, runs once, no recursi
       clock.setBpm(replayCount % 2 === 0 ? 137 : 143); // genuine change → fan-out, no re-entry
     };
     try {
-      // No live Kronos handle (nothing was evaluated) → Play takes the from-stopped branch.
-      playback.play(); // the ONE Play → exactly one explicit replay
-      await Promise.resolve();
+      // No live Kronos handle (nothing was evaluated) → Play takes the bascule branch
+      // (silence + disarm + arm-and-play), which funnels through replayArmed exactly once.
+      await playback.play(); // the ONE Play → exactly one explicit replay
     } finally {
       openBlocks.replayArmed = realReplay;
       openBlocks.armed = new Set();
@@ -70,7 +71,7 @@ describe('Play-from-stopped — explicit armed-block eval, runs once, no recursi
     // The surgical Ctrl+Enter path evaluates ONLY the touched block — it must never trigger
     // an armed-set replay. With the host clock gone there is no subscriber at all, so
     // `replayArmed` is simply never reached by a direct single-block eval.
-    const id = workspace.loadFiles(
+    const id = workspace.openBundle(
       [{ path: 'silent.strudel', contents: 'sound("bd")' }],
       'silent.strudel'
     );
@@ -100,7 +101,7 @@ describe('Play-from-stopped — explicit armed-block eval, runs once, no recursi
 describe('openBlocks.armLoadedProgram — arms WITHOUT starting the transport', () => {
   it('arms a freshly-loaded program file blocks but leaves the clock alone', () => {
     openBlocks.armed = new Set();
-    const id = workspace.loadFiles(
+    const id = workspace.openBundle(
       [{ path: 'noauto.strudel', contents: 'sound("bd hh sd")' }],
       'noauto.strudel'
     );
@@ -117,7 +118,7 @@ describe('openBlocks.armLoadedProgram — arms WITHOUT starting the transport', 
 
 describe('openBlocks.disarmAll — clears armed/errored without touching the clock', () => {
   it('empties the armed and errored sets', () => {
-    const id = workspace.loadFiles(
+    const id = workspace.openBundle(
       [{ path: 'beat.strudel', contents: 'sound("bd hh")' }],
       'beat.strudel'
     );

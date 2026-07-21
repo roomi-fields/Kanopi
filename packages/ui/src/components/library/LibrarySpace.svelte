@@ -2,9 +2,6 @@
   import { library } from '../../stores/library.svelte';
   import { workspace } from '../../stores/workspace.svelte';
   import { ui } from '../../stores/ui.svelte';
-  import { openBlocks } from '../../stores/blocks.svelte';
-  import { core } from '../../lib/core';
-  import { tick } from 'svelte';
   import type { LibraryItem, LibraryCategory } from '../../lib/library/catalog';
   import { RESOURCE_FILES, type LibraryFile } from '../../lib/library/resources';
 
@@ -104,26 +101,17 @@
     ui.activeActivityView = 'now';
   }
 
-  async function load(item: LibraryItem) {
-    // Swap scenes WITHOUT a full `hushAll`: silence the outgoing scene's runtimes (audio +
-    // backtick) AND disarm its blocks, then load + PRODUCE the new scene. A full hush would
-    // tear down the live Kronos handle and churn the reactive graph mid-swap; here we only
-    // cut sound + bookkeeping, and the new scene's produce builds its own (stopped) handle.
-    await core.silenceRuntimes();
-    openBlocks.disarmAll();
-    const focusId = workspace.loadFiles(item.files, item.sessionFile);
-    // The library is a launcher: on load, land on NOW — you open a scene to PLAY it
-    // (Romain, 2026-07-13). Mine is for managing your OWN files, not the landing spot
-    // after loading a bundled scene.
+  function load(item: LibraryItem) {
+    // Opening a scene from the library is EDIT-ONLY (Romain's tab semantics): it
+    // opens a NEW tab alongside whatever is already open and produces/plays
+    // nothing — it must not touch a scene that's already sounding. Switching the
+    // LIVE scene is now an explicit Produce/Play gesture on the active tab
+    // (TransportCluster's bascule), not a side effect of opening a file.
+    workspace.openBundle(item.files, item.sessionFile);
+    // The library is a launcher: on load, land on NOW — you open a scene to look
+    // at/edit it (Romain, 2026-07-13). Mine is for managing your OWN files, not
+    // the landing spot after opening a bundled scene.
     ui.activeActivityView = 'now';
-    // Load = PRODUCE, not play (Romain's produce/play split): derive the scene so
-    // its structure shows + the tempo (`@mm`) is adopted, and arm it so Play
-    // sounds it — but do NOT start the transport on load. `await tick()` flushes
-    // the reactive updates from `loadFiles` first so the blocks are re-extractable.
-    if (focusId) {
-      await tick();
-      await openBlocks.produceLoadedProgram(focusId);
-    }
   }
 
   function pickCategory(c: LibraryCategory | 'all') {

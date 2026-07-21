@@ -2,10 +2,10 @@ import { starterFiles } from '../lib/workspace/fixtures';
 import type { TreeNode, VirtualFile } from '../lib/workspace/types';
 import { runtimeFromExt } from '../lib/workspace/types';
 import { buildTree } from '../lib/workspace/build-tree';
-import { forgetFile, forgetAllFiles } from './blocks.svelte';
+import { forgetFile } from './blocks.svelte';
 
 // Monotonic counter so every minted file id is unique for the lifetime of the
-// page — `Date.now()` alone collides when two `loadFiles`/`addFile` calls land in
+// page — `Date.now()` alone collides when two `openBundle`/`addFile` calls land in
 // the SAME millisecond (rapid demo swaps), and a colliding id let a STALE tab in
 // `openTabIds` resolve to a DIFFERENT freshly-loaded file, resurfacing the
 // previous program's blocks (the phantom "02" open block after a scene swap).
@@ -86,28 +86,23 @@ class WorkspaceStore {
     return id;
   }
 
-  /** Replace every file + tab with a fresh set and focus the given path (if any).
-   * Returns the focused file's id (or null) so the caller can arm+play the
-   * loaded program — a demo sounds on load, not after a manual disarm/rearm. */
-  loadFiles(files: { path: string; contents: string }[], focusPath?: string): string | null {
-    const next: VirtualFile[] = files.map((f) => ({
-      id: mintFileId(),
-      path: f.path,
-      name: f.path.split('/').pop() ?? f.path,
-      contents: f.contents,
-      runtime: runtimeFromExt(f.path)
-    }));
-    this.files = next;
-    this.openTabIds = [];
-    this.activeTabId = null;
-    // Every prior file id is gone — drop their memoized extractions wholesale.
-    forgetAllFiles();
-    if (focusPath) {
-      const target = next.find((f) => f.path === focusPath);
-      if (target) {
-        this.openFile(target.id);
-        return target.id;
-      }
+  /** Add a bundle of files (e.g. a library scene's files) as NEW tabs alongside
+   * whatever is already open, and focus the given path (if any). Never wipes —
+   * opening a scene from the library is an EDIT-ONLY gesture (Romain's tab
+   * semantics): it must not close/silence anything already open or playing.
+   * Each file is added via `addFile` (dedup by path, same as any other open),
+   * so re-opening an already-open bundle just refocuses it. Returns the
+   * focused file's id, or null if `focusPath` was omitted or not found in the
+   * bundle. */
+  openBundle(files: { path: string; contents: string }[], focusPath?: string): string | null {
+    let focusId: string | null = null;
+    for (const f of files) {
+      const id = this.addFile(f.path, f.contents);
+      if (focusPath && f.path === focusPath) focusId = id;
+    }
+    if (focusId) {
+      this.openFile(focusId);
+      return focusId;
     }
     return null;
   }

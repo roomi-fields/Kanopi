@@ -89,7 +89,8 @@
     background: var(--python);
   }
   .ext-kanopi,
-  .ext-bps {
+  .ext-bps,
+  .ext-gr {
     background: var(--kanopi);
   }
   .ext-js {

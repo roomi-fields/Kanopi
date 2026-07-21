@@ -128,14 +128,14 @@ describe('Actors-panel arm no longer self-starts the transport (Romain 2026-07-1
     // already wired it to `core.actors.setActors` (the REAL Actors-panel store); a
     // test-local override would silently disconnect `core.actors` from the eval and
     // hide the exact wiring the Actors panel depends on.
-    // Open the file through the REAL workspace (`workspace.loadFiles`, sets the active
+    // Open the file through the REAL workspace (`workspace.openBundle`, sets the active
     // tab) then PRODUCE it (`openBlocks.produceLoadedProgram`, the exact "open a scene"
     // gesture) — arms its blocks AND builds the persistent Kronos handle in STOPPED
     // state (Model C), exactly the state before any Play click. This wiring matters:
     // the OLD self-start (`openBlocks.replayArmed()`) only does anything when the
     // workspace has an active tab with armed blocks — a bare adapter `.evaluate()` call
     // (bypassing the workspace) would let the bug hide behind an unmet precondition.
-    const fileId = workspace.loadFiles([{ path: 'arm-a.bps', contents: SRC }], 'arm-a.bps');
+    const fileId = workspace.openBundle([{ path: 'arm-a.bps', contents: SRC }], 'arm-a.bps');
     expect(fileId).not.toBeNull();
     await openBlocks.produceLoadedProgram(fileId!);
     expect(
@@ -170,7 +170,7 @@ describe('Actors-panel arm no longer self-starts the transport (Romain 2026-07-1
 
   it('(b)+(c) Play sounds the armed actor and keeps a pre-Play-disarmed actor silent', async () => {
     // NOTE: no test-local `setActorsSink` override here either — see (a) above.
-    const fileId = workspace.loadFiles([{ path: 'arm-bc.bps', contents: SRC }], 'arm-bc.bps');
+    const fileId = workspace.openBundle([{ path: 'arm-bc.bps', contents: SRC }], 'arm-bc.bps');
     expect(fileId).not.toBeNull();
     await openBlocks.produceLoadedProgram(fileId!);
     const handle = kronosCursor.active;

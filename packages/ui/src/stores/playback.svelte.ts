@@ -13,6 +13,8 @@
 import { core } from '../lib/core';
 import { kronosCursor } from './kronos-cursor.svelte';
 import { openBlocks } from './blocks.svelte';
+import { workspace } from './workspace.svelte';
+import { isNonProgramFile } from '../lib/workspace/types';
 
 type Mode = 'stopped' | 'playing' | 'paused';
 
@@ -50,31 +52,52 @@ class Playback {
     return kronosCursor.active?.transport ?? null;
   }
 
-  play() {
-    const t = this.transport;
-    // Resume IN PLACE on the live Transport (no re-eval): one scheduler across the whole
-    // play→pause→play cycle. UNCHANGED.
-    if (t && t.state === 'paused') {
-      // Les voix de code reprennent via le relais lifecycle (paused→running = reprise
-      // resynchronisée à la position transport, option (b)) — plus d'appel hôte exprès.
-      t.play();
+  /** Play = "make the ACTIVE tab the one live scene", never several at once.
+   *
+   * Two cases:
+   *  - The active tab IS already the routed-live scene (`openBlocks.liveFileId`)
+   *    and a Transport exists for it → resume/replay IN PLACE, the untouched
+   *    Model C paths below (B7/B8/B10 in TRANSPORT_BEHAVIOR.md).
+   *  - Anything else (a different tab, or nothing live yet) → BASCULE: cut the
+   *    outgoing scene (`core.silenceRuntimes()`, which tears down the Kronos
+   *    handle) and arm+play the active tab fresh. Only one scene ever sounds. */
+  async play() {
+    const active = workspace.activeTabId;
+    // No active tab, or the active tab is a library/data file: nothing to play
+    // (the Play button is disabled in this state too — this is the safety net).
+    if (!active) return;
+    const activeFile = workspace.fileById(active);
+    if (!activeFile || isNonProgramFile(activeFile.path)) return;
+
+    if (active === openBlocks.liveFileId && this.transport) {
+      const t = this.transport;
+      // Resume IN PLACE on the live Transport (no re-eval): one scheduler across the whole
+      // play→pause→play cycle. UNCHANGED.
+      if (t.state === 'paused') {
+        // Les voix de code reprennent via le relais lifecycle (paused→running = reprise
+        // resynchronisée à la position transport, option (b)) — plus d'appel hôte exprès.
+        t.play();
+        return;
+      }
+      // Model C — Play from STOPPED with a PERSISTED handle: the derived timeline still lives
+      // in Kronos (Stop only moved the playhead to 0). REPLAY it from 0 with ZERO re-derivation
+      // — no new scheduler, no eval. The handle stays the same; its transport flips to
+      // 'running' (the mode mirror follows). reRandom still re-rolls at the loop boundary via
+      // the handle's persisted closure — that is NOT this path.
+      if (t.state === 'stopped') {
+        void core.replayActiveScene();
+        return;
+      }
+      // 'running' — already playing, nothing to do.
       return;
     }
-    // Model C — Play from STOPPED with a PERSISTED handle: the derived timeline still lives
-    // in Kronos (Stop only moved the playhead to 0). REPLAY it from 0 with ZERO re-derivation
-    // — no new scheduler, no eval. The handle stays the same; its transport flips to
-    // 'running' (the mode mirror follows). reRandom still re-rolls at the loop boundary via
-    // the handle's persisted closure — that is NOT this path.
-    if (t && t.state === 'stopped') {
-      void core.replayActiveScene();
-      return;
-    }
-    // From stopped with NO live handle (scene never derived, or fully torn down): EVAL once.
-    // EXPLICITLY eval the active scene's armed blocks — that eval derives once and creates the
-    // persistent Kronos handle (whose transport flips to 'running', so `mode` reads 'playing').
-    // No host clock to start: Kronos becomes the authority the instant the handle is built.
-    // Subsequent Stop/Play replay it without eval. (No host resume-offset — Kronos handles resume.)
-    void openBlocks.replayArmed();
+
+    // BASCULE: the active tab is a DIFFERENT scene than whatever is currently live
+    // (or nothing is live at all). Cut the outgoing scene first — never two scenes
+    // sounding at once — then arm+play the active tab, which sets `liveFileId`.
+    await core.silenceRuntimes();
+    openBlocks.disarmAll();
+    await openBlocks.armAndPlayFile(active);
   }
 
   pause() {

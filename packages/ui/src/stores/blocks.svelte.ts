@@ -53,6 +53,18 @@ class OpenBlocksStore {
    */
   errored = $state<Set<string>>(new Set());
 
+  /**
+   * Which open file is currently ROUTED to the engine (produced or armed+played)
+   * — host-side routing bookkeeping, NOT transport state (Kronos alone owns
+   * transport/position; this is "which tab did I last hand to Kronos", the same
+   * kind of fact as `activeTabId`/`armed`). Used by the play/produce bascule
+   * gesture to tell "resume the SAME live scene" (Model C, no re-derivation)
+   * from "switch to a DIFFERENT tab" (silence the outgoing scene first). Stays
+   * put across pause/stop — Model C keeps the handle alive, so the live file
+   * doesn't change just because the transport did.
+   */
+  liveFileId = $state<string | null>(null);
+
   isArmed(q: string): boolean {
     return this.armed.has(q);
   }
@@ -134,9 +146,9 @@ class OpenBlocksStore {
   /**
    * Blocks of ONE file, extracted straight from the workspace file — NOT read
    * off the reactively-`$derived` `this.list`. A freshly-loaded program (after
-   * `loadFiles` + a `hushAll` that churned the reactive graph) may not yet be
-   * reflected in `this.list` when `playLoadedProgram` runs, so the play path
-   * must compute the blocks deterministically here instead of trusting the
+   * `openBundle` + a `hushAll` that churned the reactive graph) may not yet be
+   * reflected in `this.list` when `armAndPlayFile`/`produceLoadedProgram` run, so
+   * the play path must compute the blocks deterministically here instead of trusting the
    * derived snapshot. Mirrors `computeOpenBlocks`'s per-file logic.
    */
   blocksForFile(fileId: string): OpenBlock[] {
@@ -171,6 +183,7 @@ class OpenBlocksStore {
   async armAndPlayFile(fileId: string) {
     const fileBlocks = this.blocksForFile(fileId);
     if (fileBlocks.length === 0) return;
+    this.liveFileId = fileId;
     const next = new Set(this.armed);
     for (const b of fileBlocks) next.add(b.qualifiedName);
     this.armed = next;
@@ -216,6 +229,7 @@ class OpenBlocksStore {
     this.armLoadedProgram(fileId);
     const file = workspace.fileById(fileId);
     if (!file) return;
+    if (this.blocksForFile(fileId).length > 0) this.liveFileId = fileId;
     // Record the DERIVATION outcome of this produce so the compile chip is fail-loud
     // (msg [598]): a symbolic scene that PARSES but throws at derive (e.g. an
     // unresolvable pitch) must not read green. First thrown block = the file fails.
@@ -252,23 +266,6 @@ class OpenBlocksStore {
       const resErrors = resourceResolutionErrors(file.contents);
       resourceStatus.report(fileId, file.contents, resErrors.length === 0, resErrors);
     }
-  }
-
-  /**
-   * Play whatever was just loaded — the coherent "load = it sounds" gesture
-   * (beta issues 3+5). A program file (`.bps`, `.gr`, a single sketch) arms its
-   * own blocks and starts the transport; a program with no blocks of its own just
-   * starts the transport. Run after a microtask by the caller so the
-   * reactively-derived block list has settled.
-   */
-  async playLoadedProgram(fileId: string) {
-    const hasBlocks = this.blocksForFile(fileId).length > 0;
-    if (hasBlocks) {
-      await this.armAndPlayFile(fileId);
-    }
-    // A program with NO blocks has nothing to derive → no Kronos handle, no transport to
-    // start. The host invents no "playing" state for an empty program (the old `clock.play()`
-    // here flipped a host flag with no audio — a fabricated transport state, now gone).
   }
 
   /** Re-eval every armed block of the active scene. Called EXPLICITLY at each
@@ -376,11 +373,6 @@ function extractBlocksMemo(id: string, contents: string, runtime: Runtime): Code
  */
 export function forgetFile(id: string): void {
   extractMemo.delete(id);
-}
-
-/** Drop every memoized extraction (workspace-wide replace, e.g. loadFiles). */
-export function forgetAllFiles(): void {
-  extractMemo.clear();
 }
 
 function computeOpenBlocks(): OpenBlock[] {
