@@ -1,5 +1,5 @@
 export type ActivityView = 'now' | 'factory' | 'mine' | 'search' | 'hardware' | 'docs' | 'account';
-export type BottomPanelTab = 'console' | 'text' | 'structure';
+export type BottomPanelTab = 'console' | 'text' | 'structure' | 'trace';
 export type Theme = 'dark' | 'light';
 
 const THEME_KEY = 'kanopi.theme';

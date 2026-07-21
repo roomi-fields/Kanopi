@@ -17,6 +17,7 @@
   const tabs: { id: BottomPanelTab; label: string }[] = [
     ...pvTab('structure'),
     ...pvTab('text'),
+    ...pvTab('trace'),
     { id: 'console', label: 'Console' }
   ];
 
@@ -26,6 +27,7 @@
   // la fermeture reelle du panneau (repli) demonte via le {#if !collapsed} racine.
   const structureView = productionViews.find((v) => v.id === 'structure') ?? null;
   const textView = productionViews.find((v) => v.id === 'text') ?? null;
+  const traceView = productionViews.find((v) => v.id === 'trace') ?? null;
 </script>
 
 <section class="bottom-panel" class:collapsed={ui.bottomPanelCollapsed}>
@@ -63,6 +65,11 @@
       {#if textView}
         <div class="bp-slot" class:hidden={ui.bottomPanelTab !== 'text'}>
           <ProductionViewHost view={textView} />
+        </div>
+      {/if}
+      {#if traceView}
+        <div class="bp-slot" class:hidden={ui.bottomPanelTab !== 'trace'}>
+          <ProductionViewHost view={traceView} />
         </div>
       {/if}
     </div>

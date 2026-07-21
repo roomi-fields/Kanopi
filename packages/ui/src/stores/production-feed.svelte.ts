@@ -12,7 +12,7 @@
 // signal that "the living tree changed" — bumped on every (re)load.
 
 import type { Kairos } from '@kairos/core';
-import type { ProductionStructure } from 'runtime-ui';
+import type { ProductionStructure, PoigneeTrace } from 'runtime-ui';
 
 /** Retour natif de `Kairos.arbreCourant()` (la vue « flat » Kronos). Le type `FlatView`
  *  de runtime-ui a été retiré en v1 (amendement UI-8) : on lit directement le type Kairos,
@@ -41,6 +41,14 @@ class ProductionFeedStore {
    *  / backtick voice). */
   structure(): ProductionStructure | null {
     return this.#kairos?.structureCourante() ?? null;
+  }
+
+  /** Poignée LÉGÈRE de trace de dérivation (via Kairos.traceCourante()), ou null
+   *  (trace non demandée / rien chargé). PORTÉE verbatim vers la vue — l'hôte ne
+   *  l'abonne JAMAIS (aucun onStep ici) ; null quand la Session n'a pas été construite
+   *  avec trace:true. */
+  trace(): PoigneeTrace | null {
+    return this.#kairos?.traceCourante() ?? null;
   }
 
   /** Kronos flat (`arbreCourant()`), lu depuis Kairos — exposé par `inspect.flat()` de

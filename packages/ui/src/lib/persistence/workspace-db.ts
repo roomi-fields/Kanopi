@@ -86,7 +86,7 @@ export interface PersistedWorkspace {
   bottomPanelHeight?: number;
   bottomPanelCollapsed?: boolean;
   // 'timeline' is the legacy id for today's 'structure' view (mapped on restore).
-  bottomPanelTab?: 'console' | 'text' | 'structure' | 'timeline';
+  bottomPanelTab?: 'console' | 'text' | 'structure' | 'trace' | 'timeline';
 }
 
 export function loadWorkspace(): PersistedWorkspace | undefined {

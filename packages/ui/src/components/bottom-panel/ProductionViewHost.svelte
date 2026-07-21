@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import type { ViewModule, ProductionInput, ProductionStructure } from 'runtime-ui';
+  import type { ViewModule, ProductionInput, ProductionStructure, PoigneeTrace } from 'runtime-ui';
   import { productionFeed } from '../../stores/production-feed.svelte';
   import { kronosCursor } from '../../stores/kronos-cursor.svelte';
   import { recordViewInput } from '../../lib/pilot/view-input-observer';
@@ -20,16 +20,22 @@
   // host from re-pulling an UNCHANGED projection on each transport tick.
   let lastGen = -1;
   let cachedStructure: ProductionStructure | null = null;
+  // [745] La poignée de trace, comme `structure`, ne change qu'au (re)chargement de
+  // Kairos (generation) — jamais au gré du transport. PORTÉE verbatim (identité de
+  // référence), jamais résolue ni abonnée ici.
+  let cachedTrace: PoigneeTrace | null = null;
 
   $effect(() => {
     // Reactive deps: generation (eval/swap → re-read), transport state + handle (cursor only).
     const gen = productionFeed.generation;
     if (gen !== lastGen) {
       cachedStructure = productionFeed.structure();
+      cachedTrace = productionFeed.trace();
       lastGen = gen;
     }
     const input: ProductionInput = {
       structure: cachedStructure,
+      trace: cachedTrace,
       transport: {
         mode: kronosCursor.state,
         cursor: kronosCursor.active,

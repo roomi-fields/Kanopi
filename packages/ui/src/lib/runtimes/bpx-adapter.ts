@@ -45,6 +45,10 @@ import voicesJson from 'bpscript/lib/voices.json';
 // commentaire de digital.json). On consomme donc `LIBS.digital` (avec body), pas le JSON nu.
 import { LIBS as BPSCRIPT_LIBS } from 'bpscript/src/transpiler/libs-data.js';
 import { createSession, type Session, type TimedToken as BpxTimedToken } from 'bpx';
+// [745] Interrupteur de la trace de dérivation — LU seul (jamais `setTraceEnabled`,
+// matière propre de la vue Texte). L'hôte PORTE la valeur à la construction de la
+// Session, il ne la résout ni ne l'abonne.
+import { traceEnabled } from 'runtime-ui';
 // KAN-orchestration P1 — Kairos is the SOURCE of the played timeline (projects the BPx
 // tree into a Kronos Timeline, exposes a StructureSource the Transport PULLs). Consumed
 // AS-IS: the host `charger`s it with the tree + BPx projection context, then hands it to
@@ -1752,6 +1756,12 @@ function makeBpxAdapter(
       // charger (dans le bloc où `bpx`/`derived` vivent) pour re-charger le Kairos VIVANT au teardown.
       let liveUpdateTree: Parameters<Kairos['charger']>[0] | undefined;
       let liveUpdateCtx: Parameters<Kairos['charger']>[1] | undefined;
+      // [745] Idem tree/ctx : la trace COMPAGNON de CE derive (si demandée), pour que la
+      // MISE À JOUR VIVANTE (re-éval same-file, plus bas) recharge Kairos avec la trace
+      // FRAÎCHE — sinon ce 3e site de `charger()` resterait le trou (repéré à la vérif
+      // écran : toggle ON + Ctrl+Entrée sur un fichier déjà en lecture emprunte CE chemin,
+      // pas le chemin d'éval "neuf").
+      let liveUpdateTrace: Parameters<Kairos['charger']>[2] | undefined;
       // KAI-10 — the host builds NO pitch resolver at all. Kairos graves `content.pitch.hz`
       // (read by every output) AND `content.sounds` (the DISPLAY note-vs-text predicate, read
       // below off the timeline), both from `ctx.pitchLib` + the tree; the sound transpose
@@ -1773,7 +1783,9 @@ function makeBpxAdapter(
           // atteint le son par WARP Kronos à la construction du handle (plus bas), pas ici.
           ...(settings !== undefined ? { settings } : {}),
           ...(effectiveFlags !== undefined ? { initialFlags: effectiveFlags } : {}),
-          ...(currentSeed !== undefined ? { seed: currentSeed } : {})
+          ...(currentSeed !== undefined ? { seed: currentSeed } : {}),
+          // [745] Coût nul strict quand éteint : la clé `trace` est ABSENTE (pas `false`).
+          ...(traceEnabled() ? { trace: true } : {})
         });
         // Keep BOTH halves of the derivation: `.tree` (from `derive()`) carries the
         // polymetric structure (groups + voices + nesting) the piano-roll's struct band
@@ -1890,7 +1902,13 @@ function makeBpxAdapter(
             // `transposeToken` (the old host path was a prod no-op, FLAG3); a display-only
             // token transpose, if ever needed, comes from the Kairos views (KAN-18).
             modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
-          } as unknown as Parameters<Kairos['charger']>[1]
+          } as unknown as Parameters<Kairos['charger']>[1],
+          // [745] Relais de la trace COMPAGNON : l'hôte remet la trace BPx à Kairos AVEC
+          // l'arbre, verbatim (PORTER ≠ RÉSOUDRE). Absente quand éteint ⇒ 3e arg undefined
+          // ⇒ Kairos #trace reste null ⇒ coût nul par construction.
+          deriveResult.trace !== undefined
+            ? ({ pas: deriveResult.trace } as unknown as Parameters<Kairos['charger']>[2])
+            : undefined
         );
         // Capture pour la MISE À JOUR VIVANTE (re-éval same-file) : arbre + contexte de projection,
         // pour re-charger le Kairos VIVANT au teardown sans reconstruire la scène (bpx/derived ne
@@ -1906,6 +1924,11 @@ function makeBpxAdapter(
           homomorphismeLib: HOMOMORPHISM_LIB,
           modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
         } as unknown as Parameters<Kairos['charger']>[1];
+        // [745] Idem site d'éval : même trace, portée pour le rechargement vivant.
+        liveUpdateTrace =
+          deriveResult.trace !== undefined
+            ? ({ pas: deriveResult.trace } as unknown as Parameters<Kairos['charger']>[2])
+            : undefined;
         // BPx authority for the scene's compiled length (includes any trailing rest);
         // projected into the Kronos loop bound below.
         totalDurationBeats = derived.tree?.metadata?.totalDurationBeats;
@@ -1996,7 +2019,11 @@ function makeBpxAdapter(
       ) {
         for (const k of Object.keys(prev.backticks)) delete prev.backticks[k];
         Object.assign(prev.backticks, backticks);
-        prev.kairos.charger(liveUpdateTree, liveUpdateCtx);
+        // [745] 3e site — la MISE À JOUR VIVANTE recharge le MÊME Kairos avec le
+        // tree/ctx *fraîchement dérivés* (ci-dessus) : la trace doit suivre le même
+        // relais que les 2 autres sites, sinon un re-éval same-file en lecture perd
+        // silencieusement la trace (gap distinct des sites eval/re-random).
+        prev.kairos.charger(liveUpdateTree, liveUpdateCtx, liveUpdateTrace);
         productionFeed.swapped();
         // Si le transport était ARRÊTÉ (handle build-only d'une ouverture qui PRODUIT sans jouer,
         // ou un Stop), l'éval le DÉMARRE (replay : stopped→running → Kronos re-tire les notes + les
@@ -2231,9 +2258,12 @@ function makeBpxAdapter(
                 // sans injection ; le WARP live (retune) persiste côté Kronos à travers le swap.
                 ...(settings !== undefined ? { settings } : {}),
                 ...(effectiveFlags !== undefined ? { initialFlags: effectiveFlags } : {}),
-                seed: freshSeed()
+                seed: freshSeed(),
+                // [745] Idem site d'éval : coût nul strict quand éteint (clé absente).
+                ...(traceEnabled() ? { trace: true } : {})
               });
-              const rtree = rbpx.derive().tree;
+              const rDerive = rbpx.derive();
+              const rtree = rDerive.tree;
               // Re-charge Kairos with the NEW tree + a context rebuilt from the NEW session
               // (resolvers/kpress/order) + the cycle-invariant CV registry (KRO-24 — Kairos
               // composes the modulations at flatten) + B03 transpose (same scene resolver;
@@ -2257,7 +2287,11 @@ function makeBpxAdapter(
                   homomorphismeLib: HOMOMORPHISM_LIB,
                   // KAI-10 — sound transpose in Kairos; host lends no transposeToken.
                   modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
-                } as unknown as Parameters<Kairos['charger']>[1]
+                } as unknown as Parameters<Kairos['charger']>[1],
+                // [745] Idem site d'éval : relais verbatim de la trace COMPAGNON au re-random.
+                rDerive.trace !== undefined
+                  ? ({ pas: rDerive.trace } as unknown as Parameters<Kairos['charger']>[2])
+                  : undefined
               );
               // Same instance re-charger'd → bump generation so the views re-render.
               productionFeed.swapped();

@@ -80,6 +80,11 @@ export interface SessionOptions {
   tempo?: number;
   initialFlags?: Record<string, number>;
   settings?: SeEngineSettings;
+  /** [745] Interrupteur de la trace de dérivation, porté à la CONSTRUCTION de la
+   *  Session (pas par derive()). true ⇒ BPx émet, résultat en compagnon d'arbre
+   *  (DeriveResult.trace) résolu par Kairos. Absent/false = éteint. Type publié BPx
+   *  (dist/session.d.ts:82, commit 143a2cf). */
+  trace?: boolean;
 }
 /** Projection context the EXTERNAL flattener (Kairos `charger`) consumes — the
  *  symbol resolvers + emission options bundled by `Session.buildProjectionContext`
