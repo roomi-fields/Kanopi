@@ -111,6 +111,28 @@ describe('applyMixerGains (KAN-UX3 / KAN-UX3-B)', () => {
     expect(audio.setActorGain).not.toHaveBeenCalledWith('groove', 0.8);
   });
 
+  // PREUVE que le canal CONSOLE suffit, sans essaimage par acteur (arbitrage architecte
+  // 2026-07-24, [896]) : `setMasterMuted` est envoyé PAR SORTIE VIVANTE, hors de la boucle
+  // sur les acteurs (mixer-gain.ts:45 vs :46-48). Une scène MONO — qui ne publie AUCUN
+  // acteur, donc que l'ancien essaimage ne pouvait pas couper — est donc coupée par
+  // construction, sur les quatre sorties.
+  it('coupe le maître sur CHAQUE sortie vivante sans dépendre d’un seul acteur (scène mono)', () => {
+    mixerIntent.setMasterMuted(true);
+    applyMixerGains();
+    expect(audio.setMasterMuted).toHaveBeenLastCalledWith(true);
+    expect(midi.setMasterMuted).toHaveBeenLastCalledWith(true);
+    expect(osc.setMasterMuted).toHaveBeenLastCalledWith(true);
+    expect(codevoices.setMasterMuted).toHaveBeenLastCalledWith(true);
+    // Et le rétablissement passe par le même canal.
+    vi.clearAllMocks();
+    mixerIntent.setMasterMuted(false);
+    applyMixerGains();
+    expect(audio.setMasterMuted).toHaveBeenLastCalledWith(false);
+    expect(midi.setMasterMuted).toHaveBeenLastCalledWith(false);
+    expect(osc.setMasterMuted).toHaveBeenLastCalledWith(false);
+    expect(codevoices.setMasterMuted).toHaveBeenLastCalledWith(false);
+  });
+
   it('is a no-op when NO runtime is live', () => {
     audioLive = null;
     midiLive = null;

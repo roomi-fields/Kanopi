@@ -77,17 +77,43 @@ describe('mixer store application (KAN-UX3)', () => {
     expect(applyMixerGains).toHaveBeenCalled();
   });
 
-  it('master mute ALSO fans out over live actors (code/MIDI/OSC voices bypass the audio master bus)', () => {
-    mixer.setActorMuted('viz', true);
-    vi.clearAllMocks();
+  // VERROU DE NON-RETOUR (arbitrage architecte 2026-07-24, [896]) — remplace le test qui
+  // exigeait l'essaimage par acteur, supprimé le même jour. Le mute maître est un geste de
+  // CONSOLE (hote-runtimes-sortie.md:51, « réglage de console, pas état de rendu ») ; il ne
+  // doit JAMAIS écrire un mute d'ACTEUR, qui appartient à la résolution transport
+  // (decisions/2026-07-02-clarification-5-points-archi.md:10 : Kairos met en file, Kronos
+  // draine et résout). `setOrchestratedActorMuted` est l'UNIQUE porte de ce second canal
+  // côté hôte (bpx-adapter.ts:1426 → la poignée de voix :2447 → kronos-audio.ts:693-697
+  // `kairos.demande({type:'mute', …})`) : ne pas l'appeler = rien dans la file Kairos.
+  it("couper le maître n'écrit AUCUN mute d'acteur dans la file Kairos", () => {
     mixer.setMasterMuted(true);
-    expect(setOrchestratedActorMuted).toHaveBeenCalledWith('groove', true);
+    expect(setOrchestratedActorMuted).not.toHaveBeenCalled();
+    mixer.setMasterMuted(false);
+    expect(setOrchestratedActorMuted).not.toHaveBeenCalled();
+    // Et le geste passe bien par le canal console.
+    expect(applyMixerGains).toHaveBeenCalled();
+  });
+
+  it('scène MONO (aucun acteur publié) : couper le maître emprunte quand même le canal console', () => {
+    // Le cas qui avait motivé l'essaimage supprimé : sans acteur publié, une boucle par
+    // acteur ne coupe RIEN. Le canal console agit par SORTIE, donc il couvre ce cas — la
+    // preuve que `setMasterMuted` atteint bien les quatre sorties est dans
+    // `lib/mixer/mixer-gain.test.ts` (« coupe le maître sur CHAQUE sortie vivante »).
+    actorList.length = 0;
+    mixer.setMasterMuted(true);
+    expect(applyMixerGains).toHaveBeenCalled();
+    expect(setOrchestratedActorMuted).not.toHaveBeenCalled();
+  });
+
+  it('un mute de strip reste, lui, sur le canal transport (les deux canaux ne se confondent pas)', () => {
+    mixer.setActorMuted('viz', true);
     expect(setOrchestratedActorMuted).toHaveBeenCalledWith('viz', true);
     vi.clearAllMocks();
+    // Couper puis rétablir le maître ne touche NI l'intention du strip NI le canal transport.
+    mixer.setMasterMuted(true);
     mixer.setMasterMuted(false);
-    expect(setOrchestratedActorMuted).toHaveBeenCalledWith('groove', false);
-    expect(setOrchestratedActorMuted).not.toHaveBeenCalledWith('viz', false); // its strip stays muted
-    expect(setOrchestratedActorMuted).toHaveBeenCalledWith('viz', true);
+    expect(setOrchestratedActorMuted).not.toHaveBeenCalled();
+    expect(mixer.isActorMuted('viz')).toBe(true);
   });
 
   it('volume changes update the intent and route through the gain API — never arm/disarm', () => {

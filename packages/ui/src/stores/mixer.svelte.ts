@@ -66,18 +66,22 @@ class MixerStore {
     this.setMasterMuted(!this.master.muted);
   }
 
+  /** MASTER mute = geste de CONSOLE, UN SEUL canal (arbitrage architecte 2026-07-24, [896]) :
+   *  `applyMixerGains` → `setMasterMuted` sur CHAQUE sortie vivante (mixer-gain.ts:45), l'API
+   *  d'intention de mixage du contrat hote-runtimes-sortie.md:51 — réglage de console qui
+   *  SURVIT au stop→play et à `reset()`.
+   *
+   *  L'essaimage par acteur (`#apply` en boucle) est SUPPRIMÉ : il écrivait un mute de
+   *  TRANSPORT (file Kairos → Kronos résout) pour un geste de console, ce qui faisait perdre
+   *  au mute maître sa propriété gravée de réglage survivant au transport et désynchronisait
+   *  les deux états dès qu'on touchait un acteur après avoir coupé le maître. Le canal console
+   *  couvre déjà les quatre sorties, chacune implémentant la méthode (runtime-audio
+   *  adapter.js:905, runtime-MIDI midi-runtime.js:212, runtime-OSC adapter.js:286,
+   *  runtime-codevoices code-voices-runtime.ts:746) ; et il agit PAR SORTIE, donc une scène
+   *  mono sans acteur publié est couverte par construction. */
   setMasterMuted(muted: boolean) {
     mixerIntent.setMasterMuted(muted);
-    // MASTER mute = runtime-audio's `setMasterMuted` (via `applyMixerGains`):
-    // cuts the whole master bus — including a mono scene without actors, the
-    // gap the old fan-out-only version left open. The runtime memorizes the
-    // level and restores it on un-mute (contract [651]).
     applyMixerGains();
-    // The fan-out over the per-actor primitive is KEPT on top: code voices
-    // (Strudel/Hydra), MIDI and OSC actors do not pass through runtime-audio's
-    // master bus, so only the arm/disarm gate silences them. Un-mute still
-    // respects each strip + the arming layer (#apply).
-    for (const a of actors.list) this.#apply(a.name);
   }
 
   /** Master VOLUME (0..1, linear, multiplies every actor). Sent raw — the
