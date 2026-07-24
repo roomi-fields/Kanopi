@@ -36,7 +36,6 @@ export interface Actor {
   file?: string;
   runtime: Runtime;
   active: boolean;
-  muted?: boolean;
   /**
    * The actor's declared OUTPUT TRANSPORT family — 'audio' | 'midi' | 'osc' |
    * 'code' | a custom @devices name, read VERBATIM off BPx's `tree.metadata.actors[name]
@@ -56,9 +55,6 @@ export interface Actor {
 export interface ActorManager {
   list(): Actor[];
   toggle(name: string): void;
-  setMuted(name: string, muted: boolean): void;
-  toggleMute(name: string): void;
-  unmuteAll(): void;
   subscribe(cb: (actors: Actor[]) => void): Unsubscribe;
 }
 

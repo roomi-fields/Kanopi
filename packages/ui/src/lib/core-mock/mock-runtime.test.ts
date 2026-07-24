@@ -25,31 +25,10 @@ describe('mock core', () => {
     expect(a.list()[0].active).toBe(true);
   });
 
-  it('MockActors unmuteAll routes through setMuted (subclass override fires)', () => {
-    // Proves the fix: unmuteAll must dispatch via `this.setMuted` so a subclass
-    // override (RealActors.setMuted → onMute → re-arm the Kronos voice) actually runs,
-    // instead of writing the `muted` field directly and bypassing it.
-    const seen: Array<[string, boolean]> = [];
-    class SpyActors extends MockActors {
-      setMuted(name: string, muted: boolean) {
-        seen.push([name, muted]);
-        super.setMuted(name, muted);
-      }
-    }
-    const a = new SpyActors();
-    a.setActors([
-      { name: 'x', file: 'x.bps', runtime: 'bpscript', active: true, muted: true },
-      { name: 'y', file: 'y.bps', runtime: 'bpscript', active: true, muted: false },
-      { name: 'z', file: 'z.bps', runtime: 'bpscript', active: true, muted: true }
-    ]);
-    a.unmuteAll();
-    // Override invoked for each MUTED actor only, with `false`.
-    expect(seen).toEqual([
-      ['x', false],
-      ['z', false]
-    ]);
-    expect(a.list().every((act) => !act.muted)).toBe(true);
-  });
+  // (Le test « unmuteAll route par setMuted » a disparu AVEC la couche de mute
+  //  d'armement, supprimée le 2026-07-24 : elle faisait double emploi avec le
+  //  désarmement. Le seul mute restant est celui du mixer, couvert par
+  //  `stores/mixer.svelte.test.ts` et l'e2e `mute-code-voice.spec.ts`.)
 
   it('MockScenes activate marks exactly one active', () => {
     const s = new MockScenes();

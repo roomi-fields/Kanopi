@@ -13,8 +13,9 @@
 </script>
 
 <aside class="sidebar-right">
+  <!-- Pas de ligne de titre (Romain 2026-07-24) : la colonne ne porte plus qu'une
+       surface, le master et les acteurs se nomment eux-mêmes. -->
   <section class="rp-widget">
-    <h3 class="rp-widget-title">Actors</h3>
     <div class="rp-widget-body">
       <ActorsPanel />
     </div>
@@ -51,15 +52,6 @@
     border-top: 1px solid var(--border-dim);
   }
   */
-  .rp-widget-title {
-    padding: 10px 12px;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    border-bottom: 1px solid var(--border-dim);
-  }
   .rp-widget-body {
     flex: 1;
     overflow-y: auto;

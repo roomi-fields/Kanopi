@@ -32,11 +32,38 @@
     }
   }
 
+  // Suivi automatique des dernières lignes (Romain 2026-07-24 : « ça stick en haut »).
+  // Deux causes au collage en haut : (1) rien ne distinguait « l'utilisateur a remonté »
+  // d'un défilement automatique ; (2) surtout, la vue reste MONTÉE mais masquée en
+  // `display:none` quand un autre onglet du bas est actif (KAN-751) — hauteurs à 0, donc
+  // les lignes arrivées pendant ce temps laissaient le défilement à 0, et rien ne le
+  // rattrapait au retour sur l'onglet. D'où l'observateur de taille : au ré-affichage,
+  // la hauteur repasse de 0 à N et on recolle au bas.
+  let stick = $state(true);
+  const AU_BAS = 8; // px de tolérance
+
+  function scrollToBottom() {
+    if (scroller) scroller.scrollTop = scroller.scrollHeight;
+  }
+
+  function onScroll() {
+    if (!scroller) return;
+    stick = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - AU_BAS;
+  }
+
   $effect(() => {
     void consoleLog.entries.length;
-    tick().then(() => {
-      if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    if (!stick) return;
+    tick().then(scrollToBottom);
+  });
+
+  $effect(() => {
+    if (!scroller) return;
+    const ro = new ResizeObserver(() => {
+      if (stick) scrollToBottom();
     });
+    ro.observe(scroller);
+    return () => ro.disconnect();
   });
 
   function fmtTime(ts: number) {
@@ -55,7 +82,7 @@
       <button class="action" type="button" onclick={() => consoleLog.clear()}>clear</button>
     </div>
   </header>
-  <div class="scroll" bind:this={scroller}>
+  <div class="scroll" bind:this={scroller} onscroll={onScroll}>
     {#each consoleLog.entries as e, i (e.ts + ':' + i)}
       {@const id = e.ts + ':' + i}
       <div class="row level-{e.level}">

@@ -96,7 +96,7 @@ class MixerStore {
       return;
     }
     const a = actors.list.find((x) => x.name === name);
-    if (a && a.active && !a.muted) setOrchestratedActorMuted(name, false);
+    if (a && a.active) setOrchestratedActorMuted(name, false);
   }
 }
 

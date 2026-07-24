@@ -13,12 +13,6 @@ class ActorsStore {
   toggle(name: string) {
     core.actors.toggle(name);
   }
-  toggleMute(name: string) {
-    core.actors.toggleMute(name);
-  }
-  unmuteAll() {
-    core.actors.unmuteAll();
-  }
 }
 
 export const actors = new ActorsStore();

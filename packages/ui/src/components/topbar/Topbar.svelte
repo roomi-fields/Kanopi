@@ -76,9 +76,14 @@
 </header>
 
 <style>
+  /* Les trois pistes doivent pouvoir RÉTRÉCIR (`minmax(0, …)`) : avec `240px 1fr auto`
+     le minimum de contenu de la barre (~1142px) débordait la fenêtre et élargissait
+     TOUTE l'application — le panneau droit se retrouvait hors écran sous 1150px
+     (Romain 2026-07-24). */
   .topbar {
     display: grid;
-    grid-template-columns: 240px 1fr auto;
+    grid-template-columns: minmax(0, 240px) minmax(0, 1fr) minmax(0, auto);
+    min-width: 0;
     align-items: center;
     background: linear-gradient(to bottom, var(--bar-gradient-a), var(--bar-gradient-b));
     border-bottom: 1px solid var(--border);
@@ -101,6 +106,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    min-width: 0;
   }
 
   .sigil {
@@ -123,12 +129,29 @@
     align-items: center;
     justify-content: center;
     gap: 20px;
+    min-width: 0;
   }
 
   .topbar-right {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 10px;
+    min-width: 0;
+  }
+
+  /* Ce qui cède quand l'écran se resserre, dans l'ordre : le nom de marque, puis la
+     pastille de commande (la palette reste au clavier). Le bloc transport, lui, ne
+     cède jamais. */
+  @media (max-width: 1250px) {
+    .brand-name {
+      display: none;
+    }
+  }
+  @media (max-width: 1100px) {
+    .cmdk-pill {
+      display: none;
+    }
   }
 
   .cmdk-pill {

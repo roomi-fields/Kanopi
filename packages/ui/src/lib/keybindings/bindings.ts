@@ -3,6 +3,7 @@ import { playback } from '../../stores/playback.svelte';
 import { workspace } from '../../stores/workspace.svelte';
 import { cloudDocs } from '../../stores/cloud-docs.svelte';
 import { session } from '../../stores/session.svelte';
+import { mixer } from '../../stores/mixer.svelte';
 import { core } from '../core';
 import { flushPersist } from '../persistence/snapshot.svelte';
 
@@ -62,14 +63,17 @@ export function handleGlobalKey(e: KeyboardEvent) {
   }
   // Cmd/Ctrl + 1..9 → toggle mute on the Nth actor (atom-tidalcycles).
   // Cmd/Ctrl + 0 → unmute every actor.
+  // Le mute PERSISTANT du mixer est le seul mute (Romain 2026-07-24 : l'ancien mute
+  // d'armement faisait double emploi avec le désarmement) — ces raccourcis pilotent
+  // donc la couche mixer, celle qui survit au stop→play.
   if (isMod(e) && !e.shiftKey && !e.altKey && /^[0-9]$/.test(e.key)) {
     const n = Number(e.key);
     e.preventDefault();
     if (n === 0) {
-      core.actors.unmuteAll();
+      for (const a of core.actors.list()) mixer.setActorMuted(a.name, false);
     } else {
       const target = core.actors.list()[n - 1];
-      if (target) core.actors.toggleMute(target.name);
+      if (target) mixer.toggleActorMuted(target.name);
     }
     return;
   }

@@ -3,11 +3,12 @@
   // Romain constat: the two used to list the same actors twice). Master strip on
   // top, then ONE row per live actor fusing the arm LED + name/meta (former
   // ActorsPanel) with the volume slider + persistent mixer mute (former
-  // MixerStrips, now folded in here — MixerStrips.svelte deleted). The mute
-  // button below (`.mute`, Ctrl+1-9, `actors.toggleMute`) is the ARM-layer
-  // performer mute; the `.mix-mute` button (`mixer.toggleActorMuted`) is the
-  // PERSISTENT mixer layer (localStorage, contract hote-runtimes-sortie.md:51)
-  // — two distinct concepts, kept distinct, see their titles below.
+  // MixerStrips, now folded in here — MixerStrips.svelte deleted). UN SEUL mute
+  // subsiste : celui du MIXER (`mixer.toggleActorMuted`, couche persistante,
+  // localStorage, contrat hote-runtimes-sortie.md:51). L'ancien mute d'ARMEMENT
+  // faisait double emploi avec le désarmement — même primitive
+  // (`setOrchestratedActorMuted`) et même branche au rejeu — il a été supprimé
+  // (Romain 2026-07-24) ; le voyant est le seul geste d'armement.
   import { actors } from '../../stores/actors.svelte';
   import { workspace } from '../../stores/workspace.svelte';
   import { openBlocks } from '../../stores/blocks.svelte';
@@ -57,7 +58,7 @@
   <div class="empty">no live actors</div>
 {:else}
   <ul class="actors">
-    {#each actors.list as a, i (a.name)}
+    {#each actors.list as a (a.name)}
       {@const isCodeVoice = isCodeVoiceRuntime(a.runtime)}
       {@const codeVoiceGainOk = isCodeVoice && codeVoiceReachesGainBus(a.runtime)}
       {@const disabledKind =
@@ -70,7 +71,6 @@
       <li
         class="actor stack"
         class:active={a.active}
-        class:muted={a.muted}
         class:errored={!!a.error}
         class:mixer-muted={mixer.isActorMuted(a.name) || mixer.master.muted}
         class:midi-unselected={midiUnselected}
@@ -85,22 +85,11 @@
             title="toggle {a.name}"
             onclick={() => actors.toggle(a.name)}
           >
-            <span class="led" class:on={a.active} class:muted={a.muted} class:err={!!a.error}
-            ></span>
+            <span class="led" class:on={a.active} class:err={!!a.error}></span>
           </button>
           <span class="name">{a.name}</span>
           <span class="rt rt-{a.runtime}">{a.runtime}</span>
           {#if a.error}<span class="err-badge" title={a.error}>⚠ output</span>{/if}
-          {#if i < 9}
-            <button
-              class="mute"
-              type="button"
-              title="mute {a.name} (Ctrl+{i + 1})"
-              onclick={() => actors.toggleMute(a.name)}
-            >
-              {a.muted ? 'M' : '·'}
-            </button>
-          {/if}
         </div>
         <!-- Ligne 2 — mixer : volume + mute persistant. Le volume emprunte l'API de
              gain ratifiée (contrat hote-runtimes-sortie.md:51) : effectif = acteur ×
@@ -223,9 +212,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .stack .mute {
-    margin-left: auto;
-  }
   .toggle {
     width: 22px;
     height: 22px;
@@ -245,41 +231,12 @@
     background: var(--green);
     box-shadow: 0 0 6px var(--green-glow);
   }
-  .led.on.muted {
-    background: var(--text-muted);
-    box-shadow: none;
-    opacity: 0.5;
-  }
-  .actor.muted .name,
   .actor.mixer-muted .name {
     opacity: 0.5;
   }
   .actor.midi-unselected .name,
   .actor.midi-unselected .mix-mute {
     opacity: 0.35;
-  }
-  .mute {
-    width: 20px;
-    height: 20px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid transparent;
-    border-radius: 3px;
-    color: var(--text-faint);
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    transition: all 0.12s;
-  }
-  .mute:hover {
-    color: var(--text-muted);
-    border-color: var(--border);
-  }
-  .actor.muted .mute {
-    color: var(--amber);
-    border-color: var(--amber-dim);
   }
   .info {
     flex: 1;

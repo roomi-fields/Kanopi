@@ -49,13 +49,9 @@ function autonomousCodeVoices(log: LogPush): CodeVoicesRuntime {
 class RealActors extends MockActors {
   // We override toggle to delegate to the real-core orchestration via a callback.
   private onToggle?: (a: Actor, willBeActive: boolean) => void;
-  private onMute?: (a: Actor, willBeMuted: boolean) => void;
 
   setOnToggle(fn: (a: Actor, willBeActive: boolean) => void) {
     this.onToggle = fn;
-  }
-  setOnMute(fn: (a: Actor, willBeMuted: boolean) => void) {
-    this.onMute = fn;
   }
 
   toggle(name: string) {
@@ -65,14 +61,6 @@ class RealActors extends MockActors {
     if (before && after && this.onToggle) {
       this.onToggle(after, after.active);
     }
-  }
-
-  setMuted(name: string, muted: boolean) {
-    const before = this.list().find((a) => a.name === name);
-    if (!before || !!before.muted === muted) return;
-    super.setMuted(name, muted);
-    const after = this.list().find((a) => a.name === name);
-    if (after && this.onMute) this.onMute(after, muted);
   }
 }
 
@@ -103,9 +91,6 @@ class RealCore implements CoreApi {
     installConsoleBridge((e) => this.console.push(e));
     this.actors.setOnToggle((a, willBeActive) => {
       void this.handleActorToggle(a, willBeActive);
-    });
-    this.actors.setOnMute((a, willBeMuted) => {
-      void this.handleActorMute(a, willBeMuted);
     });
     this.scenes.setOnActivate((s) => {
       void this.handleSceneActivate(s);
@@ -261,20 +246,6 @@ class RealCore implements CoreApi {
 
   private log = (e: { runtime: Runtime; level: LogEntry['level']; msg: string }) =>
     this.console.push(e);
-
-  private async handleActorMute(a: Actor, willBeMuted: boolean) {
-    // Only affects audio if the actor is currently armed and a scene is live (transport
-    // running, per Kronos — the single authority; no host clock flag).
-    if (!a.active || kronosCursor.state !== 'running') return;
-    // Orchestrator `.bps` actor: mute/unmute its live voice (same mechanism as
-    // arm/disarm — silence the voice while the rest play, restore on unmute).
-    if (isOrchestratedActor(a.name)) {
-      if (willBeMuted) setOrchestratedActorMuted(a.name, true);
-      // Un-muting the ARMING layer must not override the MIXER layer (KAN-UX3).
-      else if (!mixerMutedFor(a.name)) setOrchestratedActorMuted(a.name, false);
-      return;
-    }
-  }
 
   private async handleActorToggle(a: Actor, willBeActive: boolean) {
     // Orchestrator `.bps` actor: arm/disarm sets ONLY the "ready" intent (the LED
@@ -462,7 +433,7 @@ class RealCore implements CoreApi {
     for (const a of this.actors.list()) {
       // `mixerMutedFor`: the PERSISTENT mixer layer (KAN-UX3) is re-applied here too —
       // the replay `reset()` must never un-mute a mixer-muted actor.
-      if (isOrchestratedActor(a.name) && (a.muted || !a.active || mixerMutedFor(a.name)))
+      if (isOrchestratedActor(a.name) && (!a.active || mixerMutedFor(a.name)))
         setOrchestratedActorMuted(a.name, true);
     }
     // KAN-UX3 — belt over the runtime guarantee: levels + master mute survive

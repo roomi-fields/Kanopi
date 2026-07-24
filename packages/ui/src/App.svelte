@@ -123,14 +123,18 @@
 
 <div class="app" class:drop-active={dropActive}>
   <Topbar />
+  <!-- Les deux panneaux latéraux sont bornés à une part de la LARGEUR RÉELLE de la
+       fenêtre (`min(largeur, 30vw)`) : une largeur mémorisée sur un grand écran ne doit
+       pas manger tout l'espace — voire pousser l'autre panneau hors écran — sur un écran
+       plus petit (Romain 2026-07-24). -->
   <div
     class="body"
     class:sidebar-collapsed={ui.sidebarCollapsed}
     style:grid-template-columns={ui.activeActivityView === 'factory'
-      ? '44px 1fr'
+      ? '44px minmax(0, 1fr)'
       : ui.sidebarCollapsed
-        ? `44px 1fr 4px ${ui.rightPanelWidth}px`
-        : `44px ${ui.sidebarWidth}px 4px 1fr 4px ${ui.rightPanelWidth}px`}
+        ? `44px minmax(0, 1fr) 4px min(${ui.rightPanelWidth}px, 30vw)`
+        : `44px min(${ui.sidebarWidth}px, 30vw) 4px minmax(0, 1fr) 4px min(${ui.rightPanelWidth}px, 30vw)`}
   >
     <ActivityBar />
     {#if ui.activeActivityView === 'factory'}
@@ -179,17 +183,23 @@
 {/if}
 
 <style>
+  /* `min-width: 0` + `overflow-x: hidden` = ceinture : AUCUNE rangée (barre du haut,
+     corps, barre d'état) ne peut plus élargir l'application au-delà de la fenêtre et
+     pousser le panneau droit hors écran. */
   .app {
     display: grid;
     grid-template-rows: 56px 1fr auto 30px;
     height: 100%;
     width: 100%;
+    min-width: 0;
     min-height: 0;
+    overflow-x: hidden;
   }
   .body {
     display: grid;
     background: var(--bg);
     overflow: hidden;
+    min-width: 0;
     min-height: 0;
   }
   .center-stack {

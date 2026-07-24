@@ -43,8 +43,8 @@ describe('mixer store application (KAN-UX3)', () => {
   beforeEach(() => {
     actorList.length = 0;
     actorList.push(
-      { name: 'groove', active: true, muted: false, runtime: 'bpscript' },
-      { name: 'viz', active: true, muted: false, runtime: 'hydra' }
+      { name: 'groove', active: true, runtime: 'bpscript' },
+      { name: 'viz', active: true, runtime: 'hydra' }
     );
     isOrchestratedActor.mockReturnValue(true);
     resetMix();
@@ -57,8 +57,11 @@ describe('mixer store application (KAN-UX3)', () => {
     expect(setOrchestratedActorMuted).toHaveBeenCalledWith('groove', false);
   });
 
-  it('un-muting the mixer never re-arms an actor the ARMING layer holds silent', () => {
-    actorList[0].muted = true; // arming layer says muted
+  it('un-muting the mixer never re-arms an actor the ARMING layer holds silent (DÉSARMÉ)', () => {
+    // La couche d'armement n'a plus qu'un état — `active` (le mute d'armement, doublon
+    // du désarmement, a été supprimé le 2026-07-24). L'invariant lui survit : démuter le
+    // mixer ne doit JAMAIS rallumer une voix que l'utilisateur a désarmée.
+    actorList[0].active = false; // désarmé
     mixer.setActorMuted('groove', true);
     mixer.setActorMuted('groove', false);
     expect(setOrchestratedActorMuted).not.toHaveBeenCalledWith('groove', false);

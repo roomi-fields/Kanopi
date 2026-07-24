@@ -24,45 +24,60 @@
     "aucun acteur actif ne joint une sortie mixable — pas de contrôle de volume depuis Kanopi (en attente d'une API d'entrée côté runtime)";
 </script>
 
+<!-- Deux lignes, MÊME gabarit qu'une ligne d'acteur (Romain 2026-07-24) : libellé
+     seul, puis volume + mute indentés — les curseurs master et acteurs ont ainsi la
+     même longueur et le même alignement. -->
 <div class="strip master" class:muted={mixer.master.muted}>
-  <span class="label">master</span>
+  <div class="line"><span class="label">master</span></div>
   <!-- Volume rides runtime-audio's gain API (KAN-UX3, contract [651]): raw
        0..1 intent, the anti-click ramp is the runtime's. -->
-  <input
-    class="vol"
-    type="range"
-    min="0"
-    max="1"
-    step="0.01"
-    value={mixer.master.volume}
-    oninput={(e) => mixer.setMasterVolume(e.currentTarget.valueAsNumber)}
-    {disabled}
-    title={disabled ? DISABLED_TITLE : 'master volume'}
-  />
-  <button
-    class="mute"
-    type="button"
-    class:on={mixer.master.muted}
-    title={mixer.master.muted ? 'unmute all actors' : 'mute all actors'}
-    onclick={() => mixer.toggleMasterMuted()}
-  >
-    M
-  </button>
+  <div class="line">
+    <input
+      class="vol"
+      type="range"
+      min="0"
+      max="1"
+      step="0.01"
+      value={mixer.master.volume}
+      oninput={(e) => mixer.setMasterVolume(e.currentTarget.valueAsNumber)}
+      {disabled}
+      title={disabled ? DISABLED_TITLE : 'master volume'}
+    />
+    <button
+      class="mute"
+      type="button"
+      class:on={mixer.master.muted}
+      title={mixer.master.muted ? 'unmute all actors' : 'mute all actors'}
+      onclick={() => mixer.toggleMasterMuted()}
+    >
+      M
+    </button>
+  </div>
 </div>
 
 <style>
   .strip {
     display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 6px 12px;
+  }
+  .line {
+    display: flex;
     align-items: center;
     gap: 8px;
-    padding: 5px 12px;
+    min-width: 0;
+  }
+  /* Même indentation que la 2e ligne d'un acteur (ActorsPanel `.line + .line`),
+     pour que les curseurs s'alignent exactement. */
+  .line + .line {
+    padding-left: 30px;
   }
   .master {
     border-bottom: 1px solid var(--border-dim);
   }
   .label {
     flex: 0 0 auto;
-    min-width: 64px;
     font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 600;
