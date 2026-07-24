@@ -198,4 +198,35 @@ describe('programCompileStatus', () => {
     expect(s.ok).toBe(false);
     expect(s.phase).toBe('derive');
   });
+
+  // `.gr` — native BP3 grammar, parsed by the REAL BP3 front-end (`parseBP3`/`parseGr`),
+  // NOT the BPScript transpiler. Signals 2/3/4 (derive/resource/runtime) apply the
+  // same as `.bps` — only the parse call differs.
+  describe('.gr — BP3 grammar', () => {
+    it('is applicable and ok for a clean BP3 grammar', () => {
+      const code = `ORD\nS --> A\nA --> a`;
+      const s = programCompileStatus('trial.gr', code);
+      expect(s.applicable).toBe(true);
+      expect(s.ok).toBe(true);
+      expect(s.errors).toEqual([]);
+    });
+
+    it('reports a parse error, phase "parse", for an empty grammar', () => {
+      const s = programCompileStatus('empty.gr', '');
+      expect(s.applicable).toBe(true);
+      expect(s.ok).toBe(false);
+      expect(s.phase).toBe('parse');
+      expect(s.errors[0].message).toContain('aucune règle trouvée');
+    });
+
+    it('still folds in derive/resource/runtime signals like .bps', () => {
+      const code = `ORD\nS --> A\nA --> a`;
+      const s = programCompileStatus('trial.gr', code, {
+        ok: false,
+        error: { message: 'transposeToken: unresolved pitch' }
+      });
+      expect(s.ok).toBe(false);
+      expect(s.phase).toBe('derive');
+    });
+  });
 });

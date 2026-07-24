@@ -18,10 +18,11 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helper
 // Ctrl+Enter evaluates the whole session and places every backtick voice in
 // time.
 //
-// Mixer mute button: MixerStrips.svelte:73-86 — `button.mute`, `title="mute
-// <actor> (mixer)"` when off, `title="unmute <actor>"` when on. Clicking calls
-// `mixer.toggleActorMuted(a.name)` — the exact gesture a performer uses at the
-// desk, so we drive it via a real click rather than the mixer store directly.
+// Mixer mute button: ActorsPanel.svelte (`button.mix-mute`, merged in from the
+// former MixerStrips.svelte) — `title="mute <actor> (mixer)"` when off,
+// `title="unmute <actor>"` when on. Clicking calls `mixer.toggleActorMuted(a.name)`
+// — the exact gesture a performer uses at the desk, so we drive it via a real
+// click rather than the mixer store directly.
 const BUNDLED = fileURLToPath(new URL('../../../library/scenes/code-voices', import.meta.url));
 
 // The mute route (mixer.svelte.ts:92-100) gates on `isOrchestratedActor(name)`

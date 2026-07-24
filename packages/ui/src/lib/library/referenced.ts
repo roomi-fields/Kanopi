@@ -7,7 +7,7 @@
 // `.libraries` (audio banks per engine) and `.alphabet` — read AS-IS.
 // Anything else, parse errors, or compile throws → empty list (graceful).
 
-import { compileBps } from '../runtimes/compile-cache';
+import { compileBps, parseGr } from '../runtimes/compile-cache';
 import { runtimeFromExt, isNonProgramFile } from '../workspace/types';
 
 export interface ReferencedLib {
@@ -215,10 +215,11 @@ interface BpsError {
 
 /**
  * Compile status of the active program — drives a clear pass/fail indicator in
- * the UI (Files panel). Pure; call from a `$derived`. Only `.bps` is "applicable":
- * its status comes from `compileToBPxAST`. `.gr` is native BP3 grammar parsed by
- * `parseBP3` (different validator, needs alphabet plumbing) — running the BPScript
- * transpiler on it would report a FALSE error, so `.gr` shows no chip for now.
+ * the UI (Files panel). Pure; call from a `$derived`. `.bps` and `.gr` are both
+ * "applicable": `.bps` status comes from `compileToBPxAST` (`compileBps`), `.gr`
+ * is native BP3 grammar parsed by the REAL BP3 front-end, `parseBP3` (`parseGr`,
+ * memoized like `compileBps`) — running the BPScript transpiler on a `.gr` would
+ * report a FALSE error, so `.gr` never goes through `compileBps`.
  *
  * `derive` is the last DERIVATION outcome recorded by the eval pipeline (msg [598]).
  * A scene can PARSE cleanly yet throw at `derive()` (an unresolvable pitch, …); the
@@ -247,11 +248,14 @@ export function programCompileStatus(
   // 2026-07-13-invocation-librairies-factory-mine.md).
   if (isNonProgramFile(path)) return { applicable: false, ok: true, errors: [] };
   const runtime = runtimeFromExt(fileName);
-  if (runtime !== 'bpscript') {
+  if (runtime !== 'bpscript' && runtime !== 'bp3') {
     return { applicable: false, ok: true, errors: [] };
   }
   try {
-    const c = compileBps(contents) as { errors?: BpsError[] };
+    const c =
+      runtime === 'bp3'
+        ? (parseGr(contents) as { errors?: BpsError[] })
+        : (compileBps(contents) as { errors?: BpsError[] });
     const parseErrors = (c.errors ?? []).map((e) => ({
       line: e.line,
       message: e.message ?? 'error'

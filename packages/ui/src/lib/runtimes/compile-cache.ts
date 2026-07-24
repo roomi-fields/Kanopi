@@ -1,4 +1,5 @@
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { parseBP3 } from 'bp3-frontend';
 
 // Memoized BPScript compile. Several reactive consumers compile the SAME active
 // source on EVERY keystroke — the libraries panel (`referencedLibraries`), the
@@ -33,6 +34,31 @@ export function compileBps(source: string, environnement?: { tempo?: number }): 
   if (CACHE.size > MAX) {
     const oldest = CACHE.keys().next().value;
     if (oldest !== undefined) CACHE.delete(oldest);
+  }
+  return result;
+}
+
+const GR_CACHE = new Map<string, unknown>();
+const GR_MAX = 8;
+
+/**
+ * `parseBP3(source)` memoized (LRU, size 8) — same pattern as `compileBps`, for
+ * `.gr` native BP3 grammars. Several reactive consumers (compile chip, libraries
+ * panel) call this on every keystroke; without memoization each keystroke ran a
+ * full parse per consumer.
+ */
+export function parseGr(source: string): unknown {
+  if (GR_CACHE.has(source)) {
+    const v = GR_CACHE.get(source);
+    GR_CACHE.delete(source);
+    GR_CACHE.set(source, v);
+    return v;
+  }
+  const result = parseBP3(source);
+  GR_CACHE.set(source, result);
+  if (GR_CACHE.size > GR_MAX) {
+    const oldest = GR_CACHE.keys().next().value;
+    if (oldest !== undefined) GR_CACHE.delete(oldest);
   }
   return result;
 }

@@ -12,8 +12,9 @@ dit ce que c'est, où ça se trouve dans l'interface, et le comportement clé
 **Quoi.** Une table de mixage minimale : une tranche « master » puis une tranche par
 acteur vivant de la scène, chacune avec un curseur de volume et un bouton mute (M).
 
-**Où.** Bandeau droit, widget « Actors », section « mixer » sous la liste des acteurs
-(`components/right-panel/MixerStrips.svelte`, `MixerMaster.svelte`).
+**Où.** Bandeau droit, widget « Actors » : bande master en tête, puis une ligne
+fusionnée par acteur (armement + méta + volume + mute mixer)
+(`components/right-panel/ActorsPanel.svelte`, `MixerMaster.svelte`).
 
 **Comportement.**
 - Le **mute du mixer est une couche performeur persistante**, distincte de

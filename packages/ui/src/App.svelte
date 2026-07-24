@@ -142,28 +142,32 @@
         <Sidebar />
         <Resizer side="right" width={ui.sidebarWidth} onResize={(w) => ui.setSidebarWidth(w)} />
       {/if}
-      <!-- Center column: editor stacked above the bottom output panel. The
-           bottom panel is contained here so the right column stays full-height. -->
       <div class="center-stack">
         <EditorArea />
-        {#if !ui.bottomPanelCollapsed}
-          <Resizer
-            side="top"
-            width={ui.bottomPanelHeight}
-            onResize={(h) => ui.setBottomPanelHeight(h)}
-          />
-        {/if}
-        <div
-          class="bottom-slot"
-          style:height={ui.bottomPanelCollapsed ? 'auto' : `${ui.bottomPanelHeight}px`}
-        >
-          <BottomPanel />
-        </div>
       </div>
       <Resizer side="left" width={ui.rightPanelWidth} onResize={(w) => ui.setRightPanelWidth(w)} />
       <RightPanel />
     {/if}
   </div>
+  {#if ui.activeActivityView !== 'factory'}
+    <!-- Full-width row: spans under the sidebar AND the right panel (not
+         boxed inside .center-stack), factory view (LibrarySpace) excluded. -->
+    <div class="bottom-row">
+      {#if !ui.bottomPanelCollapsed}
+        <Resizer
+          side="top"
+          width={ui.bottomPanelHeight}
+          onResize={(h) => ui.setBottomPanelHeight(h)}
+        />
+      {/if}
+      <div
+        class="bottom-slot"
+        style:height={ui.bottomPanelCollapsed ? 'auto' : `${ui.bottomPanelHeight}px`}
+      >
+        <BottomPanel />
+      </div>
+    </div>
+  {/if}
   <Statusbar />
 </div>
 
@@ -177,7 +181,7 @@
 <style>
   .app {
     display: grid;
-    grid-template-rows: 56px 1fr 30px;
+    grid-template-rows: 56px 1fr auto 30px;
     height: 100%;
     width: 100%;
     min-height: 0;
@@ -195,9 +199,16 @@
     min-height: 0;
     overflow: hidden;
   }
-  /* EditorArea (its root is `.editor`) takes the space above the bottom panel. */
   .center-stack > :global(.editor) {
     flex: 1;
+    min-height: 0;
+  }
+  /* Full-width row (a direct child of `.app`, NOT `.body`): the bottom panel
+     spans under the sidebar and the right panel instead of being boxed
+     between them. */
+  .bottom-row {
+    display: flex;
+    flex-direction: column;
     min-height: 0;
   }
   .bottom-slot {
