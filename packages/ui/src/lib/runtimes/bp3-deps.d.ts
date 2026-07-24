@@ -97,13 +97,42 @@ export interface ProjectionContext {
   order?: 'chronological' | 'voice-major';
   resolveRuntimeState?: (nodeId: number) => Record<string, number> | null;
 }
+/** [97] Charge par position de la chaîne finale (`DeriveResult.chainMarkers` — BPx
+ *  session.ts:294/380). Même forme `{index, payload}` que `TraceControlMarkerEntry`
+ *  et Kairos `EntreeMarqueurControle`. */
+export interface ChainPayloadEntry {
+  readonly index: number;
+  readonly payload: unknown;
+}
+/** Options de `renderChain` (BPx `trace/surface.ts:313`). */
+export interface RenderChainOptions {
+  readonly payloads?: readonly ChainPayloadEntry[];
+  readonly renderControl?: (payload: unknown) => string;
+}
+/** [97] Assemble une chaîne d'ids en texte BP3 (BPx `trace/surface.ts:338`, réexporté
+ *  `index.ts:149`) — LA graphie, injectée en 4e argument à Kairos `rendreChaineFinale`
+ *  (jamais réécrite côté hôte). */
+export function renderChain(
+  ids: readonly number[],
+  resolveName: (id: number) => string,
+  options?: RenderChainOptions
+): string;
 /** The upstream `Session` (carries `buildProjectionContext`, unlike `BPxInstance`).
  *  `derive()` returns the tree only; the flat tokens come from `emit('timed-tokens')`.
  *  `output:'complete'` has migrated to Kairos and now THROWS — the host uses the
  *  default 'sounding' path. */
 export interface Session {
   readonly grammar: { symbols?: { getName?(id: number): string }; [k: string]: unknown };
-  derive(options?: DeriveOptions): { tree: DerivationTree; [k: string]: unknown };
+  derive(options?: DeriveOptions): {
+    tree: DerivationTree;
+    /** [97] `DeriveResult.ids` (BPx session.ts:286) — TOUJOURS présent, la vue Texte est
+     *  toujours active (contrairement à `trace`). Entrée `ids` de `renderChain`. */
+    ids: number[];
+    /** [97] `DeriveResult.chainMarkers` (BPx session.ts:380) — TOUJOURS construit. Entrée
+     *  `payloads` de `renderChain` via `rendreChaineFinale`. */
+    chainMarkers: readonly ChainPayloadEntry[];
+    [k: string]: unknown;
+  };
   emit<T>(format: string, options?: unknown): T;
   buildProjectionContext(order?: 'chronological' | 'voice-major'): ProjectionContext;
 }

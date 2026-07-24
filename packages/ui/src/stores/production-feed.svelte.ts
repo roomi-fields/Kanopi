@@ -25,11 +25,26 @@ class ProductionFeedStore {
    *  retrigger the views' update: a swap does not change the `#kairos` REFERENCE, so
    *  this counter is the reactive "the living tree changed" signal. */
   generation = $state(0);
+  /** [97] Chaîne d'items en graphie moteur (BPx `renderChain`, via `Kairos.rendreChaineFinale`),
+   *  POSÉE par l'adaptateur — le store ne la calcule jamais (aucune graphie fabriquée ici).
+   *  `null` : rien chargé, ou le portage a échoué côté adaptateur (dégradation honnête). */
+  #chaine: string | null = $state(null);
 
   /** Wire the live Kairos instance (eval) or unwire it (teardown). */
   set(kairos: Kairos | null): void {
     this.#kairos = kairos;
+    if (kairos === null) this.#chaine = null;
     this.generation++;
+  }
+
+  /** Pose la chaîne d'items PORTÉE par l'adaptateur (rendue par BPx/Kairos), verbatim. */
+  setChaine(s: string | null): void {
+    this.#chaine = s;
+  }
+
+  /** Chaîne d'items en graphie moteur pour la production courante, ou null. */
+  chaine(): string | null {
+    return this.#chaine;
   }
 
   /** Signal a swap (re-random) on the SAME instance → re-render the views. */

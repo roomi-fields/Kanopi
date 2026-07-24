@@ -44,7 +44,7 @@ import voicesJson from 'bpscript/lib/voices.json';
 // il est CAPTÉ depuis `lib/digital/<fn>.ts` dans le BUNDLE navigateur `libs-data.js` (libs-bundle.js:52,
 // commentaire de digital.json). On consomme donc `LIBS.digital` (avec body), pas le JSON nu.
 import { LIBS as BPSCRIPT_LIBS } from 'bpscript/src/transpiler/libs-data.js';
-import { createSession, type Session, type TimedToken as BpxTimedToken } from 'bpx';
+import { createSession, renderChain, type Session, type TimedToken as BpxTimedToken } from 'bpx';
 // [745] Interrupteur de la trace de dérivation — LU seul (jamais `setTraceEnabled`,
 // matière propre de la vue Texte). L'hôte PORTE la valeur à la construction de la
 // Session, il ne la résout ni ne l'abonne.
@@ -53,7 +53,7 @@ import { traceEnabled } from 'runtime-ui';
 // tree into a Kronos Timeline, exposes a StructureSource the Transport PULLs). Consumed
 // AS-IS: the host `charger`s it with the tree + BPx projection context, then hands it to
 // `startKronosAudio`. Kairos is the SOLE projection source — no parallel host-side flattener.
-import { Kairos } from '@kairos/core';
+import { Kairos, rendreChaineFinale } from '@kairos/core';
 import { BUNDLED_SE, BUNDLED_SOUND, BUNDLED_AL } from './bp3-aux';
 // Audio output lives in runtime-audio: it provides the CV-curve factory `exprSource`
 // (compiles a backtick curve → ModulationSource), injected into Kronos's composition
@@ -1762,6 +1762,11 @@ function makeBpxAdapter(
       // écran : toggle ON + Ctrl+Entrée sur un fichier déjà en lecture emprunte CE chemin,
       // pas le chemin d'éval "neuf").
       let liveUpdateTrace: Parameters<Kairos['charger']>[2] | undefined;
+      // [97] Chaîne d'items en graphie moteur (BPx `renderChain`, via `Kairos.rendreChaineFinale`),
+      // rendue UNE FOIS pour CE derive et cachée pour la MISE À JOUR VIVANTE (site 3, plus bas) —
+      // même tree/ids/chainMarkers que le site d'éval, pas de recalcul. `null` : le rendu a
+      // échoué (dégradation honnête, jamais de chaîne inventée) ou n'a pas encore eu lieu.
+      let liveUpdateChaine: string | null = null;
       // KAI-10 — the host builds NO pitch resolver at all. Kairos graves `content.pitch.hz`
       // (read by every output) AND `content.sounds` (the DISPLAY note-vs-text predicate, read
       // below off the timeline), both from `ctx.pitchLib` + the tree; the sound transpose
@@ -1860,10 +1865,14 @@ function makeBpxAdapter(
         // it. `output:'voice-major'` is `buildProjectionContext`'s default (the parity
         // corpus' voice-major order); see Open notes on the order choice.
         kairos = new Kairos();
+        // [97] Contexte de projection capturé NOMMÉ (pas un appel inline) : servi à `charger`
+        // ci-dessous ET à `resolveName` pour la chaîne d'items — un seul appel à
+        // `buildProjectionContext()`, pas de 2e résolveur fabriqué côté hôte.
+        const evalProjectionCtx = bpx.buildProjectionContext();
         kairos.charger(
           derived.tree as unknown as Parameters<Kairos['charger']>[0],
           {
-            ...(bpx.buildProjectionContext() as object),
+            ...(evalProjectionCtx as object),
             // KAI-10 — hand Kairos the shared pitch CATALOGS (read-only library DATA,
             // the 5 `bpscript/lib` JSONs bundled at `PITCH_LIB`), the exact sibling of
             // `modulation.registry`: host-composed data on the projection context, NOT a
@@ -1910,6 +1919,23 @@ function makeBpxAdapter(
             ? ({ pas: deriveResult.trace } as unknown as Parameters<Kairos['charger']>[2])
             : undefined
         );
+        // [97] Chaîne d'items en graphie moteur — l'hôte n'assemble AUCUNE graphie : il appelle
+        // `rendreChaineFinale` (Kairos) avec la fonction d'assemblage `renderChain` (BPx, 4e
+        // argument) et PORTE le résultat. Dégradation honnête : un échec (ids/chainMarkers
+        // absents/inattendus) pose `null`, jamais une chaîne inventée — la vue affiche alors
+        // « pas encore livrée ». Cachée pour le site 3 (mise à jour vivante) : même derive.
+        try {
+          liveUpdateChaine = rendreChaineFinale(
+            deriveResult.ids,
+            deriveResult.chainMarkers,
+            evalProjectionCtx.resolveName,
+            renderChain
+          );
+        } catch (err) {
+          log({ runtime: id, level: 'warn', msg: `chaîne d'items: ${String(err)}` });
+          liveUpdateChaine = null;
+        }
+        productionFeed.setChaine(liveUpdateChaine);
         // Capture pour la MISE À JOUR VIVANTE (re-éval same-file) : arbre + contexte de projection,
         // pour re-charger le Kairos VIVANT au teardown sans reconstruire la scène (bpx/derived ne
         // vivent que dans ce bloc). Contexte reconstruit à frais comme le fait le re-random.
@@ -2025,6 +2051,10 @@ function makeBpxAdapter(
         // silencieusement la trace (gap distinct des sites eval/re-random).
         prev.kairos.charger(liveUpdateTree, liveUpdateCtx, liveUpdateTrace);
         productionFeed.swapped();
+        // [97] Idem trace : la chaîne d'items du MÊME derive (calculée au site d'éval
+        // ci-dessus, cachée dans `liveUpdateChaine`) suit le rechargement vivant — pas de
+        // recalcul (même tree/ids/chainMarkers), PORTÉE verbatim.
+        productionFeed.setChaine(liveUpdateChaine);
         // Si le transport était ARRÊTÉ (handle build-only d'une ouverture qui PRODUIT sans jouer,
         // ou un Stop), l'éval le DÉMARRE (replay : stopped→running → Kronos re-tire les notes + les
         // backticks à leurs onsets). S'il TOURNE déjà (vraie re-éval live), on ne touche PAS la
@@ -2264,6 +2294,9 @@ function makeBpxAdapter(
               });
               const rDerive = rbpx.derive();
               const rtree = rDerive.tree;
+              // [97] Contexte nommé, comme au site d'éval — servi à `charger` ci-dessous ET
+              // à `resolveName` pour la chaîne d'items de CE cycle.
+              const rProjectionCtx = rbpx.buildProjectionContext();
               // Re-charge Kairos with the NEW tree + a context rebuilt from the NEW session
               // (resolvers/kpress/order) + the cycle-invariant CV registry (KRO-24 — Kairos
               // composes the modulations at flatten) + B03 transpose (same scene resolver;
@@ -2272,7 +2305,7 @@ function makeBpxAdapter(
               kairos!.charger(
                 rtree as unknown as Parameters<Kairos['charger']>[0],
                 {
-                  ...(rbpx.buildProjectionContext() as object),
+                  ...(rProjectionCtx as object),
                   // KAI-10 — same read-only catalogs on every re-derive (cycle-invariant).
                   pitchLib: PITCH_LIB,
                   // Catalogue perso — même patron, cycle-invariant lui aussi (lu par référence
@@ -2295,6 +2328,28 @@ function makeBpxAdapter(
               );
               // Same instance re-charger'd → bump generation so the views re-render.
               productionFeed.swapped();
+              // [97] Chaîne d'items de CE cycle re-random — même règle qu'au site d'éval
+              // (rendreChaineFinale/renderChain), portée verbatim. Try/catch DÉDIÉ : un échec
+              // de rendu de la chaîne ne doit jamais faire échouer le re-random déjà réussi
+              // (charger() + swapped() ci-dessus tiennent) — dégradation honnête = `null` posé,
+              // pas de propagation vers le catch englobant de `reDeriveKairos`.
+              let rChaine: string | null;
+              try {
+                rChaine = rendreChaineFinale(
+                  rDerive.ids,
+                  rDerive.chainMarkers,
+                  rProjectionCtx.resolveName,
+                  renderChain
+                );
+              } catch (chainErr) {
+                log({
+                  runtime: id,
+                  level: 'warn',
+                  msg: `chaîne d'items (re-random): ${String(chainErr)}`
+                });
+                rChaine = null;
+              }
+              productionFeed.setChaine(rChaine);
               // Refresh the Structure/Text view so it shows THIS cycle's variation
               // (display only — mirrors what the dormant `reDeriveTreeEvents` publishes).
               const rnames = buildSymbolNames(rbpx, rtree);
