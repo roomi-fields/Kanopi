@@ -68,70 +68,74 @@
             : null}
       {@const midiUnselected = a.outputTransport === 'midi' && midiOutput.selectedId === null}
       <li
-        class="actor"
+        class="actor stack"
         class:active={a.active}
         class:muted={a.muted}
         class:errored={!!a.error}
         class:mixer-muted={mixer.isActorMuted(a.name) || mixer.master.muted}
         class:midi-unselected={midiUnselected}
       >
-        <button
-          class="toggle"
-          type="button"
-          title="toggle {a.name}"
-          onclick={() => actors.toggle(a.name)}
-        >
-          <span class="led" class:on={a.active} class:muted={a.muted} class:err={!!a.error}></span>
-        </button>
-        <button class="info" type="button" onclick={() => openFile(a.file)}>
-          <span class="name">{a.name}</span>
-          <span class="meta">
-            <span class="rt rt-{a.runtime}">{a.runtime}</span>
-            {#if a.file}<span class="file">{a.file}</span>{/if}
-            {#if a.error}<span class="err-badge" title={a.error}>⚠ output</span>{/if}
-          </span>
-        </button>
-        {#if i < 9}
+        <!-- Ligne 1 — identité : armement, nom, langage. Le nom de FICHIER n'y est
+             plus (Romain 2026-07-24) : un seul fichier est actif à la fois, il est
+             déjà nommé par l'onglet actif et par « active scene ». -->
+        <div class="line">
           <button
-            class="mute"
+            class="toggle"
             type="button"
-            title="mute {a.name} (Ctrl+{i + 1})"
-            onclick={() => actors.toggleMute(a.name)}
+            title="toggle {a.name}"
+            onclick={() => actors.toggle(a.name)}
           >
-            {a.muted ? 'M' : '·'}
+            <span class="led" class:on={a.active} class:muted={a.muted} class:err={!!a.error}
+            ></span>
           </button>
-        {/if}
-        <!-- Volume rides the ratified gain API (contract hote-runtimes-sortie.md:51):
-             effective = actor x master, on WHICHEVER live runtime owns the actor. -->
-        <input
-          class="vol"
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={mixer.actorEntry(a.name).volume}
-          oninput={(e) => mixer.setActorVolume(a.name, e.currentTarget.valueAsNumber)}
-          disabled={disabledKind !== null || midiUnselected}
-          title={midiUnselected
-            ? MIDI_NO_DEVICE_TITLE
-            : disabledKind !== null
-              ? mixerSliderDisabledTitle(disabledKind)
-              : mixerSliderActiveTitle(a.name, a.runtime)}
-        />
-        <button
-          class="mix-mute"
-          type="button"
-          class:on={mixer.isActorMuted(a.name)}
-          disabled={midiUnselected}
-          title={midiUnselected
-            ? MIDI_NO_DEVICE_TITLE
-            : mixer.isActorMuted(a.name)
-              ? `unmute ${a.name}`
-              : `mute ${a.name} (mixer)`}
-          onclick={() => mixer.toggleActorMuted(a.name)}
-        >
-          M
-        </button>
+          <span class="name">{a.name}</span>
+          <span class="rt rt-{a.runtime}">{a.runtime}</span>
+          {#if a.error}<span class="err-badge" title={a.error}>⚠ output</span>{/if}
+          {#if i < 9}
+            <button
+              class="mute"
+              type="button"
+              title="mute {a.name} (Ctrl+{i + 1})"
+              onclick={() => actors.toggleMute(a.name)}
+            >
+              {a.muted ? 'M' : '·'}
+            </button>
+          {/if}
+        </div>
+        <!-- Ligne 2 — mixer : volume + mute persistant. Le volume emprunte l'API de
+             gain ratifiée (contrat hote-runtimes-sortie.md:51) : effectif = acteur ×
+             master, sur QUEL QUE SOIT le runtime vivant qui possède l'acteur. -->
+        <div class="line">
+          <input
+            class="vol"
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={mixer.actorEntry(a.name).volume}
+            oninput={(e) => mixer.setActorVolume(a.name, e.currentTarget.valueAsNumber)}
+            disabled={disabledKind !== null || midiUnselected}
+            title={midiUnselected
+              ? MIDI_NO_DEVICE_TITLE
+              : disabledKind !== null
+                ? mixerSliderDisabledTitle(disabledKind)
+                : mixerSliderActiveTitle(a.name, a.runtime)}
+          />
+          <button
+            class="mix-mute"
+            type="button"
+            class:on={mixer.isActorMuted(a.name)}
+            disabled={midiUnselected}
+            title={midiUnselected
+              ? MIDI_NO_DEVICE_TITLE
+              : mixer.isActorMuted(a.name)
+                ? `unmute ${a.name}`
+                : `mute ${a.name} (mixer)`}
+            onclick={() => mixer.toggleActorMuted(a.name)}
+          >
+            M
+          </button>
+        </div>
       </li>
     {/each}
   </ul>
@@ -195,6 +199,32 @@
     gap: 8px;
     padding: 6px 12px;
     border-bottom: 1px solid var(--border-dim);
+  }
+  /* Acteur vivant = DEUX lignes : identité (armement/nom/langage) puis mixer
+     (volume/mute). La liste « open blocks » plus bas garde UNE ligne. */
+  .actor.stack {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+  }
+  .line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  /* La 2e ligne s'aligne sous le nom, pas sous la LED. */
+  .line + .line {
+    padding-left: 30px;
+  }
+  .stack .name {
+    flex: 0 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .stack .mute {
+    margin-left: auto;
   }
   .toggle {
     width: 22px;
@@ -302,11 +332,6 @@
   .rt-js {
     color: var(--cyan);
   }
-  .file {
-    color: var(--text-faint);
-    font-family: var(--font-code);
-  }
-
   /* ————— Volume + persistent mixer mute (former MixerStrips.svelte) ————— */
   .vol {
     flex: 1 1 56px;
