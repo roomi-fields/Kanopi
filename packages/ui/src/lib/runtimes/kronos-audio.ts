@@ -262,8 +262,11 @@ let currentCodeVoicesGain: AudioGainControl | null = null;
 /** Même contrat gain que `audioGainControl()`, porté par l'instance runtime-codevoices VIVANTE
  *  (`opts.codeVoicesRuntime`, bpx-adapter.ts — construite par createCodeVoicesRuntime, transmise
  *  telle quelle). `null` quand la scène n'a aucun backtick (pas de voix de code). Diffusé en
- *  interne à TOUS les adaptateurs de voix (paquet, [73]) ; seuls strudel/csound réagissent
- *  réellement (mercury/hydra/p5/js n'implémentent pas la méthode → no-op silencieux côté paquet). */
+ *  interne à TOUS les adaptateurs de voix (paquet, [73]). Qui réagit, à jour au 2026-07-24 :
+ *  le niveau PAR ACTEUR (`setActorGain`) reste strudel/csound seuls (pas de point d'insertion
+ *  par acteur ailleurs — voices/js.ts:72-75) ; le MAÎTRE (`setMasterGain`/`setMasterMuted`) est
+ *  désormais honoré AUSSI par mercury, js et p5 (étage `voices/master-out.ts`, amont 5c4f4e8).
+ *  hydra n'a rien à couper et reste sans méthode (voices/hydra.ts:163). */
 export function codeVoicesGainControl(): AudioGainControl | null {
   return currentCodeVoicesGain;
 }

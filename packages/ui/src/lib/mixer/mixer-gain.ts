@@ -64,11 +64,17 @@ export function reachesGainBus(outputTransport: string | undefined): boolean {
   );
 }
 
-/** Mirror of `reachesGainBus`, for CODE-VOICE runtimes. Only strudel/csound actually
- *  implement `setActorGain`/`setMasterGain`/`setMasterMuted` on their individual adapter (the
- *  runtime-codevoices package diffuses with `adapter.setActorGain?.(...)` — hydra/p5/mercury/js
- *  have no such method, so the call is a silent no-op for them: no API, not a "not confirmed yet"
- *  gap like dmx). */
+/** Mirror of `reachesGainBus`, for CODE-VOICE runtimes — porte sur le niveau PAR ACTEUR
+ *  (`setActorGain`), que seuls strudel/csound implémentent. Le paquet diffuse en
+ *  `adapter.setActorGain?.(...)` : pour hydra/p5/mercury/js l'appel est un no-op silencieux.
+ *
+ *  MOTIF CORRIGÉ (runtime-codevoices, 2026-07-24, voices/js.ts:72-75) : ce n'est PAS « ces
+ *  voix sont visuelles, il n'y a pas de son à atténuer » — js, p5 et mercury SONNENT. La vraie
+ *  raison est qu'il n'existe pas de point d'insertion PAR ACTEUR sans changer l'objet audio que
+ *  l'auteur manipule : il construit ses nœuds lui-même sur le contexte partagé et les branche
+ *  sur `destination`. Limite assumée, distincte du MAÎTRE — lequel, lui, est désormais câblé
+ *  pour mercury/js/p5 (étage `voices/master-out.ts`, commit amont 5c4f4e8) ; seul hydra n'a
+ *  rien à couper (voices/hydra.ts:163). NE PAS confondre les deux niveaux. */
 export function codeVoiceReachesGainBus(runtime: string): boolean {
   return runtime === 'strudel' || runtime === 'csound';
 }

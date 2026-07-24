@@ -7,11 +7,16 @@
   // Master gain is projected onto EVERY live gain bus (audio/midi/osc/codevoices —
   // applyMixerGains calls setMasterGain/setMasterMuted on each). A NATIVE actor reaches
   // one when its declared transport (Actor.outputTransport, BPx's `output.runtime`) is
-  // audio/midi/osc; a CODE-VOICE actor (strudel/hydra/…) reaches one only for
-  // strudel/csound (`codeVoiceReachesGainBus` — the sole adapters implementing the
-  // gain API in the package). A native actor routed dmx (API not yet confirmed) or a
-  // hydra/p5/mercury/js voice touch none of these buses. Only disable the master when NO
-  // live actor genuinely reaches a gain bus; if even one does, the master stays live.
+  // audio/midi/osc; a CODE-VOICE actor reaches one per `codeVoiceReachesGainBus`.
+  //
+  // ⚠ ÉCART CONNU, REPORTÉ À L'ARCHITECTE (2026-07-24), pas corrigé sans arbitrage :
+  // `codeVoiceReachesGainBus` porte sur le niveau PAR ACTEUR (strudel/csound seuls). Depuis
+  // l'amont 5c4f4e8, mercury/js/p5 honorent le MAÎTRE (setMasterGain + setMasterMuted, étage
+  // voices/master-out.ts) — une scène où SEULE une de ces voix est vivante grise donc ici un
+  // contrôle qui FONCTIONNERAIT. Corriger demande un prédicat propre au maître ; l'architecte
+  // a demandé de ne rien rouvrir sur le grisage sans son accord.
+  // Only disable the master when NO live actor genuinely reaches a gain bus; if even one does,
+  // the master stays live.
   const anyReachesGainBus = $derived(
     actors.list.some((a) =>
       isCodeVoiceRuntime(a.runtime)
