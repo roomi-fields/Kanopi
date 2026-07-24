@@ -152,7 +152,10 @@ describe('codeVoiceReachesGainBus (KAN-UX3-B)', () => {
     expect(codeVoiceReachesGainBus('csound')).toBe(true);
   });
 
-  it('is false for hydra, p5, mercury and js — no gain API on their adapter', () => {
+  // NB (2026-07-24) : « pas de setActorGain » ≠ « aucune API de gain ». mercury/js/p5 honorent
+  // désormais le MAÎTRE (voir `codeVoiceReachesMasterBus`, registry.test.ts) ; c'est bien le
+  // niveau PAR ACTEUR qui leur manque, faute de point d'insertion par acteur.
+  it('is false for hydra, p5, mercury and js — no PER-ACTOR gain on their adapter', () => {
     expect(codeVoiceReachesGainBus('hydra')).toBe(false);
     expect(codeVoiceReachesGainBus('p5')).toBe(false);
     expect(codeVoiceReachesGainBus('mercury')).toBe(false);

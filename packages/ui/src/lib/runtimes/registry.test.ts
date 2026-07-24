@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getAdapter, listRuntimes } from './registry';
+import { getAdapter, listRuntimes, codeVoiceReachesMasterBus } from './registry';
 
 describe('runtime registry', () => {
   it('lists all known runtimes', () => {
@@ -13,6 +13,24 @@ describe('runtime registry', () => {
     expect(getAdapter('strudel')?.id).toBe('strudel');
     expect(getAdapter('hydra')?.id).toBe('hydra');
     expect(getAdapter('js')?.id).toBe('js');
+  });
+
+  // VERROU [901] (architecte, 2026-07-24) — le grisage du contrôle MAÎTRE se décide sur la
+  // capacité MAÎTRE de la voix, LUE SUR L'ADAPTATEUR, jamais sur une liste en dur : une voix
+  // câblée en amont doit dégriser le maître sans qu'on touche Kanopi. Le cas qui a mis sur la
+  // piste : une scène où SEULE une voix mercury est vivante grisait un fader et un mute qui
+  // fonctionnent (runtime-codevoices 5c4f4e8, voices/master-out.ts).
+  it('codeVoiceReachesMasterBus : vrai pour les voix qui portent un étage de sortie maître', () => {
+    expect(codeVoiceReachesMasterBus('mercury')).toBe(true);
+    expect(codeVoiceReachesMasterBus('js')).toBe(true);
+    expect(codeVoiceReachesMasterBus('p5')).toBe(true);
+    expect(codeVoiceReachesMasterBus('strudel')).toBe(true);
+    expect(codeVoiceReachesMasterBus('csound')).toBe(true);
+  });
+
+  it('codeVoiceReachesMasterBus : FAUX pour hydra — rien à couper, absence assumée en amont', () => {
+    // runtime-codevoices/src/voices/hydra.ts:163 déclare l'absence comme la réponse JUSTE.
+    expect(codeVoiceReachesMasterBus('hydra')).toBe(false);
   });
 
   it('returns undefined for unknown / unsupported', () => {

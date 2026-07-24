@@ -1,26 +1,27 @@
 <script lang="ts">
   import { mixer } from '../../stores/mixer.svelte';
   import { actors } from '../../stores/actors.svelte';
-  import { isCodeVoiceRuntime } from '../../lib/runtimes/registry';
-  import { reachesGainBus, codeVoiceReachesGainBus } from '../../lib/mixer/mixer-gain';
+  import { isCodeVoiceRuntime, codeVoiceReachesMasterBus } from '../../lib/runtimes/registry';
+  import { reachesGainBus } from '../../lib/mixer/mixer-gain';
 
   // Master gain is projected onto EVERY live gain bus (audio/midi/osc/codevoices —
   // applyMixerGains calls setMasterGain/setMasterMuted on each). A NATIVE actor reaches
   // one when its declared transport (Actor.outputTransport, BPx's `output.runtime`) is
-  // audio/midi/osc; a CODE-VOICE actor reaches one per `codeVoiceReachesGainBus`.
+  // audio/midi/osc.
   //
-  // ⚠ ÉCART CONNU, REPORTÉ À L'ARCHITECTE (2026-07-24), pas corrigé sans arbitrage :
-  // `codeVoiceReachesGainBus` porte sur le niveau PAR ACTEUR (strudel/csound seuls). Depuis
-  // l'amont 5c4f4e8, mercury/js/p5 honorent le MAÎTRE (setMasterGain + setMasterMuted, étage
-  // voices/master-out.ts) — une scène où SEULE une de ces voix est vivante grise donc ici un
-  // contrôle qui FONCTIONNERAIT. Corriger demande un prédicat propre au maître ; l'architecte
-  // a demandé de ne rien rouvrir sur le grisage sans son accord.
+  // CE BLOC EST LE SEUL À UTILISER `codeVoiceReachesMasterBus` (accord architecte [901],
+  // 2026-07-24) : le grisage du MAÎTRE se décide sur la capacité MAÎTRE de la voix, lue sur
+  // l'adaptateur lui-même (registry.ts) — pas sur `codeVoiceReachesGainBus`, qui est le
+  // prédicat du niveau PAR ACTEUR et reste strudel/csound. Avant ce correctif, une scène où
+  // seule une voix mercury/js/p5 était vivante grisait un fader et un mute qui FONCTIONNENT
+  // (leur étage de sortie existe depuis runtime-codevoices 5c4f4e8, voices/master-out.ts) ;
+  // hydra, lui, n'a réellement rien à couper et reste donc grisé (voices/hydra.ts:163).
   // Only disable the master when NO live actor genuinely reaches a gain bus; if even one does,
   // the master stays live.
   const anyReachesGainBus = $derived(
     actors.list.some((a) =>
       isCodeVoiceRuntime(a.runtime)
-        ? codeVoiceReachesGainBus(a.runtime)
+        ? codeVoiceReachesMasterBus(a.runtime)
         : reachesGainBus(a.outputTransport)
     )
   );

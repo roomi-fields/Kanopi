@@ -39,6 +39,27 @@ export function isCodeVoiceRuntime(runtime: Runtime): boolean {
   return codeVoiceRuntimeIds.has(runtime);
 }
 
+/**
+ * Cette voix de code honore-t-elle le niveau MAÎTRE (`setMasterMuted`/`setMasterGain`) ?
+ *
+ * LU OÙ LA CAPACITÉ VIT — sur l'adaptateur lui-même, jamais sur une liste en dur ici
+ * (consigne architecte 2026-07-24 [901] : « ne déduis pas la liste, lis la capacité là où
+ * elle vit, sinon la prochaine voix câblée en amont te retrouvera désynchronisé »). Le jour
+ * où hydra gagne un étage de sortie, ce prédicat le sait sans qu'on touche Kanopi.
+ *
+ * À NE PAS CONFONDRE avec `codeVoiceReachesGainBus` (lib/mixer/mixer-gain.ts), qui porte sur
+ * le niveau PAR ACTEUR (`setActorGain`) : celui-là reste strudel/csound, pour une raison qui
+ * tient (aucun point d'insertion par acteur sans changer l'objet audio que manipule l'auteur —
+ * runtime-codevoices/src/voices/js.ts:72-75). Deux niveaux, deux prédicats.
+ */
+export function codeVoiceReachesMasterBus(runtime: Runtime): boolean {
+  // Lu sur `codeVoiceAdapters` (le tableau AMONT, avec son type amont qui déclare
+  // `setMasterMuted?`) et non sur la carte locale : la carte mélange les natifs bp3/bpscript,
+  // typés par le contrat d'adaptateur de l'hôte, qui ne porte pas cette méthode. Pas de copie
+  // de surface à la main ici — la capacité est lue chez son propriétaire.
+  return codeVoiceAdapters.some((a) => a.id === runtime && typeof a.setMasterMuted === 'function');
+}
+
 export function listRuntimes(): Runtime[] {
   return [...adapters.keys()];
 }
