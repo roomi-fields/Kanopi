@@ -1915,8 +1915,15 @@ function makeBpxAdapter(
           // [745] Relais de la trace COMPAGNON : l'hôte remet la trace BPx à Kairos AVEC
           // l'arbre, verbatim (PORTER ≠ RÉSOUDRE). Absente quand éteint ⇒ 3e arg undefined
           // ⇒ Kairos #trace reste null ⇒ coût nul par construction.
+          // [97] Le contrat CompagnonTrace a évolué avec le lot graphie (Kairos kairos.ts:90) :
+          // le journal brut voyage sous `entrees` (ex-`pas`) ET la fonction d'assemblage BPx
+          // `rendreChaine` (= `renderChain`, OBLIGATOIRE) l'accompagne — la même que la chaîne
+          // d'items. L'hôte PORTE les deux, n'en résout aucun.
           deriveResult.trace !== undefined
-            ? ({ pas: deriveResult.trace } as unknown as Parameters<Kairos['charger']>[2])
+            ? ({
+                entrees: deriveResult.trace,
+                rendreChaine: renderChain
+              } as unknown as Parameters<Kairos['charger']>[2])
             : undefined
         );
         // [97] Chaîne d'items en graphie moteur — l'hôte n'assemble AUCUNE graphie : il appelle
@@ -1950,10 +1957,14 @@ function makeBpxAdapter(
           homomorphismeLib: HOMOMORPHISM_LIB,
           modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
         } as unknown as Parameters<Kairos['charger']>[1];
-        // [745] Idem site d'éval : même trace, portée pour le rechargement vivant.
+        // [745]/[97] Idem site d'éval : même trace au nouveau contrat CompagnonTrace
+        // (`entrees` + `rendreChaine`), portée pour le rechargement vivant.
         liveUpdateTrace =
           deriveResult.trace !== undefined
-            ? ({ pas: deriveResult.trace } as unknown as Parameters<Kairos['charger']>[2])
+            ? ({
+                entrees: deriveResult.trace,
+                rendreChaine: renderChain
+              } as unknown as Parameters<Kairos['charger']>[2])
             : undefined;
         // BPx authority for the scene's compiled length (includes any trailing rest);
         // projected into the Kronos loop bound below.
@@ -2321,9 +2332,13 @@ function makeBpxAdapter(
                   // KAI-10 — sound transpose in Kairos; host lends no transposeToken.
                   modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
                 } as unknown as Parameters<Kairos['charger']>[1],
-                // [745] Idem site d'éval : relais verbatim de la trace COMPAGNON au re-random.
+                // [745]/[97] Idem site d'éval : relais verbatim de la trace COMPAGNON au
+                // re-random, nouveau contrat (`entrees` + `rendreChaine`).
                 rDerive.trace !== undefined
-                  ? ({ pas: rDerive.trace } as unknown as Parameters<Kairos['charger']>[2])
+                  ? ({
+                      entrees: rDerive.trace,
+                      rendreChaine: renderChain
+                    } as unknown as Parameters<Kairos['charger']>[2])
                   : undefined
               );
               // Same instance re-charger'd → bump generation so the views re-render.

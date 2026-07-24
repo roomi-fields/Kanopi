@@ -14,12 +14,14 @@
 //  `onStep` EXPLOSE au moindre appel ne lève jamais — et rend `null` quand
 //  `Kairos.traceCourante()` rend `null` (interrupteur éteint / rien chargé).
 //
-//  PREUVE 3 — RELAIS ([745] — le trou effectivement bouché ici) : espion sur le 3e
-//  argument de `Kairos.prototype.charger` (site d'éval, bpx-adapter.ts ~L1857).
-//  ALLUMÉ ⇒ `charger` reçoit un 3e argument `{ pas: <la trace produite par
-//  DeriveResult.trace> }` (non-undefined) ; ÉTEINT ⇒ 3e argument `undefined`. C'est
-//  CE relais qui manquait (BPx produisait `DeriveResult.trace`, l'hôte ne le
-//  remettait jamais à Kairos) — cette preuve mord si le relais est retiré.
+//  PREUVE 3 — RELAIS ([745], contrat [97]) : espion sur le 3e argument de
+//  `Kairos.prototype.charger` (site d'éval, bpx-adapter.ts). ALLUMÉ ⇒ `charger`
+//  reçoit un 3e argument `{ entrees: <DeriveResult.trace>, rendreChaine: <BPx
+//  renderChain> }` (non-undefined) ; ÉTEINT ⇒ 3e argument `undefined`. C'est CE
+//  relais qui manquait (BPx produisait `DeriveResult.trace`, l'hôte ne le remettait
+//  jamais à Kairos) — cette preuve mord si le relais est retiré. Le contrat
+//  CompagnonTrace a évolué avec le lot graphie : `pas`→`entrees` + `rendreChaine`
+//  obligatoire (kairos.ts:90) ; cette preuve verrouille la forme À JOUR.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Kairos } from '@kairos/core';
@@ -256,9 +258,12 @@ describe('PREUVE 3 — RELAIS : le 3e argument de kairos.charger() porte la trac
     setTraceEnabled(false);
   });
 
-  it('ALLUMÉ ⇒ `charger` reçoit un 3e argument `{ pas: … }` NON-undefined (la trace BPx relayée)', async () => {
+  it('ALLUMÉ ⇒ `charger` reçoit un 3e argument `{ entrees, rendreChaine }` NON-undefined (la trace BPx relayée)', async () => {
     // Espion sur la VRAIE classe (call-through, pas de mock d'implémentation) : la
     // dérivation + le flattening tournent réellement, on capture seulement l'appel.
+    // [97] Contrat CompagnonTrace mis à jour (kairos.ts:90) : le journal brut voyage sous
+    // `entrees` (ex-`pas`) ET la fonction d'assemblage `rendreChaine` (= BPx `renderChain`,
+    // OBLIGATOIRE) l'accompagne — la même que la chaîne d'items. On vérifie les DEUX.
     const chargerSpy = vi.spyOn(Kairos.prototype, 'charger');
     setTraceEnabled(true);
 
@@ -271,7 +276,8 @@ describe('PREUVE 3 — RELAIS : le 3e argument de kairos.charger() porte la trac
     expect(chargerSpy).toHaveBeenCalled();
     const [, , traceArg] = chargerSpy.mock.calls[chargerSpy.mock.calls.length - 1];
     expect(traceArg).toBeDefined();
-    expect((traceArg as { pas?: unknown })?.pas).toBeDefined();
+    expect((traceArg as { entrees?: unknown })?.entrees).toBeDefined();
+    expect(typeof (traceArg as { rendreChaine?: unknown })?.rendreChaine).toBe('function');
 
     chargerSpy.mockRestore();
   });
