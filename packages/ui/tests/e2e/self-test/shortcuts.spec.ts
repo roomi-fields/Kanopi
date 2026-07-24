@@ -24,7 +24,7 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../../hel
 //     (node_modules/@codemirror/autocomplete/dist/index.cjs:525).
 //
 // These tests inject small INLINE fixtures through the dev-only
-// `window.__kanopi.workspace.loadFiles` hatch (main.ts:25-35). They need a
+// `window.__kanopi.workspace.openBundle` hatch (main.ts:25-35). They need a
 // `.strudel` actor file open (hush / Shift+Enter / Tab) or a multi-scene
 // `.kanopi` (Alt+1/2) — both defined inline here so the suite is independent of
 // the bundled starters (01/02/03 migrated to self-contained `.bps`, lot 4).
@@ -74,11 +74,14 @@ test('Ctrl/Cmd+. (hush) silences a running Strudel pattern after the lookahead f
       const w = window as unknown as {
         __kanopi?: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
           };
         };
       };
-      w.__kanopi!.workspace.loadFiles(
+      w.__kanopi!.workspace.openBundle(
         [
           { path: 'drums-solo.kanopi', contents: session },
           { path: 'drums.strudel', contents: drums }
@@ -167,11 +170,14 @@ test('Shift+Enter evaluates the current line only — a comment line does not th
       const w = window as unknown as {
         __kanopi?: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
           };
         };
       };
-      w.__kanopi!.workspace.loadFiles(
+      w.__kanopi!.workspace.openBundle(
         [
           { path: 'drums-solo.kanopi', contents: session },
           { path: 'drums.strudel', contents: drums }
@@ -288,11 +294,14 @@ test('Tab accepts the highlighted suggestion when the autocomplete popup is open
       const w = window as unknown as {
         __kanopi?: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
           };
         };
       };
-      w.__kanopi!.workspace.loadFiles(
+      w.__kanopi!.workspace.openBundle(
         [
           { path: 'drums-solo.kanopi', contents: session },
           { path: 'drums.strudel', contents: drums }

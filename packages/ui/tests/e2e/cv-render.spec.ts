@@ -114,11 +114,14 @@ test('cv-adsr renders the CV: oscillators + cutoff automations + audible output'
       const w = window as unknown as {
         __kanopi: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
           };
         };
       };
-      w.__kanopi.workspace.loadFiles([{ path: 'cv-adsr.bps', contents }], 'cv-adsr.bps');
+      w.__kanopi.workspace.openBundle([{ path: 'cv-adsr.bps', contents }], 'cv-adsr.bps');
     },
     { contents: program }
   );

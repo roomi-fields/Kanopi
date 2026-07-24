@@ -34,10 +34,11 @@ import { setupAudioCapture, evalBlockAt } from '../helpers';
 
 interface KanopiHatch {
   workspace: {
-    loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+    openBundle: (f: { path: string; contents: string }[], focusPath?: string) => string | null;
     files: { id: string; path: string }[];
     openFile: (id: string) => void;
     setActive: (id: string) => void;
+    updateContents: (id: string, contents: string) => void;
   };
   codeVoicePreload: {
     interpsForScene: (text: string) => string[];
@@ -51,11 +52,38 @@ async function loadAndFocus(page: import('@playwright/test').Page, path: string,
     async ({ path, contents }) => {
       const w = window as unknown as { __kanopi: KanopiHatch };
       const ws = w.__kanopi.workspace;
-      ws.loadFiles([{ path, contents }], path);
+      ws.openBundle([{ path, contents }], path);
       const target = ws.files.find((f) => f.path === path);
       if (!target) throw new Error(`fixture "${path}" did not land in the workspace`);
       ws.openFile(target.id);
       ws.setActive(target.id);
+    },
+    { path, contents }
+  );
+}
+
+/** Edit an ALREADY-OPEN tab's content in place, mirroring a real live-coding edit (CMEditor's
+ *  `onChange` → `workspace.updateContents`). `openBundle`/`addFile` dedup by PATH (Romain's tab
+ *  semantics: opening a path that's already a tab just re-focuses it, never overwrites its
+ *  content — see workspace.svelte.ts `addFile`) — so re-calling `loadAndFocus` with the SAME
+ *  path but different text is a no-op for the content and would silently defeat this retry.
+ *  Throws if `path` isn't already open, since this helper is only meaningful as a follow-up
+ *  edit to a tab opened earlier in the same test. */
+async function retypeOpenFile(
+  page: import('@playwright/test').Page,
+  path: string,
+  contents: string
+) {
+  await page.evaluate(
+    ({ path, contents }) => {
+      const w = window as unknown as { __kanopi: KanopiHatch };
+      const ws = w.__kanopi.workspace;
+      const target = ws.files.find((f) => f.path === path);
+      if (!target)
+        throw new Error(
+          `fixture "${path}" is not open — retypeOpenFile needs a prior loadAndFocus`
+        );
+      ws.updateContents(target.id, contents);
     },
     { path, contents }
   );
@@ -247,10 +275,15 @@ test('mercury load-on-demand [797/799] — scène synthé PUIS scène à samples
   // sans AUCUN log mercury). Les samples sont maintenant déjà dans `this.buffers` (chargés au 1er
   // passage), donc `checkBuffer` (mercury-engine, parse-time) ne les collapse plus sur un fallback :
   // la scène sonne dès ce 2e build, dans la même fenêtre courte qu'un boot eager (test précédent).
+  //
+  // `05-sample-basic-leak.bps` is ALREADY an open tab (step 2, above) — under `openBundle`'s
+  // stacking semantics (empiler, pas remplacer) a 2nd `loadAndFocus` on the SAME path is a no-op
+  // for the content (`addFile` dedups by path and just re-focuses the existing tab, see
+  // `retypeOpenFile`'s doc comment) and would silently defeat this retry. `retypeOpenFile` edits
+  // the already-open tab in place — the real live-coding gesture this retry simulates.
   const sampleSceneRetry = sampleScene.replace('gain(0.6)`:4', 'gain(0.6) `:4');
   expect(sampleSceneRetry).not.toBe(sampleScene);
-  await loadAndFocus(page, '05-sample-basic-leak.bps', sampleSceneRetry);
-  await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
+  await retypeOpenFile(page, '05-sample-basic-leak.bps', sampleSceneRetry);
   await evalBlockAt(page, 1);
 
   testInfo.attach('mercury-load-on-demand', {

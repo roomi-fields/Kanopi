@@ -43,11 +43,14 @@ test('session 02 - strudel + hydra produce audio and visuals on a shared clock',
     const w = window as unknown as {
       __kanopi?: {
         workspace: {
-          loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+          openBundle: (
+            f: { path: string; contents: string }[],
+            focusPath?: string
+          ) => string | null;
         };
       };
     };
-    w.__kanopi!.workspace.loadFiles(
+    w.__kanopi!.workspace.openBundle(
       [{ path: '02-strudel-hydra.bps', contents: session }],
       '02-strudel-hydra.bps'
     );

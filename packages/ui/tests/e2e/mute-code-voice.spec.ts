@@ -115,11 +115,14 @@ test('muting a Strudel actor via the mixer silences it, unmuting brings it back 
     const w = window as unknown as {
       __kanopi?: {
         workspace: {
-          loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+          openBundle: (
+            f: { path: string; contents: string }[],
+            focusPath?: string
+          ) => string | null;
         };
       };
     };
-    w.__kanopi!.workspace.loadFiles(
+    w.__kanopi!.workspace.openBundle(
       [{ path: '01-strudel-solo.bps', contents: session }],
       '01-strudel-solo.bps'
     );
@@ -218,11 +221,14 @@ test('muting the Strudel actor in a Strudel+Hydra session silences audio only (0
     const w = window as unknown as {
       __kanopi?: {
         workspace: {
-          loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+          openBundle: (
+            f: { path: string; contents: string }[],
+            focusPath?: string
+          ) => string | null;
         };
       };
     };
-    w.__kanopi!.workspace.loadFiles(
+    w.__kanopi!.workspace.openBundle(
       [{ path: '02-strudel-hydra.bps', contents: session }],
       '02-strudel-hydra.bps'
     );

@@ -24,11 +24,14 @@ test('bp3 grammar evaluates and produces audio', async ({ page }) => {
       const w = window as unknown as {
         __kanopi: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
           };
         };
       };
-      w.__kanopi.workspace.loadFiles([{ path: 'melody.gr', contents }], 'melody.gr');
+      w.__kanopi.workspace.openBundle([{ path: 'melody.gr', contents }], 'melody.gr');
     },
     { contents: grammar }
   );

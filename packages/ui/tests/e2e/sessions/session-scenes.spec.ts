@@ -40,7 +40,10 @@ test('session 03 - .bps file-scenes switch atomically and play their child progr
       const w = window as unknown as {
         __kanopi: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
             files: { id: string; path: string }[];
             openFile: (id: string) => void;
             setActive: (id: string) => void;
@@ -48,7 +51,7 @@ test('session 03 - .bps file-scenes switch atomically and play their child progr
         };
       };
       const ws = w.__kanopi.workspace;
-      ws.loadFiles(
+      ws.openBundle(
         [
           { path: 'scenes.bps', contents: parent },
           { path: 'calm.bps', contents: child1 },

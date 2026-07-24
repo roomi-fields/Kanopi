@@ -19,7 +19,7 @@ import { evalBlockAt } from '../../helpers';
 
 interface KanopiHatch {
   workspace: {
-    loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+    openBundle: (f: { path: string; contents: string }[], focusPath?: string) => string | null;
     files: { id: string; path: string }[];
     openFile: (id: string) => void;
     setActive: (id: string) => void;
@@ -35,7 +35,7 @@ async function loadBoth(page: import('@playwright/test').Page) {
     async ({ strudelScene, p5Scene }) => {
       const w = window as unknown as { __kanopi: KanopiHatch };
       const ws = w.__kanopi.workspace;
-      ws.loadFiles(
+      ws.openBundle(
         [
           { path: 'strudel.bps', contents: strudelScene },
           { path: 'p5.bps', contents: p5Scene }

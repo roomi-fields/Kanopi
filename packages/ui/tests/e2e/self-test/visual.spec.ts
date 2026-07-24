@@ -104,7 +104,7 @@ async function freezeAnimations(page: import('@playwright/test').Page) {
 }
 
 // Push starter files into the workspace via the dev-only handle installed by
-// main.ts. Same flow as packages/ui/tests/e2e/strudel.spec.ts — `loadFiles`
+// main.ts. Same flow as packages/ui/tests/e2e/strudel.spec.ts — `openBundle`
 // replaces the workspace and focuses the .kanopi session, then we explicitly
 // open the actor body so the editor mounts on it before Ctrl+Enter.
 async function loadStarter(
@@ -118,11 +118,14 @@ async function loadStarter(
       const w = window as unknown as {
         __kanopi?: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
           };
         };
       };
-      w.__kanopi!.workspace.loadFiles(files, focus);
+      w.__kanopi!.workspace.openBundle(files, focus);
     },
     { files, focus: focusSession }
   );

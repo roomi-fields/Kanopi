@@ -6,7 +6,7 @@ import { setupAudioCapture } from '../../helpers';
 // Strudel eval) and an entry in the Console panel. If any of these regress,
 // live-coding flow stops being honest.
 //
-// The tests share the dev-only `window.__kanopi.workspace.loadFiles` hatch
+// The tests share the dev-only `window.__kanopi.workspace.openBundle` hatch
 // (see strudel.spec.ts for the canonical example). The Strudel adapter routes
 // `parse:` errors through the console store at strudel.ts:776 / :797 / :813,
 // so the eval-failure paths converge on the same `level: 'error'` entry that
@@ -31,7 +31,10 @@ test('Broken Strudel JS triggers a red flash on eval', async ({ page }) => {
       const w = window as unknown as {
         __kanopi?: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
             files: { id: string; path: string }[];
             openFile: (id: string) => void;
             setActive: (id: string) => void;
@@ -39,7 +42,7 @@ test('Broken Strudel JS triggers a red flash on eval', async ({ page }) => {
         };
       };
       const ws = w.__kanopi!.workspace;
-      ws.loadFiles(
+      ws.openBundle(
         [
           { path: 'broken-strudel.kanopi', contents: s },
           { path: 'broken.strudel', contents: b }
@@ -129,7 +132,10 @@ test('Failed Strudel eval surfaces an error entry in the Console panel', async (
       const w = window as unknown as {
         __kanopi?: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
             files: { id: string; path: string }[];
             openFile: (id: string) => void;
             setActive: (id: string) => void;
@@ -137,7 +143,7 @@ test('Failed Strudel eval surfaces an error entry in the Console panel', async (
         };
       };
       const ws = w.__kanopi!.workspace;
-      ws.loadFiles(
+      ws.openBundle(
         [
           { path: 'broken-strudel.kanopi', contents: s },
           { path: 'broken.strudel', contents: b }

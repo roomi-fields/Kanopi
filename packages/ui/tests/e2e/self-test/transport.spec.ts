@@ -42,11 +42,14 @@ async function loadAndArm(page: import('@playwright/test').Page) {
     const w = window as unknown as {
       __kanopi: {
         workspace: {
-          loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+          openBundle: (
+            f: { path: string; contents: string }[],
+            focusPath?: string
+          ) => string | null;
         };
       };
     };
-    w.__kanopi.workspace.loadFiles(
+    w.__kanopi.workspace.openBundle(
       [{ path: 'transport-probe.bps', contents }],
       'transport-probe.bps'
     );

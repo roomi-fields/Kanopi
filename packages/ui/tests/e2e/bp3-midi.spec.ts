@@ -38,11 +38,14 @@ test('an EXPLICIT transport.midi actor routes BPx tokens to runtime-midi (NoteOn
       const w = window as unknown as {
         __kanopi: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
           };
         };
       };
-      w.__kanopi.workspace.loadFiles(
+      w.__kanopi.workspace.openBundle(
         [{ path: 'midi-explicit.bps', contents }],
         'midi-explicit.bps'
       );
@@ -154,10 +157,15 @@ test('per-actor channel + inline (ch:5) override travel to the MIDI bytes', asyn
   await page.evaluate((contents) => {
     const w = window as unknown as {
       __kanopi: {
-        workspace: { loadFiles: (f: { path: string; contents: string }[], focus?: string) => void };
+        workspace: {
+          openBundle: (
+            f: { path: string; contents: string }[],
+            focusPath?: string
+          ) => string | null;
+        };
       };
     };
-    w.__kanopi.workspace.loadFiles([{ path: 'midi-two-ch.bps', contents }], 'midi-two-ch.bps');
+    w.__kanopi.workspace.openBundle([{ path: 'midi-two-ch.bps', contents }], 'midi-two-ch.bps');
   }, TWO_CHANNEL_SCENE);
   await page.waitForFunction(() => {
     const w = window as unknown as { __kanopi?: { workspace: { files: { path: string }[] } } };

@@ -23,7 +23,10 @@ test('a .bps hydra code voice evaluates and produces non-black GL pixels', async
       const w = window as unknown as {
         __kanopi: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
             files: { id: string; path: string }[];
             openFile: (id: string) => void;
             setActive: (id: string) => void;
@@ -31,7 +34,7 @@ test('a .bps hydra code voice evaluates and produces non-black GL pixels', async
         };
       };
       const ws = w.__kanopi.workspace;
-      ws.loadFiles([{ path: 'hydra.bps', contents }], 'hydra.bps');
+      ws.openBundle([{ path: 'hydra.bps', contents }], 'hydra.bps');
       const target = ws.files.find((f) => f.path === 'hydra.bps');
       if (target) {
         ws.openFile(target.id);

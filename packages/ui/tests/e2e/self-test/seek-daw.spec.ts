@@ -26,14 +26,17 @@ async function loadScene(page: import('@playwright/test').Page, path: string, co
       const w = window as unknown as {
         __kanopi: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
             files: { id: string; path: string }[];
             openFile: (id: string) => void;
             setActive: (id: string) => void;
           };
         };
       };
-      w.__kanopi.workspace.loadFiles([{ path, contents }], path);
+      w.__kanopi.workspace.openBundle([{ path, contents }], path);
       const f = w.__kanopi.workspace.files.find((x) => x.path === path);
       if (f) {
         w.__kanopi.workspace.openFile(f.id);

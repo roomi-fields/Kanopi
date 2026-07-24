@@ -30,7 +30,10 @@ test('a multi-voice .bps plays its strudel audio AND hydra video voices', async 
       const w = window as unknown as {
         __kanopi: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
             files: { id: string; path: string }[];
             openFile: (id: string) => void;
             setActive: (id: string) => void;
@@ -38,7 +41,7 @@ test('a multi-voice .bps plays its strudel audio AND hydra video voices', async 
         };
       };
       const ws = w.__kanopi.workspace;
-      ws.loadFiles([{ path: 'multi-actor.bps', contents }], 'multi-actor.bps');
+      ws.openBundle([{ path: 'multi-actor.bps', contents }], 'multi-actor.bps');
       const target = ws.files.find((f) => f.path === 'multi-actor.bps');
       if (target) {
         ws.openFile(target.id);

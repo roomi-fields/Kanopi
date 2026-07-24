@@ -31,11 +31,14 @@ test('session 01 - strudel solo evaluates and produces audio', async ({ page }) 
     const w = window as unknown as {
       __kanopi?: {
         workspace: {
-          loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+          openBundle: (
+            f: { path: string; contents: string }[],
+            focusPath?: string
+          ) => string | null;
         };
       };
     };
-    w.__kanopi!.workspace.loadFiles(
+    w.__kanopi!.workspace.openBundle(
       [{ path: '01-strudel-solo.bps', contents: session }],
       '01-strudel-solo.bps'
     );

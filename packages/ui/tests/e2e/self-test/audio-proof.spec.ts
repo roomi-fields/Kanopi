@@ -28,7 +28,7 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../../hel
 
 interface KanopiHatch {
   workspace: {
-    loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+    openBundle: (f: { path: string; contents: string }[], focusPath?: string) => string | null;
     files: { id: string; path: string }[];
     openFile: (id: string) => void;
     setActive: (id: string) => void;
@@ -41,7 +41,7 @@ async function loadAndFocus(page: import('@playwright/test').Page, path: string,
     async ({ path, contents }) => {
       const w = window as unknown as { __kanopi: KanopiHatch };
       const ws = w.__kanopi.workspace;
-      ws.loadFiles([{ path, contents }], path);
+      ws.openBundle([{ path, contents }], path);
       const target = ws.files.find((f) => f.path === path);
       if (!target) throw new Error(`fixture "${path}" did not land in the workspace`);
       ws.openFile(target.id);

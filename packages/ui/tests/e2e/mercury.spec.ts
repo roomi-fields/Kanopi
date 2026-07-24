@@ -36,7 +36,10 @@ test.skip('a .bps mercury code voice evaluates and produces audio', async ({ pag
       const w = window as unknown as {
         __kanopi: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
             files: { id: string; path: string }[];
             openFile: (id: string) => void;
             setActive: (id: string) => void;
@@ -44,7 +47,7 @@ test.skip('a .bps mercury code voice evaluates and produces audio', async ({ pag
         };
       };
       const ws = w.__kanopi.workspace;
-      ws.loadFiles([{ path: 'mercury.bps', contents }], 'mercury.bps');
+      ws.openBundle([{ path: 'mercury.bps', contents }], 'mercury.bps');
       const target = ws.files.find((f) => f.path === 'mercury.bps');
       if (target) {
         ws.openFile(target.id);

@@ -26,7 +26,10 @@ test('a .bps strudel code voice evaluates and produces audio', async ({ page }) 
       const w = window as unknown as {
         __kanopi: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
             files: { id: string; path: string }[];
             openFile: (id: string) => void;
             setActive: (id: string) => void;
@@ -34,7 +37,7 @@ test('a .bps strudel code voice evaluates and produces audio', async ({ page }) 
         };
       };
       const ws = w.__kanopi.workspace;
-      ws.loadFiles([{ path: 'strudel.bps', contents }], 'strudel.bps');
+      ws.openBundle([{ path: 'strudel.bps', contents }], 'strudel.bps');
       const target = ws.files.find((f) => f.path === 'strudel.bps');
       if (target) {
         ws.openFile(target.id);

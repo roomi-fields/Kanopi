@@ -23,7 +23,10 @@ test('a .bps p5 code voice evaluates and paints non-background pixels', async ({
       const w = window as unknown as {
         __kanopi: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
             files: { id: string; path: string }[];
             openFile: (id: string) => void;
             setActive: (id: string) => void;
@@ -31,7 +34,7 @@ test('a .bps p5 code voice evaluates and paints non-background pixels', async ({
         };
       };
       const ws = w.__kanopi.workspace;
-      ws.loadFiles([{ path: 'p5.bps', contents }], 'p5.bps');
+      ws.openBundle([{ path: 'p5.bps', contents }], 'p5.bps');
       const target = ws.files.find((f) => f.path === 'p5.bps');
       if (target) {
         ws.openFile(target.id);

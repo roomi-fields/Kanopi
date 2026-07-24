@@ -4,7 +4,7 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helper
 // End-user path: open the app, switch to Library, click the bundled
 // "01 — Strudel solo" starter card, confirm the load dialog, and verify the
 // session ended up in the workspace. Unlike the tests under e2e/sessions/
-// (which inject via `window.__kanopi.workspace.loadFiles`), this one walks
+// (which inject via `window.__kanopi.workspace.openBundle`), this one walks
 // the same UI flow a real user would — proving the bundled starter files
 // reach the Library panel via the ?raw imports in starters.ts. Starter 01 is
 // now a self-contained `.bps` (lot 4): one file, evaluated in place.
@@ -39,7 +39,7 @@ test('library: bundled starter loads via the Library panel and evaluates', async
   await card.getByRole('button', { name: 'load' }).click();
 
   // After load, the self-contained `.bps` tab is opened and set active by
-  // workspace.loadFiles. We verify via the visible DOM only — the dev-only
+  // workspace.openBundle. We verify via the visible DOM only — the dev-only
   // `window.__kanopi` hatch is not exposed in production builds.
   const sessionTab = page.locator('.tab', {
     has: page.locator('.name', { hasText: '01-strudel-solo.bps' })

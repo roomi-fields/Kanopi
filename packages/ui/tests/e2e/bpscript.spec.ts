@@ -26,11 +26,14 @@ test('bps program evaluates and produces audio', async ({ page }) => {
       const w = window as unknown as {
         __kanopi: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
           };
         };
       };
-      w.__kanopi.workspace.loadFiles([{ path: 'melody.bps', contents }], 'melody.bps');
+      w.__kanopi.workspace.openBundle([{ path: 'melody.bps', contents }], 'melody.bps');
     },
     { contents: program }
   );

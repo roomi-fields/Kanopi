@@ -39,11 +39,14 @@ async function loadCvLfo(page: Page): Promise<string> {
       const w = window as unknown as {
         __kanopi: {
           workspace: {
-            loadFiles: (f: { path: string; contents: string }[], focus?: string) => void;
+            openBundle: (
+              f: { path: string; contents: string }[],
+              focusPath?: string
+            ) => string | null;
           };
         };
       };
-      w.__kanopi.workspace.loadFiles([{ path: 'cv-lfo.bps', contents }], 'cv-lfo.bps');
+      w.__kanopi.workspace.openBundle([{ path: 'cv-lfo.bps', contents }], 'cv-lfo.bps');
     },
     { contents: program }
   );
