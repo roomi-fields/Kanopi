@@ -235,6 +235,12 @@ export default defineConfig({
     fs: {
       allow: ['..', '../../../bp']
     },
+    // Serveur DU PORTILLON (`KANOPI_GATE=1`, posé par playwright.config.ts) : pas de HMR.
+    // Le gate n'édite aucun fichier, donc le rechargement à chaud n'y a aucune utilité ; en
+    // revanche son client RECHARGE LA PAGE quand la liaison se coupe puis revient (machine
+    // chargée) — ce qui détruit le contexte d'exécution en plein test. Hors gate, le HMR
+    // reste évidemment actif : c'est l'outil de travail quotidien.
+    hmr: process.env.KANOPI_GATE ? false : undefined,
     // Native Linux (PC2, since 2026-06-14): inotify works, no polling needed.
     // Polling stays available as an opt-in for the legacy WSL2 path (edits
     // across a Windows/Linux boundary) via VITE_FORCE_POLLING / CHOKIDAR_USEPOLLING.

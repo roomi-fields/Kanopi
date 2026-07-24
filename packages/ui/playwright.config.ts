@@ -66,7 +66,15 @@ export default defineConfig({
         // de glisser sur un autre port (sinon `url` ne correspondrait plus).
         // `reuseExistingServer: false` : jamais la réutilisation d'un serveur qui tourne — le
         // gate possède le sien, frais, et le teardown.
-        command: `npm run dev -- --port ${GATE_PORT} --strictPort`,
+        // `KANOPI_GATE=1` coupe le HMR de CE serveur (vite.config.ts). Le portillon n'édite
+        // aucun fichier : le HMR n'y sert à rien, mais son client RECHARGE LA PAGE dès que la
+        // liaison de rechargement se coupe et se rétablit — ce qui arrive quand la machine est
+        // chargée. Symptôme observé (2 portillons de suite, 2026-07-24) : « Execution context
+        // was destroyed, most likely because of a navigation » en plein échantillonnage de RMS
+        // (tests/helpers.ts:119) et `window.__kanopi` devenu undefined — sur des tests DIFFÉRENTS
+        // à chaque passe, qui repassent tous en isolation. On retire la source de rechargement,
+        // on ne touche à AUCUNE assertion.
+        command: `KANOPI_GATE=1 npm run dev -- --port ${GATE_PORT} --strictPort`,
         url: `http://localhost:${GATE_PORT}`,
         reuseExistingServer: false,
         // Le preview démarre vite, mais le CPU peut être chargé — marge large.
