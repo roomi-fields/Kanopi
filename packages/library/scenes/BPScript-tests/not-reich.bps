@@ -12,7 +12,11 @@
 // --- Sous-grammaire 1 @mode:random(striated, tempo:60) ---
 
 @mode:random(striated, tempo:60)
-S -> A' B' C' (chan:1, vel:50, volumecont, volume:80)
+// ORDRE DES CONTROLES = ORDRE NATIF (not-reich.gr gram#1[1] : « S --> _chan(1) _vel(50)
+// _volumecont _volume(80) A' B' C' »). Un controle s'applique a ce qui le SUIT : sa POSITION
+// porte sa PORTEE. La conversion les avait regroupes en SUFFIXE de la regle, ou ils ne
+// s'appliquaient plus ni a A' ni a B' ni a C'.
+S -> chan(1) vel(50) volumecont volume(80) A' B' C'
 
 -----
 
