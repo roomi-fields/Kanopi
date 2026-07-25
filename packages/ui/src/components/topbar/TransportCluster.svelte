@@ -4,7 +4,7 @@
   import { transport } from '../../stores/transport.svelte';
   import { playback } from '../../stores/playback.svelte';
   import { openBlocks } from '../../stores/blocks.svelte';
-  import { writeMmDirective } from '../../lib/runtimes/mm-directive';
+  import { setTempo, tapTempo } from '../../lib/commands/tempo';
   import { kronosCursor } from '../../stores/kronos-cursor.svelte';
   import { fmt2, fmt3 } from '../../lib/format/bar-beat';
   import { isNonProgramFile } from '../../lib/workspace/types';
@@ -86,23 +86,6 @@
     draft = clock.state.bpm != null ? clock.state.bpm.toFixed(1) : '';
     editing = true;
   }
-  // Mirror the transport BPM into the active scene's `@tempo`/`@mm` directive (Romain:
-  // changing the tempo up top must change the directive in the scene). Only when the active
-  // file is a bp3/bpscript scene that already declares one — we never inject one (décision
-  // Romain 2026-07-01 : pas d'injection) — and only on an actual change, so it doesn't churn
-  // the editor. The editor reflects this external rewrite (CMEditor reconciles the doc → view).
-  //
-  // Takes the APPLIED bpm from `setBpm`/`tap` (NOT `clock.state.bpm`): while a scene plays the
-  // readout mirrors the live handle tempo, which lags one change behind at this synchronous
-  // point → it wrote the PREVIOUS value. Passing the applied value keeps UI ⇄ text in lockstep.
-  function writeTempoToScene(bpm: number | null) {
-    const f = activeFile;
-    if (!f || (f.runtime !== 'bpscript' && f.runtime !== 'bp3')) return;
-    if (bpm == null) return; // no tempo to mirror into the directive
-    const next = writeMmDirective(f.contents, bpm);
-    if (next !== f.contents) workspace.updateContents(f.id, next);
-  }
-
   function applyEdit() {
     // Guard the blur that fires right after Enter/Escape already closed the
     // field — otherwise Escape's cancel gets overridden by an apply-on-blur.
@@ -110,11 +93,12 @@
     editing = false;
     const n = parseFloat(draft.replace(',', '.'));
     if (!Number.isNaN(n)) {
-      // `setBpm` is the SOLE owner of the input bound ([20,300], `clampBpm`); the
-      // component never re-bounds (a local [20,400] clamp let 350 look accepted then
-      // be silently dropped to 300 by the store). It RETURNS the applied value, which we
-      // mirror into the scene directive (never the lagging readout).
-      writeTempoToScene(clock.setBpm(n));
+      // Le geste tempo COMPLET (warp des runtimes + report dans la directive de la scène) vit
+      // dans `lib/commands/tempo` — point d'entrée UNIQUE partagé avec `window.kanopi.setTempo`.
+      // Le composant n'en tient plus la moitié : un banc piloté par l'API mesurait sinon un
+      // comportement que ce champ ne produit pas ([927]). `setTempo` est aussi le seul
+      // propriétaire de la borne d'entrée ([20,300]) — le composant ne re-borne jamais.
+      setTempo(n);
     }
   }
   function cancelEdit() {
@@ -256,7 +240,7 @@
     <span class="bpm-label">BPM</span>
   </div>
 
-  <button class="tap-btn" type="button" onclick={() => writeTempoToScene(clock.tap())}>TAP</button>
+  <button class="tap-btn" type="button" onclick={() => tapTempo()}>TAP</button>
 
   <div class="beat-meter">
     <div class="beat-dots">

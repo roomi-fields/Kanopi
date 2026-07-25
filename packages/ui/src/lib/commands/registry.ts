@@ -1,4 +1,5 @@
 import { clock } from '../../stores/clock.svelte';
+import { tapTempo } from './tempo';
 import { playback } from '../../stores/playback.svelte';
 import { scenes } from '../../stores/scenes.svelte';
 import { actors } from '../../stores/actors.svelte';
@@ -30,7 +31,11 @@ function staticCommands(): Command[] {
       // transport in place, so 'paused' no longer falls through to stop).
       run: () => (playback.mode === 'playing' ? playback.stop() : playback.play())
     },
-    { id: 'clock.tap', title: 'Tap tempo', category: 'Clock', run: () => clock.tap() },
+    // MÊME point d'entrée que le bouton TAP de la barre (`commands/tempo`) : le geste complet,
+    // warp des runtimes ET report dans la directive de la scène. Appeler `clock.tap()` nu ici
+    // donnait une palette qui warpait sans réécrire le texte — un tap au clavier et un tap à la
+    // souris ne faisaient pas la même chose ([927]).
+    { id: 'clock.tap', title: 'Tap tempo', category: 'Clock', run: () => tapTempo() },
     {
       id: 'console.clear',
       title: 'Clear console',

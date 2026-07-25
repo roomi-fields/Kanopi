@@ -11,12 +11,15 @@
 // Remplace aussi les bidouilles de test ad-hoc (wraps globaux d'AudioContext, imports
 // dynamiques de stores — piège d'instance DUPLIQUÉE —, surfaces jetables `window.__osc/__an`).
 //
-// Phase 1 = commandes + inspection au niveau STORE (zéro extraction). Les actions logées dans un
-// composant Svelte (`produce`, `writeTempoToScene`, résolution du bloc-sous-curseur) sont des
-// candidates PHASE 2 (extraction pure en service partagé UI+API) — PAS ici. La sonde audio
-// (AnalyserNode lecture-seule sur la sortie) arrive dans un pas suivant de phase 1.
+// Phase 1 = commandes + inspection au niveau STORE. Les actions restées logées dans un composant
+// Svelte (`produce`, résolution du bloc-sous-curseur) sont des candidates PHASE 2 (extraction
+// pure en service partagé UI+API) — PAS ici. Le geste TEMPO, lui, EST extrait
+// (`lib/commands/tempo`) : le laisser à moitié dans le composant faisait diverger l'API du champ
+// BPM, et un banc mené par l'API mesurait alors un comportement que l'utilisateur ne produit pas
+// (mesuré et corrigé 2026-07-25, [927]). Une commande qui ne délègue pas le geste COMPLET viole
+// la règle dure ci-dessus, même quand la moitié manquante vit « ailleurs par construction ».
 
-import { clock } from '../../stores/clock.svelte';
+import { setTempo as setTempoCommand } from '../commands/tempo';
 import { playback } from '../../stores/playback.svelte';
 import { transport } from '../../stores/transport.svelte';
 import { openBlocks } from '../../stores/blocks.svelte';
@@ -76,9 +79,16 @@ export function installKanopiApi(): void {
     stop(): unknown {
       return playback.stop();
     },
-    /** Règle le tempo comme le champ BPM ; retourne la valeur APPLIQUÉE (clampée). */
+    /** Règle le tempo comme le champ BPM : MÊME point d'entrée (`commands/tempo`), donc le même
+     *  geste COMPLET — warp des runtimes ET report de la valeur dans la directive `@tempo`/`@mm`
+     *  de la scène active. Retourne la valeur APPLIQUÉE (bornée).
+     *
+     *  Avant [927] cette commande n'appelait que `clock.setBpm` : elle warpait sans réécrire le
+     *  texte, un re-eval faisait retomber le tempo, et un banc mené par l'API mesurait un
+     *  comportement que le champ BPM ne produit pas. C'est le raccourci que la règle dure
+     *  ci-dessus interdit — l'API ne doit rien tenir de son côté. */
     setTempo(bpm: number): number {
-      return clock.setBpm(bpm);
+      return setTempoCommand(bpm);
     },
     toggleLoop(): void {
       transport.toggleLoop();
