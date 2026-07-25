@@ -104,6 +104,10 @@ import { productionFeed } from '../../stores/production-feed.svelte';
 // source of truth the Text panel (read by order via the tree) and the Structure
 // visualizer read.
 import { production } from '../../stores/production.svelte';
+// [921] Mode test : graine figée au lancement (`?seed=N`). POSÉ → tout produce + le re-roll
+// utilisent CETTE graine (à la place de `freshSeed`) et le rattrapage `_randomize` NE s'arme PAS
+// (refus honnête = reproductibilité tenue). ABSENT → défaut vivant intact.
+import { testSeed, isTestMode } from '../mode-test';
 // Session-global transport toggles (loop on/off, re-random per cycle on/off).
 // Read FRESH at each play so the user's transport setting at play time decides
 // looping + whether the grammar re-derives each cycle.
@@ -1751,7 +1755,10 @@ function makeBpxAdapter(
       //   • Une CYCLE de boucle re-dérive avec une graine fraîche UNIQUEMENT si le re-random
       //     est ON (site re-random plus bas) ; OFF → le dispatcher reboucle les mêmes
       //     événements. `seed` est un champ de config BPx documenté — glue, pas un port de RNG.
-      if (src.produceOnly) currentSeed = freshSeed();
+      // [921] MODE TEST : `?seed=N` posé → `currentSeed` reçoit CETTE graine (au lieu d'une fraîche)
+      // à CHAQUE produce → deux produces redonnent la MÊME suite (reproduction du comparateur).
+      // Absent → `freshSeed()`, le défaut vivant strictement inchangé.
+      if (src.produceOnly) currentSeed = testSeed() ?? freshSeed();
 
       let tokens;
       let tree: ProductionTree | undefined;
@@ -1831,12 +1838,18 @@ function makeBpxAdapter(
         // réessaie UNE fois SANS graine et on OUBLIE la graine (`currentSeed = undefined`)
         // pour que Play/Step de CETTE grammaire rejouent frais eux aussi. Tout autre échec
         // de dérivation RESTE une erreur (relancée telle quelle, trace attachée).
+        //
+        // [921] EXCEPTION MODE TEST : sous `?seed=N`, le retry NE s'arme PAS. Une grammaire
+        // `_randomize` sous graine figée REFUSE, et ce refus REMONTE tel quel (trace attachée,
+        // écran lisible). C'est la sémantique cohérente du mode test — reproductible OU refus
+        // honnête, jamais un retry sans graine qui casse silencieusement la reproductibilité de
+        // la session. Hors mode test, le retry reste inchangé.
         let bpx: Session = buildSession(true);
         let deriveResult;
         try {
           deriveResult = bpx.derive();
         } catch (err) {
-          if (currentSeed !== undefined && isRandomizeNeedsClock(err)) {
+          if (currentSeed !== undefined && !isTestMode() && isRandomizeNeedsClock(err)) {
             currentSeed = undefined;
             bpx = buildSession(false);
             deriveResult = bpx.derive();
@@ -2344,7 +2357,10 @@ function makeBpxAdapter(
                 // sans injection ; le WARP live (retune) persiste côté Kronos à travers le swap.
                 ...(settings !== undefined ? { settings } : {}),
                 ...(effectiveFlags !== undefined ? { initialFlags: effectiveFlags } : {}),
-                seed: freshSeed(),
+                // [921] MODE TEST : le re-roll aussi utilise la graine figée → une session de test
+                // est déterministe de bout en bout (chaque cycle re-tire la MÊME variation). Hors
+                // mode test, `freshSeed()` — chaque cycle re-random tire une variation neuve.
+                seed: testSeed() ?? freshSeed(),
                 // [745] Idem site d'éval : coût nul strict quand éteint (clé absente).
                 ...(traceEnabled() ? { trace: true } : {})
               });

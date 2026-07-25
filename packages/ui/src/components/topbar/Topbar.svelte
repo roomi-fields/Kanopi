@@ -1,6 +1,7 @@
 <script lang="ts">
   import TransportCluster from './TransportCluster.svelte';
   import StrudelStatusPill from './StrudelStatusPill.svelte';
+  import TestModeBadge from './TestModeBadge.svelte';
   import { ui } from '../../stores/ui.svelte';
 </script>
 
@@ -41,6 +42,7 @@
   </div>
 
   <div class="topbar-right">
+    <TestModeBadge />
     <StrudelStatusPill />
     <button class="cmdk-pill" type="button" onclick={() => ui.togglePalette()}>
       <kbd>⌘</kbd><kbd>K</kbd>
