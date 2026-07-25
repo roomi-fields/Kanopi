@@ -55,7 +55,7 @@ describe('[927] commande tempo — point d’entrée unique', () => {
   });
 });
 
-describe('[927] façade de pilotage — DÉLÈGUE au même point d’entrée que le champ BPM', () => {
+describe('[927]/[929] façade de pilotage — DÉLÈGUE au même point d’entrée que le bouton', () => {
   it('PREUVE 2 — window.kanopi.setTempo passe par la commande partagée', async () => {
     vi.resetModules();
     const spy = vi.fn((bpm: number) => bpm);
@@ -71,5 +71,22 @@ describe('[927] façade de pilotage — DÉLÈGUE au même point d’entrée que
     expect(spy).toHaveBeenCalledWith(137);
     expect(applique).toBe(137);
     vi.doUnmock('../commands/tempo');
+  });
+
+  // Même verrou pour PRODUCE : ce qui avait cédé sur le tempo, c'est la DÉLÉGATION, pas l'effet.
+  // Un `produce` qui appellerait `openBlocks.produceLoadedProgram` en direct sauterait la
+  // bascule (couper la scène sortante / arrêter la vivante) et ferait mentir tout banc.
+  it('PREUVE 3 — window.kanopi.produce passe par la commande partagée (bascule comprise)', async () => {
+    vi.resetModules();
+    const spy = vi.fn(async () => {});
+    vi.doMock('../commands/produce', () => ({ produceActiveScene: spy }));
+
+    const { installKanopiApi } = await import('../pilot/kanopi-api');
+    installKanopiApi();
+
+    await (window as unknown as { kanopi: { produce(): Promise<void> } }).kanopi.produce();
+
+    expect(spy).toHaveBeenCalledOnce();
+    vi.doUnmock('../commands/produce');
   });
 });

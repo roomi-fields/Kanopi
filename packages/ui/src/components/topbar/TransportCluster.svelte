@@ -3,12 +3,11 @@
   import { workspace } from '../../stores/workspace.svelte';
   import { transport } from '../../stores/transport.svelte';
   import { playback } from '../../stores/playback.svelte';
-  import { openBlocks } from '../../stores/blocks.svelte';
   import { setTempo, tapTempo } from '../../lib/commands/tempo';
+  import { produceActiveScene } from '../../lib/commands/produce';
   import { kronosCursor } from '../../stores/kronos-cursor.svelte';
   import { fmt2, fmt3 } from '../../lib/format/bar-beat';
   import { isNonProgramFile } from '../../lib/workspace/types';
-  import { core } from '../../lib/core';
 
   // STEP lives in the transport cluster (beta issue 4 — transport buttons grouped).
   // Verdict (b) « battement ÉCRIT » ([496/499]) : step(1) avance d'UN temps d'écriture,
@@ -39,20 +38,10 @@
   const canProduce = $derived(
     canPlay && !!activeFile && (activeFile.runtime === 'bpscript' || activeFile.runtime === 'bp3')
   );
-  // PRODUCE is also a bascule gesture (same "one live scene" rule as Play): producing
-  // a DIFFERENT tab than the currently-live one cuts the outgoing scene first; producing
-  // the SAME live tab again just stops it in place before re-deriving (the existing
-  // "clean re-produce" behavior, e.g. re-random on Produce).
-  async function produce() {
-    if (!activeFile) return;
-    if (activeFile.id !== openBlocks.liveFileId) {
-      await core.silenceRuntimes();
-      openBlocks.disarmAll();
-    } else {
-      playback.stop();
-    }
-    await openBlocks.produceLoadedProgram(activeFile.id);
-  }
+  // PRODUCE est un geste de BASCULE (même règle « une seule scène sonne » que Play), et ce
+  // prélude vit dans `lib/commands/produce` — point d'entrée UNIQUE partagé avec
+  // `window.kanopi.produce`. Le tenir ici faisait qu'un banc appelant `produceLoadedProgram`
+  // sautait la bascule et mesurait un enchaînement que l'utilisateur ne produit pas ([929]).
 
   // `null` when nothing is live and the user has typed no tempo (no host-invented default):
   // the readout shows « — » rather than a fabricated number.
@@ -119,7 +108,7 @@
       title={canProduce
         ? 'PRODUCE — (re)génère la scène (nouveau tirage aléatoire), au repos, prête à jouer'
         : 'PRODUCE — indisponible (l’onglet actif n’est pas une scène bp3/bpscript)'}
-      onclick={produce}
+      onclick={() => produceActiveScene()}
     >
       PROD
     </button>

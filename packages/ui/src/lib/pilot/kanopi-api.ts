@@ -11,15 +11,19 @@
 // Remplace aussi les bidouilles de test ad-hoc (wraps globaux d'AudioContext, imports
 // dynamiques de stores — piège d'instance DUPLIQUÉE —, surfaces jetables `window.__osc/__an`).
 //
-// Phase 1 = commandes + inspection au niveau STORE. Les actions restées logées dans un composant
-// Svelte (`produce`, résolution du bloc-sous-curseur) sont des candidates PHASE 2 (extraction
-// pure en service partagé UI+API) — PAS ici. Le geste TEMPO, lui, EST extrait
-// (`lib/commands/tempo`) : le laisser à moitié dans le composant faisait diverger l'API du champ
-// BPM, et un banc mené par l'API mesurait alors un comportement que l'utilisateur ne produit pas
-// (mesuré et corrigé 2026-07-25, [927]). Une commande qui ne délègue pas le geste COMPLET viole
-// la règle dure ci-dessus, même quand la moitié manquante vit « ailleurs par construction ».
+// UN GESTE À DEUX EFFETS NE SE LAISSE PAS À MOITIÉ DANS UN COMPOSANT. Deux commandes le
+// prouvaient : TEMPO warpait sans reporter la valeur dans la directive de la scène ([927]), et
+// PRODUCE sautait le prélude de bascule qui coupe la scène sortante ([929]). Dans les deux cas
+// un banc mené par l'API mesurait un comportement que l'utilisateur ne produit PAS. Les deux
+// gestes sont désormais EXTRAITS (`lib/commands/tempo`, `lib/commands/produce`) et l'UI comme la
+// façade y délèguent — extraction, jamais duplication.
+// Une commande qui ne délègue pas le geste COMPLET viole la règle dure ci-dessus, même quand la
+// moitié manquante vit « ailleurs par construction » : un commentaire qui EXPLIQUE un écart le
+// fait survivre, il ne le légitime pas. Reste en composant (candidat même traitement) : la
+// résolution du bloc-sous-curseur du Ctrl+Enter.
 
 import { setTempo as setTempoCommand } from '../commands/tempo';
+import { produceActiveScene } from '../commands/produce';
 import { playback } from '../../stores/playback.svelte';
 import { transport } from '../../stores/transport.svelte';
 import { openBlocks } from '../../stores/blocks.svelte';
@@ -33,7 +37,9 @@ import { startFrameMonitor, readFrameStats } from './frame-stats';
 import { profileMainThread } from './stack-profiler';
 import { core } from '../core';
 
-const API_VERSION = 11;
+// v12 — ajout du délégué `produce` (geste PROD bascule comprise). Surface ADDITIVE :
+// rien de retiré, les consommateurs de v11 continuent de marcher.
+const API_VERSION = 12;
 
 // (L'observateur des events audio forwardés + l'inspection `modulations()` sont RETIRÉS avec le
 //  wrapper audio hôte — frontière Phase 2 audio : l'hôte ne forwarde plus d'events audio shapés,
@@ -64,6 +70,16 @@ export function installKanopiApi(): void {
       if (f && isNonProgramFile(f.path)) return false;
       workspace.updateContents(id, text);
       return true;
+    },
+    /** PRODUCE : (re)génère la scène active, transport au repos — MÊME point d'entrée que le
+     *  bouton PROD (`commands/produce`), BASCULE COMPRISE. C'est tout l'intérêt : produire un
+     *  autre onglet que la scène vivante coupe d'abord la sortante, re-produire la vivante
+     *  l'arrête en place. Un banc qui appelait `openBlocks.produceLoadedProgram` directement
+     *  sautait ce prélude et mesurait un enchaînement que l'utilisateur ne produit jamais
+     *  (deux scènes superposées, ou une re-dérivation par-dessus un transport vivant) — même
+     *  classe de piège que `setTempo` avant [927]. */
+    async produce(): Promise<void> {
+      await produceActiveScene();
     },
     /** Éval de la session : délègue à `openBlocks.evalOne` pour chaque bloc ouvert — le même
      *  chemin que le Ctrl+Enter de l'éditeur (au niveau bloc). */
