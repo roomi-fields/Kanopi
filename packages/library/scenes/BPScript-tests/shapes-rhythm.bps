@@ -20,6 +20,13 @@
 // "a little slower". Composition starts at metronom 60 and continues at metronom 88.
 //
 @core
+@smooth      // temps LISSE, declare par la grammaire d'origine elle-meme : shapes-rhythm.gr:18
+             // « Consequently, time is smooth (type cmd-T to verify it). » La conversion avait
+             // omis la nature du temps, et sans elle BPx tombe sur son defaut STRIE — ce qui
+             // neutralise les motifs temporels que cette piece utilise expres (cf. l'en-tete :
+             // « Uses time patterns because the dancers wanted initial sections to be a little
+             // slower »). Mesure a l'appui : natif 1952 evenements, strie 2512 (+560), lisse
+             // 1861 (-91). La Voie B est autosuffisante : la nature du temps vit dans la scene.
 @tempo:88   // horloge du natif -se.ShapesInRhythm.QTM : periode 682 ms par temps, soit 88 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
