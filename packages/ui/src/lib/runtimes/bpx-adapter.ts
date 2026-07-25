@@ -1736,16 +1736,21 @@ function makeBpxAdapter(
       // active scene in the scene bar (see `defaultScene` consumers).
       const effectiveFlags = withDefaultScene(src.flags, flagStates);
 
-      // RE-RANDOM seeding. BPx derives with a deterministic LCG seeded to a fixed
-      // default (1), so a grammar with weighted/`@mode:random` rules yields the
-      // EXACT same derivation every time. The seed model (Romain):
-      //   • Every PRODUCE (incl. the load-produce) re-rolls → a NEW variation:
-      //     `currentSeed` gets a fresh value here, on a produceOnly eval.
-      //   • A Play/Step REUSES `currentSeed` so the audio matches the produced
-      //     structure (same seed → same derivation), not a fresh roll.
-      //   • A loop cycle re-derives with a fresh seed ONLY when re-random is on
-      //     (`reDeriveTreeEvents` below); off → the dispatcher loops the same
-      //     events. `seed` is a documented BPx config field — glue, not a RNG port.
+      // GRAINE DE PRODUCTION. Une graine POSÉE fige la dérivation (reproductible) ; ABSENTE,
+      // BPx tire frais sur l'horloge (défaut natif, inversion [769]). Le modèle (Romain),
+      // à jour Model C ([448]/[489]) :
+      //   • Chaque PRODUCE (y compris le produce-au-chargement) RE-TIRE → une variation
+      //     NEUVE : `currentSeed` reçoit une graine fraîche ici, sur un éval produceOnly. La
+      //     dérivation qui suit l'utilise et la GRAVE dans le handle Kronos persistant.
+      //   • PLAY/STEP NE RE-DÉRIVENT PAS : ils rejouent/steppent le HANDLE persistant
+      //     (`replayActiveScene`/`transport.step`, real-core.ts / playback.svelte.ts) — aucun
+      //     `createSession`, aucun `derive`, `currentSeed` N'EST PAS relu. L'audio colle à la
+      //     structure produite parce que c'est LE MÊME handle, pas parce qu'on re-dériverait à
+      //     l'identique. (L'ancien commentaire « Play REUSES currentSeed → same derivation »
+      //     décrivait le modèle pré-Model-C, faux depuis — corrigé 2026-07-25.)
+      //   • Une CYCLE de boucle re-dérive avec une graine fraîche UNIQUEMENT si le re-random
+      //     est ON (site re-random plus bas) ; OFF → le dispatcher reboucle les mêmes
+      //     événements. `seed` est un champ de config BPx documenté — glue, pas un port de RNG.
       if (src.produceOnly) currentSeed = freshSeed();
 
       let tokens;
