@@ -64,8 +64,9 @@ describe('[927] façade de pilotage — DÉLÈGUE au même point d’entrée que
     const { installKanopiApi } = await import('../pilot/kanopi-api');
     installKanopiApi();
 
-    const applique = (window as unknown as { kanopi: { setTempo(n: number): number } }).kanopi
-      .setTempo(137);
+    const applique = (
+      window as unknown as { kanopi: { setTempo(n: number): number } }
+    ).kanopi.setTempo(137);
 
     expect(spy).toHaveBeenCalledWith(137);
     expect(applique).toBe(137);
