@@ -17,7 +17,13 @@
 // --- Sous-grammaire 1 @mode:ord — structure ---
 
 @mode:ord
-S -> script(wait for do#2 channel 1) A B(vel:0, chan:2) do#4 !(vel:80, chromashift:-12)
+// ORDRE DES CONTROLES = ORDRE NATIF. Un controle s'applique a ce qui le SUIT : sa POSITION
+// porte sa PORTEE. La conversion avait regroupe les controles de tete dans un !(...) de FIN
+// (alan-dice.gr:8 : « _script(...) _vel(80) _transpose(-12) A B _vel(0) _chan(2) do#4 »), ce qui
+// inversait leur portee — le -12 ne s'appliquait plus a A ni a B. Mesure : la scene sortait do3
+// la ou le natif sort do2, une octave trop haut. Ordre restaure => do2 mi4 do4 sol3, le natif exact.
+// _transpose BP3 devient chromashift (decision Romain 2026-07-17, grille 12 cles).
+S -> script(wait for do#2 channel 1) vel(80) chromashift(-12) A B vel(0) chan(2) do#4
 A -> A1 A2 A3 A4 A5 A6 A7 A8 A1 A2 A3 A4 A5 A6 A7 A'8
 B -> B1 B2 B3 B4 B5 B6 B7 B8 B1 B2 B3 B4 B5 B6 B7 B8
 
