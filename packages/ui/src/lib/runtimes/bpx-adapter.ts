@@ -1216,10 +1216,32 @@ export function setUserTempo(bpm: number): void {
 // The random seed of the CURRENT production. A PRODUCE re-rolls it (a new
 // variation); a Play/Step reuses it so the heard audio matches the produced
 // structure. A loop cycle re-rolls only when re-random is on. undefined → BPx's
-// deterministic default (a scene with no random rules is unaffected either way).
+// default = REAL CLOCK (fresh draw in seconds, native style) since the seed-meaning
+// inversion (BPx b4a8b3e, décision Romain : on tire frais par défaut, on ne fige
+// QU'AVEC une graine posée). A scene with no random rules is unaffected either way.
 let currentSeed: number | undefined;
+// Graine FRAÎCHE pour le re-roll (PRODUCE + re-random) : distincte à CHAQUE clic. On
+// NE la remplace PAS par le défaut horloge du moteur — celui-ci est à granularité
+// SECONDE (deux re-rolls dans la même seconde ⇒ MÊME graine ⇒ même variation, une
+// régression UX silencieuse). Le re-roll pose donc TOUJOURS une graine explicite
+// (currentSeed = freshSeed()), garde confirmée par l'architecte 2026-07-25.
 function freshSeed(): number {
   return Math.floor(Math.random() * 0x7ffffffe) + 1;
+}
+
+// [769] RATTRAPAGE `_randomize` (décision Romain 2026-07-25, option (a)). Le produce pose
+// la graine FIGÉE (cas normal : reproductible, Play/Step identique — 99 % des grammaires,
+// INCHANGÉ). Mais une grammaire à re-semis `_randomize`/`_srand(-1)` REFUSE de dériver sous
+// une graine figée : son intention est de tirer FRAIS sur l'horloge, non reproductible par
+// nature (BPx session.ts:142, lcg.ts requireTime). Sur CE refus PRÉCIS et lui seul, l'hôte
+// réessaie UNE fois SANS graine (session par défaut = horloge) → la grammaire dérive frais.
+// CONSÉQUENCE ASSUMÉE (voulue) : pour ces grammaires, Play/Step REJOUE DIFFÉREMMENT à chaque
+// fois — l'invariant « produire une structure, rejouer à l'identique » NE TIENT PAS pour
+// elles, et c'est CE que leur auteur demande. Ce n'est PAS un bug de rejeu.
+// Détection : BPx lève un `Error` nu (pas de code/classe dédiée) au libellé stable ci-dessous.
+function isRandomizeNeedsClock(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes('reseedOrShuffle') && msg.includes('needs a wall-clock seed');
 }
 
 // Optional hook the core wires so a grammar's declared `@mm` can drive the
@@ -1782,23 +1804,41 @@ function makeBpxAdapter(
         // `tempo` a été SUPPRIMÉ de SessionOptions côté BPx — porte fermée 8741f9f — il n'est
         // donc plus jamais passé ici). Proven derivation-identical to the former
         // `createBPx + loadGrammar` by `createsession-parity.test.ts`.
-        const bpx: Session = createSession(ast, {
-          // FERMER LA PORTE : AUCUNE injection de tempo. BPx lit le @tempo/@mm de l'AST et pose
-          // metadata.tempo (défaut moteur 60 sans directive). La saisie utilisateur (session)
-          // atteint le son par WARP Kronos à la construction du handle (plus bas), pas ici.
-          ...(settings !== undefined ? { settings } : {}),
-          ...(effectiveFlags !== undefined ? { initialFlags: effectiveFlags } : {}),
-          ...(currentSeed !== undefined ? { seed: currentSeed } : {}),
-          // [745] Coût nul strict quand éteint : la clé `trace` est ABSENTE (pas `false`).
-          ...(traceEnabled() ? { trace: true } : {})
-        });
+        // FERMER LA PORTE : AUCUNE injection de tempo. BPx lit le @tempo/@mm de l'AST et pose
+        // metadata.tempo (défaut moteur 60 sans directive). La saisie utilisateur (session)
+        // atteint le son par WARP Kronos à la construction du handle (plus bas), pas ici.
+        const buildSession = (withSeed: boolean): Session =>
+          createSession(ast, {
+            ...(settings !== undefined ? { settings } : {}),
+            ...(effectiveFlags !== undefined ? { initialFlags: effectiveFlags } : {}),
+            ...(withSeed && currentSeed !== undefined ? { seed: currentSeed } : {}),
+            // [745] Coût nul strict quand éteint : la clé `trace` est ABSENTE (pas `false`).
+            ...(traceEnabled() ? { trace: true } : {})
+          });
         // Keep BOTH halves of the derivation: `.tree` (from `derive()`) carries the
         // polymetric structure (groups + voices + nesting) the piano-roll's struct band
         // needs; `tokens` (from `emit('timed-tokens')`) is the flat timed sequence
         // (audio/MIDI/text). The `output:'complete'` mode (control markers as tree
         // nodes / zero-duration tokens) has MIGRATED to Kairos and now THROWS in BPx —
         // the default ('sounding') is the host's path: notes + rests, no control nodes.
-        const deriveResult = bpx.derive();
+        // [769] Rattrapage `_randomize` (voir `isRandomizeNeedsClock`) : le produce dérive
+        // d'ABORD sous la graine figée ; sur le refus PRÉCIS d'une grammaire à re-semis, on
+        // réessaie UNE fois SANS graine et on OUBLIE la graine (`currentSeed = undefined`)
+        // pour que Play/Step de CETTE grammaire rejouent frais eux aussi. Tout autre échec
+        // de dérivation RESTE une erreur (relancée telle quelle, trace attachée).
+        let bpx: Session = buildSession(true);
+        let deriveResult;
+        try {
+          deriveResult = bpx.derive();
+        } catch (err) {
+          if (currentSeed !== undefined && isRandomizeNeedsClock(err)) {
+            currentSeed = undefined;
+            bpx = buildSession(false);
+            deriveResult = bpx.derive();
+          } else {
+            throw err;
+          }
+        }
         const derived = {
           tree: deriveResult.tree,
           tokens: bpx.emit<BpxTimedToken[]>('timed-tokens')
