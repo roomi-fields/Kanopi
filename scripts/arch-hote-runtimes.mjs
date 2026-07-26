@@ -330,6 +330,23 @@ console.log(
 console.log(
   `   Surface auditée : ${SCAN_ROOTS.join(", ")} (${files.length} fichiers)\n`,
 );
+
+// ANTI-VACUITÉ (mesuré, pas supposé — 2026-07-27). Ce garde ANNONÇAIT son compte mais ne le
+// REFUSAIT pas : pointé sur une racine dérivée (script recopié ailleurs), il lisait 0 fichier,
+// trouvait 0 écart partout, et rendait ✅ exit 0. Son silence ressemblait à un succès le jour même
+// où quelque chose avait bougé — la famille « l'absence de signal prise pour un bon signal »
+// (signalée par runtime-in, routée par l'architecte, troisième occurrence en une nuit).
+// Un verdict qui ne dit pas SUR QUOI il conclut n'est pas un verdict. Plancher fixé nettement sous
+// le compte réel (39 au moment T) pour tolérer la croissance et les suppressions normales.
+const PLANCHER_FICHIERS = 20;
+if (files.length < PLANCHER_FICHIERS) {
+  console.error(
+    `FAIL garde frontière — ${files.length} fichier(s) vu(s), au moins ${PLANCHER_FICHIERS} ` +
+      "attendus : le balayage ne regarde plus au bon endroit (racines déplacées/renommées), " +
+      "pas que l'hôte est devenu parfait.",
+  );
+  process.exit(1);
+}
 for (const { rule, count, hits } of report) {
   console.log(`   §Garde ${rule.garde} (écarts ${rule.ecarts}) — ${count}`);
   console.log(`      ${rule.label}`);

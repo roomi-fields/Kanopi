@@ -49,6 +49,14 @@ const CHEMINS = {
 };
 
 const ecarts = [];
+// Ce que le garde a réellement EXAMINÉ — annoncé dans le verdict vert (voir en bas de fichier).
+const compte = {
+  champsEntree: 0,
+  naturesSignal: 0,
+  typesBus: 0,
+  variantesStructure: 0,
+  rolesStructure: 0
+};
 
 function rater(quoi) {
   console.error(`✗ copies miroir — ${quoi}`);
@@ -183,6 +191,7 @@ function comparer(quoi, gaucheNom, gauche, droiteNom, droite) {
   const base = corps(mien, 'KanopiEventBase');
   if (!base) rater('ma copie ne déclare plus KanopiEventBase — la base commune du bus a disparu.');
   const champsEffectifs = new Set([...champs(base), ...champs(evtMien)]);
+  compte.champsEntree = champs(evtContrat).size;
   comparer('InputEvent', 'le contrat', champs(evtContrat), 'ma copie', champsEffectifs);
 
   const sigContrat = variantes(contrat, 'InputSignal', 'kind');
@@ -196,6 +205,7 @@ function comparer(quoi, gaucheNom, gauche, droiteNom, droite) {
     'ma copie',
     new Set(sigMien.keys())
   );
+  compte.naturesSignal = sigContrat.size;
   for (const [sorte, attendus] of sigContrat) {
     const presents = sigMien.get(sorte);
     if (presents) comparer(`InputSignal/${sorte}`, 'le contrat', attendus, 'ma copie', presents);
@@ -213,6 +223,7 @@ function comparer(quoi, gaucheNom, gauche, droiteNom, droite) {
   const siens = typesDeLUnion(pair);
   if (miens.size === 0) rater('ma copie ne déclare plus aucun type d\'événement.');
   if (siens.size === 0) rater('la copie de runtime-codevoices ne déclare plus aucun type d\'événement.');
+  compte.typesBus = miens.size;
   comparer("union du bus (types d'événement)", 'ma copie', miens, 'runtime-codevoices', siens);
 }
 
@@ -240,10 +251,12 @@ function comparer(quoi, gaucheNom, gauche, droiteNom, droite) {
     if (presents) comparer(`StructureNode/${sorte}`, 'Kairos', attendus, 'runtime-ui', presents);
   }
 
+  compte.variantesStructure = varKairos.size;
   const roleKairos = valeursDuChamp(kairos, 'role');
   const roleUi = valeursDuChamp(ui, 'role');
   if (!roleKairos) rater('Kairos ne déclare plus les rôles du nœud occupant.');
   if (!roleUi) rater('runtime-ui ne déclare plus les rôles du nœud occupant.');
+  compte.rolesStructure = roleKairos.size;
   comparer('StructureNode (rôles)', 'Kairos', roleKairos, 'runtime-ui', roleUi);
 }
 
@@ -256,6 +269,13 @@ if (ecarts.length > 0) {
   process.exit(1);
 }
 
+// UN VERDICT QUI NE DIT PAS SUR QUOI IL CONCLUT N'EST PAS UN VERDICT (exigence de l'architecte,
+// 2026-07-27, après trois cas d'« absence de signal prise pour un bon signal » dans la journée).
+// Le vert ANNONCE donc ce qui a été examiné. Le refus du zéro, lui, est déjà en amont : chaque bloc
+// introuvable appelle `rater()`, ce qui est MESURÉ — les quatre références pointées sur un fichier
+// vide échouent bruyamment, aucune ne verdit.
 console.log(
-  '✓ copies miroir — événement d\'entrée conforme au contrat, union du bus alignée avec runtime-codevoices, structure de production alignée Kairos↔runtime-ui.'
+  `✓ copies miroir — ${compte.champsEntree} champs de l'événement d'entrée et ${compte.naturesSignal} natures de signal conformes au contrat, ` +
+    `${compte.typesBus} types de bus alignés avec runtime-codevoices, ` +
+    `${compte.variantesStructure} variantes et ${compte.rolesStructure} rôles de structure alignés Kairos↔runtime-ui.`
 );
