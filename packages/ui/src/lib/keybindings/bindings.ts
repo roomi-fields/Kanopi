@@ -4,6 +4,7 @@ import { workspace } from '../../stores/workspace.svelte';
 import { cloudDocs } from '../../stores/cloud-docs.svelte';
 import { session } from '../../stores/session.svelte';
 import { mixer } from '../../stores/mixer.svelte';
+import { playFocus } from '../../stores/play-focus.svelte';
 import { core } from '../core';
 import { flushPersist } from '../persistence/snapshot.svelte';
 
@@ -19,6 +20,31 @@ function inEditableTarget(e: KeyboardEvent): boolean {
 }
 
 export function handleGlobalKey(e: KeyboardEvent) {
+  // LE FOCUS DE JEU DÉCIDE — décision Romain 2026-07-26 (« le focus décide, pas une priorité
+  // globale »). Une scène qui a déclaré un périphérique clavier capte ses touches QUAND ELLE A LE
+  // FOCUS DE JEU ; hors de ce focus, l'interface garde ses raccourcis. Aucun camp ne gagne dans
+  // l'absolu, exactement comme le contexte `editorTextFocus` de VSCode : le plus spécifique gagne.
+  //
+  // LA LIGNE EXACTE, et pourquoi elle passe là :
+  //   • le focus d'ÉDITION reste le plus spécifique des deux — taper dans un champ doit taper,
+  //     même focus de jeu pris (d'où le `!inEditableTarget`, garde qui existait déjà) ;
+  //   • une touche NUE (et toute combinaison sans Cmd/Ctrl, Alt comprise) appartient alors à la
+  //     performance : on rend la main SANS `preventDefault`, donc le périphérique clavier de
+  //     `runtime-in` la reçoit — l'hôte ne consomme pas, il s'abstient ;
+  //   • les raccourcis à Cmd/Ctrl restent à l'interface. Ce n'est pas un compromis mou : le hush
+  //     (Cmd/Ctrl+.) doit rester atteignable EN JOUANT, sinon un focus pris deviendrait un piège
+  //     sonore. Même raison pour Échap ci-dessous : un mode qui capte les touches doit se quitter
+  //     au clavier, pas seulement à la souris.
+  // Ce garde est de l'INTERFACE (contrat `hote-runtime-in.md` § « Ce qui reste chez l'hôte ») :
+  // il n'écoute aucune touche de jeu, n'en connaît aucune, n'en résout aucun nom.
+  if (playFocus.held && !inEditableTarget(e)) {
+    if (e.key === 'Escape' && !isMod(e) && !e.altKey && !e.shiftKey) {
+      e.preventDefault();
+      playFocus.release();
+      return;
+    }
+    if (!isMod(e)) return;
+  }
   // Cmd/Ctrl + K (primary) or Cmd/Ctrl + Shift + P (alt) → open palette
   if (isMod(e) && !e.shiftKey && !e.altKey && (e.key === 'k' || e.key === 'K')) {
     e.preventDefault();

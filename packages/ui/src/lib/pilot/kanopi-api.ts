@@ -25,6 +25,7 @@
 import { setTempo as setTempoCommand } from '../commands/tempo';
 import { produceActiveScene } from '../commands/produce';
 import { playback } from '../../stores/playback.svelte';
+import { playFocus } from '../../stores/play-focus.svelte';
 import { transport } from '../../stores/transport.svelte';
 import { openBlocks } from '../../stores/blocks.svelte';
 import { workspace } from '../../stores/workspace.svelte';
@@ -37,9 +38,9 @@ import { startFrameMonitor, readFrameStats } from './frame-stats';
 import { profileMainThread } from './stack-profiler';
 import { core } from '../core';
 
-// v12 — ajout du délégué `produce` (geste PROD bascule comprise). Surface ADDITIVE :
-// rien de retiré, les consommateurs de v11 continuent de marcher.
-const API_VERSION = 12;
+// v13 — ajout du délégué `setPlayFocus` (focus de jeu, décision 2026-07-26). Surface ADDITIVE :
+// rien de retiré, les consommateurs de v12 continuent de marcher.
+const API_VERSION = 13;
 
 // (L'observateur des events audio forwardés + l'inspection `modulations()` sont RETIRÉS avec le
 //  wrapper audio hôte — frontière Phase 2 audio : l'hôte ne forwarde plus d'events audio shapés,
@@ -115,6 +116,16 @@ export function installKanopiApi(): void {
     /** Coupe tout (panic) — même chemin que Ctrl+. */
     async hush(): Promise<void> {
       await core.hushAll();
+    },
+    /** Prend/rend le FOCUS DE JEU (décision 2026-07-26 : le focus décide, pas une priorité
+     *  globale). Focus pris ⇒ une touche NUE appartient à la performance et l'hôte ne la consomme
+     *  plus ; les raccourcis Cmd/Ctrl (hush compris) restent à l'interface.
+     *  MÊME point d'entrée que le badge de la barre d'état (`stores/play-focus`) : aucune règle
+     *  d'arbitrage ici, le garde vit dans `keybindings/bindings.ts`.
+     *  `source` est une étiquette d'AFFICHAGE (qui a pris), jamais consultée pour décider. */
+    setPlayFocus(held: boolean, source?: string): void {
+      if (held) playFocus.take(source);
+      else playFocus.release();
     },
 
     // ————— INSPECTION (lecture seule, AUCUN effet) —————

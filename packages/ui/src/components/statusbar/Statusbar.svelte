@@ -4,6 +4,7 @@
   import { scenes } from '../../stores/scenes.svelte';
   import { actors } from '../../stores/actors.svelte';
   import { consoleLog } from '../../stores/console.svelte';
+  import { playFocus } from '../../stores/play-focus.svelte';
   import { fmt2, fmt3 } from '../../lib/format/bar-beat';
 
   // Ableton-style Bar.Beat — both 1-indexed, beats per bar from time signature.
@@ -48,6 +49,25 @@
   </div>
 
   <div class="sb-group">
+    <!-- FOCUS DE JEU — badge de MODE, affiché SEULEMENT quand le focus est pris (décision
+         2026-07-26). Un mode qui capte les touches nues doit se VOIR : sans lui, l'utilisateur
+         appuie sur Espace, rien ne démarre, et rien à l'écran ne dit pourquoi. Le clic le rend
+         (comme Échap) — c'est le seul geste d'interface ici. La PRISE, elle, viendra de la scène
+         qui déclare un périphérique clavier (`runtime-in`) : l'hôte arbitre le focus, il ne
+         fabrique pas une déclaration d'entrée qui n'existe pas encore. -->
+    {#if playFocus.held}
+      <button
+        class="sb-item play-focus"
+        title="Focus de jeu pris{playFocus.source
+          ? ` (${playFocus.source})`
+          : ''} — les touches nues vont à la performance, les raccourcis Cmd/Ctrl restent à l'interface. Clic ou Échap pour rendre."
+        onclick={() => playFocus.release()}
+      >
+        <span class="sb-dot"></span>
+        <span class="dim">focus</span> <span class="accent">jeu</span>
+      </button>
+      <span class="sb-sep">│</span>
+    {/if}
     <div class="sb-item">
       <span class="dim">devices</span> <span class="num">0</span>
     </div>
@@ -87,6 +107,16 @@
     display: flex;
     align-items: center;
     gap: 6px;
+  }
+
+  button.play-focus {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    cursor: pointer;
   }
 
   .sb-dot {
