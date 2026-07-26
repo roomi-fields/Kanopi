@@ -174,6 +174,16 @@ const RULES = [
       // — timing d'un GESTE d'entrée (la saisie utilisateur, seul état propre à l'hôte), pas une
       // reconstruction du temps de Kronos. Ne suit aucune position, n'ordonnance rien.
       { re: /const now = performance\.now\(\)/, file: "clock.svelte" },
+      // LA BASE DE TEMPS MURAL DU BUS, remise au périphérique d'ENTRÉE dans son puits
+      // (`sink.now()`). Ce n'est PAS du temps musical et ce n'est pas une seconde autorité : c'est
+      // l'horloge murale que TOUT événement du bus porte déjà (`events/types.ts` : « t: wall-clock
+      // ms via performance.now() »), et le contrat d'entrée l'EXIGE de l'hôte —
+      // `hub/contrats/hote-runtime-in.md` § La règle de temps : un périphérique ne lit JAMAIS
+      // d'horloge lui-même, il convertit son estampille native sur `sink.now()`. C'est cette règle,
+      // et elle seule, qui rend une note MIDI et un message OSC comparables ; un `now()` différent
+      // de la base du bus les rendrait incomparables EN SILENCE. Ne positionne rien, n'ordonnance
+      // rien, ne fabrique aucun tempo — la position et le transport restent à Kronos.
+      { re: /now:\s*\(\)\s*=>\s*performance\.now\(\)/, file: "real-core" },
     ],
   },
   {

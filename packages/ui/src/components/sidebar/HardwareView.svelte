@@ -1,21 +1,34 @@
 <script lang="ts">
   import { core } from '../../lib/core';
-  import { listPorts } from '../../lib/midi/midi-input';
+  import type { PortInfo } from 'runtime-in';
   import { midiOutput } from '../../lib/midi/midi-output.svelte';
 
-  let ports = $state<string[]>(listPorts());
+  // Les ports viennent du GESTE, jamais d'une lecture à l'initialisation. Avant l'autorisation,
+  // Web MIDI n'énumère RIEN : partir d'une liste vide dit la vérité du protocole, alors que
+  // l'ancien `listPorts()` synchrone au montage donnait l'illusion d'une lecture (il rendait
+  // toujours `[]`, et le pilote qui le portait est parti chez `runtime-in`).
+  let ports = $state<readonly PortInfo[]>([]);
   let enabled = $state(false);
   let busy = $state(false);
-  $effect(() => {
-    enabled = ports.length > 0 || enabled;
-  });
+  let echec = $state<string | null>(null);
 
   async function enable() {
     busy = true;
-    await core.enableMidiInput();
-    ports = listPorts();
-    enabled = true;
-    busy = false;
+    echec = null;
+    try {
+      // Le geste rend les ports vus APRÈS l'autorisation — c'est le cœur qui les tient, la vue ne
+      // touche pas au périphérique (elle n'en connaît même pas l'existence).
+      ports = await core.enableMidiInput();
+      enabled = true;
+    } catch (err) {
+      // ÉCHEC BRUYANT, ET VISIBLE : autorisation refusée / Web MIDI absent / port introuvable. Le
+      // cœur l'a journalisé en erreur ; ici on le MONTRE, on ne retombe pas dans un état « activé »
+      // qui laisserait croire que l'entrée écoute.
+      echec = String(err);
+      enabled = false;
+    } finally {
+      busy = false;
+    }
   }
 
   let outEnabled = $derived(midiOutput.accessGranted === true);
@@ -31,14 +44,22 @@
       <button class="enable" type="button" disabled={busy} onclick={enable}>
         {busy ? '…' : 'Enable MIDI input'}
       </button>
-      <p class="hint">Browser will prompt for permission.</p>
+      {#if echec}
+        <p class="hint error">{echec}</p>
+      {:else}
+        <p class="hint">Browser will prompt for permission.</p>
+      {/if}
     {:else if ports.length === 0}
       <p class="hint">No MIDI input detected. Plug a controller and click refresh.</p>
       <button class="enable" type="button" onclick={enable}>Refresh</button>
     {:else}
+      <!-- `p.name` pour l'affichage et `p.id` pour la clé : un port est désormais un OBJET
+           ({ id, name, manufacturer? }), pas une chaîne. Rendre `p` tel quel afficherait
+           « [object Object] », et deux ports peuvent porter le MÊME nom — l'identifiant, lui,
+           est distinct (c'est aussi pour ça que l'amont rend des objets). -->
       <ul class="ports">
-        {#each ports as p (p)}
-          <li><span class="dot"></span>{p}</li>
+        {#each ports as p (p.id)}
+          <li><span class="dot"></span>{p.name}</li>
         {/each}
       </ul>
     {/if}
@@ -106,6 +127,10 @@
     color: var(--text-faint);
     font-size: 10px;
     margin-top: 8px;
+  }
+  /* Un échec d'autorisation se VOIT : la couleur d'erreur, pas la teinte des indications. */
+  .hint.error {
+    color: var(--red);
   }
   .ports {
     list-style: none;

@@ -140,7 +140,8 @@ class MockCore implements CoreApi {
   }
 
   async enableMidiInput() {
-    /* mock no-op */
+    /* mock no-op — aucun port, et c'est la vérité : le mock ne branche aucun périphérique. */
+    return [];
   }
 
   async hushAll() {

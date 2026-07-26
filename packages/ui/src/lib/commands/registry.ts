@@ -47,7 +47,11 @@ function staticCommands(): Command[] {
       title: 'Enable MIDI input',
       category: 'Hardware',
       run: () => {
-        void core.enableMidiInput();
+        // Le geste peut désormais REJETER (autorisation refusée, Web MIDI absent, port
+        // introuvable) : le cœur l'a déjà journalisé en `level:'error'`, donc le signal est
+        // dans la console. On absorbe ici la promesse rejetée pour ne pas laisser un rejet
+        // non traité — absorber le REJET n'est pas absorber le SIGNAL, il est déjà crié.
+        void core.enableMidiInput().catch(() => {});
       }
     },
     {

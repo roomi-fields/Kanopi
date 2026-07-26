@@ -1,4 +1,7 @@
 import type { EventBus } from '../events/types';
+// Le type des ports vient de l'AMONT tel quel (single-source, décision 2026-07-19 : jamais une
+// copie de surface à la main) — c'est `runtime-in` qui sait ce qu'un port est.
+import type { PortInfo } from 'runtime-in';
 
 export type Unsubscribe = () => void;
 
@@ -120,8 +123,14 @@ export interface CoreApi {
     sceneTable: Record<string, { file: string }>,
     resolve: (fileName: string) => string | undefined
   ): void;
-  /** Request WebMIDI access and start dispatching mappings. */
-  enableMidiInput(): Promise<void>;
+  /** LE GESTE de connexion d'un périphérique d'entrée MIDI — il RESTE chez l'hôte (contrat
+   *  `hote-runtime-in.md` § « Ce qui reste chez l'hôte »), parce que Web MIDI n'accorde
+   *  l'autorisation que dans la chaîne du geste utilisateur. Le corps délègue à `runtime-in` ; ce
+   *  qui a disparu de l'hôte est le PILOTE, pas le geste qui l'appelle.
+   *  Rend les ports vus APRÈS l'autorisation (vide avant : Web MIDI n'énumère rien tant qu'elle
+   *  n'est pas accordée — protocole, pas manque). REJETTE bruyamment sur autorisation refusée,
+   *  Web MIDI absent ou port introuvable : aucun dégradé muet. */
+  enableMidiInput(): Promise<readonly PortInfo[]>;
   /** Hard-stop every runtime (panic): clears Strudel patterns, blanks Hydra, kills WebAudio sources. */
   hushAll(): Promise<void>;
   /**

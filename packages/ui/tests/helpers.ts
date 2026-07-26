@@ -198,6 +198,78 @@ export async function setupFakeMidi(page: Page): Promise<{
 }
 
 /**
+ * Injecte un faux accès Web MIDI portant un port d'ENTRÉE, et rend de quoi lui faire émettre un
+ * message. Symétrique de `setupFakeMidi` (qui, lui, porte un port de SORTIE et reste intact : il
+ * fait vivre la preuve de runtime-MIDI, ce n'est PAS un chemin d'entrée — vérifié ligne à ligne,
+ * ses `inputs` sont une Map vide).
+ *
+ * POURQUOI ÇA MARCHE SANS MATÉRIEL : `runtime-in` appelle `navigator.requestMIDIAccess()` dans la
+ * chaîne du geste utilisateur, et lit `acces.inputs` puis pose `entree.onmidimessage`
+ * (`runtime-in/src/devices/midi.js:105-112`). On remplace donc l'accès, pas le périphérique : le
+ * chemin mesuré est le VRAI (geste → autorisation → ports → écoute → puits → bus), seule la source
+ * d'octets est simulée. C'est ce que runtime-in appelle son autorisation injectable.
+ *
+ * CE QUE ÇA NE PROUVE PAS, et il faut le dire : qu'une vraie note d'un vrai clavier arrive. Ça
+ * reste pour Romain, sur sa machine, avec son contrôleur.
+ *
+ * À appeler AVANT `page.goto()`.
+ */
+export async function setupFakeMidiInput(
+  page: Page,
+  port = { id: 'kanopi-fake-in', name: 'Kanopi Fake MIDI In' }
+): Promise<{ sendNote: (bytes: number[]) => Promise<void> }> {
+  await page.addInitScript(
+    ({ id, name }) => {
+      const w = window as unknown as {
+        __kanopiSendMidiIn?: (bytes: number[]) => void;
+        navigator: Navigator & { requestMIDIAccess?: (opts?: unknown) => Promise<unknown> };
+      };
+      const fakeInput = {
+        id,
+        name,
+        manufacturer: 'kanopi-test',
+        type: 'input',
+        state: 'connected',
+        connection: 'open',
+        // `runtime-in` pose CETTE propriété (midi.js:108) ; c'est elle qu'on rappelle.
+        onmidimessage: null as null | ((ev: { data: Uint8Array; timeStamp: number }) => void),
+        open: () => Promise.resolve(fakeInput),
+        close: () => Promise.resolve(fakeInput),
+        addEventListener: () => {},
+        removeEventListener: () => {}
+      };
+      const fakeAccess = {
+        inputs: new Map([[fakeInput.id, fakeInput]]),
+        outputs: new Map(),
+        sysexEnabled: false,
+        onstatechange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {}
+      };
+      w.navigator.requestMIDIAccess = () => Promise.resolve(fakeAccess);
+      // L'estampille est une DONNÉE que le périphérique convertit sur la base du bus (garde 1 du
+      // contrat) : on en fournit une native plausible, on ne fabrique pas le `t` de l'événement.
+      w.__kanopiSendMidiIn = (bytes: number[]) => {
+        fakeInput.onmidimessage?.({ data: new Uint8Array(bytes), timeStamp: performance.now() });
+      };
+    },
+    { id: port.id, name: port.name }
+  );
+
+  return {
+    sendNote: async (bytes: number[]) => {
+      await page.evaluate((b) => {
+        const w = window as unknown as { __kanopiSendMidiIn?: (bytes: number[]) => void };
+        if (typeof w.__kanopiSendMidiIn !== 'function') {
+          throw new Error('setupFakeMidiInput : le faux port n’est pas installé (goto trop tôt ?)');
+        }
+        w.__kanopiSendMidiIn(b);
+      }, bytes);
+    }
+  };
+}
+
+/**
  * Move the CodeMirror cursor to `line` (1-indexed), trigger `Ctrl/Meta+Enter`
  * to evaluate the surrounding block, and wait for the green/red eval flash to
  * appear and clear. Returns once the flash has been removed (so callers can

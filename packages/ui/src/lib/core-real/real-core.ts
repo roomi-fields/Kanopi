@@ -29,7 +29,11 @@ import type { LogPush } from '../runtimes/adapter';
 import { installConsoleBridge } from '../runtimes/console-bridge';
 import { ensureCsoundSoundfiles } from '../runtimes/csound-soundfiles';
 import { warmUp } from '../runtimes/code-voice-warmup';
-import { enableMidi, type MidiEvent } from '../midi/midi-input';
+// Les périphériques d'ENTRÉE appartiennent à `runtime-in` (décision Romain 2026-07-27, contrat
+// `hub/contrats/hote-runtime-in.md`). L'hôte n'écrit aucun pilote : `midi/midi-input.ts` est
+// SUPPRIMÉ dans le même mouvement que cette arrivée — pas de voie parallèle, pas de « le temps de
+// migrer ». `periphériques()` rend les instances GELÉES du paquet (voir `enableMidiInput`).
+import { periphériques, type PortInfo } from 'runtime-in';
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
 import { production } from '../../stores/production.svelte';
@@ -450,29 +454,56 @@ class RealCore implements CoreApi {
     this.log({ runtime: 'system', level: 'warn', msg: 'hush all' });
   }
 
-  async enableMidiInput(): Promise<void> {
-    const r = await enableMidi((e) => this.handleMidi(e));
-    if (r.ok) {
-      this.log({
-        runtime: 'system',
-        level: 'info',
-        msg: `midi enabled: ${r.ports.length ? r.ports.join(', ') : 'no input port detected'}`
-      });
-    } else {
-      this.log({ runtime: 'system', level: 'warn', msg: `midi: ${r.reason}` });
+  /** LE GESTE DE CONNEXION — et RIEN de plus (contrat `hote-runtime-in.md` § « Ce qui reste chez
+   *  l'hôte »). Ce corps ne connaît ni autorisation, ni port, ni octet : il donne au périphérique
+   *  son PUITS (le bus) et sa BASE DE TEMPS, puis l'ouvre. Toute la logique vit dans `runtime-in`.
+   *
+   *  POURQUOI CETTE MÉTHODE SURVIT au retrait du pilote (avertissement de l'architecte, [960]) :
+   *  Web MIDI n'accorde l'autorisation que DANS LA CHAÎNE DU GESTE UTILISATEUR. Lire « supprime le
+   *  pilote et ses appelants » jusqu'à retirer la méthode de `CoreApi` aurait supprimé le geste
+   *  lui-même — l'autorisation n'aurait plus jamais été accordée, et aucun garde ne l'aurait vu
+   *  (celui de runtime-in compte les chemins matériels, pas les gestes manquants).
+   *
+   *  UNE SEULE INSTANCE, TENUE (avertissement runtime-in [969], et ce n'est pas du confort) : un
+   *  périphérique TIENT l'autorisation accordée, ses écouteurs et son ancre d'horloge. En fabriquer
+   *  un par geste redemanderait l'autorisation et poserait les écouteurs sur un objet que plus
+   *  personne ne tient — le périphérique se tairait SANS UNE SEULE ERREUR. Ce n'est pas une
+   *  hypothèse : c'est l'incident [96] du côté SORTIE (`runtime-MIDI/src/transports/midi.js:12`,
+   *  « root cause du silence : l'hôte créait un MidiRuntime FRAIS »). `periphériques()` gèle ses
+   *  instances : deux appels rendent les MÊMES objets. */
+  async enableMidiInput(): Promise<readonly PortInfo[]> {
+    const device = periphériques().find((d) => d.device === 'midi');
+    if (!device) {
+      // Le paquet ne rend pas de périphérique MIDI : ça se crie, ça ne se devine pas.
+      this.log({ runtime: 'system', level: 'error', msg: 'midi: aucun périphérique MIDI fourni' });
+      return [];
     }
-  }
-
-  private handleMidi(e: MidiEvent) {
-    // MIDI input is logged (the input plumbing stays live). The `@map` ROUTING that
-    // used to act on each event was DEAD (no `@map` was ever parsed into a mapping →
-    // the list was always empty) and is removed (RA-6 phase-2 cleanup); the feature
-    // will be rebuilt at the OSC/devices wiring, outside Kanopi (plan).
+    // Le puits : le bus UNIQUE de l'hôte, et sa base de temps. `now()` EST la base du bus
+    // (`KanopiEventBase.t` = temps mural via `performance.now()`) — le périphérique convertit son
+    // estampille native dessus et ne lit jamais d'horloge lui-même. Un `now()` différent du bus
+    // rendrait une note MIDI et un message OSC incomparables, en silence.
+    device.bindSink({
+      emit: (e) => this.events.emit(e),
+      now: () => performance.now()
+    });
+    // ÉCHEC BRUYANT (contrat, garde 5) : `open()` REJETTE — Web MIDI absent, autorisation refusée,
+    // port introuvable. On laisse remonter après l'avoir journalisé ; l'ancien `enableMidi` rendait
+    // un `{ ok:false, reason }` que l'appelant pouvait ignorer, c'est fini avec lui.
+    try {
+      await device.open({});
+    } catch (err) {
+      this.log({ runtime: 'system', level: 'error', msg: `midi: ${String(err)}` });
+      throw err;
+    }
+    // Les ports ne s'énumèrent QU'APRÈS l'autorisation — avant, la liste est vide par protocole,
+    // pas par manque.
+    const ports = await device.ports();
     this.log({
       runtime: 'system',
       level: 'info',
-      msg: `[midi] ${e.kind}:${e.index} val:${e.value} ch:${e.ch}`
+      msg: `midi enabled: ${ports.length ? ports.map((p) => p.name).join(', ') : 'no input port detected'}`
     });
+    return ports;
   }
 }
 
