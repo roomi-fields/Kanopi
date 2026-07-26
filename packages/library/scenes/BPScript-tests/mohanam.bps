@@ -68,7 +68,7 @@ I -> I [NumR+1] [weight:0]
 @mode:random
 [Ideas] [NumR-1] A -> I [weight:100]
 [Ideas] [NumR-1] B -> I [weight:100]
-[Ideas] I -> I ![goto: 2 1] [weight:1]
+[Ideas] I -> I [goto:2 1] [weight:1]
 
 -----
 

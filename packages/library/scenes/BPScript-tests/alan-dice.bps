@@ -35,7 +35,7 @@
 // do#2 channel 1 » attend une note MIDI entrante — synchronisation d'entree, sans nom dans
 // le langage a ce jour, et on ne l'invente pas. Piste proposee a Romain (docs/reference/
 // TRADUCTION_SCRIPT.md §2) : etendre @map a la note entrante + garde de regle.
-S -> script(wait for do#2 channel 1) !(vel: 80) !(chromashift: -12) A B !(vel: 0) !(chan: 2) do#4
+S -> script(wait for do#2 channel 1) !(vel:80) !(chromashift:-12) A B !(vel:0) !(chan:2) do#4
 A -> A1 A2 A3 A4 A5 A6 A7 A8 A1 A2 A3 A4 A5 A6 A7 A'8
 B -> B1 B2 B3 B4 B5 B6 B7 B8 B1 B2 B3 B4 B5 B6 B7 B8
 

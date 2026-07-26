@@ -15,7 +15,7 @@
 
 @mode:random
 S -> Sri Ga Na Naa Da [weight:0]
-S -> {sa4 _ _, - !(pitchbend: 500) !(pitchcont, pitchrange: 500, pitchbend: 0)}
+S -> {sa4 _ _, - !(pitchbend:500) !(pitchcont, pitchrange:500, pitchbend:0)}
 Sri -> {StartSlide StartPull sa3 _ Pull0 Slide0 _ Pull2 Slide5 _ Pull0 _ Pull2 _ Pull0 Slide5 _ Slide7 _ _ _ _ _ StopSlide StopPull}:2
 Ga -> {LightGamaka pa3}:1
 Na -> {sa4}:1
@@ -35,14 +35,14 @@ Spurita ?1 -> StartSlide ?1 Slide1 _ _ _ _ _ _ _ Slide1 StopSlide
 // --- Sous-grammaire 3 @mode:sub1 — résolution en contrôles ---
 
 @mode:sub1
-Pull0 -> !(pitchbend: 0)
-Pull1 -> !(pitchbend: 100)
-Pull2 -> !(pitchbend: 200)
-Slide0 -> !(value: slide 0)
-Slide1 -> !(value: slide 101)
-Slide5 -> !(value: slide 501)
-Slide7 -> !(value: slide 701)
-StartSlide -> !(cont: slide) !(value: slide 0)
-StopSlide -> !(fixed: slide)
-StartPull -> pitchcont !(pitchrange: 500) !(pitchbend: 0)
+Pull0 -> !(pitchbend:0)
+Pull1 -> !(pitchbend:100)
+Pull2 -> !(pitchbend:200)
+Slide0 -> !(value:slide 0)
+Slide1 -> !(value:slide 101)
+Slide5 -> !(value:slide 501)
+Slide7 -> !(value:slide 701)
+StartSlide -> !(cont:slide) !(value:slide 0)
+StopSlide -> !(fixed:slide)
+StartPull -> pitchcont !(pitchrange:500) !(pitchbend:0)
 StopPull -> pitchfixed

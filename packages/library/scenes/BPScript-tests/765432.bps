@@ -256,8 +256,8 @@ Tik -> {1,do7-}
 //   script(MIDI program N)                     -> ins(N)      (controls.json runtime.midi.ins)
 //   script(MIDI controller #C = V channel N)   -> chan(N) cc(C,V)
 // Le canal est pose AVANT le CC : un controle s'applique a ce qui le SUIT.
-Internal -> !(ins: 1) !(chan: 1) !(cc.98:0)
-C46 -> !(ins: 94)
-C47 -> !(ins: 95)
-PedalOn -> !(switchon: 64 1)
-PedalOff -> !(switchoff: 64 1)
+Internal -> !(ins:1) !(chan:1) !(cc.98:0)
+C46 -> !(ins:94)
+C47 -> !(ins:95)
+PedalOn -> !(switchon:64 1)
+PedalOff -> !(switchoff:64 1)

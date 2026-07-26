@@ -24,8 +24,8 @@ S -> Head U V [Reverse=0, beats=24, K1]
 // --- Sous-grammaire 2 @mode:random — choix du nombre de B (impair) ---
 
 @mode:random
-Head -> Head ![goto: 3 0] [B=3, A=3] [weight:3]
-Head -> Head ![goto: 3 0] [B=9, A=1] [weight:1]
+Head -> Head [goto:3 0] [B=3, A=3] [weight:3]
+Head -> Head [goto:3 0] [B=9, A=1] [weight:1]
 
 -----
 
@@ -56,8 +56,8 @@ Head -> Head ![goto: 3 0] [B=9, A=1] [weight:1]
 // --- Sous-grammaire 6 @mode:random — reboucler si transformations restantes ---
 
 @mode:random
-[A>=1] Head -> Head ![goto: 3 0] [K1]
-[B>=1] Head -> Head ![goto: 3 0] [K1]
+[A>=1] Head -> Head [goto:3 0] [K1]
+[B>=1] Head -> Head [goto:3 0] [K1]
 
 -----
 

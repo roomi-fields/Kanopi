@@ -39,14 +39,14 @@ Spurita ?1 -> StartSlide ?1 Slide1 _ _ _ _ _ _ _ Slide1 StopSlide
 // --- Sous-grammaire 3 @mode:sub1 — résolution en contrôles ---
 
 @mode:sub1
-Pull0 -> !(pitchbend: 0)
-Pull1 -> !(pitchbend: 100)
-Pull2 -> !(pitchbend: 200)
-Slide0 -> !(value: slide 0)
-Slide1 -> !(value: slide 101)
-Slide5 -> !(value: slide 501)
-Slide7 -> !(value: slide 701)
-StartSlide -> !(cont: slide) !(value: slide 0)
-StopSlide -> !(fixed: slide)
-StartPull -> pitchcont !(pitchrange: 500) !(pitchbend: 0)
+Pull0 -> !(pitchbend:0)
+Pull1 -> !(pitchbend:100)
+Pull2 -> !(pitchbend:200)
+Slide0 -> !(value:slide 0)
+Slide1 -> !(value:slide 101)
+Slide5 -> !(value:slide 501)
+Slide7 -> !(value:slide 701)
+StartSlide -> !(cont:slide) !(value:slide 0)
+StopSlide -> !(fixed:slide)
+StartPull -> pitchcont !(pitchrange:500) !(pitchbend:0)
 StopPull -> pitchfixed

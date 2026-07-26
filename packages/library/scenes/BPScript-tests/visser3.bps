@@ -51,9 +51,9 @@ K -> {Tr-11 B C D}
 // --- Sous-grammaire 3 @mode:ord — résolution des transpositions ---
 
 @mode:ord
-Tr11 -> !(chromashift: 11) !(vel: 90)
-Tr5 -> !(chromashift: 5) !(vel: 80)
-Tr1 -> !(chromashift: 1) !(vel: 70)
-Tr7 -> !(chromashift: 7) !(vel: 60)
-Tr6 -> !(chromashift: 6) !(vel: 70)
-Tr-11 -> !(chromashift: -11) !(vel: 90)
+Tr11 -> !(chromashift:11) !(vel:90)
+Tr5 -> !(chromashift:5) !(vel:80)
+Tr1 -> !(chromashift:1) !(vel:70)
+Tr7 -> !(chromashift:7) !(vel:60)
+Tr6 -> !(chromashift:6) !(vel:70)
+Tr-11 -> !(chromashift:-11) !(vel:90)
