@@ -1,5 +1,6 @@
-// @name: Nadaka
-// @tagline: Carnatic improvisation by Nadaka (1997) in sargam notation. MIDI output — select a MIDI device in Hardware to hear it
+// @name: Nadaka — 22-shruti tuning
+// @tagline: Declares the sargam_22shruti tuning. Twin of "Nadaka — native clock", which keeps the engine tempo of the original instead. MIDI output — select a MIDI device in Hardware to hear it
+// @description: Carnatic improvisation by Nadaka (1997) in sargam notation. THIS EXEMPLAR carries @tuning.sargam_22shruti and declares its alphabet at SCENE scope; it does NOT set a tempo. Its twin (BPScript-tests/nadaka.bps) carries the clock of the native -se.hamsad (360 BPM) and an actor-scoped declaration, without the shruti tuning — each holds something the other does not, which is why both are kept (décision Romain 2026-07-26).
 // @language: bpscript
 // @outputs: midi
 // @level: intermediate

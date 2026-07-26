@@ -1,6 +1,6 @@
-// @name: Mohanam — Carnatic raga
-// @tagline: generative sargam melody
-// @description: Raga Mohanam (pentatonic: sa re ga pa dha), a generative Carnatic grammar by Kumar S. Subramanian. The sargam alphabet is routed to the in-browser synth; the generative structure is the original fixture, only the output is adapted for audio.
+// @name: Mohanam — browser audio
+// @tagline: Sounds straight away, no MIDI device needed. Twin of "Mohanam — faithful MIDI", which keeps the native clock instead.
+// @description: Raga Mohanam (pentatonic: sa re ga pa dha), a generative Carnatic grammar by Kumar S. Subramanian. THIS EXEMPLAR IS THE AUDIO EXPOSURE: the sargam alphabet is routed to the in-browser synth (@alphabet.sargam:audio) with the 22-shruti tuning, at tempo 90 — the generative structure is the original fixture, only the output is adapted. Deliberately kept alongside the faithful MIDI exemplar (BPScript-tests/mohanam.bps), which carries the native clock (360 BPM) and a flute program: two objects, not two copies (décision Romain 2026-07-26).
 // @language: bpscript
 // @outputs: audio
 // @level: advanced

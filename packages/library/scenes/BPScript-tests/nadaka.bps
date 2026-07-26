@@ -1,4 +1,11 @@
+// @name: Nadaka — native clock
+// @tagline: Keeps the tempo of the original (360 BPM, -se.hamsad). Twin of "Nadaka — 22-shruti tuning", which declares that tuning instead. MIDI output — select a MIDI device in Hardware to hear it
+// @description: Carnatic improvisation by Nadaka (1997) in sargam notation. THIS EXEMPLAR carries the clock of the native -se.hamsad (@tempo:360) and declares its alphabet at ACTOR scope (@actor lead …); it does NOT declare a tuning. Its twin (world/nadaka.bps) declares @tuning.sargam_22shruti at scene scope and no tempo — each holds something the other does not, which is why both are kept (décision Romain 2026-07-26).
 // @language: bpscript
+// @outputs: midi
+// @level: intermediate
+// @tags: raga, sargam, india
+//
 // nadaka.bps — Improvisation in modern Carnatic style
 // Traduit de bp3-engine/library/tabla/nadaka/grammar.gr
 //

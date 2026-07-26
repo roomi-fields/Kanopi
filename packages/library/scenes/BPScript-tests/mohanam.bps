@@ -1,4 +1,11 @@
+// @name: Mohanam — faithful MIDI
+// @tagline: Needs a MIDI device. Twin of "Mohanam — browser audio", which sounds without one.
+// @description: The faithful translation of the native grammar: the clock of -se.trial.mohanam (360 BPM), an actor-scoped declaration (@actor flute … transport.midi), flute program 3 and chromashift. THIS EXEMPLAR IS THE FIDELITY REFERENCE — it is silent without a MIDI device. Its twin (world/mohanam.bps) routes the same generative structure to the in-browser synth. Two objects, deliberately kept side by side (décision Romain 2026-07-26).
 // @language: bpscript
+// @outputs: midi
+// @level: advanced
+// @tags: raga, sargam, generative, india
+//
 // mohanam.bps — Composition par Kumar S. Subramanian, Juin 1995
 // Traduit de bp3-engine/library/tabla/mohanam/grammar.gr
 //
