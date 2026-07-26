@@ -253,9 +253,10 @@ Tik -> {1,do7-}
 @mode:ord
 // script(...) SUPPRIME du langage (GO Romain 2026-07-26) : une fonction generique est une
 // decision non prise. Chaque intention porte desormais son nom. Traductions appliquees ici :
-//   script(MIDI program N)                     -> ins(N)      (controls.json runtime.midi.ins)
-//   script(MIDI controller #C = V channel N)   -> chan(N) cc(C,V)
-// Le canal est pose AVANT le CC : un controle s'applique a ce qui le SUIT.
+//   script(MIDI program N)                     -> !(ins:N)              (registre : runtime.midi.ins)
+//   script(MIDI controller #C = V channel N)   -> !(chan:N) !(cc.C:V)
+// Le canal est pose AVANT le CC : un controle s'applique a ce qui le SUIT. Le numero de
+// controleur est un COMPOSANT, appele par le point (cc.98), pas une partie de la valeur.
 Internal -> !(ins:1) !(chan:1) !(cc.98:0)
 C46 -> !(ins:94)
 C47 -> !(ins:95)

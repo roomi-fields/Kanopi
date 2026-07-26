@@ -7,7 +7,7 @@
 // pas des durées) — émis en TERMINAL NEUTRE (kind numeric-terminal, ratifié 2026-07-17),
 // fidèles au natif -gr.asymmetric1 (U --> 3 U, V --> 2 V).
 //
-// Les flags PRÉFIXENT le goto (`[B=3, A=3] goto(3,0)`), fidèle au natif qui pose les flags
+// Les flags PRÉFIXENT le goto (`[B=3, A=3] [goto:3 0]`), fidèle au natif qui pose les flags
 // avant le saut. Forme ratifiée Romain 2026-07-18 (flag-prefixe-sur-controle-rhs).
 
 @core

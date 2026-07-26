@@ -15,9 +15,10 @@
 //
 // script(...) SUPPRIMÉ du langage (GO Romain 2026-07-26) : une fonction générique est une
 // décision non prise, repoussée sur l'utilisateur. Chaque intention porte son nom.
-//   script(MIDI program N)                    -> ins(N)            (21 occurrences)
-//   script(MIDI controller #C = V channel N)  -> chan(N) cc(C,V)   (2 occurrences)
-// Le canal est posé AVANT le CC : un contrôle s'applique à ce qui le SUIT.
+//   script(MIDI program N)                    -> !(ins:N)               (21 occurrences)
+//   script(MIDI controller #C = V channel N)  -> !(chan:N) !(cc.C:V)   (2 occurrences)
+// Le canal est posé AVANT le CC : un contrôle s'applique à ce qui le SUIT. Le numéro de
+// contrôleur est un COMPOSANT, appelé par le point (cc.98), pas une partie de la valeur.
 // RESTENT EN ERREUR, volontairement — ces intentions n'ont pas encore de nom dans le langage,
 // et on ne l'invente pas : script(Beep), script(Tick cycle ON/OFF), script(Reset tick cycle).
 // Nommage porté à Romain par l'architecte.

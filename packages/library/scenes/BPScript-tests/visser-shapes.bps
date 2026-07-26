@@ -9,7 +9,8 @@
 // Traduit de bp3-engine/library/experimental/visser-shapes/grammar.gr
 //
 // Pièce pour piano solo — rotations, expansions, trilles, contours de vélocité
-// Contrôles nouveaux : rotate(), keyxpand(), velcont
+// Contrôles nouveaux : ![rotate:N] et ![keyxpand:<note> <facteur>] (moteur, ils agissent
+// sur la structure), velcont (runtime)
 
 @core
 @controls
@@ -25,8 +26,8 @@ S -> Shapes ![staccato:50]
 // 12 regles corrigees, 17 controles remis devant le symbole auquel ils s'appliquent
 // (gram#1[2], gram#2[2], gram#2[3], gram#2[4], gram#3[4-5], Int2/Int3, Trill2/3/6/10).
 // La conversion avait deplace ses controles DANS LES DEUX SENS, ce qui change a qui ils
-// s'appliquent : chromashift renvoye APRES le symbole qu'il devait precedes ; rotate(23)
-// avance AVANT Int1 alors que le natif le pose APRES ; et le chromashift(-11) de Part3
+// s'appliquent : chromashift renvoye APRES le symbole qu'il devait preceder ; le ![rotate:23]
+// avance AVANT Int1 alors que le natif le pose APRES ; et le !(chromashift:-11) de Part3
 // transforme en SUFFIXE du premier groupe alors qu'il s'applique au SECOND.
 // _transpose devient chromashift (decision Romain 2026-07-17).
 Shapes -> Part1 {![rotate:20] !(chromashift:2) Part1} Part2 Part3 {![tempo:0.7] Part3} Part4

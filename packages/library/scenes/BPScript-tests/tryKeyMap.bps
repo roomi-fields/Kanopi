@@ -5,10 +5,11 @@
 // semantiques distinctes que j avais confondues.
 // tryKeyMap.bps — Traduit de bp3-engine/test-data/-gr.tryKeyMap (Bernard, 1998).
 //
-// Démonstration de l'outil de MAPPAGE DE CLAVIER. keymap(a,b,c,d) fait correspondre
-// l'intervalle (a,b) à (c,d) : keymap(C3,C3,C5,C5) ne change rien et sert seulement
-// d'ancrage à l'interpolation, keymap(C3,C2,C5,C6) élargit les intervalles d'un
-// facteur 2 autour de C4, keymap(C3,C5,C5,C3) les inverse (C4 reste le pivot).
+// Démonstration de l'outil de MAPPAGE DE CLAVIER. !(keymap:a b c d) fait correspondre
+// l'intervalle a–b à c–d — les quatre bornes sont les PARTIES d'une seule valeur, donc
+// séparées par des espaces. !(keymap:C3 C3 C5 C5) ne change rien et sert seulement
+// d'ancrage à l'interpolation, !(keymap:C3 C2 C5 C6) élargit les intervalles d'un
+// facteur 2 autour de C4, !(keymap:C3 C5 C5 C3) les inverse (C4 reste le pivot).
 // mapstep applique le mappage par pas, mapcont l'interpole en continu (y compris
 // À L'INTÉRIEUR d'un objet sonore qui accepte le mappage), mapfixed le fige.
 @core

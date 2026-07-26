@@ -5,7 +5,7 @@
 // Le motif A est posé une fois en MAÎTRE ($A) puis repris en ESCLAVE (&A) : BP3
 // écrit (= A ) (: A ). Le volume passe de 5 à 127 à l'intérieur du motif.
 //
-// NOTE — volumecont et volume(N) sont des contrôles RUNTIME dans controls.json,
+// NOTE — volumecont et !(volume:N) sont des contrôles RUNTIME dans controls.json,
 // donc émis en _script(CT n) et non en _volumecont / _volume(N) moteur. Écart de
 // byte-id ATTENDU PAR DESIGN (résolution runtime délibérée) : l'iso se mesure à la
 // sortie Kairos sur les notes sonnantes, pas sur les échos de contrôle.
