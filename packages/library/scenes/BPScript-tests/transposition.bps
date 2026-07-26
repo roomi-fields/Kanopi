@@ -17,14 +17,14 @@ S -> A [numtimes=5]
 A -> {E1,A#1 F#1} {Tr2 D}
 B -> {Tr2 A}
 C -> {Tr4 B}
-[numtimes-1] D -> - {Tr6 C {B}:1} {C}:1 repeat(4)
+[numtimes-1] D -> - {Tr6 C {B}:1} {C}:1 ![repeat: 4]
 
 -----
 
 // --- Sous-grammaire 2 @mode:sub1 — résolution transpositions ---
 
 @mode:sub1
-Tr2 -> chromashift(2)
-Tr4 -> chromashift(4)
-Tr6 -> chromashift(6)
+Tr2 -> !(chromashift: 2)
+Tr4 -> !(chromashift: 4)
+Tr6 -> !(chromashift: 6)
 D -> lambda

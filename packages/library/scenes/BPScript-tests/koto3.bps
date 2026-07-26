@@ -25,7 +25,7 @@
 // --- Sous-grammaire 1 @mode:random — séquence initiale ---
 
 @mode:random
-S -> vel(127) volume(40) X X X X Y X X X X Y X X X X [weight:100]
+S -> !(vel: 127) !(volume: 40) X X X X Y X X X X Y X X X X [weight:100]
 X -> a [weight:K9]
 X -> b
 

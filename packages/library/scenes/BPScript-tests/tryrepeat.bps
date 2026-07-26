@@ -5,9 +5,9 @@
 @controls
 @mode:ord
 S -> X Y Z
-X -> a X repeat(K1=3) [weight:1-1]
-Y -> b Y repeat(K1) [weight:1-1]
-Z -> c Z repeat(K1) [weight:1-1]
+X -> a X ![repeat: K1=3] [weight:1-1]
+Y -> b Y ![repeat: K1] [weight:1-1]
+Z -> c Z ![repeat: K1] [weight:1-1]
 X -> 
 Y -> 
 Z -> 

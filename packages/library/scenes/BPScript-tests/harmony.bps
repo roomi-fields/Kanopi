@@ -39,10 +39,10 @@ Seq2 -> Cmaj {C3,E3,G3,C4}:2 Cmin {C3, Eb3, G3, C4}:2 Cmaj {C3, E3, G3, C4}:2 Cm
 S -> Cmaj_c C4 E4 F4 A4 Cmin_c C4 E4 F4 A4 Cmaj_a C4 E4 F4 A4 Cmin_a C4 E4 F4 A4
 
 // Résolution des non-terminaux de gamme en contrôles @+
-Cmaj_c -> scale(Cmaj, C4)
-Cmaj_a -> scale(Cmaj, A4)
-Cmin_c -> scale(Cmin, C4)
-Cmin_a -> scale(Cmin, A4)
+Cmaj_c -> !(scale: Cmaj C4)
+Cmaj_a -> !(scale: Cmaj A4)
+Cmin_c -> !(scale: Cmin C4)
+Cmin_a -> !(scale: Cmin A4)
 
-Cmaj -> scale(Cmaj, 0)
-Cmin -> scale(Cmin, 0)
+Cmaj -> !(scale: Cmaj 0)
+Cmin -> !(scale: Cmin 0)

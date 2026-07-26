@@ -26,7 +26,7 @@ S -> C4 G4 A4 ![scale: just_intonation A4] C4 G4 A4 ![scale: piano A4] C4 G4 A4 
 
 S -> C4 E4 A4 {C4,E4,G4,C5}:8 {C4,Eb4,G4,C5}:8 - ![scale: piano C4] C4 E4 A4 {C4,E4,G4,C5}:8 {C4,Eb4,G4,C5}:8 - ![scale: just_intonation C4] C4 E4 A4 {C4,E4,G4,C5}:8 {C4,Eb4,G4,C5}:8 [weight:1]
 
-S -> legato(20) Version3 [weight:0, tempo:2]   // ordre natif : scales.gr gram#1[6] « S --> _tempo(2) _legato(20) Version3 »
+S -> ![legato: 20] Version3 [weight:0, tempo:2]   // ordre natif : scales.gr gram#1[6] « S --> _tempo(2) _legato(20) Version3 »
 Version1 -> ![scale: just_intonation A4] Phrase - - ![scale: 0 A4] Phrase
 Version2 -> Phrase - - ![scale: piano A4] Phrase
 Version3 -> ![scale: meantone1 A4] Phrase - - ![scale: just_intonation A4] Phrase
@@ -37,7 +37,7 @@ Phrase -> {Cmajor} {Aminor} {Fmajor} {Gseventh} {Cmajor}
 Cmajor -> {C4 _ _ _,- E4 _ _,- - G4 _,- - - C5} {E4 _ _ _,- G4 _ _,- - C5 _}
 Cminor -> {C4 _ _ _,- Eb4 _ _,- - G4 _,- - - C5} {Eb4 _ _ _,- G4 _ _,- - C5 _}
 Cseventh -> {C4 _ _ _,- E4 _ _,- - Bb4 _,- - - C5} {E4 _ _ _,- Bb4 _ _,- - C5 _}
-Aminor -> chromashift(-3) Cminor   // ordre natif : scales.gr gram#1[14] « Aminor --> _transpose(-3) Cminor »
+Aminor -> !(chromashift: -3) Cminor   // ordre natif : scales.gr gram#1[14] « Aminor --> _transpose(-3) Cminor »
 Fmajor -> Cmajor !(chromashift:-7)
 Gmajor -> Cmajor !(chromashift:-5)
 Gseventh -> Cseventh !(chromashift:-5)

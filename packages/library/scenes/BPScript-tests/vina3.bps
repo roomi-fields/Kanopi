@@ -68,19 +68,19 @@ StopSlidePull -> StopSlide StopPull
 // --- Sous-grammaire 5 @mode:sub1 — contrôles bas niveau ---
 
 @mode:sub1
-Pull0 -> pitchbend(0)
-Pull1 -> pitchbend(100)
-Pull2 -> pitchbend(200)
+Pull0 -> !(pitchbend: 0)
+Pull1 -> !(pitchbend: 100)
+Pull2 -> !(pitchbend: 200)
 
-Slide0 -> value(slide,0)
-SlideBack1 -> value(slide,-101)
-SlideBack2 -> value(slide,-201)
-SlideBack3 -> value(slide,-301)
-Slide1 -> value(slide,101)
-Slide2 -> value(slide,201)
-Slide4 -> value(slide,401)
+Slide0 -> !(value: slide 0)
+SlideBack1 -> !(value: slide -101)
+SlideBack2 -> !(value: slide -201)
+SlideBack3 -> !(value: slide -301)
+Slide1 -> !(value: slide 101)
+Slide2 -> !(value: slide 201)
+Slide4 -> !(value: slide 401)
 
-StartSlide -> cont(slide) value(slide,0)
-StopSlide -> fixed(slide)
-StartPull -> pitchcont pitchrange(500) pitchbend(0)
+StartSlide -> !(cont: slide) !(value: slide 0)
+StopSlide -> !(fixed: slide)
+StartPull -> pitchcont !(pitchrange: 500) !(pitchbend: 0)
 StopPull -> pitchfixed

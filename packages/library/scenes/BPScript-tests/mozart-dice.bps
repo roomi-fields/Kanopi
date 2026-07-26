@@ -27,10 +27,10 @@ A -> A1 A2 A3 A4 A5 A6 A7 A8 A1 A2 A3 A4 A5 A6 A7 A'8
 B -> B1 B2 B3 B4 B5 B6 B7 B8 B1 B2 B3 B4 B5 B6 B7 B8
 Ajust -> Cmaj A1 A2 Gmaj A3 Cmaj A4 Dmaj A5 Cmaj A6 Gmaj A7 A8 Cmaj A1 A2 Gmaj A3 Cmaj A4 Dmaj A5 Cmaj A6 Gmaj A7 A'8
 Bjust -> Gmaj B1 Cmaj B2 Dmaj B3 Cmaj B4 Fmaj B5 B6 Gmaj B7 Cmaj B8 Gmaj B1 Cmaj B2 Dmaj B3 Cmaj B4 Fmaj B5 B6 Gmaj B7 Cmaj B8
-Cmaj -> scale(Cmaj,0)
-Dmaj -> scale(Dmaj,0)
-Fmaj -> scale(Fmaj,0)
-Gmaj -> scale(Gmaj,0)
+Cmaj -> !(scale: Cmaj 0)
+Dmaj -> !(scale: Dmaj 0)
+Fmaj -> !(scale: Fmaj 0)
+Gmaj -> !(scale: Gmaj 0)
 
 -----
 

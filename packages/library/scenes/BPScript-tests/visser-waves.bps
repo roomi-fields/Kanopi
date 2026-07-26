@@ -29,12 +29,12 @@ Waves -> Frase1 1 Frase1 Frase2 1/2 {![retro] Frase1 !(chromashift:12)} {![rotat
 // regle, renvoye _velcont/_vel(50) en FIN de groupe alors qu'ils l'OUVRENT, et colle _vel(60)
 // au M qui le PRECEDE au lieu de le poser AVANT le suivant. _transpose devient chromashift
 // (decision Romain 2026-07-17).
-Frase1 -> legato(100) {velcont vel(50) M1 M2 M3 M4 vel(60) M5 M6 vel(50)}
-Frase2 -> legato(100) {velcont vel(50) chromashift(2) M7 M8 vel(60) M9 M10 M11 M12 vel(50)}
-Frase3 -> legato(100) {velcont vel(50) chromashift(2) M13 M14 M15 vel(60) M16 M17 M18 vel(50)}
-Frase4 -> legato(100) {velcont vel(50) chromashift(2) M19 M20 M21 M22 vel(60) M23 M24 vel(50)}
-Frase5 -> legato(100) {velcont vel(50) chromashift(2) M25 vel(60) M26 M27 M28 M29 M30 vel(50)}
-Frase6 -> legato(100) {velcont vel(50) chromashift(2) M31 vel(60) M32 M33 M34 M35 M36 M37 M38 vel(50)}
+Frase1 -> ![legato: 100] {velcont !(vel: 50) M1 M2 M3 M4 !(vel: 60) M5 M6 !(vel: 50)}
+Frase2 -> ![legato: 100] {velcont !(vel: 50) !(chromashift: 2) M7 M8 !(vel: 60) M9 M10 M11 M12 !(vel: 50)}
+Frase3 -> ![legato: 100] {velcont !(vel: 50) !(chromashift: 2) M13 M14 M15 !(vel: 60) M16 M17 M18 !(vel: 50)}
+Frase4 -> ![legato: 100] {velcont !(vel: 50) !(chromashift: 2) M19 M20 M21 M22 !(vel: 60) M23 M24 !(vel: 50)}
+Frase5 -> ![legato: 100] {velcont !(vel: 50) !(chromashift: 2) M25 !(vel: 60) M26 M27 M28 M29 M30 !(vel: 50)}
+Frase6 -> ![legato: 100] {velcont !(vel: 50) !(chromashift: 2) M31 !(vel: 60) M32 M33 M34 M35 M36 M37 M38 !(vel: 50)}
 
 // Group 1: M1 opens {5, — M6 closes }
 M1 -> { C3 F#3

@@ -25,13 +25,13 @@
 @striated
 
 @mode:ord
-S -> vel(64) Part1 - vel(127) Part2 1/2 Part3 Part4 1/2 vel(64) retro Part1
+S -> !(vel: 64) Part1 - !(vel: 127) Part2 1/2 Part3 Part4 1/2 !(vel: 64) retro Part1
 
-Part1 -> ![/8] mapstep keymap(C3,C3,C5,C5) M M M M M M keymap(C3,C2,C5,C6) M M M M M M keymap(C3,C3,C5,C5) M M M M M M M M M M M M keymap(C3,C5,C5,C3) mapfixed M M keymap(C3,C3,C5,C5) M ![/1] M
+Part1 -> ![/8] mapstep !(keymap: C3 C3 C5 C5) M M M M M M !(keymap: C3 C2 C5 C6) M M M M M M !(keymap: C3 C3 C5 C5) M M M M M M M M M M M M !(keymap: C3 C5 C5 C3) mapfixed M M !(keymap: C3 C3 C5 C5) M ![/1] M
 
 M -> C4 C#4 D4 G4 F#4 F4 E4
 
-Part2 -> keymap(52,52,86,86) a a mapcont a a a a a a a a a a keymap(52,86,86,52) a b
+Part2 -> !(keymap: 52 52 86 86) a a mapcont a a a a a a a a a a !(keymap: 52 86 86 52) a b
 
-Part3 -> mapcont keymap(52,52,86,86) a _ _ a _ _ keymap(52,86,86,52)
-Part4 -> mapstep keymap(52,52,86,86) a _ _ a _ _ keymap(52,86,86,52)
+Part3 -> mapcont !(keymap: 52 52 86 86) a _ _ a _ _ !(keymap: 52 86 86 52)
+Part4 -> mapstep !(keymap: 52 52 86 86) a _ _ a _ _ !(keymap: 52 86 86 52)
