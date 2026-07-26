@@ -13,7 +13,10 @@ import type { VoiceOutputType } from '../runtimes/adapter';
 import bundledDevicesRaw from '../../../../library/devices.json?raw';
 
 // DEVICES_SPEC §1 — a device is name + type + connection params.
-export type DeviceType = 'midi' | 'audio' | 'osc' | 'dmx' | 'video' | 'text';
+// `video` A ETE RETIRE (decision 2026-07-14-modele-producteur-canal-eval-transport.md:32 :
+// « Il n'y a PAS de transport.video / transport.visual »). Les visuels embarques (hydra/p5)
+// ne sortent par AUCUN transport : ce sont des producteurs, pas des destinations.
+export type DeviceType = 'midi' | 'audio' | 'osc' | 'dmx' | 'text';
 
 export interface Device {
   /** unique name referenced by `transport.<name>` (kebab/lower) */
@@ -33,7 +36,6 @@ const ACCEPTED: Record<DeviceType, ReadonlySet<VoiceOutputType>> = {
   audio: new Set<VoiceOutputType>(['notes', 'signal']),
   osc: new Set<VoiceOutputType>(['control', 'notes']),
   dmx: new Set<VoiceOutputType>(['light']),
-  video: new Set<VoiceOutputType>(['visual']),
   // text is the readable-fallback sink: it accepts `text` AND everything else
   // (any voice can be dumped to the symbolic console). DEVICES_SPEC §3.
   text: new Set<VoiceOutputType>(['text', 'notes', 'signal', 'visual', 'control', 'light'])

@@ -4,7 +4,6 @@
     { "name": "audio", "type": "audio", "label": "Audio (WebAudio)", "params": { "gain": 1 } },
     { "name": "osc", "type": "osc", "label": "OSC", "params": { "host": "127.0.0.1", "port": 57120, "addr": "/kanopi" } },
     { "name": "text", "type": "text", "label": "Text console" },
-    { "name": "video", "type": "video", "label": "Video", "params": { "target": "main" } },
     { "name": "dmx", "type": "dmx", "label": "DMX", "params": { "universe": 0 } }
   ]
 }

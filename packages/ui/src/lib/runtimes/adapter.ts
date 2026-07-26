@@ -52,7 +52,7 @@ export type LogPush = (e: {
 export type VoiceOutputType =
   | 'notes' // pitched events (→ midi / audio)
   | 'signal' // raw audio signal, no discrete pitch (→ audio)
-  | 'visual' // pixels / canvas / video (→ video)
+  | 'visual' // pixels / canvas — producteur embarque, routé par AUCUN transport (2026-07-14)
   | 'control' // CC / control messages (→ osc)
   | 'light' // intensities / colours (→ dmx)
   | 'text'; // symbols to read (→ text / console)

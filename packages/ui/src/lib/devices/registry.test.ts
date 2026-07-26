@@ -25,11 +25,15 @@ describe('resolveDevice', () => {
     expect(resolveDevice('webaudio')).toBeUndefined();
   });
 
-  it('resolves osc / text / video / dmx bundled devices', () => {
+  it('resolves osc / text / dmx bundled devices', () => {
     expect(resolveDevice('osc')?.type).toBe('osc');
     expect(resolveDevice('text')?.type).toBe('text');
-    expect(resolveDevice('video')?.type).toBe('video');
     expect(resolveDevice('dmx')?.type).toBe('dmx');
+  });
+
+  // `video` a ete RETIRE (decision 2026-07-14) : plus de device, donc plus de resolution.
+  it('ne resout PLUS « video » — le transport visuel n existe pas', () => {
+    expect(resolveDevice('video')).toBeUndefined();
   });
 
   it('returns undefined for an unknown name (caller throws — never silent)', () => {
@@ -45,7 +49,6 @@ describe('acceptedOutputTypes (§3 table)', () => {
     audio: ['notes', 'signal'],
     osc: ['control', 'notes'],
     dmx: ['light'],
-    video: ['visual'],
     text: ['text', 'notes', 'signal', 'visual', 'control', 'light']
   };
 
@@ -61,11 +64,8 @@ describe('isCompatible accept/reject', () => {
   it('accepts notes → midi', () => expect(isCompatible('notes', 'midi')).toBe(true));
   it('accepts notes → audio', () => expect(isCompatible('notes', 'audio')).toBe(true));
   it('accepts signal → audio', () => expect(isCompatible('signal', 'audio')).toBe(true));
-  it('accepts visual → video', () => expect(isCompatible('visual', 'video')).toBe(true));
   it('accepts light → dmx', () => expect(isCompatible('light', 'dmx')).toBe(true));
 
-  it('rejects notes → video (the documented .bps gate case)', () =>
-    expect(isCompatible('notes', 'video')).toBe(false));
   it('rejects notes → dmx (notes → lumieres example, §3)', () =>
     expect(isCompatible('notes', 'dmx')).toBe(false));
   it('rejects visual → audio', () => expect(isCompatible('visual', 'audio')).toBe(false));

@@ -41,16 +41,16 @@ describe('voice↔device compat gate (orchestrator .bps)', () => {
     expect(gate('strudel', 'audio')).toEqual({ ok: true });
   });
 
-  it('a strudel (notes) voice → transport.video is REJECTED with a clear error', () => {
-    const r = gate('strudel', 'video');
-    expect(r.ok).toBe(false);
-    expect(r.reason).toContain('incompatible');
-    expect(r.reason).toContain('video');
+  // `transport.video` a ete RETIRE (decision 2026-07-14) : un visuel embarque est un
+  // PRODUCTEUR, il ne sort par aucun transport. Le gate ne connait donc plus ce nom —
+  // ce qui verrouillait la voie morte verrouille desormais son absence.
+  it('transport.video n existe plus — le nom est refuse pour toute voix', () => {
+    expect(gate('strudel', 'video').ok).toBe(false);
+    expect(gate('hydra', 'video').ok).toBe(false);
   });
 
-  it('a hydra (visual) voice → transport.video PASSES (visual ∈ {visual})', () => {
+  it('hydra produit bien du visuel, sans transport', () => {
     expect(hydraAdapter.outputType).toBe('visual');
-    expect(gate('hydra', 'video')).toEqual({ ok: true });
   });
 
   it('a hydra (visual) voice → transport.audio is REJECTED', () => {
