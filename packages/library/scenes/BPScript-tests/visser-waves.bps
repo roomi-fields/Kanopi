@@ -1,4 +1,10 @@
+// @name: Visser: Waves
+// @tagline: Harm Visser's "Waves" (1998) — nested imbedding pattern for solo piano. MIDI output — select a MIDI device in Hardware to hear it
 // @language: bpscript
+// @outputs: midi
+// @level: intermediate
+// @tags: polymetric
+//
 // visser-waves.bps — Harm Visser "Waves" (1998)
 // Traduit de bp3-engine/library/experimental/visser-waves/grammar.gr
 //

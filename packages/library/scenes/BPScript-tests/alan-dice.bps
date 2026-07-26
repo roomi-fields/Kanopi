@@ -1,4 +1,10 @@
+// @name: Alan Dice Game
+// @tagline: Alan's musical dice game — 158 bars picked by two simulated dice. MIDI output — select a MIDI device in Hardware to hear it
 // @language: bpscript
+// @outputs: midi
+// @level: intermediate
+// @tags: generative
+//
 // alan-dice.bps — Alan's musical dice game
 // Translated from bp3-engine/library/western/alan-dice/grammar.gr
 //

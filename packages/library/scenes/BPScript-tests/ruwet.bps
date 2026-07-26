@@ -1,4 +1,10 @@
+// @name: Ruwet Variations
+// @tagline: Theme and variation after Nicolas Ruwet's analysis. MIDI output — select a MIDI device in Hardware to hear it
 // @language: bpscript
+// @outputs: midi
+// @level: intermediate
+// @tags: generative
+//
 // ruwet.bps — Theme and variation (Nicolas Ruwet analysis)
 // Traduit de bp3-engine/library/western/ruwet/grammar.gr
 //

@@ -1,4 +1,10 @@
+// @name: Mozart Dice Game
+// @tagline: Mozart's musical dice game — 176 bars picked by two simulated dice. MIDI output — select a MIDI device in Hardware to hear it
 // @language: bpscript
+// @outputs: midi
+// @level: intermediate
+// @tags: generative
+//
 // mozart-dice.bps — Jeu de dés musical de Mozart
 // Traduit de bp3-engine/library/western/mozart-dice/grammar.gr
 //

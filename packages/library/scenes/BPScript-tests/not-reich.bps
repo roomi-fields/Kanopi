@@ -1,4 +1,10 @@
+// @name: Not Reich
+// @tagline: Steve Reich-style phasing by Thierry Montaudon (1997). MIDI output — select a MIDI device in Hardware to hear it
 // @language: bpscript
+// @outputs: midi
+// @level: intermediate
+// @tags: polymetric
+//
 // not-reich.bps — phasing (style Steve Reich) par Thierry Montaudon (1997)
 // Traduit de bp3-engine/library/experimental/not-reich/grammar.gr
 //

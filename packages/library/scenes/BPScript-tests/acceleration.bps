@@ -1,4 +1,10 @@
+// @name: Acceleration
+// @tagline: Harm Visser's "sawtooth rhythm" (1997) — an accelerating chain of rules. MIDI output — select a MIDI device in Hardware to hear it
 // @language: bpscript
+// @outputs: midi
+// @level: intermediate
+// @tags: generative
+//
 // acceleration.bps — "sawtooth rhythm" par Harm Visser (1997)
 // Traduit de bp3-engine/test-data/-gr.acceleration
 // _transpose = runtime, _vel = runtime — both via _script(CTn)

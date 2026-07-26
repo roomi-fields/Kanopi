@@ -1,4 +1,10 @@
+// @name: Shapes in Rhythm
+// @tagline: Kathak-based dance piece by Andreine Bel in 9 parts. MIDI output — select a MIDI device in Hardware to hear it
 // @language: bpscript
+// @outputs: midi
+// @level: intermediate
+// @tags: world
+//
 // shapes-rhythm.bps — "ShapesInRhythm" for Cronos dance production
 // Traduit de bp3-engine/library/experimental/shapes-rhythm/grammar.gr
 //

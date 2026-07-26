@@ -1,4 +1,10 @@
+// @name: Visser: Shapes
+// @tagline: Harm Visser's "Shapes" (1998) — rotations, expansions, trills and velocity contours. MIDI output — select a MIDI device in Hardware to hear it
 // @language: bpscript
+// @outputs: midi
+// @level: intermediate
+// @tags: generative
+//
 // visser-shapes.bps — Harm Visser "Shapes" (1998)
 // Traduit de bp3-engine/library/experimental/visser-shapes/grammar.gr
 //
