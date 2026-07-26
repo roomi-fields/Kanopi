@@ -5,11 +5,10 @@
 // Méta-grammaire : les règles SUB construisent dynamiquement des polymétriques.
 // Les { } , apparaissent comme terminaux bruts sur le LHS et dans les contextes.
 //
-// ⚠️ CETTE SCÈNE NE COMPILE PLUS, VOLONTAIREMENT. script(...) a été SUPPRIMÉ du langage
-// (GO Romain 2026-07-26) : une fonction générique est une décision non prise. « MIDI send
-// Continue » est un message système temps réel de transport — il n'a pas encore de nom dans
-// le langage, et on ne l'invente pas. Le nommage est porté à Romain par l'architecte ;
-// la scène se rallume dès qu'il est tranché.
+// script(...) a été SUPPRIMÉ du langage (GO Romain 2026-07-26) : une fonction générique est une
+// décision non prise. « MIDI send Continue » a reçu son nom le même jour — c'est un message
+// système temps réel de synchronisation, et il s'écrit désormais `!(sync:continue)`.
+// Les deux autres messages de la famille sont `!(sync:start)` et `!(sync:stop)`.
 
 @core
 @controls
@@ -59,7 +58,7 @@ c a c -> b a b
 @mode:random
 Y -> !f [weight:40]
 Y -> !chik [weight:50]
-? #? -> ? Silence script(MIDI send Continue) #? [weight:1-1]
+? #? -> ? Silence !(sync:continue) #? [weight:1-1]
 Silence -> - - - - - [weight:50]
 Silence -> - - - - [weight:15]
 Silence -> - - - [weight:8]

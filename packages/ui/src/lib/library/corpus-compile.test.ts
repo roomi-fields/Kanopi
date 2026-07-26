@@ -39,40 +39,39 @@ const BPS = import.meta.glob('../../../../library/scenes/**/*.bps', {
 }) as Record<string, string>;
 
 /** Rouges DÉCLARÉS : chemin → motif attendu dans l'erreur + ce que la scène attend.
- *  Seule cause admise aujourd'hui : 'nommage-attendu' — le rouge est le RÉSULTAT voulu du
- *  chantier `script` ([932]), l'intention employée n'a pas encore de nom dans le langage et
- *  c'est Romain qui la nomme. Toute AUTRE cause de rouge est une régression, donc un échec :
- *  cette liste n'est pas un dépotoir de scènes cassées, chaque entrée porte une attente datée.
- *  Retirer une entrée dès que sa cause est levée : le test le réclame de lui-même. */
+ *  DEUX causes, qui ne veulent pas dire la même chose et ne se confondent pas :
+ *   • 'nommage-attendu' — rouge TRANSITOIRE. La scène emploie une intention dont la forme
+ *     existe désormais mais qu'elle n'a pas encore reçue. L'entrée doit disparaître quand la
+ *     migration arrive, et le test le réclame de lui-même.
+ *   • 'rouge-definitif' — rouge PERMANENT et VOULU. La verdir exigerait de mentir : soit
+ *     inventer un nom pour une commande qui ne fait rien, soit retirer du natif ce que la
+ *     scène traduit. Un rouge qui dit la vérité vaut mieux qu'un vert qui ment.
+ *  Toute AUTRE cause de rouge est une régression, donc un échec : cette liste n'est pas un
+ *  dépotoir de scènes cassées, chaque entrée porte sa raison. */
 const ROUGES_DECLAREES: Array<{
   fichier: string;
   motif: RegExp;
-  cause: 'nommage-attendu';
+  cause: 'nommage-attendu' | 'rouge-definitif';
   attend: string;
 }> = [
   {
     fichier: 'BPScript-tests/shapes-rhythm.bps',
     motif: /script/,
-    cause: 'nommage-attendu',
-    attend: 'Beep, Tick cycle ON/OFF, Reset tick cycle'
-  },
-  {
-    fichier: 'BPScript-tests/koto3.bps',
-    motif: /script/,
-    cause: 'nommage-attendu',
-    attend: 'MIDI send Continue'
+    cause: 'rouge-definitif',
+    attend:
+      'RIEN — état stable : Tick cycle ON/OFF et Reset tick cycle ont un CORPS VIDE dans le moteur natif (ScriptUtils.c:1840,1844,1914), les nommer promettrait un effet inexistant ; Beep est hors périmètre par décision (Romain 2026-07-26). Ne pas « réparer ».'
   },
   {
     fichier: 'BPScript-tests/beatrix-dice.bps',
     motif: /script/,
     cause: 'nommage-attendu',
-    attend: 'Wait for <note> channel'
+    attend: 'migration de « Wait for <note> channel » vers le trigger entrant (la forme existe)'
   },
   {
     fichier: 'BPScript-tests/alan-dice.bps',
     motif: /script/,
     cause: 'nommage-attendu',
-    attend: 'Wait for <note> channel'
+    attend: 'migration de « Wait for <note> channel » vers le trigger entrant (la forme existe)'
   }
 ];
 

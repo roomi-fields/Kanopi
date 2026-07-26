@@ -19,9 +19,22 @@
 //   script(MIDI controller #C = V channel N)  -> !(chan:N) !(cc.C:V)   (2 occurrences)
 // Le canal est posé AVANT le CC : un contrôle s'applique à ce qui le SUIT. Le numéro de
 // contrôleur est un COMPOSANT, appelé par le point (cc.98), pas une partie de la valeur.
-// RESTENT EN ERREUR, volontairement — ces intentions n'ont pas encore de nom dans le langage,
-// et on ne l'invente pas : script(Beep), script(Tick cycle ON/OFF), script(Reset tick cycle).
-// Nommage porté à Romain par l'architecte.
+//
+// ⚠️ CETTE SCÈNE NE COMPILE PAS, ET C'EST UN ÉTAT STABLE — pas un chantier oublié.
+// Quatre commandes restent sans nom, et elles n'en recevront pas :
+//   script(Tick cycle ON), script(Tick cycle OFF), script(Reset tick cycle) — mesuré dans le
+//     moteur natif : les trois ont un CORPS VIDE (ScriptUtils.c:1840, 1844, 1914). Elles ne font
+//     RIEN en BP3. Leur donner un nom fabriquerait la promesse d'un effet qui n'existe pas.
+//   script(Beep) — HORS PÉRIMÈTRE par décision de Romain (2026-07-26) : conservé pour la seule
+//     compatibilité BP3, aucune implémentation attendue.
+//
+// La faire passer au vert exigerait soit d'inventer ces noms, soit de retirer ces commandes —
+// ce qui la rendrait INFIDÈLE à la grammaire d'origine qu'elle traduit. Un rouge qui dit la
+// vérité vaut mieux qu'un vert qui ment. Ne pas « réparer » cette scène.
+//
+// Les autres familles de script(…), elles, ont bien reçu leur nom le 2026-07-26 : `mute`,
+// `unmute`, `panic`, `sync` — et l'attente d'entrée (`wait for …`) s'écrit avec le trigger
+// entrant, qui existait déjà. Aucune ne concerne cette scène.
 //
 // Les contrôles MIDI du corpus D-50 étaient écrits en valeurs de FIL (14 bits).
 // BPScript les exprime dans leur convention propre : mod = CC1, 7 bits (0..127) ;
