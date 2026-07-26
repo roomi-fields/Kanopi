@@ -23,6 +23,12 @@
 // inversait leur portee — le -12 ne s'appliquait plus a A ni a B. Mesure : la scene sortait do3
 // la ou le natif sort do2, une octave trop haut. Ordre restaure => do2 mi4 do4 sol3, le natif exact.
 // _transpose BP3 devient chromashift (decision Romain 2026-07-17, grille 12 cles).
+//
+// ⚠️ CETTE SCENE NE COMPILE PLUS, VOLONTAIREMENT. script(...) a ete SUPPRIME du langage
+// (GO Romain 2026-07-26) : une fonction generique est une decision non prise. « wait for
+// do#2 channel 1 » attend une note MIDI entrante — synchronisation d'entree, sans nom dans
+// le langage a ce jour, et on ne l'invente pas. Piste proposee a Romain (docs/reference/
+// TRADUCTION_SCRIPT.md §2) : etendre @map a la note entrante + garde de regle.
 S -> script(wait for do#2 channel 1) vel(80) chromashift(-12) A B vel(0) chan(2) do#4
 A -> A1 A2 A3 A4 A5 A6 A7 A8 A1 A2 A3 A4 A5 A6 A7 A'8
 B -> B1 B2 B3 B4 B5 B6 B7 B8 B1 B2 B3 B4 B5 B6 B7 B8

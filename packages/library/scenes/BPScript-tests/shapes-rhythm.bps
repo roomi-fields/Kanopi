@@ -7,6 +7,15 @@
 // sound "patches". Will not make sense unless played on Roland D-50 with
 // Musitronics extension card.
 //
+// script(...) SUPPRIMÉ du langage (GO Romain 2026-07-26) : une fonction générique est une
+// décision non prise, repoussée sur l'utilisateur. Chaque intention porte son nom.
+//   script(MIDI program N)                    -> ins(N)            (21 occurrences)
+//   script(MIDI controller #C = V channel N)  -> chan(N) cc(C,V)   (2 occurrences)
+// Le canal est posé AVANT le CC : un contrôle s'applique à ce qui le SUIT.
+// RESTENT EN ERREUR, volontairement — ces intentions n'ont pas encore de nom dans le langage,
+// et on ne l'invente pas : script(Beep), script(Tick cycle ON/OFF), script(Reset tick cycle).
+// Nommage porté à Romain par l'architecte.
+//
 // Les contrôles MIDI du corpus D-50 étaient écrits en valeurs de FIL (14 bits).
 // BPScript les exprime dans leur convention propre : mod = CC1, 7 bits (0..127) ;
 // pitchbend = signé, centre 0 (-8192..8191), cf. docs/design/SOUNDS.md:448 et
@@ -260,28 +269,28 @@ Michiko -> X75
 // --- Sous-grammaire 17 @mode:ord — D-50 MIDI setup ---
 
 @mode:ord
-Xcard -> script(MIDI controller #98 = 1 channel 1)
-Internal -> script(MIDI controller #98 = 0 channel 1)
-X13 -> Xcard script(MIDI program 5)
-X24 -> Xcard script(MIDI program 12)
-X26 -> Xcard script(MIDI program 14)
-X27 -> Xcard script(MIDI program 15)
-X36 -> Xcard script(MIDI program 22)
-X63 -> Xcard script(MIDI program 43)
-X68 -> Xcard script(MIDI program 48)
-X72 -> Xcard script(MIDI program 50)
-X75 -> Xcard script(MIDI program 53)
-X76 -> Xcard script(MIDI program 54)
-X83 -> Xcard script(MIDI program 59)
-X85 -> Xcard script(MIDI program 61)
-X86 -> Xcard script(MIDI program 62)
-X87 -> Xcard script(MIDI program 63)
-I42 -> Internal script(MIDI program 26)
-I62 -> Internal script(MIDI program 42)
-I66 -> Internal script(MIDI program 46)
-C13 -> Internal script(MIDI program 67)
-C42 -> Internal script(MIDI program 90)
-C56 -> Internal script(MIDI program 102)
-C23 -> Internal script(MIDI program 75)
+Xcard -> chan(1) cc(98,1)
+Internal -> chan(1) cc(98,0)
+X13 -> Xcard ins(5)
+X24 -> Xcard ins(12)
+X26 -> Xcard ins(14)
+X27 -> Xcard ins(15)
+X36 -> Xcard ins(22)
+X63 -> Xcard ins(43)
+X68 -> Xcard ins(48)
+X72 -> Xcard ins(50)
+X75 -> Xcard ins(53)
+X76 -> Xcard ins(54)
+X83 -> Xcard ins(59)
+X85 -> Xcard ins(61)
+X86 -> Xcard ins(62)
+X87 -> Xcard ins(63)
+I42 -> Internal ins(26)
+I62 -> Internal ins(42)
+I66 -> Internal ins(46)
+C13 -> Internal ins(67)
+C42 -> Internal ins(90)
+C56 -> Internal ins(102)
+C23 -> Internal ins(75)
 PedalOn -> switchon(64,1)
 PedalOff -> switchoff(64,1)

@@ -4,6 +4,12 @@
 //
 // Méta-grammaire : les règles SUB construisent dynamiquement des polymétriques.
 // Les { } , apparaissent comme terminaux bruts sur le LHS et dans les contextes.
+//
+// ⚠️ CETTE SCÈNE NE COMPILE PLUS, VOLONTAIREMENT. script(...) a été SUPPRIMÉ du langage
+// (GO Romain 2026-07-26) : une fonction générique est une décision non prise. « MIDI send
+// Continue » est un message système temps réel de transport — il n'a pas encore de nom dans
+// le langage, et on ne l'invente pas. Le nommage est porté à Romain par l'architecte ;
+// la scène se rallume dès qu'il est tranché.
 
 @core
 @controls

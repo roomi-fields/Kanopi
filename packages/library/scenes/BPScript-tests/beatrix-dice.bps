@@ -5,6 +5,12 @@
 // Solfège français (do, re, mi, fa, sol, la, si) avec octaves
 // K-params simulent 2 dés : distribution en cloche (1,2,3,4,5,6,5,4,3,2,1)
 // 158 mesures terminales (T1-T176), 16 sections de sélection par dés
+//
+// ⚠️ CETTE SCÈNE NE COMPILE PLUS, VOLONTAIREMENT. script(...) a été SUPPRIMÉ du langage
+// (GO Romain 2026-07-26) : une fonction générique est une décision non prise. « Wait for
+// do#3 channel 2 » attend une note MIDI entrante — synchronisation d'entrée, sans nom dans
+// le langage à ce jour, et on ne l'invente pas. Piste proposée à Romain (docs/reference/
+// TRADUCTION_SCRIPT.md §2) : étendre @map à la note entrante + garde de règle.
 
 @core
 @controls
