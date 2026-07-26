@@ -16,11 +16,12 @@
 //   • une scène déclarée rouge qui se met à COMPILER = ÉCHEC AUSSI : sa cause a été levée en
 //     amont, ce fichier doit sortir de la liste. Un rouge déclaré ne peut pas se fossiliser.
 //
-// EFFET DE BORD À LA POSE DU GARDE : il a trouvé DEUX rouges que le chantier n'avait pas vus —
+// CE QUE LA POSE DU GARDE A DÉJÀ ATTRAPÉ : deux rouges que le chantier n'avait pas vus —
 // `generative/alan-dice.bps` et `world/shapes-rhythm.bps`, copies divergentes figées au
-// 2026-07-13 des scènes de `BPScript-tests/`, toutes deux exposées dans le rail. Elles sont
-// déclarées avec la cause 'doublon-perime', pas 'nommage-attendu' : la déduplication est un
-// arbitrage de corpus remonté à l'architecte, pas un résultat voulu.
+// 2026-07-13 des scènes de `BPScript-tests/`, exposées toutes deux dans le rail (l'utilisateur
+// voyait deux cartes de la même pièce, dont une périmée). Romain a tranché : SUPPRIMÉES ([933]).
+// Leurs entrées ont donc quitté la liste ci-dessous — et c'est le garde lui-même qui l'a réclamé,
+// en échouant sur « déclarée rouge mais absente du corpus ».
 //
 // Périmètre : les scènes `.bps` dont l'en-tête déclare `@language: bpscript`. Les voix de code
 // (strudel/hydra/mercury/p5…) ne passent pas par cette analyse, les `.gr` ont la leur (parseBP3).
@@ -38,19 +39,15 @@ const BPS = import.meta.glob('../../../../library/scenes/**/*.bps', {
 }) as Record<string, string>;
 
 /** Rouges DÉCLARÉS : chemin → motif attendu dans l'erreur + ce que la scène attend.
- *  Deux causes, jamais confondues :
- *   • 'nommage-attendu' — le rouge est le RÉSULTAT voulu du chantier `script` ([932]) : l'intention
- *     employée n'a pas encore de nom dans le langage, Romain doit la nommer.
- *   • 'doublon-perime' — la scène est une COPIE divergente d'une autre scène du corpus, figée au
- *     2026-07-13 : elle a manqué chromashift (2026-07-17), les corrections de position et le
- *     chantier `script`. Le catalogue expose LES DEUX copies (catégorie = dossier réel,
- *     scenes.ts:14), donc l'utilisateur voit deux cartes de la même pièce dont une périmée.
- *     La déduplication est un arbitrage de corpus, remonté à l'architecte — pas un rouge voulu.
- *  Retirer une entrée dès que sa cause est levée : le test le réclamera de lui-même. */
+ *  Seule cause admise aujourd'hui : 'nommage-attendu' — le rouge est le RÉSULTAT voulu du
+ *  chantier `script` ([932]), l'intention employée n'a pas encore de nom dans le langage et
+ *  c'est Romain qui la nomme. Toute AUTRE cause de rouge est une régression, donc un échec :
+ *  cette liste n'est pas un dépotoir de scènes cassées, chaque entrée porte une attente datée.
+ *  Retirer une entrée dès que sa cause est levée : le test le réclame de lui-même. */
 const ROUGES_DECLAREES: Array<{
   fichier: string;
   motif: RegExp;
-  cause: 'nommage-attendu' | 'doublon-perime';
+  cause: 'nommage-attendu';
   attend: string;
 }> = [
   {
@@ -76,20 +73,6 @@ const ROUGES_DECLAREES: Array<{
     motif: /script/,
     cause: 'nommage-attendu',
     attend: 'Wait for <note> channel'
-  },
-  {
-    fichier: 'generative/alan-dice.bps',
-    motif: /script/,
-    cause: 'doublon-perime',
-    attend:
-      'arbitrage de déduplication (copie de BPScript-tests/alan-dice.bps, forme transpose:-1200c d’avant chromashift)'
-  },
-  {
-    fichier: 'world/shapes-rhythm.bps',
-    motif: /script/,
-    cause: 'doublon-perime',
-    attend:
-      'arbitrage de déduplication (copie de BPScript-tests/shapes-rhythm.bps, sans @smooth ni conversion ins/cc)'
   }
 ];
 
