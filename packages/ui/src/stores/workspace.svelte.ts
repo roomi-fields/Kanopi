@@ -69,8 +69,24 @@ class WorkspaceStore {
   addFile(path: string, contents = '', readOnly = false) {
     // Reuse an existing file at the same path rather than piling up duplicates
     // (e.g. re-opening the same resource entry from the Resources view).
+    //
+    // LA SOURCE FAIT FOI : rouvrir un chemin déjà présent EN FOURNISSANT un contenu
+    // ÉCRASE la copie de l'espace de travail — sans garde, sans confirmation, sans
+    // comparaison de versions (arbitrage Romain 2026-07-26 : « on écrase tout, on s'en
+    // fout, c'est que des tests à moi, et on respecte la biblio »).
+    // POURQUOI ça compte : la copie était conservée en SILENCE, donc recharger une scène
+    // de la bibliothèque rendait le texte d'hier. Mesuré — `watch.bps` rechargé affichait
+    // 583 occurrences d'une graphie que le compilateur refuse désormais, avec un voyant
+    // rouge, sur un fichier disque parfaitement sain.
+    // Un contenu VIDE n'écrase rien : `addFile(path)` sans contenu n'affirme rien (c'est
+    // le geste « ouvre/crée », pas « voici le contenu »).
     const existing = this.files.find((f) => f.path === path);
-    if (existing) return existing.id;
+    if (existing) {
+      if (contents !== '' && contents !== existing.contents) {
+        this.updateContents(existing.id, contents);
+      }
+      return existing.id;
+    }
     const id = mintFileId();
     this.files = [
       ...this.files,

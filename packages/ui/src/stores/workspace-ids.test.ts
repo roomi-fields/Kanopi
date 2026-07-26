@@ -70,3 +70,38 @@ describe('workspace read-only resource tabs stack', () => {
     expect(workspace.openTabIds).toContain(c);
   });
 });
+
+// [946] LA SOURCE FAIT FOI — rouvrir un chemin déjà présent EN FOURNISSANT un contenu
+// écrase la copie de l'espace de travail (arbitrage Romain 2026-07-26 : « on écrase tout,
+// on respecte la biblio »). Ce que ce verrou empêche de revenir : la copie était conservée
+// en SILENCE, donc recharger une scène de la bibliothèque rendait le texte d'hier — mesuré
+// sur `watch.bps`, 583 occurrences d'une graphie désormais refusée, voyant rouge, sur un
+// fichier disque sain. Le rouge accusait le corpus ; le coupable était le rechargement.
+describe('[946] recharger depuis la bibliothèque écrase la copie de travail', () => {
+  it('un contenu FOURNI remplace celui de la copie existante', () => {
+    const id = workspace.addFile('ecrase-ids.bps', 'S -> ancien');
+    const memeId = workspace.addFile('ecrase-ids.bps', 'S -> frais');
+
+    expect(memeId).toBe(id); // même entrée, pas un doublon
+    expect(workspace.fileById(id)?.contents).toBe('S -> frais');
+  });
+
+  it('openBundle rafraîchit une scène déjà ouverte', () => {
+    workspace.openBundle([{ path: 'bundle-ids.bps', contents: 'S -> v1' }], 'bundle-ids.bps');
+    const id = workspace.openBundle(
+      [{ path: 'bundle-ids.bps', contents: 'S -> v2' }],
+      'bundle-ids.bps'
+    );
+
+    expect(id).not.toBeNull();
+    expect(workspace.fileById(id!)?.contents).toBe('S -> v2');
+    expect(workspace.files.filter((f) => f.path === 'bundle-ids.bps')).toHaveLength(1);
+  });
+
+  it('un contenu VIDE n’écrase RIEN — « ouvre/crée » n’affirme pas un contenu', () => {
+    const id = workspace.addFile('vide-ids.bps', 'S -> garde-moi');
+    workspace.addFile('vide-ids.bps');
+
+    expect(workspace.fileById(id)?.contents).toBe('S -> garde-moi');
+  });
+});
