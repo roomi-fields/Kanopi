@@ -42,6 +42,21 @@
         return `${e.name}${e.pitch !== undefined ? ` p${e.pitch}` : ''} d${e.duration.toFixed(0)}ms${e.locations ? ` [${e.locations.length} loc]` : ''}`;
       case 'flag':
         return `${e.name}=${String(e.value)}`;
+      case 'input':
+        // AFFICHAGE OPAQUE — on montre la charge telle qu'elle arrive (device + numéros), on ne
+        // la traduit pas : un numéro reste un numéro, jamais un nom de note (un nom se résout
+        // par l'alphabet déclaré, en aval — contrat `hote-runtime-in.md`).
+        return `${e.device} ${
+          e.signal.kind === 'note'
+            ? `note ${e.signal.number} ch${e.signal.channel} v${e.signal.velocity} ${
+                e.signal.on ? 'on' : 'off'
+              }`
+            : e.signal.kind === 'control'
+              ? `cc ${e.signal.number} ch${e.signal.channel} = ${e.signal.value}`
+              : e.signal.kind === 'address'
+                ? `${e.signal.path} (${e.signal.args.length} arg)`
+                : `key ${e.signal.code} ${e.signal.down ? 'down' : 'up'}`
+        }`;
     }
   }
 
@@ -61,10 +76,12 @@
       <option value="trigger">trigger</option>
       <option value="token">token</option>
       <option value="flag">flag</option>
+      <option value="input">input</option>
     </select>
     <select bind:value={filterRuntime}>
       <option value="all">all rt</option>
       <option value="clock">clock</option>
+      <option value="in">in</option>
       <option value="strudel">strudel</option>
       <option value="hydra">hydra</option>
       <option value="js">js</option>
