@@ -25,7 +25,13 @@ vi.mock('bpx', async (importOriginal) => {
   const actual = await importOriginal<typeof import('bpx')>();
   return {
     ...actual,
-    createSession: (ast: unknown, options?: Record<string, unknown>) => {
+    // L'espion ne RE-DECLARE pas le type de l'arbre : il le prend a la source
+    // (`Parameters<…>[0]`). Le typer `unknown` ici effaçait `SceneAST` pour tout
+    // l'appel en aval — c'est ce qui avait fait imputer l'erreur a BPx a tort ([951]).
+    createSession: (
+      ast: Parameters<typeof actual.createSession>[0],
+      options?: Record<string, unknown>
+    ) => {
       capturedOptions.push(options);
       return actual.createSession(ast, options as Parameters<typeof actual.createSession>[1]);
     }

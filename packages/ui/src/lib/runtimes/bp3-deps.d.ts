@@ -17,6 +17,14 @@
  */
 
 // --- bpx -------------------------------------------------------------------
+// SINGLE-SOURCE : l'arbre de scene vient du VRAI type publie par BPx, jamais d'une copie de
+// surface. `bpx/dist/index.js` n'est pas mappe par tsconfig.paths (seul le specificateur NU
+// `bpx` pointe vers ce fichier), donc cet import atteint la surface amont sans boucler.
+// AVANT [951] ce fichier typait l'arbre `unknown` des DEUX cotes : Kanopi ne voyait donc
+// JAMAIS `SceneAST`, et l'erreur qui en resultait a ete imputee a tort a BPx — dont le type
+// etait publie et correct. Un calque qui efface un type amont est pire qu'un calque absent.
+import type { SceneAST } from 'bpx/dist/index.js';
+export type { SceneAST };
 export interface TimedToken {
   token: string;
   start: number;
@@ -136,7 +144,7 @@ export interface Session {
   emit<T>(format: string, options?: unknown): T;
   buildProjectionContext(order?: 'chronological' | 'voice-major'): ProjectionContext;
 }
-export function createSession(ast: unknown, options?: SessionOptions): Session;
+export function createSession(ast: SceneAST, options?: SessionOptions): Session;
 
 // --- bp3-frontend ----------------------------------------------------------
 export interface ParseError {
@@ -211,7 +219,8 @@ export interface CompileBPSError {
 // nodes carry their resolved `interp` (tag, or the actor's eval). Everything Kanopi
 // needs is read off the AST. This is the path the `.bps` adapter consumes.
 export interface CompileToBPxASTResult {
-  ast: unknown | null;
+  /** `null` quand `errors` est non vide — le narrowing revient a l'appelant. */
+  ast: SceneAST | null;
   errors: CompileBPSError[];
   warnings: unknown[];
 }
