@@ -26,12 +26,17 @@
 // Échap rend le focus, et l'espace redevient le bouton Play.
 //
 // ENTENDU LE 2026-07-27 : la pièce sonne, S'ARRÊTE net sur le point, y reste, et la barre
-// d'espace la fait REPARTIR. Frappée EN AVANCE, la touche annule le gel et la musique passe sans
-// trou. Deux choses restent à savoir avant de jouer avec :
-//   • elle n'attend qu'UNE FOIS par production — une fois la touche donnée, le point reste levé,
-//     y compris au tour de boucle suivant. Reproduire (PROD) le ré-arme.
-//   • à la reprise, la première note revient avec un demi-temps de retard : on entend la fin du
-//     Do aigu, pas son attaque.
+// d'espace la fait REPARTIR — à CHAQUE tour de boucle, mesuré sur trois tours d'affilée. Pendant
+// l'arrêt, la barre de lecture reste posée à l'endroit du point ; à l'arrêt vrai elle s'efface.
+//
+// TENIR OU FRAPPER, ET C'EST TOUTE LA DIFFÉRENCE. Une touche se lit en ÉTAT : l'appui ouvre la
+// barrière, le relâchement la REFERME. Donc la barre d'espace TENUE quand la lecture arrive au
+// point la laisse passer sans s'arrêter — comme une pédale ; FRAPPÉE en avance, elle ne change
+// rien, la barrière est déjà refermée quand la lecture arrive. C'est ce qui permet à la pièce de
+// s'arrêter encore au tour suivant.
+//
+// Une réserve, mesurée le 2026-07-27 et routée en amont : à la reprise, la note du point arrive
+// environ un dixième de seconde en retard (la lecture normale, elle, enchaîne sans silence).
 
 @core
 @alphabet.western:audio

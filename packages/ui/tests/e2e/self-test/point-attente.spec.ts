@@ -151,6 +151,23 @@ test("la lecture GÈLE au point d'attente et la touche la fait repartir", async 
   expect(await sonSur(page, 1_500)).toBeGreaterThan(0.01);
 });
 
+test('elle attend ENCORE au tour de boucle suivant — la barrière se repose', async ({ page }) => {
+  // LE VERROU DU RÉ-ARMEMENT. Pendant une soirée, cette pièce n'a attendu qu'UNE FOIS : la touche
+  // levait la barrière et personne ne la refermait, donc au deuxième tour elle traversait son
+  // propre point sans s'arrêter. Une pièce qui n'attend qu'au premier tour n'est pas jouable en
+  // boucle — et rien ne l'aurait signalé, puisque le premier tour, lui, était parfait.
+  await page.evaluate(() => (window as unknown as Facade).kanopi.setPlayFocus(true));
+  await produireEtJouer(page);
+
+  await attendreEtat(page, 'waiting');
+  await page.keyboard.press('Space'); // frappée : lève PUIS repose la barrière
+  await attendreEtat(page, 'running', 5_000);
+
+  // La pièce dure ~5,3 s : elle doit revenir buter sur le même point au tour suivant. On laisse la
+  // marge d'un tour entier, sans jamais supposer l'instant exact (c'est Kronos qui tient le temps).
+  await attendreEtat(page, 'waiting', 15_000);
+});
+
 test('la touche TENUE à travers le point annule le gel — la musique passe sans trou', async ({
   page
 }) => {
