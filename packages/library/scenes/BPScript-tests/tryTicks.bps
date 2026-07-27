@@ -8,5 +8,11 @@
 @transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:678 fait key += (C4key - 60),
                  // soit -12 demi-tons appliques a TOUTE touche. Image fidele = transposition
                  // REELLE d'une octave vers le bas, qui preserve les noms ecrits.
+// ANNOTATION 2026-07-27 — la scene DIT desormais son alphabet au lieu de le laisser deviner.
+// Le reglage d'origine (-se.tryTicks) declare la convention de notes ANGLAISE (valeur 0 : C, D,
+// E...). La scene ecrit C5 D5 E5 F5 G5 : le discriminant vient de la DONNEE, il n'a pas ete choisi.
+// Sans cette ligne, la resolution aval devinait — et devinait juste, mais deviner juste n'est pas
+// savoir. Mesure : scenePitch porte desormais alphabet=western, jetons inchanges.
+@alphabet.western:midi
 @mode:random
 S -> C5 D5 E5 F5 E5 G5 F5 E5 F5 D5 E5 G5 D5 F5 E5 C5 [weight:1]

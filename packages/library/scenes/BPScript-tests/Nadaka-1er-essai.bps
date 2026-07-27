@@ -5,6 +5,16 @@
 // Nadaka-1er-essai.bps — migré de bp3-engine/test-data/-gr.Nadaka-1er-essai (porter bp3ToScene, 2026-07-17)
 // Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
 
+// ANNOTATION 2026-07-27 — cette scene DIT desormais sa convention de notes ET son symbole.
+// Le reglage d'origine (-se.hamsad) declare la convention INDIENNE (valeur 2 : sa, re, ga) ; onze
+// grammaires du fonds la declarent, vina et vina2 annotent le meme alphabet. Le discriminant vient
+// de la DONNEE, il n'a pas ete choisi.
+// A8 n'a AUCUNE regle -- ni ici ni dans le .gr d'origine -- et n'est une note dans aucun alphabet :
+// le moteur natif l'emet litteralement comme jeton. C'est une VARIABLE DE TRAVAIL (decision Romain
+// 2026-07-27, voie 3). Sans cette declaration, annoter la convention faisait REFUSER la scene ;
+// sans la convention, la resolution aval devinait 7040 Hz pour un symbole qui n'a pas de hauteur.
+@alphabet.bp3_indian:midi
+@var A8
 @mode:random
 S -> A32
 A32 -> A8 A8 A8 A8

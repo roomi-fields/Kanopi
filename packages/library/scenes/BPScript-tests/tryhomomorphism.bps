@@ -2,6 +2,12 @@
 // Homomorphisme INLINE du .gr d'origine (-ho.tryhomomorphism) chargé via la table lib : TOUT homo
 // PEUPLE la table (décision 2026-07-18) — BPx porte opaque, Kairos résout. Byte-id BP3 legacy intact.
 @transcription.tryhomomorphism
+// ANNOTATION 2026-07-27 — meme geste que Nadaka-1er-essai, meme raison.
+// Le reglage d'origine (-se.tryhomomorphism) declare la convention ITALIENNE (valeur 1 : do, re,
+// mi) ; la scene ecrit do4, mi4, fa4 -- l'alphabet solfege du catalogue les porte.
+// a, b et c ne sont des notes dans AUCUN alphabet : ce sont des VARIABLES DE TRAVAIL.
+@alphabet.solfege:midi
+@var a, b, c
 @mode:random(tempo:60.0000,striated)
 S -> a b c $X * &X
 X -> do4 c mi4 fa4
