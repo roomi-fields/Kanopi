@@ -6,6 +6,12 @@
 // @tags: basics
 //
 // Silence Rhythm — motif rythmique avec silences
+//
+// NETTOYAGE 2026-07-27 : le deuxième silence portait un réglage de nuance, `-(vel:80)`. Un
+// silence ne sonne pas : la valeur était SANS EFFET (mesuré sur l'arbre projeté — le nœud de
+// repos ne porte aucun contrôle, ni avant ni après ce retrait). Elle enseignait donc une
+// fausse possibilité à qui lit la scène, ce qui est pire qu'inutile dans « basics ».
+// La nuance de tout le motif reste écrite là où elle agit : en suffixe de règle.
 
 @core
 @controls
@@ -13,5 +19,5 @@
 
 S -> Pattern Pattern Pattern Coda
 
-Pattern -> C4 - E4 -(vel:80) G4 C5 - - (vel:100)
+Pattern -> C4 - E4 - G4 C5 - - (vel:100)
 Coda -> C5 _ _ _ (vel:110)
