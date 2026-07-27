@@ -44,7 +44,13 @@ import voicesJson from 'bpscript/lib/voices.json';
 // il est CAPTÉ depuis `lib/digital/<fn>.ts` dans le BUNDLE navigateur `libs-data.js` (libs-bundle.js:52,
 // commentaire de digital.json). On consomme donc `LIBS.digital` (avec body), pas le JSON nu.
 import { LIBS as BPSCRIPT_LIBS } from 'bpscript/src/transpiler/libs-data.js';
-import { createSession, renderChain, type Session, type TimedToken as BpxTimedToken } from 'bpx';
+import {
+  createSession,
+  renderChain,
+  type SceneAST,
+  type Session,
+  type TimedToken as BpxTimedToken
+} from 'bpx';
 // [745] Interrupteur de la trace de dérivation — LU seul (jamais `setTraceEnabled`,
 // matière propre de la vue Texte). L'hôte PORTE la valeur à la construction de la
 // Session, il ne la résout ni ne l'abonne.
@@ -800,7 +806,8 @@ export interface DeclaredInput {
  *
  * CE QUE L'HÔTE EN FAIT, ET SA LIMITE : il PRÉSENTE ces rôles et laisse l'utilisateur y associer un
  * appareil réel. Il ne route rien — associer un événement reçu au rôle qui l'attend est le mandat
- * de `@map`, en aval (contrat `hub/contrats/hote-runtime-in.md`).
+ * du routeur de BPx (`entrees/routeur.ts`), à qui l'hôte tend l'événement VERBATIM et l'association
+ * en DONNÉE (voir `pousserEvenementEntree` plus bas ; contrat `hub/contrats/hote-runtime-in.md`).
  */
 export function declaredInputsForScene(text: string): readonly DeclaredInput[] {
   let c: { ast?: unknown };
@@ -817,6 +824,64 @@ export function declaredInputsForScene(text: string): readonly DeclaredInput[] {
       return typeof n?.name === 'string' && typeof n?.transport === 'string';
     })
     .map((d) => ({ name: d.name, transport: d.transport, mapping: d.mapping ?? null }));
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
+// [994] LE BRANCHEMENT DU POINT D'ATTENTE — deux fils, aucune décision
+// ════════════════════════════════════════════════════════════════════════════════
+//
+// La chaîne complète est : une touche arrive sur le bus → le routeur de BPx décide QUEL point
+// d'attente elle lève (il connaît les `@in` déclarés ET les points écrits dans l'arbre) → la porte
+// de Kairos désarme le point → Kronos, qui consulte l'état armé à l'instant du gel, repart.
+//
+// L'HÔTE N'EST NI L'UN NI L'AUTRE BOUT. Il tient exactement les deux fils que personne d'autre ne
+// peut tenir, parce que lui seul voit les deux côtés à la fois :
+//   1. il REMET la porte de Kairos à BPx (`brancherPorteAttente`) — Kairos dépend de BPx et jamais
+//      l'inverse, donc le routeur ne peut pas l'importer ;
+//   2. il POUSSE l'événement du bus vers ce routeur, VERBATIM.
+// Il ne lit aucun signal, ne compare aucune adresse, ne connaît aucune touche : `signal` traverse
+// opaque. Décisions `2026-07-27-le-routage-d-entree-rejoint-le-map-existant.md` (« l'hôte branche
+// le bus, il ne route pas ») et `2026-07-27-la-levee-passe-par-la-porte-de-kairos-le-streaming-
+// sort.md` (la porte de Kairos est l'unique voie de levée).
+//
+// POURQUOI LA SESSION VIVANTE EST TENUE ICI, ET PAS AILLEURS. Le routeur résout sur l'arbre de SA
+// session ; une session périmée viserait un arbre que Kronos ne joue plus. Elle est donc posée au
+// même endroit et au même instant que l'arbre remis à Kairos — à l'éval ET à chaque re-derive — et
+// RETIRÉE au démontage, pour qu'une touche frappée après un stop ne trouve rien plutôt que de
+// lever un point d'un arbre mort.
+
+/** La session BPx qui a chargé l'arbre COURANT — celle dont le routeur vise l'arbre que Kronos joue. */
+let sessionEntrees: Session | null = null;
+
+/** Remet la porte de Kairos au routeur de BPx et publie la session vivante. Appelé avec l'arbre. */
+function brancherAttente(session: Session, k: Kairos | undefined): void {
+  if (k === undefined) return;
+  // La porte, telle quelle : `demande` EST la forme qu'attend BPx (`PorteAttente`), y compris son
+  // accusé — un refus doit remonter jusqu'au routeur, qui en fait une erreur d'assemblage bruyante.
+  session.brancherPorteAttente((d) => k.demande(d as Parameters<Kairos['demande']>[0]));
+  sessionEntrees = session;
+}
+
+/** Démontage : plus d'arbre joué, plus de cible. Une touche tardive ne lève alors plus rien. */
+export function debrancherAttente(): void {
+  sessionEntrees = null;
+}
+
+/**
+ * UN ÉVÉNEMENT D'ENTRÉE PART VERS LE ROUTEUR. Rend le nombre de points levés (0 = il ne visait
+ * rien, ce qui est le cas ordinaire d'une touche frappée hors point d'attente).
+ *
+ * L'ASSOCIATION voyage en DONNÉE, telle que l'utilisateur l'a faite dans le panneau des entrées :
+ * elle vit hors de la scène (décision `2026-07-27-forme-des-entrees-in-mapping-adresse-nue.md`) et
+ * ne sert qu'à lever une ambiguïté quand deux rôles partagent un canal. L'hôte la PORTE ; c'est le
+ * routeur qui décide si elle compte.
+ */
+export function pousserEvenementEntree(
+  evenement: { device: string; source?: string; signal: unknown },
+  associations: readonly { role: string; source?: string }[]
+): number {
+  if (sessionEntrees === null) return 0;
+  return sessionEntrees.evenementEntree(evenement, associations);
 }
 
 // Extracts the `gm_*` soundfont names a strudel backtick's code USES, by regex over its
@@ -1862,7 +1927,7 @@ function makeBpxAdapter(
         // metadata.tempo (défaut moteur 60 sans directive). La saisie utilisateur (session)
         // atteint le son par WARP Kronos à la construction du handle (plus bas), pas ici.
         const buildSession = (withSeed: boolean): Session =>
-          createSession(ast, {
+          createSession(ast as SceneAST, {
             ...(settings !== undefined ? { settings } : {}),
             ...(effectiveFlags !== undefined ? { initialFlags: effectiveFlags } : {}),
             ...(withSeed && currentSeed !== undefined ? { seed: currentSeed } : {}),
@@ -2026,6 +2091,12 @@ function makeBpxAdapter(
               } as unknown as Parameters<Kairos['charger']>[2])
             : undefined
         );
+        // [994] LA PORTE D'ATTENTE — l'hôte REMET, il ne route pas. Kairos dépend de BPx et
+        // jamais l'inverse : le raccord entrée→attente vit chez BPx (`entrees/routeur.ts`,
+        // décision `2026-07-27-le-routage-d-entree-rejoint-le-map-existant.md`) et ne peut pas
+        // importer la porte de Kairos — c'est la boîte de branchement qui la lui tend, une fois,
+        // avec l'arbre. Sans ce geste, BPx CRIE au premier événement (jamais un silence).
+        brancherAttente(bpx, kairos);
         // [97] Chaîne d'items en graphie moteur — l'hôte n'assemble AUCUNE graphie : il appelle
         // `rendreChaineFinale` (Kairos) avec la fonction d'assemblage `renderChain` (BPx, 4e
         // argument) et PORTE le résultat. Dégradation honnête : un échec (ids/chainMarkers
@@ -2394,7 +2465,7 @@ function makeBpxAdapter(
             try {
               // Fresh-seed re-derivation — identical opts to the eval path + the dormant
               // `reDeriveTreeEvents`, only the random draw differs.
-              const rbpx: Session = createSession(ast, {
+              const rbpx: Session = createSession(ast as SceneAST, {
                 // FERMER LA PORTE : le re-roll aussi dérive au @tempo de l'AST (BPx le lit),
                 // sans injection ; le WARP live (retune) persiste côté Kronos à travers le swap.
                 ...(settings !== undefined ? { settings } : {}),
@@ -2444,6 +2515,12 @@ function makeBpxAdapter(
                     } as unknown as Parameters<Kairos['charger']>[2])
                   : undefined
               );
+              // [994] LE RE-ROLL CHANGE DE SESSION — donc de porte ET d'arbre. `rbpx` est une
+              // session NEUVE : sans ce re-branchement, la touche continuerait de viser l'arbre
+              // du cycle précédent, et une scène re-randomisée cesserait de repartir sans qu'un
+              // seul message le dise. On rebranche sur la session VIVANTE, celle qui vient de
+              // charger l'arbre que Kronos va jouer.
+              brancherAttente(rbpx, kairos);
               // Same instance re-charger'd → bump generation so the views re-render.
               productionFeed.swapped();
               // [97] Chaîne d'items de CE cycle re-random — même règle qu'au site d'éval
@@ -2715,6 +2792,7 @@ function makeBpxAdapter(
         // and the timeline cursor + bar·beat display fall back to rest (001·01.00).
         kronosCursor.set(null);
         productionFeed.set(null);
+        debrancherAttente();
         // "Stop everything" also FORGETS the live orchestrated-voice handles: every
         // voice is down and the core hushes every code runtime alongside this
         // call, so a lingering handle would only let a stale voice be torn down /
@@ -2730,6 +2808,7 @@ function makeBpxAdapter(
         if (voice.kronosAudio) {
           kronosCursor.set(null);
           productionFeed.set(null);
+          debrancherAttente();
         }
         voice.kronosAudio?.stop();
         voices.delete(key);
@@ -2748,6 +2827,7 @@ function makeBpxAdapter(
       voices.clear();
       kronosCursor.set(null);
       productionFeed.set(null);
+      debrancherAttente();
     }
   };
 }

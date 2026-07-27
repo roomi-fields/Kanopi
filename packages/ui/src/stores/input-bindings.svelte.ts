@@ -11,8 +11,9 @@
 // défaut, et ça se voit à l'écran.
 //
 // CE QUE CE FICHIER NE FAIT PAS : router. Associer un événement reçu au rôle qui l'attend est le
-// mandat de `@map`, en aval (contrat `hub/contrats/hote-runtime-in.md`). Ici on retient un choix
-// d'utilisateur, on ne traduit rien.
+// mandat du routeur de BPx (`entrees/routeur.ts`), en aval (contrat `hub/contrats/hote-runtime-
+// in.md`). Ici on retient un choix d'utilisateur, on ne traduit rien — et `pourRoutage()` ne fait
+// que le PORTER jusqu'à ce routeur, dans la forme qu'il attend.
 
 const CLE = 'kanopi.input-bindings.v1';
 
@@ -57,6 +58,21 @@ class InputBindingsStore {
   set(role: string, binding: InputBinding) {
     this.byRole = { ...this.byRole, [role]: binding };
     this.persister();
+  }
+
+  /**
+   * [994] LES ASSOCIATIONS, DANS LA FORME QU'ATTEND LE ROUTEUR (`AssociationEntree` de BPx) : le
+   * rôle et le PORT associé, rien d'autre. Le nom d'affichage et le point d'écoute OSC restent ici
+   * — ils servent l'écran, pas la résolution.
+   *
+   * Une association SANS port (rôle clavier : il n'y a rien à choisir) ne dit rien au routeur et
+   * n'est pas portée : la porter avec `source` absent ferait une association vide, indiscernable
+   * d'un « tout port de ce canal » explicite.
+   */
+  pourRoutage(): readonly { role: string; source?: string }[] {
+    return Object.entries(this.byRole)
+      .filter(([, b]) => b.portId !== undefined)
+      .map(([role, b]) => ({ role, source: b.portId as string }));
   }
 
   clear(role: string) {

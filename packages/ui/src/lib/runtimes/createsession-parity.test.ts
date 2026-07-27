@@ -133,7 +133,7 @@ function deriveViaInstance(src: string, cfg: HostConfig): { tree: NodeView; toke
 // NEW path: createSession(ast, opts).derive() [sounding] + emit('timed-tokens').
 function deriveViaSession(src: string, cfg: HostConfig): { tree: NodeView; tokens: TokView[] } {
   const ast = compileToBPxAST(src, cfg.tempo != null ? { tempo: cfg.tempo } : undefined).ast;
-  const session = createSession(ast, toSessionOptions(cfg));
+  const session = createSession(ast!, toSessionOptions(cfg));
   const result = session.derive(); // DEFAULT (sounding).
   // emit auto-injects resolveName/resolveKind from its own symbols (session.ts),
   // exactly like BPxInstance.derive() does for its token half.

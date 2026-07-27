@@ -106,7 +106,7 @@ describe('OSC address-in-the-tree (consumed bpscript/bpx copies — stale-dep gu
 
   it('the actor→output table carries `{runtime:osc, params:{device, ch}}` (OSC enumeration)', () => {
     const ast = compileToBPxAST(osc, { tempo: 120 }).ast;
-    const tree = createSession(ast, { seed: 1, tempo: 120 }).derive().tree as {
+    const tree = createSession(ast!, { seed: 1 }).derive().tree as {
       metadata?: { actors?: Record<string, unknown> };
     };
     // `toMatchObject` (pas `toEqual`) : le ROUTAGE OSC est `runtime:'osc'` + `params{device,ch}` —
@@ -121,7 +121,7 @@ describe('OSC address-in-the-tree (consumed bpscript/bpx copies — stale-dep gu
 
   it('every OSC event carries `output={runtime:osc, device, channel}` (per-event routing)', () => {
     const ast = compileToBPxAST(osc, { tempo: 120 }).ast;
-    const session = createSession(ast, { seed: 1, tempo: 120 });
+    const session = createSession(ast!, { seed: 1 });
     const tree = session.derive().tree;
     const kairos = new Kairos();
     kairos.charger(

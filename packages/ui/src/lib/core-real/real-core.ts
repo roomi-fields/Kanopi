@@ -6,8 +6,10 @@ import {
   setActorsSink,
   setOrchestratedActorMuted,
   isOrchestratedActor,
+  pousserEvenementEntree,
   type PublishedActor
 } from '../runtimes/bpx-adapter';
+import { inputBindings } from '../../stores/input-bindings.svelte';
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 // KAN-UX3 — la couche mute MIXER (intention performeur, persistante) : consultée en
 // garde des chemins d'armement pour qu'un arm/replay/publish ne ré-arme jamais un
@@ -167,6 +169,35 @@ class RealCore implements CoreApi {
       for (const id of listRuntimes()) {
         const adapter = getAdapter(id);
         adapter?.onBar?.(e.count, this.log);
+      }
+    });
+    // [994] LE FIL D'ENTRÉE — du bus vers le routeur de BPx, VERBATIM.
+    //
+    // C'est le second des deux fils de la boîte de branchement (le premier, la porte de Kairos
+    // remise à BPx, est posé avec l'arbre : `bpx-adapter.brancherAttente`). Ici on ne lit rien du
+    // signal : `device`/`source`/`signal` traversent tels quels vers `pousserEvenementEntree`, qui
+    // les remet au routeur. C'est LUI qui sait quel point d'attente une touche lève ; l'hôte ne
+    // compare aucune adresse et ne connaît aucune touche.
+    //
+    // L'ASSOCIATION rôle→appareil part avec, en donnée : elle vit hors de la scène, l'hôte la
+    // porte. Le routeur l'ignore quand un canal n'a qu'un rôle (le cas ordinaire).
+    //
+    // UN ÉCHEC SE CRIE. Le routeur lève quand l'assemblage est faux (porte non branchée, arbre
+    // absent, porte qui refuse) : ces cris-là disent un défaut de câblage, jamais un geste de
+    // l'utilisateur. Les avaler rendrait « la pièce ne repart pas » indiscernable de « la touche
+    // ne visait rien » — exactement le silence qu'on vient de payer une journée.
+    this.events.on('input', (e) => {
+      try {
+        pousserEvenementEntree(
+          {
+            device: e.device,
+            ...(e.source === undefined ? {} : { source: e.source }),
+            signal: e.signal
+          },
+          inputBindings.pourRoutage()
+        );
+      } catch (err) {
+        this.log({ runtime: 'system', level: 'error', msg: `entrée: ${String(err)}` });
       }
     });
   }

@@ -40,7 +40,7 @@ function actorTerminalsFromKairos(tl: Timeline): Set<string> {
 describe('actorTerminals sourced from the Kairos timeline', () => {
   it('projects the actor-bound terminals off Kairos, shared terminal preserved', () => {
     const ast = compileToBPxAST(SHARED_TERMINAL, { tempo: 120 }).ast;
-    const session = createSession(ast, { seed: 1, tempo: 120 });
+    const session = createSession(ast!, { seed: 1 });
     const tree = session.derive().tree;
 
     // Build the Kairos timeline the same way the adapter does (charger → arbreCourant).

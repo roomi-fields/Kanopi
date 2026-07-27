@@ -125,26 +125,17 @@ export function renderChain(
   resolveName: (id: number) => string,
   options?: RenderChainOptions
 ): string;
-/** The upstream `Session` (carries `buildProjectionContext`, unlike `BPxInstance`).
- *  `derive()` returns the tree only; the flat tokens come from `emit('timed-tokens')`.
- *  `output:'complete'` has migrated to Kairos and now THROWS — the host uses the
- *  default 'sounding' path. */
-export interface Session {
-  readonly grammar: { symbols?: { getName?(id: number): string }; [k: string]: unknown };
-  derive(options?: DeriveOptions): {
-    tree: DerivationTree;
-    /** [97] `DeriveResult.ids` (BPx session.ts:286) — TOUJOURS présent, la vue Texte est
-     *  toujours active (contrairement à `trace`). Entrée `ids` de `renderChain`. */
-    ids: number[];
-    /** [97] `DeriveResult.chainMarkers` (BPx session.ts:380) — TOUJOURS construit. Entrée
-     *  `payloads` de `renderChain` via `rendreChaineFinale`. */
-    chainMarkers: readonly ChainPayloadEntry[];
-    [k: string]: unknown;
-  };
-  emit<T>(format: string, options?: unknown): T;
-  buildProjectionContext(order?: 'chronological' | 'voice-major'): ProjectionContext;
-}
-export function createSession(ast: SceneAST, options?: SessionOptions): Session;
+// SINGLE-SOURCE, ET C'EST UNE CORRECTION [994] : `Session` était RECOPIÉ ici à la main, avec les
+// seuls membres que l'hôte connaissait au moment de la copie. Une copie de surface ne se met pas à
+// jour toute seule — quand BPx a livré le raccord d'entrée (`brancherPorteAttente`,
+// `evenementEntree`), le type de l'hôte l'ignorait, et le type-checker a refusé un appel POURTANT
+// publié en amont : le calque effaçait le contrat, exactement le défaut déjà corrigé sur `SceneAST`
+// juste au-dessus. Interdiction de copie de surface (`CLAUDE.md` + décision
+// `hub/decisions/2026-07-19-copies-de-surface-cross-repo-single-source-ou-declaree-outillee.md`) :
+// on importe le VRAI type. `bpx/dist/index.js` n'est pas mappé par `tsconfig.paths` (seul le
+// spécificateur NU `bpx` l'est), donc cet import atteint l'amont sans boucler.
+export type { Session } from 'bpx/dist/index.js';
+export { createSession } from 'bpx/dist/index.js';
 
 // --- bp3-frontend ----------------------------------------------------------
 export interface ParseError {

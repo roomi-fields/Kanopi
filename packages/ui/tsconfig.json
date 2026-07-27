@@ -15,6 +15,7 @@
     "types": ["vite/client", "svelte"],
     "paths": {
       "bpx": ["./src/lib/runtimes/bp3-deps.d.ts"],
+      "bpx/dist/index.js": ["../../../BPx/dist/index.d.ts"],
       "bp3-frontend": ["./src/lib/runtimes/bp3-deps.d.ts"],
       "bpscript/src/transpiler/index.js": ["./src/lib/runtimes/bp3-deps.d.ts"],
       "bpscript/src/transpiler/orderTokens.js": ["./src/lib/text-order/order-tokens.d.ts"]
