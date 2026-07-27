@@ -36,6 +36,16 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 
 ## UI / Workspace
 
+- **KAN-33** `ouvert` — **Panneau d'ENTRÉES (remplacer la lucarne `?events=1`)** : aujourd'hui, voir
+  une entrée arriver exige de taper un paramètre d'adresse pour ouvrir une lucarne de
+  DÉVELOPPEMENT (`App.svelte:26`). C'est un provisoire assumé, pas une affordance produit : un
+  musicien ne devrait pas connaître une URL pour voir sa pédale répondre. **PRÉALABLE, et c'est
+  pourquoi ce n'est pas ouvert maintenant** (arbitrage architecte 2026-07-27) : la DÉCLARATION
+  d'entrée n'existe pas encore côté langage — sans elle, le panneau n'aurait rien à lister que des
+  appareils bruts, et pas ce que la scène ATTEND. À poser quand la graphie sera tranchée par
+  Romain ; il portera alors aussi l'association rôle → appareil (décision
+  `2026-07-27-forme-des-entrees-in-mapping-adresse-nue.md` : la scène nomme un RÔLE, l'utilisateur
+  associe l'appareil, et cette association vit HORS de la scène).
 - **KAN-14** `ouvert` — **Suppression de fichier** : Kanopi n'a aucune suppression de fichier (ni bouton/menu contextuel dans l'arbre, ni API store `removeFile`). Seule la commande `workspace.reset` (palette) nettoie — globalement. Ajouter une suppression par fichier (FileTree + `workspace.removeFile` + persistance). Trouvé en session 2026-06-20.
 
 ## Éditeur
