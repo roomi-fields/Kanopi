@@ -46,7 +46,12 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
   Romain ; il portera alors aussi l'association rôle → appareil (décision
   `2026-07-27-forme-des-entrees-in-mapping-adresse-nue.md` : la scène nomme un RÔLE, l'utilisateur
   associe l'appareil, et cette association vit HORS de la scène).
-- **KAN-14** `ouvert` — **Suppression de fichier** : Kanopi n'a aucune suppression de fichier (ni bouton/menu contextuel dans l'arbre, ni API store `removeFile`). Seule la commande `workspace.reset` (palette) nettoie — globalement. Ajouter une suppression par fichier (FileTree + `workspace.removeFile` + persistance). Trouvé en session 2026-06-20.
+- **KAN-14** `fait` (14e8ee8, 2026-07-27) — **Suppression de fichier** : livrée. `workspace.removeFile`
+  est le SEUL point d'entrée (corbeille de l'arbre local + façade v14 `removeFile(chemin)`), avec
+  confirmation EN LIGNE reprise de l'arbre du nuage, et un libellé qui dit la vérité des deux côtés
+  (un document du nuage projeté ici se RETIRE, il ne se supprime pas). Ni renommage ni déplacement :
+  l'écart avec l'arbre du nuage est mesuré et signalé, pas comblé de moi-même.
+  Texte d'origine : Kanopi n'avait aucune suppression de fichier (ni bouton/menu contextuel dans l'arbre, ni API store `removeFile`). Seule la commande `workspace.reset` (palette) nettoie — globalement. Ajouter une suppression par fichier (FileTree + `workspace.removeFile` + persistance). Trouvé en session 2026-06-20.
 
 ## Éditeur
 
