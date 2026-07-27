@@ -1,0 +1,54 @@
+// @name: Wait for Key
+// @tagline: A written wait point — the key that restarts a piece
+// @language: bpscript
+// @outputs: audio
+// @level: didactic
+// @tags: basics, input
+//
+// Wait for Key — la touche qui relance une pièce.
+//
+// TROIS LIGNES À LIRE :
+//   `@in touches transport.keyboard` déclare un RÔLE. La scène nomme ce qu'elle attend
+//   (« des touches »), jamais un appareil : un nom de port vient du système et change de
+//   machine, et une pièce qui le coderait ne s'ouvrirait plus ailleurs. L'appareil réel
+//   s'associe dans le panneau des entrées (barre de gauche, « Hardware »), et cette
+//   association vit HORS de la scène — délibérément.
+//
+//   `<!touches.Space` est le POINT D'ATTENTE : la lecture s'y suspend jusqu'à ce que la
+//   barre d'espace arrive. `Space` est l'adresse NUE de la touche — aucune table à charger,
+//   et c'est explicite dans la scène (il n'existe aucune table par défaut, par décision).
+//
+//   Le reste est du BPScript ordinaire : trois notes, l'attente, puis la suite.
+//
+// COMMENT ELLE SE JOUE : Produire, puis Play. Après le Sol, la pièce attend. Prendre le
+// FOCUS DE JEU (le badge « focus jeu ? », en bas à droite) : les touches nues vont alors à
+// la pièce et non plus à l'interface. Appuyer sur la barre d'espace — la suite repart.
+// Échap rend le focus, et l'espace redevient le bouton Play.
+//
+// ⚠️ CE QUI NE SE PRODUIT PAS ENCORE (mesuré le 2026-07-27, à re-mesurer avant d'y croire) :
+// la pièce SONNE et son point d'attente est bien PORTÉ jusqu'à l'arbre projeté (nœud de
+// durée nulle, rôle `wait`, nom `touches`) — mais elle NE S'ARRÊTE PAS. Deux maillons
+// manquent, tous deux en amont de l'hôte :
+//   1. personne ne CONSULTE l'état de suspension pendant la lecture — Kairos tient bien un
+//      booléen par point (`kairos/src/attente/points-attente.ts`), armé par défaut, et
+//      `pointsAttente()` n'a AUCUN lecteur dans l'écosystème ;
+//   2. personne n'APPELLE la porte qui lève l'attente depuis un événement d'entrée. Ce
+//      raccord a un domicile daté — le routeur `@map` de BPx, décision
+//      `hub/decisions/2026-07-27-le-routage-d-entree-rejoint-le-map-existant.md` — et il
+//      reste à écrire ; la même décision signale que DEUX mécanismes coexistent (le
+//      déclencheur de flux côté BPx, l'état de scène côté Kairos) et qu'il faudra en
+//      désigner UN.
+// Cette scène est donc écrite JUSTE, et jouable comme démonstration de la FORME. Le jour où
+// le raccord existe, elle s'arrêtera et repartira sans qu'on y touche une ligne — c'est
+// pour ça qu'elle est ici, et c'est le seul changement à attendre : ce bloc disparaît.
+
+@core
+@alphabet.western:audio
+@tempo:90
+
+@in touches transport.keyboard
+
+S -> Montee Repart
+
+Montee -> C4 E4 G4 <!touches.Space
+Repart -> C5 G4 E4 C4 _
