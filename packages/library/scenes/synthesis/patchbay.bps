@@ -17,11 +17,14 @@
 
 // Voix PERSISTANTE = câblage multi-étage : jouer `lead` arme le patch. Le filtre
 // est modulé par un LFO câblé en backtick (cv sur le port cutoff).
-@macro lead  = saw.freq: pitch >> lpf.cutoff: `js: lfo(2)*0.7` >> audio
+// MIGRATION 2026-07-27 par l'agent bpscript : le signe `=` a DISPARU de tout le langage
+// (decision Romain, uniformite declarative — une seule forme partout : `@directive <nom>
+// <valeur>`). Aucune autre modification. Ecriture SIGNEE, a commiter par kanopi.
+@macro lead saw.freq: pitch >> lpf.cutoff: `js: lfo(2)*0.7` >> audio
 
 // Actions MONO-ÉTAGE (appel-composant opaque, one-shot) sur le patch armé :
-@macro open  = lpf.cutoff: 12000   // cv-set — ouvre grand le filtre
-@macro close = lpf.cutoff: 700     // cv-set — le referme
-@macro glide = saw.freq: pitch     // cv-set — re-cible la hauteur du générateur
+@macro open lpf.cutoff: 12000   // cv-set — ouvre grand le filtre
+@macro close lpf.cutoff: 700     // cv-set — le referme
+@macro glide saw.freq: pitch     // cv-set — re-cible la hauteur du générateur
 
 S -> lead open lead close lead glide lead close
