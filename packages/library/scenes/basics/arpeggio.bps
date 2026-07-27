@@ -5,7 +5,18 @@
 // @level: intermediate
 // @tags: basics
 //
-// Arpeggio — accords arpégés avec vélocité
+// Arpeggio — accords arpégés avec contraste de nuance
+//
+// UNE RÈGLE PAR NUANCE. Chaque arpège se joue en deux temps : la MONTÉE douce, la DESCENTE
+// forte. Le suffixe `(vel:N)` enveloppe TOUTE la règle où il est écrit — séparer les deux
+// nuances en deux règles est donc ce qui rend le contraste réel, et lisible dans le texte.
+//
+// POURQUOI CETTE ÉCRITURE (correction 2026-07-27) : la version précédente écrivait la montée
+// et la descente dans UNE règle, avec un suffixe final `(vel:100)` et une seule note à 70. Le
+// suffixe s'appliquant à toute la règle, elle dérivait SEPT notes à 100 et UNE à 70 — mesuré
+// sur l'arbre projeté, puis au signal : une seule note 3,1 dB sous ses voisines, perdue dans
+// un arpège. Le contraste annoncé par le sous-titre n'existait pas.
+// Ici l'écart va de 55 à 110 sur QUATRE notes chacune : il s'entend.
 
 @core
 @controls
@@ -13,7 +24,20 @@
 
 S -> Arp1 Arp2 Arp3 Final
 
-Arp1 -> C4 E4 G4 C5(vel:70) G4 E4 C4 - (vel:100)
-Arp2 -> D4 F#4 A4 D5(vel:70) A4 F#4 D4 - (vel:100)
-Arp3 -> E4 G#4 B4 E5(vel:70) B4 G#4 E4 - (vel:100)
-Final -> C4 E4 G4 C5 _ _ _ (vel:110)
+// Do majeur — montée douce, descente forte.
+Arp1 -> Up1 Down1
+Up1   -> C4 E4 G4 C5 (vel:55)
+Down1 -> G4 E4 C4 - (vel:110)
+
+// Ré majeur.
+Arp2 -> Up2 Down2
+Up2   -> D4 F#4 A4 D5 (vel:55)
+Down2 -> A4 F#4 D4 - (vel:110)
+
+// Mi majeur.
+Arp3 -> Up3 Down3
+Up3   -> E4 G#4 B4 E5 (vel:55)
+Down3 -> B4 G#4 E4 - (vel:110)
+
+// L'accord final, tenu, au plus fort.
+Final -> C4 E4 G4 C5 _ _ _ (vel:125)

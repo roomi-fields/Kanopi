@@ -6,6 +6,18 @@
 // @tags: basics
 //
 // Crescendo — dynamique progressive
+//
+// UNE RÈGLE PAR PALIER DE NUANCE. Le suffixe `(vel:N)` enveloppe TOUTE la règle où il est
+// écrit (même règle du langage que le tutoriel 6) : chaque palier est donc une règle, et la
+// rampe se construit en les enchaînant. C'est ce qui rend la progression LISIBLE dans le
+// texte autant qu'audible.
+//
+// POURQUOI CETTE ÉCRITURE, ET PAS UNE VALEUR PAR NOTE (correction 2026-07-27) : la version
+// précédente mélangeait les deux intentions dans une seule règle — un suffixe final `(vel:30)`
+// qui faisait défaut de règle, plus quelques notes portant leur propre valeur. Elle ne
+// produisait pas une rampe mais un ZIGZAG : 30 · 50 · 30 · 70 · 30 · 90 · 30 · 30 (mesuré sur
+// l'arbre projeté). Une scène de « basics » qui promet un crescendo et dérive un zigzag trompe
+// l'apprenant deux fois : sur ce qu'il entend, et sur ce qu'il croit avoir compris du langage.
 
 @core
 @controls
@@ -13,5 +25,18 @@
 
 S -> Up Down
 
-Up -> C4 D4(vel:50) E4 F4(vel:70) G4 A4(vel:90) B4 C5 (vel:30)
-Down -> C5(vel:90) B4(vel:70) A4 G4(vel:50) F4 E4(vel:30) D4 C4 (vel:110)
+// La MONTÉE — quatre paliers, du plus doux au plus fort.
+Up -> Soft Medium Loud Peak
+
+Soft   -> C4 D4 (vel:30)
+Medium -> E4 F4 (vel:65)
+Loud   -> G4 A4 (vel:95)
+Peak   -> B4 C5 (vel:125)
+
+// La DESCENTE — les mêmes paliers, en sens inverse.
+Down -> PeakBack LoudBack MediumBack SoftBack
+
+PeakBack   -> C5 B4 (vel:125)
+LoudBack   -> A4 G4 (vel:95)
+MediumBack -> F4 E4 (vel:65)
+SoftBack   -> D4 C4 (vel:30)
