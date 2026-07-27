@@ -30,17 +30,20 @@ import { transport } from '../../stores/transport.svelte';
 import { openBlocks } from '../../stores/blocks.svelte';
 import { workspace } from '../../stores/workspace.svelte';
 import { isNonProgramFile } from '../workspace/types';
+import { declaredInputsForScene } from '../runtimes/bpx-adapter';
 import { productionFeed } from '../../stores/production-feed.svelte';
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 import { pilotAudioMeter, pilotCodeVoicesRuntime } from '../runtimes/kronos-audio';
 import { lastViewInput } from './view-input-observer';
 import { startFrameMonitor, readFrameStats } from './frame-stats';
+import { startInputObserver, readInputs } from './input-observer';
 import { profileMainThread } from './stack-profiler';
 import { core } from '../core';
 
-// v14 — ajout du délégué `removeFile` (suppression de fichier, KAN-14). Surface ADDITIVE :
-// rien de retiré, les consommateurs de v13 continuent de marcher.
-const API_VERSION = 14;
+// v15 — le lot des ENTRÉES : `inspect.declaredInputs()` (les rôles que la scène déclare),
+// `inspect.inputs()` (les événements d'entrée vus sur le bus). Surface ADDITIVE : rien de retiré,
+// les consommateurs de v14 continuent de marcher.
+const API_VERSION = 15;
 
 // (L'observateur des events audio forwardés + l'inspection `modulations()` sont RETIRÉS avec le
 //  wrapper audio hôte — frontière Phase 2 audio : l'hôte ne forwarde plus d'events audio shapés,
@@ -51,6 +54,9 @@ const API_VERSION = 14;
 export function installKanopiApi(): void {
   // Sonde de fluidité (inspect.frameStats) — démarrée ici pour capter AVANT toute repro.
   startFrameMonitor();
+  // Sonde d'entrée (inspect.inputs) — branchée sur le bus AVANT tout geste, pour qu'aucune
+  // première frappe ne passe avant l'écoute.
+  startInputObserver((fn) => core.events.onAny(fn));
 
   const api = {
     version: API_VERSION,
@@ -148,6 +154,19 @@ export function installKanopiApi(): void {
       /** La structure projetée de la production courante (facette Kairos). */
       structure() {
         return productionFeed.structure();
+      },
+      /** LES RÔLES D'ENTRÉE que la scène active DÉCLARE (`@in <rôle> transport.<canal>`), lus sur
+       *  l'AST amont — la même lecture que le panneau des entrées et que le badge de focus, jamais
+       *  une seconde analyse du texte. Liste vide si la scène n'en déclare aucun ou ne compile pas. */
+      declaredInputs() {
+        const id = workspace.activeTabId;
+        return declaredInputsForScene(id ? (workspace.fileById(id)?.contents ?? '') : '');
+      },
+      /** LES ÉVÉNEMENTS D'ENTRÉE vus sur le bus, VERBATIM (device + signal opaque), du plus ancien
+       *  au plus récent. Prouve qu'une pédale ou une touche arrive vraiment — sans passer par la
+       *  lucarne de développement, et sans interpréter la charge. */
+      inputs() {
+        return readInputs();
       },
       /** La vue « flat » Kairos (`productionFeed.plat()` = `arbreCourant()` de Kairos) :
        *  durée + données d'affichage de l'arbre courant. Lecture seule.

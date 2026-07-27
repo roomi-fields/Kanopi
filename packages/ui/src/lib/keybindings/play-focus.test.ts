@@ -12,6 +12,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 const playSpy = vi.fn();
 const stopSpy = vi.fn();
 const hushSpy = vi.fn();
+const ouvrirClavierSpy = vi.fn(async () => {});
+const fermerClavierSpy = vi.fn(async () => {});
 
 vi.mock('../../stores/playback.svelte', () => ({
   playback: {
@@ -26,9 +28,13 @@ vi.mock('../../stores/playback.svelte', () => ({
 // `core` est mocké au strict nécessaire : le garde n'appelle que `hushAll`, `actors.list` et
 // `scenes.*`. Les `subscribe` sont là parce que les stores projetés (`actors`, `mixer`) s'abonnent
 // à leur construction — importer `bindings` les monte en cascade.
+// Les deux gestes de clavier sont là parce que PRENDRE le focus OUVRE le périphérique et le RENDRE
+// le ferme (contrat `hote-runtime-in.md`) : c'est ce que les deux derniers verrous mesurent.
 vi.mock('../core', () => ({
   core: {
     hushAll: (...a: unknown[]) => hushSpy(...a),
+    openPlayKeyboard: () => ouvrirClavierSpy(),
+    closePlayKeyboard: () => fermerClavierSpy(),
     actors: { list: () => [], subscribe: () => () => {} },
     scenes: { list: () => [], activate: () => {}, subscribe: () => () => {} },
     console: { push: () => {} }
@@ -46,11 +52,18 @@ function key(init: KeyboardEventInit & { target?: HTMLElement }): KeyboardEvent 
   return e;
 }
 
-beforeEach(() => {
+/** Le branchement part sur-le-champ (appel direct au cœur) ; seul le RETOUR d'échec est
+ *  asynchrone — d'où ce passage de main pour le verrou du refus d'ouverture. */
+const laisserVenir = () => new Promise((r) => setTimeout(r, 0));
+
+beforeEach(async () => {
   playSpy.mockClear();
   stopSpy.mockClear();
   hushSpy.mockClear();
   playFocus.release();
+  await laisserVenir();
+  ouvrirClavierSpy.mockClear();
+  fermerClavierSpy.mockClear();
 });
 
 describe('focus de jeu — le contexte décide, jamais une priorité globale', () => {
@@ -99,6 +112,44 @@ describe('focus de jeu — le contexte décide, jamais une priorité globale', (
     playFocus.take();
     handleGlobalKey(key({ code: 'Space', key: ' ', target: input }));
     expect(playSpy).not.toHaveBeenCalled();
+  });
+
+  // ── LE BRANCHEMENT DU PÉRIPHÉRIQUE ────────────────────────────────────────────────────────
+  // « L'hôte l'ouvre quand le jeu a la main et le ferme quand il la perd. C'est tout le protocole
+  // de focus qu'il connaît » (`runtime-in/src/devices/keyboard.js:9-11`).
+  it('prendre le focus OUVRE le clavier de jeu', () => {
+    playFocus.take('touches');
+    expect(ouvrirClavierSpy).toHaveBeenCalledTimes(1);
+    expect(fermerClavierSpy).not.toHaveBeenCalled();
+  });
+
+  it('rendre le focus par ÉCHAP ferme le clavier — pas seulement le clic du badge', () => {
+    // Le verrou qui compte : le branchement vit dans le store, pas sur le bouton. Posé sur le
+    // bouton, le périphérique continuerait d'écouter après un Échap, en silence.
+    playFocus.take('touches');
+    handleGlobalKey(key({ key: 'Escape' }));
+    expect(playFocus.held).toBe(false);
+    expect(fermerClavierSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('DEUX prises de suite branchent DEUX fois — le second relâchement ferme aussi', () => {
+    // Ce verrou vient d'un vrai défaut trouvé ici : avec un import tardif du cœur, la promesse du
+    // DEUXIÈME relâchement restait pendante et le périphérique continuait d'écouter, sans un mot.
+    // Un branchement qui ne tient que la première fois est pire qu'un branchement absent.
+    playFocus.take('touches');
+    playFocus.release();
+    playFocus.take('touches');
+    playFocus.release();
+    expect(ouvrirClavierSpy).toHaveBeenCalledTimes(2);
+    expect(fermerClavierSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('un clavier qui refuse de s’ouvrir RELÂCHE le focus — un mode qui n’écoute rien ne se tient pas', async () => {
+    ouvrirClavierSpy.mockRejectedValueOnce(new Error('aucune cible qui écoute'));
+    playFocus.take('touches');
+    expect(playFocus.held).toBe(true); // pris tout de suite…
+    await laisserVenir();
+    expect(playFocus.held).toBe(false); // …puis rendu, parce que personne ne reçoit.
   });
 
   it('l’étiquette de source est de l’affichage : elle ne décide de rien', () => {

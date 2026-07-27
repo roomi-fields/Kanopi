@@ -2,6 +2,10 @@
   import { core } from '../../lib/core';
   import type { PortInfo } from 'runtime-in';
   import { midiOutput } from '../../lib/midi/midi-output.svelte';
+  import { workspace } from '../../stores/workspace.svelte';
+  import { declaredInputsForScene } from '../../lib/runtimes/bpx-adapter';
+  import { inputBindings } from '../../stores/input-bindings.svelte';
+  import { playFocus } from '../../stores/play-focus.svelte';
 
   // Les ports viennent du GESTE, jamais d'une lecture à l'initialisation. Avant l'autorisation,
   // Web MIDI n'énumère RIEN : partir d'une liste vide dit la vérité du protocole, alors que
@@ -35,9 +39,125 @@
   async function enableMidiOutput() {
     await midiOutput.requestAccess();
   }
+
+  // ─── LES ENTRÉES QUE LA SCÈNE DÉCLARE ────────────────────────────────────────────────────
+  // La scène nomme un RÔLE, l'utilisateur associe l'appareil, et cette association vit HORS de la
+  // scène (décision `2026-07-27-forme-des-entrees-in-mapping-adresse-nue.md`) — pour qu'une pièce
+  // écrite ici s'ouvre sur une autre machine. Les rôles sont LUS sur l'AST amont, jamais devinés.
+  const roles = $derived.by(() => {
+    const texte = workspace.activeTabId
+      ? (workspace.fileById(workspace.activeTabId)?.contents ?? '')
+      : '';
+    return declaredInputsForScene(texte);
+  });
+
+  /** L'échec d'une association se MONTRE, par rôle — pas de dégradé muet (contrat, garde 5). */
+  let echecParRole = $state<Record<string, string>>({});
+
+  async function associerPort(role: string, portId: string) {
+    echecParRole = { ...echecParRole, [role]: '' };
+    if (!portId) {
+      inputBindings.clear(role);
+      return;
+    }
+    const port = ports.find((p) => p.id === portId);
+    inputBindings.set(role, { portId, portName: port?.name });
+    try {
+      // Associer, c'est OUVRIR : le geste sert à quelque chose tout de suite, il ne remplit pas
+      // seulement une fiche. Les ports vus sont rafraîchis au passage.
+      ports = await core.enableMidiInput(portId);
+    } catch (err) {
+      echecParRole = { ...echecParRole, [role]: String(err) };
+    }
+  }
+
+  async function ecouterOsc(role: string, address: string) {
+    echecParRole = { ...echecParRole, [role]: '' };
+    if (!address) {
+      inputBindings.clear(role);
+      return;
+    }
+    inputBindings.set(role, { address });
+    try {
+      await core.openOscInput(address);
+    } catch (err) {
+      echecParRole = { ...echecParRole, [role]: String(err) };
+    }
+  }
 </script>
 
 <div class="hw">
+  <!-- LE PANNEAU DES ENTRÉES (KAN-33) — ce que la scène ATTEND, pas seulement ce qui est branché.
+       Un musicien ne devrait pas connaître une adresse de développeur pour voir sa pédale répondre.
+       Ce que ce panneau fait : il PRÉSENTE les rôles déclarés, laisse ASSOCIER un appareil réel et
+       MÉMORISE le choix. Ce qu'il ne fait pas : router. Associer un événement reçu au rôle qui
+       l'attend est le mandat de `@map`, en aval — pas de l'hôte. -->
+  <section>
+    <h4>Entrées de la scène</h4>
+    {#if roles.length === 0}
+      <p class="hint">
+        Cette scène ne déclare aucune entrée. Une scène nomme un <em>rôle</em> :
+        <code>@in pedale transport.midi</code>.
+      </p>
+    {:else}
+      <ul class="roles">
+        {#each roles as r (r.name)}
+          <li class="role">
+            <div class="role-head">
+              <span class="role-name">{r.name}</span>
+              <span class="role-canal">{r.transport}</span>
+              {#if r.mapping}<span class="role-table">mapping.{r.mapping}</span>{/if}
+            </div>
+
+            {#if r.transport === 'midi'}
+              {#if !enabled}
+                <button class="enable" type="button" disabled={busy} onclick={enable}>
+                  {busy ? '…' : 'Autoriser le MIDI pour voir les appareils'}
+                </button>
+              {:else}
+                <select
+                  class="port-select"
+                  value={inputBindings.for(r.name)?.portId ?? ''}
+                  onchange={(e) => associerPort(r.name, (e.target as HTMLSelectElement).value)}
+                >
+                  <option value="">— aucun appareil associé —</option>
+                  {#each ports as p (p.id)}
+                    <option value={p.id}>{p.name}</option>
+                  {/each}
+                </select>
+                <!-- L'appareil associé la dernière fois peut être DÉBRANCHÉ aujourd'hui : on le dit
+                     au lieu de retomber silencieusement sur « aucun ». -->
+                {#if inputBindings.for(r.name)?.portId && !ports.some((p) => p.id === inputBindings.for(r.name)?.portId)}
+                  <p class="hint error">
+                    Associé à « {inputBindings.for(r.name)?.portName ?? '?'} » — absent aujourd'hui.
+                  </p>
+                {/if}
+              {/if}
+            {:else if r.transport === 'keyboard'}
+              <p class="hint">
+                Rien à associer : le clavier est déjà là. C'est le <em>focus de jeu</em> (barre
+                d'état, en bas) qui lui donne les touches.
+                {#if playFocus.held}<strong>Pris.</strong>{/if}
+              </p>
+            {:else if r.transport === 'osc'}
+              <input
+                class="port-select"
+                type="text"
+                placeholder="ws://machine:port (relais OSC)"
+                value={inputBindings.for(r.name)?.address ?? ''}
+                onchange={(e) => ecouterOsc(r.name, (e.target as HTMLInputElement).value.trim())}
+              />
+            {/if}
+
+            {#if echecParRole[r.name]}
+              <p class="hint error">{echecParRole[r.name]}</p>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    {/if}
+  </section>
+
   <section>
     <h4>MIDI Input</h4>
     {#if !enabled}
@@ -167,5 +287,36 @@
   .port-select:focus {
     border-color: var(--amber);
     outline: none;
+  }
+  .roles {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .role {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-dim);
+  }
+  .role-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .role-name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text);
+  }
+  .role-canal,
+  .role-table {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .hint code {
+    font-family: var(--font-mono);
+    color: var(--text-muted);
   }
 </style>

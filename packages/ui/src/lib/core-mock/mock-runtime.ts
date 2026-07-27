@@ -144,6 +144,18 @@ class MockCore implements CoreApi {
     return [];
   }
 
+  async openPlayKeyboard() {
+    /* mock no-op — le mock ne branche aucun périphérique, donc aucune touche n'arrive. */
+  }
+
+  async openOscInput() {
+    /* mock no-op */
+  }
+
+  async closePlayKeyboard() {
+    /* mock no-op */
+  }
+
   async hushAll() {
     /* mock no-op */
   }

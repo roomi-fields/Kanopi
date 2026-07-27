@@ -130,7 +130,18 @@ export interface CoreApi {
    *  Rend les ports vus APRÈS l'autorisation (vide avant : Web MIDI n'énumère rien tant qu'elle
    *  n'est pas accordée — protocole, pas manque). REJETTE bruyamment sur autorisation refusée,
    *  Web MIDI absent ou port introuvable : aucun dégradé muet. */
-  enableMidiInput(): Promise<readonly PortInfo[]>;
+  enableMidiInput(portId?: string): Promise<readonly PortInfo[]>;
+  /** LE GESTE DU FOCUS DE JEU côté périphérique : l'hôte OUVRE le clavier quand le jeu prend la
+   *  main, et le FERME quand il la rend (`runtime-in/src/devices/keyboard.js:9-11`). C'est tout ce
+   *  que le périphérique connaît du focus — l'arbitrage, lui, reste de l'interface.
+   *  REJETTE bruyamment si aucun clavier n'est fourni ou si l'ouverture échoue : un focus qui
+   *  n'écoute rien doit se relâcher, pas se taire. */
+  openPlayKeyboard(): Promise<void>;
+  /** LE GESTE de connexion d'une entrée OSC : l'endroit d'écoute (un relais `ws://…` dans un
+   *  navigateur). L'adresse nomme la machine de l'utilisateur — elle n'entre jamais dans une scène. */
+  openOscInput(address: string): Promise<void>;
+  /** Rend le clavier de jeu — le périphérique retire ses écouteurs. */
+  closePlayKeyboard(): Promise<void>;
   /** Hard-stop every runtime (panic): clears Strudel patterns, blanks Hydra, kills WebAudio sources. */
   hushAll(): Promise<void>;
   /**

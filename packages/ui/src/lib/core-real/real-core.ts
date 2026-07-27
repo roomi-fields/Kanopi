@@ -471,7 +471,7 @@ class RealCore implements CoreApi {
    *  hypothèse : c'est l'incident [96] du côté SORTIE (`runtime-MIDI/src/transports/midi.js:12`,
    *  « root cause du silence : l'hôte créait un MidiRuntime FRAIS »). `periphériques()` gèle ses
    *  instances : deux appels rendent les MÊMES objets. */
-  async enableMidiInput(): Promise<readonly PortInfo[]> {
+  async enableMidiInput(portId?: string): Promise<readonly PortInfo[]> {
     const device = periphériques().find((d) => d.device === 'midi');
     if (!device) {
       // Le paquet ne rend pas de périphérique MIDI : ça se crie, ça ne se devine pas.
@@ -489,8 +489,12 @@ class RealCore implements CoreApi {
     // ÉCHEC BRUYANT (contrat, garde 5) : `open()` REJETTE — Web MIDI absent, autorisation refusée,
     // port introuvable. On laisse remonter après l'avoir journalisé ; l'ancien `enableMidi` rendait
     // un `{ ok:false, reason }` que l'appelant pouvait ignorer, c'est fini avec lui.
+    //
+    // LE PORT CHOISI, QUAND IL Y EN A UN (association du panneau des entrées). Sans choix, on
+    // ouvre TOUT ce qui est branché — c'est ce que le périphérique fait d'un `open({})`, et c'est
+    // la vérité de l'état « rien n'est encore associé », pas un défaut fabriqué.
     try {
-      await device.open({});
+      await device.open(portId !== undefined ? { portId } : {});
     } catch (err) {
       this.log({ runtime: 'system', level: 'error', msg: `midi: ${String(err)}` });
       throw err;
@@ -504,6 +508,76 @@ class RealCore implements CoreApi {
       msg: `midi enabled: ${ports.length ? ports.map((p) => p.name).join(', ') : 'no input port detected'}`
     });
     return ports;
+  }
+
+  /** LE CLAVIER DE JEU S'OUVRE QUAND LE JEU PREND LA MAIN — et se ferme quand il la rend.
+   *
+   *  C'est TOUT le protocole de focus que le périphérique connaît, et il est écrit de son côté :
+   *  « ce périphérique ne consulte aucun focus : l'hôte l'ouvre quand le jeu a la main et le ferme
+   *  quand il la perd » (`runtime-in/src/devices/keyboard.js:9-11`). L'hôte ne pose donc AUCUN
+   *  écouteur clavier de jeu — les écouteurs, le code physique de la touche et la table vivent
+   *  entièrement dans `runtime-in` (contrat `hote-runtime-in.md`, garde 4).
+   *
+   *  AUCUNE TABLE N'EST REMISE ICI, et c'est délibéré : la bibliothèque des tables est VIDE tant
+   *  que Romain n'en a pas donné une (arbitrage 2026-07-27). Sans table, le périphérique émet le
+   *  code physique tel quel — l'adresse nue, forme explicitement autorisée. En fabriquer une
+   *  d'office poserait une identité implicite que la décision refuse.
+   *
+   *  L'INSTANCE EST TENUE par `periphériques()` : ouvrir et fermer parlent au MÊME objet, celui
+   *  qui tient ses écouteurs. */
+  async openPlayKeyboard(): Promise<void> {
+    const device = periphériques().find((d) => d.device === 'keyboard');
+    if (!device) {
+      this.log({ runtime: 'system', level: 'error', msg: 'clavier: aucun périphérique fourni' });
+      throw new Error('runtime-in ne fournit aucun périphérique clavier');
+    }
+    // Le MÊME puits et la MÊME base de temps que le MIDI : un bus unique, une seule règle de
+    // conversion — c'est elle, et elle seule, qui rend une note MIDI et une touche comparables.
+    device.bindSink({
+      emit: (e) => this.events.emit(e),
+      now: () => performance.now()
+    });
+    try {
+      await device.open({});
+    } catch (err) {
+      // ÉCHEC BRUYANT (contrat, garde 5) : un focus de jeu qui ne peut pas écouter ne se tait pas,
+      // il le dit — et l'appelant relâche le focus plutôt que de le laisser mentir.
+      this.log({ runtime: 'system', level: 'error', msg: `clavier: ${String(err)}` });
+      throw err;
+    }
+    this.log({ runtime: 'system', level: 'info', msg: 'clavier de jeu ouvert' });
+  }
+
+  /** LE GESTE DE CONNEXION D'UNE ENTRÉE OSC — l'endroit d'écoute, et rien de plus.
+   *
+   *  Dans un navigateur c'est un RELAIS `ws://…` (une socket UDP n'y existe pas ; `runtime-in`
+   *  choisit l'un ou l'autre sur la seule forme de l'adresse — `devices/osc.js:243`). L'adresse
+   *  vient de l'utilisateur : elle nomme SA machine, donc elle n'entre jamais dans une scène. */
+  async openOscInput(address: string): Promise<void> {
+    const device = periphériques().find((d) => d.device === 'osc');
+    if (!device) {
+      this.log({ runtime: 'system', level: 'error', msg: 'osc: aucun périphérique fourni' });
+      throw new Error('runtime-in ne fournit aucun périphérique OSC');
+    }
+    device.bindSink({
+      emit: (e) => this.events.emit(e),
+      now: () => performance.now()
+    });
+    try {
+      await device.open({ address });
+    } catch (err) {
+      this.log({ runtime: 'system', level: 'error', msg: `osc: ${String(err)}` });
+      throw err;
+    }
+    this.log({ runtime: 'system', level: 'info', msg: `osc input: écoute ${address}` });
+  }
+
+  /** Rend le clavier : le périphérique retire ses deux écouteurs. Idempotent de son côté. */
+  async closePlayKeyboard(): Promise<void> {
+    const device = periphériques().find((d) => d.device === 'keyboard');
+    if (!device) return;
+    await device.close();
+    this.log({ runtime: 'system', level: 'info', msg: 'clavier de jeu fermé' });
   }
 }
 

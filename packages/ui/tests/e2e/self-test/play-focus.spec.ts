@@ -18,11 +18,11 @@ import { expectNoConsoleErrors } from '../../helpers';
 //
 // Sélecteurs, tous pris dans les composants (jamais devinés) :
 //   - `.tbtn[title="Play"]` / `.tbtn.playing` — TransportCluster.svelte, comme transport.spec.ts ;
-//   - `.sb-item.play-focus` — Statusbar.svelte, le badge de mode.
-// La PRISE du focus passe par la façade pilote (`window.kanopi.setPlayFocus`, v13), qui délègue au
-// MÊME point d'entrée que le badge (`stores/play-focus`). Aucune scène ne déclare encore de
-// périphérique clavier (c'est `runtime-in` qui l'apportera) : le banc mesure donc l'arbitrage de
-// l'hôte, pas un périphérique.
+//   - `.sb-item.play-focus.pris` — Statusbar.svelte, le badge de mode PRIS (l'affordance de PRISE,
+//     elle, est toujours présente et porte `.armed` — voir `entrees-panneau.spec.ts`).
+// La PRISE du focus passe ici par la façade pilote (`window.kanopi.setPlayFocus`), qui délègue au
+// MÊME point d'entrée que le badge (`stores/play-focus`). Ce banc mesure l'ARBITRAGE de l'hôte ;
+// le branchement du périphérique et le geste de prise sont mesurés par `entrees-panneau.spec.ts`.
 
 // Même sonde que transport.spec.ts : 8 hauteurs occidentales en `:audio` (pas `:midi` — le garde
 // fail-loud MIDI bloquerait l'éval sans périphérique). Kronos est la seule autorité de transport :
@@ -94,7 +94,7 @@ test('le focus de jeu décide à qui appartient Espace, et il se voit', async ({
   await loadAndArm(page);
   await leaveEditFocus(page);
 
-  const badge = page.locator('.sb-item.play-focus');
+  const badge = page.locator('.sb-item.play-focus.pris');
   const playing = page.locator('.tbtn.playing');
 
   // 1. HORS focus de jeu : Espace est à l'interface, il démarre le transport.

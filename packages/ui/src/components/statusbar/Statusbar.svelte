@@ -5,6 +5,8 @@
   import { actors } from '../../stores/actors.svelte';
   import { consoleLog } from '../../stores/console.svelte';
   import { playFocus } from '../../stores/play-focus.svelte';
+  import { workspace } from '../../stores/workspace.svelte';
+  import { declaredInputsForScene } from '../../lib/runtimes/bpx-adapter';
   import { fmt2, fmt3 } from '../../lib/format/bar-beat';
 
   // Ableton-style Bar.Beat — both 1-indexed, beats per bar from time signature.
@@ -25,6 +27,18 @@
     new Set(actors.list.filter((a) => a.active).map((a) => a.runtime)).size
   );
   const errors = $derived(consoleLog.entries.filter((e) => e.level === 'error').length);
+
+  // LA DÉCLARATION ARME, L'UTILISATEUR PREND (décision
+  // `2026-07-27-focus-de-jeu-la-declaration-arme-l-utilisateur-prend.md`). Le rôle clavier est LU
+  // sur l'AST de la scène active, jamais re-analysé du texte ni fabriqué ici : sans `@in <rôle>
+  // transport.keyboard`, la scène n'attend rien du clavier et le geste reste grisé — pour que ça
+  // se SACHE, plutôt que de laisser cliquer sur un mode qui ne servirait à rien.
+  const roleClavier = $derived.by(() => {
+    const texte = workspace.activeTabId
+      ? (workspace.fileById(workspace.activeTabId)?.contents ?? '')
+      : '';
+    return declaredInputsForScene(texte).find((e) => e.transport === 'keyboard')?.name ?? null;
+  });
 </script>
 
 <footer class="statusbar">
@@ -49,15 +63,17 @@
   </div>
 
   <div class="sb-group">
-    <!-- FOCUS DE JEU — badge de MODE, affiché SEULEMENT quand le focus est pris (décision
-         2026-07-26). Un mode qui capte les touches nues doit se VOIR : sans lui, l'utilisateur
-         appuie sur Espace, rien ne démarre, et rien à l'écran ne dit pourquoi. Le clic le rend
-         (comme Échap) — c'est le seul geste d'interface ici. La PRISE, elle, viendra de la scène
-         qui déclare un périphérique clavier (`runtime-in`) : l'hôte arbitre le focus, il ne
-         fabrique pas une déclaration d'entrée qui n'existe pas encore. -->
+    <!-- FOCUS DE JEU — badge de MODE **et** geste de prise (décisions 2026-07-26 et 2026-07-27).
+         Un mode qui capte les touches nues doit se VOIR (sans ça, on appuie sur Espace, rien ne
+         démarre, et rien à l'écran ne dit pourquoi) ET doit se PRENDRE : « déclarer un périphérique
+         clavier ARME le focus — le prendre reste un geste de l'utilisateur ». Produire une scène
+         est le geste le plus fréquent du live coding ; s'il emportait les touches nues, l'auteur
+         perdrait son clavier au moment où il en fait le plus usage.
+         Trois états, un seul endroit : GRISÉ quand la scène ne déclare aucun clavier · PRENDRE
+         quand elle en déclare un · PRIS (clic ou Échap pour rendre). -->
     {#if playFocus.held}
       <button
-        class="sb-item play-focus"
+        class="sb-item play-focus pris"
         title="Focus de jeu pris{playFocus.source
           ? ` (${playFocus.source})`
           : ''} — les touches nues vont à la performance, les raccourcis Cmd/Ctrl restent à l'interface. Clic ou Échap pour rendre."
@@ -65,6 +81,18 @@
       >
         <span class="sb-dot"></span>
         <span class="dim">focus</span> <span class="accent">jeu</span>
+      </button>
+      <span class="sb-sep">│</span>
+    {:else}
+      <button
+        class="sb-item play-focus armed"
+        disabled={roleClavier === null}
+        title={roleClavier === null
+          ? 'Cette scène ne déclare aucun clavier de jeu — rien à prendre. Une scène l’arme en déclarant « @in <rôle> transport.keyboard ».'
+          : `Prendre le focus de jeu pour « ${roleClavier} » — les touches nues iront à la performance, les raccourcis Cmd/Ctrl restent à l’interface. Échap pour rendre.`}
+        onclick={() => roleClavier && playFocus.take(roleClavier)}
+      >
+        <span class="dim">focus</span> <span class="accent">jeu ?</span>
       </button>
       <span class="sb-sep">│</span>
     {/if}
@@ -117,6 +145,21 @@
     letter-spacing: inherit;
     color: inherit;
     cursor: pointer;
+    /* La barre d'état est une LIGNE : sans ça, « focus jeu ? » se coupait en deux et chevauchait
+       le compteur voisin (vu à l'écran, largeur d'un portable). */
+    white-space: nowrap;
+  }
+  /* GRISÉ quand la scène ne déclare aucun clavier : l'affordance reste VISIBLE pour qu'on sache
+     qu'elle existe, et inerte pour qu'on sache que cette scène-là n'attend rien du clavier. */
+  button.play-focus:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  button.play-focus.armed:not(:disabled) .accent {
+    color: var(--amber);
+  }
+  button.play-focus.armed:not(:disabled):hover .accent {
+    text-decoration: underline;
   }
 
   .sb-dot {

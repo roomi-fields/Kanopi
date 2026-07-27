@@ -777,6 +777,48 @@ export function interpsForScene(text: string): string[] {
   return codeVoiceInterps(buildOrchestration(a), backticksFromAst(c.ast));
 }
 
+/** Une ENTRÉE déclarée par la scène — recopiée VERBATIM du nœud `InDirective` de l'AST amont
+ *  (`bpscript/src/transpiler/parser.js:1211`). L'hôte ne complète rien : `mapping` reste `null`
+ *  quand la scène n'invoque aucune table, parce qu'il n'existe AUCUNE table par défaut (décision
+ *  `2026-07-27-forme-des-entrees-in-mapping-adresse-nue.md`). */
+export interface DeclaredInput {
+  /** Le RÔLE, tel que la scène le nomme (`@in pedale …`) — jamais un nom d'appareil. */
+  readonly name: string;
+  /** Le canal d'entrée déclaré : `midi` · `keyboard` · `osc`. Liste FERMÉE tenue en amont. */
+  readonly transport: string;
+  /** La table de correspondance invoquée, ou `null`. */
+  readonly mapping: string | null;
+}
+
+/**
+ * LES ENTRÉES QUE LA SCÈNE DÉCLARE — lues sur l'AST compilé, jamais re-analysées du texte.
+ *
+ * Même statut que `interpsForScene` juste au-dessus : `compileBps` est mémoïsé, donc appeler ceci
+ * à chaque frappe coûte le même compile que la puce d'état. Une scène qui ne compile pas ne
+ * déclare rien de lisible — liste vide, sans cri : la faute de compilation se dit déjà ailleurs
+ * (voyant de santé), la redire ici ferait deux voix pour un seul défaut.
+ *
+ * CE QUE L'HÔTE EN FAIT, ET SA LIMITE : il PRÉSENTE ces rôles et laisse l'utilisateur y associer un
+ * appareil réel. Il ne route rien — associer un événement reçu au rôle qui l'attend est le mandat
+ * de `@map`, en aval (contrat `hub/contrats/hote-runtime-in.md`).
+ */
+export function declaredInputsForScene(text: string): readonly DeclaredInput[] {
+  let c: { ast?: unknown };
+  try {
+    c = compileBps(text) as typeof c;
+  } catch {
+    return [];
+  }
+  const inputs = (c.ast as { inputs?: unknown } | null)?.inputs;
+  if (!Array.isArray(inputs)) return [];
+  return inputs
+    .filter((d): d is { name: string; transport: string; mapping?: string | null } => {
+      const n = d as { name?: unknown; transport?: unknown };
+      return typeof n?.name === 'string' && typeof n?.transport === 'string';
+    })
+    .map((d) => ({ name: d.name, transport: d.transport, mapping: d.mapping ?? null }));
+}
+
 // Extracts the `gm_*` soundfont names a strudel backtick's code USES, by regex over its
 // `sound(...)` / `.sound(...)` call arguments — no re-derivation, just a text scan of the code the
 // AST already carries verbatim (same status as `interpsForScene`'s AST read: the host TRANSPORTS

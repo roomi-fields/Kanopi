@@ -15,7 +15,22 @@
 // capte le geste de connexion et arbitre le focus ; toute la logique de périphérique (écouteurs
 // clavier, décodage, autorisation) vit dans `runtime-in`. Ce fichier ne pose donc AUCUN écouteur
 // clavier de jeu, ne connaît AUCUNE touche, et ne résout AUCUN nom : il porte un état d'interface
-// que le garde des raccourcis (`bindings.ts`) consulte, rien de plus.
+// que le garde des raccourcis (`bindings.ts`) consulte.
+//
+// CE QU'IL FAIT EN PLUS, ET POURQUOI C'EST ICI. Prendre le focus OUVRE le clavier de jeu, le rendre
+// le FERME — « l'hôte l'ouvre quand le jeu a la main et le ferme quand il la perd. C'est tout le
+// protocole de focus qu'il connaît » (`runtime-in/src/devices/keyboard.js:9-11`). Le branchement
+// vit ICI et nulle part ailleurs parce que le focus se rend par TROIS chemins — le badge, Échap
+// (`bindings.ts`), la façade de pilotage — et qu'un branchement posé sur le bouton laisserait le
+// périphérique écouter après un Échap, en silence.
+//
+// L'IMPORT DU CŒUR EST DIRECT, et c'est un choix mesuré : la version tardive (`import()` dans la
+// méthode) échouait à brancher au DEUXIÈME relâchement d'une même page — la promesse d'import
+// restait pendante, donc le périphérique continuait d'écouter en silence. Un branchement qui ne
+// tient que la première fois est pire qu'un branchement absent. L'import direct ne coûte rien ici :
+// le garde des raccourcis (`bindings.ts`) charge déjà le cœur pour le hush.
+import { core } from '../lib/core';
+
 class PlayFocusStore {
   /** Vrai quand une surface de jeu détient le focus : les raccourcis d'interface qui pourraient
    *  entrer en concurrence avec la performance se taisent (cf. `bindings.ts`). */
@@ -29,11 +44,19 @@ class PlayFocusStore {
   take(source?: string) {
     this.held = true;
     this.source = source ?? null;
+    // UN FOCUS QUI N'ÉCOUTE RIEN NE SE TIENT PAS. Si l'ouverture échoue (aucun périphérique
+    // clavier fourni, cible sans écoute), le cœur l'a déjà crié en erreur ; ici on RELÂCHE, pour
+    // que le badge ne dise pas « les touches vont au jeu » alors que personne ne les reçoit.
+    void core.openPlayKeyboard().catch(() => {
+      this.held = false;
+      this.source = null;
+    });
   }
 
   release() {
     this.held = false;
     this.source = null;
+    void core.closePlayKeyboard().catch(() => {});
   }
 
   toggle(source?: string) {
