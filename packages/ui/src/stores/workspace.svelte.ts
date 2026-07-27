@@ -102,6 +102,27 @@ class WorkspaceStore {
     return id;
   }
 
+  /** RETIRE un fichier de l'espace de travail — le SEUL point d'entrée de la suppression
+   *  (le bouton de l'arbre et la façade de pilotage y délèguent tous les deux).
+   *
+   *  CE QU'IL FAIT, ET RIEN DE PLUS : il retire l'entrée de CET espace de travail. Il ne touche
+   *  ni au disque, ni à la bibliothèque, ni au nuage — pour un document du nuage ouvert ici, la
+   *  projection locale disparaît et le document distant reste (c'est l'arbre du nuage qui possède
+   *  sa suppression, `cloudDocs.removeDoc`). L'appelant DIT laquelle des deux choses il fait :
+   *  pour un fichier local c'est irréversible, pour une projection du nuage ça ne l'est pas.
+   *
+   *  L'onglet se ferme d'abord : `closeTab` recalcule l'onglet actif ET relâche l'extraction de
+   *  blocs mémorisée (`forgetFile`). Retirer le fichier sans passer par là laisserait un onglet
+   *  ouvert sur un identifiant qui ne résout plus.
+   *  Rend `false` si l'identifiant n'existe pas — une suppression qui ne trouve rien ne se tait
+   *  pas, elle le dit à son appelant. */
+  removeFile(id: string): boolean {
+    if (!this.files.some((f) => f.id === id)) return false;
+    this.closeTab(id);
+    this.files = this.files.filter((f) => f.id !== id);
+    return true;
+  }
+
   /** Add a bundle of files (e.g. a library scene's files) as NEW tabs alongside
    * whatever is already open, and focus the given path (if any). Never wipes —
    * opening a scene from the library is an EDIT-ONLY gesture (Romain's tab

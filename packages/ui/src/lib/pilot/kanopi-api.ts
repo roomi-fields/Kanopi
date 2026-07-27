@@ -38,9 +38,9 @@ import { startFrameMonitor, readFrameStats } from './frame-stats';
 import { profileMainThread } from './stack-profiler';
 import { core } from '../core';
 
-// v13 — ajout du délégué `setPlayFocus` (focus de jeu, décision 2026-07-26). Surface ADDITIVE :
-// rien de retiré, les consommateurs de v12 continuent de marcher.
-const API_VERSION = 13;
+// v14 — ajout du délégué `removeFile` (suppression de fichier, KAN-14). Surface ADDITIVE :
+// rien de retiré, les consommateurs de v13 continuent de marcher.
+const API_VERSION = 14;
 
 // (L'observateur des events audio forwardés + l'inspection `modulations()` sont RETIRÉS avec le
 //  wrapper audio hôte — frontière Phase 2 audio : l'hôte ne forwarde plus d'events audio shapés,
@@ -116,6 +116,20 @@ export function installKanopiApi(): void {
     /** Coupe tout (panic) — même chemin que Ctrl+. */
     async hush(): Promise<void> {
       await core.hushAll();
+    },
+    /** SUPPRIME un fichier de l'espace de travail par son CHEMIN — même point d'entrée que la
+     *  corbeille de l'arbre (`workspace.removeFile`), donc mêmes effets : l'onglet se ferme,
+     *  l'extraction de blocs est relâchée, et rien d'autre n'est touché (ni disque, ni
+     *  bibliothèque, ni nuage — un document du nuage projeté ici reste dans l'espace perso).
+     *  Par CHEMIN et non par identifiant : un banc connaît le chemin qu'il a écrit, pas
+     *  l'identifiant minté à l'ouverture. Rend `false` si aucun fichier ne porte ce chemin — une
+     *  suppression qui ne trouve rien le DIT, elle ne se tait pas.
+     *  LA CONFIRMATION N'EST PAS ICI : elle vit dans l'interface, où vit le geste humain. Une
+     *  façade de pilotage qui redemanderait confirmation à un banc serait un dialogue avec
+     *  personne — mais c'est bien le MÊME effet qui part, pas un chemin parallèle. */
+    removeFile(path: string): boolean {
+      const cible = workspace.files.find((f) => f.path === path);
+      return cible ? workspace.removeFile(cible.id) : false;
     },
     /** Prend/rend le FOCUS DE JEU (décision 2026-07-26 : le focus décide, pas une priorité
      *  globale). Focus pris ⇒ une touche NUE appartient à la performance et l'hôte ne la consomme
