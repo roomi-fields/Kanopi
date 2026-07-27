@@ -51,28 +51,28 @@ A6 A2 -> A4 A4
 #A6 A2 -> A2 #A6
 -----
 @mode:random
-A3 <> dhinOO
-A3 <> dhaOO
+A3 <> dhin--
+A3 <> dha--
 A3 <> dhagena
 A4 <> tirakita
-A3 A3 <> dhagenadhinOO
-A3 A3 <> dhagenadhaOO
-A6 <> dhaOdhaOdhaO
-A6 <> dhaOtaOdhaO
+A3 A3 <> dhagenadhin--
+A3 A3 <> dhagenadha--
+A6 <> dha-dha-dha-
+A6 <> dha-ta-dha-
 A6 <> dheenedheenedheene
 A6 <> dheenedheenagena
-A6 <> dheenedhaOdheene
+A6 <> dheenedha-dheene
 A6 <> tagetirakita
 A6 <> teeneteenakena
 A6 <> dhatigegenaka
 -----
 @mode:random
 F'12 <> dhatigegenakateeneteenakena
-Q24 <> dhinOOdhagenadhaOOdhagenadhatigegenakadheenedheenagena
-F24 <> tagetirakitadhinOOdhagenadhatigegenakadheenedheenagena
-F24 <> tagetirakitagenaOdhagenadhatigegenakadheenedheenagena
-F'24 <> tagetirakitadhinOOdhagenadhatigegenakateeneteenakena
-F'24 <> tagetirakitagenaOdhagenadhatigegenakateeneteenakena
-F48 <> dhinOOdhagenadhaOOdhagenadhatigegenakadheenedheenagenatagetirakitadhinOOdhagenadhatigegenakateeneteenakena
-F48 <> dhinOOdhagenadhaOOdhagenadhatigegenakadheenedheenagenatagetirakitagenaOdhagenadhatigegenakateeneteenakena
+Q24 <> dhin--dhagenadha--dhagenadhatigegenakadheenedheenagena
+F24 <> tagetirakitadhin--dhagenadhatigegenakadheenedheenagena
+F24 <> tagetirakitagena-dhagenadhatigegenakadheenedheenagena
+F'24 <> tagetirakitadhin--dhagenadhatigegenakateeneteenakena
+F'24 <> tagetirakitagena-dhagenadhatigegenakateeneteenakena
+F48 <> dhin--dhagenadha--dhagenadhatigegenakadheenedheenagenatagetirakitadhin--dhagenadhatigegenakateeneteenakena
+F48 <> dhin--dhagenadha--dhagenadhatigegenakadheenedheenagenatagetirakitagena-dhagenadhatigegenakateeneteenakena
 -----
