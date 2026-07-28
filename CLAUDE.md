@@ -219,9 +219,16 @@ fini les éditions markdown du courrier à la main. Non optionnel.
 3. **Écrire / demander un arbitrage** : `~/dev/bp/hub/tour send <dest> "message"` (`architecte` est
    un destinataire valide). **Jamais** écrire dans ma propre boîte. Décision :
    `tour decide <slug> -m "titre" --impacts a,b,c` (notifie auto les impactés).
-4. **Fin de session** : MAJ moi-même ma ligne du `TABLEAU.md` + ma fiche `projets/kanopi.md` + ma
-   colonne `baseline-status.json`. L'architecte ne corrige plus mes pièces — il recadre.
-   « Le code fait foi » : un statut se vérifie sur pièces, jamais de mémoire.
+4. **Fin de session** : MAJ moi-même ma ligne du `TABLEAU.md` + ma fiche `projets/kanopi.md`.
+   L'architecte ne corrige plus mes pièces — il recadre. « Le code fait foi » : un statut se
+   vérifie sur pièces, jamais de mémoire.
+   ⛔ **`baseline-status.json` (à MA racine) est GELÉ — ne rien y écrire** (architecte, 2026-07-28).
+   Le tableau qu'il alimente est **mort** : jamais régénéré depuis le 14 juin, et sa colonne
+   vertébrale est la source dont on a acté qu'elle n'est PAS la baseline de conformité (ma colonne
+   y liste 5 grammaires, la campagne qui mesure vraiment en porte 113). **Écrire une ligne fraîche
+   dans un tableau périmé le rendrait crédible** — c'est le contraire du but. L'arbitrage (le
+   régénérer et l'entretenir, ou le supprimer avec son outil et sa référence) n'est pas rendu ;
+   personne n'écrit dedans en attendant. Signaler, jamais boucher le trou en silence.
 
 Détail : `hub/README.md` (§Le protocole + §Outil tour).
 
