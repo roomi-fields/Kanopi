@@ -13,13 +13,13 @@ const raw: { path: string; contents: string }[] = [
 
 @flag scene: intro:1, drop:2, break:3
 
-[scene==intro] S -> visuals
-[scene==drop]  S -> { drums, visuals, bass }
-[scene==break] S -> { visuals, bass }
+[scene==intro] S -> visuals_r
+[scene==drop]  S -> { drums_r, visuals_r, bass_r }
+[scene==break] S -> { visuals_r, bass_r }
 
-drums -> \`stack(s("bd*4").gain(0.9), s("~ cp").room(0.4), s("hh*8").gain(0.5).pan(sine.range(0.2, 0.8).slow(4)))\`
-visuals -> \`osc(60, 0.1, 1.5).modulate(noise(3)).rotate(() => time/10).out()\`
-bass -> \`note("c2 c2 eb2 g2").s("sawtooth").gain(0.4)\`
+drums_r -> drums.\`stack(s("bd*4").gain(0.9), s("~ cp").room(0.4), s("hh*8").gain(0.5).pan(sine.range(0.2, 0.8).slow(4)))\`
+visuals_r -> visuals.\`osc(60, 0.1, 1.5).modulate(noise(3)).rotate(() => time/10).out()\`
+bass_r -> bass.\`note("c2 c2 eb2 g2").s("sawtooth").gain(0.4)\`
 `
   },
   {
@@ -29,10 +29,10 @@ bass -> \`note("c2 c2 eb2 g2").s("sawtooth").gain(0.4)\`
 
 @flag scene: a:1, b:2
 
-[scene==a] S -> melody
+[scene==a] S -> melody_r
 [scene==b] S -> -
 
-melody -> \`note("c4 e4 g4 b4").s("sawtooth").gain(0.4).slow(2)\`
+melody_r -> melody.\`note("c4 e4 g4 b4").s("sawtooth").gain(0.4).slow(2)\`
 `
   }
 ];

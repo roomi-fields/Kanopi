@@ -4,6 +4,6 @@
 
 @actor beat  eval.strudel
 
-S -> beat
+S -> beat_r
 
-beat -> `note("c2*4").s("sawtooth").gain(0.5)`
+beat_r -> beat.`note("c2*4").s("sawtooth").gain(0.5)`

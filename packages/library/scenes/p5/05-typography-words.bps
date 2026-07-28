@@ -21,9 +21,9 @@
 
 @actor v  eval.p5
 
-S -> v
+S -> v_r
 
-v -> `
+v_r -> v.`
 // Define global variables: font and fontSize.
 let font;
 let fontsize = 40;

@@ -161,8 +161,8 @@ test('seek Hydra: l’horloge propre de la voix (synth.time) se recale sur le po
     page,
     'seek-hydra.bps',
     '@actor viz eval.hydra\n' +
-      'S -> viz viz viz viz viz viz viz viz\n' +
-      'viz -> `osc(10,0.1,0.8).out()`\n'
+      'S -> viz_r viz_r viz_r viz_r viz_r viz_r viz_r viz_r\n' +
+      'viz_r -> viz.`osc(10,0.1,0.8).out()`\n'
   );
   await evalWholeSession(page);
   await bottomTab(page, /structure/);
@@ -221,10 +221,10 @@ test('seek Strudel: repli best-effort — le motif redémarre depuis le début d
     '@actor drums eval.strudel\n' +
       '@actor lead eval.strudel\n' +
       'S -> calm full\n' +
-      'calm -> drums\n' +
-      'full -> { drums, lead }\n' +
-      'drums -> `note("c2*4").s("sine").gain(0.6)`\n' +
-      'lead  -> `note("e4 g4 b4 d5").s("triangle").gain(0.5)`\n'
+      'calm -> drums_r\n' +
+      'full -> { drums_r, lead_r }\n' +
+      'drums_r -> drums.`note("c2*4").s("sine").gain(0.6)`\n' +
+      'lead_r  -> lead.`note("e4 g4 b4 d5").s("triangle").gain(0.5)`\n'
   );
   await evalWholeSession(page);
   await bottomTab(page, /structure/);

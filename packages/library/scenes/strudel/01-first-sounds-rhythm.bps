@@ -18,6 +18,6 @@
 
 @actor v  eval.strudel
 
-S -> v
+S -> v_r
 
-v -> `sound("bd hh sd oh")`:4
+v_r -> v.`sound("bd hh sd oh")`:4

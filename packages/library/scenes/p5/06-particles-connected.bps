@@ -21,9 +21,9 @@
 
 @actor v  eval.p5
 
-S -> v
+S -> v_r
 
-v -> `
+v_r -> v.`
 // Array of path objects, each containing an array of particles
 let paths = [];
 

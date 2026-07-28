@@ -1,10 +1,10 @@
 // @name: Hydra + audio
-// @tagline: reactive visuals over a drum loop
-// @description: One self-contained `.bps`: a Strudel drums voice → audio and a Hydra visual → video, both inlined as backticks. Two named scenes guarded by a flag — `a` (drums only) and `b` (drums + visuals). Open it and look at the code to see how the flag picks which scene derives. Hydra renders behind the editor. Ctrl+. to hush.
+// @tagline: reactive visuals_r over a drum loop
+// @description: One self-contained `.bps`: a Strudel drums_r voice → audio and a Hydra visual → video, both inlined as backticks. Two named scenes guarded by a flag — `a` (drums_r only) and `b` (drums_r + visuals_r). Open it and look at the code to see how the flag picks which scene derives. Hydra renders behind the editor. Ctrl+. to hush.
 // @language: hydra
 // @outputs: audio, visual
 // @level: didactic
-// @tags: visuals, hydra, scenes
+// @tags: visuals_r, hydra, scenes
 //
 // Hydra + audio (migré de hydra-audio.kanopi).
 // Deux voix de code : batterie en Strudel (eval.strudel) → audio, et visuel en
@@ -18,16 +18,16 @@
 @actor drums  eval.strudel
 @actor visuals  eval.hydra
 
-[scene==a] S -> drums
-[scene==b] S -> { drums, visuals }
+[scene==a] S -> drums_r
+[scene==b] S -> { drums_r, visuals_r }
 
-drums -> `stack(
+drums_r -> drums.`stack(
   s("bd ~ bd ~").gain(0.9),
   s("~ sd").room(0.4),
   s("hh*8").gain(0.4)
 )`
 
-visuals -> `osc(20, 0.1, 1.2)
+visuals_r -> visuals.`osc(20, 0.1, 1.2)
   .kaleid(4)
   .modulate(noise(2), 0.3)
   .rotate(() => time / 6)

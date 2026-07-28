@@ -19,8 +19,8 @@
 
 @actor v  eval.mercury
 
-S -> v
+S -> v_r
 
-v -> `set scale minor_pentatonic d
+v_r -> v.`set scale minor_pentatonic d
 
 new synth saw note(0 3 5 7) time(1/8) shape(1 200)`:4

@@ -1,13 +1,13 @@
 // @name: Strudel — inheritance + tag override
 // @tagline: inheritance plus a per-terminal tag override
-// @description: A code voice: two forms shown — inheritance (the eval.strudel actor types the beat rule) and a per-terminal tag override (sc:) for a one-off SuperCollider line in the flow.
+// @description: A code voice: two forms shown — inheritance (the eval.strudel actor types the beat_r rule) and a per-terminal tag override (sc:) for a one-off SuperCollider line in the flow.
 // @language: strudel
 // @outputs: audio
 // @level: intermediate
 // @tags: strudel, patterns
 //
 // Voix de code — STRUDEL (patterns, live coding).
-// Deux formes montrées : héritage (acteur `beat eval.strudel`) sur la règle `beat`,
+// Deux formes montrées : héritage (acteur `beat_r eval.strudel`) sur la règle `beat_r`,
 // et override par TAG propre (`sc:`) pour une ligne SuperCollider ponctuelle.
 // NB : SC exige un backend natif (SuperDirt/scsynth) — cette démo montre la FORME
 // des voix ; en navigateur la ligne sc: ne sonne pas (pas de serveur SC).
@@ -17,6 +17,6 @@
 
 @actor beat  eval.strudel
 
-S -> beat beat beat `sc: Synth.new(\ping)`
+S -> beat_r beat_r beat_r `sc: Synth.new(\ping)`
 
-beat -> `s("bd sn hh sn").gain(0.9)`
+beat_r -> beat.`s("bd sn hh sn").gain(0.9)`

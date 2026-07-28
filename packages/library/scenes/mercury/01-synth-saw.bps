@@ -19,6 +19,6 @@
 
 @actor v  eval.mercury
 
-S -> v
+S -> v_r
 
-v -> `new synth saw note(0 0) time(1/16) shape(1 80)`:4
+v_r -> v.`new synth saw note(0 0) time(1/16) shape(1 80)`:4

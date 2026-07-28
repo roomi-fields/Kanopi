@@ -20,9 +20,9 @@
 
 @actor v  eval.p5
 
-S -> v
+S -> v_r
 
-v -> `
+v_r -> v.`
 let osc;
 
 function setup() {

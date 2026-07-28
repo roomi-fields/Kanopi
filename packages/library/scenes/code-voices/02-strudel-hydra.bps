@@ -14,13 +14,13 @@
 @actor groove  eval.strudel
 @actor viz  eval.hydra
 
-S -> { groove, viz }
+S -> { groove_r, viz_r }
 
-groove -> `stack(
+groove_r -> groove.`stack(
   note("c2*4").s("sawtooth").gain(0.5),
   note("c5*8").s("square").gain(0.2)
 )`
 
-viz -> `osc(60, 0.1, () => 0.5 + 0.5 * Math.sin(beat * Math.PI))
+viz_r -> viz.`osc(60, 0.1, () => 0.5 + 0.5 * Math.sin(beat * Math.PI))
   .rotate(() => bar * 0.05)
   .out()`

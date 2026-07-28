@@ -61,9 +61,9 @@ test('an unresolved @library.strudel bank turns the compile chip RED (signal 2, 
 
 @actor beat  eval.strudel
 
-S -> beat
+S -> beat_r
 
-beat -> \`note("c2*4").s("sawtooth").gain(0.5)\`
+beat_r -> beat.\`note("c2*4").s("sawtooth").gain(0.5)\`
 `;
 
   await loadAndProduce(page, 'bad-bank.bps', broken);

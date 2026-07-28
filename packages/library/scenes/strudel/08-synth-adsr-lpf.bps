@@ -19,6 +19,6 @@
 
 @actor v  eval.strudel
 
-S -> v
+S -> v_r
 
-v -> `note("c3 bb2 f3 eb3").sound("sawtooth").lpf(600).attack(.1).decay(.1).sustain(.25).release(.2)`:4
+v_r -> v.`note("c3 bb2 f3 eb3").sound("sawtooth").lpf(600).attack(.1).decay(.1).sustain(.25).release(.2)`:4

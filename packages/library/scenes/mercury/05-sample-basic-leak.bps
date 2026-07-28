@@ -25,7 +25,7 @@
 
 @actor v  eval.mercury
 
-S -> v
+S -> v_r
 
-v -> `new sample kick_909 time(1/4)
+v_r -> v.`new sample kick_909 time(1/4)
 new sample hat_909 time(1/4 1/8) gain(0.6)`:4

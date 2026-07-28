@@ -5,7 +5,7 @@
 @actor beat  eval.strudel
 @actor viz  eval.hydra
 
-S -> { beat, viz }
+S -> { beat_r, viz_r }
 
-beat -> `note("c2*4").s("sawtooth").gain(0.5)`
-viz  -> `osc(60, 0.1, 1.5).out()`
+beat_r -> beat.`note("c2*4").s("sawtooth").gain(0.5)`
+viz_r  -> viz.`osc(60, 0.1, 1.5).out()`

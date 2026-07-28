@@ -7,7 +7,7 @@
 // @tags: mercury, live-coding
 //
 // Voix de code — MERCURY (live coding minimal).
-// L'acteur `lead eval.mercury` type le langage ; héritage sur la règle de tête.
+// L'acteur `lead_r eval.mercury` type le langage ; héritage sur la règle de tête.
 // Rappel timing (ratifié) : `set tempo 110` dans le patch serait ÉCRASÉ — la voix
 // est asservie au tempo maître de Kronos ; son rythme s'échelonne, polytempo = ratio.
 
@@ -16,8 +16,8 @@
 
 @actor lead  eval.mercury
 
-S -> lead lead
+S -> lead_r lead_r
 
-lead -> `new synth saw
+lead_r -> lead.`new synth saw
   note(0 3 5 7) time(1/8)
   shape(1 200)`

@@ -4,15 +4,15 @@
 // @language: strudel
 // @outputs: audio
 // @level: didactic
-// @tags: drums, strudel
+// @tags: drums_r, strudel
 // @showcase
 //
 // 01 — Strudel solo (migré de 01-strudel-solo.kanopi).
 // Une voix de code : Strudel (eval) → sortie audio (transport).
-// Évaluer la voix `drums`, puis couper.
+// Évaluer la voix `drums_r`, puis couper.
 
 @actor drums  eval.strudel
 
-S -> drums
+S -> drums_r
 
-drums -> `note("c3 e3 g3 c4").s("sine").gain(0.7)`
+drums_r -> drums.`note("c3 e3 g3 c4").s("sine").gain(0.7)`

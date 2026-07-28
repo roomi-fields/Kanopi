@@ -8,14 +8,14 @@
 //
 // Csound intro (migré de csound-intro.kanopi).
 // Une voix de code Csound → audio. Csound est le langage DSP de lignée MIT
-// (Barry Vercoe, 1986, ~1700 opcodes). Évaluer la voix `synth` : le moteur
+// (Barry Vercoe, 1986, ~1700 opcodes). Évaluer la voix `synth_r` : le moteur
 // démarre et les notes de la partition jouent. Ctrl+. pour couper.
 
 @actor synth  eval.csound
 
-S -> synth
+S -> synth_r
 
-synth -> `<CsoundSynthesizer>
+synth_r -> synth.`<CsoundSynthesizer>
 <CsOptions>
 -odac
 </CsOptions>

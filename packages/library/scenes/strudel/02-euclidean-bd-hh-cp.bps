@@ -19,6 +19,6 @@
 
 @actor v  eval.strudel
 
-S -> v
+S -> v_r
 
-v -> `s("bd(3,8), hh cp")`:4
+v_r -> v.`s("bd(3,8), hh cp")`:4

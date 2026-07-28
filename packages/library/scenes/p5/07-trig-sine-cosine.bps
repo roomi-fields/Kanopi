@@ -18,9 +18,9 @@
 
 @actor v  eval.p5
 
-S -> v
+S -> v_r
 
-v -> `
+v_r -> v.`
 let circleX = 200;
 let circleY = 150;
 let circleRadius = 75;

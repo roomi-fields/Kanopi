@@ -222,9 +222,9 @@ test("son inexistant (ASYNC) → onStrudelError remonte ET le chip passe ROUGE '
 
 @actor v  eval.strudel
 
-S -> v
+S -> v_r
 
-v -> \`sound("nawak_pas_un_son")\`:4
+v_r -> v.\`sound("nawak_pas_un_son")\`:4
 `;
 
   // Armé AVANT de charger/évaluer la scène : errorLogger('[getTrigger] error: …') part de
@@ -288,9 +288,9 @@ test('une erreur JS synchrone dans un acteur eval.strudel fait passer le chip ro
 
 @actor v  eval.strudel
 
-S -> v
+S -> v_r
 
-v -> \`nonexistentStrudelFn("x")\`:4
+v_r -> v.\`nonexistentStrudelFn("x")\`:4
 `;
 
   await loadAndFocus(page, 'sync-throw.bps', syncThrow);

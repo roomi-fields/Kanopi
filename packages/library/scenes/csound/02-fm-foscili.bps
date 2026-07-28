@@ -19,9 +19,9 @@
 
 @actor v  eval.csound
 
-S -> v
+S -> v_r
 
-v -> `<CsoundSynthesizer>
+v_r -> v.`<CsoundSynthesizer>
 <CsOptions>
 -odac
 </CsOptions>

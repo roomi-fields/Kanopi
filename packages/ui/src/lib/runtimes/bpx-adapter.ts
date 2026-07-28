@@ -668,48 +668,40 @@ function backticksFromAst(ast: unknown): BacktickTable {
   return out;
 }
 
-// Map each orchestrated actor to the backtick token its rule emits, when the
-// actor is a CODE voice. A rule `groove -> `…`` has the actor name as its LHS
-// symbol and a `BacktickInline` (carrying `_btName`) in its RHS. We pair the two
-// so the adapter can stop/re-eval a single code voice on arm/disarm (the BT
-// token itself carries no actor on the derivation tree). Native (notes) voices
-// have no entry — they are armed/disarmed through the dispatcher's note gate.
+// L ACTEUR D UNE VOIX DE CODE SE LIT SUR LE BLOC, PAR LA GRAPHIE — jamais sur le nom de la règle.
+//
+// ⚠️ CE QUI ÉTAIT LU AVANT, ET POURQUOI C'EST MORT (2026-07-29). Cette fonction lisait le NOM DE LA
+// TÊTE DE RÈGLE et le cherchait dans la table des acteurs : `groove -> \`…\`` liait le bloc à
+// l'acteur `groove` PARCE QUE LES DEUX PORTAIENT LE MÊME NOM. Romain a interdit cette homonymie —
+// un acteur est un ensemble de terminaux, une tête de règle est une étiquette, les amalgamer est
+// une erreur. Ce chemin ne peut donc plus RIEN trouver : une tête ne peut plus porter un nom
+// d'acteur. Il est RETIRÉ, pas gardé à côté.
+//
+// CE QUE ÇA COÛTAIT DE NE PAS LE VOIR, mesuré à l'écran avant la réparation : avec un bloc
+// simplement TAGUÉ (`\`strudel: …\``), le langage revenait mais l'identité NON — le bloc
+// n'appartenait à personne. Le muet par acteur du mixeur et l'armement perdaient leur sujet, et
+// surtout LE VOYANT DE SANTÉ RESTAIT VERT pendant qu'une voix erreurait en continu (le répartiteur
+// clé ses erreurs en `fichier::acteur`, plus personne ne répondait à ce nom). 52 scènes, 59 acteurs.
+//
+// LA GRAPHIE : `acteur.\`code\`` — l'acteur qualifie le bloc à droite, là où il qualifie déjà une
+// note. Elle rend les DEUX : le langage (le moteur déclaré de l'acteur) ET l'identité. Le nœud
+// porte alors `actor` en clair, et c'est CE champ qu'on lit. Un tag explicite reste prioritaire
+// pour le langage, mais il ne dit rien de l'acteur : un bloc tagué sans point est un ORPHELIN
+// ASSUMÉ (une ligne ponctuelle dans le flux), et il n'a pas d'entrée ici — c'est voulu.
 export function btTokenByActor(ast: unknown): Record<string, string> {
   const out: Record<string, string> = {};
   const seen = new Set<unknown>();
-  const findBt = (n: unknown, fbSeen: Set<unknown>): string | undefined => {
-    if (!n || typeof n !== 'object' || fbSeen.has(n)) return undefined;
-    fbSeen.add(n); // cycle guard: a shared/back-referenced node must not re-recurse
-    const node = n as Record<string, unknown>;
-    if (node.type === 'BacktickInline' && typeof node._btName === 'string') return node._btName;
-    for (const v of Object.values(node)) {
-      if (Array.isArray(v)) {
-        for (const x of v) {
-          const r = findBt(x, fbSeen);
-          if (r) return r;
-        }
-      } else if (v && typeof v === 'object') {
-        const r = findBt(v, fbSeen);
-        if (r) return r;
-      }
-    }
-    return undefined;
-  };
   const walk = (n: unknown): void => {
     if (!n || typeof n !== 'object' || seen.has(n)) return;
     seen.add(n);
     const node = n as Record<string, unknown>;
-    if (node.type === 'Rule') {
-      const lhs = node.lhs as Array<{ name?: string; negated?: boolean }> | undefined;
-      // Prérequis flip AST (chantier inline, [497]) : des ATOMES NIÉS (`Symbol{negated:true}`)
-      // peuvent PRÉFIXER le LHS d'une règle contextuelle — la TÊTE de règle est le premier
-      // atome NON nié, jamais un contexte nié. INERTE pré-flip (aucune tête niée n'existe
-      // dans le flux actuel : `find` sans `negated` ≡ `lhs[0]`).
-      const name = lhs?.find((s) => !s?.negated)?.name;
-      if (typeof name === 'string') {
-        const bt = findBt(node.rhs, new Set());
-        if (bt) out[name] = bt;
-      }
+    if (
+      typeof node.type === 'string' &&
+      node.type.startsWith('Backtick') &&
+      typeof node.actor === 'string' &&
+      typeof node._btName === 'string'
+    ) {
+      out[node.actor] = node._btName;
     }
     for (const v of Object.values(node)) {
       if (Array.isArray(v)) v.forEach(walk);

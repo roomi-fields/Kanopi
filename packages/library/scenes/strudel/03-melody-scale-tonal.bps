@@ -21,6 +21,6 @@
 
 @actor v  eval.strudel
 
-S -> v
+S -> v_r
 
-v -> `n("0 2 4 <[6,8] [7,9]>").scale("C:minor").sound("gm_piano")`:4
+v_r -> v.`n("0 2 4 <[6,8] [7,9]>").scale("C:minor").sound("gm_piano")`:4

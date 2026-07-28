@@ -1,6 +1,6 @@
 // @name: Strudel — code voice
 // @tagline: a synth bassline inherited from the actor
-// @description: A code voice: the actor (eval.strudel) types the language, so a flow backtick in its head rule inherits Strudel with no tag. A synth bass pattern (no samples needed — it sounds without the network) sits in the rule flow as a terminal; Kronos owns start/stop/loop, the code is captured then transported.
+// @description: A code voice: the actor (eval.strudel) types the language, so a flow backtick in its head rule inherits Strudel with no tag. A synth bass_r pattern (no samples needed — it sounds without the network) sits in the rule flow as a terminal; Kronos owns start/stop/loop, the code is captured then transported.
 // @language: strudel
 // @outputs: audio
 // @level: didactic
@@ -9,7 +9,7 @@
 //
 // Voix de code — STRUDEL (patterns, live coding).
 // Le langage vient de l'eval de l'acteur (`eval.strudel`) : le backtick de flux
-// dans une règle de tête `bass` HÉRITE de strudel — pas besoin de tag.
+// dans une règle de tête `bass_r` HÉRITE de strudel — pas besoin de tag.
 // (Forme tag explicite équivalente : `strudel: note("c2 eb2")` hors acteur.)
 // Motif SYNTHÉ (sonne sans réseau) ; pour des samples : `@library.strudel "dirt-samples"`
 // puis `s("bd sd hh hh")`. Décision hub 2026-07-04-cv-curve-syntaxe-backtick-type.md + [299].
@@ -19,6 +19,6 @@
 
 @actor bass  eval.strudel
 
-S -> bass bass bass bass
+S -> bass_r bass_r bass_r bass_r
 
-bass -> `note("c2 eb2 g2 c3").s("sawtooth")`
+bass_r -> bass.`note("c2 eb2 g2 c3").s("sawtooth")`

@@ -1,8 +1,8 @@
 // mercury fixture (migré de mercury.kanopi) — voix-code Mercury → audio.
 @actor melody  eval.mercury
 
-S -> melody
+S -> melody_r
 
-melody -> `set tempo 120
+melody_r -> melody.`set tempo 120
 
 new synth saw time(1/8) note(0 0) shape(1 1/16 0.6) gain(0.6)`

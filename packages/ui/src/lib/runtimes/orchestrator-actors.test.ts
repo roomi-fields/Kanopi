@@ -54,9 +54,9 @@ beforeEach(() => {
 
 const SRC = `@actor groove  eval.strudel
 @actor viz  eval.hydra
-S -> { groove, viz }
-groove -> \`stack(note("c2*4"))\`
-viz -> \`osc(60).out()\`
+S -> { groove_r, viz_r }
+groove_r -> groove.\`stack(note("c2*4"))\`
+viz_r -> viz.\`osc(60).out()\`
 `;
 
 // Verbatim copy of the bundled orchestrator the UI ships
@@ -67,14 +67,14 @@ const BUNDLED = `// 02 — Strudel + Hydra synchronisés sur le transport Kanopi
 @actor groove  eval.strudel
 @actor viz  eval.hydra
 
-S -> { groove, viz }
+S -> { groove_r, viz_r }
 
-groove -> \`stack(
+groove_r -> groove.\`stack(
   note("c2*4").s("sawtooth").gain(0.5),
   note("c5*8").s("square").gain(0.2)
 )\`
 
-viz -> \`osc(60, 0.1, () => 0.5 + 0.5 * Math.sin(beat * Math.PI))
+viz_r -> viz.\`osc(60, 0.1, () => 0.5 + 0.5 * Math.sin(beat * Math.PI))
   .rotate(() => bar * 0.05)
   .out()\`
 `;

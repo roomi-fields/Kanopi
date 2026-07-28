@@ -1,6 +1,6 @@
 // @name: Strudel intro
-// @tagline: drums + bass, two named scenes
-// @description: One self-contained `.bps`: a Strudel drums voice and a Strudel bass voice, both inlined as backticks → audio. Two named scenes guarded by a flag — `intro` (drums only) and `full` (drums + bass). Open it and look at the code to see how the flag picks which scene derives. Ctrl+. to hush.
+// @tagline: drums_r + bass_r, two named scenes
+// @description: One self-contained `.bps`: a Strudel drums_r voice and a Strudel bass_r voice, both inlined as backticks → audio. Two named scenes guarded by a flag — `intro` (drums_r only) and `full` (drums_r + bass_r). Open it and look at the code to see how the flag picks which scene derives. Ctrl+. to hush.
 // @language: strudel
 // @outputs: audio
 // @level: didactic
@@ -19,16 +19,16 @@
 @actor drums  eval.strudel
 @actor bass  eval.strudel
 
-[scene==intro] S -> drums
-[scene==full]  S -> { drums, bass }
+[scene==intro] S -> drums_r
+[scene==full]  S -> { drums_r, bass_r }
 
-drums -> `stack(
+drums_r -> drums.`stack(
   s("bd*4").gain(0.9),
   s("~ cp").room(0.3),
   s("hh*8").gain(0.5).pan(sine.range(0.2, 0.8).slow(4))
 )`
 
-bass -> `note("c2 c2 eb2 g2")
+bass_r -> bass.`note("c2 c2 eb2 g2")
   .sound("sawtooth")
   .cutoff(sine.range(400, 2000).slow(4))
   .gain(0.5)`

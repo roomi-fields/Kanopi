@@ -8,13 +8,13 @@
 //
 // JS / WebAudio (migré de js-webaudio.kanopi).
 // Une voix de code JS brut → audio. `audio` est l'AudioContext partagé,
-// injecté par l'adaptateur. Évaluer la voix `tone` ; couper avec Ctrl+.
+// injecté par l'adaptateur. Évaluer la voix `tone_r` ; couper avec Ctrl+.
 
 @actor tone  eval.js
 
-S -> tone
+S -> tone_r
 
-tone -> `// 'audio' est l'AudioContext partagé injecté par le runtime.
+tone_r -> tone.`// 'audio' est l'AudioContext partagé injecté par le runtime.
 const osc = audio.createOscillator();
 const gain = audio.createGain();
 osc.frequency.value = 220;

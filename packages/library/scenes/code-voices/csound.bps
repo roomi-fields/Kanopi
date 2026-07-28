@@ -6,8 +6,8 @@
 // @level: intermediate
 // @tags: csound, synthesis
 //
-// Voix de code — CSOUND (synthèse audio).
-// L'acteur `synth eval.csound` type le langage ; le backtick de flux hérite de csound.
+// Voix de code — CSOUND (synth_rèse audio).
+// L'acteur `synth_r eval.csound` type le langage ; le backtick de flux hérite de csound.
 // Le tempo absolu éventuel du patch est ÉCRASÉ : Kronos est seul maître (modèle DAW,
 // décision 2026-07-04-modele-timing-voix-de-code.md).
 
@@ -16,9 +16,9 @@
 
 @actor synth  eval.csound
 
-S -> synth synth synth synth
+S -> synth_r synth_r synth_r synth_r
 
-synth -> `instr 1
+synth_r -> synth.`instr 1
   aOut oscili 0.3, 220
   outs aOut, aOut
 endin`

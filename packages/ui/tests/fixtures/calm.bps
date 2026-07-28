@@ -1,6 +1,6 @@
 // Scène enfant "calm" — batterie seule (voix-code Strudel → audio).
 @actor drums  eval.strudel
 
-S -> drums
+S -> drums_r
 
-drums -> `note("c2*4").s("sine").gain(0.6)`
+drums_r -> drums.`note("c2*4").s("sine").gain(0.6)`

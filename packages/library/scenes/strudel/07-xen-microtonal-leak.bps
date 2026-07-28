@@ -22,6 +22,6 @@
 
 @actor v  eval.strudel
 
-S -> v
+S -> v_r
 
-v -> `"0 1 2 3 4 5".tune("hexany15").freq().s("sawtooth")`:4
+v_r -> v.`"0 1 2 3 4 5".tune("hexany15").freq().s("sawtooth")`:4

@@ -41,9 +41,9 @@ beforeEach(() => {
 
 const ORCH = `@actor groove eval.strudel
 @actor viz eval.hydra
-S -> { groove, viz }
-groove -> \`stack(note("c2*4"))\`
-viz -> \`osc(60).out()\`
+S -> { groove_r, viz_r }
+groove_r -> groove.\`stack(note("c2*4"))\`
+viz_r -> viz.\`osc(60).out()\`
 `;
 
 // A plain non-orchestrated program (no @actor) — the kind that must REPLACE the
