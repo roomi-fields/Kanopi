@@ -8,12 +8,17 @@
  *  1. `bpx`'s hand-maintained `dist/index.d.ts` omits `createBPx`, although the
  *     bundled `dist/index.js` exports it (verified: dist/index.js ~line 20045).
  *     Reported to the BPx maintainer — the `.d.ts` should re-export it.
- *  2. `bp3-frontend` ships raw TypeScript whose relative imports carry explicit
- *     `.ts` extensions; following them under svelte-check trips
- *     `allowImportingTsExtensions`. The path mapping stops that descent.
  *
- * Both modules are re-exported below so `tsconfig.paths` resolves the bare
- * specifiers (`bpx`, `bp3-frontend`) to this single module file.
+ * ⛔ `bp3-frontend` N'EST PLUS ICI, et il ne doit pas y revenir (2026-07-28). Sa surface était
+ * RECOPIÉE À LA MAIN dans ce fichier pour empêcher le contrôleur de descendre dans ses sources
+ * (leurs imports portent l'extension `.ts`). Cette copie MENTAIT : elle déclarait `isNoteName` à UN
+ * argument là où l'amont en attend DEUX — le second étant la convention de notes, qui DÉCIDE si un
+ * mot est une note. Rien ne rougissait, et l'amont a chiffré l'exposition : 33 grammaires sur 113
+ * changent de réponse selon la convention lue. Une surface écrite à la main chez le consommateur ne
+ * ment pas « un peu » : elle ment ou elle est juste, et aucune rigueur individuelle ne l'attrape.
+ * On lit donc les VRAIS types à la source (`allowImportingTsExtensions`, plus de mappage pour ce
+ * paquet). Le jour où l'on est tenté de recopier une signature ici, c'est ce paragraphe qu'il faut
+ * relire.
  */
 
 // --- bpx -------------------------------------------------------------------
@@ -139,66 +144,6 @@ export function renderChain(
 // spécificateur NU `bpx` l'est), donc cet import atteint l'amont sans boucler.
 export type { Session } from 'bpx/dist/index.js';
 export { createSession } from 'bpx/dist/index.js';
-
-// --- bp3-frontend ----------------------------------------------------------
-export interface ParseError {
-  code: string;
-  message: string;
-  line: number;
-}
-export interface ParseBP3Options {
-  alphabetNames?: string[];
-  /** Per-symbol sound routing: alphabet symbols that carry a sound prototype
-   *  (loaded by the caller from the -so/-mi/-cs that fileRefs signals). */
-  soundSymbols?: string[];
-  /** Note convention from the `-se` (ENGLISH=0, FRENCH=1, INDIAN=2). Drives the
-   *  BP3-faithful alphabet KEY emitted on the actor (`bp3_english`/`bp3_fr`/`bp3_indian`)
-   *  so Kairos resolves FR/sargam pitches — finding [79]. Read via
-   *  `parseSeFile(...).protocol.noteConvention`. */
-  noteConvention?: number | null;
-}
-export interface FileRef {
-  prefix: string;
-  name: string;
-  line: number;
-}
-/** One per SOUNDING alphabet symbol (decision routage-texte-son-par-symbole). */
-export interface SoundAssignment {
-  type: 'SoundAssignment';
-  subject: string;
-  target:
-    | { kind: 'named-ref'; name: string }
-    | { kind: 'inline-props'; props: Record<string, unknown> };
-  [k: string]: unknown;
-}
-export interface SceneActor {
-  name: string;
-  assignments?: SoundAssignment[];
-  [k: string]: unknown;
-}
-export interface ParseBP3Result {
-  ast: { actors?: SceneActor[]; [k: string]: unknown } | null;
-  fileRefs: FileRef[];
-  errors: ParseError[];
-  notes: string[];
-}
-export function parseBP3(source: string, options?: ParseBP3Options): ParseBP3Result;
-/** Parse a `-se.*` settings file (JSON) → engine timing the BPx session consumes. */
-export function parseSeFile(text: string): {
-  engine: SeEngineSettings;
-  /** PROTOCOLE du harnais BP3 (convention de notes, seed, c4key…). `noteConvention`
-   *  (0=anglaise, 1=française, 2=indienne) pilote la clé d'alphabet BP3-fidèle — finding [79]. */
-  protocol?: { noteConvention?: number | null; [k: string]: unknown };
-  [k: string]: unknown;
-};
-/** Extract the sounding-symbol names from a `-so`/`-mi`/`-cs` aux file. */
-export function parseSoundObjects(text: string): string[];
-/** True when a symbol is a pitch name (English / solfège / sargam) — sounds by default. */
-export function isNoteName(name: string): boolean;
-/** Alphabet symbol names declared in a `-al.*` file. */
-export function parseAlFile(text: string): string[];
-/** The sound file a `-al.*` alphabet points to (`-gr → -al → -so/-mi/-cs` chain). */
-export function alphabetSoundRef(text: string): { prefix: string; name: string } | null;
 
 // --- bpscript --------------------------------------------------------------
 // BPScript transpiler facade. Ships raw ESM JS with no `.d.ts`; we only use the

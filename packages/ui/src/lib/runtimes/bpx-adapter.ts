@@ -10,13 +10,17 @@ import {
   parseAlFile,
   alphabetSoundRef
 } from 'bp3-frontend';
-import type { FileRef, SeEngineSettings, SceneActor } from 'bp3-frontend';
+import type { FileRef, SeEngineSettings, ParseBP3Result } from 'bp3-frontend';
+// L'ACTEUR VIENT DU TYPE PUBLIÉ, il ne se redéclare pas ici. `SceneActor` était une forme
+// INVENTÉE par la copie de surface locale (supprimée le 2026-07-28) : l'amont n'a jamais publié ce
+// nom. On dérive donc l'acteur de ce qu'il publie vraiment — l'arbre de `parseBP3`.
+type Bp3Actor = NonNullable<NonNullable<ParseBP3Result['ast']>['actors']>[number];
 // Catalogue d'alphabets BP3-FIDÈLES (finding [79], b3a29f8, co-conçu Kairos). Donnée pure
 // (tables C verbatim bp3_english/bp3_fr/bp3_indian + diapasons authentiques) que l'hôte FUSIONNE
 // dans sa `pitchLib` (cf. l'en-tête du module amont) : le frontal .gr émet une CLÉ d'alphabet, Kairos
 // résout token→hauteur via son résolveur GÉNÉRIQUE en lisant cette DÉFINITION. Dernier maillon [79]
 // (part a) : sans la fusion, une grammaire FR/sargam émet la clé mais résout MUET.
-import { BP3_PITCH_CATALOG, bp3AlphabetKey } from 'bp3-frontend/src/emit/bp3-alphabets';
+import { BP3_PITCH_CATALOG, bp3AlphabetKey } from 'bp3-frontend';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 // bpscript's musical catalogs, imported AS-IS (same path as
 // lib/library/resources.ts). A `.bps` that declares `@alphabet.X` (+ optional
@@ -426,7 +430,7 @@ export function resolveGrAux(
 // The sounding non-note symbols the front-end assigned (actors[0].assignments),
 // each `{ subject }` being an alphabet symbol that carries a sound.
 function soundingFromAst(ast: unknown): string[] {
-  const actors = (ast as { actors?: SceneActor[] } | null)?.actors;
+  const actors = (ast as { actors?: Bp3Actor[] } | null)?.actors;
   return (actors?.[0]?.assignments ?? []).map((a) => a.subject);
 }
 
@@ -514,7 +518,10 @@ function parseWithSound(code: string) {
     ast: r.ast,
     errors: r.errors.map((e) => ({ line: e.line, message: e.message })),
     settings: resolveSeSettings(r.fileRefs),
-    soundingSymbols: soundingFromAst(r.ast)
+    soundingSymbols: soundingFromAst(r.ast),
+    // La convention voyage AVEC l'arbre : le lecteur de sections en a besoin pour savoir quels mots
+    // sont des notes, et la re-deviner plus loin serait une deuxième autorité sur la même donnée.
+    noteConvention
   };
 }
 
@@ -527,7 +534,7 @@ function parseWithSound(code: string) {
 // the regression lock in `gr-head-sections.test.ts`.)
 const grFrontend: Frontend = (code) => {
   const parsed = parseWithSound(code);
-  const sections = headSectionNamesFromAst(parsed.ast);
+  const sections = headSectionNamesFromAst(parsed.ast, parsed.noteConvention);
   const base = sections.length > 0 ? { ...parsed, sections } : parsed;
   // `.gr` (BP3) has no `@actor`, but bp3-frontend materializes one IMPLICIT `default`
   // actor (audio transport, `synthetic:true`) in the AST — so its events carry
@@ -1069,7 +1076,13 @@ const bpsFrontend: Frontend = (code) => {
   const withLibs = Object.keys(libraries).length > 0 ? { ...withFlags, libraries } : withFlags;
   const withBt = Object.keys(backticks).length > 0 ? { ...withLibs, backticks } : withLibs;
   // Head-rule sections, read from the AST start rule (no longer the grammar text).
-  const sections = headSectionNamesFromAst(c.ast);
+  // ❓ TROU CONNU, NON COMBLÉ ICI (2026-07-28) : un `.bps` n'a pas de `-se`, il déclare
+  // `@alphabet.<nom>`. La correspondance entre ce nom et une convention de notes BP3 n'est PAS
+  // tranchée, et l'hôte ne l'invente pas : on passe donc `undefined` — l'anglais, défaut documenté
+  // amont — ce qui reproduit EXACTEMENT le comportement d'avant (l'appel se faisait sans convention).
+  // Conséquence à mesurer : une scène `.bps` en sargam/français peut garder pour SECTION un mot qui
+  // est une note dans sa convention. Question remontée ; ne pas « choisir » une convention ici.
+  const sections = headSectionNamesFromAst(c.ast, undefined);
   const base = sections.length > 0 ? { ...withBt, sections } : withBt;
 
   // Orchestrator `.bps`: `@actor` declarations are AST `ActorDirective` nodes (each actor
@@ -2156,7 +2169,10 @@ function makeBpxAdapter(
       // Per-section leaf counts (from the AST head rule) so the visualizer draws
       // the REAL section boundaries off the tree's leaf spans, not an equal split.
       // Empty for `.gr` (no AST) or an unmappable macro shape → equal-split fallback.
-      const leafCounts = sectionLeafCounts(ast);
+      // Convention de notes : même trou connu qu'au lecteur de sections (voir `headSectionNamesFromAst`
+      // plus haut) — un `.bps` n'a pas de `-se`, la correspondance `@alphabet.<nom>` → convention n'est
+      // pas tranchée. `undefined` = anglais, comportement identique à avant, gap remonté.
+      const leafCounts = sectionLeafCounts(ast, undefined);
       publishProduction(id, tokens, headSections ?? [], beatDurSec, tree, symbolNames, leafCounts);
 
       // PRODUCE-only (scene opened/loaded/armed, not played) — Model C: a LOAD is a content
@@ -2518,7 +2534,7 @@ function makeBpxAdapter(
                 beatDurSec,
                 rtree as unknown as ProductionTree,
                 rnames,
-                sectionLeafCounts(ast)
+                sectionLeafCounts(ast, undefined) // même trou connu : pas de `-se` sur un `.bps`
               );
             } catch (err) {
               // On any failure, do NOT charger — Kairos keeps the current flat and Kronos

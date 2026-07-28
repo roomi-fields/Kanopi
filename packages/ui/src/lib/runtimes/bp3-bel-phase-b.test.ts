@@ -17,7 +17,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { parseBP3 } from 'bp3-frontend';
-import { BP3_PITCH_CATALOG, bp3AlphabetKey } from 'bp3-frontend/src/emit/bp3-alphabets';
+import { BP3_PITCH_CATALOG, bp3AlphabetKey } from 'bp3-frontend';
 import { createSession } from 'bpx';
 import { resolveGrAux, resolveSeSettings, resolveSeNoteConvention } from './bpx-adapter';
 import { BUNDLED_AL, BUNDLED_SOUND } from './bp3-aux';

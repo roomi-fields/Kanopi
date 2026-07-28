@@ -34,8 +34,11 @@ function deriveTree(src: string): { tree: ProductionTree; ast: unknown } {
 describe('sectionLeafCounts (per-section leaf count from the AST head rule)', () => {
   it('counts Sayr 7, Rujoo 7, Qarar 5 (note + 4 held) for maqam Rast', () => {
     const { ast } = deriveTree(ARABIC);
-    expect(headSectionNamesFromAst(ast)).toEqual(['Sayr', 'Rujoo', 'Qarar']);
-    expect(sectionLeafCounts(ast)).toEqual([7, 7, 5]);
+    // `undefined` = la convention que le chemin `.bps` passe RÉELLEMENT en production (pas de `-se`
+    // sur un `.bps` ; correspondance `@alphabet.<nom>` → convention non tranchée, gap remonté le
+    // 2026-07-28). Ce banc mesure donc ce qui tourne, pas une convention souhaitée.
+    expect(headSectionNamesFromAst(ast, undefined)).toEqual(['Sayr', 'Rujoo', 'Qarar']);
+    expect(sectionLeafCounts(ast, undefined)).toEqual([7, 7, 5]);
   });
 
   it('returns [] for a polymetric / non-flat macro shape (fallback signal)', () => {
@@ -46,14 +49,14 @@ c -> e
 `;
     const { ast } = deriveTree(POLY);
     // A `{ … }` polymetric is one section but not a flat symbol run → no counts.
-    expect(sectionLeafCounts(ast)).toEqual([]);
+    expect(sectionLeafCounts(ast, undefined)).toEqual([]);
   });
 });
 
 describe('sectionBoundsFromTree', () => {
   it('maps maqam Rast sections to their real onset spans (Qarar shorter)', () => {
     const { tree, ast } = deriveTree(ARABIC);
-    const counts = sectionLeafCounts(ast);
+    const counts = sectionLeafCounts(ast, undefined);
     const bounds = sectionBoundsFromTree(tree, counts);
     expect(bounds).not.toBeNull();
     expect(bounds!.length).toBe(3);

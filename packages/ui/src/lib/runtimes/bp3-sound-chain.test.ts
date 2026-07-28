@@ -40,7 +40,9 @@ describe('resolveGrAux — the -gr → -al → sound chain', () => {
       WESTERN
     );
     const sounding = new Set(soundSymbols);
-    const sounds = (n: string) => isNoteName(n) || sounding.has(n);
+    // La convention est ÉCRITE : ce banc charge un `-al` de bols avec l'alphabet occidental
+    // (`WESTERN`), donc anglaise (0). L'ancienne surface recopiée cachait ce second argument.
+    const sounds = (n: string) => isNoteName(n, 0) || sounding.has(n);
     expect(sounds('ek')).toBe(true); // sounding bol → audio
     expect(sounds('C4')).toBe(true); // note → audio
     expect(sounds('zzz')).toBe(false); // mute symbol → text console

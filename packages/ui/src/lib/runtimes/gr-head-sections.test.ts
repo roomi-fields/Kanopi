@@ -28,7 +28,9 @@ const WESTERN_NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 
 function grSections(code: string): string[] {
   const { ast } = parseBP3(code, { alphabetNames: WESTERN_NOTES });
-  return headSectionNamesFromAst(ast);
+  // Convention ANGLAISE (0), écrite et non sous-entendue : ce banc parse justement avec l'alphabet
+  // occidental ci-dessus. La passer explicitement, c'est dire de quelle convention parle le verdict.
+  return headSectionNamesFromAst(ast, 0);
 }
 
 // Expected CORRECT sections per bundled `.gr` (the AST result). bp-transposition and
