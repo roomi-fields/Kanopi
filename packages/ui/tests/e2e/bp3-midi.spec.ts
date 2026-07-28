@@ -12,6 +12,18 @@ import { evalBlockAt, expectNoConsoleErrors, setupFakeMidi } from '../helpers';
 //   .bps (@actor … transport.midi) → derive() → per-actor Kronos events
 //        → runtime-midi MidiTransport.send() → output.send([0x90|ch, note, vel], ts)
 //
+// ⚠️ INSTABLE CONNU, APPARU LE 2026-07-28 — et sa FORME dit où il ne faut PAS chercher.
+// Ce jour-là, le premier passage du portillon après l'élargissement de l'union du bus l'a vu
+// rougir pour la première fois. Comme il touche le MIDI, c'est-à-dire la zone que ce changement
+// venait de traverser, il a été rejoué SEUL, machine au calme, deux invocations à froid de cinq
+// répétitions chacune, sans réessai : 20 sur 20 verts. Il ne rougit donc pas en isolement.
+// CE QUI L'AVAIT FAIT ROUGIR, lu dans la sortie du gate : `.cm-content` invisible au bout de 5 s —
+// l'ÉDITEUR n'était pas monté à temps. Ce n'est pas un défaut de routage MIDI : rien n'avait encore
+// été joué. C'est un démarrage lent sous la charge du gate, la même famille que l'autre instable
+// connu (le hush après vidange). Si ce test rougit à nouveau, regarder le TEMPS DE MONTAGE de la
+// page avant de soupçonner le MIDI — et se souvenir qu'un vert obtenu au deuxième essai n'est pas
+// un vert, c'est un vert et une question.
+//
 // The scene derives C4 D4 E4 G4 C5 G4 E4 C4 → MIDI notes 60 62 64 67 72.
 const EXPECTED_NOTES = [60, 62, 64, 67, 72];
 
