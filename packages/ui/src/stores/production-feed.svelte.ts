@@ -25,26 +25,20 @@ class ProductionFeedStore {
    *  retrigger the views' update: a swap does not change the `#kairos` REFERENCE, so
    *  this counter is the reactive "the living tree changed" signal. */
   generation = $state(0);
-  /** [97] Chaîne d'items en graphie moteur (BPx `renderChain`, via `Kairos.rendreChaineFinale`),
-   *  POSÉE par l'adaptateur — le store ne la calcule jamais (aucune graphie fabriquée ici).
-   *  `null` : rien chargé, ou le portage a échoué côté adaptateur (dégradation honnête). */
-  #chaine: string | null = $state(null);
+  // [130] LA CHAÎNE FINALE EST RETIRÉE, PAS MISE DE CÔTÉ. Romain a tranché que la vue Texte n'a plus
+  // qu'UNE rangée — celle des jetons, enrichie de la structure ; la ligne qui portait la chaîne en
+  // graphie moteur a disparu (runtime-ui d132457, et `chaineItems` est sorti de leur contrat).
+  // Mesuré ici avant de couper : plus AUCUN lecteur dans ce dépôt, ni vue, ni test, ni banc. Un
+  // champ qu'on alimente sans que personne le lise se fait rebrancher un jour par quelqu'un qui le
+  // prend pour une fonctionnalité — donc il s'enlève entièrement, avec ce qui l'alimentait.
+  // ⚠️ À NE PAS CONFONDRE : `renderChain` de BPx reste TRÈS VIVANT (la vue Trace s'en sert à chaque
+  // pas, relayé à Kairos comme compagnon de trace). C'est la chaîne FINALE qui meurt, pas la
+  // fonction d'assemblage.
 
   /** Wire the live Kairos instance (eval) or unwire it (teardown). */
   set(kairos: Kairos | null): void {
     this.#kairos = kairos;
-    if (kairos === null) this.#chaine = null;
     this.generation++;
-  }
-
-  /** Pose la chaîne d'items PORTÉE par l'adaptateur (rendue par BPx/Kairos), verbatim. */
-  setChaine(s: string | null): void {
-    this.#chaine = s;
-  }
-
-  /** Chaîne d'items en graphie moteur pour la production courante, ou null. */
-  chaine(): string | null {
-    return this.#chaine;
   }
 
   /** Signal a swap (re-random) on the SAME instance → re-render the views. */

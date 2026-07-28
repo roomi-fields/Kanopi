@@ -24,9 +24,6 @@
   // Kairos (generation) — jamais au gré du transport. PORTÉE verbatim (identité de
   // référence), jamais résolue ni abonnée ici.
   let cachedTrace: PoigneeTrace | null = null;
-  // [97] Chaîne d'items en graphie moteur — même règle que structure/trace : ne change qu'au
-  // (re)chargement (generation), jamais au gré du transport. PORTÉE verbatim.
-  let cachedChaine: string | null = null;
 
   $effect(() => {
     // Reactive deps: generation (eval/swap → re-read), transport state + handle (cursor only).
@@ -34,13 +31,11 @@
     if (gen !== lastGen) {
       cachedStructure = productionFeed.structure();
       cachedTrace = productionFeed.trace();
-      cachedChaine = productionFeed.chaine();
       lastGen = gen;
     }
     const input: ProductionInput = {
       structure: cachedStructure,
       trace: cachedTrace,
-      chaineItems: cachedChaine,
       transport: {
         mode: kronosCursor.state,
         cursor: kronosCursor.active,

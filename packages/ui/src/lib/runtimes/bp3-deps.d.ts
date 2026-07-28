@@ -118,8 +118,11 @@ export interface RenderChainOptions {
   readonly renderControl?: (payload: unknown) => string;
 }
 /** [97] Assemble une chaîne d'ids en texte BP3 (BPx `trace/surface.ts:338`, réexporté
- *  `index.ts:149`) — LA graphie, injectée en 4e argument à Kairos `rendreChaineFinale`
- *  (jamais réécrite côté hôte). */
+ *  `index.ts:149`) — LA graphie, jamais réécrite côté hôte.
+ *  [130] TOUJOURS VIVANTE, et c'est la distinction qui compte : l'hôte la relaie à Kairos comme
+ *  COMPAGNON DE TRACE (`charger(..., { entrees, rendreChaine })`), et la vue Trace s'en sert à
+ *  chaque pas. C'est la CHAÎNE FINALE (`rendreChaineFinale` + son convoyage jusqu'à l'écran) qui a
+ *  été retirée avec la seconde ligne de la vue Texte, pas cette fonction d'assemblage. */
 export function renderChain(
   ids: readonly number[],
   resolveName: (id: number) => string,
