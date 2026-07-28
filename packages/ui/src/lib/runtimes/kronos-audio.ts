@@ -219,6 +219,14 @@ export interface AudioMeter {
   disableMeter(): void;
   getMeasurement(): { rms: number; spectralCentroid: number } | null;
   getFloatFrequencyData(arr: Float32Array): void;
+  // [334] LE JUMEAU DU COMPTEUR — journal des ENVOIS REÇUS, livré par runtime-audio (46cb4e3) à sa
+  // propre frontière. Même statut que le compteur juste au-dessus : opt-in, coût nul éteint, lecture
+  // seule, HORS du chemin du son. L'hôte ALLUME et LIT ; il n'enveloppe aucun `send` — un `send`
+  // enveloppé côté hôte est nommément une violation (`§Garde 1` du portillon), et c'est précisément
+  // pour ça que l'instrument a été ouvert chez le runtime plutôt qu'ici.
+  enableEventLog?(opts?: { cap?: number }): void;
+  disableEventLog?(): void;
+  getEventLog?(): ReadonlyArray<Record<string, unknown>> | null;
 }
 let currentAudioMeter: AudioMeter | null = null;
 export function pilotAudioMeter(): AudioMeter | null {

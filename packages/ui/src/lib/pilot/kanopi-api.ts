@@ -43,7 +43,10 @@ import { core } from '../core';
 // v15 — le lot des ENTRÉES : `inspect.declaredInputs()` (les rôles que la scène déclare),
 // `inspect.inputs()` (les événements d'entrée vus sur le bus). Surface ADDITIVE : rien de retiré,
 // les consommateurs de v14 continuent de marcher.
-const API_VERSION = 15;
+// v16 — [334] `inspect.audio.enableEventLog/eventLog/disableEventLog` : trois PASSE-PLATS vers le
+// journal des envois reçus que runtime-audio a ouvert à sa propre frontière (46cb4e3). Additif lui
+// aussi, et volontairement mince : l'hôte allume, lit, éteint — il n'interpose rien.
+const API_VERSION = 16;
 
 // (L'observateur des events audio forwardés + l'inspection `modulations()` sont RETIRÉS avec le
 //  wrapper audio hôte — frontière Phase 2 audio : l'hôte ne forwarde plus d'events audio shapés,
@@ -192,6 +195,28 @@ export function installKanopiApi(): void {
           if (!m) return null;
           m.enableMeter({ fftSize: 2048 });
           return m.getMeasurement();
+        },
+        /** [334] LE JOURNAL DES ENVOIS REÇUS — jumeau du compteur, livré par runtime-audio à SA
+         *  frontière (46cb4e3). Trois passe-plats, rien d'autre : l'hôte ALLUME, LIT, ÉTEINT.
+         *
+         *  POURQUOI IL EST CHEZ EUX ET PAS ICI, et c'est le point : Kronos demandait de capturer ce
+         *  que l'adaptateur reçoit à la reprise d'un point d'attente. Le faire côté hôte voulait dire
+         *  envelopper son `send` — nommément une violation du portillon (« §Garde 1 — Adaptateur/mise
+         *  en forme écrits côté hôte (wrapper `send`) », attendu 0). L'instrument a donc été ouvert
+         *  chez le propriétaire de la frontière, sur le patron exact de son compteur. Ici : zéro
+         *  interposition sur le chemin du son.
+         *
+         *  Chaque entrée porte l'instant et la durée REÇUS, plus `lateBy` — de combien l'instant
+         *  demandé est DÉJÀ dans le passé de l'horloge audio quand l'envoi arrive. */
+        enableEventLog(cap = 512): void {
+          pilotAudioMeter()?.enableEventLog?.({ cap });
+        },
+        disableEventLog(): void {
+          pilotAudioMeter()?.disableEventLog?.();
+        },
+        /** Les envois tracés, du plus ancien au plus récent. `null` si le journal est éteint. */
+        eventLog(): ReadonlyArray<Record<string, unknown>> | null {
+          return pilotAudioMeter()?.getEventLog?.() ?? null;
         },
         /** Canal (B) chantier transport-SM : le sink audio a-t-il reçu la vue horloge de
          *  KRONOS (`bindClock` appelé à l'enregistrement du sink) ? Preuve du câblage, lecture
