@@ -61,18 +61,24 @@ class InputBindingsStore {
   }
 
   /**
-   * [994] LES ASSOCIATIONS, DANS LA FORME QU'ATTEND LE ROUTEUR (`AssociationEntree` de BPx) : le
-   * rôle et le PORT associé, rien d'autre. Le nom d'affichage et le point d'écoute OSC restent ici
-   * — ils servent l'écran, pas la résolution.
+   * [994]/[869] LES ASSOCIATIONS, DANS LA FORME QU'ATTEND LE ROUTEUR (`AssociationEntree` de BPx) :
+   * le rôle et l'IDENTITÉ de l'appareil, rien d'autre. Le nom d'affichage et le point d'écoute OSC
+   * restent ici — ils servent l'écran, pas la résolution.
    *
-   * Une association SANS port (rôle clavier : il n'y a rien à choisir) ne dit rien au routeur et
-   * n'est pas portée : la porter avec `source` absent ferait une association vide, indiscernable
-   * d'un « tout port de ce canal » explicite.
+   * ⚠️ C'EST `sourceId` ET PLUS `source`, et ce n'est pas un renommage : je remettais déjà
+   * l'IDENTIFIANT du port, mais le routeur le comparait à l'ÉTIQUETTE que `runtime-in` posait (le
+   * nom du port). Les deux ne se rencontraient jamais — masqué tant qu'un canal n'a qu'un rôle,
+   * fatal dès deux pédales. BPx a retiré l'étiquette de sa surface, l'identité est exigée des deux
+   * côtés, et la faute est devenue impossible à écrire.
+   *
+   * Une association SANS identité n'est PAS portée : la clause « absent égale tout » a été retirée
+   * en amont, pas assouplie — deux absences s'y comparaient ÉGALES, et le second appareil n'était
+   * jamais servi sans qu'une seule erreur le dise.
    */
-  pourRoutage(): readonly { role: string; source?: string }[] {
+  pourRoutage(): readonly { role: string; sourceId: string }[] {
     return Object.entries(this.byRole)
       .filter(([, b]) => b.portId !== undefined)
-      .map(([role, b]) => ({ role, source: b.portId as string }));
+      .map(([role, b]) => ({ role, sourceId: b.portId as string }));
   }
 
   clear(role: string) {

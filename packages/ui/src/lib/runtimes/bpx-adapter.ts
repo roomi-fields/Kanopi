@@ -875,10 +875,18 @@ export function debrancherAttente(): void {
  * elle vit hors de la scène (décision `2026-07-27-forme-des-entrees-in-mapping-adresse-nue.md`) et
  * ne sert qu'à lever une ambiguïté quand deux rôles partagent un canal. L'hôte la PORTE ; c'est le
  * routeur qui décide si elle compte.
+ *
+ * ⚠️ C'EST L'IDENTITÉ QUI VOYAGE, PLUS L'ÉTIQUETTE — et ça répare un défaut que j'avais trouvé sans
+ * pouvoir le corriger. Je remettais l'identifiant du port comme association pendant que `runtime-in`
+ * remplissait `source` avec le NOM du port : les deux ne se rencontraient jamais, et une scène à
+ * deux pédales MIDI aurait échoué. BPx a retiré `source` de sa surface plutôt que de l'assortir d'un
+ * avertissement — ne pas la déclarer rend la faute impossible à refaire. Des deux côtés, c'est
+ * désormais `sourceId`, exigé, jamais facultatif : deux appareils sans identité se compareraient
+ * égaux, et le second ne serait jamais servi sans qu'une seule erreur le dise.
  */
 export function pousserEvenementEntree(
-  evenement: { device: string; source?: string; signal: unknown },
-  associations: readonly { role: string; source?: string }[]
+  evenement: { device: string; sourceId: string; signal: unknown },
+  associations: readonly { role: string; sourceId: string }[]
 ): number {
   if (sessionEntrees === null) return 0;
   return sessionEntrees.evenementEntree(evenement, associations);

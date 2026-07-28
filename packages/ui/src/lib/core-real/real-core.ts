@@ -175,7 +175,7 @@ class RealCore implements CoreApi {
     //
     // C'est le second des deux fils de la boîte de branchement (le premier, la porte de Kairos
     // remise à BPx, est posé avec l'arbre : `bpx-adapter.brancherAttente`). Ici on ne lit rien du
-    // signal : `device`/`source`/`signal` traversent tels quels vers `pousserEvenementEntree`, qui
+    // signal : `device`/`sourceId`/`signal` traversent tels quels vers `pousserEvenementEntree`, qui
     // les remet au routeur. C'est LUI qui sait quel point d'attente une touche lève ; l'hôte ne
     // compare aucune adresse et ne connaît aucune touche.
     //
@@ -189,11 +189,7 @@ class RealCore implements CoreApi {
     this.events.on('input', (e) => {
       try {
         pousserEvenementEntree(
-          {
-            device: e.device,
-            ...(e.source === undefined ? {} : { source: e.source }),
-            signal: e.signal
-          },
+          { device: e.device, sourceId: e.sourceId, signal: e.signal },
           inputBindings.pourRoutage()
         );
       } catch (err) {
