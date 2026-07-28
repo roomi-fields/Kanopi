@@ -7,6 +7,10 @@
 //
 // not-reich.bps — phasing (style Steve Reich) par Thierry Montaudon (1997)
 // Traduit de bp3-engine/library/experimental/not-reich/grammar.gr
+// NOMS DE REGLES SUFFIXES `_r` : une tete de regle ne peut plus porter le nom d une note de
+// l alphabet actif (decision 2026-07-28, hub). Le natif d origine garde SES noms : les passages
+// de .gr cites dans ce fichier ne suivent donc PAS nos renommages. Production prouvee INCHANGEE :
+// arbre derive compare EN ENTIER avant/apres, a graine fixe.
 //
 // Polymétrie imbriquée progressive avec volume dynamique
 
@@ -19,23 +23,24 @@
 
 @mode:random(striated, tempo:60)
 // ORDRE DES CONTROLES = ORDRE NATIF (not-reich.gr gram#1[1] : « S --> _chan(1) _vel(50)
-// _volumecont _volume(80) A' B' C' »). Un controle s'applique a ce qui le SUIT : sa POSITION
+// _volumecont _volume(80) A' B' C' »). Le natif s'ecrit avec SES noms : cette citation ne suit pas
+// nos renommages, sinon elle cesse d'etre une citation. Un controle s'applique a ce qui le SUIT : sa POSITION
 // porte sa PORTEE. La conversion les avait regroupes en SUFFIXE de la regle, ou ils ne
-// s'appliquaient plus ni a A' ni a B' ni a C'.
-S -> !(chan:1) !(vel:50) volumecont !(volume:80) A' B' C'
+// s'appliquaient plus ni a A_r' ni a B_r' ni a C_r'.
+S -> !(chan:1) !(vel:50) volumecont !(volume:80) A_r' B_r' C_r'
 
 -----
 
 // --- Sous-grammaire 2 @mode:random ---
 
 @mode:random
-A' -> A A A A A A A A
-B' -> B B B" B" C C D D D D E E E E
-C' -> C C C D E E E E C D C D E E E E C C C B" B" B A A !(volume:80) A A A !(volume:0)
+A_r' -> A_r A_r A_r A_r A_r A_r A_r A_r
+B_r' -> B_r B_r B_r" B_r" C_r C_r D_r D_r D_r D_r E_r E_r E_r E_r
+C_r' -> C_r C_r C_r D_r E_r E_r E_r E_r C_r D_r C_r D_r E_r E_r E_r E_r C_r C_r C_r B_r" B_r" B_r A_r A_r !(volume:80) A_r A_r A_r !(volume:0)
 
-A -> {C4 -, !(vel:40) - E#3 G3, A#5, - D5}:1
-B -> {A A, !(vel:60) C2}
-B" -> {B, - F5}
-C -> {B, {!(vel:55) - C5}}
-D -> {B,- {C4 F5 E#4}}
-E -> {D,D#4 F4 C5 G#3}
+A_r -> {C4 -, !(vel:40) - E#3 G3, A#5, - D5}:1
+B_r -> {A_r A_r, !(vel:60) C2}
+B_r" -> {B_r, - F5}
+C_r -> {B_r, {!(vel:55) - C5}}
+D_r -> {B_r,- {C4 F5 E#4}}
+E_r -> {D_r,D#4 F4 C5 G#3}

@@ -21,15 +21,15 @@
 @alphabet.western:audio
 
 // Sub-grammar 1: structure (ORD by default)
-S -> A B A
+S -> A_r B_r A_r
 
 -----
 
-// Sub-grammar 2: material (random choice for each A and B)
+// Sub-grammar 2: material (random choice for each A_r and B_r)
 @mode:random
-A -> C4 D4 E4 F4
-A -> E4 F4 G4 A4
-A -> G4 A4 B4 C5
+A_r -> C4 D4 E4 F4
+A_r -> E4 F4 G4 A4
+A_r -> G4 A4 B4 C5
 
-B -> G4 F4 E4 D4 C4 _
-B -> C5 B4 A4 G4 F4 E4
+B_r -> G4 F4 E4 D4 C4 _
+B_r -> C5 B4 A4 G4 F4 E4

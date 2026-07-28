@@ -4,6 +4,10 @@
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
 // Nadaka-1er-essai.bps — migré de bp3-engine/test-data/-gr.Nadaka-1er-essai (porter bp3ToScene, 2026-07-17)
 // Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
+// NOMS DE REGLES SUFFIXES `_r` : une tete de regle ne peut plus porter le nom d une note de
+// l alphabet actif (decision 2026-07-28, hub). Le natif d origine garde SES noms : les passages
+// de .gr cites dans ce fichier ne suivent donc PAS nos renommages. Production prouvee INCHANGEE :
+// arbre derive compare EN ENTIER avant/apres, a graine fixe.
 
 // ANNOTATION 2026-07-27 — cette scene DIT desormais sa convention de notes ET son symbole.
 // Le reglage d'origine (-se.hamsad) declare la convention INDIENNE (valeur 2 : sa, re, ga) ; onze
@@ -23,41 +27,41 @@ A32 -> G G G P P P N N N R R R G _ S _ G G G P P P N N N R R R G _ S _ [weight:0
 A32 -> G _ P _ N _ R _ G _ G P N R G S G P N R G S G P N R G S R G S R [weight:0]
 -----
 @mode:lin
-#? G -> #? ga4 [weight:inf]
-ga3 G -> ga3 ga3 [weight:inf]
-ga4 G -> ga4 ga4 [weight:inf]
-ga5 G -> ga5 ga5 [weight:inf]
-re5 G -> re5 ga5 [weight:inf]
-re5 _ G -> re5 _ ga5 [weight:inf]
-#re5 G -> #re5 ga4
-re3 R -> re3 re3 [weight:inf]
-re4 R -> re4 re4 [weight:inf]
-sa5 R -> sa5 re5 [weight:inf]
-re5 R -> re5 re5 [weight:inf]
-ni4 R -> ni4 re5 [weight:inf]
-ni4 _ R -> ni4 _ re5 [weight:inf]
-#ni4 R -> #ni4 re4
-ga4 P -> ga4 pa4 [weight:inf]
-ga4 _ P -> ga4 _ pa4 [weight:inf]
-pa4 P -> pa4 pa4 [weight:inf]
-pa3 P -> pa3 pa3 [weight:inf]
-ni4 P -> ni4 pa4 [weight:inf]
-ni5 P -> ni5 pa4 [weight:inf]
-ni3 P -> ni3 pa3 [weight:inf]
-P ga4 -> pa4 ga4 [weight:inf]
-P ni4 -> pa4 ni4 [weight:inf]
-ni3 N -> ni3 ni3 [weight:inf]
-ni4 N -> ni4 ni4 [weight:inf]
-pa3 N -> pa3 ni3 [weight:inf]
-pa4 N -> pa4 ni4 [weight:inf]
-pa4 _ N -> pa4 _ ni4 [weight:inf]
-sa4 N -> sa4 ni3 [weight:inf]
-#sa4 N -> #sa4 ni4
-sa3 S -> sa3 sa3 [weight:inf]
-sa4 S -> sa4 sa4 [weight:inf]
-re4 S -> re4 sa4 [weight:inf]
-ni3 S -> ni3 sa4 [weight:inf]
-re5 S -> re5 sa5 [weight:inf]
-ni4 S -> ni4 sa5 [weight:inf]
-ga5 S -> ga5 sa5 [weight:inf]
-ga5 _ S -> ga5 _ sa5 [weight:inf]
+#? G -> #? ga4_r [weight:inf]
+ga3_r G -> ga3_r ga3_r [weight:inf]
+ga4_r G -> ga4_r ga4_r [weight:inf]
+ga5_r G -> ga5_r ga5_r [weight:inf]
+re5_r G -> re5_r ga5_r [weight:inf]
+re5_r _ G -> re5_r _ ga5_r [weight:inf]
+#re5_r G -> #re5_r ga4_r
+re3_r R -> re3_r re3_r [weight:inf]
+re4_r R -> re4_r re4_r [weight:inf]
+sa5_r R -> sa5_r re5_r [weight:inf]
+re5_r R -> re5_r re5_r [weight:inf]
+ni4_r R -> ni4_r re5_r [weight:inf]
+ni4_r _ R -> ni4_r _ re5_r [weight:inf]
+#ni4_r R -> #ni4_r re4_r
+ga4_r P -> ga4_r pa4_r [weight:inf]
+ga4_r _ P -> ga4_r _ pa4_r [weight:inf]
+pa4_r P -> pa4_r pa4_r [weight:inf]
+pa3_r P -> pa3_r pa3_r [weight:inf]
+ni4_r P -> ni4_r pa4_r [weight:inf]
+ni5_r P -> ni5_r pa4_r [weight:inf]
+ni3_r P -> ni3_r pa3_r [weight:inf]
+P ga4_r -> pa4_r ga4_r [weight:inf]
+P ni4_r -> pa4_r ni4_r [weight:inf]
+ni3_r N -> ni3_r ni3_r [weight:inf]
+ni4_r N -> ni4_r ni4_r [weight:inf]
+pa3_r N -> pa3_r ni3_r [weight:inf]
+pa4_r N -> pa4_r ni4_r [weight:inf]
+pa4_r _ N -> pa4_r _ ni4_r [weight:inf]
+sa4_r N -> sa4_r ni3_r [weight:inf]
+#sa4_r N -> #sa4_r ni4_r
+sa3_r S -> sa3_r sa3_r [weight:inf]
+sa4_r S -> sa4_r sa4_r [weight:inf]
+re4_r S -> re4_r sa4_r [weight:inf]
+ni3_r S -> ni3_r sa4_r [weight:inf]
+re5_r S -> re5_r sa5_r [weight:inf]
+ni4_r S -> ni4_r sa5_r [weight:inf]
+ga5_r S -> ga5_r sa5_r [weight:inf]
+ga5_r _ S -> ga5_r _ sa5_r [weight:inf]

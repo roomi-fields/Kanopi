@@ -1,6 +1,10 @@
 // @language: bpscript
 // visser3.bps — Harm Visser, structure avec transpositions et vélocité
 // Traduit de BP3 grammar format
+// NOMS DE REGLES SUFFIXES `_r` : une tete de regle ne peut plus porter le nom d une note de
+// l alphabet actif (decision 2026-07-28, hub). Le natif d origine garde SES noms : les passages
+// de .gr cites dans ce fichier ne suivent donc PAS nos renommages. Production prouvee INCHANGEE :
+// arbre derive compare EN ENTIER avant/apres, a graine fixe.
 //
 // 3 sous-grammaires :
 // 1. Structure macro (M1–M11) avec silences et periods
@@ -17,13 +21,13 @@
 
 @mode:ord
 S -> M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11
-M1 -> A -
-M2 -> B - M1
-M3 -> C - M2
-M4 -> D - M3
-M5 -> E . M4
-M6 -> F - M5
-M7 -> G - M6
+M1 -> A_r -
+M2 -> B_r - M1
+M3 -> C_r - M2
+M4 -> D_r - M3
+M5 -> E_r . M4
+M6 -> F_r - M5
+M7 -> G_r - M6
 M8 -> H - . M7
 M9 -> I - M8
 M10 -> J - .
@@ -34,17 +38,17 @@ M11 -> K
 // --- Sous-grammaire 2 @mode:ord — motifs avec transpositions ---
 
 @mode:ord
-A -> C3
-B -> {Tr11 A}
-C -> {Tr5 {A,B}}
-D -> {Tr1 A C}
-E -> {Tr7 {A -,D -}}
-F -> {Tr6 A E D}
-G -> {Tr11 {A B C D . E F E D C B A}}
-H -> {Tr-11 {G F E D C B A}}
-I -> {Tr11 G}
-J -> {G F,Tr5 G F}
-K -> {Tr-11 B C D}
+A_r -> C3
+B_r -> {Tr11 A_r}
+C_r -> {Tr5 {A_r,B_r}}
+D_r -> {Tr1 A_r C_r}
+E_r -> {Tr7 {A_r -,D_r -}}
+F_r -> {Tr6 A_r E_r D_r}
+G_r -> {Tr11 {A_r B_r C_r D_r . E_r F_r E_r D_r C_r B_r A_r}}
+H -> {Tr-11 {G_r F_r E_r D_r C_r B_r A_r}}
+I -> {Tr11 G_r}
+J -> {G_r F_r,Tr5 G_r F_r}
+K -> {Tr-11 B_r C_r D_r}
 
 -----
 

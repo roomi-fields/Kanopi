@@ -1,6 +1,10 @@
 // @language: bpscript
 // simpletemplates.bps — Simple templates test
 // Traduit de bp3-engine/test-data/-gr.simpletemplates (Bernard, 1996)
+// NOMS DE REGLES SUFFIXES `_r` : une tete de regle ne peut plus porter le nom d une note de
+// l alphabet actif (decision 2026-07-28, hub). Le natif d origine garde SES noms : les passages
+// de .gr cites dans ce fichier ne suivent donc PAS nos renommages. Production prouvee INCHANGEE :
+// arbre derive compare EN ENTIER avant/apres, a graine fixe.
 
 @core
 @alphabet.western:midi
@@ -8,8 +12,8 @@
 @mode:random
 S <> C4 . C5 . D5 C5 F#4 . A4 . C5
 S <> C4 . C5 . D5 C5 D5 C5 F#4 . A4 . C5
-S <> $A &A
-A <> D5 C5 . D5
+S <> $A_r &A_r
+A_r <> D5 C5 . D5
 
 -----
 

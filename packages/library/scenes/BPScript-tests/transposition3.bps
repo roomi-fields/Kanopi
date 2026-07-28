@@ -2,19 +2,23 @@
 // transposition3.bps — Autotransposer with _repeat and K-params
 // Traduit de bp3-engine/test-data/-gr.transposition3 (Harm Visser, 1997)
 // _transpose = runtime (dispatcher), _repeat = engine
+// NOMS DE REGLES SUFFIXES `_r` : une tete de regle ne peut plus porter le nom d une note de
+// l alphabet actif (decision 2026-07-28, hub). Le natif d origine garde SES noms : les passages
+// de .gr cites dans ce fichier ne suivent donc PAS nos renommages. Production prouvee INCHANGEE :
+// arbre derive compare EN ENTIER avant/apres, a graine fixe.
 
 @core
 @controls
 @alphabet.western:midi
 
 @mode:random
-S -> A [numtimes=5]
-A -> {E1, A#1 F#1} {D}(chromashift:2)
-B -> {A}(chromashift:2)
-C -> {B}(chromashift:4)
-[numtimes-1] D -> - {C {1,B}}(chromashift:6) {1,C} [repeat:4]
+S -> A_r [numtimes=5]
+A_r -> {E1, A#1 F#1} {D_r}(chromashift:2)
+B_r -> {A_r}(chromashift:2)
+C_r -> {B_r}(chromashift:4)
+[numtimes-1] D_r -> - {C_r {1,B_r}}(chromashift:6) {1,C_r} [repeat:4]
 
 -----
 
 @mode:sub1
-D -> lambda
+D_r -> lambda

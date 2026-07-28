@@ -13,9 +13,9 @@
 @alphabet.western:audio
 @tempo:80
 
-S -> D0 D15 D30 D50 D100 End
+S -> D0_r D15 D30 D50 D100 End
 
-D0 -> C3 E3 G3 (wave:sawtooth, vel:80, detune:0)
+D0_r -> C3 E3 G3 (wave:sawtooth, vel:80, detune:0)
 D15 -> C3 E3 G3 (detune:15)
 D30 -> C3 E3 G3 (detune:30)
 D50 -> C3 E3 G3 (detune:50)

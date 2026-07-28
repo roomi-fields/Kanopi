@@ -1,9 +1,13 @@
 // @language: bpscript
 // checkVolMasterSlave.bps — Traduit de bp3-engine/test-data/-gr.checkVolMasterSlave
+// NOMS DE REGLES SUFFIXES `_r` : une tete de regle ne peut plus porter le nom d une note de
+// l alphabet actif (decision 2026-07-28, hub). Le natif d origine garde SES noms : les passages
+// de .gr cites dans ce fichier ne suivent donc PAS nos renommages. Production prouvee INCHANGEE :
+// arbre derive compare EN ENTIER avant/apres, a graine fixe.
 // (Bernard, 1997). Teste le volume sur un couple gabarit maître / esclave.
 //
-// Le motif A est posé une fois en MAÎTRE ($A) puis repris en ESCLAVE (&A) : BP3
-// écrit (= A ) (: A ). Le volume passe de 5 à 127 à l'intérieur du motif.
+// Le motif A_r est posé une fois en MAÎTRE ($A_r) puis repris en ESCLAVE (&A_r) : BP3
+// écrit (= A_r ) (: A_r ). Le volume passe de 5 à 127 à l'intérieur du motif.
 //
 // NOTE — volumecont et !(volume:N) sont des contrôles RUNTIME dans controls.json,
 // donc émis en _script(CT n) et non en _volumecont / _volume(N) moteur. Écart de
@@ -14,5 +18,5 @@
 @alphabet.western:midi
 
 @mode:random
-S -> volumecont $A &A
-A -> !(volume:5) {A4. D5 B5} !(volume:127)
+S -> volumecont $A_r &A_r
+A_r -> !(volume:5) {A4. D5 B5} !(volume:127)
