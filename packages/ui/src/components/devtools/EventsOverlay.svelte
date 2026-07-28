@@ -57,6 +57,13 @@
                 ? `${e.signal.path} (${e.signal.args.length} arg)`
                 : `key ${e.signal.code} ${e.signal.down ? 'down' : 'up'}`
         }`;
+      case 'input-device':
+        // ÉTAT DE PÉRIPHÉRIQUE — pas un geste de jeu : personne n'a joué quoi que ce soit. On
+        // l'affiche parce que l'union le porte et que cette lucarne montre TOUT ce qui passe ; le
+        // taire ferait croire à un bus muet au moment précis où un appareil s'ouvre ou se ferme.
+        // `sourceId` (l'identité) et non `source` (l'étiquette) : deux appareils du même modèle
+        // rendent la même étiquette, et on ne saurait pas lequel vient de partir.
+        return `${e.device} ${e.state} [${e.sourceId}]`;
     }
   }
 

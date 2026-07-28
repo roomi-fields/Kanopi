@@ -21,6 +21,9 @@ const noteOn: InputEvent = {
   t: 1234.5,
   runtime: 'in',
   source: 'Launchkey MK3',
+  // IDENTITÉ, distincte de l'étiquette : deux Launchkey rendraient la même `source`, et un aval
+  // qui routerait dessus lèverait l'attente de l'un avec le geste de l'autre.
+  sourceId: 'midi:launchkey-mk3-2',
   device: 'midi',
   signal: { kind: 'note', number: 60, channel: 1, velocity: 100, on: true }
 };
@@ -43,7 +46,7 @@ describe('InputEvent sur le bus unique', () => {
 
     const signaux: InputEvent['signal'][] = [
       { kind: 'note', number: 60, channel: 1, velocity: 100, on: true },
-      { kind: 'control', number: 74, channel: 3, value: 42 },
+      { kind: 'control', number: 74, channel: 3, value: 42, switchReading: 'not-a-switch' },
       { kind: 'address', path: '/fader/1', args: [0.75] },
       { kind: 'key', code: 'KeyQ', down: true }
     ];
@@ -56,7 +59,7 @@ describe('InputEvent sur le bus unique', () => {
     expect(vus.map((e) => e.device)).toEqual(devices);
     // Rien d'ajouté : les clés sortantes sont exactement celles entrées.
     expect(Object.keys(vus[3]).sort()).toEqual(
-      ['device', 'runtime', 'schemaVersion', 'signal', 'source', 't', 'type'].sort()
+      ['device', 'runtime', 'schemaVersion', 'signal', 'source', 'sourceId', 't', 'type'].sort()
     );
   });
 

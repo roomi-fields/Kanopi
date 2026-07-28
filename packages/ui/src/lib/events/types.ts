@@ -87,6 +87,16 @@ export type InputSignal =
       readonly number: number;
       readonly channel: number;
       readonly value: number;
+      /** AMENDEMENT 2026-07-28 (hub adc1bd7, runtime-in 7735417) — TOUJOURS PRÉSENT.
+       *  « Aucune valeur ne se lit par une absence » : le champ DIT que ceci est un interrupteur,
+       *  au lieu de laisser chacun deviner. `pressed`/`released` pour les six contrôleurs que la
+       *  norme MIDI définit à deux états, au seuil qu'elle écrit ; `not-a-switch` pour tous les
+       *  autres — et pour un contrôle venu du CLAVIER quel que soit son numéro (une touche
+       *  d'ordinateur n'est pas un contrôleur MIDI : elle porte un numéro parce qu'une table le lui
+       *  a donné). Les TROIS valeurs sont figées maintenant : en ajouter une plus tard serait une
+       *  seconde traversée de l'union, propagée à toutes les copies. L'hôte ne LIT pas ce champ, il
+       *  le PORTE. */
+      readonly switchReading: 'pressed' | 'released' | 'not-a-switch';
     }
   | { readonly kind: 'address'; readonly path: string; readonly args: readonly unknown[] } // OSC
   | { readonly kind: 'key'; readonly code: string; readonly down: boolean }; // clavier, code PHYSIQUE
@@ -94,10 +104,40 @@ export type InputSignal =
 export interface InputEvent extends KanopiEventBase {
   readonly type: 'input';
   readonly runtime: 'in';
-  /** Le port, l'adresse, ou le clavier — étiquette de provenance, jamais un routage. */
+  /** ÉTIQUETTE lisible — provenance, JAMAIS un routage. L'interdiction ne bouge pas avec
+   *  l'amendement : on n'a pas fait mentir un champ existant, on en a ajouté un dont c'est le rôle. */
   readonly source?: string;
+  /** IDENTITÉ stable, TOUJOURS présente — la SEULE sur laquelle l'aval a le droit de router.
+   *  Mesuré en amont : deux appareils du même modèle portent la MÊME étiquette, donc un aiguillage
+   *  bâti sur `source` lève les attentes de l'un avec les gestes de l'autre, et le consommateur ne
+   *  peut PAS le détecter (deux étiquettes identiques sont indiscernables). */
+  readonly sourceId: string;
   readonly device: 'midi' | 'osc' | 'keyboard';
   readonly signal: InputSignal;
+}
+
+/**
+ * UN ÉTAT DE PÉRIPHÉRIQUE — type d'événement DISTINCT, jamais une cinquième nature de signal :
+ * personne n'a joué quoi que ce soit (décision `2026-07-27-la-fermeture-d-un-peripherique-est-un-
+ * evenement-distinct-pas-un-signal.md`). `runtime-in` PORTE le fait ; c'est le consommateur qui
+ * tient l'état des barrières ouvertes.
+ *
+ * POURQUOI IL EST ICI ALORS QUE L'HÔTE N'EN LIT AUCUN : un type nouveau se propage MÊME chez ceux
+ * qui ne le liront jamais. Ce n'est pas un excès de zèle, c'est le type qui l'exige — une copie
+ * plus étroite ne peut plus S'ABONNER au bus (la contravariance rougit sur le paramètre de `on`,
+ * pas sur `emit`), et c'est exactement le mur sur lequel la livraison des entrées s'est arrêtée le
+ * 2026-07-27.
+ *
+ * Les QUATRE états sont figés maintenant alors que seule la fermeture était demandée : en ajouter
+ * un plus tard serait une SECONDE traversée de l'union, propagée à toutes les copies.
+ */
+export interface InputDeviceEvent extends KanopiEventBase {
+  readonly type: 'input-device';
+  readonly runtime: 'in';
+  readonly source?: string;
+  readonly sourceId: string;
+  readonly device: 'midi' | 'osc' | 'keyboard';
+  readonly state: 'opened' | 'closed' | 'connected' | 'disconnected';
 }
 
 export type KanopiEvent =
@@ -107,7 +147,8 @@ export type KanopiEvent =
   | TriggerEvent
   | TokenEvent
   | FlagEvent
-  | InputEvent;
+  | InputEvent
+  | InputDeviceEvent;
 
 export type EventType = KanopiEvent['type'];
 export type EventOf<T extends EventType> = Extract<KanopiEvent, { type: T }>;
