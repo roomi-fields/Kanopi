@@ -1,6 +1,10 @@
 // @language: bpscript
 // acceleration_v2.bps — "sawtooth rhythm" par Harm Visser (1997)
 // Source: bp3-ctests/-gr.acceleration (version avec poids <N> et direction <->)
+// NOMS DE REGLES SUFFIXES `_r` : une tete de regle ne peut plus porter le nom d une note de
+// l alphabet actif (decision 2026-07-28, hub). Le natif d origine garde SES noms : les passages
+// de .gr cites dans ce fichier ne suivent donc PAS nos renommages. Production prouvee INCHANGEE :
+// arbre derive compare EN ENTIER avant/apres, a graine fixe.
 // _chromashift(12) → !(chromashift:12), _vel(N) → !(vel:N), <N> → [weight:N], <-> → <>
 
 @core
@@ -11,16 +15,16 @@
 @alphabet.western:midi
 
 @mode:ord
-S <> !(chromashift:12) !(vel:60) A B !(vel:65) C D !(vel:70) E F !(vel:75) G !(vel:77) H !(vel:80) I !(vel:85) J !(vel:87) K !(vel:90) L [weight:1]
+S <> !(chromashift:12) !(vel:60) A_r B_r !(vel:65) C_r D_r !(vel:70) E_r F_r !(vel:75) G_r !(vel:77) H !(vel:80) I !(vel:85) J !(vel:87) K !(vel:90) L [weight:1]
 
-A <> E2 . [weight:12]
-B <> D2 A [weight:11]
-C <> B2 B [weight:10]
-D <> G2 C [weight:9]
-E <> F#2 D [weight:8]
-F <> A#2 E [weight:7]
-G <> C2 F [weight:6]
-H <> G#2 G [weight:5]
+A_r <> E2 . [weight:12]
+B_r <> D2 A_r [weight:11]
+C_r <> B2 B_r [weight:10]
+D_r <> G2 C_r [weight:9]
+E_r <> F#2 D_r [weight:8]
+F_r <> A#2 E_r [weight:7]
+G_r <> C2 F_r [weight:6]
+H <> G#2 G_r [weight:5]
 I <> A2 H [weight:4]
 J <> D#2 I [weight:3]
 K <> C#2 J [weight:2]

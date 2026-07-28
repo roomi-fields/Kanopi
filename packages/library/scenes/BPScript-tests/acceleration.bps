@@ -7,6 +7,10 @@
 //
 // acceleration.bps — "sawtooth rhythm" par Harm Visser (1997)
 // Traduit de bp3-engine/test-data/-gr.acceleration
+// NOMS DE REGLES SUFFIXES `_r` : une tete de regle ne peut plus porter le nom d une note de
+// l alphabet actif (decision 2026-07-28, hub). Le natif d origine garde SES noms : les passages
+// de .gr cites dans ce fichier ne suivent donc PAS nos renommages. Production prouvee INCHANGEE :
+// arbre derive compare EN ENTIER avant/apres, a graine fixe.
 // _transpose = runtime, _vel = runtime — both via _script(CTn)
 
 @core
@@ -17,16 +21,16 @@
 @alphabet.western:midi
 
 @mode:ord
-S -> !(chromashift:12, vel:60) A B !(vel:65) C D !(vel:70) E F !(vel:75) G !(vel:77) H !(vel:80) I !(vel:85) J !(vel:87) K !(vel:90) L
+S -> !(chromashift:12, vel:60) A_r B_r !(vel:65) C_r D_r !(vel:70) E_r F_r !(vel:75) G_r !(vel:77) H !(vel:80) I !(vel:85) J !(vel:87) K !(vel:90) L
 
-A -> E2 .
-B -> D2 A
-C -> B2 B
-D -> G2 C
-E -> F#2 D
-F -> A#2 E
-G -> C2 F
-H -> G#2 G
+A_r -> E2 .
+B_r -> D2 A_r
+C_r -> B2 B_r
+D_r -> G2 C_r
+E_r -> F#2 D_r
+F_r -> A#2 E_r
+G_r -> C2 F_r
+H -> G#2 G_r
 I -> A2 H
 J -> D#2 I
 K -> C#2 J
