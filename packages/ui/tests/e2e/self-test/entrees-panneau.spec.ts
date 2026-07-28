@@ -11,8 +11,9 @@ import { expectNoConsoleErrors } from '../../helpers';
 //     l'utilisateur associe l'appareil, et l'association vit HORS de la scène.
 //
 // CE QUE CE BANC PROUVE, dans l'ordre où l'utilisateur le vit :
-//   1. une scène SANS clavier déclaré laisse le geste de prise GRISÉ — la scène n'attend rien ;
-//   2. une scène qui déclare `@in touches transport.keyboard` l'ARME (cliquable) ;
+//   1. une scène SANS clavier déclaré : le témoin le dit dans son infobulle — la scène n'attend
+//      rien du clavier ;
+//   2. une scène qui déclare `@in touches transport.keyboard` : le témoin annonce ce rôle ;
 //   3. le panneau des entrées LISTE le rôle déclaré, avec son canal — pas des appareils bruts ;
 //   4. le clic PREND le focus, et une touche arrive alors VRAIMENT sur le bus (charge opaque :
 //      `key <code> down`) — sans commande de développeur, sans lucarne `?events=1` ;
@@ -21,8 +22,13 @@ import { expectNoConsoleErrors } from '../../helpers';
 // Le point 5 est le verrou qui compte : un périphérique qui continuerait d'écouter après le
 // relâchement volerait les touches de l'éditeur, en silence.
 //
+// ⚠️ Le banc arme en envoyant des événements qui PORTENT le drapeau du verrou : l'automatisation ne
+// sait pas basculer le vrai (mesuré). Même porte que le geste réel, clavier simulé — et comme un
+// clavier verrouillé estampille TOUTES ses frappes, chaque touche de jeu porte le drapeau.
+//
 // Sélecteurs, tous pris dans les composants (jamais devinés) :
-//   `.sb-item.play-focus.armed` / `.pris` — Statusbar.svelte ·
+//   `.sb-item.play-focus.pris` / `.rendu` — Statusbar.svelte (un MIROIR du verrou, plus un
+//   bouton : depuis 2026-07-28 c'est le VERROU DES MAJUSCULES qui arme, et l'écran le reflète) ·
 //   `.activity-bar button[title="Hardware"]` — le bouton porte le nom accessible « 2 » (badge),
 //   d'où le sélecteur par titre · `.hw .role` — HardwareView.svelte.
 
@@ -41,6 +47,27 @@ S -> C4 D4 E4 G4
 `;
 
 type Page = import('@playwright/test').Page;
+
+/** Une frappe qui PORTE l'état du verrou des majuscules — c'est ainsi qu'un vrai clavier estampille
+ *  ses touches. Envoyée sur `window`, là où écoutent le garde des raccourcis ET le périphérique. */
+async function frappeVerrou(page: Page, code: string, verrou: boolean) {
+  await page.evaluate(
+    ({ c, v }) => {
+      for (const type of ['keydown', 'keyup']) {
+        window.dispatchEvent(
+          new KeyboardEvent(type, {
+            code: c,
+            key: c,
+            bubbles: true,
+            cancelable: true,
+            modifierCapsLock: v
+          } as KeyboardEventInit)
+        );
+      }
+    },
+    { c: code, v: verrou }
+  );
+}
 
 async function ouvrirScene(page: Page, path: string, contents: string) {
   await page.evaluate(
@@ -76,24 +103,24 @@ async function entreesVues(page: Page) {
   });
 }
 
-test('la déclaration arme le focus, la prise ouvre le clavier, Échap le referme', async ({
-  page
-}) => {
+test('le VERROU arme le focus, il ouvre le clavier, le relâcher le referme', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
-  const prise = page.locator('.sb-item.play-focus.armed');
   const pris = page.locator('.sb-item.play-focus.pris');
+  const rendu = page.locator('.sb-item.play-focus.rendu');
 
-  // 1. SANS déclaration : l'affordance existe (on sait qu'elle existe) et reste INERTE.
+  // 1. SANS déclaration : le témoin dit que cette scène n'attend rien du clavier.
   await ouvrirScene(page, 'entrees-sans-clavier.bps', SANS_CLAVIER);
-  await expect(prise).toBeVisible({ timeout: 3_000 });
-  await expect(prise).toBeDisabled();
+  await frappeVerrou(page, 'ShiftLeft', false);
+  await expect(rendu).toBeVisible({ timeout: 3_000 });
+  await expect(rendu).toHaveAttribute('title', /ne déclare aucun clavier/);
 
-  // 2. AVEC déclaration : la même affordance s'arme.
+  // 2. AVEC déclaration : le témoin nomme le rôle qu'on jouerait.
   await ouvrirScene(page, 'entrees-avec-clavier.bps', AVEC_CLAVIER);
-  await expect(prise).toBeEnabled({ timeout: 3_000 });
+  await frappeVerrou(page, 'ShiftLeft', false);
+  await expect(rendu).toHaveAttribute('title', /touches/, { timeout: 3_000 });
 
   // 3. Le panneau des entrées liste les RÔLES déclarés, pas des appareils bruts.
   await page.locator('.activity-bar button[title="Hardware"]').click();
@@ -115,13 +142,13 @@ test('la déclaration arme le focus, la prise ouvre le clavier, Échap le referm
     { name: 'pedale', transport: 'midi', mapping: null }
   ]);
 
-  // 4. LE GESTE : on prend le focus, puis on tape. La touche doit ARRIVER sur le bus.
-  await prise.click();
-  await expect(pris).toBeVisible({ timeout: 2_000 });
+  // 4. LE GESTE : on enclenche le verrou, puis on tape. La touche doit ARRIVER sur le bus.
   await quitterEdition(page);
+  await frappeVerrou(page, 'ShiftLeft', true);
+  await expect(pris).toBeVisible({ timeout: 2_000 });
 
   const avant = (await entreesVues(page)).length;
-  await page.keyboard.press('KeyQ');
+  await frappeVerrou(page, 'KeyQ', true);
   await page.waitForTimeout(200);
   const apres = await entreesVues(page);
   expect(apres.length).toBeGreaterThan(avant);
@@ -129,12 +156,12 @@ test('la déclaration arme le focus, la prise ouvre le clavier, Échap le referm
   expect(frappe.device).toBe('keyboard');
   expect(frappe.signal.kind).toBe('key');
 
-  // 5. Échap rend le focus ET ferme le périphérique — plus rien n'arrive ensuite.
-  await page.keyboard.press('Escape');
+  // 5. RELÂCHER LE VERROU rend le focus ET ferme le périphérique — plus rien n'arrive ensuite.
+  await frappeVerrou(page, 'ShiftLeft', false);
   await expect(pris).toHaveCount(0, { timeout: 2_000 });
   const aprèsRelâche = (await entreesVues(page)).length;
-  await page.keyboard.press('KeyW');
-  await page.keyboard.press('KeyX');
+  await frappeVerrou(page, 'KeyW', false);
+  await frappeVerrou(page, 'KeyX', false);
   await page.waitForTimeout(300);
   expect((await entreesVues(page)).length).toBe(aprèsRelâche);
 

@@ -20,6 +20,10 @@ function inEditableTarget(e: KeyboardEvent): boolean {
 }
 
 export function handleGlobalKey(e: KeyboardEvent) {
+  // LE VERROU EST LU ICI, SUR L'ÉVÉNEMENT — il n'existe aucune autre façon de le connaître (pas
+  // d'interrogation globale). C'est donc chaque geste qui met le focus de jeu à jour, et l'état
+  // « inconnu » du chargement tombe au premier d'entre eux.
+  playFocus.observer(e);
   // LE FOCUS DE JEU DÉCIDE — décision Romain 2026-07-26 (« le focus décide, pas une priorité
   // globale »). Une scène qui a déclaré un périphérique clavier capte ses touches QUAND ELLE A LE
   // FOCUS DE JEU ; hors de ce focus, l'interface garde ses raccourcis. Aucun camp ne gagne dans
@@ -38,11 +42,6 @@ export function handleGlobalKey(e: KeyboardEvent) {
   // Ce garde est de l'INTERFACE (contrat `hote-runtime-in.md` § « Ce qui reste chez l'hôte ») :
   // il n'écoute aucune touche de jeu, n'en connaît aucune, n'en résout aucun nom.
   if (playFocus.held && !inEditableTarget(e)) {
-    if (e.key === 'Escape' && !isMod(e) && !e.altKey && !e.shiftKey) {
-      e.preventDefault();
-      playFocus.release();
-      return;
-    }
     if (!isMod(e)) return;
   }
   // Cmd/Ctrl + K (primary) or Cmd/Ctrl + Shift + P (alt) → open palette
@@ -126,9 +125,20 @@ export function handleGlobalKey(e: KeyboardEvent) {
   }
 }
 
+/** Un geste de SOURIS porte le même drapeau de verrou qu'une touche — et c'est ce qui fait tomber
+ *  l'état « inconnu » sans rien demander à personne : pour jouer, on clique forcément dans la
+ *  fenêtre. Lecture SEULE, aucun raccourci ne dépend de la souris. */
+function observerGeste(e: MouseEvent) {
+  playFocus.observer(e);
+}
+
 export function installGlobalKeybindings() {
   // Capture phase so we beat the browser's Ctrl+1..9 tab-switch accelerator.
   const opts: AddEventListenerOptions = { capture: true };
   window.addEventListener('keydown', handleGlobalKey, opts);
-  return () => window.removeEventListener('keydown', handleGlobalKey, opts);
+  window.addEventListener('mousedown', observerGeste, opts);
+  return () => {
+    window.removeEventListener('keydown', handleGlobalKey, opts);
+    window.removeEventListener('mousedown', observerGeste, opts);
+  };
 }

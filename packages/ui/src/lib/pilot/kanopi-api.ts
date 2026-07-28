@@ -25,7 +25,6 @@
 import { setTempo as setTempoCommand } from '../commands/tempo';
 import { produceActiveScene } from '../commands/produce';
 import { playback } from '../../stores/playback.svelte';
-import { playFocus } from '../../stores/play-focus.svelte';
 import { transport } from '../../stores/transport.svelte';
 import { openBlocks } from '../../stores/blocks.svelte';
 import { workspace } from '../../stores/workspace.svelte';
@@ -46,7 +45,12 @@ import { core } from '../core';
 // v16 — [334] `inspect.audio.enableEventLog/eventLog/disableEventLog` : trois PASSE-PLATS vers le
 // journal des envois reçus que runtime-audio a ouvert à sa propre frontière (46cb4e3). Additif lui
 // aussi, et volontairement mince : l'hôte allume, lit, éteint — il n'interpose rien.
-const API_VERSION = 16;
+// v17 — [1015] `setPlayFocus` est RETIRÉ. Le focus de jeu n'est plus commandé : il est LU sur le
+// verrou des majuscules, à chaque geste. Une commande qui le poserait serait une seconde autorité
+// sur le même état — exactement la voie parallèle que le passage au modèle Bitwig supprime. Un banc
+// arme le focus comme un utilisateur : en envoyant un événement qui PORTE le drapeau du verrou
+// (`new KeyboardEvent('keydown', { modifierCapsLock: true })`), mesuré conforme dans le navigateur.
+const API_VERSION = 17;
 
 // (L'observateur des events audio forwardés + l'inspection `modulations()` sont RETIRÉS avec le
 //  wrapper audio hôte — frontière Phase 2 audio : l'hôte ne forwarde plus d'events audio shapés,
@@ -139,16 +143,6 @@ export function installKanopiApi(): void {
     removeFile(path: string): boolean {
       const cible = workspace.files.find((f) => f.path === path);
       return cible ? workspace.removeFile(cible.id) : false;
-    },
-    /** Prend/rend le FOCUS DE JEU (décision 2026-07-26 : le focus décide, pas une priorité
-     *  globale). Focus pris ⇒ une touche NUE appartient à la performance et l'hôte ne la consomme
-     *  plus ; les raccourcis Cmd/Ctrl (hush compris) restent à l'interface.
-     *  MÊME point d'entrée que le badge de la barre d'état (`stores/play-focus`) : aucune règle
-     *  d'arbitrage ici, le garde vit dans `keybindings/bindings.ts`.
-     *  `source` est une étiquette d'AFFICHAGE (qui a pris), jamais consultée pour décider. */
-    setPlayFocus(held: boolean, source?: string): void {
-      if (held) playFocus.take(source);
-      else playFocus.release();
     },
 
     // ————— INSPECTION (lecture seule, AUCUN effet) —————

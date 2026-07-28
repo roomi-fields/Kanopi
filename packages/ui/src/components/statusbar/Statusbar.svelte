@@ -63,37 +63,42 @@
   </div>
 
   <div class="sb-group">
-    <!-- FOCUS DE JEU — badge de MODE **et** geste de prise (décisions 2026-07-26 et 2026-07-27).
-         Un mode qui capte les touches nues doit se VOIR (sans ça, on appuie sur Espace, rien ne
-         démarre, et rien à l'écran ne dit pourquoi) ET doit se PRENDRE : « déclarer un périphérique
-         clavier ARME le focus — le prendre reste un geste de l'utilisateur ». Produire une scène
-         est le geste le plus fréquent du live coding ; s'il emportait les touches nues, l'auteur
-         perdrait son clavier au moment où il en fait le plus usage.
-         Trois états, un seul endroit : GRISÉ quand la scène ne déclare aucun clavier · PRENDRE
-         quand elle en déclare un · PRIS (clic ou Échap pour rendre). -->
-    {#if playFocus.held}
-      <button
+    <!-- FOCUS DE JEU — UN MIROIR, PLUS UN BOUTON (décision Romain 2026-07-28, « on fait comme
+         Bitwig »). Le VERROU DES MAJUSCULES arme le clavier de jeu ; l'écran ne fait que REFLÉTER
+         son voyant, parce qu'aucune page ne peut allumer ni éteindre celui d'un clavier. Le badge
+         cliquable et la sortie par Échap ont disparu dans le même mouvement : deux façons d'armer
+         un même mode, c'est la voie parallèle qui finit par diverger.
+         TROIS ÉTATS, et le troisième est le plus important : PRIS (verrou enclenché, les touches
+         nues vont à la performance) · RENDU · INCONNU tant qu'aucun geste n'a été observé — l'état
+         du verrou ne se lit que sur un événement, jamais au chargement. On affiche INCONNU plutôt
+         qu'« éteint », parce qu'un éteint faux est pire qu'un inconnu assumé ; il tombe de toute
+         façon au premier clic dans la fenêtre. -->
+    {#if playFocus.etat === 'pris'}
+      <div
         class="sb-item play-focus pris"
-        title="Focus de jeu pris{playFocus.source
-          ? ` (${playFocus.source})`
-          : ''} — les touches nues vont à la performance, les raccourcis Cmd/Ctrl restent à l'interface. Clic ou Échap pour rendre."
-        onclick={() => playFocus.release()}
+        title="VERROU MAJ ENCLENCHÉ — les touches nues vont à la performance ; les raccourcis Cmd/Ctrl restent à l'interface. Relâche le verrou des majuscules pour rendre la main."
       >
         <span class="sb-dot"></span>
         <span class="dim">focus</span> <span class="accent">jeu</span>
-      </button>
+      </div>
+      <span class="sb-sep">│</span>
+    {:else if playFocus.etat === 'rendu'}
+      <div
+        class="sb-item play-focus rendu"
+        title={roleClavier === null
+          ? 'Verrou des majuscules relâché. Cette scène ne déclare aucun clavier de jeu — une scène l’arme en déclarant « @in <rôle> transport.keyboard ».'
+          : `Verrou des majuscules relâché : les touches vont à l’interface. Enclenche-le pour jouer « ${roleClavier} » au clavier.`}
+      >
+        <span class="dim">focus</span> <span class="dim">maj</span>
+      </div>
       <span class="sb-sep">│</span>
     {:else}
-      <button
-        class="sb-item play-focus armed"
-        disabled={roleClavier === null}
-        title={roleClavier === null
-          ? 'Cette scène ne déclare aucun clavier de jeu — rien à prendre. Une scène l’arme en déclarant « @in <rôle> transport.keyboard ».'
-          : `Prendre le focus de jeu pour « ${roleClavier} » — les touches nues iront à la performance, les raccourcis Cmd/Ctrl restent à l’interface. Échap pour rendre.`}
-        onclick={() => roleClavier && playFocus.take(roleClavier)}
+      <div
+        class="sb-item play-focus inconnu"
+        title="État du verrou des majuscules encore INCONNU — il ne se lit que sur un geste (touche ou clic), jamais au chargement. Le premier clic dans la fenêtre le révèle."
       >
-        <span class="dim">focus</span> <span class="accent">jeu ?</span>
-      </button>
+        <span class="dim">focus</span> <span class="accent">maj ?</span>
+      </div>
       <span class="sb-sep">│</span>
     {/if}
     <div class="sb-item">
@@ -137,29 +142,21 @@
     gap: 6px;
   }
 
-  button.play-focus {
-    background: none;
-    border: none;
-    padding: 0;
-    font: inherit;
-    letter-spacing: inherit;
-    color: inherit;
-    cursor: pointer;
-    /* La barre d'état est une LIGNE : sans ça, « focus jeu ? » se coupait en deux et chevauchait
-       le compteur voisin (vu à l'écran, largeur d'un portable). */
+  /* La barre d'état est une LIGNE : sans ça, l'étiquette se coupait en deux et chevauchait le
+     compteur voisin (vu à l'écran, largeur d'un portable). Plus de `cursor: pointer` ni de
+     soulignement au survol : ce n'est plus quelque chose qu'on clique, et le laisser ressembler à
+     un bouton ferait chercher un geste qui n'existe plus. */
+  .play-focus {
     white-space: nowrap;
   }
-  /* GRISÉ quand la scène ne déclare aucun clavier : l'affordance reste VISIBLE pour qu'on sache
-     qu'elle existe, et inerte pour qu'on sache que cette scène-là n'attend rien du clavier. */
-  button.play-focus:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
-  button.play-focus.armed:not(:disabled) .accent {
+  /* INCONNU : accentué, parce que c'est l'état qui demande un geste (n'importe lequel) pour se
+     lever — pas éteint, pas discret. */
+  .play-focus.inconnu .accent {
     color: var(--amber);
   }
-  button.play-focus.armed:not(:disabled):hover .accent {
-    text-decoration: underline;
+  /* RENDU : entièrement en sourdine, comme les compteurs voisins — rien à faire, rien à voir. */
+  .play-focus.rendu {
+    opacity: 0.55;
   }
 
   .sb-dot {

@@ -26,8 +26,15 @@ import { test, expect } from '@playwright/test';
 // pour toujours et la pièce ne s'arrêterait plus au tour suivant. Ce qui traverse sans gel, c'est
 // le doigt POSÉ quand la lecture atteint le point, comme une pédale tenue.
 //
-// La touche part par de VRAIS événements clavier (`keyboard.down`/`up`), à travers le focus de jeu
-// — jamais par un appel qui court-circuiterait le périphérique.
+// ⚠️ COMMENT LE BANC FRAPPE, ET POURQUOI CE N'EST PLUS UNE FRAPPE PILOTÉE. Depuis le passage au
+// modèle Bitwig, le focus de jeu est armé par le VERROU DES MAJUSCULES, lu sur CHAQUE événement.
+// Or l'automatisation de navigateur ne sait pas basculer le vrai verrou (mesuré : `press`, `down`/
+// `up`, double frappe — `getModifierState('CapsLock')` reste `false`). Une vraie frappe pilotée
+// rapporterait donc le verrou ÉTEINT et désarmerait le focus à l'instant même où on veut jouer.
+// Le banc envoie donc des événements clavier PORTANT le drapeau du verrou, sur la même fenêtre où
+// écoutent le garde des raccourcis ET le périphérique de `runtime-in` (`devices/keyboard.js` :
+// `addEventListener('keydown'/'keyup')`, lecture de `ev.code`). Même porte, même chemin, clavier
+// simulé — pas une voie parallèle.
 
 const SCENE = `@core
 @alphabet.western:audio
@@ -49,7 +56,6 @@ type Facade = {
     play: () => void;
     stop: () => void;
     hush: () => void;
-    setPlayFocus: (on: boolean) => void;
     inspect: {
       transportState: () => string;
       audio: { enableMeter: () => void; measure: () => { rms: number } | null };
@@ -61,6 +67,40 @@ type Facade = {
     };
   };
 };
+
+/** Une touche du CLAVIER DE JEU, verrou des majuscules ENCLENCHÉ — c'est ce que produit un vrai
+ *  clavier dont la touche est allumée : toutes ses frappes portent le drapeau, pas seulement celle
+ *  qui l'a basculé. Envoyée sur `window`, là où écoutent le garde des raccourcis et le
+ *  périphérique d'entrée. */
+async function toucheDeJeu(page: Page, code: string, quoi: 'down' | 'up' | 'press') {
+  await page.evaluate(
+    ({ c, q }) => {
+      const env = (type: string) =>
+        window.dispatchEvent(
+          new KeyboardEvent(type, {
+            code: c,
+            key: c === 'Space' ? ' ' : c,
+            bubbles: true,
+            cancelable: true,
+            modifierCapsLock: true
+          } as KeyboardEventInit)
+        );
+      if (q === 'down' || q === 'press') env('keydown');
+      if (q === 'up' || q === 'press') env('keyup');
+    },
+    { c: code, q: quoi }
+  );
+}
+
+/** ARMER LE FOCUS DE JEU : un premier événement portant le verrou suffit — l'hôte le LIT, il ne le
+ *  pose pas. Il n'y a plus ni bouton ni commande de façade à appeler. */
+async function armerVerrou(page: Page) {
+  await page.evaluate(() => {
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { modifierCapsLock: true } as KeyboardEventInit)
+    );
+  });
+}
 
 async function etatTransport(page: Page) {
   return page.evaluate(() => (window as unknown as Facade).kanopi.inspect.transportState());
@@ -127,7 +167,6 @@ test.afterEach(async ({ page }) => {
     const k = (window as unknown as Facade).kanopi;
     k.stop();
     k.hush();
-    k.setPlayFocus(false);
   });
 });
 
@@ -143,8 +182,8 @@ test("la lecture GÈLE au point d'attente et la touche la fait repartir", async 
   expect(await etatTransport(page)).toBe('waiting');
 
   // 3. LA TOUCHE. Focus de jeu pris (les touches nues vont à la pièce), puis une VRAIE frappe.
-  await page.evaluate(() => (window as unknown as Facade).kanopi.setPlayFocus(true));
-  await page.keyboard.press('Space');
+  await armerVerrou(page);
+  await toucheDeJeu(page, 'Space', 'press');
 
   await attendreEtat(page, 'running', 5_000);
   // 4. ET ÇA SONNE. La reprise doit produire du son, pas seulement avancer un compteur.
@@ -156,11 +195,11 @@ test('elle attend ENCORE au tour de boucle suivant — la barrière se repose', 
   // levait la barrière et personne ne la refermait, donc au deuxième tour elle traversait son
   // propre point sans s'arrêter. Une pièce qui n'attend qu'au premier tour n'est pas jouable en
   // boucle — et rien ne l'aurait signalé, puisque le premier tour, lui, était parfait.
-  await page.evaluate(() => (window as unknown as Facade).kanopi.setPlayFocus(true));
+  await armerVerrou(page);
   await produireEtJouer(page);
 
   await attendreEtat(page, 'waiting');
-  await page.keyboard.press('Space'); // frappée : lève PUIS repose la barrière
+  await toucheDeJeu(page, 'Space', 'press'); // frappée : lève PUIS repose la barrière
   await attendreEtat(page, 'running', 5_000);
 
   // La pièce dure ~5,3 s : elle doit revenir buter sur le même point au tour suivant. On laisse la
@@ -172,12 +211,12 @@ test('la touche TENUE à travers le point annule le gel — la musique passe san
   page
 }) => {
   // Le focus est pris AVANT la lecture : le geste du musicien qui sait ce qui vient.
-  await page.evaluate(() => (window as unknown as Facade).kanopi.setPlayFocus(true));
+  await armerVerrou(page);
   // Le doigt se POSE APRÈS la production (qui re-pose les barrières) et NE SE LÈVE PAS : c'est la
   // pédale tenue. Un `press` (appui + relâchement instantanés) remonterait la barrière avant que la
   // lecture n'arrive au point.
   await produire(page);
-  await page.keyboard.down('Space');
+  await toucheDeJeu(page, 'Space', 'down');
   await jouer(page);
 
   // Le point est à deux temps du début (90 bpm ⇒ ~1,3 s) : on observe bien au-delà, et la lecture
@@ -187,7 +226,7 @@ test('la touche TENUE à travers le point annule le gel — la musique passe san
     etats.add(await etatTransport(page));
     await page.waitForTimeout(100);
   }
-  await page.keyboard.up('Space');
+  await toucheDeJeu(page, 'Space', 'up');
   expect([...etats]).not.toContain('waiting');
   expect(await sonSur(page, 800)).toBeGreaterThan(0.01);
 });
@@ -198,9 +237,9 @@ test('la touche FRAPPÉE en avance ne désarme pas le point — la barrière se 
   // Le pendant du test précédent, et le verrou qui compte vraiment : sans lui, quelqu'un
   // « corrigerait » un jour le ré-armement au relâchement pour faire passer le cas d'au-dessus, et
   // la pièce cesserait de s'arrêter au deuxième tour sans qu'un seul test ne rougisse.
-  await page.evaluate(() => (window as unknown as Facade).kanopi.setPlayFocus(true));
+  await armerVerrou(page);
   await produireEtJouer(page);
-  await page.keyboard.press('Space'); // appui + relâchement, bien avant le point
+  await toucheDeJeu(page, 'Space', 'press'); // appui + relâchement, bien avant le point
 
   await attendreEtat(page, 'waiting');
 });

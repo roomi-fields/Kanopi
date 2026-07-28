@@ -2,27 +2,36 @@ import { test, expect } from '@playwright/test';
 import { expectNoConsoleErrors } from '../../helpers';
 
 // FOCUS DE JEU — banc permanent de l'ARBITRAGE clavier, à l'écran.
-// Décision `hub/decisions/2026-07-26-clavier-le-focus-decide-pas-une-priorite-globale.md` :
-// ni le transport ni le contenu ne gagne dans l'absolu, c'est le CONTEXTE FOCALISÉ qui décide.
+// Décision Romain 2026-07-28 : « pour le focus on fait comme Bitwig » — c'est LE VERROU DES
+// MAJUSCULES qui arme le clavier de jeu, et lui seul. Le badge cliquable et la sortie par Échap ont
+// été retirés dans le même mouvement (deux façons d'armer un même mode = voie parallèle).
 //
 // CE QUE CE BANC PROUVE, dans l'ordre où l'utilisateur le vit :
-//   1. hors focus de jeu, Espace démarre le transport (le comportement d'avant ne bouge pas) ;
-//   2. focus pris, le badge « focus jeu » APPARAÎT dans la barre d'état — un mode qui capte les
-//      touches nues doit se voir, sinon Espace ne fait rien et rien ne dit pourquoi ;
-//   3. focus pris, Espace ne démarre PLUS le transport — la touche nue revient à la performance ;
-//   4. Échap rend le focus, le badge disparaît et Espace redevient le transport.
+//   1. verrou relâché, Espace démarre le transport (le comportement d'avant ne bouge pas) ;
+//   2. verrou enclenché, le témoin « focus jeu » APPARAÎT dans la barre d'état — un mode qui capte
+//      les touches nues doit se voir, sinon Espace ne fait rien et rien ne dit pourquoi ;
+//   3. verrou enclenché, Espace ne démarre PLUS le transport — la touche nue va à la performance ;
+//   4. ÉCHAP NE REND PLUS RIEN : c'est une touche ordinaire, et le témoin reste allumé. Seul le
+//      relâchement du verrou rend la main — et Espace redevient alors le transport.
 //
 // L'unité (`src/lib/keybindings/play-focus.test.ts`) garde en plus le NON-preventDefault (l'hôte
-// s'abstient au lieu de consommer) et le hush qui reste atteignable en jouant — deux choses qu'un
-// banc navigateur ne lit pas directement.
+// s'abstient au lieu de consommer), le hush qui reste atteignable en jouant, et l'état INCONNU
+// tant qu'aucun geste n'a été observé — trois choses qu'un banc navigateur ne lit pas directement.
+//
+// ⚠️ COMMENT LE BANC ARME : l'automatisation ne sait PAS basculer le vrai verrou (mesuré : `press`,
+// `down`/`up`, double frappe — l'état lu reste `false`). Il envoie donc des événements clavier
+// PORTANT le drapeau, sur la fenêtre où écoutent le garde des raccourcis et le périphérique
+// d'entrée : même porte, clavier simulé. Et comme un vrai clavier verrouillé estampille TOUTES ses
+// frappes, chaque touche de ce banc porte le drapeau tant que le verrou est censé être enclenché.
+//
+// ✅ ET LE SIMULÉ VAUT LE RÉEL, C'EST ÉTABLI — pas supposé. Le 2026-07-28, Romain a essayé avec le
+// VRAI verrou physique, au doigt : ça fonctionne. C'était le seul point que ce banc ne pouvait pas
+// atteindre, et il est désormais confirmé. Si tu lis ceci en te demandant si la simulation prouve
+// quelque chose : oui, elle a été confrontée au geste réel une fois, et elle disait vrai.
 //
 // Sélecteurs, tous pris dans les composants (jamais devinés) :
 //   - `.tbtn[title="Play"]` / `.tbtn.playing` — TransportCluster.svelte, comme transport.spec.ts ;
-//   - `.sb-item.play-focus.pris` — Statusbar.svelte, le badge de mode PRIS (l'affordance de PRISE,
-//     elle, est toujours présente et porte `.armed` — voir `entrees-panneau.spec.ts`).
-// La PRISE du focus passe ici par la façade pilote (`window.kanopi.setPlayFocus`), qui délègue au
-// MÊME point d'entrée que le badge (`stores/play-focus`). Ce banc mesure l'ARBITRAGE de l'hôte ;
-// le branchement du périphérique et le geste de prise sont mesurés par `entrees-panneau.spec.ts`.
+//   - `.sb-item.play-focus.pris` — Statusbar.svelte, le témoin de mode (un MIROIR, plus un bouton).
 
 // Même sonde que transport.spec.ts : 8 hauteurs occidentales en `:audio` (pas `:midi` — le garde
 // fail-loud MIDI bloquerait l'éval sans périphérique). Kronos est la seule autorité de transport :
@@ -34,6 +43,27 @@ const PROBE_SCENE = `@core
 
 S -> C4 D4 E4 G4 C5 G4 E4 C4
 `;
+
+/** Une frappe qui PORTE l'état du verrou — `verrou:true` simule un clavier dont la touche est
+ *  allumée. Envoyée sur `window`, là où écoutent le garde et le périphérique d'entrée. */
+async function frappe(page: import('@playwright/test').Page, code: string, verrou: boolean) {
+  await page.evaluate(
+    ({ c, v }) => {
+      for (const type of ['keydown', 'keyup']) {
+        window.dispatchEvent(
+          new KeyboardEvent(type, {
+            code: c,
+            key: c === 'Space' ? ' ' : c,
+            bubbles: true,
+            cancelable: true,
+            modifierCapsLock: v
+          } as KeyboardEventInit)
+        );
+      }
+    },
+    { c: code, v: verrou }
+  );
+}
 
 async function loadAndArm(page: import('@playwright/test').Page) {
   await page.evaluate((contents) => {
@@ -105,24 +135,29 @@ test('le focus de jeu décide à qui appartient Espace, et il se voit', async ({
   await page.locator('.tbtn[title="Stop"]').click();
   await expect(playing).toHaveCount(0, { timeout: 3_000 });
 
-  // 2. Focus de jeu PRIS (façade pilote → même point d'entrée que le badge) : le mode se voit.
-  await page.evaluate(() => {
-    const w = window as unknown as {
-      kanopi: { setPlayFocus: (held: boolean, source?: string) => void };
-    };
-    w.kanopi.setPlayFocus(true, 'banc');
-  });
+  // 2. VERROU ENCLENCHÉ : le témoin s'allume. L'hôte le LIT sur l'événement, il ne le pose pas.
+  await frappe(page, 'ShiftLeft', true);
   await expect(badge).toBeVisible({ timeout: 2_000 });
   await leaveEditFocus(page);
 
   // 3. Espace ne démarre PLUS le transport : la touche nue revient à la performance. On laisse
   //    une seconde pleine — un démarrage qui « arriverait juste après » serait quand même un vol.
-  await page.keyboard.press('Space');
+  await frappe(page, 'Space', true);
   await page.waitForTimeout(1000);
   await expect(playing).toHaveCount(0);
 
-  // 4. Échap rend le focus : le badge disparaît, Espace redevient le transport.
-  await page.keyboard.press('Escape');
+  // 4. ÉCHAP NE REND PLUS RIEN — le témoin reste allumé et Espace reste à la performance. Une
+  //    sortie de secours au clavier serait une SECONDE façon de changer un état qu'on ne commande
+  //    pas : l'écran mentirait aussitôt, puisqu'il reflète un voyant resté allumé.
+  await frappe(page, 'Escape', true);
+  await page.waitForTimeout(300);
+  await expect(badge).toBeVisible();
+  await frappe(page, 'Space', true);
+  await page.waitForTimeout(500);
+  await expect(playing).toHaveCount(0);
+
+  // 5. SEUL LE RELÂCHEMENT DU VERROU rend la main : le témoin s'éteint, Espace redevient transport.
+  await frappe(page, 'ShiftLeft', false);
   await expect(badge).toHaveCount(0, { timeout: 2_000 });
   await page.keyboard.press('Space');
   await expect(playing).toBeVisible({ timeout: 3_000 });
