@@ -57,7 +57,7 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 
 ## Bibliothèque (corpus)
 
-- **KAN-34** `ouvert` **— BLOQUÉ EN AMONT, NE PAS TOUCHER LA SCÈNE AVANT** ([1063], 2026-07-29) —
+- **KAN-37** `ouvert` **— BLOQUÉ EN AMONT, NE PAS TOUCHER LA SCÈNE AVANT** ([1063], 2026-07-29) —
   **`synthesis/patchbay.bps` n'a rien à jouer pendant qu'elle branche.** Romain : un câblage n'a
   pas de durée ; quand le câblage cessera d'occuper le temps (décidé, livraison bpscript), cette
   scène passera de huit secondes à ZÉRO et deviendra injouable. Ce n'est pas le modèle qu'on plie
