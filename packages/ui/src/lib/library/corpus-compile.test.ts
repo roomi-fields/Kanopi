@@ -63,6 +63,23 @@ const BPS = import.meta.glob('../../../../library/scenes/**/*.bps', {
   eager: true
 }) as Record<string, string>;
 
+/** GRAINE FIGÉE — sans elle ce garde BASCULE, et un garde qui bascule est pire qu'un rouge.
+ *
+ * MESURÉ le 2026-07-29, après m'être trompé une première fois : `koto2.bps` jetait à 15h02,
+ * dérivait à 15h20 sans que j'aie touché au fichier. J'ai d'abord conclu « ce n'est pas un
+ * aléa » sur 20 dérivations passant 20/20 — CONCLUSION FAUSSE : la graine est semée UNE FOIS
+ * par processus, mes 20 tirages partageaient donc la même. Entre deux runs, elle change.
+ * Sous graine figée, koto1 ET koto2 jettent systématiquement, et sous les trois graines
+ * essayées (1, 42, 7) : le comportement est reproductible, le « passe parfois » venait d'un
+ * tirage d'horloge favorable.
+ *
+ * ⚠️ CE QUE CE GARDE NE PROUVE DONC PAS, et il faut le lire ici plutôt que le découvrir :
+ * une scène verte l'est SOUS CETTE GRAINE. Une grammaire aléatoire peut dériver sous un
+ * tirage et jeter sous un autre. Le déterminisme est ce qu'on gagne ; l'exhaustivité des
+ * tirages n'est pas couverte. C'est le même choix que le mode test à graine figée ([921]) :
+ * reproductible d'abord. */
+const GRAINE = 1;
+
 /** Rouges DÉCLARÉS : chemin → motif attendu dans l'erreur + ce que la scène attend.
  *  DEUX causes, qui ne veulent pas dire la même chose et ne se confondent pas :
  *   • 'nommage-attendu' — rouge TRANSITOIRE. La scène emploie une intention dont la forme
@@ -149,7 +166,8 @@ const ROUGES_DECLAREES: Array<{
     fichier: 'BPScript-tests/koto2.bps',
     motif: /SUB Insert: wildcard substitution misses/,
     cause: 'bug-moteur-route',
-    attend: 'idem koto1 — même erreur, même règle SUB à jokers, même origine amont.'
+    attend:
+      "idem koto1 — même erreur, même règle SUB à jokers, même origine amont. ⚠️ C'est elle qui a révélé que ce garde basculait : elle est SORTIE de cette liste puis y est RENTRÉE dans la même heure, parce qu'un tirage d'horloge favorable l'avait fait dériver une fois. Sous la GRAINE FIGÉE ci-dessus, elle jette de façon reproductible."
   }
 ];
 
@@ -179,7 +197,7 @@ describe('[932] statut de compilation du corpus BPScript', () => {
     };
     if (errors.length) return `analyse : ${errors.map((e) => e.message ?? String(e)).join(' | ')}`;
     try {
-      createSession(ast as Parameters<typeof createSession>[0], {}).derive();
+      createSession(ast as Parameters<typeof createSession>[0], { seed: GRAINE }).derive();
       return null;
     } catch (e) {
       return `dérivation : ${String(e)}`;
