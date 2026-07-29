@@ -256,7 +256,6 @@ const ACTION_LIB = {
 // un mécanisme BPx séparé et inchangé, non concerné par cette lib.
 const HOMOMORPHISM_LIB = BPSCRIPT_LIBS.homomorphism;
 
-
 // A front-end turns language source into a derivable BP3 SceneAST + parse
 // errors. Both languages produce the SAME `ast` shape (BPScript compiles down
 // to a BP3 grammar that the BP3 front-end then parses), so the rest of the
