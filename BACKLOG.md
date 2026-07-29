@@ -55,6 +55,20 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
   l'écart avec l'arbre du nuage est mesuré et signalé, pas comblé de moi-même.
   Texte d'origine : Kanopi n'avait aucune suppression de fichier (ni bouton/menu contextuel dans l'arbre, ni API store `removeFile`). Seule la commande `workspace.reset` (palette) nettoie — globalement. Ajouter une suppression par fichier (FileTree + `workspace.removeFile` + persistance). Trouvé en session 2026-06-20.
 
+## Bibliothèque (corpus)
+
+- **KAN-34** `ouvert` **— BLOQUÉ EN AMONT, NE PAS TOUCHER LA SCÈNE AVANT** ([1063], 2026-07-29) —
+  **`synthesis/patchbay.bps` n'a rien à jouer pendant qu'elle branche.** Romain : un câblage n'a
+  pas de durée ; quand le câblage cessera d'occuper le temps (décidé, livraison bpscript), cette
+  scène passera de huit secondes à ZÉRO et deviendra injouable. Ce n'est pas le modèle qu'on plie
+  — c'est la scène qui est fausse.
+  **Mesuré ici, pas rapporté de confiance** (dérivation BPx, graine 1) : `terminals` = les 8
+  symboles `lead open lead close lead glide lead close`, tous des macros de câblage/action,
+  **zéro note** ; `beatEdges` = `[0 … 8000]`, soit 8 temps de 1000 ms — la durée entière de la
+  pièce vient donc du câblage, et de rien d'autre. La clame de l'architecte est exacte.
+  **À faire quand bpscript aura livré la nature du câblage** : réécrire la scène pour qu'elle
+  JOUE quelque chose pendant qu'elle branche. Écrire avant = écrire contre une forme qui bouge.
+
 ## Éditeur
 
 - **KAN-15** `ouvert` — **Validation `.gr` (indicateur de compilation)** : `programCompileStatus` n'est applicable qu'au `.bps` (via `compileToBPxAST`). Le `.gr` natif se parse par `parseBP3` (validateur différent, nécessite la plomberie d'alphabet) ; lancer le transpileur `.bps` dessus donnait une fausse erreur → restreint au `.bps`. Pour donner au `.gr` un vrai indicateur, brancher `parseBP3` (deux passes alphabet) dans `programCompileStatus`. 2026-06-20.
