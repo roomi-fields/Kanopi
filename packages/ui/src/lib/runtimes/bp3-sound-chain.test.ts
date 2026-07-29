@@ -17,17 +17,14 @@ const fixtureLoader = (prefix: string, name: string): string | undefined => {
   return undefined;
 };
 
-const WESTERN = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-
 describe('resolveGrAux — the -gr → -al → sound chain', () => {
   it('follows the alphabet to the sound prototype and lists the sounding symbols', () => {
     const { alphabetNames, soundSymbols } = resolveGrAux(
       [{ prefix: 'al', name: 'EkDoTin', line: 0 }],
-      fixtureLoader,
-      WESTERN
+      fixtureLoader
     );
-    // The alphabet now comes from the -al, not the western fallback.
-    expect(alphabetNames).not.toEqual(WESTERN);
+    // La table vient du -al, et de lui seul.
+    expect(alphabetNames).toEqual(expect.arrayContaining(['ek', 'do', 'tin']));
     // The numbers' bols carry a sound (-mi.EkDoTin).
     expect(soundSymbols).toEqual(expect.arrayContaining(['ek', 'do', 'tin']));
   });
@@ -40,17 +37,21 @@ describe('resolveGrAux — the -gr → -al → sound chain', () => {
   it('resolves WHICH symbols sound through the -al chain (bols yes, unknowns no)', () => {
     const { soundSymbols } = resolveGrAux(
       [{ prefix: 'al', name: 'EkDoTin', line: 0 }],
-      fixtureLoader,
-      WESTERN
+      fixtureLoader
     );
     const sounding = new Set(soundSymbols);
     expect(sounding.has('ek')).toBe(true); // bol prototypé → sonne
     expect(sounding.has('zzz')).toBe(false); // symbole muet → console texte
   });
 
-  it('falls back to the default alphabet and no sound when there is no -al', () => {
-    const r = resolveGrAux([{ prefix: 'se', name: 'X', line: 0 }], fixtureLoader, WESTERN);
-    expect(r.alphabetNames).toEqual(WESTERN);
+  // ⛔ SANS `-al`, PLUS DE TABLE DU TOUT — et c'est le point du mouvement (bp3-frontend db2a1ab).
+  // Ce cas verrouillait l'inverse : il exigeait qu'on rende une liste de notes de repli. Cette
+  // liste partait dans la TABLE D'ALPHABET du natif, où une note n'a rien à faire — 58 grammaires
+  // sur 113 en sortaient polluées. `undefined` n'est pas « vide » : c'est « je ne sais pas », et
+  // c'est la vraie réponse quand aucun `-al` ne la donne.
+  it('rend une ABSENCE franche, pas un alphabet de repli, quand il n’y a pas de -al', () => {
+    const r = resolveGrAux([{ prefix: 'se', name: 'X', line: 0 }], fixtureLoader);
+    expect(r.alphabetNames).toBeUndefined();
     expect(r.soundSymbols).toEqual([]);
   });
 });

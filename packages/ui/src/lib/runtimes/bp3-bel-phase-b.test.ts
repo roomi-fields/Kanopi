@@ -17,9 +17,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { parseBP3 } from 'bp3-frontend';
-import { BP3_PITCH_CATALOG, bp3AlphabetKey } from 'bp3-frontend';
 import { createSession } from 'bpx';
-import { resolveGrAux, resolveSeSettings, resolveSeNoteConvention } from './bpx-adapter';
+import { resolveGrAux, resolveSeSettings, resolveSeText } from './bpx-adapter';
 import { BUNDLED_AL, BUNDLED_SOUND } from './bp3-aux';
 
 import bpFlags from '../../../../library/scenes/bp3/bp-flags.gr?raw';
@@ -30,31 +29,23 @@ import bpRepeat from '../../../../library/scenes/bp3/bp-repeat.gr?raw';
 import bpTestNc1 from '../../../../library/scenes/bp3/bp-test-nc1.gr?raw';
 import bpTicks from '../../../../library/scenes/bp3/bp-ticks.gr?raw';
 
-const BP3_EN_TOKENS = BP3_PITCH_CATALOG.alphabets[bp3AlphabetKey(0)].notes;
 type AuxLoader = (prefix: string, name: string) => string | undefined;
 // Même câblage que bundledAuxLoader (bpx-adapter.ts:322) — non exporté, 1 ligne, cf.
 // bp3-sound-chain.test.ts qui répète le même schéma pour ses fixtures.
 const bundledAuxLoader: AuxLoader = (prefix, name) =>
   prefix === 'al' ? BUNDLED_AL[name] : BUNDLED_SOUND[name];
 
-// Réplique de parseWithSound (bpx-adapter.ts:437-463) — la fonction elle-même n'est
-// pas exportée, mais chaque brique qu'elle orchestre (resolveGrAux/resolveSeSettings/
-// resolveSeNoteConvention) EST importée réelle ci-dessus, donc ceci exerce le VRAI
-// chemin de résolution de l'adaptateur, pas une réimplémentation indépendante.
+// Réplique de parseWithSound (la fonction elle-même n'est pas exportée, mais chaque brique qu'elle
+// orchestre — resolveGrAux / resolveSeSettings / resolveSeText — EST importée réelle ci-dessus,
+// donc ceci exerce le VRAI chemin de résolution de l'adaptateur, pas une réimplémentation).
+// La convention de notes ne passe plus par ici : on rend le TEXTE du `-se` au frontal, qui l'en
+// tire lui-même (2026-07-29, bp3-frontend db2a1ab).
 function parseWithSoundReplica(code: string) {
-  const first = parseBP3(code, { alphabetNames: BP3_EN_TOKENS });
-  const noteConvention = resolveSeNoteConvention(first.fileRefs);
-  const convTokens =
-    BP3_PITCH_CATALOG.alphabets[bp3AlphabetKey(noteConvention as number | null | undefined)]
-      ?.notes ?? BP3_EN_TOKENS;
-  const { alphabetNames, soundSymbols } = resolveGrAux(
-    first.fileRefs,
-    bundledAuxLoader,
-    convTokens
-  );
-  const reparse =
-    soundSymbols.length > 0 || alphabetNames !== BP3_EN_TOKENS || noteConvention != null;
-  const r = reparse ? parseBP3(code, { alphabetNames, soundSymbols, noteConvention }) : first;
+  const first = parseBP3(code);
+  const seText = resolveSeText(first.fileRefs);
+  const { alphabetNames, soundSymbols } = resolveGrAux(first.fileRefs, bundledAuxLoader);
+  const reparse = soundSymbols.length > 0 || alphabetNames !== undefined || seText !== undefined;
+  const r = reparse ? parseBP3(code, { alphabetNames, soundSymbols, seText }) : first;
   return { ast: r.ast, errors: r.errors, settings: resolveSeSettings(r.fileRefs) };
 }
 

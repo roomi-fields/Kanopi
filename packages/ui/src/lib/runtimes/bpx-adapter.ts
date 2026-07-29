@@ -20,7 +20,7 @@ type Bp3Actor = NonNullable<NonNullable<ParseBP3Result['ast']>['actors']>[number
 // dans sa `pitchLib` (cf. l'en-tête du module amont) : le frontal .gr émet une CLÉ d'alphabet, Kairos
 // résout token→hauteur via son résolveur GÉNÉRIQUE en lisant cette DÉFINITION. Dernier maillon [79]
 // (part a) : sans la fusion, une grammaire FR/sargam émet la clé mais résout MUET.
-import { BP3_PITCH_CATALOG, bp3AlphabetKey } from 'bp3-frontend';
+import { BP3_PITCH_CATALOG } from 'bp3-frontend';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 // bpscript's musical catalogs, imported AS-IS (same path as
 // lib/library/resources.ts). A `.bps` that declares `@alphabet.X` (+ optional
@@ -256,13 +256,6 @@ const ACTION_LIB = {
 // un mécanisme BPx séparé et inchangé, non concerné par cette lib.
 const HOMOMORPHISM_LIB = BPSCRIPT_LIBS.homomorphism;
 
-// Noms de TOKENISATION anglais par défaut (quels noms nus sont des terminaux de note au parse
-// d'une `.gr`), SOURCÉS du catalogue BP3-fidèle — plus de liste occidentale EN DUR (nettoyage L26
-// étape 2/2, GO archi [95], hand-off bp3-frontend [628]). Le rôle HAUTEUR de l'ancien repli est
-// mort (les 3 conventions résolvent via `PITCH_LIB`, bp3-frontend émet la clé anglaise depuis
-// 4df0b78) ; SEUL le rôle tokenisation subsiste, ici depuis la donnée. `parseWithSound` choisit la
-// convention réelle (`bp3_fr`/`bp3_indian`) selon le `-se`.
-const BP3_EN_TOKENS = BP3_PITCH_CATALOG.alphabets[bp3AlphabetKey(0)].notes;
 
 // A front-end turns language source into a derivable BP3 SceneAST + parse
 // errors. Both languages produce the SAME `ast` shape (BPScript compiles down
@@ -384,23 +377,28 @@ function soundFromRef(prefix: string, name: string, load: AuxLoader): string[] {
 // reached through the alphabet (`-gr → -al → -so/-mi/-cs`, decision
 // routage-texte-son-par-symbole / bp3-frontend 6a26fc4): load the `-al`, take its
 // alphabet, follow `alphabetSoundRef` to the prototype file. Fallback for the
-// rare grammar that references a sound file directly. No `-al` / unbundled →
-// the caller's default alphabet and no sounding non-note symbols (graceful).
+// rare grammar that references a sound file directly.
+//
+// ⛔ PLUS D'ALPHABET DE REPLI (2026-07-29, bp3-frontend db2a1ab). Ce lecteur recevait une liste de
+// notes à mettre dans `alphabetNames` quand la grammaire n'a pas de `-al` — et cette liste ne
+// partait pas que dans la tokenisation : elle alimentait la TABLE D'ALPHABET du natif. Mesuré en
+// face : 58 grammaires sur 113 en sortaient avec « C C# D D# E F… » pour table, alors qu'une note
+// n'y a rien à faire et que l'ABSENCE y veut dire « je ne sais pas », pas « vide ». Pas de `-al`
+// → on ne passe RIEN, et l'absence reste franche.
 export function resolveGrAux(
   fileRefs: FileRef[],
-  load: AuxLoader,
-  fallbackAlphabet: string[]
-): { alphabetNames: string[]; soundSymbols: string[] } {
+  load: AuxLoader
+): { alphabetNames: string[] | undefined; soundSymbols: string[] } {
   const alRef = fileRefs.find((r) => r.prefix === 'al');
   if (alRef) {
     const alText = load('al', alRef.name);
     if (alText) {
-      let alphabetNames = fallbackAlphabet;
+      let alphabetNames: string[] | undefined;
       try {
         const names = parseAlFile(alText);
         if (names.length) alphabetNames = names;
       } catch {
-        /* keep fallback */
+        /* -al illisible → aucune table, pas une table inventée */
       }
       const sref = alphabetSoundRef(alText);
       const soundSymbols = sref ? soundFromRef(sref.prefix, sref.name, load) : [];
@@ -412,7 +410,7 @@ export function resolveGrAux(
     (r) => r.prefix === 'so' || r.prefix === 'mi' || r.prefix === 'cs'
   );
   const soundSymbols = direct.flatMap((r) => soundFromRef(r.prefix, r.name, load));
-  return { alphabetNames: fallbackAlphabet, soundSymbols };
+  return { alphabetNames: undefined, soundSymbols };
 }
 
 // The sounding non-note symbols the front-end assigned (actors[0].assignments),
@@ -459,23 +457,18 @@ export function resolveSeSettings(fileRefs: FileRef[]): SeEngineSettings | undef
   }
 }
 
-// La CONVENTION DE NOTES du `-se` (0=anglaise, 1=française, 2=indienne) — dernier maillon [79]
-// (part b). parseBP3 émet la CLÉ d'alphabet BP3-fidèle (`bp3_fr`/`bp3_indian`) sur l'acteur
-// UNIQUEMENT si on lui passe cette convention (`options.noteConvention`) ; sans elle, une grammaire
-// FR/sargam émet des notes mais aucune clé → Kairos résout MUET (le catalogue est là, cf. la fusion
-// dans PITCH_LIB, mais rien ne le désigne). On lit `parseSeFile(...).protocol.noteConvention` — le
-// même `-se` que `resolveSeSettings`, dont le CONTENU est déjà bundlé. Absent → undefined (anglais /
-// repli inchangé). L'hôte n'invente rien : il TRANSPORTE la convention de la donnée `-se` vers le frontal.
-export function resolveSeNoteConvention(fileRefs: FileRef[]): number | null | undefined {
+// Le TEXTE du `-se` que la grammaire référence, rendu TEL QUEL au frontal (2026-07-29,
+// bp3-frontend db2a1ab). La convention de notes y est écrite ; c'est LUI qui l'en tire, pas moi.
+// Avant, j'ouvrais ce fichier pour en extraire un entier (0 anglaise / 1 française / 2 indienne)
+// que je repassais en option — la convention traversait donc ma frontière alors que la règle dit
+// qu'elle n'est connue que du frontal (décision
+// `hub/decisions/2026-07-29-notre-mecanique-n-utilise-que-des-alphabets.md`). Je PORTE le fichier,
+// je ne le RÉSOUS plus. Absent du bundle → undefined : le frontal appliquera son propre défaut,
+// ce n'est plus à moi d'en avoir un.
+export function resolveSeText(fileRefs: FileRef[]): string | undefined {
   const ref = fileRefs.find((r) => r.prefix === 'se');
   if (!ref) return undefined;
-  const text = BUNDLED_SE[ref.name];
-  if (!text) return undefined;
-  try {
-    return parseSeFile(text).protocol?.noteConvention ?? undefined;
-  } catch {
-    return undefined;
-  }
+  return BUNDLED_SE[ref.name];
 }
 
 // Parse a BP3 grammar with per-symbol sound routing. parseBP3 surfaces the
@@ -483,25 +476,18 @@ export function resolveSeNoteConvention(fileRefs: FileRef[]): number | null | un
 // sound, and re-parse so the front-end can assign them (actors[0].assignments).
 // All-note / no-prototype grammars need no second pass.
 function parseWithSound(code: string) {
-  // 1re passe : tokenisation ANGLAISE par défaut (défaut BP3) pour récupérer les fileRefs (dont le -se).
-  const first = parseBP3(code, { alphabetNames: BP3_EN_TOKENS });
-  // La convention de notes du `-se` pilote (1) l'émission de la clé d'alphabet BP3-fidèle
-  // (`bp3_english`/`bp3_fr`/`bp3_indian`) sur l'acteur — dernier maillon [79] (part b) — ET (2) la
-  // TOKENISATION : les noms nus de LA BONNE convention sont les terminaux du parse (nettoyage L26
-  // étape 2/2, GO [95], hand-off [628] : plus de liste occidentale en dur ; la donnée du catalogue
-  // fait foi). On lit le `-se` (fileRefs stables entre les deux passes) et on repasse avec la
-  // convention → clé gravée + do/re/mi (FR) ou sa/re/ga (sargam) reconnus comme terminaux.
-  const noteConvention = resolveSeNoteConvention(first.fileRefs);
-  const convTokens =
-    BP3_PITCH_CATALOG.alphabets[bp3AlphabetKey(noteConvention)]?.notes ?? BP3_EN_TOKENS;
-  const { alphabetNames, soundSymbols } = resolveGrAux(
-    first.fileRefs,
-    bundledAuxLoader,
-    convTokens
-  );
-  const reparse =
-    soundSymbols.length > 0 || alphabetNames !== BP3_EN_TOKENS || noteConvention != null;
-  const r = reparse ? parseBP3(code, { alphabetNames, soundSymbols, noteConvention }) : first;
+  // 1re passe SANS RIEN : elle ne sert qu'à récupérer les `fileRefs` (dont le `-se`), et ceux-là ne
+  // dépendent pas de la tokenisation des notes. Je passais ici une liste de notes anglaises — un
+  // défaut de convention déguisé en argument.
+  const first = parseBP3(code);
+  // 2e passe : je rends au frontal LE TEXTE du `-se` (`seText`), et c'est LUI qui en tire la
+  // convention de notes (2026-07-29, bp3-frontend db2a1ab). La convention ne traverse plus ma
+  // frontière : je ne l'extrais pas, je ne la nomme pas, je ne la choisis pas. `alphabetNames`
+  // redevient ce que son nom dit — les noms du `-al`, et rien d'autre ; absent → je ne passe rien.
+  const seText = resolveSeText(first.fileRefs);
+  const { alphabetNames, soundSymbols } = resolveGrAux(first.fileRefs, bundledAuxLoader);
+  const reparse = soundSymbols.length > 0 || alphabetNames !== undefined || seText !== undefined;
+  const r = reparse ? parseBP3(code, { alphabetNames, soundSymbols, seText }) : first;
   return {
     ast: r.ast,
     errors: r.errors.map((e) => ({ line: e.line, message: e.message })),
