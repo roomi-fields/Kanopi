@@ -12,13 +12,22 @@
 // la règle d'unicité les refuse. Elles sont renommées A_r … E_r, TOUS usages compris (leur emploi
 // dans S). Zéro erreur de compilation après.
 //
-// ⚠️ ET CE ZÉRO N'EST PAS UNE PREUVE — c'est le point le plus important de cette note.
-// La production de cette scène est NULLE avant comme après : le moteur ne dérive aucun arbre.
-// Il n'y a donc rien à comparer, et l'outil de migration (test/migration_noms.mjs) REFUSE à juste
-// titre de signer un renommage qu'il ne peut pas prouver. Son refus reste bon en général ; il ne
-// mord simplement pas ici, faute de référence. Arbitrage Romain, 2026-07-29 : « on migre ce que
-// l'on sait avoir MODIFIÉ… ça plantait avant, ça va continuer après… mais on aura a priori pas
-// AGGRAVÉ la situation. »
+// ⚠️ CORRECTION DU 2026-07-29 — CETTE NOTE A PORTÉ UNE RAISON FAUSSE PENDANT UNE HEURE.
+// J'avais écrit ici « la production de cette scène est NULLE avant comme après, le moteur ne
+// dérive aucun arbre », et je m'en étais servi pour justifier d'avoir contourné mon propre outil
+// de migration. C'EST FAUX : Kanopi a mesuré 35 jetons dérivés (b b b a b a a a…) par la porte de
+// son application. Une référence EXISTAIT, et l'outil aurait pu prouver le renommage.
+//
+// LA VRAIE CAUSE, mesurée : mon banc de migration dérive avec une graine FIXE, et cette scène
+// exige une graine d'HORLOGE — le moteur jette « LCG.reseedOrShuffle needs a wall-clock seed ».
+// Mon outil AVALAIT cette exception et rendait « aucun arbre dérivé » : un message qui annonce
+// une ABSENCE là où il tenait la CAUSE. C'est ce message que j'ai lu comme « la scène ne produit
+// rien », et cette conclusion-là a fini gravée ici. L'outil dit désormais la cause (bpscript,
+// même jour).
+//
+// CE QUI RESTE VRAI : le renommage lui-même est mécanique et vérifiable. Arbitrage Romain,
+// 2026-07-29 : « on migre ce que l'on sait avoir MODIFIÉ… mais on aura a priori pas AGGRAVÉ la
+// situation. » Ce qui était faux, c'est la raison invoquée pour se passer de la preuve.
 //
 // CE QUI N'A DÉLIBÉRÉMENT PAS ÉTÉ FAIT : aucun alphabet n'est déclaré ici.
 // La scène écrit SIMULTANÉMENT des notes occidentales (C3…G5) et des symboles abstraits (a, b),
@@ -28,6 +37,13 @@
 // erreur sous `simple` COMME sous `solfege`, parce qu'un terminal placé dans un groupe polymétrique
 // n'est pas validé (défaut de bpscript, remonté le 2026-07-29, non corrigé à cette date). Ses `a`
 // et `b` sont donc des terminaux inconnus que personne ne signale.
+//
+// ⚠️ ET L'ALPHABET RESTE NON DÉCLARÉ, mais la raison a changé elle aussi : le réglage natif
+// -se.trySrand porte « NoteConvention: 0 » (ANGLAISE, donc bp3_english) et la grammaire native
+// charge -ho.tryKeyXpand, qui déclare un alphabet de deux terminaux « a b ». LA SOURCE RÉPOND
+// DONC — ce n'est pas un cas indécidable, c'est le réglage ordinaire du natif : un alphabet PLUS
+// la convention active. Ce qui reste ouvert, c'est de savoir comment BPScript l'écrit, et cette
+// question-là est chez Romain (11 conversions concernées, 61 notes à déclarer).
 //
 // bpscript — 2026-07-29. Écriture chez un autre : elle n'est LIVRÉE que quand Kanopi l'a committée.
 // ─────────────────────────────────────────────────────────────────────────────

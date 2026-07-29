@@ -153,7 +153,7 @@ const ROUGES_DECLAREES: Array<{
     motif: /terminal '(a|b)' non déclaré/,
     cause: 'arbitrage-attendu',
     attend:
-      "la question OUVERTE chez Romain : « un alphabet ET des notes dans la même portée ». La scène écrit simultanément des notes occidentales et des symboles abstraits `a`/`b` ; bpscript a délibérément refusé d'y déclarer un alphabet pour ne pas trancher cette question dans une scène, puis son propre fail-loud des groupes l'a rendue rouge. Je n'y touche pas : c'est son écriture, sa raison documentée, et l'arbitrage n'est ni à lui ni à moi. NOTE : l'alphabet EXISTE à la source (-ho.tryKeyXpand contient « a b ») — il n'est simplement pas déclaré dans la traduction."
+      "COMMENT BPScript écrit « un alphabet PLUS une convention de notes » — question chez Romain, 11 conversions concernées, 61 notes à déclarer. ⚠️ LA RAISON A CHANGÉ EN COURS DE JOURNÉE, et l'ancienne était fausse : on a d'abord cru le cas INDÉCIDABLE parce que la scène mêle notes occidentales et symboles abstraits. La source répond en fait — le réglage natif -se.trySrand porte « NoteConvention: 0 » (anglaise) et -ho.tryKeyXpand déclare l'alphabet « a b ». Ce n'est donc pas un mystère, c'est le réglage ordinaire du natif ; ce qui manque est sa GRAPHIE en BPScript. Je n'y touche pas : c'est l'écriture de bpscript et l'arbitrage est chez Romain."
   },
   {
     fichier: 'BPScript-tests/koto1.bps',
@@ -200,6 +200,21 @@ describe('[932] statut de compilation du corpus BPScript', () => {
       createSession(ast as Parameters<typeof createSession>[0], { seed: GRAINE }).derive();
       return null;
     } catch (e) {
+      // ⚠️ ÉCART CONNU AVEC L'APPLICATION, ÉCRIT PLUTÔT QUE COMBLÉ À L'AVEUGLE.
+      // Une grammaire à re-semis REFUSE de dériver sous graine figée : le moteur exige une
+      // graine d'HORLOGE. L'adaptateur réessaie alors UNE fois sans graine
+      // (`isRandomizeNeedsClock`, bpx-adapter.ts:1276 et 1876) — donc l'app la JOUE, là où ce
+      // garde la déclarerait rouge. J'AI ÉCRIT CE RATTRAPAGE PUIS JE L'AI RETIRÉ : impossible
+      // de l'éprouver. MESURÉ — aucune scène du corpus n'est dans ce cas (les 197 qui analysent
+      // dérivent sous graine figée sans jamais demander l'horloge), et la forme BP3 qui le
+      // déclenche (`_randomize` / `_rndseq`) n'a pas d'équivalent BPScript reconnu : écrite
+      // telle quelle, elle est refusée à l'analyse comme terminal inconnu. Sans témoin, ce
+      // rattrapage aurait été du code de garde JAMAIS EXÉCUTÉ — c'est-à-dire exactement le
+      // « vert qui ne regarde rien » qu'on a passé la journée à traquer.
+      // POUR QUI AJOUTERA UNE TELLE SCÈNE : le garde la verra rouge et il aura raison de crier ;
+      // la réponse est de reproduire ici le rattrapage de l'adaptateur, AVEC cette scène comme
+      // témoin. (Piste donnée par bpscript, [1060] : son comparateur avalait cette exception
+      // précise dans un catch vide et en concluait « aucun arbre dérivé ».)
       return `dérivation : ${String(e)}`;
     }
   }
