@@ -16,6 +16,21 @@
 // L espacement (accolades collees au silence, prolongation collee) est l ecart connu
 // du convertisseur, sans effet sur ce que le moteur lit.
 
+// ALPHABET DECLARE : bp3_fr, ET LE « ZERO ERREUR » DU 4c220de NE LE PROUVAIT PAS.
+// Cette scene avait ete declaree migree ce matin sur une analyse qui ne descendait pas dans les
+// groupes (defaut bpscript, corrige par e249886) : ses 31 noms de notes FRANCAISES (fa3 re3 sol3
+// si2 la4 fa#4 do#5 …) etaient tous ecrits dans des groupes et passaient sans un mot. Le vert ne
+// mesurait pas ce qu'on croyait — la reserve est de bpscript, elle est juste, et le commit fautif
+// est le mien.
+// CE QUI TRANCHE ENTRE bp3_fr ET solfege, lu et non choisi : ces deux alphabets portent les MEMES
+// noms de notes et ne different que par le REGISTRE, donc se tromper ne casse rien a l'analyse —
+// ca TRANSPOSE. Le reglage natif `-se.Mozartexpression` porte « NoteConvention: 1 » = FRENCH du
+// moteur natif => bp3_fr. (Meme piege et meme lecture que pour Alarm.bps, commit 6cdf294.)
+// ⚠️ SIGNALE, PAS RESOLU : ce meme reglage porte « C4key: 48 » (au lieu de 60) et « A4freq: 220 »
+// (au lieu de 440) — la scene natif joue une octave SOUS le standard. Je ne transcris pas ces
+// deux ancrages, faute de savoir s'ils font double emploi avec le decalage propre a bp3_fr.
+@alphabet.bp3_fr:midi
+
 @controls
 @timepatterns: t1=96/100, t2=100/100, t3=102/100, t4=100/100, t5=100/100, t6=102/100, t7=104/100, t8=106/100, t9=107/100, t10=108/100, t11=107/100, t12=106/100, t13=104/100, t14=102/100, t15=1/1
 @mode:random

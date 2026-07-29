@@ -1,4 +1,12 @@
 // @language: bpscript
+// ALPHABET DECLARE : bp3_indian, lu et non choisi. Le reglage natif `-se.tryRagas` porte
+// « NoteConvention: 2 » = INDIAN du moteur natif. Le vocabulaire de la scene le confirme —
+// sa re ga ma pa dha ni, avec le komal accole (dhak3, rek4, gak4) et le tivra en dièse (ma#3).
+// Trois scenes du corpus emploient deja @alphabet.bp3_indian:midi : le precedent existe.
+// Ces 20 noms etaient tous ecrits DANS DES GROUPES, donc invisibles a l'analyse jusqu'au
+// fail-loud bpscript e249886 (2026-07-29).
+@alphabet.bp3_indian:midi
+
 @controls
 @mode:ord
 KishoriAmonkar1 -> Scale _ {2, dhak3 sa4 ni3 sa4} {7, rek4} _ {2, dhak3 sa4 ni3 dhak3} {2, dhak3 _ ni3 sa4} {5, rek4}

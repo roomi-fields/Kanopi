@@ -126,8 +126,18 @@ const ROUGES_DECLAREES: Array<{
     attend:
       "la DESTINATION Csound. L'alphabet original charge -mi ET -cs : ce sont des objets sonores Csound. Toutes les scènes déjà migrées vont vers :midi ; aucune ne montre comment s'écrit une destination Csound. Je n'invente pas un précédent. Attend : architecte / bpscript."
   },
-  // (trySrand.bps a QUITTÉ cette liste le 2026-07-29 : bpscript a renommé ses cinq têtes
-  // A…E en A_r…E_r, dans mon dépôt et en le signalant. Elle compile ET dérive 35 jetons.)
+  // (trySrand.bps est SORTIE puis RENTRÉE dans cette liste le 2026-07-29, et les deux mouvements
+  // sont instructifs : bpscript a renommé ses cinq têtes A…E en A_r…E_r chez moi — elle a alors
+  // analysé ET dérivé 35 jetons, et ce garde a exigé son retrait. Deux heures plus tard, le
+  // fail-loud des groupes du MÊME auteur (e249886) l'a refait rougir, sur la raison qu'il avait
+  // lui-même gravée dans le fichier : « aucun alphabet n'est déclaré, DÉLIBÉRÉMENT ».)
+  {
+    fichier: 'BPScript-tests/trySrand.bps',
+    motif: /terminal '(a|b)' non déclaré/,
+    cause: 'arbitrage-attendu',
+    attend:
+      "la question OUVERTE chez Romain : « un alphabet ET des notes dans la même portée ». La scène écrit simultanément des notes occidentales et des symboles abstraits `a`/`b` ; bpscript a délibérément refusé d'y déclarer un alphabet pour ne pas trancher cette question dans une scène, puis son propre fail-loud des groupes l'a rendue rouge. Je n'y touche pas : c'est son écriture, sa raison documentée, et l'arbitrage n'est ni à lui ni à moi. NOTE : l'alphabet EXISTE à la source (-ho.tryKeyXpand contient « a b ») — il n'est simplement pas déclaré dans la traduction.",
+  },
   {
     fichier: 'BPScript-tests/koto1.bps',
     motif: /SUB Insert: wildcard substitution misses/,

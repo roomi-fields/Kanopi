@@ -5,4 +5,20 @@
 @tempo:400   // horloge du natif -se.koto3 : periode 150 ms par temps, soit 400 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
+// TERMINAUX DECLARES, destination LUE a la source : l'original charge -ho.abc1, dont la ligne
+// d'alphabet est « chik a a' b b' c c' d f cycle1 sync cycle2 » et qui charge -mi.abc1
+// (prototypes d'objets sonores). Ce sont donc des objets qui SONNENT, meme alphabet que
+// koto1/koto2/koto3 — d'ou :midi, comme elles.
+// Ils etaient tous ecrits DANS UN GROUPE, donc invisibles a l'analyse jusqu'au fail-loud
+// bpscript e249886 (2026-07-29). C'est ce garde amont qui les a reveles, pas moi.
+// `a'` est un terminal A PART ENTIERE, pas une variante decorative : la ligne d'alphabet de
+// -ho.abc1 le liste a cote de `a` (« a a' b b' c c' d f »), et son homomorphisme le produit
+// (« a --> a' »). La scene l'emploie deux fois dans son unique regle.
+@gate a:midi
+@gate a':midi
+@gate b:midi
+@gate h:midi
+@gate cycle1:midi
+@gate cycle2:midi
+
 S -> {a h a' b a' b a a a a a, cycle2 cycle1______}
