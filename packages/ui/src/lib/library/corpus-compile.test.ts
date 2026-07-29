@@ -96,13 +96,10 @@ const ROUGES_DECLAREES: Array<{
   // scènes ont été réparées mécaniquement en LISANT la destination dans l'original BP3
   // (-ho./-mi. des `BP3-tests/*.gr`). Ces quatre-là résistent, et chacune pour une raison
   // DIFFÉRENTE — c'est ce qui interdit de les traiter d'un seul geste.
-  {
-    fichier: 'BPScript-tests/Alarm.bps',
-    motif: /terminal 'do3' non déclaré/,
-    cause: 'arbitrage-attendu',
-    attend:
-      "l'alphabet des noms FRANÇAIS. L'original charge -ho.Frenchnotes : « do3 » est une HAUTEUR, pas un terminal à déclarer. La déclarer en @gate/@var la couperait de tout accordage — ce serait mentir sur sa nature. Attend : architecte / bpscript."
-  },
+  // (Alarm.bps a QUITTÉ cette liste le 2026-07-29 : l'alphabet qu'elle attendait — `bp3_fr`,
+  // la convention française du moteur natif — a été intégré en amont le matin même, et c'est
+  // CE GARDE qui a réclamé le retrait, en échouant sur « COMPILE désormais ». Un rouge
+  // d'arbitrage ne se fossilise pas : il sort dès que sa cause est levée.)
   {
     fichier: 'BPScript-tests/dhadhatite_v2.bps',
     motif: /terminal 'dha(dha)?' non déclaré/,

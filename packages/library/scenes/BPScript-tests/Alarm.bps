@@ -2,6 +2,17 @@
 // Alarm.bps — migré de bp3-engine/test-data/-gr.Alarm (porter bp3ToScene, 2026-07-17)
 // Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
 
+// ALPHABET DECLARE : bp3_fr, ET LE CHOIX EST MESURE, PAS PRIS AU HASARD — bp3_fr et solfege
+// portent les MEMES noms de notes (do re mi fa sol la si) et ne different que par le REGISTRE :
+// bp3_fr porte « octaves: bp3_fr » (registres du natif, decales d'un cran, la3 = A4) la ou
+// solfege porte « octaves: western ». Se tromper ne casse rien a l'analyse — ca TRANSPOSE.
+// CE QUI TRANCHE, lu dans l'original et non choisi : BP3-tests/Alarm.gr est une grammaire BP3
+// NATIVE (V.2.4, 1994) qui charge -ho.Frenchnotes, le fichier d'alphabet FRANCAIS DU MOTEUR
+// NATIF. Son registre est donc celui du natif. La destination vient de la meme lecture :
+// l'original charge -in.abc1, un fichier d'interaction MIDI.
+// (Alphabet integre en amont le 2026-07-29, bpscript 759474b ; decision Romain du meme jour.)
+@alphabet.bp3_fr:midi
+
 @mode:lin
 S -> do3 1000 {2, B7_r B8_r} 300 {2, B7_r B8_r}
 -----
