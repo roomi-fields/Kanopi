@@ -124,10 +124,7 @@ import { testSeed, isTestMode } from '../mode-test';
 import { transport } from '../../stores/transport.svelte';
 import type {
   ProductionToken,
-  ProductionSection,
   ProductionTree,
-  ProductionTreeNode,
-  ProductionTreeSpan,
   RawTimedToken
 } from '../../stores/production.svelte';
 // Device library (@devices): resolve a voice's `transport.<name>` to a typed
@@ -166,10 +163,6 @@ import { codeVoiceInterps } from './warmup';
 // OSC output (OSC-5b): the osc-bridge WS→UDP relay endpoint. Kanopi's WebSocket
 // transport (built in startKronosAudio) connects here; the relay forwards UDP.
 import routingJson from '../../../../library/routing.json';
-// Head-rule sections read from the parsed scene AST (`compileBPS().ast` for `.bps`,
-// `parseBP3().ast` for `.gr`), the single source of truth — replacing the deprecated
-// regex-on-grammar-text reader on BOTH paths.
-import { headSectionNamesFromAst, sectionLeafCounts } from './head-sections-ast';
 
 /**
  * BPx language adapters (PRIMARY vertical slice).
@@ -189,7 +182,7 @@ import { headSectionNamesFromAst, sectionLeafCounts } from './head-sections-ast'
  * `compileToBPxAST` (AST direct, plus
  * d'aller-retour par le texte BP3 ni de tables parallèles) ; `.gr` par parseBP3
  * (le `.gr` EST du texte natif). Toute la structure (acteurs, scènes, drapeaux,
- * bibliothèques, sections, backticks) est lue DEPUIS l'arbre.
+ * bibliothèques, backticks) est lue DEPUIS l'arbre.
  *
  * The slice scopes to ONE engine instance + ONE transport per file.
  */
@@ -302,23 +295,11 @@ type Frontend = (code: string) => {
   // banks before/at the backtick eval so the code voices find their samples. `.gr`
   // has none.
   libraries?: Libraries;
-  // Head-rule top-level sections (`S --> calm full` → ['calm','full']), used to
-  // annotate the FULL production with section boundaries (production store). Cheap
-  // to compute from the compiled grammar text; empty for a `.gr` (parseBP3 already
-  // expanded the structure, so the head sequence isn't recoverable here).
-  sections?: string[];
   // Declared metronome (`@mm:70`), the tempo BPx derives durations at. When
   // present the adapter adopts it as the global tempo so the displayed BPM, the
   // derivation, and the STEP beat grid all agree. Absent for `.gr` and `.bps`
   // without `@mm` (the current tempo is kept).
   mm?: number;
-  // La CONVENTION DE NOTES que la DONNÉE porte (`.gr` → `-se`, cf. `resolveSeNoteConvention`).
-  // Elle voyage AVEC l'arbre parce que DEUX lecteurs en ont besoin sur la même scène : les
-  // ÉTIQUETTES de sections (`headSectionNamesFromAst`) et leurs BORNES
-  // (`sectionLeafCounts`). Les faire répondre sur des conventions différentes donnait des
-  // étiquettes justes sous des bandes mal découpées (mesuré : 2 grammaires sur 188). L'hôte
-  // TRANSPORTE, il ne devine pas : absent (`.bps`, qui n'a pas de `-se`) → `undefined`.
-  noteConvention?: number | null;
 };
 
 // `@library.<engine> "<id>"` → { engine → [bank ids] } (from compileBPS).
@@ -525,29 +506,20 @@ function parseWithSound(code: string) {
     ast: r.ast,
     errors: r.errors.map((e) => ({ line: e.line, message: e.message })),
     settings: resolveSeSettings(r.fileRefs),
-    soundingSymbols: soundingFromAst(r.ast),
-    // La convention voyage AVEC l'arbre : le lecteur de sections en a besoin pour savoir quels mots
-    // sont des notes, et la re-deviner plus loin serait une deuxième autorité sur la même donnée.
-    noteConvention
+    soundingSymbols: soundingFromAst(r.ast)
   };
 }
 
 // `.gr` — native BP3 grammar text straight into the BP3 front-end. The head
-// rule's top-level non-terminals (`S --> … A' B' C'`) are the macro structure
-// STEP advances through (Part B). `parseBP3` returns the parsed scene AST, so the
-// sections are read off that AST with the SAME reader as `.bps`
-// (`headSectionNamesFromAst`) — no separate grammar-text path. (The former text
-// scanner was buggy: it mis-read multi-line / fraction-directive head rules; see
-// the regression lock in `gr-head-sections.test.ts`.)
+// rule's top-level non-terminals are NOT read here — voir la note « SECTIONS » en
+// tête de `publishProduction`.
 const grFrontend: Frontend = (code) => {
-  const parsed = parseWithSound(code);
-  const sections = headSectionNamesFromAst(parsed.ast, parsed.noteConvention);
-  const base = sections.length > 0 ? { ...parsed, sections } : parsed;
+  const base = parseWithSound(code);
   // `.gr` (BP3) has no `@actor`, but bp3-frontend materializes one IMPLICIT `default`
   // actor (audio transport, `synthetic:true`) in the AST — so its events carry
   // `output.runtime='audio'` and it travels the SAME orchestrated path as `.bps`. Read
   // the orchestration straight off that AST; no host-synthesized default.
-  const orchestration = buildOrchestration(parsed.ast as SceneAstView | null);
+  const orchestration = buildOrchestration(base.ast as SceneAstView | null);
   return orchestration ? { ...base, orchestration } : base;
 };
 
@@ -1013,8 +985,8 @@ export function assetsForScene(text: string): {
 }
 
 // `.bps` — BPScript compiles to a SceneAST (`compileBPS().ast`) that BPx derives
-// directly. The front-end view (tempo, flagStates, libraries, actorTable,
-// sections) is read from THAT AST — the single source of truth — not the
+// directly. The front-end view (tempo, flagStates, libraries, actorTable) is
+// read from THAT AST — the single source of truth — not the
 // deprecated grammar text nor compileBPS's redundant sidecar tables.
 const bpsFrontend: Frontend = (code) => {
   // FERMER LA PORTE (Romain 2026-07-01) : l'hôte n'injecte PLUS AUCUN tempo dans BPx — ni le
@@ -1035,7 +1007,7 @@ const bpsFrontend: Frontend = (code) => {
   // que BPx ingère désormais directement (gap fondateur levé, BPx bba7c2f : le
   // terminal backtick émis porte la clé `compileBPS().backticks`). Aucun `.bps` du
   // corpus n'utilise la chaîne son BP3 `-al/-so` ; le son vient des notes
-  // (`isNoteName`) ou des `soundAssignments` de l'AST.
+  // (résolues par le frontal) ou des `soundAssignments` de l'AST.
   // Everything below is read from the AST (`c.ast`), the single source of truth —
   // no longer from compileBPS's precomputed tables (`c.flagStates`, `c.libraries`,
   // `c.actorTable`, `c.settings`) nor from the BP3 grammar TEXT (`c.grammar`).
@@ -1074,15 +1046,7 @@ const bpsFrontend: Frontend = (code) => {
   const libraries = librariesFromAst(a);
   const withLibs = Object.keys(libraries).length > 0 ? { ...withFlags, libraries } : withFlags;
   const withBt = Object.keys(backticks).length > 0 ? { ...withLibs, backticks } : withLibs;
-  // Head-rule sections, read from the AST start rule (no longer the grammar text).
-  // ❓ TROU CONNU, NON COMBLÉ ICI (2026-07-28) : un `.bps` n'a pas de `-se`, il déclare
-  // `@alphabet.<nom>`. La correspondance entre ce nom et une convention de notes BP3 n'est PAS
-  // tranchée, et l'hôte ne l'invente pas : on passe donc `undefined` — l'anglais, défaut documenté
-  // amont — ce qui reproduit EXACTEMENT le comportement d'avant (l'appel se faisait sans convention).
-  // Conséquence à mesurer : une scène `.bps` en sargam/français peut garder pour SECTION un mot qui
-  // est une note dans sa convention. Question remontée ; ne pas « choisir » une convention ici.
-  const sections = headSectionNamesFromAst(c.ast, undefined);
-  const base = sections.length > 0 ? { ...withBt, sections } : withBt;
+  const base = withBt;
 
   // Orchestrator `.bps`: `@actor` declarations are AST `ActorDirective` nodes (each actor
   // owns an alphabet + a transport device). A no-`@actor` scene carries an implicit
@@ -1200,52 +1164,24 @@ type Tok = {
 // advances one beat at a time off it. Section names (head-rule RHS) get
 // equal-proportion time bounds along the same timeline as PASSIVE visual
 // landmarks only (no longer the STEP unit). Set ONCE per eval (replace).
-// Real section boundaries from the derivation tree: the root is a flat sequence of
-// timed leaf nodes (the sub-rules are expanded inline), so we walk those leaves IN
-// ORDER and slice them into `leafCounts[i]` consecutive leaves per section. Each
-// section's bounds = [first leaf's start, last leaf's end], converted ms→s. Returns
-// null when the counts don't line up with the tree (sum mismatch, missing spans,
-// non-sequence root) so the caller can fall back to the equal split. This replaces
-// the equal `i*dur/count` slicing for grammars whose sections have unequal lengths
-// (maqam Rast: Sayr 7, Rujoo 7, Qarar 4+tail → Qarar is visibly shorter).
-export function sectionBoundsFromTree(
-  tree: ProductionTree | undefined,
-  leafCounts: number[]
-): Array<{ startSec: number; endSec: number }> | null {
-  if (!tree || leafCounts.length === 0) return null;
-  const root: ProductionTreeNode | undefined = tree.root;
-  if (!root || root.type !== 'sequence') return null;
-  const children = root.children;
-  if (!Array.isArray(children)) return null;
-  // Ordered spans of the top-level leaves (every direct child carries a span;
-  // occupying/event leaves and any nested group all expose `span.startMs/endMs`).
-  const spans: ProductionTreeSpan[] = [];
-  for (const c of children) {
-    const span = c.span;
-    if (!span || typeof span.startMs !== 'number' || typeof span.endMs !== 'number') return null;
-    spans.push({ startMs: span.startMs, endMs: span.endMs });
-  }
-  const total = leafCounts.reduce((a, n) => a + n, 0);
-  if (total !== spans.length) return null; // counts don't match the tree — fall back
-  const bounds: Array<{ startSec: number; endSec: number }> = [];
-  let cursor = 0;
-  for (const n of leafCounts) {
-    const first = spans[cursor];
-    const last = spans[cursor + n - 1];
-    bounds.push({ startSec: first.startMs / 1000, endSec: last.endMs / 1000 });
-    cursor += n;
-  }
-  return bounds;
-}
-
+// ⛔ SECTIONS : PLUS RIEN ICI, ET ÇA NE REVIENT PAS (décision 2026-07-29,
+// `hub/decisions/2026-07-29-notre-mecanique-n-utilise-que-des-alphabets.md`).
+// L'hôte lisait l'axiome de la scène, écartait les notes des sections et datait les bandes.
+// DEUX raisons de l'avoir supprimé, pas déplacé :
+//  1. écarter les notes suppose de trancher « ce mot est-il une note ? », ce qui demandait un
+//     prédicat BP3 à trois conventions — or les conventions SONT des alphabets, et le corpus en
+//     déclare douze. La question était mal posée : elle n'appartient pas à l'hôte, et l'alphabet
+//     n'est connu que du frontal BP3.
+//  2. le champ alimentait un canal que les vues ont DÉJÀ QUITTÉ — elles lisent Kairos par
+//     `production-feed`, pas ce magasin. Mesuré avant de couper : aucune vue, aucun test hors
+//     ceux du calcul lui-même. Même geste que la chaîne finale ([130], plus bas dans ce dépôt).
+// Qui devra dessiner des bandes les lira sur l'arbre, où l'amont marque ce qui est une note.
 function publishProduction(
   id: Runtime,
   tokens: Tok[],
-  sectionNames: string[],
   beatDurSec: number,
   tree?: ProductionTree,
-  symbolNames?: Record<number, string>,
-  sectionLeafCounts?: number[]
+  symbolNames?: Record<number, string>
 ): void {
   // Scene length (display: beat count + piano-roll extent). PROJECT the BPx-compiled
   // authority — the derivation tree root's span ENCLOSES every leaf (trailing rests
@@ -1264,23 +1200,6 @@ function publishProduction(
     durSec: (t.end - t.start) / 1000
   }));
   const durationSec = durationMs / 1000;
-  const count = sectionNames.length;
-  // Real section bounds from the derivation tree's leaf spans when the per-section
-  // leaf counts line up with it (maqam Rast: Sayr/Rujoo 7 notes, Qarar shorter);
-  // otherwise the equal split, kept as a safe fallback (and for `.gr`, which has no
-  // counts). Only meaningful when there is more than one section to draw.
-  const treeBounds =
-    count > 1 && sectionLeafCounts && sectionLeafCounts.length === count
-      ? sectionBoundsFromTree(tree, sectionLeafCounts)
-      : null;
-  const sections: ProductionSection[] =
-    count > 1
-      ? sectionNames.map((name, i) => ({
-          name,
-          startSec: treeBounds ? treeBounds[i].startSec : (i * durationSec) / count,
-          endSec: treeBounds ? treeBounds[i].endSec : ((i + 1) * durationSec) / count
-        }))
-      : [];
   // Raw flat tokens (times in MS, untransformed) for the polymetric piano-roll
   // visualizer, which assigns voices by temporal overlap from these alone.
   const rawTokens: RawTimedToken[] = tokens.map((t) => ({
@@ -1295,7 +1214,6 @@ function publishProduction(
     tokens: prodTokens,
     durationSec,
     beatDurSec,
-    sections,
     rawTokens,
     tree,
     symbolNames
@@ -1797,11 +1715,6 @@ function makeBpxAdapter(
         backticks,
         flagStates,
         libraries,
-        sections: headSections,
-        // La convention que la donnée porte, à passer au lecteur de BORNES — le même que celui
-        // des étiquettes (bpx-adapter.ts:537), donc la même convention, sinon les deux se
-        // contredisent sur la même scène.
-        noteConvention,
         // LECTURE (pas injection) : la directive @tempo/@mm déclarée par la scène, pour SAVOIR
         // si le tempo de session (userTempo) doit s'appliquer par warp. Directive présente →
         // la scène joue à SON tempo (BPx le lit) ; absente → on warpe au tempo de session.
@@ -2169,15 +2082,7 @@ function makeBpxAdapter(
       // `currentBpm`, so every beat boundary on the produced timeline is one
       // beat of the clock — STEP advances one of those at a time.
       const beatDurSec = currentBpm > 0 ? 60 / currentBpm : 0;
-      // Per-section leaf counts (from the AST head rule) so the visualizer draws
-      // the REAL section boundaries off the tree's leaf spans, not an equal split.
-      // Empty for `.gr` (no AST) or an unmappable macro shape → equal-split fallback.
-      // La convention vient de la DONNÉE (`-se` du `.gr`), transportée par le frontal — c'est le
-      // même lecteur que celui des étiquettes, il doit répondre sur la même convention. `.bps`
-      // n'a pas de `-se` : `undefined` y reste, et ce trou-là se comble AUTREMENT (l'arbre doit
-      // marquer ses notes lui-même ; l'hôte cessera d'interroger le prédicat BP3).
-      const leafCounts = sectionLeafCounts(ast, noteConvention);
-      publishProduction(id, tokens, headSections ?? [], beatDurSec, tree, symbolNames, leafCounts);
+      publishProduction(id, tokens, beatDurSec, tree, symbolNames);
 
       // PRODUCE-only (scene opened/loaded/armed, not played) — Model C: a LOAD is a content
       // change, so it must BUILD + PERSIST the Kronos handle (timeline) so the FIRST Play is a
@@ -2534,11 +2439,9 @@ function makeBpxAdapter(
               publishProduction(
                 id,
                 rtokens,
-                headSections ?? [],
                 beatDurSec,
                 rtree as unknown as ProductionTree,
-                rnames,
-                sectionLeafCounts(ast, noteConvention) // la convention de la donnée, comme au 1er derive
+                rnames
               );
             } catch (err) {
               // On any failure, do NOT charger — Kairos keeps the current flat and Kronos

@@ -17,7 +17,6 @@ describe('production store — rawTokens', () => {
       tokens: [{ token: 'C4', startSec: 0, durSec: 0.5 }],
       durationSec: 0.75,
       beatDurSec: 0.5,
-      sections: [],
       rawTokens: raw
     });
 

@@ -11,7 +11,8 @@
  *
  * ⛔ `bp3-frontend` N'EST PLUS ICI, et il ne doit pas y revenir (2026-07-28). Sa surface était
  * RECOPIÉE À LA MAIN dans ce fichier pour empêcher le contrôleur de descendre dans ses sources
- * (leurs imports portent l'extension `.ts`). Cette copie MENTAIT : elle déclarait `isNoteName` à UN
+ * (leurs imports portent l'extension `.ts`). Cette copie MENTAIT : elle déclarait le prédicat de
+ * note du frontal à UN
  * argument là où l'amont en attend DEUX — le second étant la convention de notes, qui DÉCIDE si un
  * mot est une note. Rien ne rougissait, et l'amont a chiffré l'exposition : 33 grammaires sur 113
  * changent de réponse selon la convention lue. Une surface écrite à la main chez le consommateur ne

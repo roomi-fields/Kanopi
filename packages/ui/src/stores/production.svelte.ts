@@ -5,7 +5,7 @@
 //
 // Consumers: the Text panel renders the production BY ORDER all-at-once (the
 // symbolic readout is a VIEW of this tree — there is no routed text transport);
-// the Structure visualizer + STEP read the same shape (sections + beat grid).
+// the Structure visualizer + STEP read the same shape (beat grid).
 //
 // Backtick-only voices (Strudel/Hydra) derive no note tokens — the store is just
 // `clear()`ed for them, so the Text panel degrades to an empty/"no production"
@@ -18,18 +18,6 @@ export interface ProductionToken {
   startSec: number;
   /** duration in seconds */
   durSec: number;
-}
-
-// A top-level section of the derivation (head-rule RHS element). Boundaries are
-// in seconds along the same timeline as the tokens, so a visualizer can draw
-// section bands and STEP can map an index → a time window without re-deriving.
-export interface ProductionSection {
-  /** the section's label (head-rule terminal, e.g. `calm`, `full`) */
-  name: string;
-  /** onset of the section, in seconds */
-  startSec: number;
-  /** end of the section, in seconds */
-  endSec: number;
 }
 
 // A raw timed token straight from BPx `derive().tokens`, kept UNTRANSFORMED for
@@ -102,12 +90,6 @@ export interface ProductionSet {
    * `ceil(durationSec / beatDurSec)`.
    */
   beatDurSec: number;
-  /**
-   * Head-rule sections with their time bounds (empty when the grammar has none).
-   * Kept as PASSIVE visual landmarks (labels + bands) — they are NOT the STEP
-   * unit anymore (the beat is).
-   */
-  sections: ProductionSection[];
   /**
    * DETERMINISTIC leaf-name table: `symbolId → terminal name` straight from the
    * BPx grammar's own symbol table (`bpx.grammar.symbols.getName`). This is the
