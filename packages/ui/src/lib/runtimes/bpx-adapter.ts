@@ -312,6 +312,13 @@ type Frontend = (code: string) => {
   // derivation, and the STEP beat grid all agree. Absent for `.gr` and `.bps`
   // without `@mm` (the current tempo is kept).
   mm?: number;
+  // La CONVENTION DE NOTES que la DONNÉE porte (`.gr` → `-se`, cf. `resolveSeNoteConvention`).
+  // Elle voyage AVEC l'arbre parce que DEUX lecteurs en ont besoin sur la même scène : les
+  // ÉTIQUETTES de sections (`headSectionNamesFromAst`) et leurs BORNES
+  // (`sectionLeafCounts`). Les faire répondre sur des conventions différentes donnait des
+  // étiquettes justes sous des bandes mal découpées (mesuré : 2 grammaires sur 188). L'hôte
+  // TRANSPORTE, il ne devine pas : absent (`.bps`, qui n'a pas de `-se`) → `undefined`.
+  noteConvention?: number | null;
 };
 
 // `@library.<engine> "<id>"` → { engine → [bank ids] } (from compileBPS).
@@ -1791,6 +1798,10 @@ function makeBpxAdapter(
         flagStates,
         libraries,
         sections: headSections,
+        // La convention que la donnée porte, à passer au lecteur de BORNES — le même que celui
+        // des étiquettes (bpx-adapter.ts:537), donc la même convention, sinon les deux se
+        // contredisent sur la même scène.
+        noteConvention,
         // LECTURE (pas injection) : la directive @tempo/@mm déclarée par la scène, pour SAVOIR
         // si le tempo de session (userTempo) doit s'appliquer par warp. Directive présente →
         // la scène joue à SON tempo (BPx le lit) ; absente → on warpe au tempo de session.
@@ -2161,10 +2172,11 @@ function makeBpxAdapter(
       // Per-section leaf counts (from the AST head rule) so the visualizer draws
       // the REAL section boundaries off the tree's leaf spans, not an equal split.
       // Empty for `.gr` (no AST) or an unmappable macro shape → equal-split fallback.
-      // Convention de notes : même trou connu qu'au lecteur de sections (voir `headSectionNamesFromAst`
-      // plus haut) — un `.bps` n'a pas de `-se`, la correspondance `@alphabet.<nom>` → convention n'est
-      // pas tranchée. `undefined` = anglais, comportement identique à avant, gap remonté.
-      const leafCounts = sectionLeafCounts(ast, undefined);
+      // La convention vient de la DONNÉE (`-se` du `.gr`), transportée par le frontal — c'est le
+      // même lecteur que celui des étiquettes, il doit répondre sur la même convention. `.bps`
+      // n'a pas de `-se` : `undefined` y reste, et ce trou-là se comble AUTREMENT (l'arbre doit
+      // marquer ses notes lui-même ; l'hôte cessera d'interroger le prédicat BP3).
+      const leafCounts = sectionLeafCounts(ast, noteConvention);
       publishProduction(id, tokens, headSections ?? [], beatDurSec, tree, symbolNames, leafCounts);
 
       // PRODUCE-only (scene opened/loaded/armed, not played) — Model C: a LOAD is a content
@@ -2526,7 +2538,7 @@ function makeBpxAdapter(
                 beatDurSec,
                 rtree as unknown as ProductionTree,
                 rnames,
-                sectionLeafCounts(ast, undefined) // même trou connu : pas de `-se` sur un `.bps`
+                sectionLeafCounts(ast, noteConvention) // la convention de la donnée, comme au 1er derive
               );
             } catch (err) {
               // On any failure, do NOT charger — Kairos keeps the current flat and Kronos
