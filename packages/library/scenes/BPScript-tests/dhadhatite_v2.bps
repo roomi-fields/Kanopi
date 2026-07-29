@@ -64,7 +64,7 @@ S1F S2F S1V S2F E32 -> S1F S2F V8 S2F S1F S2F V8 S1F [weight:100]
 
 // gram#2[2]: S1V S2F S1F S2F E32 <-> (=++ A1 V7 ) +S2F S1F +S2F * (:++ A1 V7 ) * (= ++ S2F ) S1F S1F
 // Stripped: S1V S2F S1F S2F E32 -> A1 V7 S2F S1F S2F A1 V7 S2F S1F S1F
-S1V S2F S1F S2F E32 -> A1 V7 S2F S1F S2F A1 V7 S2F S1F S1F [weight:100]
+S1V S2F S1F S2F E32 -> A1_r V7 S2F S1F S2F A1_r V7 S2F S1F S1F [weight:100]
 
 // gram#2[3]: S1V S2F S1F S2F E32 <-> (=++ A2 V6 ) +S2F S1F +S2F * (:++ A2 V6 ) * (= ++ S2F ) S1F S1F
 // Stripped: S1V S2F S1F S2F E32 -> A2 V6 S2F S1F S2F A2 V6 S2F S1F S1F
@@ -76,12 +76,12 @@ S1V S2F S1F S2F E32 -> A1 V7 S2F S1F S2F A1 V7 S2F S1F S1F [weight:100]
 
 // gram#2[4]: S1F S2V S1F S2F E32 <-> S1F (= V6 + B2 ) S1F +S2F * (= S1F ) * (: V6 + B2 ) S1F S1F
 // Stripped: S1F S2V S1F S2F E32 -> S1F V6 B2 S1F S2F S1F V6 B2 S1F S1F
-S1F S2V S1F S2F E32 -> S1F V6 B2 S1F S2F S1F V6 B2 S1F S1F [weight:100]
+S1F S2V S1F S2F E32 -> S1F V6 B2_r S1F S2F S1F V6 B2_r S1F S1F [weight:100]
 
 // gram#2[5..10]: All have same LHS S1V S2V S1F S2F E32 — only first is kept.
 // The others are commented out for the same reason as gram#2[2] vs [3].
 // gram#2[5]: (=++ A1 V11 + B4 ) S1F +S2F * (:++ A1 V11 + B4 ) S1F S1F
-S1V S2V S1F S2F E32 -> A1 V11 B4 S1F S2F A1 V11 B4 S1F S1F [weight:100]
+S1V S2V S1F S2F E32 -> A1_r V11 B4_r S1F S2F A1_r V11 B4_r S1F S1F [weight:100]
 // gram#2[6..10] commented out — identical LHS, NOT YET SUPPORTED
 // S1V S2V S1F S2F E32 -> A2 V10 B4 S1F S2F A2 V10 B4 S1F S1F [weight:100]
 // S1V S2V S1F S2F E32 -> A1 V13 B2 S1F S2F A1 V13 B2 S1F S1F [weight:100]
@@ -177,18 +177,18 @@ T2 -> teena [weight:50]
 @mode:ord
 
 // gram#5[1]: + B2 <-> +teena  (context marker stripped)
-B2 -> teena [weight:100]
+B2_r -> teena [weight:100]
 
 // gram#5[2]: + B4 <-> +dhadhateena  (context marker stripped)
 // Note: 'dhadhateena' is NOT in gram#4 terminals — it is a composite bol
 // used only as a fixed terminal in gram#5 context. Added to alphabet.
-B4 -> dhadhateena [weight:100]
+B4_r -> dhadhateena [weight:100]
 
 // gram#5[3]: ++ A1 <-> ++dha  (context marker stripped)
-A1 -> dha [weight:100]
+A1_r -> dha [weight:100]
 
 // gram#5[4]: ++ A2 <-> ++dhadha  (context marker stripped)
-A2 -> dhadha [weight:100]
+A2_r -> dhadha [weight:100]
 
 // gram#5[5]: ++ A2 <-> ++dheena  (context marker stripped, duplicate LHS)
 // A2 -> dheena [weight:50]
