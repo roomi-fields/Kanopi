@@ -5,6 +5,19 @@
 @tempo:400   // horloge du natif -se.koto3 : periode 150 ms par temps, soit 400 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
+
+// TERMINAUX DECLARES DANS LA SCENE (decision Romain 2026-07-29 §5 : c'est la voie qui permet
+// de declarer un terminal directement, sans passer par un alphabet). La DESTINATION n'est pas
+// choisie ici, elle est LUE a la source : l'original -gr.koto1 charge -ho.abc1, qui est un
+// fichier d'alphabet chargeant lui-meme -mi.abc1 (prototypes d'objets sonores). Ces symboles
+// sonnent donc, et koto3.bps — meme alphabet -ho.abc1, deja verte dans ce corpus — declare
+// exactement de cette facon. Sans declaration, seul 'd' etait refuse (a/b/c sont reconnus par
+// leur presence en membre gauche des regles SUB) : la scene sonnait a moitie declaree.
+@gate a:midi
+@gate b:midi
+@gate c:midi
+@gate d:midi
+
 @mode:random
 S -> X X X X X X X X
 X -> a

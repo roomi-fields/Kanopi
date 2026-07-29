@@ -5,6 +5,14 @@
 // tryLIN.bps — migré de bp3-engine/test-data/-gr.tryLIN (porter bp3ToScene, 2026-07-17)
 // Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
 
+// TERMINAUX DECLARES DANS LA SCENE (decision Romain 2026-07-29 §5). Destination LUE a la
+// source : l'original -gr.tryLIN charge -ho.abc, fichier d'alphabet chargeant -mi.abc — ces
+// symboles sonnent. Sans declaration, 'a' et 'c' etaient refuses ('b' est reconnu par sa
+// presence en membre gauche).
+@gate a:midi
+@gate b:midi
+@gate c:midi
+
 @mode:ord
 S -> X X X X X X X X X X X X X X X X X X
 -----

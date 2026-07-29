@@ -2,6 +2,19 @@
 // tryFlags.bps — migré de bp3-engine/test-data/-gr.tryFlags (porter bp3ToScene, 2026-07-17)
 // Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
 
+// TERMINAUX DECLARES EN @var, ET LE CHOIX EST MESURE, PAS PAR DEFAUT (decision Romain
+// 2026-07-29 §5 : @var = « il ne sonne pas — ni duree ni destination a donner »). Contrairement
+// a koto1/tryLIN, l'original -gr.tryFlags ne charge AUCUN fichier auxiliaire : ni alphabet, ni
+// prototypes d'objets, ni reglages. Ces symboles n'ont donc pas de son ni de destination a la
+// source — c'est une grammaire de STRUCTURE, qui demontre le mecanisme des drapeaux. Leur
+// donner une destination MIDI serait inventer ce que la source ne dit pas.
+//
+// SEUL 'b' EST DECLARE, ET C'EST MESURE : 'a' est deja reconnu comme terminal par sa presence
+// en membre gauche de la regle « a -> b ». Le declarer EN PLUS le fait entrer en collision avec
+// cette regle — « la regle 'a' porte un nom deja pris par une variable de travail ». On declare
+// donc ce qui MANQUE, pas tout ce qui ressemble a un terminal.
+@var b
+
 S -> X [Num_total=20]
 [Num_total-1] X -> a X
 -----
