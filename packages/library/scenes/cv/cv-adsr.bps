@@ -18,7 +18,7 @@
 @tempo:138
 
 // Modulateur descriptif : env1 EST une enveloppe adsr (sortie 0..1)
-cv env1 : mod.adsr(attack:5, decay:150, sustain:0.2, release:400)
+@cv env1 mod.adsr(attack:5, decay:150, sustain:0.2, release:400)
 
 S -> Bass Bass Bass Bass
 

@@ -17,14 +17,14 @@
 @controls
 @alphabet.western:audio
 
-gate C4:midi
-gate D4:midi
-gate E4:midi
-gate F4:midi
-gate G4:midi
-gate A4:midi
-gate B4:midi
-gate C5:midi
+@gate C4:midi
+@gate D4:midi
+@gate E4:midi
+@gate F4:midi
+@gate G4:midi
+@gate A4:midi
+@gate B4:midi
+@gate C5:midi
 
 S -> {Melody, Bass}
 

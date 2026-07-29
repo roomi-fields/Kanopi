@@ -23,8 +23,21 @@
 // Leurs entrées ont donc quitté la liste ci-dessous — et c'est le garde lui-même qui l'a réclamé,
 // en échouant sur « déclarée rouge mais absente du corpus ».
 //
-// Périmètre : les scènes `.bps` dont l'en-tête déclare `@language: bpscript`. Les voix de code
-// (strudel/hydra/mercury/p5…) ne passent pas par cette analyse, les `.gr` ont la leur (parseBP3).
+// Périmètre : TOUTES les scènes `.bps` du corpus. (Les `.gr` ont leur propre analyse, parseBP3.)
+//
+// ⛔ CE PÉRIMÈTRE A ÉTÉ ÉLARGI LE 2026-07-29, ET LA RAISON NE DOIT PAS SE REPERDRE : le garde
+// filtrait sur l'en-tête `@language: bpscript`, prenant une ÉTIQUETTE DE VITRINE pour un critère
+// de périmètre. Or `@language` ne dit pas en quel langage la scène est écrite — il dit quel
+// langage de VOIX elle met en scène, et il ne sert qu'au filtre déroulant de la bibliothèque
+// (`stores/library.svelte.ts:103`) ; aucun code d'exécution ne le lit. Une scène `@language: js`
+// ou `@language: strudel` est du BPScript tout autant qu'une autre : elle a ses `@core`, ses
+// `@actor`, ses règles `S -> …`. CE QUE LE FILTRE A COÛTÉ : `cv/cv-backtick.bps` et
+// `code-voices/cv-curve-js.bps` sont tombées avec le cassant du 2026-07-29 (forme déclarative nue
+// supprimée) SANS que ce garde crie — deux scènes de vitrine cassées, invisibles.
+// MESURÉ avant d'élargir, pour ne pas échanger un trou contre un faux rouge : sur les 202 `.bps`,
+// 13 échouent, TOUTES étiquetées `bpscript`. Aucune des 49 scènes étiquetées strudel/p5/mercury/
+// csound/hydra/js/sc n'échoue à l'analyse. L'élargissement ajoute 49 scènes surveillées et zéro
+// échec nouveau.
 
 import { describe, it, expect } from 'vitest';
 // MÊME spécificateur que l'adaptateur (`bpx-adapter.ts:20`) — c'est lui que `tsconfig.paths`
@@ -77,12 +90,7 @@ const ROUGES_DECLAREES: Array<{
 
 const rougeDeclaree = (chemin: string) => ROUGES_DECLAREES.find((r) => chemin.endsWith(r.fichier));
 
-/** Une scène est du BPScript symbolique si son en-tête le déclare. */
-const estBPScript = (src: string) => /^\s*\/\/\s*@language:\s*bpscript\s*$/m.test(src);
-
-const scenes = Object.entries(BPS)
-  .filter(([, src]) => estBPScript(src))
-  .map(([chemin, src]) => ({ chemin, src }));
+const scenes = Object.entries(BPS).map(([chemin, src]) => ({ chemin, src }));
 
 describe('[932] statut de compilation du corpus BPScript', () => {
   it('a bien trouvé le corpus (le glob ne ment pas par un ensemble vide)', () => {

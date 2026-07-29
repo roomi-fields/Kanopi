@@ -18,7 +18,10 @@
 > valide les noms écrits dans un branchement contre lui.
 >
 > Côté langage (BPScript), la forme CV est : une **déclaration** du modulateur
-> `cv env1 : mod.adsr(attack:5, …)` (lib `mod` = mod.json) et un **branchement** au
+> `@cv env1 mod.adsr(attack:5, …)` (lib `mod` = mod.json — arobase obligatoire et PAS de
+> deux-points, décision `hub/decisions/2026-07-29-les-formes-declaratives-de-bpscript.md`
+> §2 et §8 : le deux-points poserait une propriété sur un nom existant au lieu de déclarer)
+> et un **branchement** au
 > point de paramètre d'une note `Bass -> C2 (cutoff: env1)`. Ici on documente ce
 > que Kanopi **expose et fait** de la modulation.
 
