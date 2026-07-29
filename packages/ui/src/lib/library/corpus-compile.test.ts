@@ -59,12 +59,18 @@ const BPS = import.meta.glob('../../../../library/scenes/**/*.bps', {
  *   • 'rouge-definitif' — rouge PERMANENT et VOULU. La verdir exigerait de mentir : soit
  *     inventer un nom pour une commande qui ne fait rien, soit retirer du natif ce que la
  *     scène traduit. Un rouge qui dit la vérité vaut mieux qu'un vert qui ment.
+ *   • 'arbitrage-attendu' — rouge qui n'est ni voulu ni mécaniquement réparable : la forme
+ *     existe, mais l'appliquer exigerait de CHOISIR quelque chose que la source ne dit pas.
+ *     Catégorie ajoutée le 2026-07-29 plutôt que de ranger ces scènes sous 'nommage-attendu',
+ *     qui aurait été faux : ce n'est pas un nom qui manque, c'est une décision. Chaque entrée
+ *     nomme CE QU'ELLE ATTEND ET DE QUI. Un rouge d'arbitrage qui traîne est un arbitrage à
+ *     relancer, pas un dû — s'il se fossilise, c'est le signe qu'on a cessé de demander.
  *  Toute AUTRE cause de rouge est une régression, donc un échec : cette liste n'est pas un
  *  dépotoir de scènes cassées, chaque entrée porte sa raison. */
 const ROUGES_DECLAREES: Array<{
   fichier: string;
   motif: RegExp;
-  cause: 'nommage-attendu' | 'rouge-definitif';
+  cause: 'nommage-attendu' | 'rouge-definitif' | 'arbitrage-attendu';
   attend: string;
 }> = [
   {
@@ -85,6 +91,38 @@ const ROUGES_DECLAREES: Array<{
     motif: /script/,
     cause: 'nommage-attendu',
     attend: 'migration de « Wait for <note> channel » vers le trigger entrant (la forme existe)'
+  },
+  // ── Les QUATRE rescapées du chantier « déclarer les terminaux » (2026-07-29). Six autres
+  // scènes ont été réparées mécaniquement en LISANT la destination dans l'original BP3
+  // (-ho./-mi. des `BP3-tests/*.gr`). Ces quatre-là résistent, et chacune pour une raison
+  // DIFFÉRENTE — c'est ce qui interdit de les traiter d'un seul geste.
+  {
+    fichier: 'BPScript-tests/Alarm.bps',
+    motif: /terminal 'do3' non déclaré/,
+    cause: 'arbitrage-attendu',
+    attend:
+      "l'alphabet des noms FRANÇAIS. L'original charge -ho.Frenchnotes : « do3 » est une HAUTEUR, pas un terminal à déclarer. La déclarer en @gate/@var la couperait de tout accordage — ce serait mentir sur sa nature. Attend : architecte / bpscript."
+  },
+  {
+    fichier: 'BPScript-tests/dhadhatite_v2.bps',
+    motif: /terminal 'dha(dha)?' non déclaré/,
+    cause: 'arbitrage-attendu',
+    attend:
+      "un arbitrage de TRADUCTION, pas de déclaration : la scène emploie des bols COMPOSÉS (dhadha, dhadhatitedhadhadheena) que l'alphabet original -al.dhadhatite ne contient pas — il n'a que les bols simples (dha, ti, te, na, dhee, tr). Les déclarer un par un figerait des composés que la source ne connaît pas. Attend : architecte."
+  },
+  {
+    fichier: 'BPScript-tests/tryCsoundObjects.bps',
+    motif: /terminal '(a|b|c|d|e|f|midiobject)' non déclaré/,
+    cause: 'arbitrage-attendu',
+    attend:
+      "la DESTINATION Csound. L'alphabet original charge -mi ET -cs : ce sont des objets sonores Csound. Toutes les scènes déjà migrées vont vers :midi ; aucune ne montre comment s'écrit une destination Csound. Je n'invente pas un précédent. Attend : architecte / bpscript."
+  },
+  {
+    fichier: 'BPScript-tests/trySrand.bps',
+    motif: /la règle '[A-E]' porte le nom d'un TERMINAL/,
+    cause: 'arbitrage-attendu',
+    attend:
+      "le mot de Romain sur le renommage. L'outil amont test/migration_noms.mjs REFUSE cette scène, et pour une juste raison qu'il énonce lui-même : sa production est invérifiable AVANT comme APRÈS (aucun arbre dérivé), donc il ne peut pas prouver la non-régression. Forcer l'outil serait contourner sa garantie."
   }
 ];
 
