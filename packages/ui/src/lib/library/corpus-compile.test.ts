@@ -136,7 +136,7 @@ const ROUGES_DECLAREES: Array<{
     motif: /terminal '(a|b)' non déclaré/,
     cause: 'arbitrage-attendu',
     attend:
-      "la question OUVERTE chez Romain : « un alphabet ET des notes dans la même portée ». La scène écrit simultanément des notes occidentales et des symboles abstraits `a`/`b` ; bpscript a délibérément refusé d'y déclarer un alphabet pour ne pas trancher cette question dans une scène, puis son propre fail-loud des groupes l'a rendue rouge. Je n'y touche pas : c'est son écriture, sa raison documentée, et l'arbitrage n'est ni à lui ni à moi. NOTE : l'alphabet EXISTE à la source (-ho.tryKeyXpand contient « a b ») — il n'est simplement pas déclaré dans la traduction.",
+      "la question OUVERTE chez Romain : « un alphabet ET des notes dans la même portée ». La scène écrit simultanément des notes occidentales et des symboles abstraits `a`/`b` ; bpscript a délibérément refusé d'y déclarer un alphabet pour ne pas trancher cette question dans une scène, puis son propre fail-loud des groupes l'a rendue rouge. Je n'y touche pas : c'est son écriture, sa raison documentée, et l'arbitrage n'est ni à lui ni à moi. NOTE : l'alphabet EXISTE à la source (-ho.tryKeyXpand contient « a b ») — il n'est simplement pas déclaré dans la traduction."
   },
   {
     fichier: 'BPScript-tests/koto1.bps',
