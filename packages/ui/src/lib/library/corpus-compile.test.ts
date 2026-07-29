@@ -173,6 +173,45 @@ const ROUGES_DECLAREES: Array<{
 
 const rougeDeclaree = (chemin: string) => ROUGES_DECLAREES.find((r) => chemin.endsWith(r.fichier));
 
+/** Le statut RÉEL d'une scène : analysée, PUIS dérivée. Rend le premier échec rencontré, ou
+ *  `null` si les deux étages passent. Le mot « analyse » ou « dérivation » est dans le message
+ *  pour qu'un échec dise TOUT DE SUITE à quel étage il est tombé. */
+export function statut(src: string): string | null {
+  const { ast, errors } = compileToBPxAST(src) as {
+    ast: unknown;
+    errors: Array<{ message?: string }>;
+  };
+  if (errors.length) return `analyse : ${errors.map((e) => e.message ?? String(e)).join(' | ')}`;
+  try {
+    createSession(ast as Parameters<typeof createSession>[0], { seed: GRAINE }).derive();
+    return null;
+  } catch (e) {
+    // MÊME RATTRAPAGE QUE L'APPLICATION — et il est ÉPROUVÉ, voir le banc « le rattrapage de
+    // graine mord » plus bas. Une grammaire à RE-SEMIS refuse de dériver sous graine figée : le
+    // moteur exige une graine d'HORLOGE. L'adaptateur réessaie alors UNE fois sans graine
+    // (`isRandomizeNeedsClock`, bpx-adapter.ts:1276 et 1876) et JOUE la scène. Sans ce
+    // rattrapage, le garde la déclarerait rouge alors qu'elle marche à l'écran — un FAUX rouge,
+    // aussi nuisible que le vert menteur.
+    //
+    // ⛔ CE RATTRAPAGE A ÉTÉ ÉCRIT, RETIRÉ, PUIS REMIS DANS LA MÊME HEURE, et la raison de
+    // l'aller-retour est le principe qui compte : je l'avais retiré faute de TÉMOIN — un
+    // rattrapage jamais exécuté dans un garde est du code qui a l'air de protéger et ne protège
+    // rien. Je croyais alors qu'aucune scène BPScript ne pouvait exiger l'horloge. FAUX, et
+    // c'est bpscript qui m'a corrigé ([1061]) : la graphie existe (`[shuffle]`, `![@seed:N]`),
+    // ce sont `_rndseq`/`_randomize` — les mots INTERNES du moteur natif — qui n'en ont pas.
+    // Le témoin est donc constructible, il est écrit plus bas, et le rattrapage est éprouvé.
+    if (/reseedOrShuffle/.test(String(e)) && /wall-clock/.test(String(e))) {
+      try {
+        createSession(ast as Parameters<typeof createSession>[0], {}).derive();
+        return null;
+      } catch (e2) {
+        return `dérivation (même sans graine figée) : ${String(e2)}`;
+      }
+    }
+    return `dérivation : ${String(e)}`;
+  }
+}
+
 const scenes = Object.entries(BPS).map(([chemin, src]) => ({ chemin, src }));
 
 describe('[932] statut de compilation du corpus BPScript', () => {
@@ -186,38 +225,6 @@ describe('[932] statut de compilation du corpus BPScript', () => {
       expect(trouvee, `${r.fichier} déclarée rouge mais absente du corpus`).toBe(true);
     }
   });
-
-  /** Le statut RÉEL d'une scène : analysée, PUIS dérivée. Rend le premier échec rencontré,
-   *  ou `null` si les deux étages passent. Le mot « analyse » ou « dérivation » est dans le
-   *  message pour qu'un échec dise TOUT DE SUITE à quel étage il est tombé. */
-  function statut(src: string): string | null {
-    const { ast, errors } = compileToBPxAST(src) as {
-      ast: unknown;
-      errors: Array<{ message?: string }>;
-    };
-    if (errors.length) return `analyse : ${errors.map((e) => e.message ?? String(e)).join(' | ')}`;
-    try {
-      createSession(ast as Parameters<typeof createSession>[0], { seed: GRAINE }).derive();
-      return null;
-    } catch (e) {
-      // ⚠️ ÉCART CONNU AVEC L'APPLICATION, ÉCRIT PLUTÔT QUE COMBLÉ À L'AVEUGLE.
-      // Une grammaire à re-semis REFUSE de dériver sous graine figée : le moteur exige une
-      // graine d'HORLOGE. L'adaptateur réessaie alors UNE fois sans graine
-      // (`isRandomizeNeedsClock`, bpx-adapter.ts:1276 et 1876) — donc l'app la JOUE, là où ce
-      // garde la déclarerait rouge. J'AI ÉCRIT CE RATTRAPAGE PUIS JE L'AI RETIRÉ : impossible
-      // de l'éprouver. MESURÉ — aucune scène du corpus n'est dans ce cas (les 197 qui analysent
-      // dérivent sous graine figée sans jamais demander l'horloge), et la forme BP3 qui le
-      // déclenche (`_randomize` / `_rndseq`) n'a pas d'équivalent BPScript reconnu : écrite
-      // telle quelle, elle est refusée à l'analyse comme terminal inconnu. Sans témoin, ce
-      // rattrapage aurait été du code de garde JAMAIS EXÉCUTÉ — c'est-à-dire exactement le
-      // « vert qui ne regarde rien » qu'on a passé la journée à traquer.
-      // POUR QUI AJOUTERA UNE TELLE SCÈNE : le garde la verra rouge et il aura raison de crier ;
-      // la réponse est de reproduire ici le rattrapage de l'adaptateur, AVEC cette scène comme
-      // témoin. (Piste donnée par bpscript, [1060] : son comparateur avalait cette exception
-      // précise dans un catch vide et en concluait « aucun arbre dérivé ».)
-      return `dérivation : ${String(e)}`;
-    }
-  }
 
   for (const { chemin, src } of scenes) {
     const attendu = rougeDeclaree(chemin);
@@ -243,4 +250,51 @@ describe('[932] statut de compilation du corpus BPScript', () => {
       });
     }
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LE RATTRAPAGE DE GRAINE MORD — et il sait aussi SE TAIRE. Un témoin qui ne prouve qu'un seul
+// sens laisserait passer un rattrapage qui avale TOUT échec de dérivation.
+//
+// LE TÉMOIN N'EST PAS INVENTÉ : c'est `trySrand.bps` du corpus, à qui on donne EN MÉMOIRE
+// l'alphabet que sa propre source déclare (son réglage natif `-se.trySrand` porte
+// « NoteConvention: 0 » = anglaise, et `-ho.tryKeyXpand` déclare les deux terminaux « a b »).
+// Rien n'est écrit dans le fichier : la scène reste rouge dans le corpus, son arbitrage est chez
+// Romain. On se sert seulement du fait MESURÉ qu'elle exige une graine d'horloge — c'est
+// exactement la cause que bpscript a fini par isoler chez lui ([1060]).
+describe('le rattrapage de graine mord', () => {
+  const source = Object.entries(BPS).find(([c]) => c.endsWith('BPScript-tests/trySrand.bps'))?.[1];
+  const avecAlphabet = () =>
+    source!.replace(
+      '@controls',
+      '@alphabet.bp3_english:midi\n@gate a:midi\n@gate b:midi\n@controls'
+    );
+
+  it('le témoin existe et exige bien une graine d’HORLOGE (sinon ce banc ne prouve rien)', () => {
+    expect(source, 'trySrand.bps introuvable dans le corpus').toBeDefined();
+    const { ast, errors } = compileToBPxAST(avecAlphabet()) as {
+      ast: unknown;
+      errors: unknown[];
+    };
+    expect(
+      errors,
+      'le témoin doit ANALYSER proprement, sinon on ne mesure pas la dérivation'
+    ).toEqual([]);
+    // C'est LA propriété qui fait de cette scène un témoin : sous graine figée, elle REFUSE.
+    expect(() =>
+      createSession(ast as Parameters<typeof createSession>[0], { seed: GRAINE }).derive()
+    ).toThrow(/reseedOrShuffle/);
+  });
+
+  it('sait MORDRE : le garde rend VERT une scène que la graine figée refuse', () => {
+    expect(statut(avecAlphabet())).toBeNull();
+  });
+
+  it('sait SE TAIRE : il n’avale pas un échec de dérivation ORDINAIRE', () => {
+    // koto1 jette sur les règles SUB à jokers, PAS sur la graine — le rattrapage ne doit pas
+    // s'en mêler, et le message doit rester celui de la vraie cause.
+    const koto1 = Object.entries(BPS).find(([c]) => c.endsWith('BPScript-tests/koto1.bps'))?.[1];
+    expect(koto1).toBeDefined();
+    expect(statut(koto1!)).toMatch(/SUB Insert: wildcard substitution misses/);
+  });
 });
