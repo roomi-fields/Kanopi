@@ -3,11 +3,39 @@
 // hub 2026-07-16-tempo-slash-n-nu-legacy-persistant, RATIFIEE). En BPScript elle s ecrit
 // ![/N], PAS le suffixe colle [/N] qui est la forme CANONIQUE SCOPEE (enter/exit) — deux
 // semantiques distinctes que j avais confondues.
+// ─────────────────────────────────────────────────────────────────────────────
+// MIGRÉE SOUS LES CHANGEMENTS DE LANGAGE DU 2026-07-29 — par bpscript, NON COMMITTÉ PAR LUI.
+//
+// CE QUI A ÉTÉ FAIT : les cinq têtes A B C D E portaient des noms de NOTES de l'alphabet
+// occidental. Depuis la cascade de défauts (@core → scène → acteur), une scène qui ne déclare
+// aucune convention de notes en HÉRITE — donc ces têtes sont devenues des homonymes de notes et
+// la règle d'unicité les refuse. Elles sont renommées A_r … E_r, TOUS usages compris (leur emploi
+// dans S). Zéro erreur de compilation après.
+//
+// ⚠️ ET CE ZÉRO N'EST PAS UNE PREUVE — c'est le point le plus important de cette note.
+// La production de cette scène est NULLE avant comme après : le moteur ne dérive aucun arbre.
+// Il n'y a donc rien à comparer, et l'outil de migration (test/migration_noms.mjs) REFUSE à juste
+// titre de signer un renommage qu'il ne peut pas prouver. Son refus reste bon en général ; il ne
+// mord simplement pas ici, faute de référence. Arbitrage Romain, 2026-07-29 : « on migre ce que
+// l'on sait avoir MODIFIÉ… ça plantait avant, ça va continuer après… mais on aura a priori pas
+// AGGRAVÉ la situation. »
+//
+// CE QUI N'A DÉLIBÉRÉMENT PAS ÉTÉ FAIT : aucun alphabet n'est déclaré ici.
+// La scène écrit SIMULTANÉMENT des notes occidentales (C3…G5) et des symboles abstraits (a, b),
+// et le modèle « un alphabet ET des notes dans la même portée » est une question OUVERTE chez
+// l'architecte et Romain. Déclarer un alphabet au jugé trancherait cette question dans une scène.
+// ⚠️ De plus, le compilateur ne sait PAS discriminer aujourd'hui : mesuré, cette scène rend zéro
+// erreur sous `simple` COMME sous `solfege`, parce qu'un terminal placé dans un groupe polymétrique
+// n'est pas validé (défaut de bpscript, remonté le 2026-07-29, non corrigé à cette date). Ses `a`
+// et `b` sont donc des terminaux inconnus que personne ne signale.
+//
+// bpscript — 2026-07-29. Écriture chez un autre : elle n'est LIVRÉE que quand Kanopi l'a committée.
+// ─────────────────────────────────────────────────────────────────────────────
 @controls
 @mode:random(tempo:60.0000,striated,randomize)
-S -> ![/5] A B C D E
-A -> {C3 B3 E3 F3 G3}[shuffle]
-B -> ![@seed:1] {C4 B4 E4 F4 G4}[shuffle]
-C -> randomize {C4 B4 E4 F4 G4}[shuffle] {C5 B5 E5 F5 G5}[shuffle]
-D -> ![@seed:1] {C5 B5 E5 F5 G5}[shuffle]
-E -> {!(rndvel:50) !(vel:80) a a a a a b b b b b}
+S -> ![/5] A_r B_r C_r D_r E_r
+A_r -> {C3 B3 E3 F3 G3}[shuffle]
+B_r -> ![@seed:1] {C4 B4 E4 F4 G4}[shuffle]
+C_r -> randomize {C4 B4 E4 F4 G4}[shuffle] {C5 B5 E5 F5 G5}[shuffle]
+D_r -> ![@seed:1] {C5 B5 E5 F5 G5}[shuffle]
+E_r -> {!(rndvel:50) !(vel:80) a a a a a b b b b b}

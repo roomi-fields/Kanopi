@@ -1,5 +1,14 @@
-// GARDE DE STATUT DU CORPUS — chaque scène BPScript de la bibliothèque a un statut de
-// compilation ATTENDU, et le portillon échoue dès que le réel s'en écarte, DANS LES DEUX SENS.
+// GARDE DE STATUT DU CORPUS — chaque scène BPScript de la bibliothèque a un statut ATTENDU, et
+// le portillon échoue dès que le réel s'en écarte, DANS LES DEUX SENS.
+//
+// ⛔ DEUX ÉTAGES, ET LE SECOND A ÉTÉ AJOUTÉ LE 2026-07-29 PARCE QUE LE GARDE MENTAIT : il ne
+// mesurait que l'ANALYSE. Or `koto1.bps` et `koto2.bps`, que je venais de réparer le matin même,
+// analysaient proprement et JETAIENT à la dérivation (« SUB Insert: wildcard substitution
+// misses ») — deux scènes déclarées vertes qui ne produisent rien. Un garde qui s'arrête à
+// l'analyse dit « le corpus va bien » d'un corpus qui ne joue pas.
+// MESURÉ AVANT D'ÉTENDRE, comme pour l'élargissement du périmètre plus bas : sur les 197 scènes
+// qui analysent, 195 dérivent, 2 jettent (koto1/koto2), 0 ne produit zéro jeton. L'étage ajouté
+// coûte exactement les 2 rouges RÉELS et aucun faux.
 //
 // POURQUOI (chantier `script`, [932], 2026-07-26) : quatre scènes deviennent ROUGES par
 // INTENTION. Elles emploient des intentions qui n'ont pas encore de nom dans le langage (attente
@@ -44,6 +53,9 @@ import { describe, it, expect } from 'vitest';
 // résout vers la surface typée du dépôt amont. Pas de second chemin d'import, pas de `declare
 // module` recopié : le garde analyse par la porte que l'application emprunte.
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+// MÊME porte de dérivation que l'application (`bpx-adapter.ts:52,1847`) : le garde mesure par
+// où l'app passe, pas par un chemin de test à lui.
+import { createSession } from 'bpx';
 
 const BPS = import.meta.glob('../../../../library/scenes/**/*.bps', {
   query: '?raw',
@@ -70,7 +82,7 @@ const BPS = import.meta.glob('../../../../library/scenes/**/*.bps', {
 const ROUGES_DECLAREES: Array<{
   fichier: string;
   motif: RegExp;
-  cause: 'nommage-attendu' | 'rouge-definitif' | 'arbitrage-attendu';
+  cause: 'nommage-attendu' | 'rouge-definitif' | 'arbitrage-attendu' | 'bug-moteur-route';
   attend: string;
 }> = [
   {
@@ -114,12 +126,20 @@ const ROUGES_DECLAREES: Array<{
     attend:
       "la DESTINATION Csound. L'alphabet original charge -mi ET -cs : ce sont des objets sonores Csound. Toutes les scènes déjà migrées vont vers :midi ; aucune ne montre comment s'écrit une destination Csound. Je n'invente pas un précédent. Attend : architecte / bpscript."
   },
+  // (trySrand.bps a QUITTÉ cette liste le 2026-07-29 : bpscript a renommé ses cinq têtes
+  // A…E en A_r…E_r, dans mon dépôt et en le signalant. Elle compile ET dérive 35 jetons.)
   {
-    fichier: 'BPScript-tests/trySrand.bps',
-    motif: /la règle '[A-E]' porte le nom d'un TERMINAL/,
-    cause: 'arbitrage-attendu',
+    fichier: 'BPScript-tests/koto1.bps',
+    motif: /SUB Insert: wildcard substitution misses/,
+    cause: 'bug-moteur-route',
     attend:
-      "le mot de Romain sur le renommage. L'outil amont test/migration_noms.mjs REFUSE cette scène, et pour une juste raison qu'il énonce lui-même : sa production est invérifiable AVANT comme APRÈS (aucun arbre dérivé), donc il ne peut pas prouver la non-régression. Forcer l'outil serait contourner sa garantie."
+      "un correctif du moteur de dérivation sur les règles SUB à jokers. MESURÉ que ce n'est PAS ma déclaration de terminaux : les trois variantes qui compilent (4 en @gate, seul `d` en @gate, seul `d` en @var) jettent TOUTES la même erreur. Ma migration du 2026-07-29 n'a pas causé ce défaut — elle l'a rendu ATTEIGNABLE (avant, la scène ne compilait pas, la dérivation n'était jamais lancée). Routé à l'architecte."
+  },
+  {
+    fichier: 'BPScript-tests/koto2.bps',
+    motif: /SUB Insert: wildcard substitution misses/,
+    cause: 'bug-moteur-route',
+    attend: 'idem koto1 — même erreur, même règle SUB à jokers, même origine amont.'
   }
 ];
 
@@ -139,30 +159,44 @@ describe('[932] statut de compilation du corpus BPScript', () => {
     }
   });
 
+  /** Le statut RÉEL d'une scène : analysée, PUIS dérivée. Rend le premier échec rencontré,
+   *  ou `null` si les deux étages passent. Le mot « analyse » ou « dérivation » est dans le
+   *  message pour qu'un échec dise TOUT DE SUITE à quel étage il est tombé. */
+  function statut(src: string): string | null {
+    const { ast, errors } = compileToBPxAST(src) as {
+      ast: unknown;
+      errors: Array<{ message?: string }>;
+    };
+    if (errors.length) return `analyse : ${errors.map((e) => e.message ?? String(e)).join(' | ')}`;
+    try {
+      createSession(ast as Parameters<typeof createSession>[0], {}).derive();
+      return null;
+    } catch (e) {
+      return `dérivation : ${String(e)}`;
+    }
+  }
+
   for (const { chemin, src } of scenes) {
     const attendu = rougeDeclaree(chemin);
     const nom = chemin.replace(/^.*\/scenes\//, '');
 
     if (attendu) {
       it(`${nom} — ROUGE DÉCLARÉ [${attendu.cause}] (attend : ${attendu.attend})`, () => {
-        const { errors } = compileToBPxAST(src);
-        // Elle DOIT échouer : si elle compile, sa cause est levée en amont et cette entrée doit
+        const echec = statut(src);
+        // Elle DOIT échouer : si elle passe, sa cause est levée en amont et cette entrée doit
         // disparaître de ROUGES_DECLAREES (un rouge déclaré ne se fossilise pas).
         expect(
-          errors.length,
-          `${nom} COMPILE désormais — sa cause (${attendu.cause} : ${attendu.attend}) a dû être levée : retirer cette entrée de ROUGES_DECLAREES`
-        ).toBeGreaterThan(0);
+          echec,
+          `${nom} PASSE désormais — sa cause (${attendu.cause} : ${attendu.attend}) a dû être levée : retirer cette entrée de ROUGES_DECLAREES`
+        ).not.toBeNull();
         // …et pour LA RAISON déclarée, pas pour une autre casse qui se cacherait derrière.
-        const messages = errors.map((e) => e.message ?? String(e)).join(' | ');
-        expect(messages, `${nom} échoue, mais pas sur « ${attendu.motif} » : ${messages}`).toMatch(
+        expect(echec!, `${nom} échoue, mais pas sur « ${attendu.motif} » : ${echec}`).toMatch(
           attendu.motif
         );
       });
     } else {
-      it(`${nom} — compile`, () => {
-        const { errors } = compileToBPxAST(src);
-        const messages = errors.map((e) => e.message ?? String(e)).join(' | ');
-        expect(errors.length, `${nom} ne compile plus : ${messages}`).toBe(0);
+      it(`${nom} — analyse ET dérive`, () => {
+        expect(statut(src), `${nom} ne passe plus`).toBeNull();
       });
     }
   }
