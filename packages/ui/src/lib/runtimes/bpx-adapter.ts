@@ -48,9 +48,13 @@ import voicesJson from 'bpscript/lib/voices.json';
 // il est CAPTÉ depuis `lib/digital/<fn>.ts` dans le BUNDLE navigateur `libs-data.js` (libs-bundle.js:52,
 // commentaire de digital.json). On consomme donc `LIBS.digital` (avec body), pas le JSON nu.
 import { LIBS as BPSCRIPT_LIBS } from 'bpscript/src/transpiler/libs-data.js';
-// PLUS DE TYPE DE JETON PLAT IMPORTÉ DE BPx : son aplatisseur n'a plus d'appelant ici (décision
-// 2026-07-29, Kairos seul aplatisseur). Le plat et son type viennent de Kairos/Kronos.
-import { createSession, renderChain, type SceneAST, type Session } from 'bpx';
+import {
+  createSession,
+  renderChain,
+  type SceneAST,
+  type Session,
+  type TimedToken as BpxTimedToken
+} from 'bpx';
 // [745] Interrupteur de la trace de dérivation — LU seul (jamais `setTraceEnabled`,
 // matière propre de la vue Texte). L'hôte PORTE la valeur à la construction de la
 // Session, il ne la résout ni ne l'abonne.
@@ -60,9 +64,6 @@ import { traceEnabled } from 'runtime-ui';
 // AS-IS: the host `charger`s it with the tree + BPx projection context, then hands it to
 // `startKronosAudio`. Kairos is the SOLE projection source — no parallel host-side flattener.
 import { Kairos } from '@kairos/core';
-// Le plat que Kairos rend (`platCourant()`) est la Timeline de Kronos : je lis le TYPE à sa source,
-// je n'en recopie pas la surface (single-source, décision copies-de-surface 2026-07-19).
-import type { TimelineEvent } from '@kronos/core';
 import { BUNDLED_SE, BUNDLED_SOUND, BUNDLED_AL } from './bp3-aux';
 // Audio output lives in runtime-audio: it provides the CV-curve factory `exprSource`
 // (compiles a backtick curve → ModulationSource), injected into Kronos's composition
@@ -1161,28 +1162,6 @@ type Tok = {
 //     `production-feed`, pas ce magasin. Mesuré avant de couper : aucune vue, aucun test hors
 //     ceux du calcul lui-même. Même geste que la chaîne finale ([130], plus bas dans ce dépôt).
 // Qui devra dessiner des bandes les lira sur l'arbre, où l'amont marque ce qui est une note.
-// Le plat de Kairos → les jetons d'affichage du magasin de production.
-//
-// TRADUCTION D'UNITÉ ET DE VOCABULAIRE, rien d'autre — aucune décision. Kairos date en SECONDES
-// (`sceneOnset`/`sceneDuration`), mon magasin garde des MILLISECONDES pour le rouleau ; le symbole
-// tel qu'écrit est sous `content.token` (présent pour CHAQUE nature, silence `-` compris) ; la
-// nature s'appelle `kind` et vaut `note` / `rest` / `control` (absente ⇒ `note`).
-// Le filtre des `control` est l'ÉQUIVALENT EXACT de l'ancien `type !== 'control'` — correspondance
-// mesurée par Kairos sur la même scène par les deux chemins.
-// `null` (rien de chargé) → tableau vide : l'appelant crie déjà sur une production vide.
-function platEnJetons(plat: readonly TimelineEvent[] | null): Tok[] {
-  if (!plat) return [];
-  return plat
-    .filter((e) => e.kind !== 'control')
-    .map((e) => ({
-      token: String((e.content as { token?: unknown }).token ?? ''),
-      start: e.sceneOnset * 1000,
-      end: (e.sceneOnset + e.sceneDuration) * 1000,
-      type: e.kind ?? 'note',
-      actor: e.actor ?? null
-    }));
-}
-
 function publishProduction(
   id: Runtime,
   tokens: Tok[],
@@ -1873,9 +1852,12 @@ function makeBpxAdapter(
             // [745] Coût nul strict quand éteint : la clé `trace` est ABSENTE (pas `false`).
             ...(traceEnabled() ? { trace: true } : {})
           });
-        // On ne garde ici QUE l'arbre : c'est lui qui porte la structure polymétrique
-        // (groupes + voix + imbrication) dont la bande de structure a besoin. Le PLAT ne
-        // vient plus d'ici — il se lit chez Kairos, après `charger` (voir plus bas).
+        // Keep BOTH halves of the derivation: `.tree` (from `derive()`) carries the
+        // polymetric structure (groups + voices + nesting) the piano-roll's struct band
+        // needs; `tokens` (from `emit('timed-tokens')`) is the flat timed sequence
+        // (audio/MIDI/text). The `output:'complete'` mode (control markers as tree
+        // nodes / zero-duration tokens) has MIGRATED to Kairos and now THROWS in BPx —
+        // the default ('sounding') is the host's path: notes + rests, no control nodes.
         // [769] Rattrapage `_randomize` (voir `isRandomizeNeedsClock`) : le produce dérive
         // d'ABORD sous la graine figée ; sur le refus PRÉCIS d'une grammaire à re-semis, on
         // réessaie UNE fois SANS graine et on OUBLIE la graine (`currentSeed = undefined`)
@@ -1900,7 +1882,10 @@ function makeBpxAdapter(
             throw err;
           }
         }
-        const derived = { tree: deriveResult.tree };
+        const derived = {
+          tree: deriveResult.tree,
+          tokens: bpx.emit<BpxTimedToken[]>('timed-tokens')
+        };
         // METER (BPx authority): l'hôte LIT la facette `DeriveResult.meter.cycleBeats`
         // (longueur de cycle repliée, RÉSOLUE par BPx — fe33ab0/B3) et la passe telle
         // quelle au fold-barre entier de Kronos ; il ne SOMME plus les numérateurs
@@ -1953,6 +1938,8 @@ function makeBpxAdapter(
         // AudioRuntime. The legacy `resolveCvControls`
         // (which stamped `{__cv}` descriptors for the now-removed internal WebAudio synth)
         // is GONE — Kanopi neither resolves nor renders CV.
+        // Flat tokens (control markers dropped) — the resolver context + downstream consumers.
+        tokens = derived.tokens.filter((t) => t.type !== 'control');
         // KAN-orchestration P1 — hand the derived tree + projection context to Kairos.
         // `charger` projects the tree into a Kronos Timeline (modulations composed inside)
         // and bumps its generation; `startKronosAudio` binds `sourceStructure()` on the
@@ -2028,18 +2015,6 @@ function makeBpxAdapter(
         // importer la porte de Kairos — c'est la boîte de branchement qui la lui tend, une fois,
         // avec l'arbre. Sans ce geste, BPx CRIE au premier événement (jamais un silence).
         brancherAttente(bpx, kairos);
-        // ⛔ LE PLAT NE VIENT PLUS DE BPx — Kairos est le SEUL aplatisseur (décision 2026-07-29,
-        // GO architecte [1037] ; porte livrée par Kairos 25b5a84). Je lisais
-        // `bpx.emit('timed-tokens')` AVANT `charger` ; je lis maintenant APRÈS, ce qui est l'ordre
-        // normal — `charger` est atomique (il projette, puis committe : jamais un demi-swap).
-        // ⚠️ `platCourant()` ET PAS `query(0, durée)` : Kairos l'a mesuré en me répondant — la
-        // fenêtre de `query` est [de, a) sur l'onset, donc un événement d'onset NÉGATIF (un
-        // décalage de pression) en tombe. Sur `S -> C2 _tempo(120) C2 C2` j'aurais affiché deux
-        // lignes sur trois sans qu'aucune erreur ne le dise.
-        // `null` = rien de chargé (jamais confondu avec une scène vide) → aucune garde à écrire.
-        // Ses temps sont en SECONDES là où BPx me donnait des MILLISECONDES : je convertis ici,
-        // une fois. Le symbole tel qu'écrit est sous `content.token`, silence (`-`) compris.
-        tokens = platEnJetons(kairos.platCourant());
         // Capture pour la MISE À JOUR VIVANTE (re-éval same-file) : arbre + contexte de projection,
         // pour re-charger le Kairos VIVANT au teardown sans reconstruire la scène (bpx/derived ne
         // vivent que dans ce bloc). Contexte reconstruit à frais comme le fait le re-random.
@@ -2444,10 +2419,9 @@ function makeBpxAdapter(
               // Refresh the Structure/Text view so it shows THIS cycle's variation
               // (display only — mirrors what the dormant `reDeriveTreeEvents` publishes).
               const rnames = buildSymbolNames(rbpx, rtree);
-              // Même bascule qu'au site d'éval : le plat vient de Kairos, pas de BPx. Lu APRÈS
-              // `charger` ci-dessus — avant, `platCourant()` rendrait encore le plat du cycle
-              // PRÉCÉDENT, cohérent mais périmé (la bascule est atomique, jamais un mélange).
-              const rtokens = platEnJetons(kairos!.platCourant());
+              const rtokens = rbpx
+                .emit<BpxTimedToken[]>('timed-tokens')
+                .filter((t) => t.type !== 'control');
               publishProduction(
                 id,
                 rtokens,
