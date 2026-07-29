@@ -44,6 +44,30 @@ RÉUTILISÉ, fait ÉVOLUER, et des mesures tournent dessus = bifurcation silenci
 - **Enforcement** : un garde anti-rétrocompat au gate échoue si du code marqué legacy/deprecated a un
   appelant vivant (mordant prouvé par injection, comme le méta-garde anti-bypass).
 
+## ⚠️ ON SE PRÉVIENT À LA MODIFICATION D'UNE SURFACE PARTAGÉE, PAS AU PUSH (Romain, 2026-07-29)
+
+Dans cet atelier, les dépôts consomment la **source** l'un de l'autre — pas un paquet publié
+(chez moi : `bpscript`, `@kairos/core`, `@kronos/core`, `bp3-frontend` résolvent vers des sources
+liées). Une modification d'une **surface partagée** — nom de type d'un nœud d'arbre, champ de
+contrat, signature exportée, graphie du langage — est donc **EN PRODUCTION À LA SECONDE OÙ ELLE EST
+ÉCRITE** ; le push ne fait que la rendre **irréversible**. Prévenir « avant de pousser » est la
+bonne précaution **au mauvais moment** : les voisins sont déjà rouges.
+
+**Le geste** : dès que je touche une surface partagée, je préviens ses consommateurs — **avec les
+sites à changer chez eux** — et je vérifie qu'ils ont basculé **AVANT** de pousser. Et l'ancien nom
+**sort dans le même mouvement** : le garder en parallèle est la bifurcation interdite du 19/07
+(§ ci-dessus).
+
+**Ce qui a déclenché la règle, et ce n'est pas théorique** : un renommage poussé, `Unsupported RHS
+element type` chez le voisin, trois bancs rouges et TOUTE LA CHAÎNE qui cesse de charger. La
+précaution avait bien été annoncée — elle portait sur le push.
+
+**Le corollaire qui me concerne en RÉCEPTION** : un rouge chez moi peut venir de l'arbre de travail
+**non commité** d'un voisin. Avant de conclure « ma régression », discriminer contre son HEAD
+(`git -C <repo> archive HEAD | tar -x -C <scratch>`) — déjà vu, 14 rouges qui n'étaient pas à moi.
+
+Source : `hub/AGENT_WELCOME.md:36-46` (commit `6f8e0ca`) — vérifiée à l'oracle avant inscription.
+
 ## Architecture — LOI NON NÉGOCIABLE (lire AVANT de coder)
 
 Contrats contraignants, à respecter sans dérogation (les contourner = bug, pas « choix sain ») :
