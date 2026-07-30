@@ -15,14 +15,19 @@
 // qui garde l'ABSENCE elle-même, et non son effet. Sans ça, la voie parallèle peut rentrer sans
 // bruit, exactement comme elle est entrée.
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
 import alphabetsJson from 'bpscript/lib/alphabets.json';
 import tuningsJson from 'bpscript/lib/tunings.json';
 import temperamentsJson from 'bpscript/lib/temperaments.json';
 import octavesJson from 'bpscript/lib/octaves.json';
 
-const ADAPTATEUR = path.resolve(__dirname, 'bpx-adapter.ts');
+// Source de l'adaptateur lue par le bundler (même route que le garde de corpus,
+// `library/corpus-compile.test.ts:60`) : rien de Node ici, `src/` n'en porte pas les types.
+const ADAPTATEUR = Object.values(
+  import.meta.glob('./bpx-adapter.ts', { query: '?raw', import: 'default', eager: true }) as Record<
+    string,
+    string
+  >
+)[0];
 
 /** Les trois conventions de notes du moteur BP3 natif, portées par l'amont depuis le 2026-07-29. */
 const CONVENTIONS_BP3 = ['bp3_english', 'bp3_fr', 'bp3_indian'] as const;
@@ -35,14 +40,16 @@ const OCTAVIERS = octavesJson as unknown as Record<string, Entree>;
 
 describe('un seul catalogue de hauteur', () => {
   it('l’adaptateur n’étale AUCUN second catalogue dans le `pitchLib` qu’il tend à Kairos', () => {
-    const code = fs.readFileSync(ADAPTATEUR, 'utf8');
+    expect(
+      ADAPTATEUR,
+      'source de l’adaptateur illisible — ce banc ne mesurerait rien'
+    ).toBeTruthy();
     // On ne juge que le CODE : les lignes de commentaire (dont celle qui raconte ce retrait)
     // sont écartées, sinon ce banc interdirait d'expliquer sa propre raison d'être.
-    const lignesDeCode = code
-      .split('\n')
-      .map((l, i) => ({ n: i + 1, t: l }))
-      .filter(({ t }) => !/^\s*(\/\/|\*|\/\*)/.test(t));
-    const fautives = lignesDeCode.filter(({ t }) => /BP3_PITCH_CATALOG/.test(t));
+    const fautives = ADAPTATEUR.split('\n')
+      .map((t: string, i: number) => ({ n: i + 1, t }))
+      .filter(({ t }) => !/^\s*(\/\/|\*|\/\*)/.test(t))
+      .filter(({ t }) => /BP3_PITCH_CATALOG/.test(t));
     expect(
       fautives.map(({ n, t }) => `${n}: ${t.trim()}`),
       'un second catalogue de hauteur est de nouveau étalé dans PITCH_LIB — voir l’en-tête de ce banc'
