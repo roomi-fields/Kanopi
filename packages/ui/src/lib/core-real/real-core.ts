@@ -189,7 +189,6 @@ class RealCore implements CoreApi {
     });
   }
 
-
   private log = (e: { runtime: Runtime; level: LogEntry['level']; msg: string }) =>
     this.console.push(e);
 

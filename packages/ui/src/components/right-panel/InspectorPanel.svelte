@@ -65,10 +65,6 @@
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
-  dd.accent {
-    color: var(--amber);
-  }
-
   .bullets {
     list-style: none;
     margin: 0;
