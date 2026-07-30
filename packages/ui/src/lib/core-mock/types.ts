@@ -61,25 +61,6 @@ export interface ActorManager {
   subscribe(cb: (actors: Actor[]) => void): Unsubscribe;
 }
 
-export interface Scene {
-  name: string;
-  actors: Record<string, boolean>;
-  active: boolean;
-  /**
-   * A `.bps` file-scene (`@scene calm "calm.bps"`) references a CHILD `.bps`
-   * file instead of arming in-session actors. When set, activating the scene
-   * loads + evaluates that child program (see real-core `handleSceneActivate`).
-   * Absent for actor-set scenes (the `actors` map drives those).
-   */
-  file?: string;
-}
-
-export interface SceneManager {
-  list(): Scene[];
-  activate(name: string): void;
-  subscribe(cb: (scenes: Scene[]) => void): Unsubscribe;
-}
-
 export interface LogEntry {
   ts: number;
   runtime: Runtime;
@@ -96,7 +77,6 @@ export interface ConsoleBus {
 
 export interface CoreApi {
   actors: ActorManager;
-  scenes: SceneManager;
   console: ConsoleBus;
   events: EventBus;
   /**
@@ -114,15 +94,6 @@ export interface CoreApi {
     flags?: Record<string, number>,
     produceOnly?: boolean
   ): Promise<void>;
-  /**
-   * Feed the Scenes panel from a `.bps`'s `@scene <name> "<file>"` table.
-   * Activating a resulting scene loads + plays the referenced child `.bps`
-   * (resolved via `resolve`). An empty table clears the panel.
-   */
-  loadBpsFileScenes(
-    sceneTable: Record<string, { file: string }>,
-    resolve: (fileName: string) => string | undefined
-  ): void;
   /** LE GESTE de connexion d'un périphérique d'entrée MIDI — il RESTE chez l'hôte (contrat
    *  `hote-runtime-in.md` § « Ce qui reste chez l'hôte »), parce que Web MIDI n'accorde
    *  l'autorisation que dans la chaîne du geste utilisateur. Le corps délègue à `runtime-in` ; ce

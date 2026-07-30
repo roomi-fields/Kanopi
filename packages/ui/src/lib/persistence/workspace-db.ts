@@ -79,7 +79,6 @@ export interface PersistedWorkspace {
   files: VirtualFile[];
   openTabIds: string[];
   activeTabId: string | null;
-  activeScene: string | null;
   activeActors: string[];
   sidebarWidth?: number;
   rightPanelWidth?: number;

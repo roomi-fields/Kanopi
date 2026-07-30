@@ -1,5 +1,4 @@
 import { workspace } from '../../stores/workspace.svelte';
-import { scenes } from '../../stores/scenes.svelte';
 import { actors } from '../../stores/actors.svelte';
 import { ui } from '../../stores/ui.svelte';
 import { debounce, loadWorkspace, saveWorkspace, type PersistedWorkspace } from './workspace-db';
@@ -14,7 +13,6 @@ function snapshot(): PersistedWorkspace {
     // `@mm`/tree.metadata.tempo) : le persister puis le ré-injecter ressusciterait
     // une autorité tempo depuis le localStorage. Le tempo redécoule de la
     // ré-évaluation de la scène.
-    activeScene: scenes.active?.name ?? null,
     activeActors: actors.list.filter((a) => a.active).map((a) => a.name),
     sidebarWidth: ui.sidebarWidth,
     rightPanelWidth: ui.rightPanelWidth,
@@ -60,8 +58,6 @@ export function restoreWorkspace(): boolean {
           : 'console';
   }
 
-  if (w.activeScene) scenes.activate(w.activeScene);
-
   const wantOn = new Set(w.activeActors);
   for (const a of actors.list) {
     if (a.active !== wantOn.has(a.name)) actors.toggle(a.name);
@@ -104,7 +100,6 @@ export function installAutosave() {
       for (const f of workspace.files) void f.contents.length;
       void workspace.openTabIds.length;
       void workspace.activeTabId;
-      void scenes.active?.name;
       void actors.list.map((a) => `${a.name}:${a.active}`).join(',');
       void ui.sidebarWidth;
       void ui.rightPanelWidth;

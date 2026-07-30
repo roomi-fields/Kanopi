@@ -62,7 +62,6 @@ describe('KAN-C17 — restore does not resurrect a tempo from localStorage', () 
       openTabIds: [],
       activeTabId: null,
       bpm: 120,
-      activeScene: null,
       activeActors: []
     });
     expect(restoreWorkspace()).toBe(true);
@@ -74,7 +73,6 @@ describe('KAN-C17 — restore does not resurrect a tempo from localStorage', () 
       files: [],
       openTabIds: [],
       activeTabId: null,
-      activeScene: null,
       activeActors: []
     });
     expect(restoreWorkspace()).toBe(true);

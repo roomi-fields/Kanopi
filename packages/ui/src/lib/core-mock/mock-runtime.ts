@@ -5,8 +5,6 @@ import type {
   CoreApi,
   LogEntry,
   Runtime,
-  Scene,
-  SceneManager,
   Unsubscribe
 } from './types';
 import { createEventBus } from '../events/bus';
@@ -46,35 +44,6 @@ export class MockActors implements ActorManager {
   }
 }
 
-export class MockScenes implements SceneManager {
-  private scenes: Scene[] = [];
-  private b = bus<Scene[]>();
-  private onActivateHook?: (s: Scene) => void;
-
-  setOnActivate(fn: (s: Scene) => void) {
-    this.onActivateHook = fn;
-  }
-
-  setScenes(list: Scene[]) {
-    this.scenes = list;
-    this.b.emit(this.scenes);
-  }
-
-  list() {
-    return this.scenes;
-  }
-  activate(name: string) {
-    const target = this.scenes.find((s) => s.name === name);
-    this.scenes = this.scenes.map((s) => ({ ...s, active: s.name === name }));
-    this.b.emit(this.scenes);
-    if (target) this.onActivateHook?.(target);
-  }
-  subscribe(cb: (s: Scene[]) => void) {
-    cb(this.scenes);
-    return this.b.subscribe(cb);
-  }
-}
-
 export class MockConsole implements ConsoleBus {
   private log: LogEntry[] = [];
   private b = bus<LogEntry[]>();
@@ -104,7 +73,6 @@ export class MockConsole implements ConsoleBus {
 
 class MockCore implements CoreApi {
   actors = new MockActors();
-  scenes = new MockScenes();
   console = new MockConsole();
   events: EventBus = createEventBus();
 
@@ -122,21 +90,6 @@ class MockCore implements CoreApi {
     _produceOnly?: boolean
   ): Promise<void> {
     this.console.push({ runtime, level: 'info', msg: `eval mock (${code.length}b @ ${sourceId})` });
-  }
-
-  loadBpsFileScenes(
-    sceneTable: Record<string, { file: string }>,
-    _resolve: (fileName: string) => string | undefined
-  ) {
-    const entries = Object.entries(sceneTable);
-    const currentAreFileScenes = this.scenes.list().some((s) => s.file !== undefined);
-    if (entries.length === 0) {
-      if (currentAreFileScenes) this.scenes.setScenes([]);
-      return;
-    }
-    this.scenes.setScenes(
-      entries.map(([name, def]) => ({ name, actors: {}, file: def.file, active: false }))
-    );
   }
 
   async enableMidiInput() {

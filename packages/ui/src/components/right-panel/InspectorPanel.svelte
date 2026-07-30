@@ -2,7 +2,6 @@
   import { clock } from '../../stores/clock.svelte';
   import { kronosCursor } from '../../stores/kronos-cursor.svelte';
   import { actors } from '../../stores/actors.svelte';
-  import { scenes } from '../../stores/scenes.svelte';
   import { fmt2, fmt3 } from '../../lib/format/bar-beat';
 
   // Position from Kronos's Transport, sampled per-frame into `kronosCursor.beat` (the
@@ -24,8 +23,6 @@
       <dd>{clock.state.bpm != null ? clock.state.bpm.toFixed(1) : '—'}</dd>
       <dt>position</dt>
       <dd>{beatStr}</dd>
-      <dt>scene</dt>
-      <dd class="accent">{scenes.active?.name ?? '—'}</dd>
     </dl>
   </section>
 

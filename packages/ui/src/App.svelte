@@ -17,11 +17,9 @@
   import { installGlobalKeybindings } from './lib/keybindings/bindings';
   import { installAutosave } from './lib/persistence/snapshot.svelte';
   import { installPersonalPitchLib } from './stores/personal-pitch-lib.svelte';
-  import { core } from './lib/core';
   import { workspace } from './stores/workspace.svelte';
   import { openBlocks } from './stores/blocks.svelte';
   import { markLastEvalError } from './components/editor/eval-tracker';
-  import { sceneTableFromFile } from './stores/bpsScenes.svelte';
 
   const showEventsOverlay =
     typeof location !== 'undefined' && new URLSearchParams(location.search).has('events');
@@ -88,26 +86,6 @@
         if (active.runtime !== 'bpscript' && active.runtime !== 'bp3') return;
         didInitialProduce = true;
         void openBlocks.produceLoadedProgram(active.id);
-      });
-
-      // `.bps` file-scenes (`@scene calm "calm.bps"`): when the active file is a
-      // `.bps` declaring a scene table, feed the right-panel Scenes cards from it.
-      // Activating a card loads + plays the referenced child `.bps` (resolved
-      // against the workspace). An empty table clears only a previously-loaded
-      // file-scene set (core.loadBpsFileScenes only owns file-scene cards).
-      let lastSceneTableKey = '';
-      $effect(() => {
-        const active = workspace.activeTabId
-          ? workspace.fileById(workspace.activeTabId)
-          : undefined;
-        const table = sceneTableFromFile(active?.name, active?.contents);
-        const key = `${active?.name ?? ''}:${JSON.stringify(table)}`;
-        if (key === lastSceneTableKey) return;
-        lastSceneTableKey = key;
-        core.loadBpsFileScenes(table, (fileName) => {
-          const f = workspace.files.find((x) => x.name === fileName || x.path === fileName);
-          return f?.contents;
-        });
       });
     });
 

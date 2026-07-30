@@ -7,16 +7,17 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../../hel
 //
 //   1. Ctrl/Cmd+K        toggle command palette
 //   2. Ctrl/Cmd+. (dot)  hush every runtime
-//   3. Alt+1..9          activate scene N
+//   3. Alt+1..9          arme/désarme le Nᵉ acteur
 //   4. Shift+Enter       evaluate the current line only (not the whole block)
 //   5. Tab               accept completion when the popup is active
 //
 // Selectors come straight from the components, not guesses:
 //   - CommandPalette.svelte:78 — `.palette[role="dialog"]`, with the input
 //     auto-focused once `ui.paletteOpen` flips to true.
-//   - Alt+1..9 resolves scene N through `core.scenes` (bindings.ts:59-66);
-//     the active scene is read from the statusbar readout
-//     (cf session-scenes.spec.ts — the Scenes cards panel was removed, KAN-UX1).
+//   - Alt+1..9 ARME le Nᵉ acteur (`core.actors.toggle`, bindings.ts). Le raccourci a
+//     CHANGÉ DE CIBLE le 2026-07-30 (il activait une scène) : le sous-système scènes est
+//     parti avec la suppression de `@scene` du langage, dont il était l'unique producteur.
+//     Preuve du nouveau ciblage : `sessions/scenes-absentes.spec.ts`.
 //   - `.cm-content` — CodeMirror's contenteditable host.
 //   - `.cm-flash-ok` / `.cm-flash-err` — eval-flash decorations
 //     (eval-flash.ts:12-13).
@@ -25,13 +26,13 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../../hel
 //
 // These tests inject small INLINE fixtures through the dev-only
 // `window.__kanopi.workspace.openBundle` hatch (main.ts:25-35). They need a
-// `.strudel` actor file open (hush / Shift+Enter / Tab) or a multi-scene
-// `.kanopi` (Alt+1/2) — both defined inline here so the suite is independent of
+// `.strudel` actor file open (hush / Shift+Enter / Tab) — défini en ligne ici pour que
+// la suite soit indépendante de
 // the bundled starters (01/02/03 migrated to self-contained `.bps`, lot 4).
 
 // Single Strudel actor, lines 1-3 comments + line 4 the note(...) block — the
 // layout the cursor-position assertions below rely on.
-const SOLO_SESSION = `# 01 - Strudel solo (inline fixture).\n\n@actor drums drums.strudel strudel\n@scene main drums\n`;
+const SOLO_SESSION = `# 01 - Strudel solo (inline fixture).\n\n@actor drums drums.strudel strudel\n`;
 const SOLO_DRUMS = `// Drums - the kick of the whole composition.\n// Put the cursor here, Ctrl+Enter.\n//\nnote("c3 e3 g3 c4").s("sine").gain(0.7)\n`;
 
 test('Ctrl/Cmd+K opens the command palette; Escape closes it', async ({ page }) => {

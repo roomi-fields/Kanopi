@@ -1,7 +1,6 @@
 <script lang="ts">
   import { clock } from '../../stores/clock.svelte';
   import { kronosCursor } from '../../stores/kronos-cursor.svelte';
-  import { scenes } from '../../stores/scenes.svelte';
   import { actors } from '../../stores/actors.svelte';
   import { consoleLog } from '../../stores/console.svelte';
   import { playFocus } from '../../stores/play-focus.svelte';
@@ -22,7 +21,6 @@
     const bp = kronosCursor.beat;
     return bp ? fmt3(bp.bar) + '.' + fmt2(bp.beat + 1) : '001.01';
   });
-  const sceneName = $derived(scenes.active?.name ?? '—');
   const activeRuntimes = $derived(
     new Set(actors.list.filter((a) => a.active).map((a) => a.runtime)).size
   );
@@ -51,10 +49,6 @@
     <span class="sb-sep">│</span>
     <div class="sb-item" title="bar.beat (Ableton-style, 1-indexed)">
       <span class="dim">bar.beat</span> <span class="num">{posStr}</span>
-    </div>
-    <span class="sb-sep">│</span>
-    <div class="sb-item">
-      <span class="dim">scene</span> <span class="accent">{sceneName}</span>
     </div>
     <span class="sb-sep">│</span>
     <div class="sb-item">

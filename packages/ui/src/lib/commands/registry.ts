@@ -1,7 +1,6 @@
 import { clock } from '../../stores/clock.svelte';
 import { tapTempo } from './tempo';
 import { playback } from '../../stores/playback.svelte';
-import { scenes } from '../../stores/scenes.svelte';
 import { actors } from '../../stores/actors.svelte';
 import { workspace } from '../../stores/workspace.svelte';
 import { consoleLog } from '../../stores/console.svelte';
@@ -69,7 +68,6 @@ function staticCommands(): Command[] {
           openTabIds: workspace.openTabIds,
           activeTabId: workspace.activeTabId,
           actors: actors.list,
-          scenes: scenes.list,
           bpm: clock.state.bpm,
           playing: clock.state.playing
         });
@@ -90,14 +88,6 @@ function staticCommands(): Command[] {
 
 export function listCommands(): Command[] {
   const cmds = staticCommands();
-  for (const s of scenes.list) {
-    cmds.push({
-      id: `scene.${s.name}`,
-      title: `Switch to scene: ${s.name}`,
-      category: 'Scenes',
-      run: () => scenes.activate(s.name)
-    });
-  }
   for (const a of actors.list) {
     cmds.push({
       id: `actor.toggle.${a.name}`,

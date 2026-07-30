@@ -1,8 +1,0 @@
-// Scène enfant "full" — batterie + lead_r (deux voix-code Strudel → audio).
-@actor drums  eval.strudel
-@actor lead  eval.strudel
-
-S -> { drums_r, lead_r }
-
-drums_r -> drums.`note("c2*4").s("sine").gain(0.6)`
-lead_r  -> lead.`note("e4 g4 b4 d5").s("triangle").gain(0.5)`

@@ -102,13 +102,26 @@ export function handleGlobalKey(e: KeyboardEvent) {
     }
     return;
   }
-  // Alt + 1..9 → activate scene N (Kanopi-specific; Tidal has no scene concept).
+  // Alt + 1..9 → ARME / DÉSARME le Nᵉ acteur.
+  //
+  // ⚠️ CE RACCOURCI A CHANGÉ DE CIBLE, IL N'A PAS ÉTÉ SUPPRIMÉ (décision Romain 2026-07-30,
+  // `hub/decisions/2026-07-30-les-scenes-sortent-de-l-ui-alt-chiffres-vise-les-acteurs.md`) :
+  // il activait une SCÈNE, dont le sous-système entier est parti avec `@scene` (le langage a
+  // supprimé la déclaration, donc plus aucun producteur de scènes n'existait). Ses mots :
+  // « les Alt+chiffres sont censés maintenant agir sur les ACTEURS, pas les scènes ».
+  //
+  // POURQUOI ARMER, et pas une « sélection » : aucune notion d'acteur sélectionné n'existe dans
+  // Kanopi — les deux seuls gestes réels sur un acteur sont l'ARMEMENT (la diode du panneau,
+  // `actors.toggle`) et la COUPURE (le mixer, déjà pilotée par Cmd/Ctrl+1..9 juste au-dessus).
+  // Fabriquer un état « acteur sélectionné » que rien ne lit aurait été inventer de l'état
+  // d'hôte — exactement ce que ce dépôt élimine. Les deux rangées de chiffres portent donc
+  // désormais les deux gestes distincts qui existent : Cmd = couper, Alt = armer.
   if (!isMod(e) && !e.shiftKey && e.altKey && /^[1-9]$/.test(e.key)) {
     const n = Number(e.key);
-    const target = core.scenes.list()[n - 1];
+    const target = core.actors.list()[n - 1];
     if (target) {
       e.preventDefault();
-      core.scenes.activate(target.name);
+      core.actors.toggle(target.name);
     }
     return;
   }

@@ -1,7 +1,0 @@
-// Scènes multi-fichiers A/B (migré de l'inline scenes.kanopi).
-// Chaque scène nommée référence un .bps enfant ; activer la carte charge et
-// joue ce programme enfant. calm = batterie seule, full = batterie + lead.
-@scene calm "calm.bps"
-@scene full "full.bps"
-
-S -> calm full

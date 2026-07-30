@@ -31,7 +31,6 @@ function snap(paths: string[]): PersistedWorkspace {
     })),
     openTabIds: [],
     activeTabId: null,
-    activeScene: null,
     activeActors: []
   };
 }

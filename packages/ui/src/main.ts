@@ -9,7 +9,6 @@ import { core } from './lib/core';
 import { workspace } from './stores/workspace.svelte';
 import { clock } from './stores/clock.svelte';
 import { actors } from './stores/actors.svelte';
-import { scenes } from './stores/scenes.svelte';
 import { openBlocks, installSlotErrorBridge } from './stores/blocks.svelte';
 import { ui } from './stores/ui.svelte';
 import { production } from './stores/production.svelte';
@@ -96,7 +95,6 @@ if (import.meta.env.DEV) {
     workspace,
     clock,
     actors,
-    scenes,
     openBlocks,
     ui,
     // The most recent derived production (PROJECTION of BPx `derive()`), re-published

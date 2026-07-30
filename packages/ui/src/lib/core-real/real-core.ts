@@ -1,5 +1,5 @@
-import { MockScenes, MockConsole, MockActors } from '../core-mock/mock-runtime';
-import type { Actor, CoreApi, LogEntry, Runtime, Scene } from '../core-mock/types';
+import { MockConsole, MockActors } from '../core-mock/mock-runtime';
+import type { Actor, CoreApi, LogEntry, Runtime } from '../core-mock/types';
 import { getAdapter, listRuntimes } from '../runtimes/registry';
 import {
   setTempoSink,
@@ -72,14 +72,8 @@ class RealActors extends MockActors {
 
 class RealCore implements CoreApi {
   actors = new RealActors();
-  scenes = new MockScenes();
   console = new MockConsole();
   events: EventBus = createEventBus();
-
-  // Resolve a `.bps` file-scene child by file name → its source text. Fed by the
-  // workspace (bindBpsSceneFiles) so activating a `@scene calm "calm.bps"` can
-  // load + evaluate the referenced child program.
-  private getBpsSceneFile?: (fileName: string) => string | undefined;
 
   constructor() {
     // The per-frame playhead sample + the beat/bar UI events (p5/hydra `onBeat`/`onBar`)
@@ -97,9 +91,6 @@ class RealCore implements CoreApi {
     installConsoleBridge((e) => this.console.push(e));
     this.actors.setOnToggle((a, willBeActive) => {
       void this.handleActorToggle(a, willBeActive);
-    });
-    this.scenes.setOnActivate((s) => {
-      void this.handleSceneActivate(s);
     });
     // A grammar that declares `@mm` derives at that tempo; route it to the tempo store so the
     // displayed BPM and every runtime (live retune) adopt the same tempo the derivation used
@@ -198,82 +189,6 @@ class RealCore implements CoreApi {
     });
   }
 
-  private async handleSceneActivate(scene: Scene) {
-    // Activating a scene BY ACTOR SET only ARMS its actors (LEDs) — it does NOT
-    // start the transport (Romain 2026-07-14: arm ≠ play, beta issue 5 self-start
-    // removed; see `handleActorToggle`). A file-scene (below) is a DIFFERENT,
-    // unaffected gesture: it explicitly evaluates the referenced child `.bps`,
-    // which DOES build/play a Kronos handle — loading a file-scene table entry
-    // has always been an explicit "play this file" action.
-
-    // `.bps` file-scene (`@scene calm "calm.bps"`): the scene references a child
-    // `.bps` program instead of arming in-session actors. Load its source and
-    // evaluate it through the bpscript adapter — its own actors/voices then play.
-    // The child eval is keyed by the child file name so re-activating a scene
-    // replaces the previous child's voices (the adapter stops the prior source).
-    if (scene.file) {
-      const contents = this.getBpsSceneFile?.(scene.file);
-      if (contents === undefined) {
-        this.log({
-          runtime: 'kanopi',
-          level: 'error',
-          msg: `scene "${scene.name}": child file "${scene.file}" not found`
-        });
-        return;
-      }
-      const adapter = getAdapter('bpscript');
-      if (adapter) {
-        try {
-          await adapter.evaluate(contents, { actorId: scene.file, fileId: scene.file }, this.log);
-        } catch {
-          /* error already logged by the adapter */
-        }
-      }
-      this.log({ runtime: 'system', level: 'info', msg: `scene: ${scene.name} (${scene.file})` });
-      return;
-    }
-
-    const current = new Map(this.actors.list().map((a) => [a.name, a.active]));
-    for (const [actorName, wantOn] of Object.entries(scene.actors)) {
-      const isOn = current.get(actorName);
-      if (isOn === undefined) continue; // unknown actor
-      if (isOn !== wantOn) this.actors.toggle(actorName);
-    }
-    this.log({ runtime: 'system', level: 'info', msg: `scene: ${scene.name}` });
-  }
-
-  /**
-   * Feed the Scenes panel from a `.bps`'s `@scene <name> "<file>"` table. Each
-   * named scene becomes a file-scene card; activating it loads + plays the
-   * referenced child `.bps`. `resolve` reads a child file's source by name (fed
-   * by the workspace). A non-empty table installs file-scenes; an empty table
-   * (the active file declares none) clears the panel only when the current
-   * scenes are themselves file-scenes.
-   */
-  loadBpsFileScenes(
-    sceneTable: Record<string, { file: string }>,
-    resolve: (fileName: string) => string | undefined
-  ) {
-    this.getBpsSceneFile = resolve;
-    const entries = Object.entries(sceneTable);
-    const currentAreFileScenes = this.scenes.list().some((s) => s.file !== undefined);
-
-    if (entries.length === 0) {
-      // No file-scenes in the active file. Only clear if what's shown is a
-      // previously-loaded file-scene set.
-      if (currentAreFileScenes) this.scenes.setScenes([]);
-      return;
-    }
-
-    const activeName = this.scenes.list().find((s) => s.active)?.name;
-    const next: Scene[] = entries.map(([name, def]) => ({
-      name,
-      actors: {},
-      file: def.file,
-      active: name === activeName
-    }));
-    this.scenes.setScenes(next);
-  }
 
   private log = (e: { runtime: Runtime; level: LogEntry['level']; msg: string }) =>
     this.console.push(e);
