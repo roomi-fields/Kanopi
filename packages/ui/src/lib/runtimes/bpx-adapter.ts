@@ -15,12 +15,6 @@ import type { FileRef, SeEngineSettings, ParseBP3Result } from 'bp3-frontend';
 // INVENTÉE par la copie de surface locale (supprimée le 2026-07-28) : l'amont n'a jamais publié ce
 // nom. On dérive donc l'acteur de ce qu'il publie vraiment — l'arbre de `parseBP3`.
 type Bp3Actor = NonNullable<NonNullable<ParseBP3Result['ast']>['actors']>[number];
-// Catalogue d'alphabets BP3-FIDÈLES (finding [79], b3a29f8, co-conçu Kairos). Donnée pure
-// (tables C verbatim bp3_english/bp3_fr/bp3_indian + diapasons authentiques) que l'hôte FUSIONNE
-// dans sa `pitchLib` (cf. l'en-tête du module amont) : le frontal .gr émet une CLÉ d'alphabet, Kairos
-// résout token→hauteur via son résolveur GÉNÉRIQUE en lisant cette DÉFINITION. Dernier maillon [79]
-// (part a) : sans la fusion, une grammaire FR/sargam émet la clé mais résout MUET.
-import { BP3_PITCH_CATALOG } from 'bp3-frontend';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 // bpscript's musical catalogs, imported AS-IS (same path as
 // lib/library/resources.ts). A `.bps` that declares `@alphabet.X` (+ optional
@@ -191,32 +185,28 @@ import routingJson from '../../../../library/routing.json';
 // `ctx.pitchLib` so IT builds the resolver and graves `content.pitch.hz`/`content.sounds`.
 // Kanopi embeds no resolution logic and runs no resolver — it only supplies this DATA.
 // The catalogs carry doc-only `_comment` keys, so cast through `unknown`.
-// Les catalogues BPScript (`@alphabet.X`) FUSIONNÉS avec le catalogue BP3-fidèle (clés
-// `bp3_english`/`bp3_fr`/`bp3_indian`, disjointes des clés BPScript). Un seul `ctx.pitchLib`,
-// un seul résolveur Kairos générique — pas de branche BP3 (arbitrage archi [90]/[303]).
-// Dernier maillon [79] : le frontal .gr émet la clé sur `actor.alphabet`, Kairos lit l'entrée
-// correspondante ici. Les entrées BP3 (typées `Bp3PitchLib`, forme sœur) sont lues AS-IS.
+// UNE SEULE SOURCE, celle de l'amont. Les conventions du moteur BP3 natif (`bp3_english`,
+// `bp3_fr`, `bp3_indian`) sont des entrées ORDINAIRES de ces catalogues depuis le 2026-07-29 :
+// bp3-frontend les a livrées VERBATIM à BPScript, qui les porte désormais (chaque entrée cite sa
+// provenance). Un seul `ctx.pitchLib`, un seul résolveur Kairos générique — aucune branche BP3.
+//
+// ⛔ CE QUI A ÉTÉ RETIRÉ ICI, ET POURQUOI IL NE DOIT PAS REVENIR (2026-07-30) : l'hôte étalait
+// PAR-DESSUS un second catalogue, `BP3_PITCH_CATALOG` de bp3-frontend, dont les clés étaient
+// déclarées « disjointes des clés BPScript ». C'était FAUX et mesuré : les trois alphabets, les
+// trois accordages et l'octavier `bp3_fr` existaient des DEUX côtés. Comme cet étalement passait
+// en SECOND, c'est la copie vouée au retrait qui était en vigueur à l'exécution — la bifurcation
+// silencieuse que ce dépôt interdit. Les deux formes avaient déjà divergé (7 naturelles + table
+// d'altérations contre 21 notes en dur ; degrés `[0,2,4,5,7,9,11]` contre `[0,1,…,12,…]` ;
+// tempérament `12TET` contre `tet12`). Elles restaient équivalentes en HAUTEUR : mesuré sous
+// graine figée, les 14 grammaires `.gr` publiées et les 6 scènes `.bps` qui déclarent un alphabet
+// `bp3_*` gravent EXACTEMENT les mêmes fréquences avec ou sans l'étalement. Le retrait est donc
+// neutre à l'oreille — et il enlève la seule chose qui décidait laquelle des deux formes gagnait.
 const PITCH_LIB: PitchLib = {
-  alphabets: {
-    ...(alphabetsJson as unknown as PitchLib['alphabets']),
-    ...(BP3_PITCH_CATALOG.alphabets as unknown as PitchLib['alphabets'])
-  },
-  tunings: {
-    ...(tuningsJson as unknown as PitchLib['tunings']),
-    ...(BP3_PITCH_CATALOG.tunings as unknown as PitchLib['tunings'])
-  },
-  temperaments: {
-    ...(temperamentsJson as unknown as PitchLib['temperaments']),
-    ...(BP3_PITCH_CATALOG.temperaments as unknown as PitchLib['temperaments'])
-  },
-  scales: {
-    ...(scalesJson as unknown as PitchLib['scales']),
-    ...(BP3_PITCH_CATALOG.scales as unknown as PitchLib['scales'])
-  },
-  octaves: {
-    ...(octavesJson as unknown as PitchLib['octaves']),
-    ...(BP3_PITCH_CATALOG.octaves as unknown as PitchLib['octaves'])
-  }
+  alphabets: alphabetsJson as unknown as PitchLib['alphabets'],
+  tunings: tuningsJson as unknown as PitchLib['tunings'],
+  temperaments: temperamentsJson as unknown as PitchLib['temperaments'],
+  scales: scalesJson as unknown as PitchLib['scales'],
+  octaves: octavesJson as unknown as PitchLib['octaves']
 };
 
 // The provided DIGITAL function library (`bpscript/lib/digital.json`), handed to Kairos as the
