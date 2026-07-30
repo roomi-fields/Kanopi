@@ -46,12 +46,41 @@ RÉUTILISÉ, fait ÉVOLUER, et des mesures tournent dessus = bifurcation silenci
 
 ## ⚠️ ON SE PRÉVIENT À LA MODIFICATION D'UNE SURFACE PARTAGÉE, PAS AU PUSH (Romain, 2026-07-29)
 
-Dans cet atelier, les dépôts consomment la **source** l'un de l'autre — pas un paquet publié
-(chez moi : `bpscript`, `@kairos/core`, `@kronos/core`, `bp3-frontend` résolvent vers des sources
-liées). Une modification d'une **surface partagée** — nom de type d'un nœud d'arbre, champ de
-contrat, signature exportée, graphie du langage — est donc **EN PRODUCTION À LA SECONDE OÙ ELLE EST
-ÉCRITE** ; le push ne fait que la rendre **irréversible**. Prévenir « avant de pousser » est la
+Une modification d'une **surface partagée** — nom de type d'un nœud d'arbre, champ de contrat,
+signature exportée, graphie du langage — est **en production dès qu'elle atteint ce que le voisin
+lit** ; le push ne fait que la rendre **irréversible**. Prévenir « avant de pousser » est souvent la
 bonne précaution **au mauvais moment** : les voisins sont déjà rouges.
+
+**LA FRONTIÈRE EST PAR USAGE, PAS PAR VOISIN.** ⛔ Ce paragraphe portait jusqu'au 2026-07-30 une
+phrase FAUSSE — « les dépôts consomment la source l'un de l'autre, pas un paquet publié » — une
+généralisation d'UN régime à tous. Elle n'a pas été corrigée pour la beauté du texte : une
+**instruction** périmée ne se contente pas de laisser croire, elle **fait faire**, et celle-ci a
+déjà fait publier sans préavis (constat BPx, qui l'avait aussi : « je n'ai pas oublié une règle,
+j'avais chez moi une phrase qui me disait que ce cas n'existait pas »).
+
+**MON CAS, MESURÉ le 2026-07-30 (`import.meta.resolve` hors condition `development`), pas déduit** :
+- **Source en toute condition ⇒ leur FRAPPE m'atteint** — `bpscript` (`src/transpiler/` + les JSON
+  de `lib/`), `bp3-frontend`, `runtime-audio`, `runtime-codevoices`, `runtime-in`, `runtime-midi`,
+  `runtime-osc`, `runtime-ui`. Huit voisins : rien à publier, l'écriture suffit.
+- **Les DEUX régimes à la fois ⇒ leur frappe ET leur publication** — `@kairos/core`, `@kronos/core`,
+  `bpx`. Leur `exports` porte `development → ./src/index.ts` ET `import → ./dist/index.js` : mon
+  serveur de dev **et mon portillon** (son `webServer` est un serveur de DEV) lisent leur **source**,
+  mais ma construction de **production** résout leur **`dist`**.
+
+**CE QUE CE DERNIER POINT IMPLIQUE, ET QU'IL NE FAUT PAS PERDRE** : mon portillon peut être VERT sur
+la source de ces trois-là pendant que ce qui part à l'utilisateur est bâti sur leur `dist`. Un vert
+de portillon ne dit donc rien de la fraîcheur de leur paquet construit.
+
+**Et le préavis de PUBLICATION ne dépend pas de ce que je change** : le voisin ne l'attend pas pour
+savoir *quoi* a bougé, mais pour **reposer son point de comparaison** avant que mon paquet change
+sous ses bancs. Sans ce mot, il ne distingue plus « rien n'a bougé » de « je n'ai pas regardé » —
+donc **un changement inoffensif est précisément celui qui produit ce faux négatif**. Prévenir même,
+et surtout, quand je suis sûr que rien ne bouge, avec une **prédiction falsifiable**.
+
+**Ne pas deviner de quel côté je suis, et ne pas inventorier d'une seule façon** : la mesure
+ci-dessus vient de la résolution réelle, pas de la liste des `file:` du `package.json` — les deux ne
+donnent pas la même réponse. Texte de référence, qui a bougé six fois le 2026-07-30 :
+`hub/AGENT_WELCOME.md` (§ Discipline).
 
 **Le geste** : dès que je touche une surface partagée, je préviens ses consommateurs — **avec les
 sites à changer chez eux** — et je vérifie qu'ils ont basculé **AVANT** de pousser. Et l'ancien nom

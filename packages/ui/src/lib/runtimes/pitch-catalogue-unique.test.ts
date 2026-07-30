@@ -2,7 +2,9 @@
 //
 // POURQUOI CE BANC EXISTE (2026-07-30) : l'hôte étalait DEUX catalogues dans le `ctx.pitchLib`
 // qu'il tend à Kairos — celui de BPScript, puis PAR-DESSUS celui de bp3-frontend
-// (`BP3_PITCH_CATALOG`). Le commentaire qui portait cet étalement affirmait que les clés des deux
+// (`BP3_PITCH_CATALOG`, export qu'ils ont SUPPRIMÉ depuis — leur c35de48 ; ce banc garde donc un
+// nom qui n'existe plus chez personne, et c'est voulu : il doit rester absent de MA source, qu'il
+// soit ré-exporté un jour ou recopié à la main). Le commentaire qui portait cet étalement affirmait que les clés des deux
 // côtés étaient « disjointes ». Mesuré le 2026-07-30 : FAUX. Les trois conventions du moteur BP3
 // natif (`bp3_english`, `bp3_fr`, `bp3_indian`), leurs trois accordages et l'octavier `bp3_fr`
 // existaient des DEUX côtés, et comme l'étalement de bp3-frontend passait en second, c'est la

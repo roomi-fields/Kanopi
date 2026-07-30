@@ -191,8 +191,10 @@ import routingJson from '../../../../library/routing.json';
 // provenance). Un seul `ctx.pitchLib`, un seul résolveur Kairos générique — aucune branche BP3.
 //
 // ⛔ CE QUI A ÉTÉ RETIRÉ ICI, ET POURQUOI IL NE DOIT PAS REVENIR (2026-07-30) : l'hôte étalait
-// PAR-DESSUS un second catalogue, `BP3_PITCH_CATALOG` de bp3-frontend, dont les clés étaient
-// déclarées « disjointes des clés BPScript ». C'était FAUX et mesuré : les trois alphabets, les
+// PAR-DESSUS un second catalogue, `BP3_PITCH_CATALOG`, qu'exportait alors bp3-frontend — cet export
+// A DEPUIS ÉTÉ SUPPRIMÉ CHEZ EUX (leur c35de48, dans la foulée de ce retrait) ; le symbole n'existe
+// donc plus nulle part, et le nommer ici raconte l'histoire, il ne désigne rien de vivant. Ses clés
+// étaient déclarées « disjointes des clés BPScript ». C'était FAUX et mesuré : les trois alphabets, les
 // trois accordages et l'octavier `bp3_fr` existaient des DEUX côtés. Comme cet étalement passait
 // en SECOND, c'est la copie vouée au retrait qui était en vigueur à l'exécution — la bifurcation
 // silencieuse que ce dépôt interdit. Les deux formes avaient déjà divergé (7 naturelles + table
