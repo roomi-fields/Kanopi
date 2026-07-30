@@ -270,9 +270,8 @@ type Frontend = (code: string) => {
   // token placed in the derivation maps to `{ interp, code }`. The adapter routes
   // the token → interpreter at the dispatcher-scheduled time.
   backticks?: BacktickTable;
-  // A5 named scenes: the flag→{alias→int} table compileBPS emits for `@flag scene:
-  // calm:1, full:2`. Present only when the `.bps` declares named flag states; the
-  // UI surfaces `flagStates.scene` as selectable scene buttons. `.gr` has none.
+  // A5 états nommés : la table drapeau→{alias→int} émise pour `@flag section: calm:1,
+  // full:2`. Présente seulement quand le `.bps` déclare des états nommés ; `.gr` n'en a pas.
   flagStates?: FlagStates;
   // Per-engine sample/sound banks a `.bps` declares (`@library.strudel "dirt-samples"`
   // → `{ strudel: ["dirt-samples"] }`). The adapter loads each engine's declared
@@ -295,32 +294,36 @@ type BacktickTable = Record<string, { interp: string; code: string }>;
 // `@flag <name>: <alias>:<int>, …` → { name → { alias → int } } (from compileBPS).
 export type FlagStates = Record<string, Record<string, number>>;
 
-// The first named scene (lowest int) of a `.bps`'s `scene` flag table, or null
-// when the file declares no named scenes. A `.bps` whose rules are all guarded
-// by the scene flag derives nothing until a scene is set, so this is the scene
-// that plays by default (A5: "a scene is active by default"). Shared so the
-// scene bar can surface the SAME default the adapter derives.
-export function defaultSceneName(flagStates: FlagStates | undefined): string | null {
-  const table = flagStates?.scene;
-  if (!table) return null;
-  const entries = Object.entries(table);
-  if (entries.length === 0) return null;
-  return entries.reduce((lo, e) => (e[1] < lo[1] ? e : lo))[0];
-}
-
-// Apply the default-scene fallback to a caller's flags. When the file declares
-// named scenes and the caller passed no `scene`, inject the lowest-int one so a
-// guarded rule derives instead of leaking the unexpanded start symbol. Anything
-// the caller did set is preserved untouched.
-function withDefaultScene(
+// Un fichier dont TOUTES les règles sont gardées par un drapeau ne dérive rien tant qu'aucun état
+// n'est posé : il rendrait le symbole de départ non expansé. On pose donc, pour CHAQUE drapeau
+// déclaré que l'appelant n'a pas fixé, son état de plus PETIT entier — « un état est actif par
+// défaut » (A5). Ce que l'appelant a fixé n'est jamais touché.
+//
+// ⛔ CE NOM ÉTAIT ÉCRIT EN DUR ICI, ET C'ÉTAIT UNE AUTORITÉ INVENTÉE PAR L'HÔTE (corrigé 2026-07-30) :
+// la fonction ne regardait que `flagStates.scene`, c'est-à-dire qu'un drapeau ne recevait de défaut
+// QUE s'il portait le nom `scene`. L'hôte décidait donc du sens d'un mot du langage — exactement ce
+// que ce dépôt élimine. Deux choses l'ont rendu intenable le même jour : le langage CONFISQUE le mot
+// (décision `2026-07-30-l-acteur-implicite-s-appelle-scene.md` : `scene` devient le nom de l'acteur
+// implicite, un drapeau ne peut plus le porter), et le sous-système qui justifiait la convention —
+// la barre de scènes que mentionnait le commentaire d'origine — est PARTI ce matin avec `@scene`.
+// L'export `defaultSceneName` qui l'accompagnait n'avait plus AUCUN appelant : supprimé, pas gardé.
+// Mesuré avant de généraliser : tout le corpus ne déclare que 3 drapeaux, tous renommés `section`
+// dans le même mouvement — aucune scène ne change de comportement, et une règle NON gardée ne voit
+// aucune différence puisqu'il n'y a rien à garder.
+function withDefaultFlagStates(
   flags: Record<string, number> | undefined,
   flagStates: FlagStates | undefined
 ): Record<string, number> | undefined {
-  const table = flagStates?.scene;
-  if (!table || (flags && 'scene' in flags)) return flags;
-  const name = defaultSceneName(flagStates);
-  if (name === null) return flags;
-  return { ...(flags ?? {}), scene: table[name] };
+  if (!flagStates) return flags;
+  let out = flags;
+  for (const [nom, table] of Object.entries(flagStates)) {
+    if (out && nom in out) continue;
+    const entries = Object.entries(table);
+    if (entries.length === 0) continue;
+    const plusBas = entries.reduce((lo, e) => (e[1] < lo[1] ? e : lo));
+    out = { ...(out ?? {}), [nom]: plusBas[1] };
+  }
+  return out;
 }
 
 interface OrchestratedActor {
@@ -538,7 +541,7 @@ interface SceneAstView {
   soundAssignments?: { subject: string }[] | null;
 }
 
-// A5 named scenes from the AST: each `FlagStatesDirective` (`@flag scene: calm:1,
+// A5 états nommés lus de l'arbre : chaque `FlagStatesDirective` (`@flag section: calm:1,
 // full:2`) → `{ [flag]: { [name]: value } }`. Same shape compileBPS's `flagStates`
 // sidecar had, read straight from the directive nodes.
 function flagStatesFromAst(a: SceneAstView | null): FlagStates {
@@ -1012,8 +1015,8 @@ const bpsFrontend: Frontend = (code) => {
   // routes each BT terminal to its interpreter.
   const backticks = backticksFromAst(c.ast);
   // A5 named scenes: read the flag→{alias→int} table from the AST's
-  // `FlagStatesDirective` nodes (`@flag scene: calm:1, full:2`) so the UI can offer
-  // one selection button per named scene. Re-evaluating with `flags: { scene: <int> }`
+  // `FlagStatesDirective` nodes (`@flag section: calm:1, full:2`) so the UI can offer
+  // one selection button per named state. Re-evaluating with `flags: { section: <int> }`
   // makes the matching guarded rule derive (see `evaluate`).
   const flagStates = flagStatesFromAst(a);
   const withFlags = Object.keys(flagStates).length > 0 ? { ...parsed, flagStates } : parsed;
@@ -1752,14 +1755,12 @@ function makeBpxAdapter(
       // QUAND la scène n'a pas de directive. Le tempo EFFECTIF (dérivé) est lu sur
       // `tree.metadata.tempo` (garanti peuplé, plus bas).
 
-      // A5 named scenes: a `.bps` whose rules are ALL guarded by a named scene
-      // flag (`[scene==calm] S -> …`) has no rule that derives without a scene
-      // set — `S` would stay an unexpanded non-terminal and leak as a bogus
-      // token to the audio transport. Match the A5 UX ("a scene is active by
-      // default"): when the file declares named scenes and the caller gave no
-      // scene, default to the first named one (lowest int). Reflected as the
-      // active scene in the scene bar (see `defaultScene` consumers).
-      const effectiveFlags = withDefaultScene(src.flags, flagStates);
+      // A5 états nommés : un `.bps` dont TOUTES les règles sont gardées par un drapeau
+      // (`[section==calm] S -> …`) n'a aucune règle qui dérive sans état posé — `S` resterait
+      // un non-terminal non expansé et fuirait en jeton bidon vers le transport audio. On pose
+      // donc l'état de plus petit entier de CHAQUE drapeau non fixé (« un état est actif par
+      // défaut »). Le nom du drapeau n'est plus lu par l'hôte : voir `withDefaultFlagStates`.
+      const effectiveFlags = withDefaultFlagStates(src.flags, flagStates);
 
       // GRAINE DE PRODUCTION. Une graine POSÉE fige la dérivation (reproductible) ; ABSENTE,
       // BPx tire frais sur l'horloge (défaut natif, inversion [769]). Le modèle (Romain),

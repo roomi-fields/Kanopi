@@ -13,13 +13,13 @@
 // scènes dans la barre transport (ou Alt+1 / Alt+2). Ctrl+. pour couper.
 // La batterie joue des échantillons (bd/sd/hh) : on lie la banque dirt-samples.
 @library.strudel "dirt-samples"
-@flag scene: a:1, b:2
+@flag section: a:1, b:2
 
 @actor drums  eval.strudel
 @actor visuals  eval.hydra
 
-[scene==a] S -> drums_r
-[scene==b] S -> { drums_r, visuals_r }
+[section==a] S -> drums_r
+[section==b] S -> { drums_r, visuals_r }
 
 drums_r -> drums.`stack(
   s("bd ~ bd ~").gain(0.9),

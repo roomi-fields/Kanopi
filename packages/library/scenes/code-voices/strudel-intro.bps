@@ -14,13 +14,13 @@
 // scène choisie. Ctrl+. pour couper.
 // La batterie joue des échantillons (bd/cp/hh) : on lie la banque dirt-samples.
 @library.strudel "dirt-samples"
-@flag scene: intro:1, full:2
+@flag section: intro:1, full:2
 
 @actor drums  eval.strudel
 @actor bass  eval.strudel
 
-[scene==intro] S -> drums_r
-[scene==full]  S -> { drums_r, bass_r }
+[section==intro] S -> drums_r
+[section==full]  S -> { drums_r, bass_r }
 
 drums_r -> drums.`stack(
   s("bd*4").gain(0.9),
