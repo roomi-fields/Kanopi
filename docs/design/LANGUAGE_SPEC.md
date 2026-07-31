@@ -6,8 +6,11 @@ extension CodeMirror 6** — complémentaire de :
 
 - `ADAPTER_SPEC.md` pour le runtime d'exécution et l'UX native riche
   (widgets, autocomplete, mini-notation, …)
-- `KANOPI_LANGUAGE.md` (dans `docs/spec/`) pour la syntaxe du langage
-  `.kanopi` lui-même (directives `@actor`, `@scene`, `@map`)
+- `KANOPI_LANGUAGE.md` (dans `docs/spec/`) documentait la syntaxe du langage
+  de session `.kanopi` (directives `@actor`, `@scene`, `@map`) — supprimé
+  intégralement (`lib/session/`, `lang-kanopi.ts`, `kanopi-lint.ts`) par
+  `d02366e` (2026-06-23, décision Romain). `.kanopi` est remplacé par
+  `.bps`/BPScript (cf §2) ; `KANOPI_LANGUAGE.md` n'est plus une spec vivante
 
 ---
 
@@ -39,7 +42,7 @@ standards `@lezer/highlight`.
 | JS      | `javascript()`                                  | Trivial                                               |
 | Python  | `python()` de `@codemirror/lang-python`         | Trivial                                               |
 | SC      | `javascript()` (fallback)                       | Pas de parser SuperCollider officiel CM6              |
-| Kanopi  | `kanopiLanguage` (custom StreamLanguage)        | cf `packages/ui/src/components/editor/lang-kanopi.ts` |
+| BPScript | `bpscriptLanguage` (Lezer upstream, paquet `bpscript`) | `components/editor/lang-resolver.ts` (case `'bpscript'`) + `lang-bpscript.ts` (autocomplete/lint/hover) + `bps-libword-highlight.ts` — remplace `.kanopi`/`kanopiLanguage`/`lang-kanopi.ts`, retirés (pas de case `'kanopi'` dans `lang-resolver.ts`, fichier absent du dépôt) |
 
 Règle : **réutiliser un parser upstream** avant d'en écrire un. Un parser
 CM6 custom coûte plusieurs semaines et rate toujours des edge cases.
@@ -47,7 +50,8 @@ Pour SC, `javascript()` produit un highlight approximatif mais acceptable
 jusqu'à ce qu'un parser `@codemirror/lang-supercollider` existe.
 
 Pour un vrai langage exotique sans parser CM6, un `StreamLanguage` (~30-60
-lignes) peut dépanner — cf `lang-kanopi.ts` pour le modèle.
+lignes) peut dépanner. *(L'ancien modèle `lang-kanopi.ts` cité ici n'existe plus — `.kanopi` a été
+migré vers `.bps`/BPScript, cf §2.)*
 
 ---
 
@@ -155,7 +159,8 @@ API reference auto-générée prévue post-2.4 (cf `PROGRESS.md §2.7`).
 | Primitive              | Kind           | Source                                 | Rôle                                          |
 | ---------------------- | -------------- | -------------------------------------- | --------------------------------------------- |
 | `languageFor(runtime)` | fn             | `components/editor/lang-resolver.ts:7` | Résout `Runtime → Extension` CM6              |
-| `kanopiLanguage`       | Extension      | `components/editor/lang-kanopi.ts:10`  | StreamLanguage custom pour `.kanopi`          |
+| `bpscriptLanguage`     | Extension      | paquet `bpscript/public/editor/bpscript-lang.js` | Lezer upstream pour `.bps` — remplace `kanopiLanguage`/`lang-kanopi.ts`, retirés |
+| `bpsLibwordHighlight`  | Extension      | `components/editor/bps-libword-highlight.ts` | Recolore le vocabulaire de bibliothèque distinctement des terminaux note |
 | `kanopiHighlight`      | HighlightStyle | `components/editor/cm-theme.ts:13`     | Palette Kanopi unique (12 tags → CSS vars)    |
 | `kanopiTheme`          | Extension      | `components/editor/cm-theme.ts:29`     | Theme CM6 (couleurs panel/gutter/selection)   |
 | `kanopiGlobalStyles`   | Extension      | `components/editor/cm-theme.ts:79`     | Styles unscoped (tooltips autocomplete, lint) |

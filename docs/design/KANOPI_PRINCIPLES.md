@@ -154,7 +154,11 @@ latence audio est rejetée.
 ## 9 · Maintenable — séparation hub / adapters / plugins langage
 
 ```
-packages/core/     → hub (dispatcher, clock, bus, session parser, bridge)
+packages/core/     → vide de tout export vivant : dispatcher.js + coerceControlValues retirés
+                     par 3537bf6 (2026-07-19) ; clock.js, bridge/osc-bridge.js, scene-manager.js
+                     et soundsResolver.js retirés un mois plus tôt (9de8599, c11b025, 2b7cc13 —
+                     2026-06-23) ; résolveur/CV/audio partis vers runtime-audio et @kronos/core
+                     (cf. packages/core/src/index.js)
 packages/ui/       → hub (éditeur, panels, palette, theme)
 lib/runtimes/<L>   → adapter (glue entre L et le hub)
 bpscript/          → plugin langage (repo séparé, consommé comme npm)

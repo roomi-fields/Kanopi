@@ -180,7 +180,7 @@ Règles **non négociables** :
 
 ## Structure
 
-- `packages/core/` — runtime (dispatcher, map-engine, bridge)
+- `packages/core/` — frontière de paquet vide (dispatcher/map-engine/bridge supprimés ; gardée au cas où un futur besoin de glue côté hôte y trouve un domicile)
 - `packages/ui/` — Svelte 5 + CodeMirror 6 app
 - `packages/library/` — bundled content
 - `docs/plan/` — strategic plans (local only, gitignored)
@@ -191,7 +191,7 @@ Règles **non négociables** :
 
 - `/home/romi/dev/bp/BPscript/` — the language (parser, encoder, BPx engine spec)
 - `/home/romi/dev/music/osc-bridge/` — hardware bridge
-- bp3-engine submodule
+- `/home/romi/dev/bp/bp3-engine/` — BP3 WASM engine (sibling repo ; n'est plus un sous-module de BPscript depuis le 2026-06-14, cf. décision du même jour)
 
 ## Stack
 

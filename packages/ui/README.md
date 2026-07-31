@@ -22,7 +22,7 @@ src/
 ├── main.ts               # restore IndexedDB → mount
 ├── styles/               # tokens, reset, global (extraits du mockup)
 ├── lib/
-│   ├── core-mock/        # CoreApi mock (clock, actors, scenes, maps, console)
+│   ├── core-mock/        # CoreApi mock (actors, console ; clock = store séparé — pas de scenes/maps, cf. types.ts)
 │   ├── workspace/        # types, fixtures starter, buildTree
 │   ├── persistence/      # workspace-db (idb), snapshot autosave
 │   ├── commands/         # registre + filterCommands
@@ -34,7 +34,7 @@ src/
     ├── activity-bar/
     ├── sidebar/          # Sidebar, FilesView, FileTree
     ├── editor/           # EditorArea, TabBar, Tab, CMEditor, cm-theme
-    ├── right-panel/      # ActorsPanel, ScenesPanel, InspectorPanel, ConsolePanel
+    ├── right-panel/      # ActorsPanel, ConsolePanel, MixerMaster, RightPanel (InspectorPanel présent sur disque mais retiré/non monté depuis 2026-07-12 ; ScenesPanel n'existe plus)
     ├── statusbar/
     └── palette/          # CommandPalette
 ```
@@ -71,13 +71,13 @@ pointer-events disabled. Le `solid(0,0,0,1).out()` au stop le réinitialise.
 
 - `Cmd/Ctrl+K` ou `Cmd/Ctrl+Shift+P` — ouvre la command palette
 - `Space` (hors zone éditable) — toggle play/stop
-- `1`–`9` — active la scène N (hors zone éditable)
+- `Cmd/Ctrl+1`–`9` — coupe/rétablit le Nᵉ acteur (mixer) ; `Alt+1`–`9` — arme/désarme le Nᵉ acteur (hors zone éditable)
 - `Esc` — ferme la palette
 
 ## Persistance
 
 État sérialisé (`workspace:current` dans IndexedDB `kanopi`/`kv`) :
-fichiers, onglets, onglet actif, BPM, scène active, actors actifs.
+fichiers, onglets, onglet actif, actors actifs (le tempo n'est pas persisté — KAN-C17, il redécoule de la ré-évaluation de la scène).
 Autosave debounced 500ms.
 
 Pour reset : DevTools → Application → IndexedDB → `kanopi` → delete database, ou en console :

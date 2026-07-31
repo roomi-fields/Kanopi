@@ -4,11 +4,14 @@ Contrat technique du système library : format des fichiers `catalog.json`,
 structure d'un item, règles de consommation par les adapters. Complète
 `LIBRARY.md` (product doc : vision, catégories, UX, roadmap).
 
-Deux catégories sont implémentées : **audio-banks**
-(`packages/ui/src/lib/library/audio-banks/`) et **visuals**
-(`packages/ui/src/lib/library/visuals/`). Les autres catégories (starters,
-scenes, snippets, devices, scales) sont cadrées ici pour que leur ajout
-ultérieur reste cohérent.
+**Correction (2026-07-31)** : `audio-banks` a été retiré (`packages/ui/src/lib/library/audio-banks/`
+n'existe plus, dernier commit 79f02f0 "supprime le doublon") et `scenes` est déjà implémentée
+(`packages/ui/src/lib/library/scenes.ts`, scanne `packages/library/scenes/**/*.{bps,gr}` — c'est la
+source de la bibliothèque publique des 113 grammaires, cf.
+`hub/decisions/2026-07-20-bibliotheque-kanopi-source-officielle-des-113.md`). Catégories
+aujourd'hui implémentées : **visuals** (`packages/ui/src/lib/library/visuals/`) et **scenes**. Les
+autres (starters, snippets, devices, scales) restent cadrées ici pour que leur ajout ultérieur reste
+cohérent.
 
 ---
 
@@ -33,9 +36,15 @@ catalog léger (~KB) et délègue le fetching réel à la consommation.
 
 ---
 
-## 2 · Catégorie implémentée : `audio-banks`
+## 2 · Catégorie retirée : `audio-banks`
 
-Source : `packages/ui/src/lib/library/audio-banks/catalog.json`.
+**Correction (2026-07-31)** : `audio-banks` n'existe plus dans le dépôt (dernier commit 79f02f0
+"supprime le doublon" ; `packages/ui/src/lib/library/audio-banks/` absent). La section ci-dessous
+décrit donc une implémentation historique, gardée pour mémoire du pattern — pas une source vivante.
+La catégorie vivante équivalente aujourd'hui est `scenes` (`packages/ui/src/lib/library/scenes.ts`,
+cf. §1 ci-dessus).
+
+~~Source : `packages/ui/src/lib/library/audio-banks/catalog.json`.~~
 
 ### Format
 
@@ -190,8 +199,10 @@ dans `lib/library/<category>/index.ts`.
   versions dans le catalog ; par convention, seule la dernière est exposée
   sauf si un consommateur épingle explicitement.
 
-Aujourd'hui `schemaVersion: 1` pour audio-banks. Les autres catégories
-démarreront à `1` à leur introduction.
+Aujourd'hui `schemaVersion: 2` pour `visuals` (seule catégorie avec un
+`catalog.json` versionné depuis la migration §5 ; `audio-banks` est retiré,
+`scenes` scanne le filesystem sans `catalog.json`, cf §2/§1). Les catégories
+futures démarreront à `1` à leur introduction.
 
 ---
 
@@ -250,11 +261,7 @@ items. Seuil à réévaluer quand COMMUNITY décolle.
 
 | Primitive              | Kind        | Source                                   | Rôle                                                |
 | ---------------------- | ----------- | ---------------------------------------- | --------------------------------------------------- |
-| `AudioBank`            | interface   | `lib/library/audio-banks.ts:3`           | Entrée audio-bank du catalog                        |
-| `AudioBankCatalog`     | interface   | `lib/library/audio-banks.ts:17`          | Type du fichier `catalog.json`                      |
-| `catalog`              | const       | `lib/library/audio-banks.ts:23`          | Catalog parsé, source de vérité build-time          |
-| `findBank(id)`         | fn          | `lib/library/audio-banks.ts:26`          | Résolution `id → AudioBank`                          |
-| `bankIds()`            | fn          | `lib/library/audio-banks.ts:31`          | Liste des ids disponibles (diag / autocomplete)     |
+| `LIBRARY_ITEMS`        | const       | `lib/library/scenes.ts:81`               | Items scenes parsés au build (glob + header) — catégorie vivante qui remplace `audio-banks` (cf §2, §1) |
 | `loadSampleBank(src)`  | fn          | `lib/runtimes/strudel.ts:643`            | Charge une bank dans Strudel `samples(...)`          |
 | `setDeclaredBanks(srcs)` | fn        | `lib/runtimes/strudel.ts:661`            | Sync des banks déclarées vs chargées                 |
 | `VisualItem`           | interface   | `lib/library/visuals.ts:4`               | Entrée visual du catalog                             |

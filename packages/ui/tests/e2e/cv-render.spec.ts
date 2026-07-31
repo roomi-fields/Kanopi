@@ -17,10 +17,13 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helper
 //      writing `frequency` via setValueCurveAtTime / setValueAtTime / *RampToValueAtTime.
 //   3. peak RMS > 0                      → audible output over a continuous window.
 //
-// ⚠️ EXPECTED RED until the upstream Kronos CV-render regression (1531b28) is fixed: with
-// cv-adsr currently mute, oscillators=0 / cutoff-automations=0 / RMS=0 → this FAILS. That
-// is INTENTIONAL — the test asserts the REAL render and goes green only when Kronos repairs
-// it. The assertions/thresholds are NOT softened and the test is NOT skipped.
+// RÉSOLU 2026-06-25 : Kronos 1531b28 (KAI-8, StructureSource.auBord()) N'ÉTAIT PAS la
+// cause — diagnostic écarté par l'architecte (courrier/kanopi.md 2026-06-25T02:31), 1531b28
+// porte le re-roll @mode:random, sans rapport avec le rendu CV. La vraie racine était côté
+// Kairos : composerModulations indexait les bindings par leaf.nodeId (undefined) au lieu de
+// leaf.id, donc content.modulations restait vide — corrigé en 07a1f2e (+ e2f2eb0 pour le
+// PAN-NaN). Le test est vert depuis. Les assertions/seuils ne sont pas assouplis et le test
+// n'est pas skip.
 
 interface CvProbe {
   oscillators: number;

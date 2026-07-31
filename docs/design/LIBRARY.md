@@ -66,11 +66,9 @@ Pour les items COMMUNITY, ajouter :
 - Versionné avec Kanopi releases
 
 ### MINE
-- IndexedDB key-value store
-- Opération "Save to Library" depuis n'importe quelle scène/workspace
-- Format identique à BUNDLED, source = "mine"
-- Backup/export JSON possible (v1)
-- Sync cloud optionnel (v2)
+*(Correction 2026-07-31 : cette section décrit un stockage IndexedDB local et une opération
+"Save to Library" absents du code — cf. correction plus bas, §Créer & partager. Le stockage réel des
+fichiers personnels est la bibliothèque cloud PocketBase, `ESPACE_PERSO_SPEC.md` §2.)*
 
 ### COMMUNITY
 
@@ -107,10 +105,15 @@ Pour les items COMMUNITY, ajouter :
   - SCALE : ajoute référence dans session
 
 ### Créer & partager
-- User crée une scène dans son workspace
-- Menu : "Save to Library as…" → catégorie, nom, tags, description
-- Stocké dans MINE
-- Optionnel : "Publish to Community" → soumission (v1: PR GitHub, v2: publish API)
+
+**Correction (2026-07-31)** : ce flow ("Save to Library as…" → MINE en IndexedDB, "Publish to
+Community") ne correspond à rien dans le code — aucune occurrence de "Save to Library" ni
+d'IndexedDB pour la library dans `packages/ui/src`. Le modèle réel de gestion de fichiers personnels
+est la bibliothèque cloud ("espace perso", PocketBase), ratifiée dans `ESPACE_PERSO_SPEC.md` §2
+(Romain, 2026-07-12). La source **COMMUNITY** décrite plus haut (§Principe) n'existe pas non plus
+dans le code aujourd'hui, mais elle n'est pas absente du modèle ratifié : `ESPACE_PERSO_SPEC.md` §10
+(Romain, 2026-07-13) la nomme explicitement comme quatrième origine du rail — marquée *(différé)*.
+Différé n'est pas absent.
 
 ## Contenu v1 bundled (cible 42 items)
 

@@ -14,14 +14,14 @@ plugins langage) de Kanopi.
 | `EVENTS.md`               | Bus `KanopiEvent` — schéma et consommateurs             |
 | `SCENES.md`               | Système de scènes (`@scene`)                            |
 | `LIBRARY.md`              | Product doc library (vision, UX, roadmap)               |
-| `spec/KANOPI_LANGUAGE.md` | Syntaxe du langage `.kanopi`                            |
+| ~~`spec/KANOPI_LANGUAGE.md`~~ | PÉRIMÉ : décrit le format `.kanopi`, supprimé du dépôt le 2026-06-15 (commits fdf2cff, 8f6db17) et remplacé par `.bps` (BPScript natif) — voir §Session parser |
 
 ## Topologie repos
 
 ```
 github.com/roomi-fields/
 ├── kanopi         ← l'IDE/DAW (ce repo)
-│   ├── packages/core/      runtime: dispatcher, map-engine, session parser, bridge
+│   ├── packages/core/      frontière de paquet vide (husk Dispatcher/map-engine/bridge éliminé [842], index.js sans export vivant)
 │   ├── packages/ui/        Svelte 5 + TS + CodeMirror 6
 │   ├── packages/library/   contenu bundled + loader
 │   └── docs/
@@ -60,12 +60,12 @@ hub.
 │                                                                │
 │  ┌──────────────┐   ┌───────────────┐   ┌──────────────────┐   │
 │  │  Transport   │   │  EventBus     │   │  Session parser  │   │
-│  │  (Clock,     │◄──│  KanopiEvent  │◄──│  .kanopi →       │   │
-│  │   BPM, bar)  │   │               │   │   actors/scenes  │   │
+│  │  (Clock,     │◄──│  KanopiEvent  │◄──│  .bps (BPScript) │   │
+│  │   BPM, bar)  │   │               │   │   → actors       │   │
 │  └──────┬───────┘   └───────┬───────┘   └─────────┬────────┘   │
 │         │                   │                     │            │
 │  ┌──────▼────────────────────▼─────────────────────▼────────┐  │
-│  │     Dispatcher (scene-manager, map-engine, resolver)     │  │
+│  │  (aucun dispatcher hôte — Kronos route directement)      │  │
 │  └──────┬────────┬────────┬────────┬────────┬──────────┬────┘  │
 └─────────┼────────┼────────┼────────┼────────┼──────────┼───────┘
           │        │        │        │        │          │
@@ -85,6 +85,14 @@ hub.
 
    └── MOTEURS + MODULES ÉDITEUR UPSTREAM (npm ou externes) ──┘
 ```
+
+> **PÉRIMÉ (retiré [842])** : ce diagramme montrait un « Dispatcher » hôte
+> (`scene-manager`, `map-engine`, `resolver`) qui routait les events vers les
+> adapters. Ce husk a été éliminé — `packages/core/src` ne contient plus que
+> `index.js`, vide. Réalité actuelle : chaque event porte son adresse
+> (`event.output.runtime`, gravée par Kairos) et **Kronos** route directement
+> vers le `RuntimeAdapter` enregistré pour ce nom, sans dispatcher hôte
+> intermédiaire. Source : `ADAPTER_SPEC.md §0`, `docs/arch/carte-reel.md`.
 
 Un adapter fait **trois** choses, rien de plus :
 
@@ -151,37 +159,37 @@ L'UI détecte automatiquement le bridge local (WebSocket localhost:7777). Prése
 
 ## Data flow runtime
 
+> **PÉRIMÉ (retiré [842])** : le diagramme précédent décrivait un `CoreRuntime`
+> orchestrateur (`SessionParser`, `SceneManager`, `MapEngine`, `Dispatcher`) qui
+> n'existe plus — `packages/core/src` ne contient plus que `index.js`, vide.
+> Flux réel, lu dans le code (`docs/arch/carte-reel.md`) :
+
 ```
-session.kanopi (texte)
+scène .bps (BPScript natif)
      │
      ▼
-SessionParser → AST actors/scenes/maps
+BPx (arbre de dérivation)
      │
      ▼
-CoreRuntime (orchestrateur)
-     ├─► Clock ─────────► tick bus (beat/bar events)  ──┐
-     │                                                  │
-     ├─► ActorManager ──► charge fichiers code          │
-     │                    par runtime                    │
-     ├─► SceneManager ──► applique snapshots on/off     │
-     │                                                  │
-     ├─► MapEngine ─────► route CC/OSC/note → actions   │
-     │                                                  │
-     ├─► EventBus ──────► KanopiEvent unifié ◄──────────┤
-     │                    (cf. EVENTS.md)               │
-     │                                                  │
-     └─► Dispatcher ────► schedule events → Transports ◄┘
-                               │
-                               ├─► MIDI (WebMIDI)
-                               ├─► OSC (WebSocket → osc-bridge)
-                               ├─► WebAudio
-                               └─► Runtime-specific (Strudel API, Hydra, SC…)
+bpx-adapter.ts — LE hub (branche l'arbre)
+     │
+     ▼
+Kairos (résout/projette : pitch, vues de production)
+     │
+     ▼
+Kronos (temps/transport ; route sur event.output.runtime)
+     │
+     ├─► runtime-audio / runtime-midi / runtime-osc / runtime-codevoices
+     │     (RuntimeAdapter Kronos, `scheduler.addAdapter`)
+     └─► runtime-ui (rend Texte/Timeline)
 ```
 
-Le **EventBus UI** (`core.events`) est le point d'entrée unique pour tout
-consommateur qui a besoin de réagir à ce que produit un runtime ou le clock :
-visualizers, devtools, futur pont OSC. Les adapters runtime publient dedans
-via un bus local relayé par le core. Spécification complète : [`EVENTS.md`](EVENTS.md).
+Le **EventBus UI** (`core.events`, cf. `EVENTS.md`) est le point d'entrée unique
+pour tout consommateur qui a besoin de réagir à ce que produit un runtime ou le
+clock : visualizers, devtools, futur pont OSC. Il n'est plus alimenté par un
+Dispatcher hôte — chaque `RuntimeAdapter` publie dans son bus local propre,
+relayé (`onAny`) vers `core.events` par les projections `stores`. Spécification
+complète : [`EVENTS.md`](EVENTS.md).
 
 ## Bridge OSC (hardware)
 
@@ -249,54 +257,64 @@ Doc osc-bridge détaillée : [README upstream](https://github.com/roomi-fields/o
 
 ## Session parser
 
-V1 subset de BPscript exposé à l'utilisateur :
-
-```kanopi
-@workspace myset
-@tempo 128
-@quantize bar
-
-@actor drums    file:drums.tidal    transport:tidal
-@actor sub37                         transport:osc(/sub37)
-
-@scene intro = { drums: off, visuals: on }
-@scene drop  = { drums: on,  bass: on, sub37: on, visuals: on }
-
-@map cc:20  -> tempo              range:[60, 180]
-@map cc:21  -> sub37.cutoff
-@map pad:0  -> scene:intro
-```
-
-**Le parser réutilise la base BPscript** (tokenizer + AST) mais se limite aux directives `@actor`, `@scene`, `@map`, `@tempo`, `@quantize`, `@workspace`. Les règles de grammaire (3 mots / 24 symboles) sont cachées en v1.
-
-**V2** : expose le reste de BPscript pour séquençage natif.
+> **PÉRIMÉ, section intégralement obsolète.** Le format `.kanopi` décrit
+> ci-dessous (V1 subset avec `@workspace`/`@scene`/`@map`) a été supprimé du
+> dépôt le 2026-06-15 (commits `fdf2cff`, `8f6db17`). Les sessions sont
+> aujourd'hui des fichiers **`.bps`** qui exposent DIRECTEMENT la grammaire
+> BPScript native (acteurs + règles de dérivation), sans la couche
+> `@workspace`/`@scene`/`@map` — il n'y a plus de « V1 subset caché », plus de
+> `SessionParser` distinct : le parser consommé est celui de BPScript lui-même
+> (`bpx-adapter.ts`).
+>
+> Forme d'origine (archivée pour mémoire, ne reflète plus le dépôt) :
+> ```kanopi
+> @workspace myset
+> @tempo 128
+> @quantize bar
+>
+> @actor drums    file:drums.tidal    transport:tidal
+> @actor sub37                         transport:osc(/sub37)
+>
+> @scene intro = { drums: off, visuals: on }
+> @scene drop  = { drums: on,  bass: on, sub37: on, visuals: on }
+>
+> @map cc:20  -> tempo              range:[60, 180]
+> @map cc:21  -> sub37.cutoff
+> @map pad:0  -> scene:intro
+> ```
 
 ## Module `core` (packages/core/src/)
 
-| Module                              | Rôle                                   |
-| ----------------------------------- | -------------------------------------- |
-| `dispatcher/clock.js`               | clock partagé, tick bus                |
-| `dispatcher/dispatcher.js`          | scheduler central                      |
-| `dispatcher/scene-manager.js`       | gestion scènes                         |
-| `dispatcher/map-engine.js`          | routage CC/OSC/note                    |
-| `dispatcher/transports/midi.js`     | WebMIDI in/out                         |
-| `dispatcher/transports/osc.js`      | OSC via WebSocket                      |
-| `dispatcher/transports/webaudio.js` | synthèse native                        |
-| `dispatcher/evals/sclang.js`        | adapter SuperCollider                  |
-| `dispatcher/evals/python.js`        | adapter Python (Sardine via WebSocket) |
-
-Hérités de `BPscript/src/dispatcher/`. À migrer progressivement vers TypeScript.
-(La sortie OSC est passée au paquet `runtime-OSC` ; le `bridge/osc-bridge.js`
-hérité est supprimé. La **résolution de hauteur** `dispatcher/resolver.js` est
-**supprimée** : depuis KAI-10, Kairos grave `content.pitch.hz` et l'hôte ne résout plus
-rien — cf. `docs/design/TONALITY.md`.)
+> **PÉRIMÉ, section intégralement obsolète.** Les neuf fichiers du tableau
+> ci-dessous n'existent plus : `packages/core/src` ne contient que `index.js`,
+> **vide de tout export vivant**. Le husk Dispatcher (registre de transport
+> par nom + `coerceControlValues`), dernier résident, a été éliminé d'un bloc
+> [842] — zéro appelant vivant vérifié exhaustivement. La résolution de
+> hauteur (`resolver.js`) est supprimée : depuis KAI-10, Kairos grave
+> `content.pitch.hz`, l'hôte ne résout plus rien (`docs/design/TONALITY.md`).
+> La sortie OSC est passée au paquet `runtime-OSC` ; MIDI/WebAudio/SC/Python
+> vivent désormais dans les dépôts frères `runtime-midi`/`runtime-audio`/etc.
+> Source : `packages/core/src/index.js:1-9`, `docs/arch/carte-reel.md`,
+> `docs/design/ADAPTER_SPEC.md §0`.
+>
+> | Module (supprimé)                   | Rôle qu'il tenait                       |
+> | ------------------------------------ | --------------------------------------- |
+> | `dispatcher/clock.js`               | clock partagé, tick bus                |
+> | `dispatcher/dispatcher.js`          | scheduler central                      |
+> | `dispatcher/scene-manager.js`       | gestion scènes                         |
+> | `dispatcher/map-engine.js`          | routage CC/OSC/note                    |
+> | `dispatcher/transports/midi.js`     | WebMIDI in/out                         |
+> | `dispatcher/transports/osc.js`      | OSC via WebSocket                      |
+> | `dispatcher/transports/webaudio.js` | synthèse native                        |
+> | `dispatcher/evals/sclang.js`        | adapter SuperCollider                  |
+> | `dispatcher/evals/python.js`        | adapter Python (Sardine via WebSocket) |
 
 ## Principes de design
 
 1. **Transport dans la scène, pas dans l'UI.** Le binding `@actor foo transport.xxx` détermine la sortie. L'UI reflète.
 2. **Multi-output = conséquence de la scène.** Deux actors avec deux transports = dual output auto.
 3. **Crash-isolation.** Un runtime qui plante (Strudel error, SC segfault) ne casse pas Kanopi. Web Workers et try/catch systématiques.
-4. **State observable.** Tout ce qui change (clock, scène, flags, CC) est observable par l'UI et le MapEngine.
+4. **State observable.** Tout ce qui change (clock, scène, flags, CC) est observable par l'UI via les projections `stores` et le bus `KanopiEvent` (`core.events`) — `MapEngine` a été éliminé [842], cf. §Module `core`.
 5. **Progressive enhancement.** Fonctionne sans bridge, mieux avec.
 6. **Local-first.** Pas de serveur obligatoire. Workspace local. Community = optionnel.
 

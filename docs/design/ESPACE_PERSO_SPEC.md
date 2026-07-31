@@ -1,7 +1,8 @@
 # Espace perso — Spécification comptes & fichiers (BROUILLON)
 
 **Statut** : **RATIFIÉ Romain 2026-07-12** (périmètre complet). Décisions §7 tranchées ci-dessous.
-Extensions d'interface (reset mot de passe, nom d'utilisateur) + infra email = escaladées archi.
+Extensions d'interface (reset mot de passe, nom d'utilisateur) + infra email : ✅ livrées (SMTP dev
+monté et prouvé, reset bout-en-bout validé à l'écran — cf. §7.2, courrier/kanopi.md #4611-4616).
 **Portée** : l'expérience complète « profils utilisateurs + stockage de scènes/libs perso +
 gestion des fichiers (save, save as, remove…) » (demande Romain #5). Ce document pose le
 **modèle d'ensemble AVANT tout nouveau code UI** — il remplace l'approche réactive (un bouton
@@ -64,9 +65,9 @@ l'UI doit rendre évident (aujourd'hui il est implicite, d'où la confusion).
 | **Créer un compte** | anonyme | email + mot de passe (≥ 8) + confirmation → auto-connexion | ✅ livré |
 | **Se connecter** | anonyme | email + mot de passe | ✅ livré |
 | **Se déconnecter** | connecté | ferme la session, revient au brouillon local | ✅ livré |
-| **Changer le mot de passe** | connecté | ancien + nouveau + confirmation | ❌ à faire *(étend l'interface → archi)* |
-| **Mot de passe oublié** | anonyme | reset par email | 🔶 décision (SMTP requis) |
-| **Profil : nom affiché** | connecté | nom optionnel (à défaut : l'email) | 🔶 décision (utile v1 ?) |
+| **Changer le mot de passe** | connecté | ancien + nouveau + confirmation | ✅ livré *(`session.changePassword`, `AccountView.svelte:131`)* |
+| **Mot de passe oublié** | anonyme | reset par email | ✅ livré *(`session.requestPasswordReset`, `AccountView.svelte:85`)* |
+| **Profil : nom affiché** | connecté | nom optionnel (à défaut : l'email) | ✅ livré *(`session.updateProfile`, `AccountView.svelte:100`)* |
 | **Profil : avatar** | connecté | image | post-v1 |
 
 ### 3.3 Promotion du brouillon
@@ -174,9 +175,9 @@ passe** · **Mot de passe oublié** · **Profil (nom affiché)**.
 | **Enregistrer sous** | ❌ | store + menu éditeur |
 | Actions fichier **visibles** (renommer/dupliquer/supprimer) | ⚠️ existent mais cachées | rendre discoverables + dialogues propres (pas `prompt()`) |
 | **Dossiers** (Nouveau dossier / déplacer) | ⚠️ l'arbre gère les chemins | UI de création/déplacement |
-| **Changer le mot de passe** | ❌ | étend l'interface (archi) + UI |
-| **Mot de passe oublié** | ❌ | décision + SMTP service |
-| **Profil (nom affiché)** | ❌ | décision + UI |
+| **Changer le mot de passe** | ✅ | livré et câblé (`AccountView.svelte`, `storage-service.ts`, `pocketbase-adapter.ts`) |
+| **Mot de passe oublié** | ✅ | livré et câblé (idem) |
+| **Profil (nom affiché)** | ✅ | livré et câblé (idem) |
 | Import / Export (.bps) | ❌ | post-v1 |
 | Conflits multi-appareil | ❌ | post-v1, spéc séparée |
 
@@ -186,9 +187,9 @@ passe** · **Mot de passe oublié** · **Profil (nom affiché)**.
 
 1. **Modèle d'enregistrement** : ✅ **mixte** — auto-save cloud + « Enregistrer chez moi »
    explicite pour promouvoir une copie. (la reco)
-2. **Mot de passe oublié** : ✅ **oui, en v1** — reset par email. ⚠️ *dépend d'un envoi d'emails
-   configuré côté service (infra VPS)* : le flux se construit, la livraison réelle est gatée sur
-   cette config → escaladée archi. Pas de « fait » tant que l'email ne part pas.
+2. **Mot de passe oublié** : ✅ **oui, en v1** — reset par email. ✅ **livré et prouvé bout-en-bout** :
+   SMTP dev monté (Fastmail), email de reset reçu, lien vers la page de reset intégrée PocketBase
+   validé jusqu'à la reconnexion avec le nouveau mot de passe (courrier/kanopi.md #4611-4616).
 3. **Profil** : ✅ **nom d'utilisateur affiché en v1** (username). Avatar = post-v1.
 4. **Dossiers** : ✅ **oui en v1** (créer dans un dossier + déplacer via le chemin).
 5. **Périmètre v1** : ✅ **complet** — toutes les lignes ❌ des §6, sauf import/export et conflits
@@ -201,8 +202,9 @@ passe** · **Mot de passe oublié** · **Profil (nom affiché)**.
 - **Phase A — Fichiers (le blocage actuel)** : Enregistrer chez moi + Enregistrer sous + état
   d'enregistrement visible + actions fichier discoverables + dialogues propres. *Aucune extension
   d'interface* (create/write/rename/remove existent) → constructible dès validation de cette spéc.
-- **Phase B — Comptes** : Changer le mot de passe (+ éventuellement reset) + profil. *Étend
-  l'interface de stockage* → dépend de l'arbitrage archi (escalade déjà envoyée).
+- **Phase B — Comptes** : Changer le mot de passe + reset + profil. **Livré** : `changePassword`,
+  `requestPasswordReset`, `updateProfile` sont câblés dans `StorageService`/`pocketbase-adapter.ts`
+  et appelés depuis `AccountView.svelte`.
 - **Phase C — post-v1** : import/export, avatar, conflits multi-appareil, dossiers avancés.
 
 ---
@@ -211,9 +213,9 @@ passe** · **Mot de passe oublié** · **Profil (nom affiché)**.
 
 - **Phase A** : **aucune** extension — les commandes nécessaires (`create`, `write`, `rename`,
   `duplicate`, `remove`) sont déjà dans `StorageService` §3.
-- **Phase B** : ajoute `changePassword(oldPassword, newPassword)` et, si retenu,
-  `requestPasswordReset(email)`. **Escalade envoyée à l'architecte** (le contrat `kanopi-storage.md`
-  §3 est figé — toute extension passe par lui).
+- **Phase B** : **livrée** — `StorageService` étend `changePassword(oldPassword, newPassword)`,
+  `requestPasswordReset(email)` et `updateProfile(patch)` (`storage-service.ts:57,60,62`),
+  implémentés dans `pocketbase-adapter.ts` et appelés depuis `AccountView.svelte`.
 
 ---
 

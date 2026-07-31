@@ -43,17 +43,20 @@ l'autorité unique** : la modulation audio et le curseur la contournent et
 recalculent le temps à leur façon → ils peuvent diverger. Tout symptôme « X est
 décalé de Y » naît de là.
 
-### 2.2 La portée d'une modulation est *devinée*, pas *connue*
+### 2.2 La portée d'une modulation — était *devinée*, désormais *connue* (cf §7)
 Le sujet d'une paire (`(cutoff: env)` = signal, `(*:cutoff: env)` = par note,
-`(C2:cutoff: env)` = terminal) fixe **comment** une modulation s'applique. Mais
-son **horloge** — la fenêtre temporelle sur laquelle un *signal* se déroule —
+`(C2:cutoff: env)` = terminal) fixe **comment** une modulation s'applique. Son
+**horloge** — la fenêtre temporelle sur laquelle un *signal* se déroule —
 correspond à la **portée du `()`** : la note, l'occurrence de règle, le groupe,
-ou la voix. Aujourd'hui Kanopi **reconstruit** cette fenêtre par une heuristique
-(contiguïté de la référence de règle `ruleRef`). Or `ruleRef` **est absent des
-feuilles à l'intérieur d'un bloc polymétrique** (vérifié sur pièces) : la
-fenêtre retombe alors silencieusement sur le span de la note seule. La sémantique
-« un signal sur la phrase » n'est donc **pas réellement implémentée** dès qu'il y
-a de la polymétrie — elle se dégrade sans le dire.
+ou la voix.
+
+**Correction (2026-07-31)** : ce diagnostic décrivait l'état avant le contrat de
+portée (Kanopi reconstruisant la fenêtre par une heuristique de contiguïté sur
+`ruleRef`, absent des feuilles en polymétrie, dégradation silencieuse sur
+« un signal sur la phrase »). Depuis le 2026-07-04 (§7, contrat ratifié), `controlScopes`
+porte structurellement cette fenêtre depuis BPx/Kairos — plus de reconstruction
+heuristique. Vérifié sur le dépôt : aucune trace de `ruleRef` ni de
+`composeCvBindings`. La sémantique `signal` reste correcte en polymétrie.
 
 ### 2.3 Pas de représentation temporelle canonique
 L'arbre est parcouru **plusieurs fois** par des consommateurs différents (sortie
@@ -167,25 +170,17 @@ Points structurels :
   texte, MIDI) en deviennent des **projections** (cf. contrat de projection par
   calques).
 
-## 7. Le contrat de portée (frontière avec BPx)
+## 7. Le contrat de portée (frontière avec BPx) — ratifié
 
-C'est le **pivot** de la proposition, et le point à trancher avec BPx.
+**Correction (2026-07-31)** : cette section posait le span de portée comme une demande ouverte
+("à formuler à BPx", "dette structurelle à solder"). Le contrat est ratifié depuis le 2026-07-04
+(commit 719f396, `hub/contrats/bpx-kairos-arbre.md:143-146`) et déjà consommé de bout en bout.
 
-Une modulation `signal` doit connaître sa fenêtre = le span de la **portée de
-contenance** où la paire a été écrite. BPx **connaît** cette portée (la charge de
-contenance vit sur un nœud d'occurrence/groupe). Mais la sortie actuelle aplatit
-la valeur sur la feuille **sans** le span de cette portée, et la feuille ne porte
-pas de frontière d'occurrence fiable (`ruleRef` absent en polymétrie).
-
-**Demande de contrat** (à formuler à BPx) : exposer, pour chaque contrôle
-sujet-à-horloge, le **span de sa portée de contenance** — p.ex. un champ
-`controlScopes[input] = { kind: 'rule'|'group'|'voice', startMs, endMs }` posé sur
-la feuille, ou un nœud d'occurrence préservé dans l'arbre que Kanopi peut remonter.
-Forme exacte à définir avec eux ; le principe est : **la portée descend de l'arbre,
-Kanopi ne la recalcule pas**.
-
-Tant que ce contrat n'est pas posé, l'horloge `signal` ne peut être que partielle
-(correcte hors polymétrie, dégradée dedans). C'est la dette structurelle à solder.
+`controlScopes` porte, pour chaque contrôle sujet-à-horloge, le **span de sa portée de
+contenance** — `{ kind: 'rule'|'group'|'voice', startMs, endMs }`, posé sur la feuille. Le principe
+**la portée descend de l'arbre, Kanopi ne la recalcule pas** est celui du contrat livré. Lecteurs :
+`kairos/src/modulation/tree-bindings.ts` (34-36, 127, 155-157) → `projeter.ts` →
+`runtime-audio/src/adapter.js`.
 
 ## 8. Sémantique de modulation, exprimée dans l'IR
 
