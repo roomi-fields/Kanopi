@@ -17,8 +17,10 @@
 // Chantier transport-SM [471-482] : Kanopi ne CONSTRUIT plus le moteur (garantie ARCHITECTURALE).
 // La FABRIQUE `createTransport` assemble clock+scheduler+cursor+driver EN INTERNE et ne rend qu'un
 // handle (commandes + observables LECTURE SEULE + câblage sorties + pompe) — `InternalClock`/
-// `Scheduler`/`Cursor`/`MaterializedTimeline` sont RETIRÉS du public (tsc refuse : c'est la preuve
-// que l'hôte n'a plus les primitives pour reconstruire une position/step). `ModulationBinding` :
+// `Scheduler`/`Cursor` sont RETIRÉS du public (tsc refuse : c'est la preuve que l'hôte n'a plus les
+// primitives pour reconstruire une position/step). `MaterializedTimeline` reste exporté comme
+// contrat de DONNÉES public que Kairos et l'hôte construisent (kronos/src/index.ts ; contrat hub
+// kairos-kronos-donnee.md). `ModulationBinding` :
 // résidu parti (point 5). `Transport`/`RealtimeDriver` : types seuls (portés par le handle).
 import {
   createTransport,

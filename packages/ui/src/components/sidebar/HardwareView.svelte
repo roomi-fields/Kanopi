@@ -91,7 +91,9 @@
        Un musicien ne devrait pas connaître une adresse de développeur pour voir sa pédale répondre.
        Ce que ce panneau fait : il PRÉSENTE les rôles déclarés, laisse ASSOCIER un appareil réel et
        MÉMORISE le choix. Ce qu'il ne fait pas : router. Associer un événement reçu au rôle qui
-       l'attend est le mandat de `@map`, en aval — pas de l'hôte. -->
+       l'attend se fait par l'adresse collée au point d'attente (`<!role.adresse`), résolue par
+       BPx en aval (entrees/routeur.ts) — pas par une directive de correspondance, et pas par
+       l'hôte. -->
   <section>
     <h4>Entrées de la scène</h4>
     {#if roles.length === 0}

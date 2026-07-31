@@ -6,8 +6,9 @@ import { setupAudioCapture, expectNoConsoleErrors } from '../../helpers';
 // bpx/Kanopi). Codifie le banc écran prouvé à la main : cliquer la RÈGLE de la timeline fait
 // REPARTIR la lecture depuis ce point (position + audio), et les voix de code se recalent au seek.
 //
-// GESTE DE SEEK (runtime-ui TimelinePanel.svelte:1347-1350) : un mousedown dans la BANDE RÈGLE du
-// canvas (`my < RULER_H=22`, `mx > HEADER_W=80`) appelle `onSeek(ms) → transport.playFrom(ms/1000)`.
+// GESTE DE SEEK (runtime-ui timeline.js:1442-1447, canvas vendoré — pas TimelinePanel.svelte, qui
+// n'a jamais dépassé 411 lignes) : un mousedown dans la BANDE RÈGLE du canvas (`my < RULER_H=22`,
+// `mx > HEADER_W=80`) appelle `onSeek(ms) → transport.playFrom(ms/1000)`.
 // En vue « fit » (scrollX=0, zoom pleine scène), `sec ≈ (mx-80)/(largeur-80) * durationSec`.
 //
 // DÉTERMINISME (leçons du chantier captures visuelles) : on FIT d'abord (mapping x→temps linéaire),

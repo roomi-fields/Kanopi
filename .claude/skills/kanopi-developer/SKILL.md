@@ -89,7 +89,7 @@ If you hit a real blocker (compiler error you can't fix, conflicting design choi
 
 ## Project-specific gotchas
 
-- **WSL2 polling required.** `vite.config.ts` has `server.watch.usePolling: true`. Don't remove. If HMR breaks, run the `vite-hmr-reset` skill.
+- **Polling Vite (héritage WSL2).** Depuis la migration PC2 (Ubuntu natif, 2026-06-14), `vite.config.ts` a le polling OFF par défaut (inotify natif suffit) : `usePolling` ne s'active que si `VITE_FORCE_POLLING` ou `CHOKIDAR_USEPOLLING` est positionné (fallback WSL2 legacy). Ne pas casser ce mécanisme conditionnel. Si HMR casse, lancer le skill `vite-hmr-reset`.
 - **Svelte 5 runes only.** No `export let`, no `$:` reactive labels, no `$$props`. Use `$state`, `$derived`, `$effect`, `$props`, `$bindable`. The `svelte-5-patterns` skill has the exhaustive list.
 - **Adapter lifecycle.** Adapters expose `boot`, `eval`, `hush`, `dispose`. Each runtime has its own quirks (Csound boot needs `useSAB: false`, Hydra needs scope isolation via `makeGlobal: false`, p5 needs `REEVAL_DEDUP_MS=50`). Read the adapter before modifying.
 - **AudioContext starts on user gesture.** Any test or feature that needs audio must trigger a click before evaluating.

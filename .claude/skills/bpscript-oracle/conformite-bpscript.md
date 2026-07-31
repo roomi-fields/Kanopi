@@ -87,7 +87,7 @@ Source : `hub/courrier/bpscript.md:668-706`, `BPx/docs/AST_SPEC.md:415-437` (§4
 - Deux objets distincts :
   - `lib/scales.json` = **catalogue** de collections de hauteurs (gammes/modes/maqams/ragas). `PITCH.md:35,620-679`.
   - clé d'acteur **`tuning`** (`lib/tunings.json`, pluriel) = **gamme concrète bindée** (alphabet+tempérament+réf Hz). `ACTOR.md:16-18`, ex. `tunings.json["sargam_22shruti"]={alphabet,temperament,degrees,baseHz:240,…}` (`libs-data.js:40`).
-- **Renommage** : clé d'acteur `scale`(v0.7) → `tuning`(v0.8). **NE TOUCHE QUE la clé d'acteur.** L'**opérateur moteur `[scale:…]`** (`[scale: just_intonation C4]`) existe toujours, non renommé (`EBNF.md:580`, `LANGUAGE.md:480`).
+- **Renommage** : clé d'acteur `scale`(v0.7) → `tuning`(v0.8). **NE TOUCHE QUE la clé d'acteur.** L'**opérateur moteur `[scale:N]` est SUPPRIMÉ** (Romain 2026-07-26) — sa fonction, multiplier la durée d'un bloc, est déjà celle de `{…}:durée` : `{C4, D4}[scale:2]` s'écrit `{C4, D4}:2`. Il compile encore (suppression routée bpscript). Le contrôle **runtime** `(scale:<nom> <clé>)` — gamme microtonale — est conservé. Décision `hub/decisions/2026-07-26-controle-moteur-scale-supprime-subsume-par-la-duree.md`.
 - **Périmé** : clé d'acteur `scale:X`. **Pas** de directive `@scale` de scène (n'existe pas, ne pas inventer).
 
 ### C-6. Sons (`@sound` / `sound.X`)
@@ -123,11 +123,16 @@ une **durée**, pas une vitesse).
   dans `LANGUAGE.md:476,492,689-703,1201,1233` — migration LAN-8) → forme cadre. **Périmé.**
 - **La durée qui JOUE aujourd'hui = le cadre `{N, …}`** (1er champ = empan ; durée = M/N). Prouvé
   bpscript : `{1/2,A}`=500 ms, `{2,A}`=2000 ms à `@mm:60`. Équivalent BP3 identique : `{2,A B}`.
-- **Raccourci ACTÉ mais PAS ENCORE IMPLÉMENTÉ** : `note:durée` / `{…}:durée` (`A:1/2`=croche,
-  `A:2`=blanche) doit désucrer vers `{durée, note}` (LAN-7). ⚠️ **Piège vérifié au compilateur
-  (2026-06-26)** : le suffixe `:N` **parse mais est silencieusement avalé** — `A:2` produit `A` (une
-  noire par défaut, **pas** une blanche), `{C4 E4}:2` produit `{C4 E4}` (pas de cadre). Donc tant que
-  LAN-7 n'est pas livré, **ne présente pas `A:2`/`{…}:N` comme une durée active** : utilise le cadre.
+- **Raccourci `:N` — LIVRÉ (LAN-7, réalisé 2026-07-05).** ⚠️ *Cette entrée corrige la précédente,
+  qui disait « parse mais silencieusement avalé » — c'était vrai au 2026-06-26, ce ne l'est plus.*
+  Le suffixe désucre **exactement** vers le cadre, vérifié sur la grammaire BP3 émise (atlas, 2026-07-10) :
+  `C4:1/2 D4` → `{1/2,C4} D4` · `{C4 D4}:2 E4` → `{2,C4 D4} E4` · `S -> C4 D4 :2` → `S -> {2,C4 D4}`.
+  **Trois portées, et rien d'autre** : un terminal, un groupe, ou toute la règle (en fin de RHS).
+  Une durée isolée **au milieu du flux** (`S -> C4 :2 D4`) est **refusée** (fail-loud, le message
+  énonce les trois portées). Source : `decisions/2026-06-26-trois-concepts-temps-duree.md`, réalisée
+  le 2026-07-05 ; feu vert de documentation donné par l'architecte le 2026-07-09. (Fiche jumelle
+  `atlas/.claude/skills/bpscript-oracle/conformite-bpscript.md:223-230`, corrigée le 2026-07-10 ;
+  cette copie-ci, importée le 2026-07-03, n'avait pas été resynchronisée depuis.)
 
 ---
 
@@ -139,7 +144,7 @@ une **durée**, pas une vitesse).
 | 2 | tempo `@mm` vs `@tempo` | **tout migrer en `@tempo`** | code : router `@tempo` (route `@mm` auj.) ; corpus |
 | 3+4 | `@tuning` de scène + fréquence de référence | `@tuning.<nom>` = appeler un tuning ; **`@tuning:<freq>` = affecter la fréquence de référence** ; règle générale `:` affecte une valeur / `.` appelle un composant | code : router `@tuning:<freq>` (route `a4` auj.) |
 | 5 | `@alphabet` seul vs `@actor` | **RÉVISÉ** : `@actor` reste l'unité unique mais **non obligatoire** ; si rien n'est exprimé, **acteur par défaut matérialisé dans l'AST** depuis une conf éditable Kanopi (LAN-5). `@alphabet`-seul **licite**, pas de migration de masse | conf défaut + matérialisation AST (bpscript) |
-| 6 | temps : tempo / durée / cadre | `decisions/2026-06-26-trois-concepts-temps-duree.md` : **`speed` supprimé** (cadre `{N,…}`) ; durée de note `note:durée` **actée, pas câblée** (LAN-7, `:N` avalé) ; tempo absolu `@tempo:120` vs relatif multiplicateur | LAN-7 (impl désucrage), LAN-8 (migration `speed`) |
+| 6 | temps : tempo / durée / cadre | `decisions/2026-06-26-trois-concepts-temps-duree.md` : **`speed` supprimé** (cadre `{N,…}`) ; durée de note `note:durée` **LIVRÉE** (LAN-7, réalisée 2026-07-05, cf. C-10) ; tempo absolu `@tempo:120` vs relatif multiplicateur | LAN-8 (migration `speed`) |
 
 Décisions consignées en `hub/decisions/2026-06-26-*` + backlog langage LAN-2…LAN-9 (architecte). **Écarts code** (routage `@tempo`, `@tuning:<freq>`, impl désucrage durée) + **migrations corpus** = routés à bpscript.
 

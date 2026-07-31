@@ -15,9 +15,9 @@
 //   setTempo <bpm>
 //   load <nom-de-carte>                     # charge une scène de la bibliothèque (clic carte)
 //   inspect <clé> [args]                    # structure | transportState | effectiveTempo | loop |
-//                                           #   reRandom | generation | flat | modulations [input]
-//   clearObserved                           # vide le tampon d'observation des modulations
+//                                           #   reRandom | generation | flat
 //   wait <ms>                               # pause (utile entre play et une mesure)
+// (`inspect modulations` et `clearObserved` retirés le 2026-07-03, commit e8f59f9 — cf. kanopi-api.ts)
 
 /* global document, window */
 // Les callbacks passés à `page.evaluate` / `page.waitForFunction` s'exécutent dans le NAVIGATEUR

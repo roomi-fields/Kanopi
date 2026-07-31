@@ -7,7 +7,7 @@ export interface VisualItem {
   description: string;
   /** Inline snippet pasted into the editor on load. */
   content: string;
-  /** Runtimes the snippet targets (today only `hydra`). */
+  /** Runtimes the snippet targets (hydra/p5/mercury/csound today, cf. catalog.json). */
   runtimes: Runtime[];
   tags?: string[];
 }
