@@ -2,10 +2,17 @@ import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 import { parseBP3 } from 'bp3-frontend';
 
 // Memoized BPScript compile. Several reactive consumers compile the SAME active
-// source on EVERY keystroke — the libraries panel (`referencedLibraries`), the
-// compile indicator (`programCompileStatus`), the scene bar (`modelFromFile`) and
-// the editor linter. Without memoization each keystroke ran 3-4 full compiles,
-// which made typing laggy. A small LRU keyed by the exact source string collapses
+// source on EVERY keystroke. Mesurés (2026-07-31), et volontairement ÉNUMÉRÉS plutôt
+// que comptés — un nombre se périme dès qu'un consommateur s'ajoute :
+//   · `referencedLibraries` + `programCompileStatus`  — lib/library/referenced.ts
+//   · `declaredInputsForScene`                        — components/statusbar/Statusbar.svelte
+//   · `interpsForScene`                               — components/topbar/StrudelStatusPill.svelte
+//   · préchauffe à l'ouverture                        — lib/runtimes/preload-on-open.svelte.ts
+//   · le linter de l'éditeur, lui DÉBOUNCÉ            — components/editor/lang-bpscript.ts
+// Les trois du milieu passent par `bpx-adapter.ts`, qui appelle `compileBps` sans le
+// savoir : c'est pour ça qu'un décompte par appel direct les manque.
+// Sans mémoïsation, chaque frappe déclenchait autant de compilations complètes qu'il y
+// a de consommateurs montés, ce qui rendait la frappe poussive. A small LRU keyed by the exact source string collapses
 // them to ONE compile per content (and keeps a few recent files warm).
 //
 // The result is read-only for these consumers (errors / ast.directives / scenes),

@@ -66,9 +66,16 @@ type KanopiEvent =
   | TriggerEvent
   | TokenEvent
   | FlagEvent
-  | AudioAttachEvent
-  | AudioDetachEvent;
+  | InputEvent
+  | InputDeviceEvent;
 ```
+
+`AudioAttachEvent`/`AudioDetachEvent` documentés plus bas ne sont plus dans l'union réelle (zéro
+occurrence dans le dépôt) : retirés le 2026-04-22 (commit `8e4653c`) quand Strudel a pris en charge
+son propre analyser (`.scope()`/`.spectrum()`/`.fscope()` via superdough — plus besoin de master
+tap). `InputEvent` (ajouté le 2026-07-27, commit `0df8a68`) et `InputDeviceEvent` (ajouté le LENDEMAIN, 2026-07-28, commit `9a13390` — deux ajouts distincts, ne pas les confondre) pour les
+périphériques d'entrée (MIDI/OSC/clavier), sont un ajout indépendant, sans lien de succession avec
+ce retrait. Cf. `packages/ui/src/lib/events/types.ts:104-151`.
 
 #### `beat`
 
@@ -142,7 +149,7 @@ interface TokenEvent extends KanopiEventBase {
 }
 ```
 
-`locations` : offsets source dans le fichier actif du runtime. Optionnel — tous les runtimes ne peuvent pas le fournir (Tidal/GHCi, SC via OSC…). Si absent, PatternHighlight ne dessine rien mais Pianoroll/Scope marchent.
+`locations` : offsets source dans le fichier actif du runtime. Optionnel — tous les runtimes ne peuvent pas le fournir (Tidal/GHCi, SC via OSC…). Si absent, PatternHighlight ne dessine rien mais Pianoroll marche. Scope est sans objet — le variant `audio-attach` qu'il aurait consommé n'existe pas dans l'union réelle (cf. §Visualizers v1 et events consommés).
 
 `audioTime` : horloge audio native en secondes `AudioContext.currentTime`, **fournie seulement par les adapters WebAudio-based** (Strudel, WebAudio JS). Les consommateurs audio-critiques (re-scheduler MIDI out, AudioWorklet) l'utilisent pour un scheduling sample-accurate ; les visualizers l'ignorent et consomment `t` (wall-clock ms). Les adapters non-WebAudio (Hydra rAF, SC via OSC, Tidal GHCi) n'ont pas de `audioTime` crédible — champ absent. Cf. [ARCHITECTURE.md §Précision d'horloge](ARCHITECTURE.md).
 
@@ -162,23 +169,16 @@ interface FlagEvent extends KanopiEventBase {
 
 Correspondance OSC : `/bps/flag/<name> value`.
 
-#### `audio-attach` / `audio-detach`
+#### `input` / `input-device`
 
-Signalent qu'un runtime offre un flux audio analysable. Pas de données dans le payload audio-frame : les visualizers **pullent** l'AnalyserNode à leur cadence (rAF).
-
-```ts
-interface AudioAttachEvent extends KanopiEventBase {
-  type: 'audio-attach';
-  analyser: AnalyserNode;
-  channels?: number;
-}
-
-interface AudioDetachEvent extends KanopiEventBase {
-  type: 'audio-detach';
-}
-```
-
-**Pas de variant `audio-frame`**. Le push d'un AnalyserNode 60 Hz × N visualizers est un anti-pattern : pull côté viz.
+**Correction (2026-07-31)** : cette section documentait `audio-attach`/`audio-detach`, deux
+variants absents du dépôt (zéro occurrence) — retirés le 2026-04-22 (commit `8e4653c`), Strudel
+gérant désormais son propre analyser via `.scope()`/`.spectrum()`/`.fscope()` (plus besoin de
+master tap). L'union réelle porte `input` (2026-07-27, `0df8a68`) et `input-device` (2026-07-28, `9a13390`) — ajoutés indépendamment l'un de l'autre, à un jour d'écart — pour
+les périphériques d'entrée (MIDI/OSC/clavier) — cf. décision
+`2026-07-27-la-fermeture-d-un-peripherique-est-un-evenement-distinct-pas-un-signal.md` (qui traite
+la fermeture d'un périphérique comme événement distinct, sans rapport avec le retrait d'audio-attach)
+et la définition complète des deux interfaces dans `packages/ui/src/lib/events/types.ts:104-151`.
 
 ### Normalisation
 
@@ -278,18 +278,18 @@ Un futur pont OSC (Phase 6 UI_WEB) s'abonne à `core.events.onAny(...)` et séri
 | `EventsOverlay` (dev)  | `onAny`                                   | tous                                       |
 | `PatternHighlight`     | `token` (avec `locations`)                | Strudel aujourd'hui ; tout runtime qui fournit `locations` |
 | `Pianoroll`            | `token` (pitch/duration)                  | Strudel ; tout runtime qui fournit `pitch/duration` |
-| `Scope`                | `audio-attach`/`audio-detach` + pull rAF  | Strudel, WebAudio, Hydra (si audio) |
+| `Scope`                | *(retiré — plus de variant `audio-attach`/`audio-detach` dans l'union, cf. `types.ts`)* | — |
 | `Spectrum`             | idem                                      | idem                                       |
 | `TransportPill` (existant) | `beat`, `bar`, `transport`            | global                                     |
 | `ScenesPanel` (futur)  | `trigger`, `flag`                         | global + runtimes                          |
 
-Dégradation propre : un runtime qui n'émet pas `token.locations` perd PatternHighlight mais garde Pianoroll. Un runtime sans `audio-attach` perd Scope/Spectrum.
+Dégradation propre : un runtime qui n'émet pas `token.locations` perd PatternHighlight mais garde Pianoroll. Scope/Spectrum, listés ci-dessus, sont sans objet : le variant `audio-attach` qu'ils consommaient n'existe pas dans l'union réelle (`packages/ui/src/lib/events/types.ts`).
 
 ## Back-pressure et perf
 
 - **Events discrets** (`token`, `trigger`, `beat`, `bar`, `transport`, `flag`) : emit synchrone, pas de queue.
 - **Consommateurs coûteux** (CM6 decorations, Canvas) : batch via rAF **côté consommateur**, pas côté bus. Un viz lent ne doit pas ralentir un autre viz ni l'adapter émetteur.
-- **Audio** : `audio-attach` envoie l'`AnalyserNode` une fois ; les viz pullent à leur cadence. Helper `getAnalyser(fftSize)` recommandé si fftSize partagé pose conflit.
+- **Audio** : bullet obsolète — `audio-attach` n'existe pas dans l'union réelle (cf. plus haut).
 - **Tokens haute densité** (Strudel 60+ tokens/sec) : PatternHighlight batche via rAF, décorations additives dans un `StateField` avec timer de dismiss.
 
 ## Exemple end-to-end
@@ -320,7 +320,8 @@ await initStrudel({
 ### Consommation (PatternHighlight)
 
 ```ts
-// pattern-highlight.ts — extension CM6
+// pattern-highlight.ts — extension CM6 (illustratif : ce fichier n'existe pas dans le dépôt,
+// aucun dossier `components/viz` — cf. Références ci-dessous)
 const listener = core.events.on('token', (e) => {
   if (!e.locations) return;
   queueDecoration(e);     // batch rAF
@@ -333,7 +334,7 @@ const listener = core.events.on('token', (e) => {
 - Implémentation bus : `packages/ui/src/lib/events/bus.ts`
 - Types : `packages/ui/src/lib/events/types.ts`
 - Adapter Strudel : `packages/ui/src/lib/runtimes/strudel.ts`
-- Visualizer générique : `packages/ui/src/components/viz/pattern-highlight.ts`
+- Visualizer générique : *(inexistant — pas de dossier `packages/ui/src/components/viz`, pas de fichier `pattern-highlight.ts` dans le dépôt)*
 - DevTools : `packages/ui/src/components/devtools/EventsOverlay.svelte`
 - Tick bus et dispatcher : [`ARCHITECTURE.md`](ARCHITECTURE.md) §Data flow runtime
 - `sys.beat` / `sys.bar` / triggers scène : [`SCENES.md`](SCENES.md)
