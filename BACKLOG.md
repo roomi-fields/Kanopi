@@ -103,8 +103,10 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 - **KAN-C02** `fait` — [haute/CONFIRMED] lib/runtimes/kronos-audio.ts:313 — longueur de boucle = reduce(max) hôte vs totalDurationBeats BPx (D2/D7) _(fait: loop length projette totalDurationBeats BPx (fc4bba5) ; preuve NON circulaire (mutation du champ deplace la borne) — apres auto-correction honnete)_
 - **KAN-C03** `fait` — [moyenne/PLAUSIBLE] core/dispatcher.js:145 — jumeau reduce(max) ; dispatcher.duration préféré à la durée BPx (D2) _(fait: idem C02 — fc4bba5)_
 - **KAN-C04** `ouvert` — [moyenne/CONFIRMED] stores/playback.svelte.ts:112 — STEP recalcule prochain battement + 2e repli de boucle hôte (D2)
-- **KAN-C05** `fait` — [moyenne/CONFIRMED] lib/runtimes/kronos-audio.ts:719 — pauseAtBeatEnd (mort) recalcule frontière+pliage (D2) _(fait: D/E #2, poussé (gate vert 198/198))_
-- **KAN-C06** `ouvert` — [moyenne/PLAUSIBLE] stores/production.svelte.ts:133 — beatCount : quantif (epsilon/ceil) inventée (D2/D7)
+- **KAN-C05** `fait` — [moyenne/CONFIRMED] `lib/runtimes/kronos-audio.ts` → `pauseAtBeatEnd` (mort) recalculait frontière+pliage (D2) _(fait: D/E #2, poussé (gate vert 198/198) ; le symbole a disparu du fichier)_
+- **KAN-C06** `ouvert` — [moyenne/PLAUSIBLE] `stores/production.svelte.ts` → `beatCount` : quantification (epsilon/ceil) inventée (D2/D7)
+  ⚠️ **mesuré le 2026-07-31 : `beatCount` est RETIRÉ du fichier** (commentaire l.105 « est RETIRÉ »).
+  Le défaut décrit n'a plus de site. À requalifier par Kanopi — je constate, je ne tranche pas.
 - **KAN-C07** `ouvert` — [moyenne/CONFIRMED] lib/runtimes/kronos-audio.ts:222 — BEATS_PER_BAR=4 en dur (3e copie) (D7)
 - **KAN-C08** `ouvert` — [moyenne/CONFIRMED] stores/kronos-cursor.svelte.ts:125 — events bar floor(beat/4), ignore beatsPerBar (D7)
 - **KAN-C09** `fait` — [moyenne/CONFIRMED] stores/clock.svelte.ts:73 — store #beatsPerBar = signature d'autorité hôte (D7) — DÉBLOQUÉ result.meter _(fait: mètre affiché RESSERRÉ (verdict b, kanopi a03f7fd) — vérifié : les LED dérivent de kronosCursor.active.beatsPerBar (autorité BPx DeriveResult.meter) ; #beatsPerBar + setTimeSignature (input mort) + chaîne setMeterSink RETIRÉS ; défaut si pas de scène. Preuve écran 4/4→4 LED. Plus de copie hôte qui dérive)_

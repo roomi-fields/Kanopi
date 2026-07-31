@@ -337,5 +337,6 @@ const listener = core.events.on('token', (e) => {
 - Visualizer générique : *(inexistant — pas de dossier `packages/ui/src/components/viz`, pas de fichier `pattern-highlight.ts` dans le dépôt)*
 - DevTools : `packages/ui/src/components/devtools/EventsOverlay.svelte`
 - Tick bus et dispatcher : [`ARCHITECTURE.md`](ARCHITECTURE.md) §Data flow runtime
-- `sys.beat` / `sys.bar` / triggers scène : [`SCENES.md`](SCENES.md)
+- `sys.beat` / `sys.bar` / triggers scène : la référence des scènes vit chez **BPscript**,
+  `docs/design/SCENES.md` — Kanopi n'en possède pas de copie (assainissement du 2026-07-31)
 - Haps Strudel : [`../integrations/TIDAL.md`](../integrations/TIDAL.md) §3.3 et §8.2

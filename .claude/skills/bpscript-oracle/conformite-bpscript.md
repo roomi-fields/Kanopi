@@ -112,8 +112,10 @@ Source : `hub/courrier/bpscript.md:668-706`, `BPx/docs/AST_SPEC.md:415-437` (§4
   `@tuning.<nom>` (`.` = appeler un tuning nommé). Cf. section A.
 - Niveau binding : la valeur vit dans `tunings.json` (`baseHz`/`baseNote`/`baseRegister`, ex. `western_12TET`→`baseHz:440`). `resolver.js:5-70`.
 - **Périmé / à migrer** : `@reference:442` (`PITCH.md:875`). ⚠️ **Écart code** : l'override de scène
-  réellement routé aujourd'hui est `a4:N` (`settings.json:66`) ; le routage de `@tuning:<freq>` comme
-  fréquence de référence est à implémenter côté bpscript.
+  réellement routé aujourd'hui est `a4:N` (clé `directive_map.a4` de `BPscript/lib/settings.json` —
+  précision de dépôt nécessaire : un `settings.json` homonyme, sans rapport, vit aussi dans
+  `kanopi/.claude/`) ; le routage de `@tuning:<freq>` comme fréquence de référence est à implémenter
+  côté bpscript.
 
 ### C-10. Durée, cadre, `speed` — décision temps 2026-06-26
 Source : `decisions/2026-06-26-trois-concepts-temps-duree.md` (trois concepts distincts : tempo / durée
