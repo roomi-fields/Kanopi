@@ -44,9 +44,13 @@ Jamais de spéculation. Si tu ne peux pas prouver une forme sur pièces, dis-le.
 Règle de Romain (le piège qu'il cite en exemple). **`.` appelle un composant** nommé
 (`alphabet.sargam`, `transport.midi`, `sitar.Sa`, `@transcription.dhati`, `sound.bell`,
 `@tuning.just`). **`:` affecte une valeur** à une clé/cible (`Sa:sound.kick`, `ch:3`, le `:midi`
-de `@alphabet.western:midi`, et `@tuning:442` qui affecte la fréquence de référence). Un `:` là
+de `@alphabet.western:midi`, et `@diapason:442` qui affecte la fréquence de référence). Un `:` là
 où on appelle un composant (`alphabet:sargam`, `transport:midi`) = forme **v0.7 périmée** (compile
-encore). Détail complet et toutes les zones : `conformite-bpscript.md` section A et C.
+encore). `@tuning:442` (deux-points sur un axe de catalogue) n'est PAS dans ce cas : c'est un
+**ParseError certain** depuis le cutover graphie universelle (Romain 2026-07-14, tour [412]) —
+le message d'erreur renvoie lui-même vers `@diapason:<N>` (`BPscript/src/transpiler/parser.js`,
+fonction de refus des axes à catalogue). Détail complet et toutes les zones :
+`conformite-bpscript.md` section A et C.
 
 ## Comment juger un exemple (procédure)
 
@@ -78,12 +82,16 @@ router à BPscript via la tour, autant que la correction de doc.
 
 ## Ce que tu ne tranches PAS — escalade à Romain
 
-Le langage ne se valide qu'avec Romain (`CLAUDE.md`, `principes-syntaxe.md:51-53`). Les points
-**À VALIDER ROMAIN** de la fiche (section D : `@octaves:` de scène, `@mm` vs `@tempo`, fréquence
-de référence à 3 graphies, `@tuning` de scène, intention `@alphabet` vs `@actor`) sont des
-**questions ouvertes**, pas des faits. Tu les surfaces, tu ne les documentes pas comme canon, tu
-n'en infères jamais depuis une ligne de pane tmux. Une fois tranchés par Romain → décision datée
-dans `hub/decisions/`, puis la fiche et la doc se mettent à jour.
+Le langage ne se valide qu'avec Romain (`CLAUDE.md`, `principes-syntaxe.md:51-53`). Les 5 points
+listés en section D de la fiche (`@octaves:` de scène, `@mm`/`@tempo`, fréquence de référence,
+`@tuning` de scène, `@alphabet` vs `@actor`) sont **déjà TRANCHÉS** par Romain le 2026-06-26
+(`hub/decisions/2026-06-26-*`) — la section D les nomme elle-même « Arbitrages Romain — TRANCHÉS » :
+ce n'est plus une liste de questions ouvertes, ce qui reste dessus est de l'**écart code** (routage
+à implémenter côté bpscript), pas une revalidation. Ne recopie jamais une liste de « questions
+ouvertes » sans la revérifier contre l'état daté de la fiche. Tu surfaces les points réellement
+non tranchés, tu ne les documentes pas comme canon, tu n'en infères jamais depuis une ligne de pane
+tmux. Une fois un point tranché par Romain → décision datée dans `hub/decisions/`, puis la fiche et
+la doc se mettent à jour.
 
 ## Maintenir la fiche vivante
 

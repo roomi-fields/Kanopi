@@ -201,7 +201,8 @@ réglage ponctuel dont l'**effet** persiste (la persistance appartient au module
   - **contrôle runtime `(scale:<nom> <clé>)`** — la **gamme microtonale**, de `_scale(name,key)` en BP3.
     **CONSERVÉ.** Exemple vérifié à l'oracle 2026-08-01 : `!(scale:just_intonation C4)` compile —
     valeur à deux parties séparées par une espace, **aucune espace après le deux-points** :
-    `!(scale: just_intonation C4)` est **REFUSÉ** (message « pas d'espace après le deux-points »).
+    la même forme avec une espace **après** le deux-points est **REFUSÉE** par le compilateur,
+    avec le message « pas d'espace après le deux-points ».
   - **contrôle moteur `[scale:N]`** — le facteur d'échelle **temporel** d'un bloc. **SUPPRIMÉ**
     (Romain 2026-07-26), subsumé par `{…}:durée` : `{C4, D4}[scale:2]` s'écrit `{C4, D4}:2`. ⚠️ il
     **compile encore** (suppression routée bpscript, pas encore faite). Même verdict que `speed` le
