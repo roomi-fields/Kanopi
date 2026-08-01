@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Portillon de conformité (install-gate.sh). Bloque le push si la garde mord.
+set -e
+cd "$(git rev-parse --show-toplevel)"
+export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" >/dev/null 2>&1
+maj=$(node -v 2>/dev/null | sed "s/v\([0-9]*\).*/\1/")
+if [ "${maj:-0}" -lt 20 ]; then nvm use 20 >/dev/null 2>&1 || nvm use 22 >/dev/null 2>&1; fi
+maj=$(node -v 2>/dev/null | sed "s/v\([0-9]*\).*/\1/")
+if [ "${maj:-0}" -lt 20 ]; then echo "[gate] ERREUR : Node 20+ requis (actuel $(node -v)). Push bloque."; exit 1; fi
+echo "[gate] node $(node -v) — npm run arch (garde structurelle)…"
+npm run arch --silent
+if node -e "process.exit(require(\"./package.json\").scripts?.typecheck?0:1)" 2>/dev/null; then
+  echo "[gate] npm run typecheck…"; npm run typecheck --silent
+fi
+if node -e "process.exit(require(\"./package.json\").scripts?.verify?0:1)" 2>/dev/null; then
+  echo "[gate] npm run verify…"; npm run verify --silent
+elif node -e "process.exit(require(\"./package.json\").scripts?.test?0:1)" 2>/dev/null; then
+  echo "[gate] npm test (repli — pas de verify)…"; npm test --silent
+fi
+echo "[gate] vert — push autorise."
+
+# --- gardes documentaires du hub (deployer-gardes.sh) ---
+# Source unique : hub/tools/. Jamais copiés ici — quinze copies divergeraient.
+__hub="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)/hub"
+__moi="$(basename "$(git rev-parse --show-toplevel)")"
+if [ -f "$__hub/tools/garde-navigation.py" ]; then
+  python3 "$__hub/tools/garde-navigation.py" --depot "$__moi" || exit 1
+  python3 "$__hub/tools/garde-copies.py"      --depot "$__moi" || exit 1
+else
+  echo "⚠️  gardes documentaires NON EXÉCUTÉS — hub introuvable à $__hub"
+fi
+# --- fin gardes documentaires ---
