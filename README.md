@@ -23,7 +23,6 @@ No existing tool integrates multiple live-coding runtimes with shared temporal s
 ## Docs
 
 - `docs/design/ARCHITECTURE.md` — stack, repo topology, data flow
-- `docs/design/SCENES.md` — scene hierarchy + flag scoping
 - `docs/design/EVENTS.md` — `KanopiEvent` bus spec
 - `docs/design/LIBRARY.md` — library system (bundled / mine / community)
 - `docs/integrations/TIDAL.md` — Tidal/Strudel integration matrix

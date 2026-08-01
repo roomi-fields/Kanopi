@@ -12,7 +12,6 @@ plugins langage) de Kanopi.
 | `LANGUAGE_SPEC.md`        | Parsers CM6 + tags Lezer + colorimétrie                 |
 | `LIBRARY_SPEC.md`         | Format `catalog.json` + items par catégorie             |
 | `EVENTS.md`               | Bus `KanopiEvent` — schéma et consommateurs             |
-| `SCENES.md`               | Système de scènes (`@scene`)                            |
 | `LIBRARY.md`              | Product doc library (vision, UX, roadmap)               |
 | ~~`spec/KANOPI_LANGUAGE.md`~~ | PÉRIMÉ : décrit le format `.kanopi`, supprimé du dépôt le 2026-06-15 (commits fdf2cff, 8f6db17) et remplacé par `.bps` (BPScript natif) — voir §Session parser |
 

@@ -338,5 +338,6 @@ const listener = core.events.on('token', (e) => {
 - DevTools : `packages/ui/src/components/devtools/EventsOverlay.svelte`
 - Tick bus et dispatcher : [`ARCHITECTURE.md`](ARCHITECTURE.md) §Data flow runtime
 - `sys.beat` / `sys.bar` / triggers scène : la référence des scènes vit chez **BPscript**,
-  `docs/design/SCENES.md` — Kanopi n'en possède pas de copie (assainissement du 2026-07-31)
+  la hiérarchie de scènes est **supprimée du langage** (2026-08-01) ; le document qui la
+  décrivait est archivé chez BPscript, `docs/archive/SCENES.md`
 - Haps Strudel : [`../integrations/TIDAL.md`](../integrations/TIDAL.md) §3.3 et §8.2
