@@ -32,6 +32,27 @@ sweep TERM
 sleep 1
 sweep KILL # 2e passe pour les récalcitrants
 
+# KAN-39 (2026-08-01) — un serveur de gate dont le PARENT VIT ENCORE était épargné par le
+# balayage ci-dessus, qui n'accepte que `ppid == 1`. Or un push interrompu (timeout du client,
+# Ctrl-C, session tuée) laisse exactement ça : un `vite --port 4321` rattaché à un shell encore
+# vivant. Il occupait le port, `reuseExistingServer:false` refusait de le réutiliser, et CHAQUE
+# TENTATIVE SUIVANTE ÉCHOUAIT À COUP SÛR — plus aucun push possible sans intervention manuelle.
+#
+# On tue donc TOUT ce qui écoute sur le port du gate, quel que soit son parent. Le port est
+# DÉDIÉ au portillon (jamais 5173/5174) : rien de légitime n'y vit entre deux runs.
+PORT="${GATE_PORT:-4321}"
+for pid in $(ss -lptnH "sport = :$PORT" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | sort -u); do
+  cmd=$(ps -o cmd= -p "$pid" 2>/dev/null)
+  case "$cmd" in
+    *vite*|*node*)
+      kill -TERM "$pid" 2>/dev/null && killed=$((killed + 1))
+      sleep 1; kill -KILL "$pid" 2>/dev/null
+      echo "kill-orphan-benches: serveur de gate SQUATTEUR tué sur :$PORT (pid $pid, parent vivant)" ;;
+    *)
+      echo "kill-orphan-benches: ⚠️ :$PORT occupé par un processus ÉTRANGER, laissé intact — $cmd" ;;
+  esac
+done
+
 if [ "$killed" -gt 0 ]; then
   echo "kill-orphan-benches: $killed orphelin(s) de banc tué(s)."
 else
