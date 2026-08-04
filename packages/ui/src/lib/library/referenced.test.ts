@@ -35,12 +35,9 @@ a -> \`strudel: s("bd sd")\``;
     });
   });
 
-  it('reads @devices and transport.<device>', () => {
+  it('reads @devices', () => {
     const devicesLib = referencedLibraries('d.bps', `@core\n@devices\n\nS -> a\na -> c d`);
     expect(devicesLib.some((l) => l.type === 'device')).toBe(true);
-
-    const transportLib = referencedLibraries('t.bps', `@core\n@transport.midi\n\nS -> a\na -> c d`);
-    expect(transportLib).toContainEqual({ type: 'device', typeLabel: 'device', name: 'midi' });
   });
 
   it('returns empty for a non-program file', () => {

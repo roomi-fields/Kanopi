@@ -121,7 +121,7 @@ import type {
   ProductionTree,
   RawTimedToken
 } from '../../stores/production.svelte';
-// Device library (@devices): resolve a voice's `transport.<name>` to a typed
+// Device library (@devices): resolve a voice's `out.<name>` to a typed
 // device and gate voice↔device compatibility BEFORE routing (DEVICES_SPEC §3,
 // §4 / ADAPTER_SPEC §1bis b). Kanopi owns resolution; bpscript carries the
 // name opaque.
@@ -328,7 +328,7 @@ function withDefaultFlagStates(
 
 interface OrchestratedActor {
   name: string;
-  transportKey: string; // device name referenced by `transport.<key>` (free identifier)
+  transportKey: string; // device name referenced by `out.<key>` (free identifier)
   /** Declared `@actor … alphabet:<key>` (`western` | `solfège` | catalog key, …), or
    *  `undefined` when the actor declares none. Passed THROUGH to the shared resolver
    *  builder: an absent alphabet makes it SNIFF western/solfège from the tokens, instead
@@ -711,7 +711,7 @@ function buildOrchestration(a: SceneAstView | null): Orchestration | undefined {
     actorTable,
     actors: names.map((name) => ({
       name,
-      // Free identifier `transport.<key>`; the implicit default carries `'audio'`.
+      // Free identifier `out.<key>`; the implicit default carries `'audio'`.
       transportKey: actorTable[name]?.transport?.key ?? 'audio',
       alphabet: actorTable[name]?.alphabet,
       evalInterp: actorTable[name]?.eval
@@ -746,7 +746,7 @@ export function interpsForScene(text: string): string[] {
  *  quand la scène n'invoque aucune table, parce qu'il n'existe AUCUNE table par défaut (décision
  *  `2026-07-27-forme-des-entrees-in-mapping-adresse-nue.md`). */
 export interface DeclaredInput {
-  /** Le RÔLE, tel que la scène le nomme (`@in pedale …`) — jamais un nom d'appareil. */
+  /** Le RÔLE, tel que la scène le nomme (`@var pedale …`) — jamais un nom d'appareil. */
   readonly name: string;
   /** Le canal d'entrée déclaré : `midi` · `keyboard` · `osc`. Liste FERMÉE tenue en amont. */
   readonly transport: string;
@@ -2220,8 +2220,8 @@ function makeBpxAdapter(
         // up-front for all actors so a later voice's rejection doesn't leave the
         // earlier ones already playing.
         // A `.gr` (like any mono scene) plays AUDIO by default: its synthetic `default`
-        // actor keeps `transport.audio` and MUST be audible. MIDI is an EXPLICIT choice
-        // (`@actor … transport.midi`) — never auto-routed off a granted Web MIDI port,
+        // actor keeps `out.audio` and MUST be audible. MIDI is an EXPLICIT choice
+        // (`@actor … out.midi`) — never auto-routed off a granted Web MIDI port,
         // which used to make every `.gr` SILENT on a machine that simply HAS a MIDI port.
         //
         // Only voices that route through ONE OF OUR transports get device-gated: the
@@ -2256,7 +2256,7 @@ function makeBpxAdapter(
         // — invariant « un sink existe pour la clé routée », contrat hote-runtimes-sortie.md:121,
         // tranché archi [624]). PAS `devices.type` : l'appareil @devices est l'ADRESSE (canal/
         // port) DANS le runtime, un concern SÉPARÉ (KAI-9, bpscript-bpx.md:32). Un `@actor
-        // transport.midi` grave `runtime='midi'` → même clé, même sink que tout futur
+        // out.midi` grave `runtime='midi'` → même clé, même sink que tout futur
         // `@alphabet.X:midi` qui convergera vers `runtime='midi'` à la source.
         // État UI de branchement par-acteur, reconstruit à CHAQUE éval (donc courant :
         // une ré-éval réussie republie sans erreur → le badge disparaît). Rempli par le

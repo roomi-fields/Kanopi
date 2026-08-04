@@ -30,7 +30,7 @@ interface BpsDirective {
 // Directive `@name` → how to read its referenced resource name + display label.
 // Universal dot canon (`.` names a component, `:` assigns a value; bpscript
 // f35d069 rejects `:` on every component axis): `@alphabet.<x>` / `@tuning.<x>` /
-// `@scale.<x>` / `@octaves.<x>` / `@sound.<x>` / `transport.<device>` put <x> in
+// `@scale.<x>` / `@octaves.<x>` / `@sound.<x>` / `out.<device>` put <x> in
 // `subkey`. The `runtime` slot carries a `:value` (an output target like
 // `@alphabet.western:audio` → `audio`), never a resource name.
 // `@devices` (no subkey) means "the whole device library".
@@ -59,7 +59,7 @@ const SELF_NAMED = new Set(['core', 'controls', 'filter']);
 
 function nameOfDirective(d: BpsDirective): string | null {
   // Prefer subkey (`@alphabet.arabic`, `@tuning.sargam_22shruti`, `@scale.bilaval`,
-  // `transport.midi`); the runtime fallback is defensive — under the universal dot
+  // `out.midi`); the runtime fallback is defensive — under the universal dot
   // canon a resource name always lands in subkey, never the value slot.
   if (typeof d.subkey === 'string' && d.subkey.length > 0) return d.subkey;
   if (typeof d.runtime === 'string' && d.runtime.length > 0) return d.runtime;

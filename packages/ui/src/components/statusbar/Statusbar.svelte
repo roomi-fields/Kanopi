@@ -28,8 +28,8 @@
 
   // LA DÉCLARATION ARME, L'UTILISATEUR PREND (décision
   // `2026-07-27-focus-de-jeu-la-declaration-arme-l-utilisateur-prend.md`). Le rôle clavier est LU
-  // sur l'AST de la scène active, jamais re-analysé du texte ni fabriqué ici : sans `@in <rôle>
-  // transport.keyboard`, la scène n'attend rien du clavier et le geste reste grisé — pour que ça
+  // sur l'AST de la scène active, jamais re-analysé du texte ni fabriqué ici : sans `@var <rôle>
+  // in.keyboard`, la scène n'attend rien du clavier et le geste reste grisé — pour que ça
   // se SACHE, plutôt que de laisser cliquer sur un mode qui ne servirait à rien.
   const roleClavier = $derived.by(() => {
     const texte = workspace.activeTabId
@@ -80,7 +80,7 @@
       <div
         class="sb-item play-focus rendu"
         title={roleClavier === null
-          ? 'Verrou des majuscules relâché. Cette scène ne déclare aucun clavier de jeu — une scène l’arme en déclarant « @in <rôle> transport.keyboard ».'
+          ? 'Verrou des majuscules relâché. Cette scène ne déclare aucun clavier de jeu — une scène l’arme en déclarant « @var <rôle> in.keyboard ».'
           : `Verrou des majuscules relâché : les touches vont à l’interface. Enclenche-le pour jouer « ${roleClavier} » au clavier.`}
       >
         <span class="dim">focus</span> <span class="dim">maj</span>

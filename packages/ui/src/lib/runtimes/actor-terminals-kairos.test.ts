@@ -15,8 +15,8 @@ import type { Timeline } from '@kronos/core';
 const SHARED_TERMINAL = `@core
 @controls
 
-@actor lead  @alphabet.western  transport.audio
-@actor bass  @alphabet.western  transport.audio
+@actor lead  @alphabet.western  out.audio
+@actor bass  @alphabet.western  out.audio
 
 S -> {Lead, Low}
 

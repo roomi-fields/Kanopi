@@ -4,7 +4,7 @@ import { strudelAdapter, hydraAdapter } from 'runtime-codevoices';
 import { bpscriptAdapter } from './bpx-adapter';
 
 // Integration of the voice↔device compat GATE (ADAPTER_SPEC §1bis b,
-// DEVICES_SPEC §3): the gate resolves an actor's `transport.<name>` to a device
+// DEVICES_SPEC §3): the gate resolves an actor's `out.<name>` to a device
 // and checks the voice's `outputType` against the device's accepted set. This
 // proves the exact accept/reject decisions the orchestrator gate makes, using
 // the REAL adapter `outputType` fields + the REAL device library (no AudioContext
@@ -32,12 +32,12 @@ function gate(evalInterp: string, transportKey: string): { ok: boolean; reason?:
 }
 
 describe('voice↔device compat gate (orchestrator .bps)', () => {
-  it('a strudel voice → transport.audio PASSES (notes ∈ {notes,signal})', () => {
+  it('a strudel voice → out.audio PASSES (notes ∈ {notes,signal})', () => {
     expect(strudelAdapter.outputType).toBe('notes');
     expect(gate('strudel', 'audio')).toEqual({ ok: true });
   });
 
-  it('a strudel voice → transport.audio PASSES — no alias, audio is direct', () => {
+  it('a strudel voice → out.audio PASSES — no alias, audio is direct', () => {
     expect(gate('strudel', 'audio')).toEqual({ ok: true });
   });
 
@@ -53,7 +53,7 @@ describe('voice↔device compat gate (orchestrator .bps)', () => {
     expect(hydraAdapter.outputType).toBe('visual');
   });
 
-  it('a hydra (visual) voice → transport.audio is REJECTED', () => {
+  it('a hydra (visual) voice → out.audio is REJECTED', () => {
     expect(gate('hydra', 'audio').ok).toBe(false);
   });
 
@@ -63,7 +63,7 @@ describe('voice↔device compat gate (orchestrator .bps)', () => {
     expect(r.reason).toContain('appareil inconnu');
   });
 
-  it('a native notes voice (no eval) → transport.midi PASSES', () => {
+  it('a native notes voice (no eval) → out.midi PASSES', () => {
     expect(bpscriptAdapter.outputType).toBe('notes');
     expect(gate('', 'midi')).toEqual({ ok: true });
   });

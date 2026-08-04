@@ -119,8 +119,8 @@ describe('orchestrator actor publication', () => {
 const MIDI_PLUS_WEBAUDIO = `@core
 @controls
 
-@actor melody  @alphabet.western  transport.midi(ch:1)
-@actor bass    @alphabet.western  transport.audio
+@actor melody  @alphabet.western  out.midi(ch:1)
+@actor bass    @alphabet.western  out.audio
 
 S -> {Mel, Low}
 
@@ -153,8 +153,8 @@ describe('orchestrator MIDI gate scope (one actor MIDI-unavailable must not sile
 
     // outputTransport reflects the DECLARED transport per actor (BPx's
     // `tree.metadata.actors[name].runtime`, decision [624]) — the field the mixer
-    // gates its slider on: melody (transport.midi) must read 'midi', bass
-    // (transport.audio) must read 'audio' so its slider stays live.
+    // gates its slider on: melody (out.midi) must read 'midi', bass
+    // (out.audio) must read 'audio' so its slider stays live.
     const transportByName = Object.fromEntries(published.map((p) => [p.name, p.outputTransport]));
     expect(transportByName.melody).toBe('midi');
     expect(transportByName.bass).toBe('audio');

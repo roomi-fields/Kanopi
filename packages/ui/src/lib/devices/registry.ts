@@ -1,6 +1,6 @@
 // Device library (@devices) — resolution + voice↔device compatibility.
 //
-// A voice (`@actor`) declares WHERE it outputs via `transport.<name>`. The name
+// A voice (`@actor`) declares WHERE it outputs via `out.<name>`. The name
 // points at a TYPED device in this library (DEVICES_SPEC.md). Kanopi resolves
 // the name (bpscript carries it opaque) and verifies, BEFORE routing, that the
 // voice's output type is accepted by the device's type (§3). An incompatible
@@ -19,7 +19,7 @@ import bundledDevicesRaw from '../../../../library/devices.json?raw';
 export type DeviceType = 'midi' | 'audio' | 'osc' | 'dmx' | 'text';
 
 export interface Device {
-  /** unique name referenced by `transport.<name>` (kebab/lower) */
+  /** unique name referenced by `out.<name>` (kebab/lower) */
   name: string;
   /** device class — fixes the compatible voice output types (§3) */
   type: DeviceType;
@@ -47,7 +47,7 @@ export function acceptedOutputTypes(type: DeviceType): ReadonlySet<VoiceOutputTy
 }
 
 // The `midi` device ALWAYS exists by default (DEVICES_SPEC §4): a voice without
-// an explicit transport, or `transport.midi`, targets it. Guaranteed even if the
+// an explicit transport, or `out.midi`, targets it. Guaranteed even if the
 // bundled JSON or a user overlay omits it.
 const DEFAULT_MIDI: Device = { name: 'midi', type: 'midi', label: 'MIDI (default)' };
 
@@ -91,7 +91,7 @@ function deviceMap(): Map<string, Device> {
 }
 
 /**
- * Resolve `transport.<name>` → the typed device, guaranteeing the default `midi`.
+ * Resolve `out.<name>` → the typed device, guaranteeing the default `midi`.
  * Unknown name → `undefined`; the caller throws a clear error (DEVICES_SPEC §4:
  * "appareil inconnu : <name>", NEVER a silent skip).
  */

@@ -26,7 +26,7 @@ test('a BPScript orchestrator plays its WebAudio voice', async ({ page }) => {
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
   await evalBlockAt(page, 1);
 
-  // The bass actor (transport.audio) sounds regardless of MIDI hardware.
+  // The bass actor (out.audio) sounds regardless of MIDI hardware.
   const rms = await audio.getMaxRMS(2500);
   expect(rms).toBeGreaterThan(0.001);
 

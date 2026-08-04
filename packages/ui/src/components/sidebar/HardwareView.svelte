@@ -99,7 +99,7 @@
     {#if roles.length === 0}
       <p class="hint">
         Cette scène ne déclare aucune entrée. Une scène nomme un <em>rôle</em> :
-        <code>@in pedale transport.midi</code>.
+        <code>@var pedale in.midi</code>.
       </p>
     {:else}
       <ul class="roles">

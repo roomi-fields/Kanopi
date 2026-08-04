@@ -4,12 +4,12 @@ import { evalBlockAt, expectNoConsoleErrors, setupFakeMidi } from '../helpers';
 // MIDI vertical slice — EXPLICIT routing only. MIDI is never auto-selected off a
 // granted Web MIDI port (that used to make every `.gr` silent on a machine that
 // merely HAS a MIDI port). A voice reaches MIDI ONLY when it declares
-// `transport.midi`; the SAME raw BPx timed tokens that drive WebAudio are then
+// `out.midi`; the SAME raw BPx timed tokens that drive WebAudio are then
 // routed — through the canonical runtime-MIDI `MidiTransport` (no Kanopi/core MIDI
 // copy) — to the Web MIDI output port.
 //
 // Chain:
-//   .bps (@actor … transport.midi) → derive() → per-actor Kronos events
+//   .bps (@actor … out.midi) → derive() → per-actor Kronos events
 //        → runtime-midi MidiTransport.send() → output.send([0x90|ch, note, vel], ts)
 //
 // ⚠️ INSTABLE CONNU, APPARU LE 2026-07-28 — et sa FORME dit où il ne faut PAS chercher.
@@ -31,12 +31,12 @@ const EXPECTED_NOTES = [60, 62, 64, 67, 72];
 // every event carries `payload.actor: 'melody'`, which the per-actor router sends to
 // the MIDI transport.
 const MIDI_SCENE = `@core
-@actor melody  @alphabet.western  transport.midi
+@actor melody  @alphabet.western  out.midi
 
 S -> melody.C4 melody.D4 melody.E4 melody.G4 melody.C5 melody.G4 melody.E4 melody.C4
 `;
 
-test('an EXPLICIT transport.midi actor routes BPx tokens to runtime-midi (NoteOn bytes)', async ({
+test('an EXPLICIT out.midi actor routes BPx tokens to runtime-midi (NoteOn bytes)', async ({
   page
 }) => {
   const midi = await setupFakeMidi(page);
@@ -138,7 +138,7 @@ test('an EXPLICIT transport.midi actor routes BPx tokens to runtime-midi (NoteOn
 });
 
 // Per-actor MIDI channel AND inline per-note override travel to the bytes. `lead` declares
-// `transport.midi(ch:1)`, `bass` declares `ch:2`, and the note `lead.E4(ch:5)` carries an inline
+// `out.midi(ch:1)`, `bass` declares `ch:2`, and the note `lead.E4(ch:5)` carries an inline
 // channel override. From ONE scene: three distinct channels reach the wire. Proves the migrated
 // MIDI runtime (runtime-midi, Phase 2 frontière hôte↔runtimes) resolves the channel from the
 // graven output layer (`output.channel`) — the HOST reshapes nothing (its midi wrapper + vel/127
@@ -150,8 +150,8 @@ test('an EXPLICIT transport.midi actor routes BPx tokens to runtime-midi (NoteOn
 // output isn't graven and it drops from MIDI; the prefix names the actor and Kairos graves ch:5.
 const TWO_CHANNEL_SCENE = `@core
 @tempo:120
-@actor lead  @alphabet.western  transport.midi(ch:1)
-@actor bass  @alphabet.western  transport.midi(ch:2)
+@actor lead  @alphabet.western  out.midi(ch:1)
+@actor bass  @alphabet.western  out.midi(ch:2)
 
 S -> Lead Low
 
