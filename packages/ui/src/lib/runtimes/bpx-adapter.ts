@@ -310,6 +310,15 @@ export type FlagStates = Record<string, Record<string, number>>;
 // Mesuré avant de généraliser : tout le corpus ne déclare que 3 drapeaux, tous renommés `section`
 // dans le même mouvement — aucune scène ne change de comportement, et une règle NON gardée ne voit
 // aucune différence puisqu'il n'y a rien à garder.
+//
+// ⚠️ ZONE AVEUGLE MESURÉE, ET ELLE PORTE EXACTEMENT SUR CE CHEMIN (nommée le 2026-07-30). AUCUN
+// des ~570 bancs unitaires de ce dépôt ne passe par cette fonction : seuls les bancs d'ÉCRAN
+// l'exercent. Ce qu'il faut en tirer avant de toucher une ligne ici : ce dépôt peut être VERT sur
+// toute sa suite unitaire pendant que ses scènes s'ouvrent MUETTES. Ce n'est pas une hypothèse —
+// c'est ce que le renommage décrit juste au-dessus aurait produit s'il avait été appliqué à la
+// lettre : le nom écrit en dur faisait un porteur de plus, invisible à tout inventaire par
+// extension de fichier, et cinq scènes se seraient tues sans qu'un seul banc rougisse.
+// Donc : un changement ici se prouve À L'ÉCRAN. Un vert unitaire ne dit rien de ce chemin.
 function withDefaultFlagStates(
   flags: Record<string, number> | undefined,
   flagStates: FlagStates | undefined
