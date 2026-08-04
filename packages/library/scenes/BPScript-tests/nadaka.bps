@@ -26,7 +26,7 @@
 // chiffrés). La convention d'octave par défaut de sargam est saptak ;
 // `octaves.western` la SURCHARGE (EBNF.md:114,118-119 ; ACTOR.md:37 ;
 // décision clés-acteur-six). Remplace l'ancien `@alphabet.raga` (absent du catalogue).
-@actor lead @alphabet.sargam octaves.western transport.midi
+@actor lead @alphabet.sargam octaves.western out.midi
 
 // ============================================================
 // Sous-grammaire 1 — Structure @mode:ord

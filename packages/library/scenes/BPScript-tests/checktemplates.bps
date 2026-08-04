@@ -28,7 +28,7 @@
 S <> A_r A_r A_r [*1/2]
 
 // Règle 2 : A_r A_r avec tempo doublé sur le dernier A_r
-S <> A_r A_r[tempo:2] A_r
+S <> A_r A_r[tempx:2] A_r
 
 // Règle 3 : A_r A_r avec speed doublé sur le dernier A_r (/2 en BP3)
 S <> A_r A_r A_r[/2]

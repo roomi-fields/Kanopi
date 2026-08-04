@@ -19,8 +19,8 @@
 // `@alphabet.western:midi` ne pouvait pas convenir : le `:midi` désigne un ACTEUR IMPLICITE,
 // incompatible avec un `@actor` explicite. On nomme donc les deux voix.
 @test_alphabets.abc
-@actor notes @alphabet.western transport.midi
-@actor bols  @alphabet.abc     transport.midi
+@actor notes @alphabet.western out.midi
+@actor bols  @alphabet.abc     out.midi
 
 @tempo:60
 @striated

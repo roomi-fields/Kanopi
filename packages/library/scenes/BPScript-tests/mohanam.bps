@@ -1,6 +1,6 @@
 // @name: Mohanam — faithful MIDI
 // @tagline: Needs a MIDI device. Twin of "Mohanam — browser audio", which sounds without one.
-// @description: The faithful translation of the native grammar: the clock of -se.trial.mohanam (360 BPM), an actor-scoped declaration (@actor flute … transport.midi), flute program 3 and chromashift. THIS EXEMPLAR IS THE FIDELITY REFERENCE — it is silent without a MIDI device. Its twin (world/mohanam.bps) routes the same generative structure to the in-browser synth. Two objects, deliberately kept side by side (décision Romain 2026-07-26).
+// @description: The faithful translation of the native grammar: the clock of -se.trial.mohanam (360 BPM), an actor-scoped declaration (@actor flute … out.midi), flute program 3 and chromashift. THIS EXEMPLAR IS THE FIDELITY REFERENCE — it is silent without a MIDI device. Its twin (world/mohanam.bps) routes the same generative structure to the in-browser synth. Two objects, deliberately kept side by side (décision Romain 2026-07-26).
 // @language: bpscript
 // @outputs: midi
 // @level: advanced
@@ -24,7 +24,7 @@
 // d'octave par défaut de sargam est saptak ; `octaves.western` la SURCHARGE
 // (EBNF.md:114,118-119 ; ACTOR.md:37 ; décision clés-acteur-six). Remplace
 // l'ancien `@alphabet.raga` (alphabet absent du catalogue).
-@actor flute @alphabet.sargam octaves.western transport.midi
+@actor flute @alphabet.sargam octaves.western out.midi
 
 // Settings
 @ins:3
