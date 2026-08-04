@@ -62,4 +62,23 @@ describe('catalogue amont = source unique des appareils de sortie', () => {
       .sort();
     expect([...names].sort()).toEqual(attendus);
   });
+
+  it('listDevices() rend exactement le TÉMOIN FIGÉ (indépendant du catalogue)', () => {
+    // TÉMOIN FIGÉ, écrit à la main : il ne se dérive PAS du catalogue. Sans lui, le test
+    // précédent ne compare que la donnée à elle-même (attendus dérivé du même CANAUX que
+    // listDevices()) — un changement COHÉRENT en amont (un canal qui perd `out`) laisserait
+    // les deux côtés bouger ENSEMBLE et resterait vert, pendant que l'interface perd
+    // l'appareil en silence. Si ce test rougit : soit le catalogue amont a changé et il faut
+    // mettre APPAREILS_ATTENDUS à jour DÉLIBÉRÉMENT, soit c'est une régression à corriger.
+    const APPAREILS_ATTENDUS = ['audio', 'dmx', 'midi', 'osc', 'text'];
+    const names = listDevices()
+      .map((d) => d.name)
+      .sort();
+    expect(
+      names,
+      `listDevices() rend ${JSON.stringify(names)}, attendu (témoin figé) ` +
+        `${JSON.stringify(APPAREILS_ATTENDUS)} — soit le catalogue amont a changé ` +
+        `(mettre APPAREILS_ATTENDUS à jour délibérément), soit c'est une régression.`
+    ).toEqual(APPAREILS_ATTENDUS);
+  });
 });
