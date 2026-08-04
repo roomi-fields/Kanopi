@@ -11,12 +11,18 @@
 
 import type { VoiceOutputType } from '../runtimes/adapter';
 import bundledDevicesRaw from '../../../../library/devices.json?raw';
+// The channel catalog is bpscript's, imported AS-IS (same pattern as
+// bpx-adapter.ts:22's `alphabets.json`) — directions (`in`/`out`) and default
+// connection `params` are amont data, not a second copy kept here.
+import coreJson from 'bpscript/lib/core.json';
+
+const CANAUX = coreJson.schema.channels;
 
 // DEVICES_SPEC §1 — a device is name + type + connection params.
 // `video` A ETE RETIRE (decision 2026-07-14-modele-producteur-canal-eval-transport.md:32 :
 // « Il n'y a PAS de transport.video / transport.visual »). Les visuels embarques (hydra/p5)
 // ne sortent par AUCUN transport : ce sont des producteurs, pas des destinations.
-export type DeviceType = 'midi' | 'audio' | 'osc' | 'dmx' | 'text';
+export type DeviceType = keyof typeof CANAUX;
 
 export interface Device {
   /** unique name referenced by `out.<name>` (kebab/lower) */
@@ -30,8 +36,13 @@ export interface Device {
 }
 
 // DEVICES_SPEC §3 — device type → accepted voice output types. The table is
-// authoritative: a voice whose outputType ∉ the device's set is refused.
-const ACCEPTED: Record<DeviceType, ReadonlySet<VoiceOutputType>> = {
+// authoritative: a voice whose outputType ∉ the device's set is refused. NOT
+// derived from the amont catalog: its vocabulary (notes/signal/control/light/
+// visual/text) exists only here — an host rule, not a duplicated authority
+// (arbitrage architecte, message de tour [1100] du 2026-08-04). `keyboard` is in
+// the catalog (an INPUT channel) but is not an output device — no entry here,
+// and `acceptedOutputTypes` below returns an empty set for any absent key.
+const ACCEPTED: Partial<Record<DeviceType, ReadonlySet<VoiceOutputType>>> = {
   midi: new Set<VoiceOutputType>(['notes']),
   audio: new Set<VoiceOutputType>(['notes', 'signal']),
   osc: new Set<VoiceOutputType>(['control', 'notes']),
@@ -41,31 +52,56 @@ const ACCEPTED: Record<DeviceType, ReadonlySet<VoiceOutputType>> = {
   text: new Set<VoiceOutputType>(['text', 'notes', 'signal', 'visual', 'control', 'light'])
 };
 
-/** The §3 accept set for a device type. */
-export function acceptedOutputTypes(type: DeviceType): ReadonlySet<VoiceOutputType> {
-  return ACCEPTED[type];
-}
+const EMPTY_ACCEPT: ReadonlySet<VoiceOutputType> = new Set();
 
-// The `midi` device ALWAYS exists by default (DEVICES_SPEC §4): a voice without
-// an explicit transport, or `out.midi`, targets it. Guaranteed even if the
-// bundled JSON or a user overlay omits it.
-const DEFAULT_MIDI: Device = { name: 'midi', type: 'midi', label: 'MIDI (default)' };
+/** The §3 accept set for a device type. Empty (never refuses everything by
+ * accident, but accepts nothing) for a channel with no compat-table entry. */
+export function acceptedOutputTypes(type: DeviceType): ReadonlySet<VoiceOutputType> {
+  return ACCEPTED[type] ?? EMPTY_ACCEPT;
+}
 
 // No device-name aliases: `audio` is the sole canonical transport name (§5 purge,
 // decision 2026-07-16) — `webaudio`/`browser` are rejected fail-loud by the parser
 // upstream and never reach this resolver.
 const ALIASES: Record<string, string> = {};
 
-function parseBundled(raw: string): Device[] {
+/** Bundled UI labels — the ONLY thing left in packages/library/devices.json;
+ * direction and default params now come from the amont channel catalog. */
+type BundledLabel = { name: string; label?: string };
+
+function parseBundled(raw: string): BundledLabel[] {
   try {
-    const json = JSON.parse(raw) as { devices?: Device[] };
+    const json = JSON.parse(raw) as { devices?: BundledLabel[] };
     return Array.isArray(json.devices) ? json.devices : [];
   } catch {
     return [];
   }
 }
 
-const bundled: Device[] = parseBundled(bundledDevicesRaw);
+const bundledLabels: BundledLabel[] = parseBundled(bundledDevicesRaw);
+const labelByName = new Map(bundledLabels.map((d) => [d.name, d.label]));
+
+/** A channel from the amont catalog is an output-capable channel iff `out === true`. */
+function isOutChannel(canal: unknown): canal is { out: true; params?: Record<string, unknown> } {
+  return (
+    typeof canal === 'object' &&
+    canal !== null &&
+    'out' in canal &&
+    (canal as { out: unknown }).out === true
+  );
+}
+
+/** Output devices computed from the amont catalog (§ TRAVAIL 2 b): name = type =
+ * the channel key, params = the channel's own params (if any), label = ours. */
+const bundled: Device[] = (Object.keys(CANAUX) as DeviceType[])
+  .filter((name) => isOutChannel(CANAUX[name]))
+  .map((name) => {
+    const canal = CANAUX[name] as { out: true; params?: Record<string, unknown> };
+    const label = labelByName.get(name) ?? name;
+    const device: Device = { name, type: name, label };
+    if (canal.params) device.params = canal.params;
+    return device;
+  });
 
 // User overlay (DEVICES_SPEC §4): persisted devices (localStorage / workspace
 // config), merged OVER the bundled set (same `name` → user wins). The merge
@@ -78,22 +114,23 @@ function userOverlay(): Device[] {
 }
 
 /**
- * The resolved device library: user overlay merged over bundled, keyed by name,
- * with the default `midi` guaranteed. Recomputed lazily; cheap enough that the
- * overlay can change without a cache-invalidation dance for beta.
+ * The resolved device library: user overlay merged over bundled (computed from
+ * the amont channel catalog), keyed by name. `midi` is guaranteed by the amont
+ * catalog itself (it carries `out:true`) — no local fallback (catalogue-source-
+ * unique.test.ts locks this). Recomputed lazily; cheap enough that the overlay
+ * can change without a cache-invalidation dance for beta.
  */
 function deviceMap(): Map<string, Device> {
   const map = new Map<string, Device>();
-  map.set(DEFAULT_MIDI.name, DEFAULT_MIDI);
   for (const d of bundled) map.set(d.name, d);
   for (const d of userOverlay()) map.set(d.name, d); // user wins on same name
   return map;
 }
 
 /**
- * Resolve `out.<name>` → the typed device, guaranteeing the default `midi`.
- * Unknown name → `undefined`; the caller throws a clear error (DEVICES_SPEC §4:
- * "appareil inconnu : <name>", NEVER a silent skip).
+ * Resolve `out.<name>` → the typed device. Unknown name → `undefined`; the
+ * caller throws a clear error (DEVICES_SPEC §4: "appareil inconnu : <name>",
+ * NEVER a silent skip).
  */
 export function resolveDevice(name: string): Device | undefined {
   const map = deviceMap();
@@ -108,7 +145,7 @@ export function isCompatible(outputType: VoiceOutputType, type: DeviceType): boo
   return acceptedOutputTypes(type).has(outputType);
 }
 
-/** The full resolved device library (default midi + bundled + overlay). Read-only
+/** The full resolved device library (amont catalog + overlay). Read-only
  * browse for the Resources view; order is map insertion order. */
 export function listDevices(): Device[] {
   return [...deviceMap().values()];

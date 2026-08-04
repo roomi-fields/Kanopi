@@ -44,7 +44,9 @@ describe('resolveDevice', () => {
 
 // DEVICES_SPEC §3 — full accept/reject compatibility matrix.
 describe('acceptedOutputTypes (§3 table)', () => {
-  const cases: Record<DeviceType, VoiceOutputType[]> = {
+  // Partial: DeviceType now spans the whole amont channel catalog (incl.
+  // `keyboard`, an input-only channel — no output device, no compat entry).
+  const cases: Partial<Record<DeviceType, VoiceOutputType[]>> = {
     midi: ['notes'],
     audio: ['notes', 'signal'],
     osc: ['control', 'notes'],

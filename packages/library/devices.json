@@ -1,9 +1,9 @@
 {
   "devices": [
-    { "name": "midi", "type": "midi", "label": "MIDI (default)", "params": { "ch": 1 } },
-    { "name": "audio", "type": "audio", "label": "Audio (WebAudio)", "params": { "gain": 1 } },
-    { "name": "osc", "type": "osc", "label": "OSC", "params": { "host": "127.0.0.1", "port": 57120, "addr": "/kanopi" } },
-    { "name": "text", "type": "text", "label": "Text console" },
-    { "name": "dmx", "type": "dmx", "label": "DMX", "params": { "universe": 0 } }
+    { "name": "midi", "label": "MIDI (default)" },
+    { "name": "audio", "label": "Audio (WebAudio)" },
+    { "name": "osc", "label": "OSC" },
+    { "name": "text", "label": "Text console" },
+    { "name": "dmx", "label": "DMX" }
   ]
 }
