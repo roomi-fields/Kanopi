@@ -1,101 +1,104 @@
 ---
 name: bpscript-oracle
 description: >
-  Oracle de conformité du langage BPScript. BPScript a beaucoup évolué (v0.7→v0.8 : `:`→`.`,
-  `scale`→`tuning`, `@mm`→`@tempo`, `@sounds:`→`@sound.`…) — répondre DE MÉMOIRE est non fiable,
-  MÊME sur une question qui paraît triviale. Utilise ce skill pour TOUTE question de syntaxe ou
-  d'exemple BPScript, même un one-liner « évident » (« c'est `:` ou `.` ? », « `transport.midi(ch:3)`
-  est-il correct ? », « `@sounds:tabla` passe encore ? », « écris-moi un acteur minimal »), ne
-  serait-ce que pour confirmer avant d'affirmer. Couvre : écrire, relire, corriger ou valider une
-  scène ou une déclaration (acteur, alphabet, transport, tempérament, gamme/tuning, son,
-  homomorphisme, directive de scène) ; trancher les formes de contrôle `xxx:N`/`xxx(N)`/`_xxx(N)`
-  et `@`/`[]`/`()`/`!` ; distinguer la forme canonique v0.8 d'une forme v0.7 périmée ; auditer la
-  conformité des exemples d'un corpus de doc. Déclencheurs : "conforme", "syntaxe BPScript", "c'est
-  `:` ou `.` ?", "cet exemple est-il correct", "forme à jour", "valide cette scène", "déclarer un
-  acteur/alphabet/tuning", "revue des exemples".
+  Oracle du langage BPScript — il répond sur la FORME du langage, telle qu'elle est spécifiée, en
+  citant `fichier:ligne`. Répondre de mémoire est non fiable : le langage a été refondu (les dix-huit
+  directives d'avant se réduisent à `@actor` · `@var` · `@def` · `@init`, `transport.` devient
+  `out.`/`in.`, `sub`/`transcription` deviennent `homomorphism`, la clé de règle devient `tempx`…).
+  Utilise ce skill pour TOUTE question de syntaxe ou d'exemple BPScript, même un one-liner
+  « évident » (« c'est `:` ou `.` ? », « `out.midi(ch:3)` est-il correct ? », « écris-moi un acteur
+  minimal »), ne serait-ce que pour confirmer avant d'affirmer. Couvre : écrire, relire, corriger ou
+  valider une scène ou une déclaration (acteur, variable, définition, câblage initial, alphabet,
+  accordage, homomorphisme) ; trancher les sacs `()` et `[]`, les signes `@`/`!`/`?`/`$`/`&`/`#` ;
+  dire ce que l'arbre porte. **Il ne compile pas et ne mesure pas l'état du code** : « est-ce la forme
+  du langage » et « est-ce que le compilateur l'accepte » sont deux questions distinctes, et il ne
+  répond qu'à la première. Déclencheurs : "syntaxe BPScript", "c'est `:` ou `.` ?", "cet exemple
+  est-il correct", "forme à jour", "valide cette scène", "déclarer un acteur/une variable", "que
+  porte l'arbre", "revue des exemples".
 ---
 
 # Skill : Oracle du langage BPScript
 
-## Posture — ne jamais faire confiance à ta mémoire du langage
+## La source, et elle est unique
 
-BPScript est complexe et **il a évolué** (v0.7→v0.8 : références passées de `:` à `.`,
-`scale`→`tuning`, `@sounds:`→`@sound.`, séparation tempéraments/gammes/tunings…). Un agent qui
-écrit « de mémoire » se trompe — y compris moi : la première fois que j'ai écrit un exemple
-« correct » pour tester l'oracle, le compilateur l'a **rejeté**. C'est la leçon fondatrice.
+**Trois fichiers, et rien d'autre** (décision de Romain, 2026-08-04) :
 
-Donc tu n'es pas « expert » au sens où tu saurais le langage par cœur. Tu es expert parce que tu
-**vérifies à la source**, dans cet ordre de confiance :
+| document | ce qu'il dit | quand l'ouvrir |
+|---|---|---|
+| `BPscript/docs/spec/LANGUAGE.md` | le **sens** — ce qu'une forme veut dire, pourquoi elle est ainsi | toujours en premier |
+| `BPscript/docs/spec/EBNF.md` | la **forme écrite** — ce qui est grammaticalement admis | dès qu'il s'agit d'une graphie |
+| `BPscript/docs/spec/AST.md` | ce que **l'arbre porte** — les nœuds, les champs, ce qui traverse | dès qu'il s'agit de l'aval |
 
-1. **L'oracle mécanique = le compilateur réel**
-   (`/home/romi/dev/bp/atlas/tools/oracle-bpscript.mjs`). Il tranche le syntaxiquement correct,
-   déterministe, gratuit. **Toujours le passer en premier** sur tout exemple compilable. (Chemin
-   absolu : ce skill sert tout l'écosystème, ton répertoire courant peut être un autre dépôt.)
-2. **La fiche de conformité** (`conformite-bpscript.md`, à côté de ce fichier) pour ce qui
-   *compile mais a évolué* — formes périmées que le compilateur accepte encore par rétrocompat.
-3. **L'autorité de fond** quand la fiche ne suffit pas : le code (`BPscript/src/transpiler/`),
-   l'EBNF/AST (`BPscript/docs/spec/`, `BPx/docs/AST_SPEC.md`), les décisions datées
-   (`hub/decisions/`). Le **code fait foi**.
+Ils se citent l'un l'autre et se répartissent le travail. Tu les lis dans cet ordre.
 
-Jamais de spéculation. Si tu ne peux pas prouver une forme sur pièces, dis-le.
+## ⛔ Cet oracle ne compile pas — et c'est le point
 
-## La règle d'or de surface : `:` affecte une valeur, `.` appelle un composant
+La posture d'avant était : « le compilateur tranche ». **Elle est renversée.** Les trois spécifications
+décrivent le langage **tel qu'il est spécifié** ; le parseur ne le lit pas encore. `@def`, `@init`, le
+langage de patch, les modules, les blocs de terminaux, les réglages entre parenthèses : tout cela est
+**écrit dans la spécification et refusé par le code**.
 
-Règle de Romain (le piège qu'il cite en exemple). **`.` appelle un composant** nommé
-(`alphabet.sargam`, `transport.midi`, `sitar.Sa`, `@transcription.dhati`, `sound.bell`,
-`@tuning.just`). **`:` affecte une valeur** à une clé/cible (`Sa:sound.kick`, `ch:3`, le `:midi`
-de `@alphabet.western:midi`, et `@diapason:442` qui affecte la fréquence de référence). Un `:` là
-où on appelle un composant (`alphabet:sargam`, `transport:midi`) = forme **v0.7 périmée** (compile
-encore). `@tuning:442` (deux-points sur un axe de catalogue) n'est PAS dans ce cas : c'est un
-**ParseError certain** depuis le cutover graphie universelle (Romain 2026-07-14, tour [412]) —
-le message d'erreur renvoie lui-même vers `@diapason:<N>` (`BPscript/src/transpiler/parser.js`,
-fonction de refus des axes à catalogue). Détail complet et toutes les zones :
-`conformite-bpscript.md` section A et C.
+Un oracle qui compilerait rendrait donc un **faux négatif sur une forme juste**, et enseignerait qu'elle
+n'existe pas. Le mécanisme censé protéger de l'erreur en produirait.
 
-## Comment juger un exemple (procédure)
+**Tu ne lances pas le compilateur. Tu ne lis ni `src/transpiler/`, ni `lib/*.json`** : ils portent
+l'**état d'avancement**, pas la spécification.
 
-1. **Compile-le** via l'oracle. Rejet → faute structurelle. Mais distingue trois causes de
-   rejet : (a) vraie faute de doc ; (b) **fragment** incomplet (un bout hors scène ne compile
-   pas même s'il est correct) ; (c) **proposition** délibérée non encore implémentée (docs
-   `design/`, `v0.8-extension-proposal`). Ne crie « faute » qu'après ce tri.
-2. S'il **compile**, vérifie la **forme** contre la fiche (section C) : est-ce le canon v0.8 ou
-   une graphie v0.7 tolérée ? Cite la règle (`fichier:ligne`).
-3. Pour le BP3 (` ```bp3 `) : ce n'est PAS du BPScript, l'oracle ne le juge pas — c'est un autre
-   langage (comparaison délibérée dans la doc). Ne le corrige pas en BPScript.
+## Les deux questions, à ne jamais confondre
 
-## Réviser un corpus de doc sans tout lire (l'entonnoir)
+| la question | qui y répond |
+|---|---|
+| *« Est-ce la forme du langage ? »* | **toi**, sur les trois spécifications, en citant `fichier:ligne` |
+| *« Est-ce que le compilateur l'accepte aujourd'hui ? »* | **une mesure**, et elle se demande à **bpscript** |
 
-Pour auditer beaucoup de doc à coût quasi nul, ne fais PAS lire les fichiers par un LLM. Suis
-l'entonnoir, du gratuit vers le cher :
-- **Étage 0-1** : `node /home/romi/dev/bp/atlas/tools/oracle-bpscript.mjs --scan <dirs> --json`
-  extrait et compile tous les exemples → liste des échecs structurels, ~0 token.
-- **Étage 2** : un lint de surface (la fiche section C) sur ce qui compile — repère les formes
-  périmées (`:` au lieu de `.`, `@sounds:`, `scale:`, `@tempo:`). Règles, pas de LLM.
-- **Étage 3** : un agent porteur de ce skill ne juge QUE le résidu ambigu + les affirmations en
-  prose. Quelques dizaines d'extraits, pas des mégaoctets.
+Quand on te pose la seconde, tu le dis et tu renvoies. Répondre à l'une en croyant répondre à l'autre
+est la faute que ce skill existe pour empêcher.
 
-## L'angle miroir : tu testes aussi la gestion d'erreurs du compilateur
+L'écart entre le code et la spécification est inventorié : `hub/projets/refonte-langage/ALIGNER-EBNF-ET-AST.md`
+et `PROPAGATION.md` (famille *rattrapage*).
 
-Un exemple de doc **sémantiquement faux mais accepté** par le compilateur révèle un **trou de
-gestion d'erreurs** du frontal BPScript (il aurait dû le refuser). Note-le : c'est un finding à
-router à BPscript via la tour, autant que la correction de doc.
+## Comment tu réponds
 
-## Ce que tu ne tranches PAS — escalade à Romain
+1. **Tu cites `fichier:ligne`.** Une réponse sans citation est une réponse de mémoire, donc sans valeur.
+2. **Absent des trois documents EST une réponse**, et elle est précieuse : elle nomme un **trou de
+   spécification**. Tu le dis tel quel.
+3. **Tu n'inventes ni ne déduis** une forme depuis une autre. Deux formes qui se ressemblent ne se
+   complètent pas l'une l'autre.
+4. **Deux documents qui divergent : tu remontes à l'architecte, tu ne tranches pas.** Le langage se
+   valide avec Romain (`hub/principes-syntaxe.md`), jamais en délégué.
 
-Le langage ne se valide qu'avec Romain (`CLAUDE.md`, `principes-syntaxe.md:51-53`). Les 5 points
-listés en section D de la fiche (`@octaves:` de scène, `@mm`/`@tempo`, fréquence de référence,
-`@tuning` de scène, `@alphabet` vs `@actor`) sont **déjà TRANCHÉS** par Romain le 2026-06-26
-(`hub/decisions/2026-06-26-*`) — la section D les nomme elle-même « Arbitrages Romain — TRANCHÉS » :
-ce n'est plus une liste de questions ouvertes, ce qui reste dessus est de l'**écart code** (routage
-à implémenter côté bpscript), pas une revalidation. Ne recopie jamais une liste de « questions
-ouvertes » sans la revérifier contre l'état daté de la fiche. Tu surfaces les points réellement
-non tranchés, tu ne les documentes pas comme canon, tu n'en infères jamais depuis une ligne de pane
-tmux. Une fois un point tranché par Romain → décision datée dans `hub/decisions/`, puis la fiche et
-la doc se mettent à jour.
+Pour du BP3 (` ```bp3 `) : ce n'est **pas** du BPScript, ces spécifications ne le décrivent pas, et tu
+ne le corriges pas en BPScript. Son autorité est `hub/savoir-bp3.md §⓪`.
 
-## Maintenir la fiche vivante
+## Le vocabulaire arrêté — ce qui a remplacé quoi
 
-La fiche est un **index daté**, pas une vérité éternelle. À chaque décision langage ou évolution
-du parser, ajoute/corrige une entrée (canon ⇄ périmé + source `fichier:ligne`) — ne réécris pas
-le skill. Si la fiche et l'oracle mécanique divergent, **l'oracle (le code) gagne** et la fiche
-est à corriger.
+Les mots de gauche **n'existent plus dans le langage**. S'ils apparaissent dans un texte, dans une
+scène ou dans ta mémoire, ils datent d'avant la refonte.
+
+| ce qui s'écrit aujourd'hui | remplace |
+|---|---|
+| `@def` | `@macro`, `@alias`, `@cc`, `@label` |
+| `@var` | `@flag`, `@in`, `@cv` |
+| `@init` | `@wire` |
+| `out.<canal>` · `in.<canal>` | `transport.<canal>` |
+| `out` (le puits d'un câblage) | un nom de canal en bout de chaîne (`>> audio`) |
+| `@homomorphism.<table>` | `@sub.`, `@transcription.` |
+| `tempx` (clé de règle, un **ratio**) | la clé de règle `tempo` |
+| `stage` (le drapeau des exemples) | le drapeau `phase` — le **type** `phase` ne bouge pas |
+| `interpreter` (ce qui exécute un backtick) | `runtime` employé pour ce rôle |
+| `default` (champ d'un port non branché) | `fallback` employé pour ce champ |
+| `voice` (la réalisation d'un terminal) | la clé d'acteur `sound` |
+| `signal`, `pitch`, `phase`, `logic` (conventions de lecture) | les natures `cv`, `gate`, `trig` |
+| `()` pour un réglage | `[]` pour un réglage — le crochet reste aux gardes et au rang d'un `@template` |
+| la durée collée (`{N,…}`, `:N`) | `speed`, `scale` |
+
+Ce tableau est un aide-mémoire, **pas une autorité** : chaque emploi se vérifie dans les trois
+documents, qui seuls font foi.
+
+## Maintenir ce skill
+
+Il ne porte **aucune fiche annexe**. Celle qui existait (`conformite-bpscript.md`) décrivait des formes
+v0.7 et v0.8 que la refonte a remplacées : elle enseignait la faute, elle est retirée le 2026-08-04.
+Quand le langage bouge, ce sont les **trois spécifications** qui bougent — chez bpscript — et ce skill
+ne change que si sa **posture** change. Sa source vit dans `atlas/.claude/skills/bpscript-oracle/` ;
+les autres exemplaires en sont des copies, régénérées depuis là (`hub/tools/sync-skills.sh`).
