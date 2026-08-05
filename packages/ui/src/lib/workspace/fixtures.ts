@@ -11,7 +11,7 @@ const raw: { path: string; contents: string }[] = [
 @actor visuals  eval.hydra
 @actor bass  eval.strudel
 
-@flag section: intro:1, drop:2, break:3
+@var section flag: intro:1, drop:2, break:3
 
 [section==intro] S -> visuals_r
 [section==drop]  S -> { drums_r, visuals_r, bass_r }
@@ -27,7 +27,7 @@ bass_r -> bass.\`note("c2 c2 eb2 g2").s("sawtooth").gain(0.4)\`
     contents: `// second session — démo minimale, 2 sections nommées (a / b silence).
 @actor melody eval.strudel
 
-@flag section: a:1, b:2
+@var section flag: a:1, b:2
 
 [section==a] S -> melody_r
 [section==b] S -> -

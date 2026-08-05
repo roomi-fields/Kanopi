@@ -13,7 +13,7 @@
 // scènes dans la barre transport (ou Alt+1 / Alt+2). Ctrl+. pour couper.
 // La batterie joue des échantillons (bd/sd/hh) : on lie la banque dirt-samples.
 @library.strudel "dirt-samples"
-@flag section: a:1, b:2
+@var section flag: a:1, b:2
 
 @actor drums  eval.strudel
 @actor visuals  eval.hydra

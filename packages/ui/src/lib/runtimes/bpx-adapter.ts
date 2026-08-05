@@ -270,7 +270,7 @@ type Frontend = (code: string) => {
   // token placed in the derivation maps to `{ interp, code }`. The adapter routes
   // the token → interpreter at the dispatcher-scheduled time.
   backticks?: BacktickTable;
-  // A5 états nommés : la table drapeau→{alias→int} émise pour `@flag section: calm:1,
+  // A5 états nommés : la table drapeau→{alias→int} émise pour `@var section flag: calm:1,
   // full:2`. Présente seulement quand le `.bps` déclare des états nommés ; `.gr` n'en a pas.
   flagStates?: FlagStates;
   // Per-engine sample/sound banks a `.bps` declares (`@library.strudel "dirt-samples"`
@@ -291,7 +291,7 @@ export type Libraries = Record<string, string[]>;
 // `BT<interp><id>` → foreign code + its interpreter tag (from compileBPS).
 type BacktickTable = Record<string, { interp: string; code: string }>;
 
-// `@flag <name>: <alias>:<int>, …` → { name → { alias → int } } (from compileBPS).
+// `@var <name> flag: <alias>:<int>, …` → { name → { alias → int } } (from compileBPS).
 export type FlagStates = Record<string, Record<string, number>>;
 
 // Un fichier dont TOUTES les règles sont gardées par un drapeau ne dérive rien tant qu'aucun état
@@ -550,7 +550,7 @@ interface SceneAstView {
   soundAssignments?: { subject: string }[] | null;
 }
 
-// A5 états nommés lus de l'arbre : chaque `FlagStatesDirective` (`@flag section: calm:1,
+// A5 états nommés lus de l'arbre : chaque `FlagStatesDirective` (`@var section flag: calm:1,
 // full:2`) → `{ [flag]: { [name]: value } }`. Same shape compileBPS's `flagStates`
 // sidecar had, read straight from the directive nodes.
 function flagStatesFromAst(a: SceneAstView | null): FlagStates {
@@ -1024,7 +1024,7 @@ const bpsFrontend: Frontend = (code) => {
   // routes each BT terminal to its interpreter.
   const backticks = backticksFromAst(c.ast);
   // A5 named scenes: read the flag→{alias→int} table from the AST's
-  // `FlagStatesDirective` nodes (`@flag section: calm:1, full:2`) so the UI can offer
+  // `FlagStatesDirective` nodes (`@var section flag: calm:1, full:2`) so the UI can offer
   // one selection button per named state. Re-evaluating with `flags: { section: <int> }`
   // makes the matching guarded rule derive (see `evaluate`).
   const flagStates = flagStatesFromAst(a);
