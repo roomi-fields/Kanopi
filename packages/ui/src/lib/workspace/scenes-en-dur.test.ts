@@ -7,9 +7,14 @@
 // que l'écran ouvre au démarrage, `starterFiles()` dans `./fixtures`, n'était compilée par AUCUN
 // banc — un vert de gate ne disait rien de ce que voyait l'utilisateur.
 //
+// Depuis, les deux scènes de démarrage sont sorties vers la bibliothèque
+// (`packages/library/scenes/code-voices/starter-{main,second}.bps`) : `fixtures.ts` ne PORTE
+// plus de scène, il la CHARGE par `?raw`. Le test C balaie donc désormais `fixtures.ts` comme
+// n'importe quel autre fichier de production — aucune exclusion.
+//
 // Ce fichier ferme le trou par trois voies complémentaires (A compile le réel, B verrouille la
 // liste pour que A ne puisse pas devenir vert-en-ne-regardant-rien, C garde qu'un futur porteur de
-// scène en dur hors `fixtures.ts` ne passe plus inaperçu).
+// scène en dur ne passe plus inaperçu).
 
 import { describe, it, expect } from 'vitest';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
@@ -63,7 +68,7 @@ describe('la liste des scènes de démarrage est celle attendue (témoin figé)'
 });
 
 // ————————————————————————————————————————————————————————————————————————
-// Test C — garde de découverte : aucune scène en dur AILLEURS que fixtures.ts.
+// Test C — garde de découverte : aucune scène en dur dans le code de production.
 //
 // Balaie TOUT le code de production via le glob Vite natif (pas de types Node — `node:fs` est
 // rejeté par le tsconfig de `src/`, piège déjà rencontré dans ce dépôt), même idiome que
@@ -77,7 +82,7 @@ const SOURCES = import.meta.glob('/src/**/*.{ts,svelte}', {
 }) as Record<string, string>;
 
 const FICHIERS_A_BALAYER = Object.keys(SOURCES).filter(
-  (p) => !p.includes('.test.') && !p.includes('.spec.') && !p.endsWith('/lib/workspace/fixtures.ts')
+  (p) => !p.includes('.test.') && !p.includes('.spec.')
 );
 
 /** Retire les commentaires `//…` et `/* … *\/` : les quatre exemples de règles cités en
@@ -96,7 +101,7 @@ interface Porteur {
 
 /** Cherche, dans le code décommenté, les gabarits entre accents graves dont le contenu contient
  *  une ligne ressemblant à une règle BPScript (`Sujet -> Cible`). Une scène en dur écrite dans un
- *  fichier de production hors `fixtures.ts` n'est compilée par AUCUN banc de ce dépôt. */
+ *  fichier de production n'est compilée par AUCUN banc de ce dépôt. */
 function trouvePorteurs(src: string): Porteur[] {
   const decommente = stripComments(src);
   const porteurs: Porteur[] = [];
@@ -108,7 +113,7 @@ function trouvePorteurs(src: string): Porteur[] {
   return porteurs;
 }
 
-describe('aucune scène BPScript en dur hors fixtures.ts (garde de découverte)', () => {
+describe('aucune scène BPScript en dur dans le code de production (garde de découverte)', () => {
   // ANTI-VACUITÉ : un glob qui ne résout rien rendrait ce garde vert en ne regardant aucun
   // fichier — seuil bas, il prouve que le balayage a mordu, pas qu'il compte le dépôt à l'exact.
   it('balaie vraiment le code de production (plusieurs dizaines de fichiers)', () => {
@@ -121,7 +126,7 @@ describe('aucune scène BPScript en dur hors fixtures.ts (garde de découverte)'
     expect(trouvePorteurs('// exemple : `S -> C4 D4`').length).toBe(0);
   });
 
-  it('aucun fichier de production hors fixtures.ts ne porte de scène en dur', () => {
+  it('aucun fichier de production ne porte de scène en dur', () => {
     const trouves = FICHIERS_A_BALAYER.map((p) => ({
       path: p,
       hits: trouvePorteurs(SOURCES[p])
@@ -136,8 +141,8 @@ describe('aucune scène BPScript en dur hors fixtures.ts (garde de découverte)'
 
     expect(
       trouves,
-      `Scène BPScript en dur hors fixtures.ts (non compilée par aucun banc) :\n${message}\n` +
-        `→ la déplacer dans fixtures.ts, ou étendre ce garde délibérément si c'est un faux positif.`
+      `Scène BPScript en dur (non compilée par aucun banc) :\n${message}\n` +
+        `→ la déplacer dans packages/library/scenes/, ou étendre ce garde délibérément si c'est un faux positif.`
     ).toEqual([]);
   });
 });

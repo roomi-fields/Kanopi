@@ -1,0 +1,17 @@
+// @name: Mélodie minimale — deux sections
+// @tagline: une seule voix de code, deux sections nommées dont un silence
+// @description: Démo minimale à une seule voix de code (`eval.strudel`) : un drapeau `section` à deux positions, `a` qui joue une mélodie et `b` qui rend silence. Bascule les sections dans la barre transport (ou Alt+1/2). Ctrl+. pour couper.
+// @language: strudel
+// @outputs: audio
+// @level: didactic
+// @tags: sections, flag, silence
+//
+// second session — démo minimale, 2 sections nommées (a / b silence).
+@actor melody eval.strudel
+
+@var section flag: a:1, b:2
+
+[section==a] S -> melody_r
+[section==b] S -> -
+
+melody_r -> melody.`note("c4 e4 g4 b4").s("sawtooth").gain(0.4).slow(2)`
