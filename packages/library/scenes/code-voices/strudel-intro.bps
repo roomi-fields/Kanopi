@@ -13,11 +13,10 @@
 // scènes dans la barre transport (ou Alt+1 / Alt+2) ; chaque clic réarme la
 // scène choisie. Ctrl+. pour couper.
 // La batterie joue des échantillons (bd/cp/hh) : on lie la banque dirt-samples.
-@library.strudel "dirt-samples"
 @var section flag: intro:1, full:2
 
-@actor drums  eval.strudel
-@actor bass  eval.strudel
+@actor drums  eval.strudel(bank:"dirt-samples")
+@actor bass  eval.strudel(bank:"dirt-samples")
 
 [section==intro] S -> drums_r
 [section==full]  S -> { drums_r, bass_r }

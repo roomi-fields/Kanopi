@@ -17,9 +17,7 @@
 
 @core
 @tempo:120
-@library.strudel "gm"
-
-@actor v  eval.strudel
+@actor v  eval.strudel(bank:gm)
 
 S -> v_r
 

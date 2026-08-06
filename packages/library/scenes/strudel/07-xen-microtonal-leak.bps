@@ -18,9 +18,7 @@
 
 @core
 @tempo:120
-@library.strudel "xen"
-
-@actor v  eval.strudel
+@actor v  eval.strudel(bank:xen)
 
 S -> v_r
 
