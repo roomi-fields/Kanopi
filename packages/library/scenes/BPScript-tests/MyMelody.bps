@@ -14,12 +14,12 @@
                  // REELLE d'une octave vers le bas, qui preserve les noms ecrits.
 
 @mode:random
-S -> {![/1] MyMelody1, Accomp1} (weight:1-1)
+S -> {! (/1) MyMelody1, Accomp1} (weight:1-1)
 S -> {$MyMelody1, Accomp1} {&MyMelody1, Accomp1} (weight:1-1)
-S -> {![/4] MyMelody2, Accomp2} {![/8] MyMelody2, Accomp2} (weight:1-1)
-Accomp1 -> DoM Lam FaM ![/2] SolM Sol7
+S -> {! (/4) MyMelody2, Accomp2} {! (/8) MyMelody2, Accomp2} (weight:1-1)
+Accomp1 -> DoM Lam FaM ! (/2) SolM Sol7
 Accomp2 -> DoM Lam FaM {1, SolM Sol7}
-MyMelody1 -> ![/4] mi5 _ _ re5 do5 - ![/8] re5 mi5 re5 mi5 ![/4] fa5 _ _ {mi5 re5, do5 si4} sol4 fa4 re4
+MyMelody1 -> ! (/4) mi5 _ _ re5 do5 - ! (/8) re5 mi5 re5 mi5 ! (/4) fa5 _ _ {mi5 re5, do5 si4} sol4 fa4 re4
 MyMelody2 -> mi5 _ _ re5 do5 - {2, re5 mi5 re5 mi5} fa5 _ _ {mi5 re5, do5 si4} sol4 fa4 re4
 
 -----

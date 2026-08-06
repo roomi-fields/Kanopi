@@ -17,7 +17,7 @@
 // --- Sous-grammaire 1 : choix de la permutation initiale ---
 @mode:random
 
-S -> ![/4] Tune
+S -> ! (/4) Tune
 Tune -> Canonic New B A D C X1234 End
 Tune -> Canonic New B A C D X12 End
 Tune -> Canonic New A C B D X23 End

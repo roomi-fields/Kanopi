@@ -49,7 +49,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 @controls
 @mode:random(tempo:60.0000,striated,randomize)
-S -> ![/5] A_r B_r C_r D_r E_r
+S -> ! (/5) A_r B_r C_r D_r E_r
 A_r -> {C3 B3 E3 F3 G3}[shuffle]
 B_r -> ![@seed:1] {C4 B4 E4 F4 G4}[shuffle]
 C_r -> randomize {C4 B4 E4 F4 G4}[shuffle] {C5 B5 E5 F5 G5}[shuffle]

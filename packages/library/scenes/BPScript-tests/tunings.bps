@@ -12,10 +12,10 @@
 // --- Sous-grammaire 1 @mode:ord ---
 
 @mode:ord
-S -> ![tempx:2] !(scale:bach_temperament 0) Up_Down
-S -> ![tempx:2] !(scale:pure_minor-third_meantone 0) Up_Down
-S -> ![tempx:2] !(scale:meantone_classic 0) Up_Down
-S -> ![tempx:2] Up_Down
+S -> ! (/2) !(scale:bach_temperament 0) Up_Down
+S -> ! (/2) !(scale:pure_minor-third_meantone 0) Up_Down
+S -> ! (/2) !(scale:meantone_classic 0) Up_Down
+S -> ! (/2) Up_Down
 
 Up_Down -> Diatonic_scale_up Altered_scale_down
 Diatonic_scale_up -> C4 D4 E4 F4 G4 A4 B4 C5
