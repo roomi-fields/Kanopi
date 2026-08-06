@@ -50,8 +50,8 @@ Part4 -> {Trill12,Trill11} {Trill10,Trill1} {Trill9 Trill10,Trill2} {!(chromashi
 M1 -> {! (/7) C0 C2 C4 C6(vel:60) ! (/6) Bb4 G3 F2 B2(vel:80) ! (/8) G3 A2 B1 F#1 G2 A3 C#4 E3(vel:40) ! (/6) G2 Bb1 C#1 ! (/5) G0 G#1 A2 A3 Bb4(vel:90) !(velcont, vel:40, chromashift:12)}
 M2 -> {!(keyxpand:C4 -1) M1}
 M3 -> {! (/7) C0 C2 {C4,C6}(vel:100) ! (/6) Bb4 G3 F2 {B2,G3}(vel:80) ! (/8) A2 B1 F#1 G2 A3 C#4 {E3,G2}(vel:50) ! (/6) Bb1 C#1 ! (/5) G0 G#1 A2 {A3,Bb4}(vel:70) !(velcont, vel:40, chromashift:12)}
-M4 -> {!(rotate:5) [tempx:0.7] !(chromashift:3) M3}
-M5 -> {!(rotate:12) [tempx:0.7] !(chromashift:6) M4}
+M4 -> {! (*10/7) !(rotate:5) !(chromashift:3) M3}
+M5 -> {! (*10/7) !(rotate:12) !(chromashift:6) M4}
 M6 -> {! (/2) M1}
 Int1 -> {! (/12) D2 C#3(chromashift:6) D2 C#3(chromashift:9) D2 C#3 !(vel:40, chromashift:3)}
 Int2 -> {!(chromashift:11) Int1}
