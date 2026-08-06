@@ -54,7 +54,7 @@ l'**état d'avancement**, pas la spécification.
 Quand on te pose la seconde, tu le dis et tu renvoies. Répondre à l'une en croyant répondre à l'autre
 est la faute que ce skill existe pour empêcher.
 
-L'écart entre le code et la spécification est inventorié : `hub/projets/refonte-langage/ALIGNER-EBNF-ET-AST.md`
+L'écart entre le code et la spécification est inventorié : `hub/projets/2026-08-02-refonte-langage/ALIGNER-EBNF-ET-AST.md`
 et `PROPAGATION.md` (famille *rattrapage*).
 
 ## Comment tu réponds

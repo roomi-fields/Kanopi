@@ -4,7 +4,7 @@
 > (migration `.kanopi → .bps`). Côté bpscript la référence est `docs/design/ACTOR.md`
 > (`transport` = appareil typé requis). Cette spec définit le **format** de la
 > librairie d'appareils ; l'implémentation (l'appareil `midi` par défaut câblé)
-> vient avec le lot 4. Backlog : `hub/projets/backlog-langage-bps.md §B2`.
+> vient avec le lot 4. Backlog : `hub/projets/2026-06-15-backlog-langage-bps/README.md §B2`.
 
 ## 0 · Pourquoi
 
