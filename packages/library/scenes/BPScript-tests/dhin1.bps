@@ -21,8 +21,8 @@
 // terminaux en noms PLEINS ([566]) — un silence à l'intérieur d'un nom plein le scinderait.
 @transcription.dhin
 @mode:random(tempo:360.0000,striated)
-S <> S48 [meter:4+4/6]
-S <> S96 [meter:4+4+4+4/6]
+S <> S48 (meter:4+4/6)
+S <> S96 (meter:4+4+4+4/6)
 -----
 @mode:random
 S96 <> $F48 $V24 F'24 * &F48 &V24 F24

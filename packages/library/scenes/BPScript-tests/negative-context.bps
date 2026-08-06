@@ -41,10 +41,10 @@ S -> A A2 A3 A1 A A [times=5]
 [times>0] #A1 #A2 #A3 A A -> #A1 #A2 A A #A3 [times-1]
 
 // Règle 3 : poids 0 (réservée goto), scan depuis la gauche
-#A2 #A1 A -> B B [weight:0, scan:left]
+#A2 #A1 A -> B B (weight:0, scan:left)
 
 // Règle 4 : poids 0
-S -> A [weight:0]
+S -> A (weight:0)
 
 // Règle 5 : poids 0, contexte négatif simple
-#B A -> A #B [weight:0]
+#B A -> A #B (weight:0)

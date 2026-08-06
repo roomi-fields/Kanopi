@@ -22,46 +22,46 @@
 @mode:random
 S -> A32
 A32 -> A8 A8 A8 A8
-A32 -> G _ _ P N S N P N G _ P G R S N P N _ _ R _ _ G _ _ _ _ 4 [weight:0]
-A32 -> G G G P P P N N N R R R G _ S _ G G G P P P N N N R R R G _ S _ [weight:0]
-A32 -> G _ P _ N _ R _ G _ G P N R G S G P N R G S G P N R G S R G S R [weight:0]
+A32 -> G _ _ P N S N P N G _ P G R S N P N _ _ R _ _ G _ _ _ _ 4 (weight:0)
+A32 -> G G G P P P N N N R R R G _ S _ G G G P P P N N N R R R G _ S _ (weight:0)
+A32 -> G _ P _ N _ R _ G _ G P N R G S G P N R G S G P N R G S R G S R (weight:0)
 -----
 @mode:lin
-#? G -> #? ga4_r [weight:inf]
-ga3_r G -> ga3_r ga3_r [weight:inf]
-ga4_r G -> ga4_r ga4_r [weight:inf]
-ga5_r G -> ga5_r ga5_r [weight:inf]
-re5_r G -> re5_r ga5_r [weight:inf]
-re5_r _ G -> re5_r _ ga5_r [weight:inf]
+#? G -> #? ga4_r (weight:inf)
+ga3_r G -> ga3_r ga3_r (weight:inf)
+ga4_r G -> ga4_r ga4_r (weight:inf)
+ga5_r G -> ga5_r ga5_r (weight:inf)
+re5_r G -> re5_r ga5_r (weight:inf)
+re5_r _ G -> re5_r _ ga5_r (weight:inf)
 #re5_r G -> #re5_r ga4_r
-re3_r R -> re3_r re3_r [weight:inf]
-re4_r R -> re4_r re4_r [weight:inf]
-sa5_r R -> sa5_r re5_r [weight:inf]
-re5_r R -> re5_r re5_r [weight:inf]
-ni4_r R -> ni4_r re5_r [weight:inf]
-ni4_r _ R -> ni4_r _ re5_r [weight:inf]
+re3_r R -> re3_r re3_r (weight:inf)
+re4_r R -> re4_r re4_r (weight:inf)
+sa5_r R -> sa5_r re5_r (weight:inf)
+re5_r R -> re5_r re5_r (weight:inf)
+ni4_r R -> ni4_r re5_r (weight:inf)
+ni4_r _ R -> ni4_r _ re5_r (weight:inf)
 #ni4_r R -> #ni4_r re4_r
-ga4_r P -> ga4_r pa4_r [weight:inf]
-ga4_r _ P -> ga4_r _ pa4_r [weight:inf]
-pa4_r P -> pa4_r pa4_r [weight:inf]
-pa3_r P -> pa3_r pa3_r [weight:inf]
-ni4_r P -> ni4_r pa4_r [weight:inf]
-ni5_r P -> ni5_r pa4_r [weight:inf]
-ni3_r P -> ni3_r pa3_r [weight:inf]
-P ga4_r -> pa4_r ga4_r [weight:inf]
-P ni4_r -> pa4_r ni4_r [weight:inf]
-ni3_r N -> ni3_r ni3_r [weight:inf]
-ni4_r N -> ni4_r ni4_r [weight:inf]
-pa3_r N -> pa3_r ni3_r [weight:inf]
-pa4_r N -> pa4_r ni4_r [weight:inf]
-pa4_r _ N -> pa4_r _ ni4_r [weight:inf]
-sa4_r N -> sa4_r ni3_r [weight:inf]
+ga4_r P -> ga4_r pa4_r (weight:inf)
+ga4_r _ P -> ga4_r _ pa4_r (weight:inf)
+pa4_r P -> pa4_r pa4_r (weight:inf)
+pa3_r P -> pa3_r pa3_r (weight:inf)
+ni4_r P -> ni4_r pa4_r (weight:inf)
+ni5_r P -> ni5_r pa4_r (weight:inf)
+ni3_r P -> ni3_r pa3_r (weight:inf)
+P ga4_r -> pa4_r ga4_r (weight:inf)
+P ni4_r -> pa4_r ni4_r (weight:inf)
+ni3_r N -> ni3_r ni3_r (weight:inf)
+ni4_r N -> ni4_r ni4_r (weight:inf)
+pa3_r N -> pa3_r ni3_r (weight:inf)
+pa4_r N -> pa4_r ni4_r (weight:inf)
+pa4_r _ N -> pa4_r _ ni4_r (weight:inf)
+sa4_r N -> sa4_r ni3_r (weight:inf)
 #sa4_r N -> #sa4_r ni4_r
-sa3_r S -> sa3_r sa3_r [weight:inf]
-sa4_r S -> sa4_r sa4_r [weight:inf]
-re4_r S -> re4_r sa4_r [weight:inf]
-ni3_r S -> ni3_r sa4_r [weight:inf]
-re5_r S -> re5_r sa5_r [weight:inf]
-ni4_r S -> ni4_r sa5_r [weight:inf]
-ga5_r S -> ga5_r sa5_r [weight:inf]
-ga5_r _ S -> ga5_r _ sa5_r [weight:inf]
+sa3_r S -> sa3_r sa3_r (weight:inf)
+sa4_r S -> sa4_r sa4_r (weight:inf)
+re4_r S -> re4_r sa4_r (weight:inf)
+ni3_r S -> ni3_r sa4_r (weight:inf)
+re5_r S -> re5_r sa5_r (weight:inf)
+ni4_r S -> ni4_r sa5_r (weight:inf)
+ga5_r S -> ga5_r sa5_r (weight:inf)
+ga5_r _ S -> ga5_r _ sa5_r (weight:inf)

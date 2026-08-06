@@ -19,15 +19,15 @@ S -> d1 [steps=100]
 
 -----
 
-// --- Sous-grammaire 2 @mode:sub [scan:left] ---
+// --- Sous-grammaire 2 @mode:sub (scan:left) ---
 // Ordre identique à l'original (règles courtes d'abord)
 
 @mode:sub
-[steps-1] d1 -> d1 d1 [scan:left]
-[steps-1] d1 d1 -> d2 d1 [scan:left]
-[steps-1] d1 d1 d1 -> d3 d1 [scan:left]
-[steps-1] d2 -> d1 d2 [scan:left]
-[steps-1] d2 d2 -> d2 d2 [scan:left]
-[steps-1] d1 d1 d1 -> d3 d1 [scan:left]
-[steps-1] d1 d1 d1 d2 d2 d1 -> d3 d1 d2 d2 d1 d1 [scan:left]
-[steps-1] d1 d2 d1 d1 -> d1 d1 d1 d2 d2 d1 [scan:left]
+[steps-1] d1 -> d1 d1 (scan:left)
+[steps-1] d1 d1 -> d2 d1 (scan:left)
+[steps-1] d1 d1 d1 -> d3 d1 (scan:left)
+[steps-1] d2 -> d1 d2 (scan:left)
+[steps-1] d2 d2 -> d2 d2 (scan:left)
+[steps-1] d1 d1 d1 -> d3 d1 (scan:left)
+[steps-1] d1 d1 d1 d2 d2 d1 -> d3 d1 d2 d2 d1 d1 (scan:left)
+[steps-1] d1 d2 d1 d1 -> d1 d1 d1 d2 d2 d1 (scan:left)

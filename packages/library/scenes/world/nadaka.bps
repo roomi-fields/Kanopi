@@ -28,7 +28,7 @@
 // ============================================================
 
 @mode:ord
-S -> !(scale:just_intonation 0) Theme32 Theme32 Bridge32 Theme32 B32 Theme32 V16 V16 V16 V16 Theme32 V16 V16 V16 V16 Theme32 V16 V16 V16 V16 Theme32 V16 V16 V16 V16 Theme16 V16 Theme16 V16 Theme16 V16 Theme16 V16 Theme8 V8 Theme8 V8 Theme8 V8 Theme8 V8 Finale (ins:1) [weight:1]
+S -> !(scale:just_intonation 0) Theme32 Theme32 Bridge32 Theme32 B32 Theme32 V16 V16 V16 V16 Theme32 V16 V16 V16 V16 Theme32 V16 V16 V16 V16 Theme32 V16 V16 V16 V16 Theme16 V16 Theme16 V16 Theme16 V16 Theme16 V16 Theme8 V8 Theme8 V8 Theme8 V8 Theme8 V8 Finale (ins:1) (weight:1)
 Finale -> Theme30 NiSaNiA95 NiSaNiB24 NiSaNiB24 NiSaNiC34 Morai49 Theme32 G _ _ _ _ _ _ _
 
 -----

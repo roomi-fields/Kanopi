@@ -14,9 +14,9 @@
                  // REELLE d'une octave vers le bas, qui preserve les noms ecrits.
 
 @mode:random
-S -> {![/1] MyMelody1, Accomp1} [weight:1-1]
-S -> {$MyMelody1, Accomp1} {&MyMelody1, Accomp1} [weight:1-1]
-S -> {![/4] MyMelody2, Accomp2} {![/8] MyMelody2, Accomp2} [weight:1-1]
+S -> {![/1] MyMelody1, Accomp1} (weight:1-1)
+S -> {$MyMelody1, Accomp1} {&MyMelody1, Accomp1} (weight:1-1)
+S -> {![/4] MyMelody2, Accomp2} {![/8] MyMelody2, Accomp2} (weight:1-1)
 Accomp1 -> DoM Lam FaM ![/2] SolM Sol7
 Accomp2 -> DoM Lam FaM {1, SolM Sol7}
 MyMelody1 -> ![/4] mi5 _ _ re5 do5 - ![/8] re5 mi5 re5 mi5 ![/4] fa5 _ _ {mi5 re5, do5 si4} sol4 fa4 re4
@@ -25,12 +25,12 @@ MyMelody2 -> mi5 _ _ re5 do5 - {2, re5 mi5 re5 mi5} fa5 _ _ {mi5 re5, do5 si4} s
 -----
 
 @mode:random
-DoM -> {do3, mi3, sol3} [weight:20]
-DoM -> {1, do2 - sol2 - do2 - mi3 -} [weight:70]
-Lam -> {la2, do3, mi3} [weight:100]
-Lam -> {1, la2 - do3 - mi3 - la3 _, mi2 la2 _ do3} [weight:100]
+DoM -> {do3, mi3, sol3} (weight:20)
+DoM -> {1, do2 - sol2 - do2 - mi3 -} (weight:70)
+Lam -> {la2, do3, mi3} (weight:100)
+Lam -> {1, la2 - do3 - mi3 - la3 _, mi2 la2 _ do3} (weight:100)
 FaM -> {la2, do3, fa3}
 SolM -> {sol2, si2, re3}
-Sol7 -> {sol2, si2, fa3} [weight:20]
-Sol7 -> {sol2, re3, sol3 fa3} [weight:100]
-Sol7 -> {1, sol2 si2 re3 sol3 fa3 re3 si2 sol2} [weight:50]
+Sol7 -> {sol2, si2, fa3} (weight:20)
+Sol7 -> {sol2, re3, sol3 fa3} (weight:100)
+Sol7 -> {1, sol2 si2 re3 sol3 fa3 re3 si2 sol2} (weight:50)

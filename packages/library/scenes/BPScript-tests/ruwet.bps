@@ -24,7 +24,7 @@
 
 // --- Sous-grammaire 1 @mode:ord --- structure thematique
 @mode:ord
-S -> P1 P2 P3 [meter:4+4+4+4+4+4/4]
+S -> P1 P2 P3 (meter:4+4+4+4+4+4/4)
 P1 -> A8 B"8 C8 B'8
 P2 -> A8 B8 C8 B8
 P3 -> C'8 B'8 C'8 B'8
@@ -54,11 +54,11 @@ C'8 -> $ {|e4|} & {|e4|}
 // --- Sous-grammaire 3 @mode:lin --- variantes niveau 1
 
 @mode:lin
-|x| -> fa4 do5 [weight:4]
-|x| -> |x1| [weight:1]
-|x| -> |x2| [weight:1]
-|x| -> |x3| [weight:1]
-|x| -> |x4| [weight:1]
+|x| -> fa4 do5 (weight:4)
+|x| -> |x1| (weight:1)
+|x| -> |x2| (weight:1)
+|x| -> |x3| (weight:1)
+|x| -> |x4| (weight:1)
 
 |y| -> fa4 la4
 |y| -> |y1|
@@ -77,9 +77,9 @@ C'8 -> $ {|e4|} & {|e4|}
 |w| -> |w4|
 |w| -> |w5|
 
-|z1| -> fa4 fa4 [weight:4]
-|z1| |miny| -> |z12| |miny| [weight:1]
-|z1| |miny| -> |z13| |miny| [weight:1]
+|z1| -> fa4 fa4 (weight:4)
+|z1| |miny| -> |z12| |miny| (weight:1)
+|z1| |miny| -> |z13| |miny| (weight:1)
 
 |z3| -> la4 la4
 |z3| -> |z31|
@@ -106,12 +106,12 @@ C'8 -> $ {|e4|} & {|e4|}
 |z32| -> sol4 la4
 |z311| -> sib4 {la4 la4}:1
 
-|o| -> sib4 {la4 sol4}:1 [weight:3]
-|o| |miny| -> |o1| |miny| [weight:1]
-|o| |miny| -> |o2| |miny| [weight:1]
+|o| -> sib4 {la4 sol4}:1 (weight:3)
+|o| |miny| -> |o1| |miny| (weight:1)
+|o| |miny| -> |o2| |miny| (weight:1)
 // NOTE: BP3 has right-context here: |o| (|z13|) --> |o3|
 // BPscript parser doesn't support |var| in context — omitting context for now
-|o| -> |o3| [weight:1]
+|o| -> |o3| (weight:1)
 
 -----
 

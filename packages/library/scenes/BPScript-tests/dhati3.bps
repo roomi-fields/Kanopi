@@ -2,9 +2,9 @@
 @transcription.dhati
 
 @mode:random
-S <> $A16 $V8 $A'8 * &A16 &V8 $A8 [meter:4+4+4+4/4]
-S <> $V16 $A'16 * &V16 $A16 [meter:4+4+4+4/4]
-S <> $V24 $A'8 * &V24 $A8 [meter:4+4+4+4/4]
+S <> $A16 $V8 $A'8 * &A16 &V8 $A8 (meter:4+4+4+4/4)
+S <> $V16 $A'16 * &V16 $A16 (meter:4+4+4+4/4)
+S <> $V24 $A'8 * &V24 $A8 (meter:4+4+4+4/4)
 -----
 @mode:random
 V8 <> V V V V V V V V

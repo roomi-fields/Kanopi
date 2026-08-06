@@ -21,8 +21,8 @@
 // --- Sous-grammaire 1 @mode:random — structure ---
 
 @mode:random
-S <> S96 [weight:0, meter:4+4/6]
-S <> S192 [weight:5, meter:4+4+4+4/6]
+S <> S96 (weight:0, meter:4+4/6)
+S <> S192 (weight:5, meter:4+4+4+4/6)
 
 -----
 
@@ -32,96 +32,96 @@ S <> S192 [weight:5, meter:4+4+4+4/6]
 
 @mode:random
 // BP3 orig gram#2[1]: S192 <-> (= F48 ) (= V24 ) F'24 *(: F48 ) (: V24 ) F24
-S192 <> $ {F48} $ {V24} F'24 star & {F48} & {V24} F24 [weight:5]
+S192 <> $ {F48} $ {V24} F'24 star & {F48} & {V24} F24 (weight:5)
 // BP3 orig gram#2[2]: S96 <-> (= V24 ) F'24 *(: V24 ) F24
-S96 <> $ {V24} F'24 star & {V24} F24 [weight:0]
+S96 <> $ {V24} F'24 star & {V24} F24 (weight:0)
 // BP3 orig gram#2[3]: V24 <-> (= V12 ) (: V12 ) — PAS de *
-V24 <> $ {V12} & {V12} [weight:0]
+V24 <> $ {V12} & {V12} (weight:0)
 // BP3 orig gram#2[4]: V24 <-> (= V12 ) *(: V12 ) — OUI *
-V24 <> $ {V12} star & {V12} [weight:1]
-V24 <> Q24 [weight:0]
-V24 <> V12 V12 [weight:0]
-V24 <> B24 [weight:4]
+V24 <> $ {V12} star & {V12} (weight:1)
+V24 <> Q24 (weight:0)
+V24 <> V12 V12 (weight:0)
+V24 <> B24 (weight:4)
 // BP3 orig gram#2[8]: V12 <-> (= B6 ) *(: B6 ) — OUI *
-V12 <> $ {B6} star & {B6} [weight:0]
-V12 <> B12 [weight:1]
+V12 <> $ {B6} star & {B6} (weight:0)
+V12 <> B12 (weight:1)
 
 -----
 
 // --- Sous-grammaire 3 @mode:lin — décomposition rythmique ---
 
 @mode:lin
-B3 <> A3 [weight:2]
-B4 <> A4 [weight:0]
-B6 <> A6 [weight:2]
-B6 <> C6 [weight:0]
-B24 <> A3 B21 [weight:3]
-B24 <> A4 B20 [weight:0]
-B24 <> A6 B18 [weight:1]
-B24 <> C6 B18 [weight:0]
-B21 <> A3 B18 [weight:3]
-B21 <> A6 B15 [weight:0]
-B21 <> C6 B15 [weight:0]
-B20 <> A4 B16 [weight:0]
-B20 <> C6 B14 [weight:0]
-B18 <> A3 B15 [weight:3]
-B18 <> A4 B14 [weight:0]
-B18 <> A6 B12 [weight:1]
-B18 <> C6 B12 [weight:0]
-B16 <> A4 B12 [weight:0]
-B16 <> C6 B10 [weight:0]
-B15 <> A3 B12 [weight:3]
-B15 <> A6 B9 [weight:0]
-B15 <> C6 B9 [weight:0]
-B14 <> A4 B10 [weight:0]
-B14 <> C6 B8 [weight:0]
-B12 <> F'12 [weight:1]
-B12 <> A3 B9 [weight:1]
-A3 B12 <> A3 A4 B8 [weight:0]
-A6 B12 <> A6 A4 B8 [weight:0]
-C6 B12 <> C6 A4 B8 [weight:0]
-) B12 <> ) A4 B8 [weight:0]
-B12 <> A6 B6 [weight:3]
-B12 <> C6 B6 [weight:0]
-B10 <> A4 B6 [weight:0]
-B10 <> C6 B4 [weight:0]
-B9 <> A3 B6 [weight:1]
-B9 <> A6 B3 [weight:0]
-B9 <> C6 B3 [weight:0]
-B8 <> A4 B4 [weight:0]
-B6 <> A3 B3 [weight:2]
+B3 <> A3 (weight:2)
+B4 <> A4 (weight:0)
+B6 <> A6 (weight:2)
+B6 <> C6 (weight:0)
+B24 <> A3 B21 (weight:3)
+B24 <> A4 B20 (weight:0)
+B24 <> A6 B18 (weight:1)
+B24 <> C6 B18 (weight:0)
+B21 <> A3 B18 (weight:3)
+B21 <> A6 B15 (weight:0)
+B21 <> C6 B15 (weight:0)
+B20 <> A4 B16 (weight:0)
+B20 <> C6 B14 (weight:0)
+B18 <> A3 B15 (weight:3)
+B18 <> A4 B14 (weight:0)
+B18 <> A6 B12 (weight:1)
+B18 <> C6 B12 (weight:0)
+B16 <> A4 B12 (weight:0)
+B16 <> C6 B10 (weight:0)
+B15 <> A3 B12 (weight:3)
+B15 <> A6 B9 (weight:0)
+B15 <> C6 B9 (weight:0)
+B14 <> A4 B10 (weight:0)
+B14 <> C6 B8 (weight:0)
+B12 <> F'12 (weight:1)
+B12 <> A3 B9 (weight:1)
+A3 B12 <> A3 A4 B8 (weight:0)
+A6 B12 <> A6 A4 B8 (weight:0)
+C6 B12 <> C6 A4 B8 (weight:0)
+) B12 <> ) A4 B8 (weight:0)
+B12 <> A6 B6 (weight:3)
+B12 <> C6 B6 (weight:0)
+B10 <> A4 B6 (weight:0)
+B10 <> C6 B4 (weight:0)
+B9 <> A3 B6 (weight:1)
+B9 <> A6 B3 (weight:0)
+B9 <> C6 B3 (weight:0)
+B8 <> A4 B4 (weight:0)
+B6 <> A3 B3 (weight:2)
 
 -----
 
 // --- Sous-grammaire 4 @mode:random — résolution en bols ---
 
 @mode:random
-A3 <> dhin - - [weight:4]
-A3 <> dha - - [weight:0]
-A3 <> dhagena [weight:0]
-A3 A3 <> dhagena dhin - - [weight:2]
-A3 A3 <> dhagena dha - - [weight:5]
-A4 <> tirakita [weight:0]
-A6 <> dha - dha - dha - [weight:0]
-A6 <> dha - ta - dha - [weight:0]
-A6 <> dheene dheene dheene [weight:0]
-A6 <> dheene dha - dheene [weight:1]
-A6 <> dheene dheena gena [weight:5]
-A6 <> teene teena kena [weight:1]
-A6 <> dhati ge gena ka [weight:0]
-C6 <> tage tirakita [weight:0]
+A3 <> dhin - - (weight:4)
+A3 <> dha - - (weight:0)
+A3 <> dhagena (weight:0)
+A3 A3 <> dhagena dhin - - (weight:2)
+A3 A3 <> dhagena dha - - (weight:5)
+A4 <> tirakita (weight:0)
+A6 <> dha - dha - dha - (weight:0)
+A6 <> dha - ta - dha - (weight:0)
+A6 <> dheene dheene dheene (weight:0)
+A6 <> dheene dha - dheene (weight:1)
+A6 <> dheene dheena gena (weight:5)
+A6 <> teene teena kena (weight:1)
+A6 <> dhati ge gena ka (weight:0)
+C6 <> tage tirakita (weight:0)
 
 -----
 
 // --- Sous-grammaire 5 @mode:random — phrases longues ---
 
 @mode:random
-F'12 <> dhati ge gena ka teene teena kena [weight:1]
-Q24 <> dhin - - dhagena dha - - dhagena dhati ge gena ka dheene dheena gena [weight:0]
-F24 <> tage tirakita dhin - - dhagena dhati ge gena ka dheene dheena gena [weight:5]
-F24 <> tage tirakita gena - dhagena dhati ge gena ka dheene dheena gena [weight:0]
-F'24 <> tage tirakita dhin - - dhagena dhati ge gena ka teene teena kena [weight:5]
-F'24 <> tage tirakita gena - dhagena dhati ge gena ka teene teena kena [weight:0]
-F48 <> dhin - - dhagena dha - - dhagena dhati ge gena ka dheene dheena gena tage tirakita dhin - - dhagena dhati ge gena ka teene teena kena [weight:5]
-F48 <> dhin - - dhagena dha - - dhagena dhati ge gena ka dheene dheena gena tage tirakita gena - dhagena dhati ge gena ka teene teena kena [weight:0]
+F'12 <> dhati ge gena ka teene teena kena (weight:1)
+Q24 <> dhin - - dhagena dha - - dhagena dhati ge gena ka dheene dheena gena (weight:0)
+F24 <> tage tirakita dhin - - dhagena dhati ge gena ka dheene dheena gena (weight:5)
+F24 <> tage tirakita gena - dhagena dhati ge gena ka dheene dheena gena (weight:0)
+F'24 <> tage tirakita dhin - - dhagena dhati ge gena ka teene teena kena (weight:5)
+F'24 <> tage tirakita gena - dhagena dhati ge gena ka teene teena kena (weight:0)
+F48 <> dhin - - dhagena dha - - dhagena dhati ge gena ka dheene dheena gena tage tirakita dhin - - dhagena dhati ge gena ka teene teena kena (weight:5)
+F48 <> dhin - - dhagena dha - - dhagena dhati ge gena ka dheene dheena gena tage tirakita gena - dhagena dhati ge gena ka teene teena kena (weight:0)
 

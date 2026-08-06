@@ -17,203 +17,203 @@
 S -> do3 1000 {2, B7_r B8_r} 300 {2, B7_r B8_r}
 -----
 @mode:lin
-A1_r -> T96 [weight:K1=1]
-A1_r -> T32 [weight:K2=2]
-A1_r -> T69 [weight:K3=3]
-A1_r -> T40 [weight:K4=4]
-A1_r -> T148 [weight:K5=5]
-A1_r -> T104 [weight:K6=6]
-A1_r -> T152 [weight:K7=5]
-A1_r -> T119 [weight:K8=4]
-A1_r -> T98 [weight:K9=3]
-A1_r -> T3 [weight:K10=2]
-A1_r -> T54 [weight:K11=1]
+A1_r -> T96 (weight:K1=1)
+A1_r -> T32 (weight:K2=2)
+A1_r -> T69 (weight:K3=3)
+A1_r -> T40 (weight:K4=4)
+A1_r -> T148 (weight:K5=5)
+A1_r -> T104 (weight:K6=6)
+A1_r -> T152 (weight:K7=5)
+A1_r -> T119 (weight:K8=4)
+A1_r -> T98 (weight:K9=3)
+A1_r -> T3 (weight:K10=2)
+A1_r -> T54 (weight:K11=1)
 -----
 @mode:lin
-A2_r -> T22 [weight:K1]
-A2_r -> T6 [weight:K2]
-A2_r -> T95 [weight:K3]
-A2_r -> T17 [weight:K4]
-A2_r -> T74 [weight:K5]
-A2_r -> T157 [weight:K6]
-A2_r -> T60 [weight:K7]
-A2_r -> T84 [weight:K8]
-A2_r -> T142 [weight:K9]
-A2_r -> T87 [weight:K10]
-A2_r -> T130 [weight:K11]
+A2_r -> T22 (weight:K1)
+A2_r -> T6 (weight:K2)
+A2_r -> T95 (weight:K3)
+A2_r -> T17 (weight:K4)
+A2_r -> T74 (weight:K5)
+A2_r -> T157 (weight:K6)
+A2_r -> T60 (weight:K7)
+A2_r -> T84 (weight:K8)
+A2_r -> T142 (weight:K9)
+A2_r -> T87 (weight:K10)
+A2_r -> T130 (weight:K11)
 -----
 @mode:lin
-A3_r -> T141 [weight:K1]
-A3_r -> T128 [weight:K2]
-A3_r -> T158 [weight:K3]
-A3_r -> T113 [weight:K4]
-A3_r -> T163 [weight:K5]
-A3_r -> T27 [weight:K6]
-A3_r -> T171 [weight:K7]
-A3_r -> T114 [weight:K8]
-A3_r -> T42 [weight:K9]
-A3_r -> T165 [weight:K10]
-A3_r -> T10 [weight:K11]
+A3_r -> T141 (weight:K1)
+A3_r -> T128 (weight:K2)
+A3_r -> T158 (weight:K3)
+A3_r -> T113 (weight:K4)
+A3_r -> T163 (weight:K5)
+A3_r -> T27 (weight:K6)
+A3_r -> T171 (weight:K7)
+A3_r -> T114 (weight:K8)
+A3_r -> T42 (weight:K9)
+A3_r -> T165 (weight:K10)
+A3_r -> T10 (weight:K11)
 -----
 @mode:lin
-A4_r -> T41 [weight:K1]
-A4_r -> T63 [weight:K2]
-A4_r -> T13 [weight:K3]
-A4_r -> T85 [weight:K4]
-A4_r -> T45 [weight:K5]
-A4_r -> T167 [weight:K6]
-A4_r -> T53 [weight:K7]
-A4_r -> T50 [weight:K8]
-A4_r -> T156 [weight:K9]
-A4_r -> T61 [weight:K10]
-A4_r -> T103 [weight:K11]
+A4_r -> T41 (weight:K1)
+A4_r -> T63 (weight:K2)
+A4_r -> T13 (weight:K3)
+A4_r -> T85 (weight:K4)
+A4_r -> T45 (weight:K5)
+A4_r -> T167 (weight:K6)
+A4_r -> T53 (weight:K7)
+A4_r -> T50 (weight:K8)
+A4_r -> T156 (weight:K9)
+A4_r -> T61 (weight:K10)
+A4_r -> T103 (weight:K11)
 -----
 @mode:lin
-A5_r -> T105 [weight:K1]
-A5_r -> T146 [weight:K2]
-A5_r -> T153 [weight:K3]
-A5_r -> T161 [weight:K4]
-A5_r -> T80 [weight:K5]
-A5_r -> T154 [weight:K6]
-A5_r -> T99 [weight:K7]
-A5_r -> T140 [weight:K8]
-A5_r -> T75 [weight:K9]
-A5_r -> T135 [weight:K10]
-A5_r -> T28 [weight:K11]
+A5_r -> T105 (weight:K1)
+A5_r -> T146 (weight:K2)
+A5_r -> T153 (weight:K3)
+A5_r -> T161 (weight:K4)
+A5_r -> T80 (weight:K5)
+A5_r -> T154 (weight:K6)
+A5_r -> T99 (weight:K7)
+A5_r -> T140 (weight:K8)
+A5_r -> T75 (weight:K9)
+A5_r -> T135 (weight:K10)
+A5_r -> T28 (weight:K11)
 -----
 @mode:lin
-A6_r -> T122 [weight:K1]
-A6_r -> T46 [weight:K2]
-A6_r -> T55 [weight:K3]
-A6_r -> T2 [weight:K4]
-A6_r -> T97 [weight:K5]
-A6_r -> T68 [weight:K6]
-A6_r -> T133 [weight:K7]
-A6_r -> T86 [weight:K8]
-A6_r -> T129 [weight:K9]
-A6_r -> T47 [weight:K10]
-A6_r -> T37 [weight:K11]
+A6_r -> T122 (weight:K1)
+A6_r -> T46 (weight:K2)
+A6_r -> T55 (weight:K3)
+A6_r -> T2 (weight:K4)
+A6_r -> T97 (weight:K5)
+A6_r -> T68 (weight:K6)
+A6_r -> T133 (weight:K7)
+A6_r -> T86 (weight:K8)
+A6_r -> T129 (weight:K9)
+A6_r -> T47 (weight:K10)
+A6_r -> T37 (weight:K11)
 -----
 @mode:lin
-A7_r -> T11 [weight:K1]
-A7_r -> T134 [weight:K2]
-A7_r -> T110 [weight:K3]
-A7_r -> T159 [weight:K4]
-A7_r -> T36 [weight:K5]
-A7_r -> T118 [weight:K6]
-A7_r -> T21 [weight:K7]
-A7_r -> T169 [weight:K8]
-A7_r -> T62 [weight:K9]
-A7_r -> T147 [weight:K10]
-A7_r -> T106 [weight:K11]
+A7_r -> T11 (weight:K1)
+A7_r -> T134 (weight:K2)
+A7_r -> T110 (weight:K3)
+A7_r -> T159 (weight:K4)
+A7_r -> T36 (weight:K5)
+A7_r -> T118 (weight:K6)
+A7_r -> T21 (weight:K7)
+A7_r -> T169 (weight:K8)
+A7_r -> T62 (weight:K9)
+A7_r -> T147 (weight:K10)
+A7_r -> T106 (weight:K11)
 -----
 @mode:lin
 A8_r -> T5
 A'8 -> T'5
 -----
 @mode:lin
-B1_r -> T70 [weight:K1]
-B1_r -> T117 [weight:K2]
-B1_r -> T66 [weight:K3]
-B1_r -> T90 [weight:K4]
-B1_r -> T25 [weight:K5]
-B1_r -> T138 [weight:K6]
-B1_r -> T16 [weight:K7]
-B1_r -> T120 [weight:K8]
-B1_r -> T65 [weight:K9]
-B1_r -> T102 [weight:K10]
-B1_r -> T35 [weight:K11]
+B1_r -> T70 (weight:K1)
+B1_r -> T117 (weight:K2)
+B1_r -> T66 (weight:K3)
+B1_r -> T90 (weight:K4)
+B1_r -> T25 (weight:K5)
+B1_r -> T138 (weight:K6)
+B1_r -> T16 (weight:K7)
+B1_r -> T120 (weight:K8)
+B1_r -> T65 (weight:K9)
+B1_r -> T102 (weight:K10)
+B1_r -> T35 (weight:K11)
 -----
 @mode:lin
-B2_r -> T121 [weight:K1]
-B2_r -> T39 [weight:K2]
-B2_r -> T139 [weight:K3]
-B2_r -> T176 [weight:K4]
-B2_r -> T143 [weight:K5]
-B2_r -> T71 [weight:K6]
-B2_r -> T155 [weight:K7]
-B2_r -> T88 [weight:K8]
-B2_r -> T77 [weight:K9]
-B2_r -> T4 [weight:K10]
-B2_r -> T20 [weight:K11]
+B2_r -> T121 (weight:K1)
+B2_r -> T39 (weight:K2)
+B2_r -> T139 (weight:K3)
+B2_r -> T176 (weight:K4)
+B2_r -> T143 (weight:K5)
+B2_r -> T71 (weight:K6)
+B2_r -> T155 (weight:K7)
+B2_r -> T88 (weight:K8)
+B2_r -> T77 (weight:K9)
+B2_r -> T4 (weight:K10)
+B2_r -> T20 (weight:K11)
 -----
 @mode:lin
-B3_r -> T26 [weight:K1]
-B3_r -> T126 [weight:K2]
-B3_r -> T15 [weight:K3]
-B3_r -> T7 [weight:K4]
-B3_r -> T64 [weight:K5]
-B3_r -> T150 [weight:K6]
-B3_r -> T57 [weight:K7]
-B3_r -> T48 [weight:K8]
-B3_r -> T19 [weight:K9]
-B3_r -> T31 [weight:K10]
-B3_r -> T108 [weight:K11]
+B3_r -> T26 (weight:K1)
+B3_r -> T126 (weight:K2)
+B3_r -> T15 (weight:K3)
+B3_r -> T7 (weight:K4)
+B3_r -> T64 (weight:K5)
+B3_r -> T150 (weight:K6)
+B3_r -> T57 (weight:K7)
+B3_r -> T48 (weight:K8)
+B3_r -> T19 (weight:K9)
+B3_r -> T31 (weight:K10)
+B3_r -> T108 (weight:K11)
 -----
 @mode:lin
-B4_r -> T9 [weight:K1]
-B4_r -> T56 [weight:K2]
-B4_r -> T132 [weight:K3]
-B4_r -> T34 [weight:K4]
-B4_r -> T125 [weight:K5]
-B4_r -> T29 [weight:K6]
-B4_r -> T175 [weight:K7]
-B4_r -> T166 [weight:K8]
-B4_r -> T82 [weight:K9]
-B4_r -> T164 [weight:K10]
-B4_r -> T92 [weight:K11]
+B4_r -> T9 (weight:K1)
+B4_r -> T56 (weight:K2)
+B4_r -> T132 (weight:K3)
+B4_r -> T34 (weight:K4)
+B4_r -> T125 (weight:K5)
+B4_r -> T29 (weight:K6)
+B4_r -> T175 (weight:K7)
+B4_r -> T166 (weight:K8)
+B4_r -> T82 (weight:K9)
+B4_r -> T164 (weight:K10)
+B4_r -> T92 (weight:K11)
 -----
 @mode:lin
-B5_r -> T112 [weight:K1]
-B5_r -> T174 [weight:K2]
-B5_r -> T73 [weight:K3]
-B5_r -> T67 [weight:K4]
-B5_r -> T76 [weight:K5]
-B5_r -> T101 [weight:K6]
-B5_r -> T43 [weight:K7]
-B5_r -> T51 [weight:K8]
-B5_r -> T137 [weight:K9]
-B5_r -> T144 [weight:K10]
-B5_r -> T12 [weight:K11]
+B5_r -> T112 (weight:K1)
+B5_r -> T174 (weight:K2)
+B5_r -> T73 (weight:K3)
+B5_r -> T67 (weight:K4)
+B5_r -> T76 (weight:K5)
+B5_r -> T101 (weight:K6)
+B5_r -> T43 (weight:K7)
+B5_r -> T51 (weight:K8)
+B5_r -> T137 (weight:K9)
+B5_r -> T144 (weight:K10)
+B5_r -> T12 (weight:K11)
 -----
 @mode:lin
-B6_r -> T49 [weight:K1]
-B6_r -> T18 [weight:K2]
-B6_r -> T58 [weight:K3]
-B6_r -> T160 [weight:K4]
-B6_r -> T136 [weight:K5]
-B6_r -> T162 [weight:K6]
-B6_r -> T168 [weight:K7]
-B6_r -> T115 [weight:K8]
-B6_r -> T38 [weight:K9]
-B6_r -> T59 [weight:K10]
-B6_r -> T124 [weight:K11]
+B6_r -> T49 (weight:K1)
+B6_r -> T18 (weight:K2)
+B6_r -> T58 (weight:K3)
+B6_r -> T160 (weight:K4)
+B6_r -> T136 (weight:K5)
+B6_r -> T162 (weight:K6)
+B6_r -> T168 (weight:K7)
+B6_r -> T115 (weight:K8)
+B6_r -> T38 (weight:K9)
+B6_r -> T59 (weight:K10)
+B6_r -> T124 (weight:K11)
 -----
 @mode:lin
-B7_r -> T109 [weight:K1]
-B7_r -> T116 [weight:K2]
-B7_r -> T145 [weight:K3]
-B7_r -> T52 [weight:K4]
-B7_r -> T1 [weight:K5]
-B7_r -> T23 [weight:K6]
-B7_r -> T89 [weight:K7]
-B7_r -> T72 [weight:K8]
-B7_r -> T149 [weight:K9]
-B7_r -> T173 [weight:K10]
-B7_r -> T44 [weight:K11]
+B7_r -> T109 (weight:K1)
+B7_r -> T116 (weight:K2)
+B7_r -> T145 (weight:K3)
+B7_r -> T52 (weight:K4)
+B7_r -> T1 (weight:K5)
+B7_r -> T23 (weight:K6)
+B7_r -> T89 (weight:K7)
+B7_r -> T72 (weight:K8)
+B7_r -> T149 (weight:K9)
+B7_r -> T173 (weight:K10)
+B7_r -> T44 (weight:K11)
 -----
 @mode:lin
-B8_r -> T8 [weight:K1]
-B8_r -> T78 [weight:K2]
-B8_r -> T8 [weight:K3]
-B8_r -> T8 [weight:K4]
-B8_r -> T8 [weight:K5]
-B8_r -> T8 [weight:K6]
-B8_r -> T8 [weight:K7]
-B8_r -> T8 [weight:K8]
-B8_r -> T8 [weight:K9]
-B8_r -> T8 [weight:K10]
-B8_r -> T8 [weight:K11]
+B8_r -> T8 (weight:K1)
+B8_r -> T78 (weight:K2)
+B8_r -> T8 (weight:K3)
+B8_r -> T8 (weight:K4)
+B8_r -> T8 (weight:K5)
+B8_r -> T8 (weight:K6)
+B8_r -> T8 (weight:K7)
+B8_r -> T8 (weight:K8)
+B8_r -> T8 (weight:K9)
+B8_r -> T8 (weight:K10)
+B8_r -> T8 (weight:K11)
 -----
 @mode:sub1
 T1 -> {fa3 re3 sol3, fa5 re5 sol5}

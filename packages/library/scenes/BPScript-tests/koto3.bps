@@ -24,8 +24,8 @@
 // --- Sous-grammaire 1 @mode:random — séquence initiale ---
 
 @mode:random
-S -> !(vel:127) !(volume:40) X X X X Y X X X X Y X X X X [weight:100]
-X -> a [weight:K9]
+S -> !(vel:127) !(volume:40) X X X X Y X X X X Y X X X X (weight:100)
+X -> a (weight:K9)
 X -> b
 
 -----
@@ -38,28 +38,28 @@ Y -> Y
 ?1 #? -> ?1 #?
 } -> }
 , -> ,
-a -> a [weight:5]
-a b a -> a a [weight:30]
-#({) a b a -> {a c b,f f f - f}:5 [weight:100]
-b -> b [weight:5]
-#({) b a b #(}) -> b b [weight:30]
-#({) b a b -> {b a b c b a,f a f}:3 [weight:100]
-#({) #a b #(}) -> #a c b [weight:100-10]
+a -> a (weight:5)
+a b a -> a a (weight:30)
+#({) a b a -> {a c b,f f f - f}:5 (weight:100)
+b -> b (weight:5)
+#({) b a b #(}) -> b b (weight:30)
+#({) b a b -> {b a b c b a,f a f}:3 (weight:100)
+#({) #a b #(}) -> #a c b (weight:100-10)
 c c c -> c a c
 c a c -> b a b
-?1 ?1 ?2 ?3 ?4 ?4 -> ?2 ?3 [weight:50]
-?1 ?1 ?1 -> ?1 [weight:K9]
-?1 ?1 -> ?1 [weight:K9]
+?1 ?1 ?2 ?3 ?4 ?4 -> ?2 ?3 (weight:50)
+?1 ?1 ?1 -> ?1 (weight:K9)
+?1 ?1 -> ?1 (weight:K9)
 
 -----
 
 // --- Sous-grammaire 3 @mode:random — silences et out-time objects ---
 
 @mode:random
-Y -> !f [weight:40]
-Y -> !chik [weight:50]
-? #? -> ? Silence !(sync:continue) #? [weight:1-1]
-Silence -> - - - - - [weight:50]
-Silence -> - - - - [weight:15]
-Silence -> - - - [weight:8]
-Silence -> - - [weight:8]
+Y -> !f (weight:40)
+Y -> !chik (weight:50)
+? #? -> ? Silence !(sync:continue) #? (weight:1-1)
+Silence -> - - - - - (weight:50)
+Silence -> - - - - (weight:15)
+Silence -> - - - (weight:8)
+Silence -> - - (weight:8)

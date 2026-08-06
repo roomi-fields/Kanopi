@@ -15,10 +15,10 @@
 
 S -> A_r B_r A_r B_r
 
-A_r -> C4 D4 E4 F4 [weight:50]
-A_r -> E4 D4 C4 - [weight:30]
+A_r -> C4 D4 E4 F4 (weight:50)
+A_r -> E4 D4 C4 - (weight:30)
 A_r -> C4 E4 G4 C5
 
-B_r -> G4 F4 E4 D4 [weight:50]
+B_r -> G4 F4 E4 D4 (weight:50)
 B_r -> A4 G4 F4 E4
-B_r -> G4 _ E4 C4 [weight:30]
+B_r -> G4 _ E4 C4 (weight:30)

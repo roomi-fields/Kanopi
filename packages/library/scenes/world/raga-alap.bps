@@ -19,7 +19,7 @@ S -> Intro Develop Develop Climax
 
 // Low exploration
 @mode:random
-Intro -> sa _ re _ ga _ re sa _ _ [weight:50]
+Intro -> sa _ re _ ga _ re sa _ _ (weight:50)
 Intro -> sa _ _ re ga _ _ _
 
 -----
@@ -29,11 +29,11 @@ Intro -> sa _ _ re ga _ _ _
 Develop -> Ascend Descend
 Develop -> Descend Ascend
 
-Ascend -> ga pa _ dha [weight:40]
+Ascend -> ga pa _ dha (weight:40)
 Ascend -> re ga pa _
 Ascend -> pa _ dha ni
 
-Descend -> dha pa ga _ [weight:40]
+Descend -> dha pa ga _ (weight:40)
 Descend -> ni dha _ pa
 Descend -> pa ga re sa
 

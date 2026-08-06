@@ -26,8 +26,8 @@ S -> Head U V [Reverse=0, beats=24, K1]
 // --- Sous-grammaire 2 @mode:random — choix du nombre de B (impair) ---
 
 @mode:random
-Head -> Head [B=3, A=3] [goto:3 0] [weight:3]
-Head -> Head [B=9, A=1] [goto:3 0] [weight:1]
+Head -> Head [B=3, A=3] [goto:3 0] (weight:3)
+Head -> Head [B=9, A=1] [goto:3 0] (weight:1)
 
 -----
 

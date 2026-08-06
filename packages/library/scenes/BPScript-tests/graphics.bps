@@ -3,7 +3,7 @@
 // Traduit de BP3 grammar format
 //
 // Trois voix simultanées avec contrôles d'articulation différents :
-// ![legato:20] en tête de la première, ![staccato:10] en tête de la deuxième,
+// !(legato:20) en tête de la première, !(staccato:10) en tête de la deuxième,
 // silence initial sur la troisième. Forme appel (E4) : les articulations
 // sont des contrôles engine émis à la position exacte de l'original
 // (-gr.tryGraphics) — en tête de voix, elles modulent les notes qui suivent.
@@ -15,4 +15,4 @@
 // --- Sous-grammaire 1 @mode:ord ---
 
 @mode:ord
-S -> {![legato:20] C4 D4 E4, ![staccato:10] F#5 G3, - G4}
+S -> {!(legato:20) C4 D4 E4, !(staccato:10) F#5 G3, - G4}

@@ -33,6 +33,6 @@ S -> Bass Bass Bass Bass
 
 @mode:random
 
-Bass -> C2(cutoff:wobble) _ _ C2 _ _ C2 _ (wave:sawtooth, vel:110, filterQ:6) [weight:50]
+Bass -> C2(cutoff:wobble) _ _ C2 _ _ C2 _ (wave:sawtooth, vel:110, filterQ:6) (weight:50)
 Bass -> C2(cutoff:wobble) _ Eb2 _ C2 _ _ - (wave:sawtooth, vel:110, filterQ:6)
-Bass -> C2(cutoff:wobble) _ _ _ _ _ _ - (wave:sawtooth, vel:110, filterQ:6) [weight:30]
+Bass -> C2(cutoff:wobble) _ _ _ _ _ _ - (wave:sawtooth, vel:110, filterQ:6) (weight:30)

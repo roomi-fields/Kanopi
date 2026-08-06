@@ -7,5 +7,5 @@
 @alphabet.western:midi
 
 @mode:random
-S -> A4 G4 C5 A5 A4 G4 C5 A5 (volume:127) [weight:1-1]
-S -> A4 G4 C5 A5 A4 G4 C5 A5 (volume:64) [weight:1-1]
+S -> A4 G4 C5 A5 A4 G4 C5 A5 (volume:127) (weight:1-1)
+S -> A4 G4 C5 A5 A4 G4 C5 A5 (volume:64) (weight:1-1)
