@@ -35,6 +35,6 @@ Mel3 -> !(rotate:-1) {Mel1 - Mel2} !(chromashift:6)
 @mode:ord
 M1 -> {C3 - . D4 F#3 !(keyxpand:B3 -1) C3 - D3 F#2}
 M2 -> {{M1} !(chromashift:2)}
-M3 -> !(rotate:-2) {{M1 M2},{!(keyxpand:C3 -1) M1}} !(chromashift:-6)
+M3 -> !(rotate:-2) {{M1 M2},{ !(keyxpand:C3 -1) M1}} !(chromashift:-6)
 M4 -> {C3 D4 F#3 !(keyxpand:B3 -1) C3 D3 F#2}
-M5 -> {!(keyxpand:B4 -1) {M4, M1 !(vel:100)}} {M2,M3}
+M5 -> { !(keyxpand:B4 -1) {M4, M1 !(vel:100)}} {M2,M3}

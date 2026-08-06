@@ -30,7 +30,7 @@ S -> Shapes !(staccato:50)
 // avance AVANT Int1 alors que le natif le pose APRES ; et le !(chromashift:-11) de Part3
 // transforme en SUFFIXE du premier groupe alors qu'il s'applique au SECOND.
 // _transpose devient chromashift (decision Romain 2026-07-17).
-Shapes -> Part1 {!(rotate:20) !(chromashift:2) Part1} Part2 Part3 {! (/0.7) Part3} Part4
+Shapes -> Part1 { !(rotate:20) !(chromashift:2) Part1} Part2 Part3 { ! (*10/7) Part3} Part4
 
 -----
 
@@ -38,33 +38,33 @@ Shapes -> Part1 {!(rotate:20) !(chromashift:2) Part1} Part2 Part3 {! (/0.7) Part
 
 @mode:ord
 Part1 -> {M1 Trill1 M2 Trill2 Int1 Int2 Trill3 Int3 1/4}
-Part2 -> {M3 M4 M5 1/4 Trill4 1/4 Trill4 Trill4 1/4 Trill5 M6 1/4 Trill6 Trill7 Trill8 1/4 Trill9 Trill10 1/4 M5 M4 M3 M6 {!(rotate:6) !(chromashift:23) M6} 1/4 Int3 Int2 Int1 !(rotate:23) Part1} Trill3
+Part2 -> {M3 M4 M5 1/4 Trill4 1/4 Trill4 Trill4 1/4 Trill5 M6 1/4 Trill6 Trill7 Trill8 1/4 Trill9 Trill10 1/4 M5 M4 M3 M6 { !(rotate:6) !(chromashift:23) M6} 1/4 Int3 Int2 Int1 !(rotate:23) Part1} Trill3
 Part3 -> {1 {M3,M4} 2, !(chromashift:12) Trill1} !(chromashift:-11) {1 {M3,M4} 2, !(chromashift:12) Trill1}
-Part4 -> {Trill12,Trill11} {Trill10,Trill1} {Trill9 Trill10,Trill2} {!(chromashift:11) {M3,Trill2}} {M3, !(chromashift:12) Trill3} {Trill10,Trill1} {Trill9 Trill10,Trill2} {! (/2/3) Trill10} {M3,M4} {! (/1/2) Trill10} 1/4 !(chromashift:12) Trill9
+Part4 -> {Trill12,Trill11} {Trill10,Trill1} {Trill9 Trill10,Trill2} { !(chromashift:11) {M3,Trill2}} {M3, !(chromashift:12) Trill3} {Trill10,Trill1} {Trill9 Trill10,Trill2} { ! (/2/3) Trill10} {M3,M4} { ! (/1/2) Trill10} 1/4 !(chromashift:12) Trill9
 
 -----
 
 // --- Sous-grammaire 3 @mode:ord — matériaux ---
 
 @mode:ord
-M1 -> {! (/7) C0 C2 C4 C6(vel:60) ! (/6) Bb4 G3 F2 B2(vel:80) ! (/8) G3 A2 B1 F#1 G2 A3 C#4 E3(vel:40) ! (/6) G2 Bb1 C#1 ! (/5) G0 G#1 A2 A3 Bb4(vel:90) !(velcont, vel:40, chromashift:12)}
-M2 -> {!(keyxpand:C4 -1) M1}
-M3 -> {! (/7) C0 C2 {C4,C6}(vel:100) ! (/6) Bb4 G3 F2 {B2,G3}(vel:80) ! (/8) A2 B1 F#1 G2 A3 C#4 {E3,G2}(vel:50) ! (/6) Bb1 C#1 ! (/5) G0 G#1 A2 {A3,Bb4}(vel:70) !(velcont, vel:40, chromashift:12)}
-M4 -> {!(rotate:5) [tempx:0.7] !(chromashift:3) M3}
-M5 -> {!(rotate:12) [tempx:0.7] !(chromashift:6) M4}
-M6 -> {! (/2) M1}
-Int1 -> {! (/12) D2 C#3(chromashift:6) D2 C#3(chromashift:9) D2 C#3 !(vel:40, chromashift:3)}
-Int2 -> {!(chromashift:11) Int1}
-Int3 -> {!(chromashift:11) Int2}
-Trill1 -> {! (/12) Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:80) Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:10) !(velcont, vel:10)}
-Trill2 -> {!(chromashift:-36) !(keyxpand:C5 -1) Trill1}
-Trill3 -> {!(chromashift:-12) Trill1}
-Trill4 -> {! (/14) Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:80) !(velcont, vel:10)}
-Trill5 -> {! (/12) Bb4 A6 Bb4 A4 Bb6 A5 Bb3 A6 Bb4 A5(vel:80) Bb4 A6 Bb4 A4 Bb6 A5 Bb3 A6 Bb4 A5(vel:10) !(velcont, vel:10)}
-Trill6 -> {!(chromashift:-19) Trill5}
+M1 -> { ! (/7) C0 C2 C4 C6(vel:60) ! (/6) Bb4 G3 F2 B2(vel:80) ! (/8) G3 A2 B1 F#1 G2 A3 C#4 E3(vel:40) ! (/6) G2 Bb1 C#1 ! (/5) G0 G#1 A2 A3 Bb4(vel:90) !(velcont, vel:40, chromashift:12)}
+M2 -> { !(keyxpand:C4 -1) M1}
+M3 -> { ! (/7) C0 C2 {C4,C6}(vel:100) ! (/6) Bb4 G3 F2 {B2,G3}(vel:80) ! (/8) A2 B1 F#1 G2 A3 C#4 {E3,G2}(vel:50) ! (/6) Bb1 C#1 ! (/5) G0 G#1 A2 {A3,Bb4}(vel:70) !(velcont, vel:40, chromashift:12)}
+M4 -> { !(rotate:5) [tempx:0.7] !(chromashift:3) M3}
+M5 -> { !(rotate:12) [tempx:0.7] !(chromashift:6) M4}
+M6 -> { ! (/2) M1}
+Int1 -> { ! (/12) D2 C#3(chromashift:6) D2 C#3(chromashift:9) D2 C#3 !(vel:40, chromashift:3)}
+Int2 -> { !(chromashift:11) Int1}
+Int3 -> { !(chromashift:11) Int2}
+Trill1 -> { ! (/12) Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:80) Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:10) !(velcont, vel:10)}
+Trill2 -> { !(chromashift:-36) !(keyxpand:C5 -1) Trill1}
+Trill3 -> { !(chromashift:-12) Trill1}
+Trill4 -> { ! (/14) Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:80) !(velcont, vel:10)}
+Trill5 -> { ! (/12) Bb4 A6 Bb4 A4 Bb6 A5 Bb3 A6 Bb4 A5(vel:80) Bb4 A6 Bb4 A4 Bb6 A5 Bb3 A6 Bb4 A5(vel:10) !(velcont, vel:10)}
+Trill6 -> { !(chromashift:-19) Trill5}
 Trill7 -> Trill4(chromashift:-22) Trill4(chromashift:-9) Trill4
-Trill8 -> {! (/14) Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4(chromashift:-12) A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:10) !(velcont, vel:80)}
-Trill9 -> {! (/14) Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:10) !(velcont, vel:80, chromashift:-12)}
-Trill10 -> {! (/2/3) !(chromashift:-23) Trill8 1/4 Trill9}
-Trill11 -> {! (/14) Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:80) !(velcont, vel:10, chromashift:-23)}
-Trill12 -> {! (/2) Bb4 A5 Bb4 A5 ! (/3) Bb4 A5 Bb4 A5 Bb4 A5 ! (/4) Bb4 A5 Bb4 A5 ! (/5) Bb4 A5 Bb4 A5 Bb4 A5(vel:80) ! (/6) Bb4 A5 Bb4 A5 ! (/7) Bb4 A5 Bb4 A5 ! (/8) Bb4 A5 Bb4 A5 ! (/8) Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:10) !(velcont, vel:10)}
+Trill8 -> { ! (/14) Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4(chromashift:-12) A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:10) !(velcont, vel:80)}
+Trill9 -> { ! (/14) Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:10) !(velcont, vel:80, chromashift:-12)}
+Trill10 -> { ! (/2/3) !(chromashift:-23) Trill8 1/4 Trill9}
+Trill11 -> { ! (/14) Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:80) !(velcont, vel:10, chromashift:-23)}
+Trill12 -> { ! (/2) Bb4 A5 Bb4 A5 ! (/3) Bb4 A5 Bb4 A5 Bb4 A5 ! (/4) Bb4 A5 Bb4 A5 ! (/5) Bb4 A5 Bb4 A5 Bb4 A5(vel:80) ! (/6) Bb4 A5 Bb4 A5 ! (/7) Bb4 A5 Bb4 A5 ! (/8) Bb4 A5 Bb4 A5 ! (/8) Bb4 A5 Bb4 A5 Bb4 A5 Bb4 A5(vel:10) !(velcont, vel:10)}
