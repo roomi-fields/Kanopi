@@ -7,7 +7,7 @@
 @alphabet.western:midi
 
 @mode:random
-S -> ! (/6) { !(rotate:K1=2) M} 1/2 N
+S -> ! (/6) {!(rotate:K1=2) M} 1/2 N
 N -> N !(rotate:K1) {N 1/2} (weight:5-1)
 
 -----

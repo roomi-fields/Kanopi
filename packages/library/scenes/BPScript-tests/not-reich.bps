@@ -41,6 +41,6 @@ C_r' -> C_r C_r C_r D_r E_r E_r E_r E_r C_r D_r C_r D_r E_r E_r E_r E_r C_r C_r 
 A_r -> {C4 -, !(vel:40) - E#3 G3, A#5, - D5}:1
 B_r -> {A_r A_r, !(vel:60) C2}
 B_r" -> {B_r, - F5}
-C_r -> {B_r, { !(vel:55) - C5}}
+C_r -> {B_r, {!(vel:55) - C5}}
 D_r -> {B_r,- {C4 F5 E#4}}
 E_r -> {D_r,D#4 F4 C5 G#3}
