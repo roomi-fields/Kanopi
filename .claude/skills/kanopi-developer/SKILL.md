@@ -13,7 +13,7 @@ Binding contracts. Violating them is a bug, not a "sane local choice". If a rule
 
 - **`hub/contrats/kanopi-architecture.md`** — Kanopi holds **NO authoritative state**. Every store is a **projection** of an upstream source. Anything the host *invents* is a bug.
 - **`hub/contrats/kronos-transport.md`** — **time, position and transport state belong to Kronos.** The host issues commands (`play/pause/stop/step/seek/tempo/loop`) and **reads** position/state; it keeps no position counter, no transport state machine.
-- Background: `hub/projets/2026-06-22-design-frontiere-hote-moteur/README.md` (SOTA + openDAW), `hub/projets/2026-06-22-audit-etat-kanopi/README.md` (the bugs and their cause).
+- Background: `hub/projets/archive/2026-06-22-design-frontiere-hote-moteur/README.md` (SOTA + openDAW), `hub/projets/archive/2026-06-22-audit-etat-kanopi/README.md` (the bugs and their cause).
 
 **Authority map** — before adding/editing any store, name its upstream source:
 - position / transport → **Kronos** (read the cursor per frame; never a local counter).

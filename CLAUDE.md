@@ -105,8 +105,8 @@ Contrats contraignants, à respecter sans dérogation (les contourner = bug, pas
 - **`hub/contrats/kronos-transport.md`** — le **temps, la position et l'état de transport
   appartiennent à Kronos**. Kanopi **émet des commandes** (`play/pause/stop/step/seek/tempo/loop`)
   et **lit** la position/état ; il ne tient ni compteur de position ni machine d'état.
-- Étude : `hub/projets/2026-06-22-design-frontiere-hote-moteur/README.md` (SOTA + openDAW). Cause des bugs
-  passés : `hub/projets/2026-06-22-audit-etat-kanopi/README.md`.
+- Étude : `hub/projets/archive/2026-06-22-design-frontiere-hote-moteur/README.md` (SOTA + openDAW). Cause des bugs
+  passés : `hub/projets/archive/2026-06-22-audit-etat-kanopi/README.md`.
 
 **Modèle (magnétophone)** : BPx = les bandes (contenu) · Kronos = la tête de lecture + le
 mécanisme (temps/transport/position) · **Kanopi = les boutons + l'afficheur** (intention +
