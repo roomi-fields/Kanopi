@@ -26,7 +26,7 @@
 @controls
 @sound.tabla_perc
 @tempo:15
-@transcription.dhati
+@homomorphism.dhati
 
 // Terminaux — bols de tabla
 @gate plus:midi

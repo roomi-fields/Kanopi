@@ -3,8 +3,8 @@
 // Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
 // Homomorphisme INLINE du .gr d'origine (-ho.checkHomo) chargé via la table lib (sections *,H,TR) :
 // TOUT homo PEUPLE la table (décision 2026-07-18) — BPx porte opaque, Kairos résout. Sans, les
-// marqueurs *,TR fuiraient non résolus (sortie fausse). Byte-id BP3 legacy intact (@transcription = BPx-only).
-@transcription.checkhomo
+// marqueurs *,TR fuiraient non résolus (sortie fausse). Byte-id BP3 legacy intact (@homomorphism = BPx-only).
+@homomorphism.checkhomo
 
 S -> $X * TR &X Y
 X -> a b
