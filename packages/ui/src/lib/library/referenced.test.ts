@@ -19,12 +19,13 @@ a -> do re mi`;
 
   it('reads scale, octaves and the audio-bank library table', () => {
     const code = `@core
-@library.strudel "dirt-samples"
 @scale.bilaval
 @octaves.western
 
+@actor voice  eval.strudel(bank:"dirt-samples")
+
 S -> a
-a -> \`strudel: s("bd sd")\``;
+a -> voice.\`s("bd sd")\``;
     const libs = referencedLibraries('mix.bps', code);
     expect(libs).toContainEqual({ type: 'scale', typeLabel: 'scale', name: 'bilaval' });
     expect(libs).toContainEqual({ type: 'octaves', typeLabel: 'octaves', name: 'western' });

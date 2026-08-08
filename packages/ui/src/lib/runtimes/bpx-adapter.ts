@@ -127,7 +127,7 @@ import type {
 // name opaque.
 import { resolveDevice, isCompatible, type Device } from '../devices/registry';
 import type { VoiceOutputType } from './adapter';
-// `@library.<engine>` bank loading: resolve a declared bank id against the
+// `eval.<engine>(bank:…)` bank loading: resolve a declared bank id against the
 // upstream guestLibraries registry (SOURCE OF TRUTH — no host-side catalog) and
 // load it through the Strudel `samples()` path. The adapter only maps ids → loader.
 import {
@@ -273,7 +273,7 @@ type Frontend = (code: string) => {
   // A5 états nommés : la table drapeau→{alias→int} émise pour `@var section flag: calm:1,
   // full:2`. Présente seulement quand le `.bps` déclare des états nommés ; `.gr` n'en a pas.
   flagStates?: FlagStates;
-  // Per-engine sample/sound banks a `.bps` declares (`@library.strudel "dirt-samples"`
+  // Per-engine sample/sound banks a `.bps` declares (`eval.strudel(bank:"dirt-samples")`
   // → `{ strudel: ["dirt-samples"] }`). The adapter loads each engine's declared
   // banks before/at the backtick eval so the code voices find their samples. `.gr`
   // has none.
@@ -285,7 +285,7 @@ type Frontend = (code: string) => {
   mm?: number;
 };
 
-// `@library.<engine> "<id>"` → { engine → [bank ids] } (from compileBPS).
+// `eval.<engine>(bank:"<id>")` (actor param) → { engine → [bank ids] } (read by librariesFromAst).
 export type Libraries = Record<string, string[]>;
 
 // `BT<interp><id>` → foreign code + its interpreter tag (from compileBPS).
@@ -522,11 +522,6 @@ interface FlagStatesDirectiveNode {
   flag: string;
   states: { name: string; value: number }[];
 }
-interface LibraryDirectiveNode {
-  type: 'LibraryDirective';
-  engine: string;
-  name: string;
-}
 interface TransportRefNode {
   key?: string;
   params?: Record<string, unknown>;
@@ -538,6 +533,10 @@ interface ActorDirectiveNode {
     alphabet?: string;
     transport?: TransportRefNode;
     eval?: string | null;
+    /** Per-engine entity params (`eval.strudel(bank:"dirt-samples")`). Keyed by
+     *  the literal string `eval` (NOT the engine name — the engine itself lives
+     *  in `properties.eval` above). Currently only `bank` is read here. */
+    entityParams?: Record<string, { bank?: unknown } & Record<string, unknown>>;
   };
   /** True for the IMPLICIT `default` actor the upstream front-end materializes when the
    *  scene declares no `@actor` (bpscript for `.bps`, bp3-frontend for `.gr`). Read so the
@@ -587,15 +586,21 @@ function mmFromAst(a: SceneAstView | null): number | undefined {
   return undefined;
 }
 
-// Declared audio banks from the AST: each `LibraryDirective` (`@library.strudel
-// "dirt-samples"`) accumulates by engine → `{ [engine]: [name, …] }`. Same shape
-// compileBPS's `libraries` sidecar had.
+// Declared audio banks from the AST: the bank is now an ACTOR parameter
+// (`@actor drums eval.strudel(bank:"dirt-samples")`), not a scene directive —
+// each actor's `properties.eval` names the engine, `properties.entityParams.eval.bank`
+// carries the bank. Accumulates by engine → `{ [engine]: [name, …] }`, deduplicated
+// (several actors commonly declare the SAME bank — e.g. `starter-main.bps` declares
+// `dirt-samples` on two actors — so a bank must not appear twice for one engine).
+// Same shape compileBPS's old `libraries` sidecar had.
 function librariesFromAst(a: SceneAstView | null): Libraries {
   const out: Libraries = {};
-  for (const d of a?.directives ?? []) {
-    if (d.type !== 'LibraryDirective') continue;
-    const node = d as unknown as LibraryDirectiveNode;
-    (out[node.engine] ??= []).push(node.name);
+  for (const actor of a?.actors ?? []) {
+    const engine = actor.properties?.eval;
+    const bank = actor.properties?.entityParams?.eval?.bank;
+    if (!engine || typeof bank !== 'string' || bank.length === 0) continue;
+    const list = (out[engine] ??= []);
+    if (!list.includes(bank)) list.push(bank);
   }
   return out;
 }
@@ -908,7 +913,7 @@ function btTokensForInterp(
 /**
  * PRÉ-TIRAGE DES ASSETS À L'OUVERTURE (chantier latence [788]/[791]/[795], design [789] : préfetch
  * APRÈS le warmup moteur, `runtime-codevoices/src/preload.ts`). Énumère ce qu'une scène DÉCLARE —
- * banques `@library.strudel "<id>"` (`librariesFromAst`, même lecture que `loadDeclaredLibraries`) +
+ * banques `eval.strudel(bank:"<id>")` (`librariesFromAst`, même lecture que `loadDeclaredLibraries`) +
  * instruments `gm_*` utilisés dans les backticks strudel + samples mercury utilisés dans les
  * backticks mercury (`backticksFromAst` + `btTokensForInterp` + scan du code déjà porté par l'AST,
  * `mercurySamplesInPatch` pour la syntaxe mercury `new sample <nom>`) — pour les passer tels quels à
@@ -1029,8 +1034,8 @@ const bpsFrontend: Frontend = (code) => {
   // makes the matching guarded rule derive (see `evaluate`).
   const flagStates = flagStatesFromAst(a);
   const withFlags = Object.keys(flagStates).length > 0 ? { ...parsed, flagStates } : parsed;
-  // Declared per-engine banks: read from the AST's `LibraryDirective` nodes
-  // (`@library.strudel "dirt-samples"` → `{ strudel: ['dirt-samples'] }`) so the
+  // Declared per-engine banks: read from the AST's actor `entityParams`
+  // (`eval.strudel(bank:"dirt-samples")` → `{ strudel: ['dirt-samples'] }`) so the
   // adapter loads each engine's samples before the backtick voices eval.
   const libraries = librariesFromAst(a);
   const withLibs = Object.keys(libraries).length > 0 ? { ...withFlags, libraries } : withFlags;
@@ -1567,8 +1572,8 @@ async function gateVoiceDevice(
 }
 
 /**
- * Load the sample/sound banks a `.bps` declares per engine (`@library.strudel
- * "dirt-samples"`). Only the `strudel` engine has a bank loader today (the
+ * Load the sample/sound banks a `.bps` declares per engine (`eval.strudel
+ * (bank:"dirt-samples")`). Only the `strudel` engine has a bank loader today (the
  * `samples()` path); other engines'
  * declarations are recorded but have no loader yet — logged, never silent. A
  * declared id with no catalog entry is an explicit error, not a quiet skip.
@@ -1579,7 +1584,7 @@ async function gateVoiceDevice(
  * first cycle is silent — acceptable, and the common case (dirt-samples) is
  * cached after the first eval.
  */
-/** Resolve a declared `@library.strudel "<bankId>"` against the upstream
+/** Resolve a declared `eval.strudel(bank:"<bankId>")` against the upstream
  *  `guestLibraries` registry (SOURCE OF TRUTH, [773] — no host-side catalog).
  *  Exported as a pure function so the resolution can be proven in Node/vitest
  *  without exercising the whole adapter/logging pipeline. */
@@ -1626,7 +1631,7 @@ function loadDeclaredLibraries(libraries: Libraries, id: Runtime, log: LogPush):
       log({
         runtime: id,
         level: 'info',
-        msg: `@library.${engine} déclarée (${ids.join(', ')}) : pas de chargeur de banque pour ce moteur (ignoré)`
+        msg: `eval.${engine} : banque(s) déclarée(s) (${ids.join(', ')}) : pas de chargeur de banque pour ce moteur (ignoré)`
       });
       continue;
     }
@@ -1636,7 +1641,7 @@ function loadDeclaredLibraries(libraries: Libraries, id: Runtime, log: LogPush):
         log({
           runtime: id,
           level: 'error',
-          msg: `@library.strudel "${bankId}" : banque inconnue (absente du catalogue)`
+          msg: `eval.strudel(bank:"${bankId}") : banque inconnue (absente du catalogue)`
         });
         continue;
       }
@@ -1727,7 +1732,7 @@ function makeBpxAdapter(
       // `evaluate`, couvre les deux branches de derive (mono + orchestré).
       await personalPitchLibReady;
 
-      // `@library.<engine>` banks: start loading the declared sample banks now
+      // `eval.<engine>(bank:…)` banks: start loading the declared sample banks now
       // (before derive/dispatch) so a backtick voice that references them finds
       // its samples. De-duped + fire-and-forget inside the helper.
       if (libraries && Object.keys(libraries).length > 0) {

@@ -6,7 +6,7 @@ import { setupAudioCapture } from '../../helpers';
 
 // Chantier latence [788] — câblage du préfetch d'ASSETS au préchauffage à l'ouverture
 // (`assetsForScene` → `warmUp(interps, assets)` → `preload(interps, assets)`, banques
-// `@library.strudel` + instruments `gm_*`). Preuve mesurée : le délai PLAY → 1er son de la
+// `eval.strudel(bank:…)` + instruments `gm_*`). Preuve mesurée : le délai PLAY → 1er son de la
 // scène GM (fetch+décode soundfont VPS, ~1s), AVANT/APRÈS que le préfetch d'ouverture ait
 // résolu.
 //

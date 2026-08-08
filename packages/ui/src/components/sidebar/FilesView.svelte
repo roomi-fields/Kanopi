@@ -12,7 +12,7 @@
   // (d) [764] — bibliothèques standard des moteurs invités (microtonal Strudel, soundfonts GM,
   // samples Mercury, …), surfacées ici au rang des libs BPScript. Registre CONSOMMÉ du paquet
   // runtime-codevoices (aucune liste en dur). L'auteur active les `declarable` via
-  // `@library.<engine> "<id>"`. Groupées par moteur pour la lecture.
+  // `eval.<engine>(bank:"<id>")`. Groupées par moteur pour la lecture.
   const guestLibsByEngine = Object.entries(
     guestLibraries.reduce<Record<string, (typeof guestLibraries)[number][]>>((acc, lib) => {
       (acc[lib.engine] ??= []).push(lib);
@@ -588,7 +588,7 @@
                   <span class="guest-lib-label">{lib.label}</span>
                   <span class="guest-lib-kind">{lib.kind}</span>
                   {#if lib.declarable}
-                    <code class="guest-lib-decl">@library.{engine} "{lib.id}"</code>
+                    <code class="guest-lib-decl">eval.{engine}(bank:"{lib.id}")</code>
                   {:else}
                     <span class="guest-lib-managed" title="chargée par le moteur lui-même"
                       >engine</span

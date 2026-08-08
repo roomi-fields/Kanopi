@@ -3,8 +3,9 @@
 // as the active file changes. NOT the demo catalogue.
 //
 // Source: bpscript / bp3 (`.bps`, `.gr`) — compileToBPxAST(contents) emits
-// `.directives` (alphabet, tuning, scale, octaves, sound, transport/devices),
-// `.libraries` (audio banks per engine) and `.alphabet` — read AS-IS.
+// `.directives` (alphabet, tuning, scale, octaves, sound, transport/devices) and
+// `.actors` (each actor's engine + its `entityParams` — audio banks live there,
+// `eval.strudel(bank:"dirt-samples")`) — read AS-IS.
 // Anything else, parse errors, or compile throws → empty list (graceful).
 
 import { compileBps, parseGr } from '../runtimes/compile-cache';
@@ -70,11 +71,13 @@ function nameOfDirective(d: BpsDirective): string | null {
   return null;
 }
 
-// A `LibraryDirective` AST node (`@library.<engine> "<bank>"`).
-interface LibraryDirectiveNode {
-  type: 'LibraryDirective';
-  engine: string;
-  name: string;
+// An actor AST node (`@actor <name> eval.<engine>(bank:"<bank>")`) — the bank
+// is now an actor parameter, not a scene directive. Only the fields read here.
+interface BpsActorNode {
+  properties?: {
+    eval?: string | null;
+    entityParams?: Record<string, { bank?: unknown } & Record<string, unknown>>;
+  };
 }
 
 // Parse-independent scan of `@` directives straight from the text. Used as a
@@ -111,10 +114,17 @@ function directivesFromText(contents: string): ReferencedLib[] {
 
 function fromBps(contents: string): ReferencedLib[] {
   const out: ReferencedLib[] = [];
-  // The AST's `directives` (single source of truth) carry BOTH the resource
-  // directives (alphabet, tuning, …) and the `LibraryDirective` audio-bank nodes.
+  // The AST's `directives` (single source of truth) carry the resource
+  // directives (alphabet, tuning, …); audio banks are read separately off
+  // `.actors` (below) — the bank is an actor parameter, not a directive.
   // `compileBPS().directives` is `ast.directives`, so we read the AST here too.
-  let c: { errors?: unknown[]; ast?: { directives?: (BpsDirective & { type?: string })[] } | null };
+  let c: {
+    errors?: unknown[];
+    ast?: {
+      directives?: (BpsDirective & { type?: string })[];
+      actors?: BpsActorNode[];
+    } | null;
+  };
   try {
     c = compileBps(contents) as typeof c;
   } catch {
@@ -134,13 +144,15 @@ function fromBps(contents: string): ReferencedLib[] {
     out.push({ type: meta.type, typeLabel: meta.typeLabel, name });
   }
 
-  // Audio banks: each `LibraryDirective` node (`@library.strudel "dirt-samples"`).
-  // The engine isn't a resource type the user browses; the bank name is what
-  // matters. Read off the AST nodes instead of compileBPS's `libraries` sidecar.
-  for (const d of directives) {
-    if (d.type !== 'LibraryDirective') continue;
-    const node = d as unknown as LibraryDirectiveNode;
-    out.push({ type: 'audio-bank', typeLabel: 'audio bank', name: node.name });
+  // Audio banks: each actor's `eval.<engine>(bank:"dirt-samples")` param. The
+  // engine isn't a resource type the user browses; the bank name is what
+  // matters. Read off the AST actor nodes (the bank is an actor parameter now,
+  // not a scene directive) — deduped below (several actors commonly declare the
+  // same bank).
+  for (const actor of c.ast?.actors ?? []) {
+    const bank = actor.properties?.entityParams?.eval?.bank;
+    if (typeof bank !== 'string' || bank.length === 0) continue;
+    out.push({ type: 'audio-bank', typeLabel: 'audio bank', name: bank });
   }
 
   // No AST (hard syntax error) → the directive loop found nothing. Fall back to a
@@ -229,8 +241,8 @@ interface BpsError {
  *
  * `resource` (signal 2) and `runtimeErrors` (signal 3) extend the same fail-loud
  * contract (decision 2026-07-15-voyant-sante-niveau3.md): a scene that parses AND
- * derives can still declare a resource the host's catalog doesn't know (`@library.
- * strudel "typo"`) or have a code voice currently throwing at runtime ("sound not
+ * derives can still declare a resource the host's catalog doesn't know (`eval.
+ * strudel(bank:"typo")`) or have a code voice currently throwing at runtime ("sound not
  * found"). Priority when several signals fail: parse, then derive, then resource,
  * then runtime — parse always wins (nothing downstream is trustworthy without it).
  */

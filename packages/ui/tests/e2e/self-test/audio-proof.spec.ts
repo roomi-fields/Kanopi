@@ -85,7 +85,7 @@ test('gm sonne : sound("gm_piano"/"gm_marimba"/"gm_flute") produit un RMS > 0 me
 
 // [809] point 2 — (B) dirt-samples testée d'abord (règle archi [811] : le son tranche, l'A/B
 // départage) → MUETTE dans le banc (RMS=0 tous retries ; banque distante github, inapte au gate).
-// Bascule sur (A) : @library.strudel "gm" + sound("gm_piano") (soundfont GM self-hosté VPS,
+// Bascule sur (A) : eval.strudel(bank:"gm") + sound("gm_piano") (soundfont GM self-hosté VPS,
 // garanti audible). L'objet de la démo (mélodie + gamme via .scale()) est préservé ; le timbre GM
 // y est incident (vitrine GM = scène 09).
 test('strudel/03 sonne : n(...).scale("C:minor").sound("gm_piano") produit un RMS > 0 mesuré [809]', async ({
@@ -197,7 +197,7 @@ test('xen sonne : .tune("hexany15") (pont @strudel/xen) produit un RMS > 0 mesur
 
   // FINDING A résolu ([781], corps corrigé par runtime-codevoices) : la scène jetait
   // "i is not defined" — `i` n'existe nulle part dans @strudel/xen (bug de SCÈNE, pas de moteur).
-  // Corps corrigé : (1) déclare `@library.strudel "xen"` (sinon loadXen() ne ponte jamais `.tune()`),
+  // Corps corrigé : (1) déclare `eval.strudel(bank:"xen")` (sinon loadXen() ne ponte jamais `.tune()`),
   // (2) mini-notation reifiée "0 1 2 3 4 5" au lieu de i(...), (3) `.freq()` sans `.mul` (tune.note()
   // rend déjà des Hz) + `.s("sawtooth")` pour un oscillateur audible. RMS>0 prouve le pont microtonal
   // (bundle-dépendant, comme gm). NE PAS ASSOUPLIR CE SEUIL.

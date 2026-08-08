@@ -10,7 +10,7 @@ import {
 } from '../helpers';
 
 // A multi-voice `.bps` orchestrator ties two code voices together: `beat`
-// (Strudel → audio, with an `@library.strudel "dirt-samples"` bank) and `viz`
+// (Strudel → audio, with an `eval.strudel(bank:"dirt-samples")` bank) and `viz`
 // (Hydra → video). Both are armed in one scene (`S -> { beat, viz }`).
 // Evaluating the whole `.bps` derives both terminals; the dispatcher fires each
 // backtick sink, so Strudel produces audio AND Hydra paints the GL canvas — the

@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helpers';
 
 // Strudel reached through a `.bps` code voice: the program declares a `beat`
-// actor whose body is a Strudel backtick (`note(...).s(...).gain(...)`) plus an
-// `@library.strudel "dirt-samples"` bank. Evaluating the whole `.bps` derives
+// actor whose body is a Strudel backtick (`note(...).s(...).gain(...)`) and
+// carries an `eval.strudel(bank:"dirt-samples")` bank. Evaluating the whole `.bps` derives
 // the `beat` terminal, the dispatcher fires its backtick sink at the scheduled
 // time, and the Strudel adapter plays — pure WebAudio, observed by the
 // AnalyserNode tap installed by setupAudioCapture.

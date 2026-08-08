@@ -10,9 +10,8 @@ describe('assetsForScene — declared strudel banks + used gm_* instruments (for
     const code = [
       '@core',
       '@tempo:120',
-      '@library.strudel "gm"',
       '',
-      '@actor v  eval.strudel',
+      '@actor v  eval.strudel(bank:"gm")',
       '',
       'S -> v_r',
       '',
@@ -46,7 +45,7 @@ describe('assetsForScene — declared strudel banks + used gm_* instruments (for
     // strudel si son fetch échoue à l'ouverture (régression du gate). Seules les banques VPS sont
     // préfetchées ; la banque distante reste chargée paresseusement à l'éval (inchangé).
     const code =
-      '@core\n@tempo:120\n@library.strudel "dirt-samples"\n\n@actor v  eval.strudel\n\nS -> v\n\nv -> `s("bd hh sd")`:4';
+      '@core\n@tempo:120\n\n@actor v  eval.strudel(bank:"dirt-samples")\n\nS -> v\n\nv -> `s("bd hh sd")`:4';
     const assets = assetsForScene(code);
     expect(assets.strudel?.banks ?? []).not.toContain('dirt-samples');
     expect(assets).toEqual({}); // pas de banque VPS ni d'instrument GM → rien à préfetcher

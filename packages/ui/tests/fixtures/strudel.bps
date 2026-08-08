@@ -1,8 +1,6 @@
 // strudel fixture (migré de strudel.kanopi) — voix-code Strudel → audio.
-// Banque d'échantillons liée au moteur strudel (partagée par ses voix).
-@library.strudel "dirt-samples"
-
-@actor beat  eval.strudel
+// Banque d'échantillons déclarée en paramètre de l'acteur qui la charge.
+@actor beat  eval.strudel(bank:"dirt-samples")
 
 S -> beat_r
 
