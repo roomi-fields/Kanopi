@@ -19,4 +19,4 @@
 S -> {Mel, Low}
 
 Mel -> melody.C4 melody.E4 melody.G4 melody.C5 melody.B4 melody.G4 melody.E4 melody.C4
-Low -> bass.C2(wave:sawtooth)(vel:80) - bass.G2 - bass.C2 - bass.E2 -
+Low -> bass.C2(wave:sawtooth, vel:80) - bass.G2 - bass.C2 - bass.E2 -
