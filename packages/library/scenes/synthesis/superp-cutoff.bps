@@ -6,6 +6,11 @@
 // @level: advanced
 // @tags: cv, modulation, superposition, test
 //
+// ⚠️ EN ATTENTE — ne compile pas aujourd'hui (déclarée rouge, KAN-40). '@cv' est supprimé du
+// langage ; la forme qui préserverait ses réglages de départ (« instance de module avec ses
+// réglages ») n'existe pas encore dans le parseur et sera revue avec FaustX. Ne pas migrer vers
+// la forme sans réglages : ça changerait la musique. Suivi : KAN-40.
+//
 // SUPERP-1 test scene — a GROUP cutoff filter and a PER-NOTE cutoff filter on the
 // SAME parameter, superposed in SERIES. The {…} GROUP carries the slow group cutoff
 // envelope (a shared bus over the whole sequential group); each note inside also

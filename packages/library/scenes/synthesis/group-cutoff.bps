@@ -7,6 +7,11 @@
 // @tags: cv, modulation, group, cutoff
 // @showcase
 //
+// ⚠️ EN ATTENTE — ne compile pas aujourd'hui (déclarée rouge, KAN-40). '@cv' est supprimé du
+// langage ; la forme qui préserverait ses réglages de départ (« instance de module avec ses
+// réglages ») n'existe pas encore dans le parseur et sera revue avec FaustX. Ne pas migrer vers
+// la forme sans réglages : ça changerait la musique. Suivi : KAN-40.
+//
 // Group cutoff — DÉMO du filtre de GROUPE (portée RÈGLE), CVA-GROUP.
 //
 // But : rendre ÉVIDENT à l'oreille que `(cutoff:env1)` posé sur une RÈGLE est un filtre

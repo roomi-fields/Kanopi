@@ -6,6 +6,11 @@
 // @level: intermediate
 // @tags: cv, arp
 //
+// ⚠️ EN ATTENTE — ne compile pas aujourd'hui (déclarée rouge, KAN-40). '@cv' est supprimé du
+// langage ; la forme qui préserverait ses réglages de départ (« instance de module avec ses
+// réglages ») n'existe pas encore dans le parseur et sera revue avec FaustX. Ne pas migrer vers
+// la forme sans réglages : ça changerait la musique. Suivi : KAN-40.
+//
 // CV: Spatial Arp — LFO panning on arpeggiated chords
 // Slow sine LFO sweeps the sound left-right
 // Pedal note stays center, arpeggios move in stereo

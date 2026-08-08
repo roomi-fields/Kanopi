@@ -7,6 +7,11 @@
 // @tags: cv, bass, modulation, adsr
 // @showcase
 //
+// ⚠️ EN ATTENTE — ne compile pas aujourd'hui (déclarée rouge, KAN-40). '@cv' est supprimé du
+// langage ; la forme qui préserverait ses réglages de départ (« instance de module avec ses
+// réglages ») n'existe pas encore dans le parseur et sera revue avec FaustX. Ne pas migrer vers
+// la forme sans réglages : ça changerait la musique. Suivi : KAN-40.
+//
 // CV: Acid Bass — ADSR filter envelope on resonant sawtooth
 // TB-303 style: short attack, sharp decay, low sustain
 // The filter opens on each phrase then closes

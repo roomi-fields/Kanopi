@@ -5,6 +5,14 @@
 // @level: advanced
 // @tags: synthesis, patchbay, macro
 //
+// ⚠️ EN ATTENTE — ne compile pas aujourd'hui (déclarée rouge, KAN-40). '@macro' est supprimé du
+// langage ; la forme qui préserverait ses réglages de départ (« instance de module avec ses
+// réglages ») n'existe pas encore dans le parseur et sera revue avec FaustX. Deux causes de plus,
+// propres à cette scène : le domicile du câblage persistant (lead/open/close/glide) n'a pas de
+// forme de remplacement tranchée, et ses modules (saw, lpf) sont absents du catalogue de modules
+// (qui n'en porte que trois : adsr, lfo, ramp). Ne pas migrer vers la forme sans réglages : ça
+// changerait la musique. Suivi : KAN-40.
+//
 // Patchbay — le modèle son modulaire (LANG-SONS §9).
 // Une VOIX-CÂBLAGE persistante (`lead`) arme un patch saw → filtre → audio ;
 // des ACTIONS mono-étage (`open`/`close`/`glide`) reconfigurent le patch VIVANT

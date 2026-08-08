@@ -94,12 +94,23 @@ const GRAINE = 1;
  *     qui aurait été faux : ce n'est pas un nom qui manque, c'est une décision. Chaque entrée
  *     nomme CE QU'ELLE ATTEND ET DE QUI. Un rouge d'arbitrage qui traîne est un arbitrage à
  *     relancer, pas un dû — s'il se fossilise, c'est le signe qu'on a cessé de demander.
+ *   • 'forme-a-venir' — rouge VOULU par une décision datée (Romain, 2026-08-08), pas encore
+ *     mécaniquement réparable : la forme qui préserverait le sens de la scène (réglages de
+ *     départ) existe dans la référence du langage mais pas dans le parseur, et elle sera
+ *     COMPLÈTEMENT REVUE avec un chantier identifié (FaustX) — l'écrire maintenant reviendrait
+ *     à écrire une forme qu'on remplacera. Migrer vers la forme sans réglages changerait la
+ *     musique (enveloppes aux valeurs par défaut) : ce n'est pas une option silencieuse.
  *  Toute AUTRE cause de rouge est une régression, donc un échec : cette liste n'est pas un
  *  dépotoir de scènes cassées, chaque entrée porte sa raison. */
 const ROUGES_DECLAREES: Array<{
   fichier: string;
   motif: RegExp;
-  cause: 'nommage-attendu' | 'rouge-definitif' | 'arbitrage-attendu' | 'bug-moteur-route';
+  cause:
+    | 'nommage-attendu'
+    | 'rouge-definitif'
+    | 'arbitrage-attendu'
+    | 'bug-moteur-route'
+    | 'forme-a-venir';
   attend: string;
 }> = [
   {
@@ -168,6 +179,51 @@ const ROUGES_DECLAREES: Array<{
     cause: 'bug-moteur-route',
     attend:
       "idem koto1 — même erreur, même règle SUB à jokers, même origine amont. ⚠️ C'est elle qui a révélé que ce garde basculait : elle est SORTIE de cette liste puis y est RENTRÉE dans la même heure, parce qu'un tirage d'horloge favorable l'avait fait dériver une fois. Sous la GRAINE FIGÉE ci-dessus, elle jette de façon reproductible."
+  },
+  // ── Les CINQ scènes @cv/@macro, décision Romain 2026-08-08 (KAN-40). '@cv' et '@macro' sont
+  // supprimés du langage ; BPx refuse de les dériver au lieu de les avaler en silence (sans ce
+  // refus, la scène dériverait SANS ERREUR et le dispatch en aval retomberait muet — mesuré sur
+  // patchbay : 8 événements avant, 8 après, mais plus aucun armement). On ne migre PAS vers la
+  // forme sans réglages qui compile aujourd'hui : ces déclarations portent des réglages de
+  // départ (attack/decay/sustain/release, rate/amplitude/shape) que cette forme nue jetterait,
+  // ce qui changerait la musique. La forme qui les préserve — « instance de module avec ses
+  // réglages de départ » — existe dans la référence du langage mais pas dans le parseur, et elle
+  // sera COMPLÈTEMENT REVUE avec l'arrivée de FaustX : l'écrire maintenant serait écrire une
+  // forme qu'on remplacera. Elles RESTENT dans le corpus, déclarées rouges. Suivi : KAN-40.
+  {
+    fichier: 'cv/cv-adsr.bps',
+    motif: /'@cv' est supprimé du langage.*env1\./,
+    cause: 'forme-a-venir',
+    attend:
+      'la forme « instance de module avec ses réglages de départ » (attack:5, decay:150, sustain:0.2, release:400 sur env1), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
+  },
+  {
+    fichier: 'cv/cv-lfo.bps',
+    motif: /'@cv' est supprimé du langage.*sweep\./,
+    cause: 'forme-a-venir',
+    attend:
+      'la forme « instance de module avec ses réglages de départ » (rate:0.4, amplitude:0.9, shape:sine sur sweep), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
+  },
+  {
+    fichier: 'synthesis/group-cutoff.bps',
+    motif: /'@cv' est supprimé du langage.*env1\./,
+    cause: 'forme-a-venir',
+    attend:
+      'la forme « instance de module avec ses réglages de départ » (attack:8, decay:750, sustain:0.1, release:300 sur env1), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
+  },
+  {
+    fichier: 'synthesis/superp-cutoff.bps',
+    motif: /'@cv' est supprimé du langage.*envGroup, envNote\./,
+    cause: 'forme-a-venir',
+    attend:
+      'la forme « instance de module avec ses réglages de départ » (envGroup : attack:600, decay:500, sustain:0.5, release:700 ; envNote : attack:5, decay:110, sustain:0.2, release:160), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
+  },
+  {
+    fichier: 'synthesis/patchbay.bps',
+    motif: /'@macro' est supprimé du langage.*lead, open, close, glide\./,
+    cause: 'forme-a-venir',
+    attend:
+      "la forme « instance de module avec ses réglages de départ », pas encore dans le parseur, revue avec FaustX — ET deux causes de plus, propres à cette scène : le domicile du câblage persistant (lead/open/close/glide) n'a pas de forme de remplacement tranchée, et ses modules (saw, lpf) sont absents du catalogue de modules (qui n'en porte que trois : adsr, lfo, ramp). Suivi : KAN-40."
   }
 ];
 
