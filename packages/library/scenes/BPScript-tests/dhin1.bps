@@ -10,7 +10,7 @@
 // S5 (.bps→BP3→WASM) crashe « memory access out of bounds » tant que le garde-fou de troncature
 // n'est pas posé côté encodeur (sérialisation BP3 seule). dhin1 est to_be_tested (non gaté S4/S5)
 // et sa dérivation -gr jette (compileTemplates) : non-fonctionnel, l'activation attend ce garde-fou.
-// RÉFÉRENCE MORTE CORRIGÉE (2026-07-27) : la migration écrivait `@homomorphism.dhinOO`, un nom
+// RÉFÉRENCE MORTE CORRIGÉE (2026-07-27) : la migration écrivait `@transcription.dhinOO`, un nom
 // qui n'existe dans AUCUN catalogue — la scène croyait charger un homomorphisme et n'en chargeait
 // aucun, sans un mot, sans erreur. Vérifié des deux côtés avant de corriger : la grammaire
 // d'origine déclare `-ho.dhin--` (BP3-tests/dhin1.gr:5, deux TIRETS) et la librairie nomme cette
@@ -19,6 +19,10 @@
 // même déformation (les tirets rendus par des « O » : `dhinOO`, `dhaOdhaOdhaO`…), et AUCUN d'eux
 // n'est une clé de la table. Question remontée à l'architecte : la corriger heurte la règle des
 // terminaux en noms PLEINS ([566]) — un silence à l'intérieur d'un nom plein le scinderait.
+// ⚠️ LES CITATIONS DATÉES CI-DESSUS GARDENT LEURS MOTS D'ÉPOQUE — `@transcription` (remplacé par
+// `@homomorphism` le 2026-08-07) et `lib/transcription.json` (ses tables ont rejoint
+// `lib/homomorphism.json`). Je les avais renommées avec le reste ; kanopi l'a relevé et a raison :
+// une trace qui se renomme ment sur elle-même. Restauré par bpscript, 2026-08-07.
 @homomorphism.dhin
 @mode:random(tempo:360.0000,striated)
 S <> S48 (meter:4+4/6)
