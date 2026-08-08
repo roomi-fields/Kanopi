@@ -1,0 +1,12 @@
+// @language: bpscript
+// kairos-tempo-table-position.bps — sert src/trace/libelle-controle.test.ts (kairos, trace — libellé
+// des contrôles). Un changement de vitesse autonome posé dans le flux (`! (/4)`) suivi d'UNE note :
+// preuve que la table PAR POSITION omet les continuations — deux slots de marqueur, un seul libellé
+// (position 0 = tempo(4/1)), la continuation (position 1) absente de la table plutôt que rendue
+// illisible.
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> ! (/4) C4

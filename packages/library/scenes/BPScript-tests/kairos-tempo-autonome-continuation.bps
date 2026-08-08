@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-tempo-autonome-continuation.bps — sert src/trace/libelle-controle.test.ts (kairos, trace —
+// libellé des contrôles). Un changement de vitesse autonome posé dans le flux (`! (/4)`) suivi de
+// deux notes : preuve que le 1er slot du marqueur porte le libellé (tempo(4/1)), le slot de
+// CONTINUATION rendant `null` (pas un contrôle illisible, juste l'absence de charge sur ce slot).
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> ! (/4) C4 D4
