@@ -1,0 +1,19 @@
+// @language: bpscript
+// kairos-sortie-midi-audio.bps — sert src/projection/output-e2e.test.ts (kairos, KAI-9 e2e).
+// Deux acteurs de sortie DISTINCTE : melody → out.midi(ch:1), bass → out.audio. Preuve que
+// metadata.actors est peuplée par BPx pour les deux runtimes, et que la gravure event.output suit
+// la cascade par acteur (chaque note de melody porte {runtime:'midi',channel:1}, chaque note de bass
+// porte {runtime:'audio'}). Groupe polymétrique {Mel, Low} : 8 notes melody, 4 notes bass (rests `-`
+// intercalés), bass.C2 porte des réglages inline (wave, vel) — non vérifiés par ce banc mais fidèles
+// à la forme d'origine.
+
+@core
+@controls
+
+@actor melody  @alphabet.western  out.midi(ch:1)
+@actor bass    @alphabet.western  out.audio
+
+S -> {Mel, Low}
+
+Mel -> melody.C4 melody.E4 melody.G4 melody.C5 melody.B4 melody.G4 melody.E4 melody.C4
+Low -> bass.C2(wave:sawtooth, vel:80) - bass.G2 - bass.C2 - bass.E2 -

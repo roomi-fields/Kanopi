@@ -1,0 +1,18 @@
+// @language: bpscript
+// kairos-voix-tabla.bps — sert src/projection/voix-e2e.test.ts (kairos, LANG-SONS-3 e2e).
+// Un acteur de percussion (tabla, alphabet sans tuning) : preuve bout-en-bout que chaque bol résout
+// sa voix via le BINDING D'ALPHABET (alphabets.json tabla.voices → voices.json), gravé en
+// content.voice.audio, SANS content.pitch (alphabet sans accordage = pas de hauteur). La règle
+// `Bols` (pas `tabla` — collision avec le nom d'acteur) produit exactement dhin, ka, ti ; les
+// terminaux sont PRÉFIXÉS (`tabla.dhin`) — un terminal nu ne portait pas `event.actor` (attribution
+// perdue quand le nom de règle ne coïncide plus avec le nom d'acteur), et sans acteur la résolution
+// de voix (binding d'alphabet) n'a rien à quoi s'accrocher.
+
+@core
+@controls
+
+@actor tabla @alphabet.tabla out.audio
+
+S -> Bols
+
+Bols -> tabla.dhin tabla.ka tabla.ti

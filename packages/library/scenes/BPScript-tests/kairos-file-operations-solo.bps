@@ -1,0 +1,13 @@
+// @language: bpscript
+// kairos-file-operations-solo.bps — sert src/rc-gap-opqueue.test.ts (kairos, RC-GAP-OPQUEUE).
+// Un seul acteur (bass) : le monde "APRÈS swap" du banc anti-mute-fantôme — `lead` a disparu. Une op
+// acceptée contre l'ancien monde (kairos-file-operations-duo.bps) et visant `lead` doit être écartée
+// au drain après ce rechargement, avec diagnostic ; une op visant `bass` (qui survit) reste drainée
+// normalement (course du mode random, identité nominale d'acteur).
+
+@core
+@tempo:120
+
+@actor bass  @alphabet.western  out.midi(ch:2)
+
+S -> bass.C2 bass.G2

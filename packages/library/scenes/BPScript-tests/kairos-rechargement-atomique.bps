@@ -1,0 +1,14 @@
+// @language: bpscript
+// kairos-rechargement-atomique.bps — sert src/rc-gap-aubord.test.ts (kairos, RC-GAP-AUBORD).
+// Trois notes MIDI sur un seul acteur : preuve que l'échec bruyant d'une re-dérivation (projection
+// cassée) ne traverse pas le bord de boucle temps-réel — l'arbre PRÉCÉDENT (cette scène) continue de
+// jouer à l'identique après un échec au bord, et `charger` reste atomique à froid (throw bruyant,
+// jamais d'état à moitié swappé). Les jetons exacts (C4, E4, G4) sont la valeur AVANT que le banc
+// re-vérifie après l'échec simulé.
+
+@core
+@tempo:120
+
+@actor lead  @alphabet.western  out.midi(ch:1)
+
+S -> lead.C4 lead.E4 lead.G4

@@ -1,0 +1,14 @@
+// @language: bpscript
+// kairos-charriage-override-canal.bps — sert src/garde-charriage-bpx.test.ts (kairos, G3 — sentinelle
+// de charriage aval + sentinelle producteur, contrats bpx-kairos-arbre §4 et kairos-kronos-donnee §6).
+// Deux acteurs MIDI (lead ch:1, bass ch:2) ; la deuxième note de `lead` porte un override de canal
+// INLINE (ch:5) qui doit être charrié verbatim jusqu'à la feuille (payload.address.ch=5,
+// payload.occurrence=true, payload.actor='lead'). Jetons exacts requis par le banc : C4, E4, C2.
+
+@core
+@tempo:120
+
+@actor lead  @alphabet.western  out.midi(ch:1)
+@actor bass  @alphabet.western  out.midi(ch:2)
+
+S -> lead.C4 lead.E4(ch:5) bass.C2
