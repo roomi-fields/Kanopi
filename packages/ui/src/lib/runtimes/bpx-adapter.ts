@@ -517,10 +517,14 @@ const grFrontend: Frontend = (code) => {
 // Reading these directly off the AST is the single-source-of-truth migration:
 // `flagStates`, `libraries` and `actorTable` no longer come from compileBPS's
 // precomputed sidecar tables.
-interface FlagStatesDirectiveNode {
-  type: 'FlagStatesDirective';
-  flag: string;
-  states: { name: string; value: number }[];
+// `@var` declarations (`scene.vars`, BPscript `parser.js:1567-1634`): `names` is a
+// TABLE — one line can declare several vars, each sharing the same `varType`. Only
+// `varType.kind === 'flag'` carries named states; other kinds (`signal`, `pitch`,
+// `phase`, `logic`, `in`, or a module name) are carry-only and irrelevant here.
+interface VarDirectiveNode {
+  type: 'VarDirective';
+  names: string[];
+  varType?: { kind?: string; states?: { name: string; value: number }[] } | null;
 }
 interface TransportRefNode {
   key?: string;
@@ -545,21 +549,23 @@ interface ActorDirectiveNode {
 }
 interface SceneAstView {
   directives?: ({ type?: string } & Record<string, unknown>)[];
+  vars?: VarDirectiveNode[];
   actors?: ActorDirectiveNode[];
   soundAssignments?: { subject: string }[] | null;
 }
 
-// A5 états nommés lus de l'arbre : chaque `FlagStatesDirective` (`@var section flag: calm:1,
-// full:2`) → `{ [flag]: { [name]: value } }`. Same shape compileBPS's `flagStates`
-// sidecar had, read straight from the directive nodes.
-function flagStatesFromAst(a: SceneAstView | null): FlagStates {
+// A5 états nommés lus de l'arbre : chaque `VarDirective` de `ast.vars` dont
+// `varType.kind === 'flag'` (`@var section flag: calm:1, full:2`) → `{ [flag]: { [name]:
+// value } }`. `names` est un TABLEAU (une ligne peut déclarer plusieurs drapeaux, qui
+// partagent tous la même table d'états) ; les autres `kind` (`signal`, `pitch`, `phase`,
+// `logic`, `in`, module) sont ignorés. Same shape compileBPS's `flagStates` sidecar had.
+export function flagStatesFromAst(a: SceneAstView | null): FlagStates {
   const out: FlagStates = {};
-  for (const d of a?.directives ?? []) {
-    if (d.type !== 'FlagStatesDirective') continue;
-    const node = d as unknown as FlagStatesDirectiveNode;
+  for (const v of a?.vars ?? []) {
+    if (v.varType?.kind !== 'flag') continue;
     const table: Record<string, number> = {};
-    for (const s of node.states) table[s.name] = s.value;
-    out[node.flag] = table;
+    for (const s of v.varType.states ?? []) table[s.name] = s.value;
+    for (const name of v.names) out[name] = table;
   }
   return out;
 }
@@ -1028,10 +1034,11 @@ const bpsFrontend: Frontend = (code) => {
   // in the timeline (direct lookup, no parsing). Carry it through so the adapter
   // routes each BT terminal to its interpreter.
   const backticks = backticksFromAst(c.ast);
-  // A5 named scenes: read the flag→{alias→int} table from the AST's
-  // `FlagStatesDirective` nodes (`@var section flag: calm:1, full:2`) so the UI can offer
-  // one selection button per named state. Re-evaluating with `flags: { section: <int> }`
-  // makes the matching guarded rule derive (see `evaluate`).
+  // A5 named scenes: read the flag→{alias→int} table from the AST's `ast.vars`
+  // `VarDirective` nodes with `varType.kind === 'flag'` (`@var section flag: calm:1,
+  // full:2`) so the UI can offer one selection button per named state. Re-evaluating
+  // with `flags: { section: <int> }` makes the matching guarded rule derive (see
+  // `evaluate`).
   const flagStates = flagStatesFromAst(a);
   const withFlags = Object.keys(flagStates).length > 0 ? { ...parsed, flagStates } : parsed;
   // Declared per-engine banks: read from the AST's actor `entityParams`
