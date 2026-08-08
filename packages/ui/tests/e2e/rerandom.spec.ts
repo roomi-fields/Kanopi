@@ -95,7 +95,11 @@ async function collectSignatures(
   return signatures;
 }
 
-test('re-random re-rolls the derivation each loop cycle (Kairos path)', async ({ page }) => {
+// SKIPPÉ (décision Romain 2026-08-08, KAN-40) : joue cv/cv-lfo.bps, déclarée rouge par la
+// garde de statut du corpus. La scène déclare son LFO (rate:0.4, amplitude:0.9, shape:sine sur
+// sweep) avec des mots supprimés du langage ; la forme qui préserverait ces réglages n'existe pas
+// encore dans le parseur et sera revue avec FaustX. Revient avec la scène.
+test.skip('re-random re-rolls the derivation each loop cycle (Kairos path)', async ({ page }) => {
   // The scene loops ~4.8 s (@mm:100, 8 beats). We watch ~4 cycles → ~20 s + load/eval.
   test.setTimeout(60_000);
 
@@ -137,7 +141,13 @@ test('re-random re-rolls the derivation each loop cycle (Kairos path)', async ({
   noErrors();
 });
 
-test('LIVE toggle: re-random armed mid-play starts re-rolling (Kairos path)', async ({ page }) => {
+// SKIPPÉ (décision Romain 2026-08-08, KAN-40) : joue cv/cv-lfo.bps, déclarée rouge par la
+// garde de statut du corpus. La scène déclare son LFO (rate:0.4, amplitude:0.9, shape:sine sur
+// sweep) avec des mots supprimés du langage ; la forme qui préserverait ces réglages n'existe pas
+// encore dans le parseur et sera revue avec FaustX. Revient avec la scène.
+test.skip('LIVE toggle: re-random armed mid-play starts re-rolling (Kairos path)', async ({
+  page
+}) => {
   // OFF → frozen (one sequence). Toggle ON live → re-rolls (more distinct sequences). The
   // arming goes transport.toggleReRandom → handle.setReRandom → kairos.setReDerive(cb).
   test.setTimeout(90_000);

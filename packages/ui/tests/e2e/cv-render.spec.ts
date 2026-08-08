@@ -89,7 +89,11 @@ async function installCvProbe(page: Page): Promise<void> {
   });
 }
 
-test('cv-adsr renders the CV: oscillators + cutoff automations + audible output', async ({
+// SKIPPÉ (décision Romain 2026-08-08, KAN-40) : joue cv/cv-adsr.bps, déclarée rouge par la
+// garde de statut du corpus. La scène déclare son ADSR (attack:5, decay:150, sustain:0.2,
+// release:400 sur env1) avec des mots supprimés du langage ; la forme qui préserverait ces
+// réglages n'existe pas encore dans le parseur et sera revue avec FaustX. Revient avec la scène.
+test.skip('cv-adsr renders the CV: oscillators + cutoff automations + audible output', async ({
   page
 }) => {
   // Scene loops at @mm:138; we sample a continuous RMS window and a few cycles of graph

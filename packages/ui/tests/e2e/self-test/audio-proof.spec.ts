@@ -120,7 +120,11 @@ test('strudel/03 sonne : n(...).scale("C:minor").sound("gm_piano") produit un RM
 const librarySynthesisDir = fileURLToPath(
   new URL('../../../../library/scenes/synthesis', import.meta.url)
 );
-test('patchbay sonne : un @macro saw>>lpf>>audio armé produit un RMS > 0 mesuré [829]', async ({
+// SKIPPÉ (décision Romain 2026-08-08, KAN-40) : joue synthesis/patchbay.bps, déclarée rouge par
+// la garde de statut du corpus. La scène déclare son câblage `@macro` avec des mots supprimés du
+// langage ; la forme qui préserverait ses réglages de départ n'existe pas encore dans le parseur
+// et sera revue avec FaustX. Revient avec la scène.
+test.skip('patchbay sonne : un @macro saw>>lpf>>audio armé produit un RMS > 0 mesuré [829]', async ({
   page
 }) => {
   const audio = await setupAudioCapture(page);
