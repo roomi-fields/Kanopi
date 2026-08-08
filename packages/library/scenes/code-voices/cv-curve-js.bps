@@ -8,7 +8,7 @@
 // @showcase
 //
 // Voix de code — COURBE CV en JS (modulation custom).
-// Forme CV : `@cv NAME `tag: code`` — l'arobase est OBLIGATOIRE en partie déclarative, et
+// Forme CV : `@var NAME `tag: code`` — l'arobase est OBLIGATOIRE en partie déclarative, et
 // l'ABSENCE de deux-points dit qu'on DÉCLARE un nom neuf. `cv` type le RÔLE (modulation),
 // le tag `js:` type le LANGAGE de la courbe (obligatoire, jamais deviné). La courbe (0..1
 // sur la durée) est déclarée, réutilisable. Branchement AU POINT DE PARAMÈTRE :
@@ -20,7 +20,7 @@
 @alphabet.western:audio
 @tempo:100
 
-@cv sweep `js: (t, dur) => { return 0.5 + 0.5 * Math.sin(2 * Math.PI * t / dur); }`
+@var sweep `js: (t, dur) => { return 0.5 + 0.5 * Math.sin(2 * Math.PI * t / dur); }`
 
 S -> Lead Lead Lead Lead
 

@@ -11,7 +11,7 @@
 //
 // SCENE forme CANONIQUE (décision hub 2026-07-04-cv-curve-syntaxe-backtick-type.md, puis
 // 2026-07-29-les-formes-declaratives-de-bpscript.md §2 et §8) :
-//   • `@cv wobble `js: …`` — l'arobase est OBLIGATOIRE en partie déclarative, et l'ABSENCE
+//   • `@var wobble `js: …`` — l'arobase est OBLIGATOIRE en partie déclarative, et l'ABSENCE
 //     de deux-points dit qu'on DÉCLARE un nom neuf (avec `:` on poserait une propriété sur
 //     un nom existant). `cv` type le RÔLE (modulation) ; le TAG `js:` type le LANGAGE de la
 //     courbe (obligatoire, jamais deviné). La courbe est déclarée, réutilisable.
@@ -25,7 +25,7 @@
 @alphabet.western:audio
 @tempo:70
 
-@cv wobble `js: (t, dur) => { const rate = 2 + 20 * (t/dur) * (t/dur); return Math.sin(t * rate * Math.PI * 2) * 0.5 + 0.5; }`
+@var wobble `js: (t, dur) => { const rate = 2 + 20 * (t/dur) * (t/dur); return Math.sin(t * rate * Math.PI * 2) * 0.5 + 0.5; }`
 
 S -> Bass Bass Bass Bass
 
