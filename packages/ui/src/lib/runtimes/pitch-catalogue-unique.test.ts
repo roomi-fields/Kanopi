@@ -16,11 +16,17 @@
 // ne redeviendrait rouge si l'étalement revenait — et c'est précisément pour ça qu'il faut un banc
 // qui garde l'ABSENCE elle-même, et non son effet. Sans ça, la voie parallèle peut rentrer sans
 // bruit, exactement comme elle est entrée.
+//
+// CE QUI A ÉTÉ RETIRÉ (2026-08-08), ET POURQUOI : ce banc a un temps porté un troisième test
+// vérifiant que, DANS le catalogue amont, chaque convention BP3 pointait un accordage existant,
+// lui-même pointant un tempérament existant, plus la présence de l'ancre (note de référence et
+// diapason). Ce n'était pas à nous : Kanopi ne lit pas cette donnée, il la transporte verbatim
+// jusqu'à Kairos, qui la résout — la cohérence interne du catalogue appartient à bpscript (qui le
+// possède) ou à Kairos (qui le lit). Le fait qui l'a montré : quand le champ d'accordage a été
+// renommé en amont le 2026-08-08, le SEUL code cassé chez nous était ce verrou — nous avons été
+// mis en rouge par un champ que l'application ne lit jamais.
 import { describe, it, expect } from 'vitest';
 import alphabetsJson from 'bpscript/lib/alphabets.json';
-import tuningsJson from 'bpscript/lib/tunings.json';
-import temperamentsJson from 'bpscript/lib/temperaments.json';
-import octavesJson from 'bpscript/lib/octaves.json';
 
 // Source de l'adaptateur lue par le bundler (même route que le garde de corpus,
 // `library/corpus-compile.test.ts:60`) : rien de Node ici, `src/` n'en porte pas les types.
@@ -36,9 +42,6 @@ const CONVENTIONS_BP3 = ['bp3_english', 'bp3_fr', 'bp3_indian'] as const;
 
 type Entree = Record<string, unknown>;
 const ALPHABETS = alphabetsJson as unknown as Record<string, Entree>;
-const ACCORDAGES = tuningsJson as unknown as Record<string, Entree>;
-const TEMPERAMENTS = temperamentsJson as unknown as Record<string, Entree>;
-const OCTAVIERS = octavesJson as unknown as Record<string, Entree>;
 
 describe('un seul catalogue de hauteur', () => {
   it('l’adaptateur n’étale AUCUN second catalogue dans le `pitchLib` qu’il tend à Kairos', () => {
@@ -61,29 +64,6 @@ describe('un seul catalogue de hauteur', () => {
   it('les trois conventions BP3 sont des entrées ORDINAIRES du catalogue amont', () => {
     for (const nom of CONVENTIONS_BP3) {
       expect(ALPHABETS[nom], `alphabet ${nom} absent de l’amont`).toBeDefined();
-    }
-  });
-
-  it('aucune référence ne pend : accordage, tempérament et octavier de chaque convention existent', () => {
-    for (const nom of CONVENTIONS_BP3) {
-      const alph = ALPHABETS[nom];
-      const octavier = alph.octaves as string;
-      const accordage = alph.defaultTuning as string;
-      expect(OCTAVIERS[octavier], `${nom} → octavier « ${octavier} » introuvable`).toBeDefined();
-      expect(
-        ACCORDAGES[accordage],
-        `${nom} → accordage « ${accordage} » introuvable`
-      ).toBeDefined();
-      const temperament = ACCORDAGES[accordage].temperament as string;
-      expect(
-        TEMPERAMENTS[temperament],
-        `${accordage} → tempérament « ${temperament} » introuvable`
-      ).toBeDefined();
-      // L'ANCRE : sans note de référence + diapason, un alphabet émet sa clé et résout MUET
-      // (c'était le défaut [79] d'origine). On garde donc les trois pièces sous verrou.
-      expect(alph.baseNote, `${nom} sans note d’ancrage`).toBeTruthy();
-      expect(alph.diapason, `${nom} sans diapason`).toBeTruthy();
-      expect(alph.baseRegister, `${nom} sans registre d’ancrage`).toBeDefined();
     }
   });
 });
