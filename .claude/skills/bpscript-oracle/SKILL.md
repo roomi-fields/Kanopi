@@ -4,7 +4,7 @@ description: >
   Oracle du langage BPScript — il répond sur la FORME du langage, telle qu'elle est spécifiée, en
   citant `fichier:ligne`. Répondre de mémoire est non fiable : le langage a été refondu (les dix-huit
   directives d'avant se réduisent à `@actor` · `@var` · `@def` · `@init`, `transport.` devient
-  `out.`/`in.`, `sub`/`transcription` deviennent `homomorphism`, la clé de règle devient `tempx`…).
+  `out.`/`in.`, `sub`/`transcription` deviennent `homomorphism`, la vitesse s'écrit avec l'opérateur seul…).
   Utilise ce skill pour TOUTE question de syntaxe ou d'exemple BPScript, même un one-liner
   « évident » (« c'est `:` ou `.` ? », « `out.midi(ch:3)` est-il correct ? », « écris-moi un acteur
   minimal »), ne serait-ce que pour confirmer avant d'affirmer. Couvre : écrire, relire, corriger ou
@@ -83,7 +83,7 @@ scène ou dans ta mémoire, ils datent d'avant la refonte.
 | `out.<canal>` · `in.<canal>` | `transport.<canal>` |
 | `out` (le puits d'un câblage) | un nom de canal en bout de chaîne (`>> audio`) |
 | `@homomorphism.<table>` | `@sub.`, `@transcription.` |
-| `tempx` (clé de règle, un **ratio**) | la clé de règle `tempo` |
+| l'**opérateur** de vitesse — `/N`, ou `*a/b` qui vaut `/(b/a)` — écrit en parenthèses dans le flux | la clé de règle `tempo`, et `tempx` qui l'avait renommée (supprimé le 2026-08-06, doublon exact) |
 | `stage` (le drapeau des exemples) | le drapeau `phase` — le **type** `phase` ne bouge pas |
 | `interpreter` (ce qui exécute un backtick) | `runtime` employé pour ce rôle |
 | `default` (champ d'un port non branché) | `fallback` employé pour ce champ |
