@@ -429,11 +429,18 @@ describe('le rattrapage de graine mord', () => {
 // sauterait les lignes de commentaire ne l'aurait jamais vue.
 // ⚠️ ET MON PREMIER BALAYAGE L'AVAIT RATÉE : mon motif exigeait un caractère après le mot, elle
 // est en fin de phrase. C'est l'architecte qui l'a trouvée, pas moi. D'où le motif nu ci-dessous.
-describe('aucune scène à moi n’écrit `@mm`, supprimé au profit de `@tempo`', () => {
-  it('balayage nommé, métadonnées comprises', () => {
+// ⛔ SECOND TROU, LE MÊME JOUR : la première version de ce garde cherchait `@mm` — L'AROBASE. Or
+// le mot vit AUSSI dans un sac de mode (`@mode:ord(mm:60)`), où il n'y a pas d'arobase. Il ne
+// voyait donc NI `tryTimePatterns.bps` NI `tryKeyXpand.bps`, les deux seuls fichiers réellement
+// concernés — un garde posé contre une forme, aveugle à sa moitié. Les deux graphies sont
+// couvertes depuis. La leçon vaut au-delà : un mot supprimé se cherche PAR LE MOT, pas par la
+// ponctuation d'UNE de ses places.
+describe('aucune scène à moi n’écrit `mm`, supprimé au profit de `tempo`', () => {
+  it('balayage nommé, métadonnées ET sacs de mode compris', () => {
     const fautifs = Object.entries(BPS)
       .filter(([chemin]) => !chemin.includes('/kairos-'))
-      .filter(([, src]) => /@mm/.test(src))
+      // `@mm` en tête de scène ET `mm:` dans un sac de mode — DEUX graphies, un seul mot mort.
+      .filter(([, src]) => /@mm/.test(src) || /\bmm\s*:/.test(src))
       .map(([chemin]) => chemin.split('/scenes/')[1] ?? chemin);
     expect(
       fautifs,

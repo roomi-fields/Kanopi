@@ -8,7 +8,7 @@
 // Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
 
 @controls
-@mode:ord(mm:60.0000,striated)
+@mode:ord(tempo:60.0000,striated)
 S -> ! (/6) M Part1 -- Part2 -- Part3 -- Part4
 Part1 -> {!(keyxpand:C4 -1) M} !(keyxpand:C4 1.5) M {!(retro) M}
 Part2 -> {!(keyxpand:C4 2) M {!(retro) M} !(keyxpand:C4 0.66) M}
