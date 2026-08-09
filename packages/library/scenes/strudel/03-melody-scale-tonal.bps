@@ -3,7 +3,7 @@
 // @description: Exemple canonique tiré du workshop officiel Strudel « First Notes ». Exerce le
 // module tonal (résolution de degrés de gamme via .scale()) — PRÉSENT dans notre bundle via
 // @strudel/tonal (ré-exporté par @strudel/web). Le TIMBRE est le piano General MIDI (soundfont
-// gm_piano, banque @library.strudel "gm", servi depuis notre VPS) : garanti audible. L'objet de
+// gm_piano, banque déclarée par `eval.strudel(bank:gm)`, servie depuis notre VPS) : garanti audible. L'objet de
 // la démo est la MÉLODIE et la GAMME ; le timbre du piano y est incident (la vitrine GM, c'est la
 // scène 09). À comparer côte à côte avec l'original: https://strudel.cc/workshop/first-notes/.
 // @language: strudel

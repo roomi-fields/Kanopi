@@ -11,7 +11,7 @@
 //
 // A/B — strudel — First Sounds (rhythm). Original: https://strudel.cc/workshop/first-sounds/.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original.
-// Dépend de la banque d'échantillons par défaut (dirt-samples, chargée via @library) pour bd/hh/sd/oh.
+// Dépend de la banque d'échantillons par défaut (dirt-samples, déclarée par `eval.strudel(bank:…)`) pour bd/hh/sd/oh.
 
 @core
 @tempo:120

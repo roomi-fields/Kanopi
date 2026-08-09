@@ -1,7 +1,7 @@
 // @name: Xenharmonic tuning (hexany15) — microtonal audible
 // @tagline: "0 1 2 3 4 5".tune("hexany15").freq().s("sawtooth") — accordage microtonal via @strudel/xen
 // @description: Démo AUDIBLE des fonctions xénharmoniques de Strudel (@strudel/xen), servies depuis
-// notre bundle. La scène DÉCLARE `@library.strudel "xen"` : à l'évaluation, loadSampleBank('xen') ponte
+// notre bundle. La scène DÉCLARE la banque via `eval.strudel(bank:xen)` : à l'évaluation, loadSampleBank('xen') ponte
 // `.tune()` sur le Pattern de l'instance @strudel/web (register xen/tuning/tune), et la gamme microtonale
 // hexany15 (tune.js) mappe chaque degré à sa fréquence juste. La mini-notation "0 1 2 3 4 5" est reifiée
 // en degrés numériques nus que `.tune()` consomme ; `.freq()` sort des Hz (pas de .mul, tune.note() rend

@@ -11,7 +11,7 @@
 // Le langage vient de l'eval de l'acteur (`eval.strudel`) : le backtick de flux
 // dans une règle de tête `bass_r` HÉRITE de strudel — pas besoin de tag.
 // (Forme tag explicite équivalente : `strudel: note("c2 eb2")` hors acteur.)
-// Motif SYNTHÉ (sonne sans réseau) ; pour des samples : `@library.strudel "dirt-samples"`
+// Motif SYNTHÉ (sonne sans réseau) ; pour des samples : `eval.strudel(bank:dirt-samples)`
 // puis `s("bd sd hh hh")`. Décision hub 2026-07-04-cv-curve-syntaxe-backtick-type.md + [299].
 
 @core
