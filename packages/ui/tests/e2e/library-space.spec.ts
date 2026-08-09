@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 // The dedicated full-width library space (brief lot 2): opening the Library
 // activity icon swaps the editor for a category rail + filter bar + scene grid.
@@ -52,7 +54,20 @@ test('la catégorie Samples est dans le rail, juste après Learn et Basics', asy
   expect(rang('samples')).toBe(rang('basics') + 1);
   expect(rang('basics')).toBe(rang('learn') + 1);
 
-  // Et elle filtre sur les 14 scènes déposées [1206].
+  // Et elle affiche TOUT ce que le dossier contient, ni plus ni moins.
+  //
+  // ⚠️ LE COMPTE SE DÉRIVE DU DISQUE, IL NE S'ÉCRIT PAS : figé à 14, ce banc rougissait déjà une
+  // heure plus tard, quand bpscript a déposé dix scènes de plus — un ajout légitime aurait pris
+  // la forme d'une régression. Compté depuis le dossier, il se tait sur un ajout et rougit sur ce
+  // qui compte : un écart entre le dossier et l'écran. Mordant prouvé dans les deux sens — une
+  // scène ajoutée au dossier fait suivre les deux côtés ensemble (vert à 25, donc l'accord à 24
+  // n'était pas une coïncidence), la même scène rangée dans un sous-dossier n'est plus comptée
+  // ici mais reste affichée, et le banc rougit (attendu 24, reçu 25).
+  const surDisque = readdirSync(
+    fileURLToPath(new URL('../../../library/scenes/samples', import.meta.url))
+  ).filter((f) => f.endsWith('.bps') || f.endsWith('.gr')).length;
+  expect(surDisque).toBeGreaterThan(0);
+
   await page.locator('.cat', { hasText: 'Samples' }).click();
-  await expect(page.locator('.card')).toHaveCount(14);
+  await expect(page.locator('.card')).toHaveCount(surDisque);
 });

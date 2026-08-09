@@ -9,10 +9,15 @@ import { expectNoConsoleErrors } from '../../helpers';
 const SCENE = 'learn/tuto-01-first-note.bps';
 const ONGLET = 'tuto-01-first-note.bps';
 
-// La scène d'exemple du LANGAGE, celle que la doc vise réellement : la première de `samples`
-// dans l'ordre de lecture (`@order: 1`), déposée par bpscript [1206].
-const EXEMPLE = 'samples/silences-et-prolongations.bps';
-const ONGLET_EXEMPLE = 'silences-et-prolongations.bps';
+// La scène d'exemple du LANGAGE, celle que la doc vise réellement : la première de `samples` dans
+// l'ordre de lecture, déposée par bpscript [1206]. C'est l'identifiant rendu à Atlas, et un banc
+// doit couvrir l'identifiant qu'on distribue.
+//
+// ⚠️ L'IDENTIFIANT EST LE NOM DE FICHIER, PAS LE RANG : `@order` a déjà été renuméroté une fois
+// par bpscript pour faire place à un second dépôt, sans qu'aucun identifiant bouge. Viser un rang
+// donnerait un banc qui rougit à chaque insertion en tête.
+const EXEMPLE = 'samples/fondations-la-plus-petite-piece-qui-sonne.bps';
+const ONGLET_EXEMPLE = 'fondations-la-plus-petite-piece-qui-sonne.bps';
 
 test('?scene=<id> ouvre la scène, et son onglet est là', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
