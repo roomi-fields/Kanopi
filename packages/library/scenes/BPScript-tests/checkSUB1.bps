@@ -7,7 +7,9 @@
 // corrigé 2026-07-03, flip Palier 4 étape B — sortie attendue : `i j`).
 @test_alphabets.abc
 
-@mode:random(tempo:60.0000,striated)
+@tempo:60.0000
+@striated
+@mode:random
 S -> a b c d
 -----
 @mode:sub1

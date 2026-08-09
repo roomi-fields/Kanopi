@@ -21,7 +21,9 @@
 
 // --- Sous-grammaire 1 @mode:random(striated, tempo:60) ---
 
-@mode:random(striated, tempo:60)
+@striated
+@tempo:60
+@mode:random
 // ORDRE DES CONTROLES = ORDRE NATIF (not-reich.gr gram#1[1] : « S --> _chan(1) _vel(50)
 // _volumecont _volume(80) A' B' C' »). Le natif s'ecrit avec SES noms : cette citation ne suit pas
 // nos renommages, sinon elle cesse d'etre une citation. Un controle s'applique a ce qui le SUIT : sa POSITION

@@ -24,7 +24,9 @@
 // `lib/homomorphism.json`). Je les avais renommées avec le reste ; kanopi l'a relevé et a raison :
 // une trace qui se renomme ment sur elle-même. Restauré par bpscript, 2026-08-07.
 @homomorphism.dhin
-@mode:random(tempo:360.0000,striated)
+@tempo:360.0000
+@striated
+@mode:random
 S <> S48 (meter:4+4/6)
 S <> S96 (meter:4+4+4+4/6)
 -----

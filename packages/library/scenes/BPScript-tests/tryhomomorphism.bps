@@ -8,6 +8,8 @@
 // a, b et c ne sont des notes dans AUCUN alphabet : ce sont des VARIABLES DE TRAVAIL.
 @alphabet.solfege:midi
 @var a, b, c
-@mode:random(tempo:60.0000,striated)
+@tempo:60.0000
+@striated
+@mode:random
 S -> a b c $X * &X
 X -> do4 c mi4 fa4
