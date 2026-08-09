@@ -2,8 +2,8 @@
 @controls
 @homomorphism.transposition
 @mode:ord
-S -> ${|A1|} TR ${|A1|} TR TR ${|A1|} TR TR TR ${|A1|} ${|A1|}
-|A1| -> {Tr0 M1. Tr1 M1 Tr7 M1 Tr0 M1 Tr7 M1}
+S -> ${A1} TR ${A1} TR TR ${A1} TR TR TR ${A1} ${A1}
+A1 -> {Tr0 M1. Tr1 M1 Tr7 M1 Tr0 M1 Tr7 M1}
 M1 -> C3 B3 F4
 Tr0 -> !(chromashift:0)
 Tr1 -> !(chromashift:11)

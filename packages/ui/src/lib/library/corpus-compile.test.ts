@@ -411,6 +411,28 @@ describe('le rattrapage de graine mord', () => {
 // aucun ne regarde mes scènes. Sans celui-ci, on pourrait recoller l'outil dans un `.bps` sans
 // qu'une seule assertion bouge — c'est précisément ce qui s'est produit le 2026-08-09. Un banc de
 // forme dit ce que le langage fait ; seul un balayage dit ce que MES fichiers écrivent.
+// LES BARRES AUTOUR D'UN NOM SONT SORTIES DU LANGAGE (décision Romain 2026-08-09) — elles ne
+// restent qu'en ENTRÉE BP3, où `bp3-frontend` les lit et rend un nom ordinaire. Une scène
+// BPScript qui les porte écrit donc une graphie que le langage ne reconnaît plus.
+// MIGRÉES LE JOUR MÊME : `ruwet.bps` (182) et `transposition1.bps` (6). La migration a été
+// mesurée AVANT/APRÈS sur l'arbre dérivé ENTIER — strictement identique, au temps de dérivation
+// près (le seul champ non déterministe). Un compte de jetons égal n'aurait pas suffi : c'est
+// exactement ce qui a laissé passer une scène inerte le matin même.
+describe('aucune scène du corpus ne porte de barres autour d’un nom', () => {
+  it('balayage nommé, fichier par fichier', () => {
+    const fautifs = Object.entries(BPS)
+      .filter(([, src]) =>
+        src.split('\n').some((l) => !l.trimStart().startsWith('//') && /\|[^|\s]+\|/.test(l))
+      )
+      .map(([chemin]) => chemin.split('/scenes/')[1] ?? chemin);
+    expect(
+      fautifs,
+      'la graphie à barres est sortie du langage BPScript : écrire le nom nu. Elle ne reste ' +
+        'qu’en entrée BP3, lue par bp3-frontend.'
+    ).toEqual([]);
+  });
+});
+
 describe('aucune scène du corpus ne colle un outil sériel à une fermante', () => {
   const OUTILS = ['shuffle', 'order', 'retro', 'rotate', 'srand', 'randomize'];
   // Collé à `}` ou à `]` : les deux graphies de la faute, l'ancienne et celle de ma migration.
