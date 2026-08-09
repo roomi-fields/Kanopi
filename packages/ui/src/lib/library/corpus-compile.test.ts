@@ -343,26 +343,25 @@ describe('le rattrapage de graine mord', () => {
     expect(errors).toEqual([]);
   });
 
-  // ⛔ VERROU RETOURNÉ LE 2026-08-09 — CE VERT EST UN CONSTAT DE PANNE, PAS UNE VALIDATION.
-  // Jusqu'à ce jour, cette scène REFUSAIT de dériver sous graine figée, et c'est ce refus que le
-  // rattrapage existe pour attraper. Elle ne refuse plus. MESURÉ, et la mesure dit que
-  // l'information part bien mais n'arrive pas :
-  //   - l'arbre PORTE `randomize` trois fois (un `InstantControl` dans le flux, un `modifiers[]`
-  //     de sous-grammaire), donc bpscript le grave ;
-  //   - BPx lit `subgram.randomize` (BPx/src/session.ts:930), un champ DIRECT de sous-grammaire ;
-  //   - le même mécanisme MORD TOUJOURS par le chemin BP3 natif (test-mode-seed.test.ts:157,
-  //     vert), donc le refus n'a pas été retiré de BPx — c'est la JOINTURE BPScript→BPx qui ne
-  //     transmet plus.
-  // CONSÉQUENCE MUSICALE, et c'est elle qui compte : une scène BPScript qui re-sème son tirage ne
-  // le re-sème peut-être plus. Routé le 2026-08-09 (dérivation/arbre/contrôles → bpx).
-  // POURQUOI RETOURNÉ ET NON SUSPENDU : un banc suspendu se tait ; celui-ci doit REDEVENIR ROUGE
-  // le jour où l'amont répare, pour me forcer à le remettre à l'endroit. Le vert ci-dessous
-  // verrouille donc l'ANOMALIE, pas le bon comportement.
-  it('RÉGRESSION ROUTÉE — la scène ne refuse PLUS sous graine figée (à remettre à l’endroit)', () => {
+  // VERROU REMIS À L'ENDROIT LE 2026-08-09, après avoir été RETOURNÉ quelques heures le même jour.
+  // Il avait cessé de mordre, et la cause était DOUBLE — deux défauts indépendants qui se
+  // masquaient l'un l'autre, chacun suffisant à éteindre ce banc :
+  //   1. CHEZ BPx : son port du moteur natif ne lisait qu'une branche du `switch` qui traite
+  //      `_destru`/`_randomize`/`_srand` au niveau de la déclaration de mode. `randomize` restait
+  //      donc FAUX dans la grammaire compilée, et le refus ne pouvait pas se déclencher. Corrigé
+  //      chez eux, banc de garde à 5 cas, morsure prouvée par injection.
+  //   2. CHEZ MOI : ma migration du matin avait collé l'outil de brassage APRÈS l'accolade
+  //      fermante, où il tombe dans les réglages du bloc que rien ne consomme. Corrigé ici.
+  // ⚠️ CE BANC NE COUVRE QUE LE DÉFAUT 1, ET IL FAUT LE SAVOIR : BPx a posé que le refus dépend
+  // de la DÉCLARATION seule, jamais de la position de l'outil — il revient donc dans les DEUX
+  // écritures. Un vert ici n'a jamais rien dit, et ne dira jamais rien, du brassage lui-même.
+  // C'est le banc suivant qui couvre le défaut 2, et son absence est exactement ce qui m'a laissé
+  // rendre une scène inerte sans qu'aucun rouge ne se lève.
+  it('sous graine figée, la scène REFUSE — le refus suit la DÉCLARATION de re-semence', () => {
     const { ast } = compileToBPxAST(avecAlphabet()) as { ast: unknown; errors: unknown[] };
     expect(() =>
       createSession(ast as Parameters<typeof createSession>[0], { seed: GRAINE }).derive()
-    ).not.toThrow();
+    ).toThrow(/reseedOrShuffle/);
   });
 
   // ⚠️ CE BANC NE PROUVE PLUS RIEN TANT QUE LA RÉGRESSION CI-DESSUS TIENT, et il faut le dire au
@@ -371,6 +370,85 @@ describe('le rattrapage de graine mord', () => {
   // rien dans le résultat ne les distingue. Il reprend son sens quand l'amont répare.
   it('sait MORDRE : le garde rend VERT une scène que la graine figée refuse', () => {
     expect(statut(avecAlphabet())).toBeNull();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LE BANC QUI MANQUAIT, ET SON ABSENCE A COÛTÉ UNE SCÈNE INERTE PENDANT UNE JOURNÉE.
+// Le 2026-08-09, en migrant la graphie, j'ai déplacé l'outil de brassage de DEVANT le bloc vers
+// APRÈS l'accolade fermante. Le compte de jetons est resté IDENTIQUE, aucune erreur, aucun
+// avertissement — et la scène ne brassait plus. Rien dans le dépôt ne pouvait le dire : le seul
+// banc qui regardait par là mesure le REFUS, qui ne dépend que de la déclaration.
+// CE BANC MESURE LA POSITION, ET ELLE SEULE. Il compare les deux écritures sous la MÊME graine :
+// devant le bloc l'outil est consommé et l'ordre change ; collé après la fermante il tombe dans
+// les réglages et l'ordre est celui de la scène sans outil du tout. C'est cette égalité-là — la
+// forme collée indiscernable de l'absence d'outil — qui est le vrai visage du défaut.
+// La re-semence est écartée dans les variantes en mémoire, et c'est délibéré : sans cela la
+// dérivation refuse sous graine figée et on ne peut PAS observer l'ordre. Ce qu'on écarte ici
+// n'est pas le sujet — le sujet est la position.
+// ET LE GARDE QUI PROTÈGE LE CORPUS LUI-MÊME. Les trois bancs qui suivent mesurent des FORMES ;
+// aucun ne regarde mes scènes. Sans celui-ci, on pourrait recoller l'outil dans un `.bps` sans
+// qu'une seule assertion bouge — c'est précisément ce qui s'est produit le 2026-08-09. Un banc de
+// forme dit ce que le langage fait ; seul un balayage dit ce que MES fichiers écrivent.
+describe('aucune scène du corpus ne colle un outil sériel à une fermante', () => {
+  const OUTILS = ['shuffle', 'order', 'retro', 'rotate', 'srand', 'randomize'];
+  // Collé à `}` ou à `]` : les deux graphies de la faute, l'ancienne et celle de ma migration.
+  const COLLE = new RegExp(`[}\\]]\\s*[([](?:${OUTILS.join('|')})\\b`);
+
+  it('balayage nommé, fichier par fichier', () => {
+    const fautifs = Object.entries(BPS)
+      .filter(([, src]) =>
+        src.split('\n').some((l) => !l.trimStart().startsWith('//') && COLLE.test(l))
+      )
+      .map(([chemin]) => chemin.split('/scenes/')[1] ?? chemin);
+    expect(
+      fautifs,
+      'un outil sériel collé après une fermante tombe dans les réglages du bloc et n’est JAMAIS ' +
+        'consommé : la scène compile, produit le même compte de jetons, et ne fait plus rien. ' +
+        'L’écrire DEVANT le bloc, avec le point d’exclamation.'
+    ).toEqual([]);
+  });
+});
+
+describe('le brassage AGIT, et seulement devant le bloc', () => {
+  const BLOC = '{C4 D4 E4 F4 G4}';
+  const TETE = '@core\n@alphabet.western:midi\n\nS -> ';
+  const ordre = (regle: string) => {
+    const { ast, errors } = compileToBPxAST(TETE + regle + '\n') as {
+      ast: unknown;
+      errors: unknown[];
+    };
+    expect(errors, `« ${regle} » doit analyser`).toEqual([]);
+    const r = createSession(ast as Parameters<typeof createSession>[0], { seed: 3 }).derive();
+    return (JSON.stringify((r as { tree: unknown }).tree).match(/"symbolId":\d+/g) ?? []).join(' ');
+  };
+
+  it('DEVANT le bloc : l’ordre CHANGE par rapport à la scène sans outil', () => {
+    expect(ordre(`!(shuffle) ${BLOC}`)).not.toBe(ordre(BLOC));
+  });
+
+  it('et il suit la graine : deux graines, deux ordres', () => {
+    const avec = (seed: number) => {
+      const { ast } = compileToBPxAST(`${TETE}!(shuffle) ${BLOC}\n`) as { ast: unknown };
+      const r = createSession(ast as Parameters<typeof createSession>[0], { seed }).derive();
+      return (JSON.stringify((r as { tree: unknown }).tree).match(/"symbolId":\d+/g) ?? []).join(
+        ' '
+      );
+    };
+    expect(avec(3)).not.toBe(avec(11));
+  });
+
+  it('COLLÉ après la fermante : INERTE — ordre identique à celui sans outil (défaut 2026-08-09)', () => {
+    // CE BANC EST ÉCRIT POUR ROUGIR, et de deux façons, qui appellent des gestes opposés :
+    //   - si l'égalité cesse, la forme collée est devenue AGISSANTE → venir décider laquelle des
+    //     deux écritures le corpus emploie ;
+    //   - si l'analyse refuse (`expect(errors).toEqual([])` tombe dans `ordre`), c'est que Romain
+    //     a FERMÉ la forme collée → supprimer ce cas, le défaut ne peut plus s'écrire.
+    // L'arbitrage sur la forme canonique d'un outil sériel était ouvert le jour où ceci est écrit
+    // (bpscript reconnaît l'ambiguïté de sa référence comme sa dette), donc la seconde issue est
+    // la plus probable — et un banc muet sur son propre remplacement se serait fait supprimer
+    // sans qu'on sache ce qu'il gardait.
+    expect(ordre(`${BLOC}(shuffle)`)).toBe(ordre(BLOC));
   });
 });
 
