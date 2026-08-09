@@ -1,5 +1,65 @@
 # Kanopi — Claude project instructions
 
+## ⛔ Chercher — l'ordre, sans exception
+
+1. **RTFM** (`rtfm_search` puis `rtfm_expand`) pour toute recherche de doc.
+2. **codegraph** (`codegraph explore "<question|symbole>"`) avant tout grep, find ou lecture de code.
+3. **La carte d'autorités d'Atlas** (`atlas/carte-autorites/`) pour « où vit l'autorité sur X ? ».
+4. Le **fichier de référence** qu'elle désigne.
+5. **Demander à Atlas** quand l'information reste introuvable.
+
+Ne jamais conclure qu'une information n'existe pas : ne pas trouver renseigne sur la recherche, pas
+sur le monde.
+
+## ⛔⛔ Trancher un comportement : « comment ça fonctionne en BP3 natif ? »
+
+Toute question de **comportement, de fonction ou de primitive** se tranche d'abord sur le **moteur
+natif BP3**. On couvre **a minima ce que fait le natif**, sauf dérogation explicite de Romain.
+
+## ⛔⛔⛔ Le langage ne se définit pas sans Romain
+
+`BPscript/docs/spec/LANGUAGE.md` est la bible du langage.
+
+- **IMPORTANT : interdiction formelle d'y écrire** sans autorisation explicite de Romain, pour le
+  geste précis. Un arbitrage de sa part sur le langage n'autorise pas à écrire dans le fichier.
+- **IMPORTANT : interdiction formelle de définir un élément de langage** sans son autorisation.
+- Un écart entre le code et la bible **se signale avec sa pièce** — `fichier:ligne` des deux côtés —
+  et attend son mot.
+
+## ⛔ Carte d'autorités — toute modification se signale
+
+Toute modification d'un document de la carte d'autorités est **systématiquement signalée et reportée
+à Romain**. Leur **mise en conformité est un objectif permanent**.
+
+## ⛔ Migrer casse, et on répare
+
+Remplacer X par Y = **supprimer X dans le même mouvement**. On migre, **on regarde où ça casse, on
+répare**. Aucune solution intermédiaire, aucune voie parallèle, aucune migration « sans casse ».
+
+## ⛔ Coder
+
+- **Le code mort s'élague** dans le mouvement qui le rend mort. Une branche sans appelant vivant sort.
+- **La librairie d'abord** : ce qui peut se déclarer ou se retrouver en librairie y vit. Une valeur
+  écrite en dur dans le code est invisible — personne ne peut la lire ni la surcharger.
+- **Les commentaires sont utiles et proportionnés** : ils disent ce que le code ne montre pas.
+
+## ⛔ Écrire un document
+
+- **Descriptif et factuel** : le document décrit **ce qui est**, dans son état d'aujourd'hui.
+- **Affirmatif** : on décrit l'objet. La forme négative — « ce n'est pas », « au lieu de », « sans » —
+  se réécrit en énoncé positif.
+- **Sans justification narrative** : ni « untel a dit », ni « parce que », ni date, ni renvoi à une
+  décision, ni contraste avec une forme antérieure. Le pourquoi vit dans sa décision datée.
+
+**Test avant d'écrire une phrase** : un lecteur qui découvre le sujet aujourd'hui y apprend-il
+quelque chose ?
+
+## ⛔ `LANGUAGE.md` est ma référence unique sur le langage
+
+`BPscript/docs/spec/LANGUAGE.md` **est ce que le code doit dire** : un écart est un **défaut**,
+jamais une préséance à arbitrer. `AST.md` et `EBNF.md` en sont des **dérivés**, jamais des autorités.
+
+
 ## What this is
 
 Kanopi is the IDE product. BPscript is the optional native sequencer language (separate repo). BPx is the JS engine for BPscript (lives in bpscript repo). osc-bridge is the hardware sidecar (separate repo).
