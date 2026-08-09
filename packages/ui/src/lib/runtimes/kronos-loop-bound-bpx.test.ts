@@ -121,7 +121,7 @@ describe('KAN-C02/C03 (SUITE) — loop bound projects BPx totalDurationBeats, no
 
 const SCENE_TRAILING_RESTS = `@core
 @alphabet.western:audio
-@mm:120
+@tempo:120
 S -> Phrase
 Phrase -> C4 D4 E4 _ _ _ _
 `;

@@ -24,8 +24,8 @@ beforeEach(() => {
 });
 
 describe('F06 — the scene tempo channel never seeds userTempo (no inter-scene leak)', () => {
-  it('playing a @mm:70 scene projects 70 but leaves userTempo null (no leak to the next scene)', () => {
-    // A scene declaring @mm:70 derives at 70 and projects it through the SCENE channel.
+  it('playing a @tempo:70 scene projects 70 but leaves userTempo null (no leak to the next scene)', () => {
+    // A scene declaring @tempo:70 derives at 70 and projects it through the SCENE channel.
     clock.setSceneTempo(70);
     // The projected scene tempo drives the STEP grid (currentBpm)…
     expect(__getCurrentBpm()).toBe(70);

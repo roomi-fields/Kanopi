@@ -2,11 +2,19 @@ import { describe, it, expect } from 'vitest';
 import { writeMmDirective } from './mm-directive';
 
 describe('mm-directive — transport BPM → scene tempo write-back', () => {
-  it('rewrites the @mm value (rounded) and preserves the rest', () => {
+  // ⛔ VERROU RETOURNÉ LE 2026-08-09 — ce cas vérifiait que `@mm` était RÉÉCRIT ; il vérifie
+  // maintenant qu'il ne l'est PLUS. `@mm` est sorti du langage (bpscript fa037e8) et la branche
+  // qui le reconnaissait est partie avec.
+  // POURQUOI RETOURNÉ ET NON SUPPRIMÉ : si quelqu'un ré-ajoutait la branche « pour être
+  // tolérant », plus rien ne le dirait — une tolérance se ré-installe toujours par gentillesse.
+  // Ce cas rougit si elle revient.
+  // ET LA SCÈNE RESTE INTACTE, c'est le point : on ne réécrit pas une directive qu'on ne
+  // reconnaît plus, on n'y touche pas du tout. Une scène périmée n'est pas silencieusement
+  // « réparée » à moitié par un write-back.
+  it('NE réécrit PLUS @mm, sorti du langage — et laisse la scène intacte', () => {
     const src = '@core\n@mm:70\n\nSayr -> rast dukah';
-    expect(writeMmDirective(src, 92)).toBe('@core\n@mm:92\n\nSayr -> rast dukah');
-    // fractional BPM (TAP) → rounded integer so the directive stays valid
-    expect(writeMmDirective(src, 91.6)).toContain('@mm:92');
+    expect(writeMmDirective(src, 92)).toBe(src);
+    expect(writeMmDirective(src, 91.6)).not.toContain('@mm:92');
   });
 
   it('rewrites the v0.8 canon @tempo value and preserves the keyword', () => {
@@ -24,6 +32,6 @@ describe('mm-directive — transport BPM → scene tempo write-back', () => {
   });
 
   it('rounds a fractional BPM when writing back', () => {
-    expect(writeMmDirective('@mm:70', 133.4)).toBe('@mm:133');
+    expect(writeMmDirective('@tempo:70', 133.4)).toBe('@tempo:133');
   });
 });

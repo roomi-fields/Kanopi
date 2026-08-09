@@ -23,7 +23,7 @@ describe('bpscript propagation — env → AST à travers le paquet consommé', 
   });
 
   it("la scène qui déclare @mm gagne (pas d'écrasement)", () => {
-    const ast = compileToBPxAST('@mm:70\nA -> C4', { tempo: 88 }).ast;
+    const ast = compileToBPxAST('@tempo:70\nA -> C4', { tempo: 88 }).ast;
     expect(mmFromAst(ast as Parameters<typeof mmFromAst>[0])).toBe(70);
   });
 });

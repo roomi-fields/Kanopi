@@ -96,7 +96,7 @@ async function installCvProbe(page: Page): Promise<void> {
 test.skip('cv-adsr renders the CV: oscillators + cutoff automations + audible output', async ({
   page
 }) => {
-  // Scene loops at @mm:138; we sample a continuous RMS window and a few cycles of graph
+  // Scene loops at @tempo:138; we sample a continuous RMS window and a few cycles of graph
   // activity. Generous budget for prod load + audio warm-up.
   test.setTimeout(60_000);
 

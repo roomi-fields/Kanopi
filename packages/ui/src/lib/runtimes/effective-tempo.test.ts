@@ -12,7 +12,7 @@ import { effectiveTempoBpm } from './bpx-adapter';
 
 const SCENE_MM70 = `@core
 @alphabet.western:audio
-@mm:70
+@tempo:70
 S -> Sayr
 Sayr -> C4 D4 E4 F4 G4 A4 B4
 `;
@@ -32,7 +32,7 @@ describe('effectiveTempoBpm — single tempo source from the derivation', () => 
     expect(effectiveTempoBpm(null, 96)).toBe(96);
   });
 
-  it('end-to-end: a @mm:70 scene derives metadata.tempo=70, so BOTH ex-copies become 70', () => {
+  it('end-to-end: a @tempo:70 scene derives metadata.tempo=70, so BOTH ex-copies become 70', () => {
     const ast = (compileToBPxAST(SCENE_MM70) as { ast: unknown; errors?: unknown[] }).ast;
     // The adapter seeds `createBPx({ tempo: currentBpm })` with the DECLARED @mm
     // (70) before deriving; the derivation echoes it on metadata.tempo. We pass a

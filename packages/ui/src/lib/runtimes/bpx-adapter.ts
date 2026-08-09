@@ -278,7 +278,7 @@ type Frontend = (code: string) => {
   // banks before/at the backtick eval so the code voices find their samples. `.gr`
   // has none.
   libraries?: Libraries;
-  // Declared metronome (`@mm:70`), the tempo BPx derives durations at. When
+  // Declared metronome (`@tempo:70`), the tempo BPx derives durations at. When
   // present the adapter adopts it as the global tempo so the displayed BPM, the
   // derivation, and the STEP beat grid all agree. Absent for `.gr` and `.bps`
   // without `@mm` (the current tempo is kept).
@@ -571,21 +571,18 @@ export function flagStatesFromAst(a: SceneAstView | null): FlagStates {
 }
 
 // Declared metronome from the AST directives: `@tempo:70` (v0.8 canon, arbitrage
-// 2026-06-26) OR the legacy `@mm:70` parse to a `Directive` with `name:'tempo'`/`'mm'`,
+// 2026-06-26) OR the legacy `@tempo:70` parse to a `Directive` with `name:'tempo'`/`'mm'`,
 // `value:70`. This is the tempo the BPx engine derives note durations at, so the central
 // clock + STEP grid (`beatDurSec = 60/bpm`) MUST adopt it or the displayed tempo and the
 // produced timeline diverge (a 70 bpm derivation stepped at 128 bpm yields fractional,
-// phantom beats). We read BOTH names — matching `writeMmDirective` — so a migrated `@tempo`
-// scene keeps its declared tempo instead of falling back to BPx's default (60). Absent →
-// undefined (keep the current tempo).
+// phantom beats). Un SEUL nom depuis le 2026-08-09 : `@mm` est SORTI du langage et son refus le
+// dit (bpscript fa037e8). La branche jumelle qui le lisait est partie le jour même — code voué au
+// retrait à zéro appelant légitime, donc retiré dans le même mouvement, pas gardé « au cas où ».
+// Absent → undefined (keep the current tempo).
 function mmFromAst(a: SceneAstView | null): number | undefined {
   for (const d of a?.directives ?? []) {
     const node = d as { name?: string; value?: unknown };
-    if (
-      (node.name === 'mm' || node.name === 'tempo') &&
-      typeof node.value === 'number' &&
-      node.value > 0
-    ) {
+    if (node.name === 'tempo' && typeof node.value === 'number' && node.value > 0) {
       return node.value;
     }
   }

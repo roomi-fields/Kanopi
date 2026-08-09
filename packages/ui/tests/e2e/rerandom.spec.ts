@@ -100,7 +100,7 @@ async function collectSignatures(
 // sweep) avec des mots supprimés du langage ; la forme qui préserverait ces réglages n'existe pas
 // encore dans le parseur et sera revue avec FaustX. Revient avec la scène.
 test.skip('re-random re-rolls the derivation each loop cycle (Kairos path)', async ({ page }) => {
-  // The scene loops ~4.8 s (@mm:100, 8 beats). We watch ~4 cycles → ~20 s + load/eval.
+  // The scene loops ~4.8 s (@tempo:100, 8 beats). We watch ~4 cycles → ~20 s + load/eval.
   test.setTimeout(60_000);
 
   const audio = await setupAudioCapture(page);

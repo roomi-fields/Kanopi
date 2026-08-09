@@ -13,7 +13,8 @@
 // une scène voisine l'emploie (Mozartexpression.bps:20).
 @timepatterns: t1=1/1, t2=3/2, t3=4/3, t4=1/2
 
-@mode:random(tempo:120)
+@tempo:120
+@mode:random
 S -> {10, t1 t2, Part1 Part2}
 Part1 -> {t1 t3 t4, C4 D4 E4 F4 - A4}
 Part2 -> {t3 t1, B4 C5 _ E5}

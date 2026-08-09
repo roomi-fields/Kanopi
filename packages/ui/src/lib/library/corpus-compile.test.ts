@@ -182,10 +182,19 @@ const ROUGES_DECLAREES: Array<{
   // lui-même gravée dans le fichier : « aucun alphabet n'est déclaré, DÉLIBÉRÉMENT ».)
   {
     fichier: 'BPScript-tests/trySrand.bps',
+    // ⚠️ CETTE ENTRÉE A CHANGÉ DE MOTIF DEUX FOIS LE 2026-08-09, EN QUELQUES HEURES, ET LES DEUX
+    // ALLERS-RETOURS SONT LA VRAIE INFORMATION — pas le motif final.
+    // Le soir, bpscript a fermé `randomize` comme attribut de sac AVANT que sa relève existe : la
+    // scène cessait d'ANALYSER, et j'ai basculé le motif dessus en écrivant dans `attend` que la
+    // cause historique reviendrait DERRIÈRE. Elle est revenue moins d'une heure plus tard, la
+    // fermeture ayant été reprise en amont — et le motif est donc rétabli tel qu'il était.
+    // CE QUE ÇA VAUT : avoir écrit l'ORDRE des causes empilées a permis de rebrancher le garde
+    // sans rien redécouvrir. Un rouge déclaré n'a pas UNE cause, il a une PILE ; ne pas croire le
+    // sujet clos quand la première se lève.
     motif: /terminal '(a|b)' non déclaré/,
     cause: 'arbitrage-attendu',
     attend:
-      "COMMENT BPScript écrit « un alphabet PLUS une convention de notes » — question chez Romain, 11 conversions concernées, 61 notes à déclarer. La source répond pour le CONTENU (le réglage natif -se.trySrand porte « NoteConvention: 0 » = anglaise, et -ho.tryKeyXpand déclare l'alphabet « a b ») ; ce qui manque est sa GRAPHIE en BPScript. Je n'y touche pas : c'est l'écriture de bpscript et l'arbitrage est chez Romain. ⚠️ UNE SECONDE CAUSE S'EST POSÉE DEVANT CELLE-CI PENDANT QUELQUES HEURES le 2026-08-09, et elle s'est levée : la fermeture de `randomize` au fil du flux (6b6a351) arrêtait l'analyse AVANT ce point. Migrer la scène l'aurait DÉTRUITE — le natif pose `_randomize` dans le flux et c'est le sujet même du test (« the two sequences derived from C also vary from one item to the next because of the _randomize tool that PRECEDES them », -gr.trySrand:18, là où `_srand(1)` fige B et D). Mesure portée à bpscript ; Romain a rouvert la place le jour même, et la scène est écrite en `!(randomize)`, à l'endroit du natif."
+      "COMMENT BPScript écrit « un alphabet PLUS une convention de notes » — question chez Romain, 11 conversions concernées, 61 notes à déclarer. La source répond pour le CONTENU (le réglage natif -se.trySrand porte « NoteConvention: 0 » = anglaise, et -ho.tryKeyXpand déclare l'alphabet « a b ») ; ce qui manque est sa GRAPHIE en BPScript. Je n'y touche pas : c'est l'écriture de bpscript et l'arbitrage est chez Romain. ⚠️ ET UNE CAUSE S'INTERCALE ENCORE DEVANT CELLE-CI, non levée : la scène porte un sac de mode (`@mode:random(tempo:60.0000,striated,randomize)`) et le sac disparaît — les instructions remontent EN TÊTE DE SCÈNE, ce qui change leur PORTÉE. Cette scène est l'une des dix qui attendent cette forme ; elle se mesurera avant d'être remontée."
   },
   {
     fichier: 'BPScript-tests/koto1.bps',
@@ -350,6 +359,19 @@ describe('[932] statut de compilation du corpus BPScript', () => {
 // c'est elle, portée à bpscript avec la source native (`-gr.trySrand:12` et `:18`), qui a fait
 // rouvrir la place par Romain le jour même. Le banc reprend donc tel quel, sur la forme rouverte
 // `!(randomize)`, à l'endroit où le natif la pose.
+// ⚠️ CE BANC A ÉTÉ ÉTEINT ET RALLUMÉ **DEUX FOIS DANS LA MÊME JOURNÉE**, par deux fermetures
+// amont différentes du même mot — et les deux fois il a repris tel quel.
+//   · le matin : `randomize` fermé AU FIL DU FLUX. Romain rouvre la place, le banc reprend.
+//   · le soir  : `randomize` fermé COMME ATTRIBUT DE SAC. La scène-témoin cessait même
+//     d'ANALYSER. Suspendu, daté ; la fermeture est reprise en amont moins d'une heure plus tard,
+//     le banc reprend.
+// CE QUE J'EN RETIENS, ET C'EST LA RAISON DE GARDER CE TEXTE : un banc dont le sujet vit dans une
+// surface en cours de refonte s'éteint et se rallume au rythme de l'amont. Le réflexe utile n'est
+// pas de le protéger — c'est de SUSPENDRE DATÉ avec la condition de rallumage, pour que le
+// rallumage soit mécanique au lieu d'être une redécouverte. Il l'a été deux fois.
+// ⛔ ET IL RESTE FRAGILE : la scène porte encore un sac de mode, et le sac doit disparaître. Ce
+// banc s'éteindra une troisième fois. La condition de rallumage est la même : que trySrand.bps
+// analyse de nouveau.
 describe('le rattrapage de graine mord', () => {
   const source = Object.entries(BPS).find(([c]) => c.endsWith('BPScript-tests/trySrand.bps'))?.[1];
   const avecAlphabet = () =>

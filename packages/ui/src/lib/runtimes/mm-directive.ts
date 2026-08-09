@@ -1,15 +1,19 @@
 // Tempo directive — write helper that pushes the transport BPM back into the scene's
 // metronome line (Romain: changing the top tempo must change the scene's directive).
-// Recognises BOTH the v0.8 canon `@tempo:<n>` AND the legacy `@mm:<n>` (decision Romain
-// 2026-06-26: « tout migrer en @tempo »); the matched keyword is preserved on rewrite,
-// so a `@tempo` scene stays `@tempo` and a `@mm` scene stays `@mm` — we change only the
-// number, never the directive name. The read direction lives in the compiled AST
-// (`mmFromAst` in bpx-adapter); this is the write-back only. Pure string op, trivially testable.
+// UN SEUL NOM depuis le 2026-08-09 : `@tempo:<n>`. La branche qui reconnaissait aussi `@mm:<n>`
+// est partie le jour où bpscript a fermé cette surface (fa037e8) — code voué au retrait à zéro
+// appelant légitime, donc retiré dans le même mouvement.
+// ⚠️ CE QU'ELLE NE FAISAIT PAS, ET QU'IL FAUT SAVOIR AVANT DE CROIRE À UNE RÉGRESSION : cette
+// fonction n'INJECTE jamais de directive, elle réécrit le NOMBRE d'une directive déjà présente.
+// Elle n'a donc jamais pu écrire `@mm` dans une scène qui ne l'avait pas. Mesuré avant de le dire
+// — j'allais signaler une régression de production qui n'existait pas.
+// The read direction lives in the compiled AST (`mmFromAst` in bpx-adapter); this is the
+// write-back only. Pure string op, trivially testable.
 //
 // The corpus writes integers; we match an optional decimal defensively but write back a
 // rounded integer so the rewritten directive stays valid BPScript.
 
-const MM_RE = /(@(?:mm|tempo)\s*:\s*)(\d+(?:\.\d+)?)/;
+const MM_RE = /(@tempo\s*:\s*)(\d+(?:\.\d+)?)/;
 
 /**
  * Rewrite the `@tempo`/`@mm` value to `bpm` (rounded), preserving the rest of the line
