@@ -1,0 +1,34 @@
+// @name: Changing Pace
+// @tagline: A passage slows, then returns — without touching the tempo
+// @description: L'allure d'un passage : l'opérateur de vitesse posé dans le flux, et le retour à l'allure d'origine.
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: language, time
+// @order: 29
+//
+// L'allure d'un passage — ralentir sans changer de tempo
+//
+// Le métronome de la scène est un décor : il se pose une fois. L'ALLURE, elle, se change
+// en plein vol — un opérateur posé dans le flux multiplie ou divise la vitesse à partir
+// de l'endroit où il est écrit, et jusqu'à ce qu'un autre le remplace.
+// C'est la différence entre changer de tempo et faire un ritenuto : le battement de
+// fond ne bouge pas, c'est le passage qui s'étire. Le retour à l'allure d'origine
+// s'écrit avec l'opérateur inverse.
+// Une même phrase, jouée trois fois : à l'allure, deux fois plus lente, puis reprise.
+
+@core
+@alphabet.western
+@tempo:120
+
+S -> Phrase Ralentie Phrase
+
+-----
+
+@mode:ord
+
+// L'allure de la scène, telle que le métronome la donne.
+Phrase   -> C4 D4 E4 G4 (vel:84, wave:triangle, attack:4, release:180)
+
+// Divisée par deux : la même phrase s'étire, puis l'opérateur inverse la rend au tempo.
+Ralentie -> ! (/2) C4 D4 E4 G4 ! (*2) E4 C4 (vel:72, wave:triangle, attack:8, release:340)

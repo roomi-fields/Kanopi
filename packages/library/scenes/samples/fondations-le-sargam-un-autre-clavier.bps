@@ -1,0 +1,39 @@
+// @name: Sargam — Another Keyboard
+// @tagline: Twelve equal steps against twenty-two shrutis
+// @description: Le sargam, ses degrés et son registre saptak. Douze pas égaux contre vingt-deux shrutis.
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: language, foundations, tuning, raga
+// @order: 4
+//
+// Le sargam — un autre clavier, son accordage, son registre
+//
+// Le clavier occidental n'est pas le langage : ce n'est qu'un alphabet parmi d'autres.
+// Le sargam a ses degrés (sa re ga ma pa dha ni), sa convention de registre (mandra,
+// madhya, taar) et son accordage propre. Rien de tout cela n'est une traduction de
+// l'occidental — ce sont d'autres décisions.
+// Ici la même montée de degrés, jouée d'abord sur douze pas égaux puis sur les vingt-deux
+// shrutis. Les noms ne bougent pas ; les hauteurs, si.
+
+@core
+@alphabet.sargam
+@tempo:52
+
+@actor egal
+  tuning.sargam_12TET
+
+@actor shruti
+  tuning.sargam_22shruti
+
+S -> Egal Shruti Egal Shruti
+
+-----
+
+@mode:ord
+
+// Le tempérament égal, familier et lisse.
+Egal   -> egal.sa egal.re egal.ga egal.ma egal.pa egal.taar_sa (vel:74, wave:sine, attack:14, release:520)
+
+// Les vingt-deux shrutis : les mêmes degrés, aux intervalles de la tradition.
+Shruti -> shruti.sa shruti.re shruti.ga shruti.ma shruti.pa shruti.taar_sa (vel:74, wave:sine, attack:14, release:520)

@@ -1,0 +1,39 @@
+// @name: Going Out to MIDI
+// @tagline: Channel, program, controller, bend — driving a real device
+// @description: Canal, programme, contrôleur nommé et contrôleur numéroté, pli de hauteur.
+// @language: bpscript
+// @outputs: midi
+// @level: intermediate
+// @tags: language, midi, performance
+// @order: 21
+//
+// Sortir en MIDI — piloter un appareil
+//
+// Quand un acteur sort par le MIDI, il ne fabrique pas de son : il envoie des ordres à
+// un appareil qui, lui, en fait. Le CANAL dit à qui l'on parle, le PROGRAMME choisit le
+// timbre de l'appareil, les CONTRÔLEURS déplacent ses réglages en cours de jeu, et la
+// molette de hauteur plie les notes entre les touches.
+// Un contrôleur nommé s'écrit par son nom ; un contrôleur numéroté s'appelle par son
+// numéro — le point appelle le composant, le deux-points affecte la valeur.
+// Le premier bloc joue sec ; le second envoie les mêmes notes en remuant l'appareil.
+
+@core
+@alphabet.western
+@out.midi
+@tempo:92
+
+// Le programme se pose une fois pour la scène : le timbre de l'appareil est un décor.
+@ins:12
+
+S -> Sec Anime Sec Anime
+
+-----
+
+@mode:ord
+
+// Rien que des notes, sur le canal 1 : l'appareil joue son timbre tel quel.
+Sec   -> D3 A3 D4 F4 (vel:88, chan:1)
+
+// Les mêmes notes, avec la molette de modulation qui monte, un contrôleur numéroté qui
+// ouvre un réglage sans nom, et un pli de hauteur sur l'avant-dernière.
+Anime -> D3(mod:20) A3(mod:70) D4(cc.98:45) F4(pitchbend:2048) D4 (vel:104, chan:2)

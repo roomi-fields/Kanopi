@@ -1,10 +1,11 @@
 // @name: Flags — A Piece in Three States
 // @tagline: Form emerging from three rules passing a token
+// @description: Les drapeaux : test en tête de règle, mutation en fin de règle, et la forme qui émerge.
 // @language: bpscript
 // @outputs: audio
 // @level: intermediate
 // @tags: language, derivation
-// @order: 11
+// @order: 15
 //
 // Une pièce en trois états — les drapeaux font la forme
 //

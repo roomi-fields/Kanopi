@@ -1,10 +1,11 @@
 // @name: Templates — Capture and Replay
 // @tagline: The theme is said once and comes back identical
+// @description: Le gabarit maître et son esclave : un motif capturé, puis rejoué identique.
 // @language: bpscript
 // @outputs: audio
 // @level: advanced
 // @tags: language, derivation
-// @order: 14
+// @order: 18
 //
 // La structure avant la matière — capturer et rejouer
 //

@@ -1,10 +1,11 @@
 // @name: Ties
 // @tagline: Legato against martelé — one sign, a whole phrasing
+// @description: La liaison contre la répétition : legato et martelé sur les mêmes hauteurs.
 // @language: bpscript
 // @outputs: audio
 // @level: didactic
 // @tags: language, time
-// @order: 4
+// @order: 8
 //
 // Le son qui tient — la liaison contre la répétition
 //

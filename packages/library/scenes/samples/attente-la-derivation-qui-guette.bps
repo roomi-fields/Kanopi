@@ -1,0 +1,35 @@
+// @name: Waiting for a Trigger
+// @tagline: The flow suspends until a named signal arrives
+// @description: Le point d'attente : la dérivation suspend son flux jusqu'à l'arrivée d'un déclencheur nommé.
+// @language: bpscript
+// @outputs: audio
+// @level: advanced
+// @tags: language, time, events
+// @order: 30
+//
+// Le point d'attente — la dérivation qui guette
+//
+// Tout ce qui précède se déroule seul, du début à la fin. Le POINT D'ATTENTE ouvre
+// l'autre régime : le flux s'arrête et attend qu'un signal nommé arrive du dehors. Le
+// nom attendu se colle au signe, et rien ne passe tant qu'il n'est pas venu.
+// C'est ce qui permet à une pièce d'être JOUÉE plutôt que déroulée — une entrée de
+// clavier, un top d'une autre voix, une pédale. Sans lui, une grammaire ne peut que
+// produire son temps à elle.
+// Ici l'introduction se déroule, puis la suite guette : elle ne partira qu'au signal.
+
+@core
+@alphabet.western
+@tempo:80
+
+S -> Introduction Suite
+
+-----
+
+@mode:ord
+
+// L'introduction se déroule seule, sans rien attendre.
+Introduction -> A3 C4 E4 (vel:74, wave:sine, attack:8, release:300)
+
+// Le flux s'arrête net sur le point d'attente : la note qui suit ne tombera qu'au
+// signal nommé, et le silence d'ici là fait partie de la pièce.
+Suite        -> E4 <!depart A4 C5 E5 (vel:96, wave:sine, attack:3, release:260)

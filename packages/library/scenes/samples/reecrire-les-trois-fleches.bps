@@ -1,0 +1,38 @@
+// @name: The Three Arrows
+// @tagline: Produce, analyse, both — one material, three readings
+// @description: Les trois flèches de dérivation : production, analyse, bidirectionnelle, sur un même matériau.
+// @language: bpscript
+// @outputs: audio
+// @level: didactic
+// @tags: language, derivation
+// @order: 27
+//
+// Réécrire — les trois flèches
+//
+// Une règle est une RÉÉCRITURE, et le signe dit dans quel sens elle vaut.
+// La flèche de PRODUCTION réécrit le membre gauche en membre droit : c'est le sens
+// ordinaire, celui qui fabrique la matière. La flèche d'ANALYSE va dans l'autre sens :
+// elle réduit une séquence au symbole qui la nomme — c'est ainsi qu'une grammaire
+// RECONNAÎT un motif au lieu de le produire. La flèche DOUBLE dit que la règle vaut
+// dans les deux sens : le même énoncé sert à écrire et à lire.
+// Le même matériau passe ici par les trois, et chacune donne une phrase différente.
+
+@core
+@alphabet.western
+@tempo:92
+
+S -> Produit Analyse Double
+
+-----
+
+@mode:ord
+
+// Production : le symbole se déplie en sa suite, de gauche à droite.
+Produit -> E4 G4 B4 E5 (vel:82, wave:sine, attack:5, release:220)
+
+// Analyse : la séquence de droite se réduit au symbole de gauche — la même matière,
+// prise par l'autre bout.
+Analyse <- E4 G4 B4 E5 (vel:70, wave:sine, attack:9, release:340)
+
+// Bidirectionnelle : une seule écriture qui vaut pour produire et pour reconnaître.
+Double  <> E5 B4 G4 E4 (vel:94, wave:sine, attack:3, release:180)

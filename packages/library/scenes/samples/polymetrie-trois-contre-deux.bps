@@ -1,10 +1,11 @@
 // @name: Three Against Two
 // @tagline: Voices of different lengths sharing one span
+// @description: Polymétrie et hémiole : trois contre deux, puis quatre contre trois.
 // @language: bpscript
 // @outputs: audio
 // @level: intermediate
 // @tags: language, polymetric, time
-// @order: 6
+// @order: 10
 //
 // Trois contre deux — la polymétrie entendue, pas expliquée
 //

@@ -1,0 +1,33 @@
+// @name: Derivation Procedures
+// @tagline: repeat, goto, stop — the derivation moves itself
+// @description: Les procédures de dérivation : répéter une règle, sauter ailleurs, arrêter. Écrites en fin de règle.
+// @language: bpscript
+// @outputs: audio
+// @level: advanced
+// @tags: language, derivation
+// @order: 28
+//
+// Les procédures — quand la dérivation se déplace elle-même
+//
+// Un crochet en fin de règle peut porter autre chose qu'un drapeau : une PROCÉDURE, qui
+// déplace la dérivation. RÉPÉTER refait la règle un nombre de fois. SAUTER envoie la
+// dérivation à une autre règle au lieu de continuer. ARRÊTER l'interrompt là.
+// La différence avec une répétition écrite à la main compte : la procédure agit sur le
+// PARCOURS, pas sur le texte — la boucle n'est pas recopiée, elle est décidée.
+// Ici une cellule répétée trois fois, puis une coda atteinte par saut.
+
+@core
+@alphabet.western
+@tempo:112
+
+S -> Boucle Coda
+
+-----
+
+@mode:ord
+
+// La même cellule, refaite trois fois par la procédure — le texte ne la répète pas.
+Boucle -> G3 B3 D4 [repeat:3] (vel:80, wave:triangle, attack:4, release:170)
+
+// La coda s'arrête d'elle-même : la dérivation ne cherche pas de suite.
+Coda   -> D4 B3 G3 [stop] (vel:64, wave:triangle, attack:12, release:520)

@@ -1,0 +1,43 @@
+// @name: Several Actors, Two Outputs
+// @tagline: One piece, two destinations — the cascade fills the blanks
+// @description: Deux acteurs, deux sorties : audio interne et appareil MIDI. La cascade de la scène vers ses acteurs.
+// @language: bpscript
+// @outputs: audio, midi
+// @level: intermediate
+// @tags: language, foundations, midi
+// @order: 3
+//
+// Plusieurs acteurs — une pièce, deux destinations
+//
+// Un acteur dit QUI JOUE : son clavier, son accordage, son registre, et par où il sort.
+// Ce qu'il n'écrit pas, il le reçoit de la scène — c'est la cascade, et le plus local
+// l'emporte. Ici la basse part vers un appareil MIDI et le chant vers l'audio interne :
+// une seule pièce, deux chemins de sortie, et aucun des deux acteurs n'a eu à répéter le
+// clavier ni le tempo.
+// Le premier bloc les fait sonner ENSEMBLE, chacun avec son propre découpage du temps ;
+// le second les sépare, et on entend alors à quel appareil appartient quelle voix.
+
+@core
+@alphabet.western
+@tempo:96
+
+// Le chant sort par l'audio interne : il fabrique son propre son.
+@actor chant
+  out.audio
+
+// La basse pilote un appareil externe sur le canal 2 : elle n'a pas de forme d'onde à
+// donner, c'est l'appareil qui la porte.
+@actor basse
+  out.midi(ch:2)
+
+S -> Ensemble Ensemble Separe
+
+-----
+
+@mode:ord
+
+// Deux voix dans une même durée : quatre notes en haut, deux en bas.
+Ensemble -> {chant.A4 chant.C5 chant.E5 chant.C5, basse.A2 basse.E3} (vel:82, wave:triangle, attack:5, release:280)
+
+// Les mêmes, l'une après l'autre : la destination de chacune s'entend.
+Separe   -> basse.A2 basse.E3 chant.A4 chant.C5 (vel:70, wave:triangle, attack:9, release:420)

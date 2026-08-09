@@ -1,0 +1,41 @@
+// @name: Keyboard and Tuning
+// @tagline: The same chord, tempered then just — the third moves
+// @description: Alphabet, accordage, registre et diapason : quatre décisions distinctes. Tempérament égal contre accordage juste.
+// @language: bpscript
+// @outputs: audio
+// @level: didactic
+// @tags: language, foundations, tuning
+// @order: 2
+//
+// Le clavier et son accordage — quatre choses, quatre effets
+//
+// L'ALPHABET donne les noms de notes. L'ACCORDAGE donne une fréquence à chacune. Le
+// REGISTRE dit comment on écrit les octaves. Le DIAPASON fixe le point d'ancrage de tout
+// l'édifice. Quatre décisions séparées, souvent confondues.
+// Ici deux acteurs jouent le MÊME accord écrit avec les MÊMES lettres : seul l'accordage
+// change. La tierce du tempéré bat ; celle de l'accordage juste est immobile. C'est le
+// même texte et ce n'est pas le même son.
+
+@core
+@alphabet.western
+@octaves.western
+@diapason:440
+@tempo:60
+
+@actor tempere
+  tuning.western_12TET
+
+@actor juste
+  tuning.western_just
+
+S -> Tempere Juste Tempere Juste
+
+-----
+
+@mode:ord
+
+// Douze demi-tons égaux : un compromis, et la tierce bat.
+Tempere -> {tempere.C4 tempere.E4 tempere.G4}:3 (vel:76, wave:sine, attack:20, release:900)
+
+// Les rapports simples : la tierce se pose et cesse de battre.
+Juste   -> {juste.C4 juste.E4 juste.G4}:3 (vel:76, wave:sine, attack:20, release:900)

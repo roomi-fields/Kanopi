@@ -1,0 +1,39 @@
+// @name: Shuffle, Rotate, Restore
+// @tagline: Four ways to reorder a suite — same notes, four shapes
+// @description: L'ordre du flux : brasser, renverser, tourner, remettre en ordre une suite d'éléments.
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: language, derivation, generative
+// @order: 25
+//
+// L'ordre du flux — brasser, renverser, tourner, remettre
+//
+// Quatre réglages manipulent une SUITE d'éléments, et se posent en tête de ce qu'ils
+// manipulent. BRASSER mélange, RENVERSER lit à l'envers, TOURNER décale d'un nombre de
+// rangs, REMETTRE rétablit l'ordre d'écriture. Ce ne sont pas des transformations de la
+// grammaire mais du flux : le même groupe, réordonné à l'instant où il est joué.
+// Le premier bloc donne l'ordre de référence ; les suivants le déplacent, et la mémoire
+// de l'oreille fait le reste — on reconnaît le matériau et on entend l'écart.
+
+@core
+@alphabet.western
+@tempo:108
+
+S -> Ecrit Renverse Tourne Brasse Ecrit
+
+-----
+
+@mode:ord
+
+// L'ordre d'écriture : la référence à laquelle tout le reste se compare.
+Ecrit     -> {C4 E4 G4 B4} (vel:84, wave:triangle, attack:4, release:180)
+
+// Renversé : la même montée, lue de la fin vers le début.
+Renverse  -> !(retro) {C4 E4 G4 B4} (vel:84, wave:triangle, attack:4, release:180)
+
+// Tourné de deux rangs : le début part à la fin, le contour se décale sans se casser.
+Tourne    -> !(rotate:2) {C4 E4 G4 B4} (vel:84, wave:triangle, attack:4, release:180)
+
+// Brassé : l'ordre se refait à chaque passage, la matière reste identique.
+Brasse    -> !(shuffle) {C4 E4 G4 B4} (vel:96, wave:triangle, attack:3, release:220)

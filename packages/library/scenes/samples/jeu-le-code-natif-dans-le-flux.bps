@@ -1,0 +1,37 @@
+// @name: Native Code in the Flow
+// @tagline: A backtick is an event — it fires at its own instant
+// @description: Le backtick : du code externe joué à son instant. Tag explicite, ou langage hérité de l'acteur.
+// @language: bpscript
+// @outputs: audio
+// @level: advanced
+// @tags: language, code-voices, performance
+// @order: 20
+//
+// Le code natif dans le flux — un événement comme un autre
+//
+// Un backtick porte du code écrit dans un AUTRE langage, et le tag en tête est une
+// adresse : il nomme le langage, et le langage nomme son interprète. Ce qui compte est
+// que le bloc est un ÉVÉNEMENT DU FLUX — il tombe à son instant, entre deux notes,
+// exactement comme une note tomberait. BPScript ordonne ; le code calcule.
+// Un acteur peut donner le langage par défaut de ses backticks : le bloc n'a alors plus
+// besoin de le nommer. Les deux écritures se suivent ici, et elles font la même chose.
+
+@core
+@alphabet.western
+@tempo:104
+
+// Cet acteur parle Strudel : ses backticks n'ont pas à le redire.
+@actor rythme
+  eval.strudel
+
+S -> Nomme Herite Nomme Herite
+
+-----
+
+@mode:ord
+
+// Le bloc nomme son langage lui-même : l'adresse est dans le texte.
+Nomme  -> C4 `strudel: s("bd hh")` E4 G4 (vel:84, wave:sine, attack:4, release:200)
+
+// Le même bloc sans tag, qualifié par l'acteur : c'est lui qui porte l'adresse.
+Herite -> C4 rythme.`s("bd hh")` E4 G4 (vel:84, wave:sine, attack:4, release:200)

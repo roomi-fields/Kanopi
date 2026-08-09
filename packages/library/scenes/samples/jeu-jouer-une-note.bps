@@ -1,0 +1,34 @@
+// @name: Playing a Note
+// @tagline: The same phrase, flat then shaped — velocity and pan
+// @description: Vélocité et panoramique aux trois portées : le terme, le groupe, la règle.
+// @language: bpscript
+// @outputs: audio
+// @level: didactic
+// @tags: language, performance
+// @order: 19
+//
+// Jouer une note — la force et la place
+//
+// Une hauteur ne suffit pas à faire une note : il faut dire avec quelle FORCE elle est
+// attaquée et à quelle PLACE elle se tient dans l'espace. Ces deux réglages s'écrivent
+// à trois échelles — collés à un terme, sur un groupe, ou en fin de règle pour toute la
+// production — et le plus local gagne.
+// La même phrase, deux fois : d'abord uniforme, puis accentuée et répartie. Ce ne sont
+// pas les notes qui changent, c'est la façon dont on les joue.
+
+@core
+@alphabet.western
+@tempo:100
+
+S -> Plate Modelee Plate Modelee
+
+-----
+
+@mode:ord
+
+// Une seule force pour toute la règle : tout arrive au même niveau, rien ne ressort.
+Plate    -> C4 E4 G4 E4 C4 (vel:78, pan:64, wave:triangle, attack:5, release:200)
+
+// La règle donne le fond ; le groupe et le terme le contredisent là où c'est utile.
+// L'appui tombe sur le sommet, et les deux notes médianes s'écartent à droite.
+Modelee  -> C4 {E4 G4}(pan:96) E4(vel:112) C4(vel:52) (vel:70, pan:32, wave:triangle, attack:3, release:260)

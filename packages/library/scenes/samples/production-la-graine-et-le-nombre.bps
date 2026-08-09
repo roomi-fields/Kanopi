@@ -1,0 +1,41 @@
+// @name: Seed and Item Count
+// @tagline: A seed makes chance repeatable — same draw, every run
+// @description: Les réglages de production : la graine du tirage et le nombre d'items produits, dans leur bloc.
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: language, derivation, generative
+// @order: 26
+//
+// La graine et le nombre — régler la production, pas la grammaire
+//
+// Deux réglages ne parlent ni des notes ni des règles : ils parlent de la PRODUCTION
+// elle-même. La GRAINE fixe le tirage — le hasard devient reproductible, et deux
+// exécutions donnent exactement la même pièce. Le NOMBRE D'ITEMS dit combien la
+// production en tire. Ils s'écrivent dans un bloc, en tête, parce qu'ils gouvernent la
+// fabrication et non la matière.
+// Ici le hasard est semé : relancer la scène redonne le même parcours, note pour note.
+// Retirer la ligne de graine, et chaque écoute devient différente — c'est la seule
+// différence entre une improvisation et une composition écrite au hasard.
+
+[@seed:20260810]
+[@maxitems:12]
+
+@core
+@alphabet.western
+@tempo:96
+
+S -> Cellule Cellule Cellule Cellule
+
+-----
+
+@mode:random
+
+// Trois cellules candidates, tirées au sort — mais toujours dans le même ordre, parce
+// que la graine fige le tirage.
+Cellule -> D4 F4 A4 (vel:80, wave:sine, attack:5, release:200)
+Cellule -> D4 G4 A4 (vel:80, wave:sine, attack:5, release:200)
+Cellule -> D4 F4 C5 (vel:92, wave:sine, attack:3, release:280)
+
+// Le point d'exclamation peut re-semer en plein flux : à partir d'ici, un autre tirage.
+Cellule -> ![@seed:7] A3 D4 F4 (vel:70, wave:sine, attack:8, release:320)

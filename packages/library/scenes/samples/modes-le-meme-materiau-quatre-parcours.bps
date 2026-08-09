@@ -1,10 +1,11 @@
 // @name: Derivation Modes
 // @tagline: One stock of motifs, ordered then drawn
+// @description: Les modes de dérivation : le même stock de motifs, en ordre puis au hasard.
 // @language: bpscript
 // @outputs: audio
 // @level: intermediate
 // @tags: language, derivation, generative
-// @order: 8
+// @order: 12
 //
 // Le même matériau, quatre parcours — les modes
 //

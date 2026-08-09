@@ -1,10 +1,11 @@
 // @name: Subdividing a Beat
 // @tagline: The same cell in two, three and four
+// @description: La subdivision : une pulsation découpée en fragments égaux, par deux, par trois, par quatre.
 // @language: bpscript
 // @outputs: audio
 // @level: didactic
 // @tags: language, time
-// @order: 3
+// @order: 7
 //
 // Diviser un temps — la période
 //

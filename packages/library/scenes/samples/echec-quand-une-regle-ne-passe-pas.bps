@@ -1,10 +1,11 @@
 // @name: When a Rule Fails
 // @tagline: A guarded rule steps aside, the piece goes on
+// @description: L'échec de dérivation : une règle gardée sans condition passe son tour, la pièce continue.
 // @language: bpscript
 // @outputs: audio
 // @level: advanced
 // @tags: language, derivation
-// @order: 12
+// @order: 16
 //
 // Quand une règle ne passe pas — la gestion d'échec
 //

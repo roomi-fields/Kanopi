@@ -1,10 +1,11 @@
 // @name: Reading Backwards
 // @tagline: The arrow decides the order the figures unfold
+// @description: La direction de dérivation : le sens de lecture décide de la phrase.
 // @language: bpscript
 // @outputs: audio
 // @level: intermediate
 // @tags: language, derivation
-// @order: 10
+// @order: 14
 //
 // Lire à l'envers — la direction de dérivation
 //

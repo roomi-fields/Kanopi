@@ -1,0 +1,36 @@
+// @name: Going Out to Audio
+// @tagline: Waveform, envelope, filter — building the sound itself
+// @description: Forme d'onde, enveloppe et filtre : fabriquer son son au lieu de le déléguer.
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: language, synthesis, performance
+// @order: 22
+//
+// Sortir en audio — fabriquer son propre son
+//
+// Un acteur qui sort par l'audio ne délègue rien : il fabrique le son. Trois décisions
+// suffisent à le caractériser. La FORME D'ONDE donne la matière — une sinusoïde est nue,
+// une dent de scie est riche. L'ENVELOPPE donne le geste — une attaque courte percute,
+// une attaque longue s'installe. Le FILTRE retire ce qui dépasse et décide de la couleur.
+// Trois fois les mêmes notes, trois sons sans rapport : la hauteur n'est qu'une petite
+// partie de ce qu'on entend.
+
+@core
+@alphabet.western
+@tempo:76
+
+S -> Nue Riche Feutree
+
+-----
+
+@mode:ord
+
+// Sinusoïde, attaque nette : rien que la hauteur, aucun grain.
+Nue      -> A3 C4 E4 A4 (vel:80, wave:sine, attack:3, release:200)
+
+// Dent de scie ouverte : toute la matière est là, et elle mord.
+Riche    -> A3 C4 E4 A4 (vel:80, wave:sawtooth, filter:6000, attack:2, release:180)
+
+// Même dent de scie, filtre bas et attaque lente : la même matière, adoucie et lointaine.
+Feutree  -> A3 C4 E4 A4 (vel:80, wave:sawtooth, filter:700, attack:60, release:900)

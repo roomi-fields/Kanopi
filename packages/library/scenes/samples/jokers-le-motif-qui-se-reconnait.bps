@@ -1,10 +1,11 @@
 // @name: Wildcards
 // @tagline: A rule that describes a transformation, not a content
+// @description: Les jokers numérotés : une règle qui décrit une transformation plutôt qu un contenu.
 // @language: bpscript
 // @outputs: audio
 // @level: advanced
 // @tags: language, derivation
-// @order: 13
+// @order: 17
 //
 // Le motif qui se reconnaît — les jokers
 //

@@ -1,0 +1,31 @@
+// @name: Where a Control Is Written
+// @tagline: One key, four scopes — and the most local one wins
+// @description: La même clé à ses quatre portées : terme, groupe, règle, flux. Le plus local gagne.
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: language, performance
+// @order: 24
+//
+// Où s'écrit un contrôle — la même clé à quatre places
+//
+// Un réglage n'a pas UNE place : il en a quatre, et chacune décide de sa portée.
+// Collé à un TERME, il ne vaut que pour lui. Collé à un GROUPE, il couvre son contenu.
+// En fin de RÈGLE, il vaut pour toute la production. Posé seul dans le FLUX avec le
+// point d'exclamation, il vaut à partir de là et jusqu'à ce qu'un autre le remplace.
+// Le plus local gagne toujours. Ici la même clé, la force, est écrite aux quatre places
+// dans une seule phrase — chaque note dit à quelle portée elle obéit.
+
+@core
+@alphabet.western
+@tempo:88
+
+S -> Cascade Cascade
+
+-----
+
+@mode:ord
+
+// De gauche à droite : la règle donne 70 ; le terme impose 118 ; le groupe impose 50 ;
+// le flux bascule à 100 et tient jusqu'à la fin.
+Cascade -> C4 E4(vel:118) {G4 A4}(vel:50) !(vel:100) C5 A4 G4 (vel:70, wave:sine, attack:4, release:240)

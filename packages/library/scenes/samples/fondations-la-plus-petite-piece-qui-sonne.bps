@@ -1,0 +1,37 @@
+// @name: The Smallest Piece That Sounds
+// @tagline: What a scene declares, and what it inherits
+// @description: Le socle minimal d'une scène : librairie, alphabet, règle de départ. L'acteur implicite et la cascade d'héritage.
+// @language: bpscript
+// @outputs: audio
+// @level: didactic
+// @tags: language, foundations
+// @order: 1
+//
+// La plus petite pièce qui sonne — ce qu'on écrit, ce qu'on hérite
+//
+// Trois lignes suffisent : le socle, le clavier, une règle qui part de S. Tout le reste
+// est HÉRITÉ — la scène a un acteur même si personne ne le déclare, et cet acteur reçoit
+// son alphabet, son accordage, son registre et sa sortie de la cascade.
+// Pour le prouver, la seconde voix REDIT explicitement ce que la première tait. Les deux
+// sonnent identiques : c'est la démonstration, pas une coïncidence.
+
+@core
+@alphabet.western
+@tempo:84
+
+// L'acteur nommé écrit noir sur blanc ce que la scène donne déjà à l'acteur implicite.
+@actor explicite
+  alphabet.western
+  out.audio
+
+S -> Tait Dit Tait Dit
+
+-----
+
+@mode:ord
+
+// Rien de déclaré : les notes nues passent par l'acteur implicite de la scène.
+Tait -> C4 E4 G4 C5 (vel:80, wave:triangle, attack:6, release:240)
+
+// Tout redit : le même son, par un acteur qui ne fait qu'écrire son héritage.
+Dit  -> explicite.C4 explicite.E4 explicite.G4 explicite.C5 (vel:80, wave:triangle, attack:6, release:240)

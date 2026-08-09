@@ -1,10 +1,11 @@
 // @name: Compound Sound Object
 // @tagline: One indivisible cell against a divisible group
+// @description: L'objet sonore composé : une cellule indivisible contre un groupe dérivable.
 // @language: bpscript
 // @outputs: audio
 // @level: intermediate
 // @tags: language
-// @order: 7
+// @order: 11
 //
 // Une cellule, un son — l'objet sonore composé
 //
