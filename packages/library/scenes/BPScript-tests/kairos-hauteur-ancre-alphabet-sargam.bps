@@ -6,6 +6,6 @@
 @core
 @controls
 @alphabet.sargam:audio
-@mm:60
+@tempo:60
 
 S -> sa ni

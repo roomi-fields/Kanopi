@@ -7,6 +7,6 @@
 
 @core
 @controls
-@mm:60
+@tempo:60
 
 S -> A4(diapason:428,vel:100) E4

@@ -6,6 +6,6 @@
 
 @core
 @controls
-@mm:60
+@tempo:60
 
 S -> A4 - B4

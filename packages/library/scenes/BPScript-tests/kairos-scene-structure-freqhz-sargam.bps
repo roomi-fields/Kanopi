@@ -8,6 +8,6 @@
 @controls
 @alphabet.sargam:audio
 @tuning.sargam_12TET
-@mm:60
+@tempo:60
 
 S -> sa re ni

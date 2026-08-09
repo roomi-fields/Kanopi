@@ -7,6 +7,6 @@
 @controls
 @alphabet.sargam:audio
 @tuning.sargam_22shruti
-@mm:60
+@tempo:60
 
 S -> sa ni

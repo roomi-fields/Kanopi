@@ -7,6 +7,6 @@
 @controls
 @alphabet.western:audio
 @diapason:230
-@mm:60
+@tempo:60
 
 S -> A4 E4

@@ -8,6 +8,6 @@
 @alphabet.western:audio
 @tuning.western_just
 @diapason:442
-@mm:60
+@tempo:60
 
 S -> C4 E4(diapason:428)
