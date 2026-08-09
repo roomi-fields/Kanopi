@@ -2,7 +2,12 @@ import { test, expect } from '@playwright/test';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { setupAudioCapture, setupFakeMidi, evalBlockAt, expectNoConsoleErrors } from '../../helpers';
+import {
+  setupAudioCapture,
+  setupFakeMidi,
+  evalBlockAt,
+  expectNoConsoleErrors
+} from '../../helpers';
 
 // CHAQUE SCÈNE D'EXEMPLE PRODUIT — la preuve de production, mandat architecte [1209].
 //
@@ -42,15 +47,72 @@ const SCENES: Scene[] = readdirSync(DOSSIER)
     };
   });
 
+// LES ROUGES D'INTENTION — mesurés le 2026-08-10, chacun routé, aucun à moi.
+//
+// ⚠️ CE N'EST PAS UNE MISE EN SOMMEIL : l'attente est INVERSÉE. Tant que la scène échoue POUR SA
+// RAISON, le banc passe ; le jour où elle produit, le banc ROUGIT et demande le retrait de sa
+// ligne. Un défaut réparé en amont sans que personne le dise se signale donc tout seul, au lieu
+// de dormir sous un vert.
+//
+// LA COUPURE N'EST PAS UNE RESSEMBLANCE, ELLE EST MESURÉE : les quatre muettes sont EXACTEMENT
+// les quatre scènes qui déclarent un `@actor` sans `out.*`. Les deux seules scènes à acteurs QUI
+// déclarent leur sortie produisent, et les vingt-huit sans acteur du tout produisent. Aucun
+// contre-exemple dans un sens ni dans l'autre.
+//
+// CE N'EST PAS LE PORTIER D'APPAREIL DE L'HÔTE : un acteur sans sortie déclarée reçoit `'audio'`
+// par défaut (`src/lib/runtimes/bpx-adapter.ts:741`), et le portier CRIE au lieu de sauter — or
+// ces quatre-là ne produisent aucune erreur de console.
+//
+// ET CE N'EST PAS UNE CORRÉLATION, C'EST UNE CAUSE DÉMONTRÉE : ajouter `out.audio` sous les deux
+// acteurs de `symboles-et-noms-lever-l-ambiguite.bps` la fait SONNER. La même injection prouve la
+// morsure de l'inversion — le banc rougit alors en réclamant le retrait de sa ligne ; retrait de
+// l'injection, retour au vert.
+const MUETTES_DECLAREES: Record<string, { motif: string; attend: 'silence' | 'cris' }> = {
+  'fondations-le-clavier-et-son-accordage.bps': {
+    motif: 'deux `@actor` avec `tuning.<x>` et aucun `out.*` — la voix n’atteint aucune sortie',
+    attend: 'silence'
+  },
+  'fondations-le-sargam-un-autre-clavier.bps': {
+    motif: 'deux `@actor` avec `tuning.<x>` et aucun `out.*`',
+    attend: 'silence'
+  },
+  'symboles-et-noms-lever-l-ambiguite.bps': {
+    motif: 'deux `@actor` avec `tuning.<x>` et aucun `out.*`',
+    attend: 'silence'
+  },
+  'jeu-le-code-natif-dans-le-flux.bps': {
+    motif: 'un `@actor` avec `eval.strudel` et aucun `out.*`',
+    attend: 'silence'
+  },
+  'jeu-transposer-quatre-gestes.bps': {
+    motif:
+      'elle SONNE, et elle crie : 32 fail-loud `[kairos.pitch]` — keyxpand.pivotStep=0, ' +
+      'la coercition token-step attend un TOKEN de note (KAI-B03)',
+    attend: 'cris'
+  }
+};
+
 test('le dossier des scènes d’exemple n’est pas vide', () => {
   expect(SCENES.length).toBeGreaterThan(0);
 });
 
-for (const { fichier, source, sorties } of SCENES) {
-  const attendAudio = sorties.includes('audio');
-  const attendMidi = sorties.includes('midi');
+test('aucune muette déclarée ne désigne un fichier disparu', () => {
+  const presents = new Set(SCENES.map((s) => s.fichier));
+  const fantomes = Object.keys(MUETTES_DECLAREES).filter((f) => !presents.has(f));
+  expect(fantomes, 'lignes à retirer de MUETTES_DECLAREES').toEqual([]);
+});
 
-  test(`${fichier} produit (${sorties.join(' + ')})`, async ({ page }) => {
+for (const { fichier, source, sorties } of SCENES) {
+  const declaree = MUETTES_DECLAREES[fichier];
+  const silenceAttendu = declaree?.attend === 'silence';
+  const attendAudio = sorties.includes('audio');
+  const attendMidi = sorties.includes('midi') && !silenceAttendu;
+
+  const titre = declaree
+    ? `${fichier} — rouge déclaré : ${declaree.motif}`
+    : `${fichier} produit (${sorties.join(' + ')})`;
+
+  test(titre, async ({ page }) => {
     const audio = attendAudio ? await setupAudioCapture(page) : null;
     const midi = attendMidi ? await setupFakeMidi(page) : null;
     const noErrors = expectNoConsoleErrors(page);
@@ -103,7 +165,14 @@ for (const { fichier, source, sorties } of SCENES) {
       // Fenêtre large et PIC sur la fenêtre : un instantané tombe dans un silence entre deux
       // notes et rend un zéro qui ne veut rien dire.
       const rms = await audio.getMaxRMS(3000);
-      expect(rms, `${fichier} : aucun son mesuré sur le maître`).toBeGreaterThan(0.001);
+      if (silenceAttendu) {
+        expect(
+          rms,
+          `${fichier} PRODUIT maintenant — le défaut est réparé en amont : retirer sa ligne de MUETTES_DECLAREES`
+        ).toBeLessThanOrEqual(0.001);
+      } else {
+        expect(rms, `${fichier} : aucun son mesuré sur le maître`).toBeGreaterThan(0.001);
+      }
     }
 
     if (midi) {
@@ -115,6 +184,16 @@ for (const { fichier, source, sorties } of SCENES) {
     // Romain est à la machine : on ne laisse jamais du son derrière soi.
     await page.keyboard.press('ControlOrMeta+Period');
     await page.waitForTimeout(200);
-    noErrors();
+
+    if (declaree?.attend === 'cris') {
+      // Elle sonne ET elle crie : c'est le cri qui est déclaré, donc son ABSENCE est ce qui doit
+      // rougir — sinon la réparation amont passerait inaperçue sous un vert.
+      expect(
+        () => noErrors(),
+        `${fichier} ne crie plus — le défaut amont est réparé : retirer sa ligne de MUETTES_DECLAREES`
+      ).toThrow();
+    } else {
+      noErrors();
+    }
   });
 }
