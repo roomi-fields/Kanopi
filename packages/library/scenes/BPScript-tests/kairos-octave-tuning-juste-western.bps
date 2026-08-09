@@ -1,0 +1,12 @@
+// @language: bpscript
+// kairos-octave-tuning-juste-western.bps — sert src/projection/pitch-e2e.test.ts (kairos, KAI-10).
+// `@tuning.western_just` sur C4 E4 G4 : preuve e2e que l'intonation juste sonne bout en bout (tierce
+// 5/4, quinte 3/2 exactes), distinct du tempérament égal.
+
+@core
+@controls
+@alphabet.western:audio
+@tuning.western_just
+@mm:60
+
+S -> C4 E4 G4

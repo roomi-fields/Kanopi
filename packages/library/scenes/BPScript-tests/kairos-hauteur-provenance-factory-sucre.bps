@@ -1,0 +1,10 @@
+// @language: bpscript
+// kairos-hauteur-provenance-factory-sucre.bps — sert src/projection/provenance-factory-mine.test.ts
+// (kairos, [343]). Adresse SUCRÉE @factory.alphabets.sargam (nom de fichier explicite, normalisé nu
+// par bpscript) : doit résoudre au même Hz que l'invocation nue @alphabet.sargam:audio.
+
+@core
+@controls
+@factory.alphabets.sargam
+
+S -> sa re

@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-manip-note-c4.bps — sert src/projection/rotate-keyxpand-e2e.test.ts et
+// src/projection/transpose-digital-e2e.test.ts (kairos, sortie du BPScript en dur 2026-08-09).
+// Une seule note C4 nue, western/midi — sert de RÉFÉRENCE de hauteur non manipulée, comparée aux
+// scènes équivalentes portant un contrôle (scaleshift, transpose).
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> C4

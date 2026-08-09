@@ -1,0 +1,12 @@
+// @language: bpscript
+// kairos-manip-transpose-global-legacy.bps — sert src/projection/transpose-digital-e2e.test.ts
+// (kairos, sortie du BPScript en dur 2026-08-09). VIEUX corpus : @transpose:-12 au niveau scène
+// (jamais migré en (N*100)c). Émet la chaîne "-12" = décimal négatif → intervalle irrésoluble →
+// preuve du cri de migration LOCAL (marqueur posé sur la feuille, la scène continue de sonner).
+
+@core
+@controls
+@alphabet.western:midi
+@transpose:-12
+
+S -> C4

@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-trace-axiome-deux-regles.bps — sert src/trace/vue-trace.test.ts ([513] point 3 — la trace
+// S'OUVRE SUR L'AXIOME). Deux règles enchaînées (S puis SUITE) : preuve que `avant` du pas 0 est le
+// point de départ `S`, jamais déductible d'un pas précédent puisqu'il n'y en a pas.
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> C4 SUITE
+SUITE -> E4 F4

@@ -1,0 +1,12 @@
+// @language: bpscript
+// kairos-trace-libelle-prefixe-imbrique.bps — sert src/trace/libelle-controle.test.ts (kairos, forme
+// PRÉFIXÉE `_vel(120)` / `_chan(3)` : nom et arguments en clair). Deux règles imbriquées, chacune
+// avec son propre contrôle préfixé : preuve que le libellé de chaque marqueur se rend indépendamment,
+// nom de règle intermédiaire (MOTIF) choisi pour ne pas collisionner avec un terminal de l'alphabet.
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> _vel(120) MOTIF
+MOTIF -> _chan(3) C4 D4

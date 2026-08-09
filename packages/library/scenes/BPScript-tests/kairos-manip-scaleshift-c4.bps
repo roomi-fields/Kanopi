@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-manip-scaleshift-c4.bps — sert src/projection/rotate-keyxpand-e2e.test.ts et
+// src/projection/transpose-digital-e2e.test.ts (kairos, sortie du BPScript en dur 2026-08-09).
+// C4 avec le contrôle scaleshift:2 (transposition scalaire de 2 degrés d'alphabet, C→D→E) : preuve
+// que la fonction de lib 'scaleshift' résout exactement la hauteur de E4.
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> C4(scaleshift:2)

@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-trace-accord-deux-notes.bps — sert src/trace/vue-trace.test.ts (kairos, la chaîne est
+// RENDUE par la graphie de BPx — signes collés, bourrage sauté ; et ZÉRO GRAPHIE CHEZ MOI — sans la
+// fonction de BPx, la trace n'est pas rendable). Un accord `{C4, D4}` sans contrôle : preuve que la
+// graphie BP3 (accolades et virgule collées) sort telle quelle, sans nom interne ni repli maison.
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> {C4, D4}

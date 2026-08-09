@@ -1,0 +1,10 @@
+// @language: bpscript
+// kairos-octave-transpose-base-d4.bps — sert src/projection/transpose-containment-e2e.test.ts
+// (kairos, verrou containment [446]). Note D4 SANS transposition : référence de base pour la preuve
+// de confinement (D4 doit rester VIERGE quand C4 seule porte le suffixe).
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> D4

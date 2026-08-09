@@ -1,0 +1,10 @@
+// @language: bpscript
+// kairos-hauteur-provenance-legacy-sargam.bps — sert src/projection/provenance-factory-mine.test.ts
+// (kairos, [343]). Baseline LEGACY : alphabet sargam du catalogue factory, sans librairie perso —
+// ancre de comparaison pour toutes les preuves de provenance (factory vs mine, même nom).
+
+@core
+@controls
+@alphabet.sargam:audio
+
+S -> sa re

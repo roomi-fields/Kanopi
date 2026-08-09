@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-hauteur-provenance-factory-sixieme-fichier.bps — sert
+// src/projection/provenance-factory-mine.test.ts (kairos, [487]). Invoque un SIXIÈME fichier factory
+// à nom libre (@factory.test_alphabets.abc), hors des cinq catalogues d'axe standard : preuve que la
+// composition résout un alphabet abstrait (symboles sans hauteur) depuis ce fichier.
+
+@core
+@controls
+@factory.test_alphabets.abc
+
+S -> a b

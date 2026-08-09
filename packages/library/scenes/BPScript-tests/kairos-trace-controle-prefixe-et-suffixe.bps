@@ -1,0 +1,12 @@
+// @language: bpscript
+// kairos-trace-controle-prefixe-et-suffixe.bps — sert src/trace/vue-trace.test.ts (kairos,
+// CONTRE-SIGNATURE [499] — ruleControlMarkers et controlMarkers portent la MÊME charge ; et E2E
+// RÈGLE [510][511] — ruleText de BPx + mes libellés). Contrôles sur les DEUX formes à la fois : le
+// suffixe (`transpose:-1200c`) et le préfixe (`_vel(90)`), pour prouver que la production ET la RHS
+// de la règle S résolvent identiquement des deux côtés.
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> C4(transpose:-1200c) _vel(90) D4

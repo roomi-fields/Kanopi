@@ -1,0 +1,12 @@
+// @language: bpscript
+// kairos-scene-mute-voix-de-code.bps — sert src/rc-gap-opqueue.test.ts (kairos, [330] mute
+// voix-de-code).
+// Un acteur voix-de-code (`drums`, bloc backtick `eval.strudel`) qui ne porte AUCUN acteur au
+// niveau événement : preuve que le mute atteint quand même le drain, l'index ayant été élargi aux
+// déclarations `@actor` — l'ancien index (acteurs d'événements seuls) écartait ce mute à tort.
+
+@actor drums  eval.strudel
+
+S -> BATTERIE
+
+BATTERIE -> drums.`note("c3 e3 g3").s("sine")`

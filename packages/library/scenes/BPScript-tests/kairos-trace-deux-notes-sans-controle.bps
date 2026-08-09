@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-trace-deux-notes-sans-controle.bps — sert src/trace/vue-trace.test.ts (kairos, plusieurs
+// bancs : reglesControles ABSENT sans contrôle sur la règle ; ruleText passe tel quel sans contrôle ;
+// les trois preuves de coût quand la trace est ÉTEINTE). Deux notes, zéro contrôle : le cas le plus
+// nu, servant de témoin neutre partout où seule l'ABSENCE de contrôle/trace compte.
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> C4 D4

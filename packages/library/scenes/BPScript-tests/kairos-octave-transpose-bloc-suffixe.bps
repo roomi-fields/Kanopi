@@ -1,0 +1,10 @@
+// @language: bpscript
+// kairos-octave-transpose-bloc-suffixe.bps — sert src/projection/transpose-containment-e2e.test.ts
+// (kairos, verrou containment [446]). Suffixe `(transpose:-200c)` posé sur un BLOC ({C4}) : doit
+// descendre sur la feuille C4 du bloc.
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> {C4}(transpose:-200c)

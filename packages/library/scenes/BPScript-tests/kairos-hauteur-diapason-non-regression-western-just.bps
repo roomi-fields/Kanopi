@@ -1,0 +1,12 @@
+// @language: bpscript
+// kairos-hauteur-diapason-non-regression-western-just.bps — sert src/projection/diapason-e2e.test.ts
+// (kairos, mandat [284]). Aucun @diapason déclaré, sur western_just : non-régression stricte, la
+// référence du COMPOSANT (440) doit rester inchangée (C4=264, E4=330, G4=396).
+
+@core
+@controls
+@alphabet.western:audio
+@tuning.western_just
+@mm:60
+
+S -> C4 E4 G4

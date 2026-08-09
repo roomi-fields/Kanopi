@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-octave-transpose-master-slave.bps — sert src/projection/transpose-containment-e2e.test.ts
+// (kairos, verrou containment [446]). $MOTIF(transpose:-200c) &MOTIF(vel:80) : master transposé,
+// slave porte vel seul — preuve de ZÉRO attribution croisée entre les deux invocations du template.
+
+@core
+@controls
+@alphabet.western:midi
+
+MOTIF -> C4
+S -> $MOTIF(transpose:-200c) &MOTIF(vel:80)

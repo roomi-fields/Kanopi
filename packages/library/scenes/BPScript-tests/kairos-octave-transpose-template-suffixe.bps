@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-octave-transpose-template-suffixe.bps — sert src/projection/transpose-containment-e2e.test.ts
+// (kairos, verrou containment [446]). Suffixe `(transpose:-200c)` posé sur une INVOCATION DE TEMPLATE
+// ($MOTIF) : doit descendre sur la feuille C4 de l'expansion.
+
+@core
+@controls
+@alphabet.western:midi
+
+MOTIF -> C4
+S -> $MOTIF(transpose:-200c)

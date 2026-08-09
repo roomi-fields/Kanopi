@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-octave-transpose-legacy-decimal.bps — sert src/projection/transpose-global-trnoop.test.ts
+// (kairos, TR-NOOP étage 2). VIEUX corpus `@transpose:-12` (décimal négatif nu, pas de suffixe `c`) :
+// prouve le cri de migration LOCAL par feuille (pitchError, jamais une hauteur fausse qui sonne).
+
+@core
+@controls
+@alphabet.western:midi
+@transpose:-12
+
+S -> C4 D4

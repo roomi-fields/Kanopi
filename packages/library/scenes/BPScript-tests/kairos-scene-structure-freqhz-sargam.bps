@@ -1,0 +1,13 @@
+// @language: bpscript
+// kairos-scene-structure-freqhz-sargam.bps — sert src/projection/structure-enrichie-e2e.test.ts
+// ([299] vue structure ENRICHIE).
+// Trois svara consécutifs (sa re ni) sur l'alphabet sargam : preuve que la vue structure porte
+// `freqHz` note par note IDENTIQUE à `content.pitch.hz` du plat projeté (même fabrique de contenu).
+
+@core
+@controls
+@alphabet.sargam:audio
+@tuning.sargam_12TET
+@mm:60
+
+S -> sa re ni

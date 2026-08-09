@@ -1,0 +1,10 @@
+// @language: bpscript
+// kairos-octave-transpose-sans-directive.bps — sert src/projection/transpose-global-trnoop.test.ts
+// (kairos, TR-NOOP étage 2). C4 D4 SANS aucune directive `@transpose` : référence de base pour les
+// preuves de résolution en hz/ratio (comparée aux scènes global/override du même banc).
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> C4 D4

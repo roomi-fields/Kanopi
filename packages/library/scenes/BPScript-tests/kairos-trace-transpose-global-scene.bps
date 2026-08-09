@@ -1,0 +1,12 @@
+// @language: bpscript
+// kairos-trace-transpose-global-scene.bps — sert src/trace/libelle-controle.test.ts (kairos, un
+// @transpose GLOBAL de scène ne produit AUCUN marqueur). Une directive `@transpose:-1200c` au niveau
+// scène (pas sur un terminal) : preuve que la transposition globale voyage en métadonnée, jamais dans
+// le tampon de contrôles — « aucun marqueur » ne doit pas se lire « aucune transposition ».
+
+@core
+@controls
+@alphabet.western:midi
+@transpose:-1200c
+
+S -> C4 D4

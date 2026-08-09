@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-accord-secondaire.bps — sert src/projection/c3-accord-calques.test.ts (kairos, C3 — revue
+// de conformité 2026-07-03). Un accord à 2 voix (note principale + note secondaire simultanée) :
+// preuve que la note SECONDAIRE conserve elle aussi son identité (symbolId réel) et ses calques de
+// structure — pas seulement la principale (correctif visit/sourceByNode qui la sautait avant fix).
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> C4!E4

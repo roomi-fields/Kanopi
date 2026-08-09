@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-scene-structure-rest-sans-hauteur.bps — sert src/projection/structure-enrichie-e2e.test.ts
+// ([299] vue structure ENRICHIE).
+// Un silence entre deux notes : preuve qu'une feuille `rest` de la vue structure ne porte JAMAIS
+// `freqHz` ni `params` — même règle que la facette pitch du plat projeté.
+
+@core
+@controls
+@mm:60
+
+S -> A4 - B4

@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-manip-chaine-grille-cadre.bps — sert src/projection/rotate-keyxpand-e2e.test.ts (kairos,
+// sortie du BPScript en dur 2026-08-09). C4 portant TROIS contrôles (scaleshift:2, keyxpand:C4 2,
+// transpose:100c) : preuve de la chaîne complète grille (rang 10/20) puis cadre (rang 30) — le
+// symbolique retombe sur la grille (G#4), le cadre déplace le Hz jusqu'à la hauteur de A4.
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> C4(scaleshift:2, keyxpand:C4 2, transpose:100c)

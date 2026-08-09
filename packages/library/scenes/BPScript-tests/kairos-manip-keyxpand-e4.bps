@@ -1,0 +1,10 @@
+// @language: bpscript
+// kairos-manip-keyxpand-e4.bps — sert src/projection/rotate-keyxpand-e2e.test.ts (kairos, sortie du
+// BPScript en dur 2026-08-09). E4 avec le contrôle keyxpand(pivot:C4, factor:2) : preuve que la
+// liaison générique résout le token pivot en pas de grille et dilate exactement vers G#4.
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> E4(keyxpand:C4 2)

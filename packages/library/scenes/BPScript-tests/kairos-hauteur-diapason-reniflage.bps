@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-hauteur-diapason-reniflage.bps — sert src/projection/diapason-e2e.test.ts (kairos, [288]
+// verrou). AUCUNE déclaration d'alphabet ni de tuning, seulement @diapason:230 : le résolveur doit
+// être RENIFLÉ (western par défaut) et l'override doit s'y appliquer quand même.
+
+@core
+@controls
+@diapason:230
+@mm:60
+
+S -> A4 E4

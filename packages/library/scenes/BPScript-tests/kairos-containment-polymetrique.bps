@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-containment-polymetrique.bps — sert src/garde-charriage-bpx.test.ts (kairos, G3 — invariant
+// span §2.2 du contrat bpx-kairos-arbre.md). Bloc polymétrique + prolongation `_` : fixture-type de
+// containment (oracle bp3-engine #51, fournie par BPx [237]). Preuve que chaque enfant reste contenu
+// dans son parent (span ms), et que le conteneur polymétrique est l'enveloppe de ses voix — à mm:60,
+// `{C4, E4, G4} _` occupe [3000,5000] ms, ses voix 2/3 [3000,4000] ms (le `_` prolonge le bloc).
+
+@core
+@tempo:60
+
+S -> C4 D4 E4 {C4, E4, G4} _

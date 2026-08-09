@@ -1,0 +1,10 @@
+// @language: bpscript
+// kairos-manip-keyxpand-identite.bps — sert src/projection/rotate-keyxpand-e2e.test.ts (kairos,
+// sortie du BPScript en dur 2026-08-09). E4 avec keyxpand(pivot:C4, factor:1) : preuve que le
+// facteur 1 est une IDENTITÉ par le corps (présence dispatchée, pivot valide résolu, aucune mutation).
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> E4(keyxpand:C4 1)

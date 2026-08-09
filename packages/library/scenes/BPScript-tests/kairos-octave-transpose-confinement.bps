@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-octave-transpose-confinement.bps — sert src/projection/transpose-containment-e2e.test.ts
+// (kairos, verrou containment [446]). $MOTIF(transpose:-200c) suivi de D4 : C4 (expansion du template)
+// doit être transposée, D4 doit rester VIERGE — le containment ne déborde pas sur la note voisine.
+
+@core
+@controls
+@alphabet.western:midi
+
+MOTIF -> C4
+S -> $MOTIF(transpose:-200c) D4

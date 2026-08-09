@@ -1,0 +1,10 @@
+// @language: bpscript
+// kairos-manip-transpose-cents.bps — sert src/projection/transpose-digital-e2e.test.ts (kairos,
+// sortie du BPScript en dur 2026-08-09). C4 avec transpose:-700c (intervalle NU, format cents) :
+// un des trois formats de la décision transposition réelle, preuve hz × 2^(-700/1200) exact.
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> C4(transpose:-700c)

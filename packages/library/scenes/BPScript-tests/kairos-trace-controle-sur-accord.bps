@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-trace-controle-sur-accord.bps — sert src/trace/vue-trace.test.ts (kairos, MA part dans SA
+// graphie — le contenu opaque d'un contrôle sort en clair par son crochet). Un `_vel(120)` préfixé
+// devant un accord `{C4, D4}` : preuve que mon libellé résolu s'insère dans la graphie de BPx sans
+// jamais laisser passer le placeholder `_ctrl`.
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> _vel(120) {C4, D4}

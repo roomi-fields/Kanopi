@@ -1,0 +1,13 @@
+// @language: bpscript
+// kairos-hauteur-diapason-scene-western-just.bps — sert src/projection/diapason-e2e.test.ts (kairos,
+// mandat [284]). @diapason:442 de SCÈNE (plié acteur par bpscript) sur l'accordage western_just :
+// preuve que TOUS les Hz du triple C4/E4/G4 sont décalés ×442/440.
+
+@core
+@controls
+@alphabet.western:audio
+@tuning.western_just
+@diapason:442
+@mm:60
+
+S -> C4 E4 G4

@@ -1,0 +1,13 @@
+// @language: bpscript
+// kairos-hauteur-diapason-western-meantone.bps — sert src/projection/diapason-e2e.test.ts (kairos,
+// [287] multi-tuning). @diapason:442 sur western_meantone (quarter-comma) : même token/diapason que
+// western_just, mais tierce PURE (E4/C4 = 1.25 exact) — signature du tempérament, ≠ western_just.
+
+@core
+@controls
+@alphabet.western:audio
+@tuning.western_meantone
+@diapason:442
+@mm:60
+
+S -> C4 E4

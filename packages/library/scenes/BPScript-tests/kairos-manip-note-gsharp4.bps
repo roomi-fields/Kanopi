@@ -1,0 +1,10 @@
+// @language: bpscript
+// kairos-manip-note-gsharp4.bps — sert src/projection/rotate-keyxpand-e2e.test.ts (kairos, sortie
+// du BPScript en dur 2026-08-09). Une seule note G#4 nue, western/midi — sert de RÉFÉRENCE de
+// hauteur pour la chaîne keyxpand (dilatation autour d'un pivot) et scaleshift+keyxpand combinés.
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> G#4

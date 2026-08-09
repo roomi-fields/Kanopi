@@ -1,0 +1,12 @@
+// @language: bpscript
+// kairos-scene-structure-diapason-occurrence.bps — sert src/projection/structure-enrichie-e2e.test.ts
+// ([299] vue structure ENRICHIE, M8).
+// Un diapason d'occurrence sur A4 (prime sur le diapason de scène) et un contrôle `vel` exposé :
+// preuve que la vue structure porte `params` IDENTIQUE à `content.controls` du plat, et que le
+// diapason consommé (M8) ne fuite PAS dans `params`.
+
+@core
+@controls
+@mm:60
+
+S -> A4(diapason:428,vel:100) E4

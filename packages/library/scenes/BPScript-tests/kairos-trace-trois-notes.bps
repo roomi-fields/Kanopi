@@ -1,0 +1,10 @@
+// @language: bpscript
+// kairos-trace-trois-notes.bps — sert src/trace/vue-trace.test.ts (kairos, trace arrive AVEC
+// l'arbre par charger et se lit résolue par traceCourante()). Trois notes, aucun contrôle : preuve
+// que le dernier pas montre la chaîne pleinement résolue en NOMS et que le numéro de pas s'aligne.
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> C4 D4 E4

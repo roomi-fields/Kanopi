@@ -1,0 +1,11 @@
+// @language: bpscript
+// kairos-trace-libelle-suffixe-multi.bps — sert src/trace/libelle-controle.test.ts (kairos, forme
+// SUFFIXÉE multi-paires : UN marqueur porte PLUSIEURS contrôles, types mélangés préservés). Un
+// suffixe à deux paires sur C4 (intervalle en chaîne, vélocité en nombre) : preuve que le rendu est
+// lexical, sans formatage ni coercition, quel que soit le type d'origine de la valeur.
+
+@core
+@controls
+@alphabet.western:midi
+
+S -> C4(transpose:-1200c, vel:80) D4

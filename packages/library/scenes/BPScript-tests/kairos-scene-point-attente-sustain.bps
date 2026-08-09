@@ -1,0 +1,14 @@
+// @language: bpscript
+// kairos-scene-point-attente-sustain.bps — sert src/attente/points-attente.test.ts (kairos, [538]
+// CHAÎNE RÉELLE — mesure de bout en bout).
+// Une scène qui écrit `<!sustain` : prouve que le point d'attente posé par la graphie du langage
+// expose bien son signal par la porte `pointsAttente()`, sur une dérivation BPx réelle (pas un
+// arbre fabriqué à la main).
+
+@core
+@alphabet.western:midi
+@tempo:60
+@striated
+
+@mode:ord
+S -> C4 <!sustain D4
