@@ -1,17 +1,18 @@
 // @language: bpscript
 // TRANSCRIPTION : le natif ecrit le /N ESPACE = forme LEGACY PERSISTANTE (decision
 // hub 2026-07-16-tempo-slash-n-nu-legacy-persistant, RATIFIEE). En BPScript elle s ecrit
-// ![/N], PAS le suffixe colle [/N] qui est la forme CANONIQUE SCOPEE (enter/exit) — deux
-// semantiques distinctes que j avais confondues.
+// ! (/N) dans le FLUX, et c est desormais sa SEULE forme : le suffixe colle [/N] a ete supprime
+// du langage (decision Romain 2026-08-06). La distinction scopee (enter/exit) que ce commentaire
+// opposait n existe donc plus -- l operateur de vitesse ne vit ni en suffixe de regle, ni colle.
 // tryKeyXpand.bps — migré de bp3-engine/test-data/-gr.tryKeyXpand (porter bp3ToScene, 2026-07-17)
 // Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
 
 @controls
 @mode:ord(mm:60.0000,striated)
 S -> ! (/6) M Part1 -- Part2 -- Part3 -- Part4
-Part1 -> {!(keyxpand:C4 -1) M} !(keyxpand:C4 1.5) M {![retro] M}
-Part2 -> {!(keyxpand:C4 2) M {![retro] M} !(keyxpand:C4 0.66) M}
-Part3 -> !(keyxpand:C4 1) {![retro] Part1}
+Part1 -> {!(keyxpand:C4 -1) M} !(keyxpand:C4 1.5) M {!(retro) M}
+Part2 -> {!(keyxpand:C4 2) M {!(retro) M} !(keyxpand:C4 0.66) M}
+Part3 -> !(keyxpand:C4 1) {!(retro) Part1}
 Part4 -> {!(rotate:-2) {Part1}}
 -----
 @mode:ord

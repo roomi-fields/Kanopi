@@ -1,8 +1,9 @@
 // @language: bpscript
 // TRANSCRIPTION : le natif ecrit le /N ESPACE = forme LEGACY PERSISTANTE (decision
 // hub 2026-07-16-tempo-slash-n-nu-legacy-persistant, RATIFIEE). En BPScript elle s ecrit
-// ![/N], PAS le suffixe colle [/N] qui est la forme CANONIQUE SCOPEE (enter/exit) — deux
-// semantiques distinctes que j avais confondues.
+// ! (/N) dans le FLUX, et c est desormais sa SEULE forme : le suffixe colle [/N] a ete supprime
+// du langage (decision Romain 2026-08-06). La distinction scopee (enter/exit) que ce commentaire
+// opposait n existe donc plus -- l operateur de vitesse ne vit ni en suffixe de regle, ni colle.
 // ─────────────────────────────────────────────────────────────────────────────
 // MIGRÉE SOUS LES CHANGEMENTS DE LANGAGE DU 2026-07-29 — par bpscript, NON COMMITTÉ PAR LUI.
 //
@@ -50,8 +51,8 @@
 @controls
 @mode:random(tempo:60.0000,striated,randomize)
 S -> ! (/5) A_r B_r C_r D_r E_r
-A_r -> {C3 B3 E3 F3 G3}[shuffle]
-B_r -> ![@seed:1] {C4 B4 E4 F4 G4}[shuffle]
-C_r -> randomize {C4 B4 E4 F4 G4}[shuffle] {C5 B5 E5 F5 G5}[shuffle]
-D_r -> ![@seed:1] {C5 B5 E5 F5 G5}[shuffle]
+A_r -> {C3 B3 E3 F3 G3}(shuffle)
+B_r -> ![@seed:1] {C4 B4 E4 F4 G4}(shuffle)
+C_r -> randomize {C4 B4 E4 F4 G4}(shuffle) {C5 B5 E5 F5 G5}(shuffle)
+D_r -> ![@seed:1] {C5 B5 E5 F5 G5}(shuffle)
 E_r -> {!(rndvel:50) !(vel:80) a a a a a b b b b b}

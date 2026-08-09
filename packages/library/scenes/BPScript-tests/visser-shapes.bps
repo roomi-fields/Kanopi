@@ -9,7 +9,7 @@
 // Traduit de bp3-engine/library/experimental/visser-shapes/grammar.gr
 //
 // Pièce pour piano solo — rotations, expansions, trilles, contours de vélocité
-// Contrôles nouveaux : !(rotate:N) et ![keyxpand:<note> <facteur>] (moteur, ils agissent
+// Contrôles nouveaux : !(rotate:N) et !(keyxpand:<note> <facteur>) (moteur, ils agissent
 // sur la structure), velcont (runtime)
 
 @core

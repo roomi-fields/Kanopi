@@ -1,8 +1,9 @@
 // @language: bpscript
 // TRANSCRIPTION : le natif ecrit le /N ESPACE = forme LEGACY PERSISTANTE (decision
 // hub 2026-07-16-tempo-slash-n-nu-legacy-persistant, RATIFIEE). En BPScript elle s ecrit
-// ![/N], PAS le suffixe colle [/N] qui est la forme CANONIQUE SCOPEE (enter/exit) — deux
-// semantiques distinctes que j avais confondues.
+// ! (/N) dans le FLUX, et c est desormais sa SEULE forme : le suffixe colle [/N] a ete supprime
+// du langage (decision Romain 2026-08-06). La distinction scopee (enter/exit) que ce commentaire
+// opposait n existe donc plus -- l operateur de vitesse ne vit ni en suffixe de regle, ni colle.
 // templates.bps — test des templates $/ &
 // Traduit de bp3-engine/library/examples/templates/grammar.gr
 // NOMS DE REGLES SUFFIXES `_r` : une tete de regle ne peut plus porter le nom d une note de

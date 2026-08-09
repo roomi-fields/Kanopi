@@ -161,10 +161,10 @@ const ROUGES_DECLAREES: Array<{
   // lui-même gravée dans le fichier : « aucun alphabet n'est déclaré, DÉLIBÉRÉMENT ».)
   {
     fichier: 'BPScript-tests/trySrand.bps',
-    motif: /terminal '(a|b)' non déclaré/,
-    cause: 'arbitrage-attendu',
+    motif: /'randomize' n'a pas de forme nue dans le flux/,
+    cause: 'forme-a-venir',
     attend:
-      "COMMENT BPScript écrit « un alphabet PLUS une convention de notes » — question chez Romain, 11 conversions concernées, 61 notes à déclarer. ⚠️ LA RAISON A CHANGÉ EN COURS DE JOURNÉE, et l'ancienne était fausse : on a d'abord cru le cas INDÉCIDABLE parce que la scène mêle notes occidentales et symboles abstraits. La source répond en fait — le réglage natif -se.trySrand porte « NoteConvention: 0 » (anglaise) et -ho.tryKeyXpand déclare l'alphabet « a b ». Ce n'est donc pas un mystère, c'est le réglage ordinaire du natif ; ce qui manque est sa GRAPHIE en BPScript. Je n'y touche pas : c'est l'écriture de bpscript et l'arbitrage est chez Romain."
+      "UNE PLACE POUR `randomize` AU FIL DU FLUX — fermée le 2026-08-09 par bpscript (6b6a351, « un mot nu n'est jamais une instruction »). ⚠️ CE N'EST PAS UN DÉFAUT DE MA SCÈNE, ET LA MIGRATION PRESCRITE LA DÉTRUIRAIT : la source native pose `_randomize` DANS LE FLUX, en tête du membre droit de C (-gr.trySrand:12), et c'est le SUJET MÊME du test — son propre texte l'explique, « the two sequences derived from C also vary from one item to the next because of the _randomize tool that PRECEDES them » (-gr.trySrand:18), par opposition à B et D que `_srand(1)` fige. Déplacer le mot en tête de sous-grammaire (la seule place que le langage lui laisse) supprimerait la distinction que la scène existe pour mesurer. LE REFUS ENVOIE DANS UN MUR : il prescrit `!(randomize)`, et cette forme est refusée par la fermeture VOISINE (« il ne vaut QUE en tête de sous-grammaire ») — les deux fermetures que bpscript vient justement de séparer dans son garde ne le sont pas dans son message. Escaladé à bpscript le 2026-08-09. La question d'alphabet+convention de notes reste ouverte DERRIÈRE celle-ci, chez Romain (11 conversions, 61 notes) : elle ne se mesure plus tant que l'analyse s'arrête avant."
   },
   {
     fichier: 'BPScript-tests/koto1.bps',
@@ -318,7 +318,21 @@ describe('[932] statut de compilation du corpus BPScript', () => {
 // Rien n'est écrit dans le fichier : la scène reste rouge dans le corpus, son arbitrage est chez
 // Romain. On se sert seulement du fait MESURÉ qu'elle exige une graine d'horloge — c'est
 // exactement la cause que bpscript a fini par isoler chez lui ([1060]).
-describe('le rattrapage de graine mord', () => {
+//
+// ⛔ SUSPENDU LE 2026-08-09 — LE TÉMOIN A PERDU SON SUJET, ET IL NE SE BRICOLE PAS.
+// bpscript a fermé ce jour-là (6b6a351) le mot `randomize` posé AU FIL DU FLUX. Or c'est
+// exactement lui qui portait la propriété : MESURÉ, `(shuffle)` seul dérive sans jeter, et
+// `randomize` en tête de sous-grammaire — la seule place que le langage lui laisse — dérive sans
+// jeter non plus. Il n'existe donc plus, dans le langage d'aujourd'hui, de scène qui refuse sous
+// graine figée : le rattrapage n'a plus rien à mordre, et un banc sans sujet ne prouve rien.
+// J'AI D'ABORD ESSAYÉ DE LE SAUVER en écartant la ligne fermée dans la variante en mémoire — le
+// banc est repassé au vert et ne mesurait plus rien. C'est ce faux vert qui a rendu la mesure
+// ci-dessus nécessaire.
+// RALLUMAGE : dès que la place de `randomize` au fil du flux est tranchée (escalade à bpscript le
+// 2026-08-09, voir la déclaration de trySrand.bps plus haut). Si elle rouvre, ce banc reprend tel
+// quel. Si elle reste fermée, alors c'est le RATTRAPAGE LUI-MÊME qui est sans emploi et qui doit
+// sortir avec son banc — pas rester en parallèle.
+describe.skip('le rattrapage de graine mord', () => {
   const source = Object.entries(BPS).find(([c]) => c.endsWith('BPScript-tests/trySrand.bps'))?.[1];
   const avecAlphabet = () =>
     source!.replace(
@@ -345,8 +359,12 @@ describe('le rattrapage de graine mord', () => {
   it('sait MORDRE : le garde rend VERT une scène que la graine figée refuse', () => {
     expect(statut(avecAlphabet())).toBeNull();
   });
+});
 
-  it('sait SE TAIRE : il n’avale pas un échec de dérivation ORDINAIRE', () => {
+// Le second sens du rattrapage, lui, garde son sujet : il ne dépend pas de la scène suspendue
+// ci-dessus. On ne suspend que ce qui a perdu de quoi mordre — le reste continue de verrouiller.
+describe('le rattrapage de graine sait SE TAIRE', () => {
+  it('il n’avale pas un échec de dérivation ORDINAIRE', () => {
     // koto1 jette sur les règles SUB à jokers, PAS sur la graine — le rattrapage ne doit pas
     // s'en mêler, et le message doit rester celui de la vraie cause.
     const koto1 = Object.entries(BPS).find(([c]) => c.endsWith('BPScript-tests/koto1.bps'))?.[1];
