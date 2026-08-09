@@ -1,0 +1,34 @@
+// @name: The Scene's Pulse
+// @tagline: One tempo, two densities — the beat isn't the speed
+// @description: Le métronome de la scène : le tempo posé une fois, et pourquoi il ne dit pas la vitesse ressentie.
+// @language: bpscript
+// @outputs: audio
+// @level: didactic
+// @tags: language, time
+// @order: 6
+//
+// Le métronome — un battement, posé une fois
+//
+// Le tempo de la scène s'écrit une seule fois, en tête, et vaut pour toute la pièce.
+// C'est un DÉCOR : il donne le battement, pas la vitesse ressentie. Ces deux choses se
+// confondent tout le temps, et la confusion coûte cher — on accélère le métronome alors
+// qu'il fallait densifier l'écriture.
+// Ici un seul battement, jamais changé. La première phrase pose une note par temps et
+// paraît calme ; la seconde en pose quatre et paraît pressée. Rien n'a bougé du tempo :
+// c'est la DENSITÉ qui fait la vitesse qu'on entend.
+
+@core
+@alphabet.western
+@tempo:72
+
+S -> Large Dense Large Dense
+
+-----
+
+@mode:ord
+
+// Une note par temps : le battement s'entend tel quel.
+Large -> C4 E4 G4 E4 (vel:78, wave:sine, attack:10, release:420)
+
+// Quatre notes dans le même temps : le battement n'a pas bougé, la phrase court.
+Dense -> {C4 D4 E4 F4}:1 {G4 F4 E4 D4}:1 {C4 E4 G4 C5}:1 {G4 E4 C4 G3}:1 (vel:88, wave:sine, attack:3, release:150)

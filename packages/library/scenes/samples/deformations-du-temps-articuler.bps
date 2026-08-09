@@ -1,0 +1,37 @@
+// @name: Bending Time
+// @tagline: Shorten, hold over, nudge — the notes stay, the feel changes
+// @description: Les déformations du temps : raccourcir la tenue, la prolonger sur la suivante, déplacer légèrement l'attaque.
+// @language: bpscript
+// @outputs: audio
+// @level: advanced
+// @tags: language, time
+// @order: 15
+//
+// Les déformations du temps — ce qui bouge sans changer les notes
+//
+// Une note occupe une place, et cette place ne dit pas tout : reste la TENUE — combien
+// de temps elle sonne dans sa place — et l'INSTANT EXACT de son attaque.
+// Raccourcir la tenue détache. La prolonger par-dessus la suivante lie. Déplacer
+// légèrement les attaques enlève la raideur de la grille : c'est ce qui sépare une
+// exécution mécanique d'une exécution jouée.
+// Trois fois la même mélodie, aux mêmes places, avec trois traitements du temps. Aucune
+// note ne change — et pourtant on entend trois interprètes.
+
+@core
+@alphabet.western
+@tempo:88
+
+S -> Detachee Liee Humaine
+
+-----
+
+@mode:ord
+
+// Tenue courte : chaque note lâche avant la suivante, la ligne se pointille.
+Detachee -> D4 F4 A4 D5 A4 F4 (vel:86, staccato:60, wave:triangle, attack:2, release:80)
+
+// Tenue prolongée : les notes se recouvrent, la ligne devient continue.
+Liee     -> D4 F4 A4 D5 A4 F4 (vel:74, legato:30, wave:triangle, attack:8, release:400)
+
+// Attaques légèrement déplacées : la grille se relâche, le jeu respire.
+Humaine  -> D4 F4 A4 D5 A4 F4 (vel:80, rndtime:35, wave:triangle, attack:5, release:240)

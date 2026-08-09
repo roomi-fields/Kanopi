@@ -1,0 +1,41 @@
+// @name: Symbols and Names
+// @tagline: When two actors claim one name, the dot decides
+// @description: L'unicité des noms : ce qui arrive quand deux acteurs se disputent un terminal, et comment le point tranche.
+// @language: bpscript
+// @outputs: audio
+// @level: advanced
+// @tags: language, foundations
+// @order: 5
+//
+// Les symboles et les noms — à qui appartient un mot
+//
+// Dans une scène, un nom désigne UNE chose. Tant qu'un seul acteur possède un terminal,
+// l'écrire nu suffit : il n'y a pas d'autre candidat. Dès que DEUX acteurs revendiquent
+// le même nom, le nu devient ambigu — et la compilation s'arrête au lieu de choisir à
+// notre place.
+// C'est une décision de fond : le langage préfère refuser une pièce plutôt que la faire
+// sonner selon un candidat plausible. Une hauteur attribuée au hasard s'entend rarement
+// comme une faute, et se corrige très tard.
+// La levée s'écrit avec le point : il qualifie le terminal par son propriétaire.
+
+@core
+@alphabet.western
+@tempo:100
+
+// Deux acteurs revendiquent le même clavier : chaque nom de note a désormais deux
+// propriétaires possibles.
+@actor proche
+  tuning.western_12TET
+
+@actor lointain
+  tuning.western_just
+
+S -> Qualifie Qualifie
+
+-----
+
+@mode:ord
+
+// Chaque terme dit à qui il appartient : plus aucune ambiguïté, et les deux accordages
+// se répondent sur les mêmes lettres.
+Qualifie -> proche.D4 lointain.F4 proche.A4 lointain.D5 (vel:80, wave:sine, attack:6, release:300)

@@ -1,0 +1,38 @@
+// @name: Template Catalogue
+// @tagline: Named shapes, ranked — the structure lives outside the rules
+// @description: Le catalogue de gabarits : la section @template, ses rangs, et des formes nommées hors des règles.
+// @language: bpscript
+// @outputs: audio
+// @level: advanced
+// @tags: language, derivation
+// @order: 28
+//
+// Le catalogue de gabarits — les formes rangées à part
+//
+// Un gabarit capturé dans une règle vit avec elle. Le CATALOGUE fait autre chose : il
+// range des formes NOMMÉES dans une section à part, après les règles, et chacune peut
+// porter un RANG. La structure quitte alors le corps de la grammaire — on écrit les
+// formes d'un côté, la pièce qui s'en sert de l'autre.
+// C'est ce qui permet à une même pièce de changer de matériau sans qu'on touche à une
+// seule règle, et à l'analyse de reconnaître une forme par son nom.
+// Ici deux cellules cataloguées, et une pièce qui les alterne.
+
+@core
+@alphabet.western
+@tempo:104
+
+S -> Appel Reponse Appel Reponse
+
+-----
+
+@mode:ord
+
+// La pièce n'écrit que son parcours ; la matière est rangée plus bas.
+Appel   -> G3 B3 D4 (vel:84, wave:triangle, attack:4, release:190)
+Reponse -> D4 B3 G3 (vel:68, wave:triangle, attack:9, release:330)
+
+// Le catalogue vient après toutes les règles : c'est sa place, et les rangs ordonnent
+// les formes qu'il porte.
+@template
+  [1] montee    = G3 B3 D4 G4
+  [2] descente  = G4 D4 B3 G3
