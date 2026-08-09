@@ -55,6 +55,19 @@ import { describe, it, expect } from 'vitest';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 // MÊME porte de dérivation que l'application (`bpx-adapter.ts:52,1847`) : le garde mesure par
 // où l'app passe, pas par un chemin de test à lui.
+// ⚠️ CONTRE QUELLE SURFACE CE GARDE EST-IL VERT ? MESURÉ le 2026-08-09 : la SOURCE de BPx
+// (`/BPx/src/session.ts`, lu dans la pile d'appel réelle), pas son paquet bâti — son `exports`
+// porte les deux conditions et c'est `development` qui gagne ici.
+// POURQUOI C'EST ÉCRIT ICI : un vert de ce banc vaut contre ce qu'il EXÉCUTE. S'il lisait le
+// paquet, une correction amont non rebâtie le laisserait vert contre l'ancien code et LE FAUX
+// VERT SE TAIRAIT. Lisant la source, il suit l'arbre de travail du voisin — donc il voit ses
+// corrections tout de suite, ET ses cassures avant qu'il publie.
+// ⚠️ ET L'ENJEU A GRANDI : les scènes d'exemple d'Atlas et de bpscript entreront dans ce corpus,
+// et ce banc les dérivera. Mon vert devient LEUR preuve — il doit donc dire de quoi il est la
+// preuve. MESURER À NOUVEAU si la configuration de résolution change : la déduire du
+// `package.json` ne suffit pas, la résolution réelle et le manifeste ne donnent pas toujours la
+// même réponse (mesuré chez plusieurs voisins cette semaine). Le moyen employé ici : provoquer
+// une erreur dans le module et lire le chemin dans sa pile.
 import { createSession } from 'bpx';
 
 const BPS = import.meta.glob('../../../../library/scenes/**/*.bps', {
