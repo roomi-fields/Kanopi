@@ -30,3 +30,29 @@ test('library space filters scenes by category and search', async ({ page }) => 
   await expect(cards).toHaveCount(1);
   await expect(cards.first().locator('.name')).toContainText('Ames');
 });
+
+// LA CATÉGORIE `samples` EST EN LIGNE, ET À SA PLACE — le cas que le banc unitaire de rang ne
+// peut pas couvrir : lui lit `CATEGORY_ORDER` dans le source, donc il reste vert même si la
+// catégorie n'existe pas. Ici on regarde le rail RENDU, qui dérive ses entrées des dossiers
+// réels : ce vert-ci dit que les scènes sont bien dans le paquet.
+//
+// ⚠️ LE RANG SE LIT EN VOISINAGE, PAS EN INDICE : un indice en dur rougirait au prochain
+// dossier ajouté avant, ce qui ferait passer un ajout légitime pour une régression. Ce qui est
+// verrouillé est l'arc d'entrée — on apprend, on prend les bases, puis on voit une forme du
+// langage à l'œuvre.
+test('la catégorie Samples est dans le rail, juste après Learn et Basics', async ({ page }) => {
+  await page.goto('');
+  await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
+  await page.locator('.ab-btn[title="Factory"]').click();
+  await expect(page.locator('.space')).toBeVisible({ timeout: 5_000 });
+
+  const labels = await page.locator('.rail .cat .cat-label').allTextContents();
+  const rang = (nom: string) => labels.findIndex((l) => l.toLowerCase() === nom);
+  expect(rang('samples'), `rail rendu : ${labels.join(' · ')}`).toBeGreaterThan(-1);
+  expect(rang('samples')).toBe(rang('basics') + 1);
+  expect(rang('basics')).toBe(rang('learn') + 1);
+
+  // Et elle filtre sur les 14 scènes déposées [1206].
+  await page.locator('.cat', { hasText: 'Samples' }).click();
+  await expect(page.locator('.card')).toHaveCount(14);
+});

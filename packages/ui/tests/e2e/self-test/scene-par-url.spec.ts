@@ -6,12 +6,13 @@ import { expectNoConsoleErrors } from '../../helpers';
 // Demande Romain (2026-08-09) : depuis un exemple de la doc, un clic amène l'utilisateur sur la
 // scène ouverte et prête à produire. Tant que personne ne l'a vue s'ouvrir, ce n'est pas fait.
 //
-// ⚠️ LA SCÈNE VISÉE N'EST PAS DANS `samples` : cette catégorie n'existe pas encore (elle naîtra
-// avec sa première scène, écrite par bpscript). On vise donc un tutoriel, qui est stable et
-// bundlé. Quand `samples` existera, ce banc pourra viser une vraie scène d'exemple — le chemin
-// testé est le même, seul l'identifiant change.
 const SCENE = 'learn/tuto-01-first-note.bps';
 const ONGLET = 'tuto-01-first-note.bps';
+
+// La scène d'exemple du LANGAGE, celle que la doc vise réellement : la première de `samples`
+// dans l'ordre de lecture (`@order: 1`), déposée par bpscript [1206].
+const EXEMPLE = 'samples/silences-et-prolongations.bps';
+const ONGLET_EXEMPLE = 'silences-et-prolongations.bps';
 
 test('?scene=<id> ouvre la scène, et son onglet est là', async ({ page }) => {
   const noErrors = expectNoConsoleErrors(page);
@@ -21,6 +22,18 @@ test('?scene=<id> ouvre la scène, et son onglet est là', async ({ page }) => {
   // L'onglet porte le nom du fichier : c'est la preuve visible que la scène est OUVERTE, pas
   // seulement résolue.
   await expect(page.locator('.tab', { hasText: ONGLET })).toBeVisible({ timeout: 10_000 });
+  noErrors();
+});
+
+// LE CAS QUE LA DOC VA EMPRUNTER, et que rien ne couvrait tant que `samples` n'existait pas :
+// une scène d'exemple du langage s'ouvre par son identifiant. Il traverse la même chaîne que le
+// tutoriel ci-dessus, mais sur une catégorie née d'un dépôt extérieur — donc sur le seul chemin
+// où un identifiant peut être juste dans la doc et introuvable dans le paquet.
+test('?scene=samples/<id> ouvre la scène d’exemple du langage', async ({ page }) => {
+  const noErrors = expectNoConsoleErrors(page);
+  await page.goto(`?scene=${encodeURIComponent(EXEMPLE)}`);
+  await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator('.tab', { hasText: ONGLET_EXEMPLE })).toBeVisible({ timeout: 10_000 });
   noErrors();
 });
 
