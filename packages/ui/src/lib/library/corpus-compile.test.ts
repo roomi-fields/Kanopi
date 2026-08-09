@@ -107,10 +107,13 @@ const GRAINE = 1;
  *  ci-dessous parce qu'il montre à quoi sert d'écrire un desserrage au lieu de le subir.
  *  Le refus nomme à nouveau l'entité (`'@cv env1' est supprimé du langage…`), donc les cinq
  *  motifs l'exigent à nouveau et redeviennent discriminants scène par scène.
- *  ⚠️ UNE NUANCE QUI RESTE, et qui n'est pas la même qu'avant : le message ne nomme que la
- *  PREMIÈRE entité, pas la liste. `superp-cutoff` en déclare deux (`envGroup`, `envNote`) et le
- *  refus ne cite que `envGroup`. Les motifs sont donc calés sur ce qui existe réellement, pas sur
- *  ce qu'ils exigeaient avant le 2026-08-09.
+ *  ✅ ET LA NUANCE A ÉTÉ FERMÉE DANS LA FOULÉE : le refus liste désormais TOUTES les entités de
+ *  la scène (« …en déclare 2 : envGroup, envNote »), et reste sobre quand il n'y en a qu'une.
+ *  Les deux motifs concernés exigent donc la liste ENTIÈRE — c'est-à-dire aussi le COMPTE : si
+ *  une scène gagne ou perd un modulateur, le garde le voit.
+ *  ⚠️ ET LE COMPTE ANNONCÉ N'ÉTAIT PAS LE BON : bpscript annonçait 3 entités pour `patchbay`, le
+ *  code en produit 4 (`lead, open, close, glide`). Mesuré, pas recopié — c'est la raison d'avoir
+ *  relu le message entier au lieu de reprendre le chiffre du courrier.
  *
  *  ⚠️ CINQ MOTIFS AVAIENT ÉTÉ ÉLARGIS LE 2026-08-09, ET UN MOTIF ÉLARGI EST UN GARDE PLUS FAIBLE :
  *  je l'écris ici plutôt que de laisser le desserrage passer inaperçu. Ils exigeaient que le refus
@@ -231,14 +234,14 @@ const ROUGES_DECLAREES: Array<{
   },
   {
     fichier: 'synthesis/superp-cutoff.bps',
-    motif: /'@cv envGroup' est supprim(é|e) du langage/,
+    motif: /'@cv envGroup' est supprim(é|e) du langage.*d(é|e)clare 2 : envGroup, envNote/,
     cause: 'forme-a-venir',
     attend:
       'la forme « instance de module avec ses réglages de départ » (envGroup : attack:600, decay:500, sustain:0.5, release:700 ; envNote : attack:5, decay:110, sustain:0.2, release:160), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
   },
   {
     fichier: 'synthesis/patchbay.bps',
-    motif: /'@macro lead' est supprim(é|e) du langage/,
+    motif: /'@macro lead' est supprim(é|e) du langage.*d(é|e)clare 4 : lead, open, close, glide/,
     cause: 'forme-a-venir',
     attend:
       "la forme « instance de module avec ses réglages de départ », pas encore dans le parseur, revue avec FaustX — ET deux causes de plus, propres à cette scène : le domicile du câblage persistant (lead/open/close/glide) n'a pas de forme de remplacement tranchée, et ses modules (saw, lpf) sont absents du catalogue de modules (qui n'en porte que trois : adsr, lfo, ramp). Suivi : KAN-40."
