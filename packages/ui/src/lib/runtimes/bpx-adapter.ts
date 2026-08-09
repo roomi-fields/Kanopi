@@ -76,9 +76,18 @@ import { createMidiRuntime } from 'runtime-midi';
 // facets. The host imports ZERO of `@kronos/core/pitch` (logic AND type); only the `PitchLib`
 // type survives, sourced from `@kairos/core` (the module's new owner), for the catalog constant.
 import { type PitchLib, type DigitalLib } from '@kairos/core';
-// Tree-derived dispatch events (M5+ multi-actor refacto): flatten BPx's
-// `derive({ output: 'complete' }).tree` to ordered events that each carry their
+// Tree-derived dispatch events (M5+ multi-actor refacto): flatten the tree of
+// `derive()` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
+// ⚠️ CES DEUX COMMENTAIRES ONT DÉCRIT PENDANT DES MOIS UNE OPTION QUE LE CODE NE PASSE PAS
+// (corrigé le 2026-08-09) : ils écrivaient `derive({output:'complete'})`, alors que les TROIS
+// appels réels (`bpx.derive()` ×2 et `rbpx.derive()`) n'en passent aucune. Un commentaire qui
+// décrit un chemin que le code n'emprunte pas envoie le lecteur suivant chercher un comportement
+// qui n'existe pas — l'architecte a dû ouvrir le code pour ne pas relayer cette doc comme un fait.
+// ET LA DÉCISION DU JOUR REND LE POINT SANS OBJET DANS L'AUTRE SENS : il n'y a plus de mode à
+// choisir, une seule dérivation et elle PORTE LES CONTRÔLES (décision Romain 2026-08-09). Il n'y
+// aura donc jamais d'option à passer ici — mais l'arbre que je diffuse portera des marqueurs que
+// mes consommateurs n'ont jamais vus, et c'est ma chaîne qui les emmène vers Kronos.
 // Kairos owns CV COMPOSITION (frontier R2 ; `buildModulators`/ModLib/ExprSource MIGRÉS de Kronos
 // vers @kairos/core — point 5, kairos 094abf3). `buildModulators` fuses the scene's `cv … : mod.x(…)`
 // declarations with the `mod` library into the modulator registry. The host builds it once and hands
@@ -167,7 +176,7 @@ import routingJson from '../../../../library/routing.json';
  *   .gr  : source → parseBP3 ──────────────┐
  *   .bps : source → compileToBPxAST ────────┤  (SceneAST direct, voie AST propre)
  *                                           ▼
- *     → SceneAST → createBPx().loadGrammar → derive({output:'complete'})
+ *     → SceneAST → createBPx().loadGrammar → derive()
  *     → tree (+ payload par nœud) → Kairos (projection) → Kronos timeline
  *     → routage PAR ACTEUR (payload.actor) → WebAudioTransport (+ MIDI sink)
  *
