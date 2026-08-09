@@ -418,6 +418,31 @@ describe('le rattrapage de graine mord', () => {
 // mesurée AVANT/APRÈS sur l'arbre dérivé ENTIER — strictement identique, au temps de dérivation
 // près (le seul champ non déterministe). Un compte de jetons égal n'aurait pas suffi : c'est
 // exactement ce qui a laissé passer une scène inerte le matin même.
+// `@mm` EST SUPPRIMÉ, REMPLACÉ PAR `@tempo` (décision Romain 2026-08-09, migration AVANT la
+// fermeture amont). Ce garde couvre MES scènes ; les scènes `kairos-*` sont les siennes et il les
+// migre de son côté — les exclure serait masquer sa dette, donc elles sont NOMMÉES ici tant
+// qu'elles restent, et ce banc devra les inclure quand il aura poussé.
+// ⚠️ LE GARDE LIT LES COMMENTAIRES, ET C'EST DÉLIBÉRÉ. La seule occurrence qu'il me restait
+// vivait dans le `@tagline` de `learn/tuto-04-tempo.bps` — pas dans le code de la scène, qui
+// écrivait déjà `@tempo`, mais dans la MÉTADONNÉE DE CARTE affichée au rail (`scenes.ts:97`).
+// Une forme morte dans une vitrine enseigne avant même qu'on ouvre le fichier ; un garde qui
+// sauterait les lignes de commentaire ne l'aurait jamais vue.
+// ⚠️ ET MON PREMIER BALAYAGE L'AVAIT RATÉE : mon motif exigeait un caractère après le mot, elle
+// est en fin de phrase. C'est l'architecte qui l'a trouvée, pas moi. D'où le motif nu ci-dessous.
+describe('aucune scène à moi n’écrit `@mm`, supprimé au profit de `@tempo`', () => {
+  it('balayage nommé, métadonnées comprises', () => {
+    const fautifs = Object.entries(BPS)
+      .filter(([chemin]) => !chemin.includes('/kairos-'))
+      .filter(([, src]) => /@mm/.test(src))
+      .map(([chemin]) => chemin.split('/scenes/')[1] ?? chemin);
+    expect(
+      fautifs,
+      '`@mm` est supprimé du langage : écrire `@tempo`. Vaut aussi dans les commentaires et les ' +
+        'métadonnées de carte (`@tagline`), qui enseignent avant que le fichier soit ouvert.'
+    ).toEqual([]);
+  });
+});
+
 describe('aucune scène du corpus ne porte de barres autour d’un nom', () => {
   it('balayage nommé, fichier par fichier', () => {
     const fautifs = Object.entries(BPS)

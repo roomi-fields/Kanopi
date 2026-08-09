@@ -1,5 +1,5 @@
 // @name: 4. Tempo
-// @tagline: Change speed with @mm
+// @tagline: Change speed with @tempo
 // @language: bpscript
 // @outputs: audio
 // @level: didactic
