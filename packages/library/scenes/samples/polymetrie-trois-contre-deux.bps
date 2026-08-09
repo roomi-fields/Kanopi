@@ -1,0 +1,31 @@
+// @name: Three Against Two
+// @tagline: Voices of different lengths sharing one span
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: language, polymetric, time
+// @order: 6
+//
+// Trois contre deux — la polymétrie entendue, pas expliquée
+//
+// Les accolades tiennent des voix qui partagent la MÊME durée. Ici trois notes en haut
+// contre deux en bas : elles partent ensemble, se croisent, et se retrouvent au bout.
+// C'est le hémiole des musiques d'Afrique de l'Ouest et de Brahms — la même figure.
+
+@core
+@alphabet.western:audio
+@tempo:104
+
+S -> Croise Croise Croise Repos
+
+-----
+
+@mode:ord
+
+// Trois contre deux : la voix haute divise en trois ce que la basse divise en deux.
+Croise -> {D5 F5 A5, D3 A3} (vel:82, wave:triangle, attack:4, release:180)
+
+// Quatre contre trois : le décalage se resserre, on entend mieux le croisement.
+Croise -> {D5 F5 A5 D6, D3 F3 A3} (vel:88, wave:triangle, attack:4, release:180)
+
+Repos  -> {D5 _ _ _, D3 _} (vel:64, wave:triangle, attack:12, release:400)

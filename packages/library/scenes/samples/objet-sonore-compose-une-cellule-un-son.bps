@@ -1,0 +1,30 @@
+// @name: Compound Sound Object
+// @tagline: One indivisible cell against a divisible group
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: language
+// @order: 7
+//
+// Une cellule, un son — l'objet sonore composé
+//
+// La barre suivie d'un crochet fait d'un groupe entier UN SEUL objet sonore : ce qui est
+// dedans ne se dérive plus, il se joue d'un bloc. C'est la façon d'écrire une figure
+// indivisible — un ornement, une frappe composée, un motif qui doit rester d'une pièce.
+// À côté, le même contenu en groupe ordinaire reste dérivable et se laisse traverser.
+
+@core
+@alphabet.western:audio
+@tempo:100
+
+S -> Bloc Ordinaire Bloc Ordinaire
+
+-----
+
+@mode:ord
+
+// D'un bloc : la cellule est un objet, pas une suite.
+Bloc      -> |[ E4 G4 B4 ] |[ D4 F4 A4 ] (vel:86, wave:sine, attack:3, release:220)
+
+// En groupe : le même contenu, mais divisible.
+Ordinaire -> {E4 G4 B4} {D4 F4 A4} (vel:72, wave:sine, attack:6, release:180)

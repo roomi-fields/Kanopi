@@ -1,0 +1,27 @@
+// @name: Templates — Capture and Replay
+// @tagline: The theme is said once and comes back identical
+// @language: bpscript
+// @outputs: audio
+// @level: advanced
+// @tags: language, derivation
+// @order: 14
+//
+// La structure avant la matière — capturer et rejouer
+//
+// Le dollar CAPTURE une figure au moment où elle est produite ; l'esperluette la REJOUE
+// telle quelle, plus loin. La forme est donc dite une seule fois et revient identique —
+// c'est le principe du thème et de sa reprise, écrit dans la grammaire plutôt que recopié
+// à la main. Ce qui revient n'est pas une copie du texte : c'est la MÊME figure.
+
+@core
+@alphabet.western:audio
+@tempo:84
+
+// Le motif est capturé, puis rejoué deux fois — plus doux à chaque retour.
+S <> $theme &theme (vel:60) &theme (vel:40)
+
+-----
+
+@mode:ord
+
+theme -> C4 E4 G4 C5 (vel:88, wave:sine, attack:5, release:240)

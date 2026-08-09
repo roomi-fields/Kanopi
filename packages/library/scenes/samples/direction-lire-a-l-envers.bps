@@ -1,0 +1,32 @@
+// @name: Reading Backwards
+// @tagline: The arrow decides the order the figures unfold
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: language, derivation
+// @order: 10
+//
+// Lire à l'envers — la direction de dérivation
+//
+// Une règle se lit de gauche à droite par défaut. La flèche inversée la fait dériver
+// dans l'autre sens, et la double flèche dans les deux. Ce n'est pas un détail
+// d'écriture : le sens de lecture décide de l'ordre où les figures se déploient, donc
+// de la phrase qu'on entend. Le même matériau, lu à l'endroit puis à l'envers.
+
+@core
+@alphabet.western:audio
+@tempo:96
+
+S -> Endroit Envers Endroit
+
+-----
+
+@mode:ord
+
+Endroit -> Grave Aigu
+
+// La flèche inversée déroule le membre droit dans l'autre sens.
+Envers  <- Grave Aigu
+
+Grave -> D3 F3 A3 (vel:78, wave:triangle, attack:6, release:200)
+Aigu  -> D5 F5 A5 (vel:66, wave:triangle, attack:4, release:260)

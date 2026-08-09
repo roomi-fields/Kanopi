@@ -1,0 +1,30 @@
+// @name: Wildcards
+// @tagline: A rule that describes a transformation, not a content
+// @language: bpscript
+// @outputs: audio
+// @level: advanced
+// @tags: language, derivation
+// @order: 13
+//
+// Le motif qui se reconnaît — les jokers
+//
+// Le point d'interrogation prend la place de ce qui s'y trouve. Numéroté, il lie toutes
+// ses occurrences au MÊME symbole dans une règle : ce qui est pris à gauche revient à
+// droite. C'est ainsi qu'une règle décrit une TRANSFORMATION plutôt qu'un contenu —
+// elle dit « quoi que ce soit, renvoie-le », et la matière traverse.
+
+@core
+@alphabet.western:audio
+@tempo:100
+
+S -> Motif
+
+-----
+
+@mode:ord
+
+Motif -> D4 F4 A4 Echo
+
+// Le joker capture le symbole qui précède, et ses deux occurrences à droite désignent
+// LE MÊME : quelle que soit la note tirée avant, l'écho la répète deux fois.
+?1 Echo -> ?1 ?1 (vel:64, wave:sine, attack:8, release:280)

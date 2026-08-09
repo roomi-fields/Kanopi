@@ -1,0 +1,31 @@
+// @name: Simultaneity
+// @tagline: Two voices striking as a single accent
+// @language: bpscript
+// @outputs: audio
+// @level: didactic
+// @tags: language, time
+// @order: 5
+//
+// La frappe commune — ce qui sonne EN MÊME TEMPS
+//
+// Le point d'exclamation lie deux événements en un seul instant. Deux voix qui se
+// répondent à distance ne sont pas la même chose que deux voix qui frappent ensemble :
+// la première fait un dialogue, la seconde fait un ACCENT. Ici la basse et la cloche
+// se rejoignent sur le premier temps, puis se séparent — et c'est la coïncidence
+// qu'on entend, pas les notes.
+
+@core
+@alphabet.western:audio
+@tempo:92
+
+S -> Ensemble Separe Ensemble Separe
+
+-----
+
+@mode:ord
+
+// Les deux frappent au même instant : un seul geste, deux hauteurs.
+Ensemble -> C2!C5 - G2 - (vel:104, wave:triangle, attack:2, release:300)
+
+// Les mêmes notes, l'une après l'autre : le geste se défait en dialogue.
+Separe   -> C2 C5 G2 - (vel:76, wave:triangle, attack:6, release:220)

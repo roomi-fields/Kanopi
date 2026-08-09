@@ -1,0 +1,30 @@
+// @name: Ties
+// @tagline: Legato against martelé — one sign, a whole phrasing
+// @language: bpscript
+// @outputs: audio
+// @level: didactic
+// @tags: language, time
+// @order: 4
+//
+// Le son qui tient — la liaison contre la répétition
+//
+// Le tilde lie deux objets sonores : le second ne se rejoue pas, il PROLONGE le premier.
+// C'est la différence entre une note tenue par-dessus la barre et deux notes de même
+// hauteur qui se suivent. À l'écrit c'est un signe ; à l'oreille c'est le phrasé entier
+// qui change — legato contre martelé.
+
+@core
+@alphabet.western:audio
+@tempo:66
+
+S -> Lie Martele Lie Martele
+
+-----
+
+@mode:ord
+
+// Liées : la hauteur traverse la pulsation sans se réattaquer.
+Lie     -> F4~F4 A4~A4 C5 (vel:72, wave:sine, attack:10, release:340)
+
+// Martelées : les mêmes hauteurs, mais chaque attaque se réentend.
+Martele -> F4 F4 A4 A4 C5 (vel:96, wave:sine, attack:2, release:110)

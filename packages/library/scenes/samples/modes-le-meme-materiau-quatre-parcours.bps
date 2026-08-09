@@ -1,0 +1,37 @@
+// @name: Derivation Modes
+// @tagline: One stock of motifs, ordered then drawn
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: language, derivation, generative
+// @order: 8
+//
+// Le même matériau, quatre parcours — les modes
+//
+// Un mode dit COMMENT la dérivation choisit parmi les règles candidates. Le matériau ne
+// change pas d'un bloc à l'autre : ce sont quatre lectures du même petit stock de motifs.
+// L'ordre donne une phrase prévisible, le hasard une improvisation, et l'entendre côte
+// à côte montre ce qu'un mode fait vraiment.
+
+@core
+@alphabet.western:audio
+@tempo:112
+
+S -> Suite Suite Tirage Tirage
+
+-----
+
+@mode:ord
+
+// En ordre : les motifs se suivent tels qu'ils sont écrits, la phrase est reconnaissable.
+Suite -> G3 B3 D4 G4 (vel:80, wave:sine, attack:5, release:180)
+Suite -> A3 C4 E4 A4 (vel:80, wave:sine, attack:5, release:180)
+
+-----
+
+@mode:random
+
+// Au hasard : le même stock, mais l'ordre se refait à chaque passage.
+Tirage -> G3 B3 D4 G4 (vel:92, wave:sine, attack:3, release:160)
+Tirage -> A3 C4 E4 A4 (vel:92, wave:sine, attack:3, release:160)
+Tirage -> D4 G4 B4 D5 (vel:92, wave:sine, attack:3, release:160)

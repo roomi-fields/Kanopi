@@ -1,0 +1,28 @@
+// @name: Subdividing a Beat
+// @tagline: The same cell in two, three and four
+// @language: bpscript
+// @outputs: audio
+// @level: didactic
+// @tags: language, time
+// @order: 3
+//
+// Diviser un temps — la période
+//
+// Le point découpe une durée en fragments ÉGAUX. Ce n'est pas un raccourci d'écriture :
+// c'est la façon dont une pulsation se subdivise sans qu'on ait à compter. La même
+// cellule, dite en deux puis en trois puis en quatre, fait entendre l'accélération
+// interne d'un rythme là où les notes, elles, ne changent pas.
+
+@core
+@alphabet.western:audio
+@tempo:80
+
+S -> Deux Trois Quatre Deux
+
+-----
+
+@mode:ord
+
+Deux   -> {E4 B4}:1          (vel:84, wave:triangle, attack:4, release:150)
+Trois  -> {E4 G4 B4}:1       (vel:84, wave:triangle, attack:4, release:120)
+Quatre -> {E4 G4 B4 E5}:1    (vel:84, wave:triangle, attack:3, release:100)

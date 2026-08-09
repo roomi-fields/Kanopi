@@ -1,0 +1,30 @@
+// @name: When a Rule Fails
+// @tagline: A guarded rule steps aside, the piece goes on
+// @language: bpscript
+// @outputs: audio
+// @level: advanced
+// @tags: language, derivation
+// @order: 12
+//
+// Quand une règle ne passe pas — la gestion d'échec
+//
+// Une règle gardée par un drapeau peut ne trouver aucune candidate applicable. Ce qui se
+// passe alors est ÉCRIT, pas subi : la dérivation peut abandonner la branche en silence
+// et poursuivre. Ici la deuxième section n'est jouable qu'une fois le seuil atteint —
+// avant, elle passe son tour, et la pièce continue sans trou.
+
+@core
+@alphabet.western:audio
+@tempo:90
+
+S -> Ouverture Conditionnelle Ouverture Conditionnelle
+
+-----
+
+@mode:ord
+
+// Chaque passage incrémente le compteur.
+Ouverture -> G3 B3 D4 [compte=1] (vel:76, wave:sine, attack:6, release:200)
+
+// Celle-ci n'a de matière qu'une fois le compteur armé.
+[compte==1] Conditionnelle -> D5 B4 G4 (vel:90, wave:sine, attack:3, release:280)

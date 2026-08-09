@@ -1,0 +1,33 @@
+// @name: Weighted Choice
+// @tagline: Rarity is what makes a figure remarkable
+// @language: bpscript
+// @outputs: audio
+// @level: intermediate
+// @tags: language, derivation, generative
+// @order: 9
+//
+// Le hasard qui penche — les poids
+//
+// Quand plusieurs règles peuvent s'appliquer, le tirage les départage. Le poids fait
+// pencher ce tirage sans le supprimer : une figure devient fréquente, une autre rare,
+// et c'est cette RARETÉ qui la rend remarquable quand elle arrive. Sans poids, tout
+// est également probable et rien ne surprend.
+
+@core
+@alphabet.western:audio
+@tempo:120
+
+S -> Cellule Cellule Cellule Cellule Cellule Cellule
+
+-----
+
+@mode:random
+
+// La figure ordinaire revient souvent : elle installe le climat.
+Cellule -> A3 C4 E4 (vel:74, wave:sine, attack:5, release:180, weight:70)
+
+// La seconde ponctue.
+Cellule -> A3 C4 F4 (vel:80, wave:sine, attack:5, release:180, weight:25)
+
+// Celle-ci est rare — et c'est pour ça qu'on l'entend.
+Cellule -> A4 C5 E5 A5 (vel:104, wave:sine, attack:2, release:320, weight:5)

@@ -1,0 +1,33 @@
+// @name: Rest, Hold, Divide
+// @tagline: Three signs that shape time without a note
+// @language: bpscript
+// @outputs: audio
+// @level: didactic
+// @tags: language, time
+// @order: 1
+//
+// Ce qui ne sonne pas — silence, prolongation, période
+//
+// Trois signes gouvernent le temps sans produire de note. Le TIRET est un silence : la
+// place est là, rien ne sonne. Le SOULIGNÉ prolonge ce qui précède : la note tient au
+// lieu de se rejouer. Le POINT découpe une durée en fragments égaux.
+// La même mélodie, dite trois fois, avec trois respirations différentes.
+
+@core
+@alphabet.western:audio
+@tempo:76
+
+S -> Detache Tenu Respire
+
+-----
+
+@mode:ord
+
+// Détaché : chaque note occupe sa place, rien ne se prolonge.
+Detache -> A3 C4 E4 A4 (vel:80, wave:triangle, attack:4, release:120)
+
+// Tenu : le souligné fait durer la note au lieu d'en frapper une nouvelle.
+Tenu    -> A3 _ E4 _ _ _ A4 _ (vel:80, wave:triangle, attack:4, release:200)
+
+// Respire : le tiret ouvre des silences qui font entendre les attaques.
+Respire -> A3 - E4 - - A4 - - (vel:88, wave:triangle, attack:2, release:90)
