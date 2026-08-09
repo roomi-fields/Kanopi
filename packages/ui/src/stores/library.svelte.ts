@@ -18,6 +18,13 @@ import {
 const CATEGORY_ORDER = [
   'learn',
   'basics',
+  // `samples` — les scènes d'exemple du LANGAGE (décision Romain 2026-08-09 : « un exemple est une
+  // vraie scène », au moins une par famille de formes). Placée juste après l'arc d'entrée : on
+  // apprend (`learn`), on prend les bases (`basics`), puis on voit une forme du langage à l'œuvre.
+  // ⚠️ LE RANG NE FAIT PAS EXISTER LA CATÉGORIE : le rail dérive ses entrées des DOSSIERS RÉELS,
+  // donc `samples` n'apparaîtra qu'avec sa première scène — les scènes viennent de bpscript, à qui
+  // Romain a confié leur écriture. Ce rang est la PLACE qui les attend, pas la catégorie elle-même.
+  'samples',
   'tuning',
   'world',
   'synthesis',
