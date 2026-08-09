@@ -108,6 +108,9 @@
     // LIVE scene is now an explicit Produce/Play gesture on the active tab
     // (TransportCluster's bascule), not a side effect of opening a file.
     workspace.openBundle(item.files, item.sessionFile);
+    // ⚠️ CE GESTE EST DUPLIQUÉ dans `App.svelte` (`ouvrirSceneDemandee`), qui ouvre la scène
+    // demandée par `?scene=…` — l'URL doit emprunter LE MÊME chemin que le clic, sinon une seule
+    // des deux voies serait testée. Si l'ouverture change ici, elle change là-bas.
     // The library is a launcher: on load, land on NOW — you open a scene to look
     // at/edit it (Romain, 2026-07-13). Mine is for managing your OWN files, not
     // the landing spot after opening a bundled scene.

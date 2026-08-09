@@ -18,6 +18,8 @@
   import { installAutosave } from './lib/persistence/snapshot.svelte';
   import { installPersonalPitchLib } from './stores/personal-pitch-lib.svelte';
   import { workspace } from './stores/workspace.svelte';
+  import { library } from './stores/library.svelte';
+  import { sceneDemandeeParUrl } from './lib/scene-url';
   import { openBlocks } from './stores/blocks.svelte';
   import { markLastEvalError } from './components/editor/eval-tracker';
 
@@ -55,8 +57,29 @@
     }
   }
 
+  // OUVRIR UNE SCÈNE DEMANDÉE PAR L'URL (`?scene=<catégorie>/<fichier>.bps`) — demande Romain
+  // 2026-08-09 : depuis un exemple de la doc, un clic amène l'utilisateur sur la scène OUVERTE et
+  // prête à produire, « ainsi ce qui sera testé, ça sera toujours les vraies scènes d'exemples ».
+  // ⚠️ LE MÊME GESTE QUE LE CLIC DU RAIL, volontairement dupliqué en DEUX LIGNES plutôt qu'en
+  // important une fonction depuis un composant : `LibrarySpace.load()` fait exactement
+  // `openBundle` + retour sur NOW, et la sémantique d'onglets de Romain veut que l'ouverture soit
+  // EDIT-ONLY — elle n'a jamais le droit de produire ni de jouer. Si ce geste change là-bas, il
+  // doit changer ici : c'est pour ça que les deux sites se citent l'un l'autre.
+  function ouvrirSceneDemandee() {
+    const id = sceneDemandeeParUrl();
+    if (!id) return;
+    const item = library.items.find((i) => i.id === id);
+    // Identifiant inconnu : on ne fait RIEN et on ne crie pas. Un lien de doc périmé doit laisser
+    // l'application démarrer normalement, pas l'accueillir par une erreur.
+    if (!item) return;
+    workspace.openBundle(item.files, item.sessionFile);
+    ui.activeActivityView = 'now';
+  }
+
   onMount(() => {
     installAutosave();
+    // APRÈS l'autosave : l'ouverture crée un onglet, il doit être persisté comme les autres.
+    ouvrirSceneDemandee();
     // Composeur des librairies HAUTEUR personnelles (`libraries/<domaine>/…`) → catalogue
     // `pitchLibMine` de bpx-adapter. Doit démarrer AVANT toute dérivation pour alimenter le
     // setter à temps (même patron que `installAutosave`).
