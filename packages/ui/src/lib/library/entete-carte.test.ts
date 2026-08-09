@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { LIBRARY_ITEMS } from './scenes';
 
 // L'EN-TÊTE DE CARTE D'UNE SCÈNE ÉDITORIALE EST COMPLET — le garde de RÉCEPTION.
 //
@@ -65,6 +66,42 @@ describe('toute scène d’une catégorie éditoriale porte un en-tête de carte
       const declarees = clesDeclarees(texte);
       const manquantes = CLES.filter((k) => !declarees.has(k));
       expect(manquantes, `${id} : clés absentes ou vides`).toEqual([]);
+    });
+  }
+});
+
+// TOUTES LES SORTIES DÉCLARÉES ARRIVENT SUR LA CARTE — le filtre de sortie est multi-valeur
+// (`catalog.ts:72`, `item.outputs.includes`), donc une scène qui déclare `audio, midi` doit
+// ressortir sous CHACUN des deux filtres, pas seulement le premier.
+//
+// ⚠️ POURQUOI CE CAS EXISTE : jusqu'au dépôt des scènes d'exemple, chaque scène éditoriale ne
+// déclarait qu'une seule sortie. Une lecture qui n'aurait gardé que la première serait restée
+// verte sur tout le corpus, et la scène à deux sorties aurait simplement disparu d'un filtre —
+// une absence, qui ne rougit nulle part.
+//
+// Les deux côtés sont indépendants : la gauche vient du TEXTE du fichier, la droite de l'item
+// que l'application construit. Mordant prouvé par injection dans le code du lecteur — ne garder
+// que la première sortie (`.slice(0, 1)` sur `scenes.ts:86`) fait rougir les 12 scènes à
+// plusieurs sorties, nommément ; restauration, 161 vert.
+describe('les sorties déclarées arrivent toutes sur la carte', () => {
+  const AVEC_PLUSIEURS = EDITORIALES.map(([chemin, texte]) => {
+    const m = /^\/\/\s*@outputs:\s*(.*)$/m.exec(texte.split('\n').slice(0, 12).join('\n'));
+    const declarees = (m?.[1] ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return { id: `${categorie(chemin)}/${chemin.split('/').pop()}`, declarees };
+  }).filter((s) => s.declarees.length > 1);
+
+  it('le corpus en contient au moins une (sinon ce banc ne mesure rien)', () => {
+    expect(AVEC_PLUSIEURS.length).toBeGreaterThan(0);
+  });
+
+  for (const { id, declarees } of AVEC_PLUSIEURS) {
+    it(`${id} porte ses ${declarees.length} sorties`, () => {
+      const item = LIBRARY_ITEMS.find((i) => i.id === id);
+      expect(item, `${id} absente du catalogue`).toBeDefined();
+      expect([...item!.outputs].sort()).toEqual([...declarees].sort());
     });
   }
 });
