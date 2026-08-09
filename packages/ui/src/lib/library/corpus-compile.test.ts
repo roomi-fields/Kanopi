@@ -101,7 +101,16 @@ const GRAINE = 1;
  *     à écrire une forme qu'on remplacera. Migrer vers la forme sans réglages changerait la
  *     musique (enveloppes aux valeurs par défaut) : ce n'est pas une option silencieuse.
  *  Toute AUTRE cause de rouge est une régression, donc un échec : cette liste n'est pas un
- *  dépotoir de scènes cassées, chaque entrée porte sa raison. */
+ *  dépotoir de scènes cassées, chaque entrée porte sa raison.
+ *
+ *  ⚠️ CINQ MOTIFS ONT ÉTÉ ÉLARGIS LE 2026-08-09, ET UN MOTIF ÉLARGI EST UN GARDE PLUS FAIBLE :
+ *  je l'écris ici plutôt que de laisser le desserrage passer inaperçu. Ils exigeaient que le refus
+ *  NOMME les entités concernées (`env1`, `sweep`, `envGroup, envNote`, `lead, open, close,
+ *  glide`) — ce que le message amont faisait, et ne fait plus depuis la suppression des deux
+ *  directives (bpscript 7a2d351). Le refus dit désormais que la directive est supprimée, sans dire
+ *  CE QU'ELLE PORTAIT. Les motifs suivent donc le réel au maximum de spécificité disponible ; ce
+ *  n'est pas un contournement, c'est une perte d'information en amont, signalée à bpscript le
+ *  jour même. Si le nom des entités revient dans le message, RESSERRER ces cinq motifs. */
 const ROUGES_DECLAREES: Array<{
   fichier: string;
   motif: RegExp;
@@ -192,35 +201,35 @@ const ROUGES_DECLAREES: Array<{
   // forme qu'on remplacera. Elles RESTENT dans le corpus, déclarées rouges. Suivi : KAN-40.
   {
     fichier: 'cv/cv-adsr.bps',
-    motif: /'@cv' est supprimé du langage.*env1\./,
+    motif: /'@cv' est supprim(é|e) du langage/,
     cause: 'forme-a-venir',
     attend:
       'la forme « instance de module avec ses réglages de départ » (attack:5, decay:150, sustain:0.2, release:400 sur env1), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
   },
   {
     fichier: 'cv/cv-lfo.bps',
-    motif: /'@cv' est supprimé du langage.*sweep\./,
+    motif: /'@cv' est supprim(é|e) du langage/,
     cause: 'forme-a-venir',
     attend:
       'la forme « instance de module avec ses réglages de départ » (rate:0.4, amplitude:0.9, shape:sine sur sweep), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
   },
   {
     fichier: 'synthesis/group-cutoff.bps',
-    motif: /'@cv' est supprimé du langage.*env1\./,
+    motif: /'@cv' est supprim(é|e) du langage/,
     cause: 'forme-a-venir',
     attend:
       'la forme « instance de module avec ses réglages de départ » (attack:8, decay:750, sustain:0.1, release:300 sur env1), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
   },
   {
     fichier: 'synthesis/superp-cutoff.bps',
-    motif: /'@cv' est supprimé du langage.*envGroup, envNote\./,
+    motif: /'@cv' est supprim(é|e) du langage/,
     cause: 'forme-a-venir',
     attend:
       'la forme « instance de module avec ses réglages de départ » (envGroup : attack:600, decay:500, sustain:0.5, release:700 ; envNote : attack:5, decay:110, sustain:0.2, release:160), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
   },
   {
     fichier: 'synthesis/patchbay.bps',
-    motif: /'@macro' est supprimé du langage.*lead, open, close, glide\./,
+    motif: /'@macro' est supprim(é|e) du langage/,
     cause: 'forme-a-venir',
     attend:
       "la forme « instance de module avec ses réglages de départ », pas encore dans le parseur, revue avec FaustX — ET deux causes de plus, propres à cette scène : le domicile du câblage persistant (lead/open/close/glide) n'a pas de forme de remplacement tranchée, et ses modules (saw, lpf) sont absents du catalogue de modules (qui n'en porte que trois : adsr, lfo, ramp). Suivi : KAN-40."
@@ -438,18 +447,19 @@ describe('le brassage AGIT, et seulement devant le bloc', () => {
     expect(avec(3)).not.toBe(avec(11));
   });
 
-  it('COLLÉ après la fermante : INERTE — ordre identique à celui sans outil (défaut 2026-08-09)', () => {
-    // CE BANC EST ÉCRIT POUR ROUGIR, et de deux façons, qui appellent des gestes opposés :
-    //   - si l'égalité cesse, la forme collée est devenue AGISSANTE → venir décider laquelle des
-    //     deux écritures le corpus emploie ;
-    //   - si l'analyse refuse (`expect(errors).toEqual([])` tombe dans `ordre`), c'est que Romain
-    //     a FERMÉ la forme collée → supprimer ce cas, le défaut ne peut plus s'écrire.
-    // L'arbitrage sur la forme canonique d'un outil sériel était ouvert le jour où ceci est écrit
-    // (bpscript reconnaît l'ambiguïté de sa référence comme sa dette), donc la seconde issue est
-    // la plus probable — et un banc muet sur son propre remplacement se serait fait supprimer
-    // sans qu'on sache ce qu'il gardait.
-    expect(ordre(`${BLOC}(shuffle)`)).toBe(ordre(BLOC));
-  });
+  // ✅ LE CAS « COLLÉ = INERTE » A ÉTÉ RETIRÉ LE 2026-08-09, ET C'EST LE BANC LUI-MÊME QUI L'A
+  // DEMANDÉ. Il était écrit pour rougir de deux façons, avec le geste inscrit pour chacune ; c'est
+  // la seconde qui s'est produite, quelques heures plus tard : l'analyse REFUSE désormais la forme
+  // collée (« 'shuffle' ne peut pas s'écrire sur un groupe — il ne vaut QUE dans le flux »,
+  // bpscript 7a2d351). Le défaut ne peut donc plus s'écrire, et un cas qui vérifie l'inertie d'une
+  // forme inécrivable ne garde rien.
+  // CE QUI L'A TRANCHÉ N'EST PAS UN ARBITRAGE DE GRAPHIE mais une mesure du moteur d'origine :
+  // l'outil sériel y cible ce qui SUIT le marqueur et la boucle s'arrête net sur une fermante —
+  // 32 occurrences avant un bloc contre 2 après, qui portent sur la suite. La forme DEVANT n'est
+  // donc pas seulement la seule qui agit : c'est la seule que le moteur ait jamais su lire.
+  // Le balayage du corpus, lui, RESTE : le parseur ferme `shuffle` sur un groupe, mais rien ne
+  // prouve qu'il ferme les cinq autres outils que ce balayage surveille, ni la forme collée à un
+  // crochet. Un garde redondant qui NOMME le fichier fautif vaut mieux qu'un refus générique.
 });
 
 // Le second sens du rattrapage, lui, garde son sujet : il ne dépend pas de la scène suspendue
