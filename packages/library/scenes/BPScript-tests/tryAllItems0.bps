@@ -8,11 +8,22 @@
 [@allitems, @maxitems:500]
 
 @mode:random
+// ⚠️ `@destru` EST REMONTÉ EN TÊTE DE SCÈNE le 2026-08-09 — il était accroché au mode de CETTE
+// sous-grammaire, et le sac accroché au mode disparaît du langage (décision Romain).
+// MESURE AU MOTEUR NATIF avant de le bouger, faite par BPx sur la grammaire d'origine : la
+// sortie est IDENTIQUE dans les trois configurations — directive à sa place d'origine, remontée,
+// et RETIRÉE COMPLÈTEMENT. C'est ce troisième témoin qui donne son sens aux deux premiers.
+// ⛔ NE PAS EN CONCLURE QUE LA PORTÉE EST SANS EFFET : elle est NON EXERCÉE ICI. Cette grammaire
+// ne la met pas à l'épreuve — la sortie est la même parce que la directive n'y fait rien, pas
+// parce que sa place serait indifférente. La grammaire qui l'exercerait reste à trouver (vague 2
+// de BPx). Si elle est trouvée et que la place compte, cette scène est à reprendre.
+@destru
+
 S -> $X X &X
 S -> X X
 
 -----
 
-@mode:random(destru)
+@mode:random
 X -> a
 X -> b
