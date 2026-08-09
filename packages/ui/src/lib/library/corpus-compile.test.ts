@@ -161,10 +161,10 @@ const ROUGES_DECLAREES: Array<{
   // lui-même gravée dans le fichier : « aucun alphabet n'est déclaré, DÉLIBÉRÉMENT ».)
   {
     fichier: 'BPScript-tests/trySrand.bps',
-    motif: /'randomize' n'a pas de forme nue dans le flux/,
-    cause: 'forme-a-venir',
+    motif: /terminal '(a|b)' non déclaré/,
+    cause: 'arbitrage-attendu',
     attend:
-      "UNE PLACE POUR `randomize` AU FIL DU FLUX — fermée le 2026-08-09 par bpscript (6b6a351, « un mot nu n'est jamais une instruction »). ⚠️ CE N'EST PAS UN DÉFAUT DE MA SCÈNE, ET LA MIGRATION PRESCRITE LA DÉTRUIRAIT : la source native pose `_randomize` DANS LE FLUX, en tête du membre droit de C (-gr.trySrand:12), et c'est le SUJET MÊME du test — son propre texte l'explique, « the two sequences derived from C also vary from one item to the next because of the _randomize tool that PRECEDES them » (-gr.trySrand:18), par opposition à B et D que `_srand(1)` fige. Déplacer le mot en tête de sous-grammaire (la seule place que le langage lui laisse) supprimerait la distinction que la scène existe pour mesurer. LE REFUS ENVOIE DANS UN MUR : il prescrit `!(randomize)`, et cette forme est refusée par la fermeture VOISINE (« il ne vaut QUE en tête de sous-grammaire ») — les deux fermetures que bpscript vient justement de séparer dans son garde ne le sont pas dans son message. Escaladé à bpscript le 2026-08-09. La question d'alphabet+convention de notes reste ouverte DERRIÈRE celle-ci, chez Romain (11 conversions, 61 notes) : elle ne se mesure plus tant que l'analyse s'arrête avant."
+      "COMMENT BPScript écrit « un alphabet PLUS une convention de notes » — question chez Romain, 11 conversions concernées, 61 notes à déclarer. La source répond pour le CONTENU (le réglage natif -se.trySrand porte « NoteConvention: 0 » = anglaise, et -ho.tryKeyXpand déclare l'alphabet « a b ») ; ce qui manque est sa GRAPHIE en BPScript. Je n'y touche pas : c'est l'écriture de bpscript et l'arbitrage est chez Romain. ⚠️ UNE SECONDE CAUSE S'EST POSÉE DEVANT CELLE-CI PENDANT QUELQUES HEURES le 2026-08-09, et elle s'est levée : la fermeture de `randomize` au fil du flux (6b6a351) arrêtait l'analyse AVANT ce point. Migrer la scène l'aurait DÉTRUITE — le natif pose `_randomize` dans le flux et c'est le sujet même du test (« the two sequences derived from C also vary from one item to the next because of the _randomize tool that PRECEDES them », -gr.trySrand:18, là où `_srand(1)` fige B et D). Mesure portée à bpscript ; Romain a rouvert la place le jour même, et la scène est écrite en `!(randomize)`, à l'endroit du natif."
   },
   {
     fichier: 'BPScript-tests/koto1.bps',
@@ -319,20 +319,17 @@ describe('[932] statut de compilation du corpus BPScript', () => {
 // Romain. On se sert seulement du fait MESURÉ qu'elle exige une graine d'horloge — c'est
 // exactement la cause que bpscript a fini par isoler chez lui ([1060]).
 //
-// ⛔ SUSPENDU LE 2026-08-09 — LE TÉMOIN A PERDU SON SUJET, ET IL NE SE BRICOLE PAS.
-// bpscript a fermé ce jour-là (6b6a351) le mot `randomize` posé AU FIL DU FLUX. Or c'est
-// exactement lui qui portait la propriété : MESURÉ, `(shuffle)` seul dérive sans jeter, et
-// `randomize` en tête de sous-grammaire — la seule place que le langage lui laisse — dérive sans
-// jeter non plus. Il n'existe donc plus, dans le langage d'aujourd'hui, de scène qui refuse sous
-// graine figée : le rattrapage n'a plus rien à mordre, et un banc sans sujet ne prouve rien.
-// J'AI D'ABORD ESSAYÉ DE LE SAUVER en écartant la ligne fermée dans la variante en mémoire — le
-// banc est repassé au vert et ne mesurait plus rien. C'est ce faux vert qui a rendu la mesure
-// ci-dessus nécessaire.
-// RALLUMAGE : dès que la place de `randomize` au fil du flux est tranchée (escalade à bpscript le
-// 2026-08-09, voir la déclaration de trySrand.bps plus haut). Si elle rouvre, ce banc reprend tel
-// quel. Si elle reste fermée, alors c'est le RATTRAPAGE LUI-MÊME qui est sans emploi et qui doit
-// sortir avec son banc — pas rester en parallèle.
-describe.skip('le rattrapage de graine mord', () => {
+// ⚠️ CE BANC A ÉTÉ SUSPENDU QUELQUES HEURES LE 2026-08-09, ET CE QUI L'A RALLUMÉ VAUT D'ÊTRE SU.
+// bpscript avait fermé ce matin-là (6b6a351) le mot `randomize` posé AU FIL DU FLUX — exactement
+// ce qui portait la propriété mesurée ici. MESURÉ alors : `(shuffle)` seul dérive sans jeter, et
+// `randomize` en tête de sous-grammaire dérive sans jeter non plus ; plus aucune scène ne refusait
+// sous graine figée, le rattrapage n'avait plus rien à mordre.
+// J'AI D'ABORD ESSAYÉ DE SAUVER LE BANC en écartant la ligne fermée dans la variante en mémoire :
+// il est repassé au VERT en ne mesurant plus rien. C'est ce faux vert qui a imposé la mesure — et
+// c'est elle, portée à bpscript avec la source native (`-gr.trySrand:12` et `:18`), qui a fait
+// rouvrir la place par Romain le jour même. Le banc reprend donc tel quel, sur la forme rouverte
+// `!(randomize)`, à l'endroit où le natif la pose.
+describe('le rattrapage de graine mord', () => {
   const source = Object.entries(BPS).find(([c]) => c.endsWith('BPScript-tests/trySrand.bps'))?.[1];
   const avecAlphabet = () =>
     source!.replace(
@@ -340,22 +337,38 @@ describe.skip('le rattrapage de graine mord', () => {
       '@alphabet.bp3_english:midi\n@gate a:midi\n@gate b:midi\n@controls'
     );
 
-  it('le témoin existe et exige bien une graine d’HORLOGE (sinon ce banc ne prouve rien)', () => {
+  it('le témoin existe et ANALYSE proprement (sinon on ne mesure pas la dérivation)', () => {
     expect(source, 'trySrand.bps introuvable dans le corpus').toBeDefined();
-    const { ast, errors } = compileToBPxAST(avecAlphabet()) as {
-      ast: unknown;
-      errors: unknown[];
-    };
-    expect(
-      errors,
-      'le témoin doit ANALYSER proprement, sinon on ne mesure pas la dérivation'
-    ).toEqual([]);
-    // C'est LA propriété qui fait de cette scène un témoin : sous graine figée, elle REFUSE.
-    expect(() =>
-      createSession(ast as Parameters<typeof createSession>[0], { seed: GRAINE }).derive()
-    ).toThrow(/reseedOrShuffle/);
+    const { errors } = compileToBPxAST(avecAlphabet()) as { ast: unknown; errors: unknown[] };
+    expect(errors).toEqual([]);
   });
 
+  // ⛔ VERROU RETOURNÉ LE 2026-08-09 — CE VERT EST UN CONSTAT DE PANNE, PAS UNE VALIDATION.
+  // Jusqu'à ce jour, cette scène REFUSAIT de dériver sous graine figée, et c'est ce refus que le
+  // rattrapage existe pour attraper. Elle ne refuse plus. MESURÉ, et la mesure dit que
+  // l'information part bien mais n'arrive pas :
+  //   - l'arbre PORTE `randomize` trois fois (un `InstantControl` dans le flux, un `modifiers[]`
+  //     de sous-grammaire), donc bpscript le grave ;
+  //   - BPx lit `subgram.randomize` (BPx/src/session.ts:930), un champ DIRECT de sous-grammaire ;
+  //   - le même mécanisme MORD TOUJOURS par le chemin BP3 natif (test-mode-seed.test.ts:157,
+  //     vert), donc le refus n'a pas été retiré de BPx — c'est la JOINTURE BPScript→BPx qui ne
+  //     transmet plus.
+  // CONSÉQUENCE MUSICALE, et c'est elle qui compte : une scène BPScript qui re-sème son tirage ne
+  // le re-sème peut-être plus. Routé le 2026-08-09 (dérivation/arbre/contrôles → bpx).
+  // POURQUOI RETOURNÉ ET NON SUSPENDU : un banc suspendu se tait ; celui-ci doit REDEVENIR ROUGE
+  // le jour où l'amont répare, pour me forcer à le remettre à l'endroit. Le vert ci-dessous
+  // verrouille donc l'ANOMALIE, pas le bon comportement.
+  it('RÉGRESSION ROUTÉE — la scène ne refuse PLUS sous graine figée (à remettre à l’endroit)', () => {
+    const { ast } = compileToBPxAST(avecAlphabet()) as { ast: unknown; errors: unknown[] };
+    expect(() =>
+      createSession(ast as Parameters<typeof createSession>[0], { seed: GRAINE }).derive()
+    ).not.toThrow();
+  });
+
+  // ⚠️ CE BANC NE PROUVE PLUS RIEN TANT QUE LA RÉGRESSION CI-DESSUS TIENT, et il faut le dire au
+  // lieu de le laisser vert : il passait parce que le rattrapage AVALAIT le refus ; il passe
+  // aujourd'hui parce qu'il n'y a plus de refus à avaler. Même vert, deux causes opposées — et
+  // rien dans le résultat ne les distingue. Il reprend son sens quand l'amont répare.
   it('sait MORDRE : le garde rend VERT une scène que la graine figée refuse', () => {
     expect(statut(avecAlphabet())).toBeNull();
   });
