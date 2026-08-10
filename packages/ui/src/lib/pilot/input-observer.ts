@@ -17,6 +17,11 @@ import type { InputEvent, KanopiEvent } from '../events/types';
 const MAX = 100;
 
 const derniers: InputEvent[] = [];
+// LES ÉVÉNEMENTS PRODUITS PAR LES VOIX DE CODE, sur le MÊME bus. Ajoutés le 2026-08-10 avec la
+// suppression du pont : les six voix publient désormais DIRECTEMENT sur le bus commun, et rien ne
+// permettait de le PROUVER depuis un banc — l'ancienne preuve aurait traversé le pont qu'on venait
+// de retirer. Même discipline que ci-dessus : recopié verbatim, borné, jamais interprété.
+const production: KanopiEvent[] = [];
 let branchee = false;
 
 /** Branche la sonde sur le bus. Idempotente — deux appels ne doublent pas l'écoute. */
@@ -24,13 +29,25 @@ export function startInputObserver(onAny: (fn: (e: KanopiEvent) => void) => () =
   if (branchee) return;
   branchee = true;
   onAny((e) => {
-    if (e.type !== 'input') return;
-    derniers.push(e);
-    if (derniers.length > MAX) derniers.shift();
+    if (e.type === 'input') {
+      derniers.push(e);
+      if (derniers.length > MAX) derniers.shift();
+      return;
+    }
+    if (e.type === 'trigger' || e.type === 'token') {
+      production.push(e);
+      if (production.length > MAX) production.shift();
+    }
   });
 }
 
 /** Les événements d'entrée vus, du plus ancien au plus récent. Lecture seule. */
 export function readInputs(): readonly InputEvent[] {
   return [...derniers];
+}
+
+/** Ce que les VOIX DE CODE ont publié sur le bus commun, du plus ancien au plus récent.
+ *  Lecture seule. C'est la sonde qui prouve qu'une voix atteint un consommateur SANS pont. */
+export function readVoiceEvents(): readonly KanopiEvent[] {
+  return [...production];
 }

@@ -1,5 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { getAdapter, listRuntimes, codeVoiceReachesMasterBus } from './registry';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { createEventBus } from '../events/bus';
+import { getAdapter, listRuntimes, codeVoiceReachesMasterBus, initAdapters } from './registry';
+
+// LE REGISTRE SE CONSTRUIT AVEC LE BUS — comme le cœur le fait en vrai (real-core, constructeur).
+// Ce banc l'initialise donc de la même façon au lieu de lire un registre qui n'existe pas encore :
+// c'est le cri fail-loud du registre qui l'a révélé, et l'affaiblir pour faire passer le banc
+// aurait rendu au produit un « aucune voix reconnue » silencieux.
+beforeAll(() => initAdapters(createEventBus()));
 
 describe('runtime registry', () => {
   it('lists all known runtimes', () => {

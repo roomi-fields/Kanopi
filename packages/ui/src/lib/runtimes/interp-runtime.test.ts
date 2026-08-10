@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createCodeVoiceAdapters } from 'runtime-codevoices';
 import { createEventBus } from '../events/bus';
-import { getAdapter, listRuntimes, initAdapters, isCodeVoiceRuntime } from './registry';
+import { getAdapter, listRuntimes, initAdapters } from './registry';
 
 // LES VOIX SE CONSTRUISENT AVEC LE BUS — le tableau exporté a quitté la surface du paquet
 // (2026-08-10, chantier bus) : la fabrique est le SEUL chemin, et ce banc l'emprunte comme

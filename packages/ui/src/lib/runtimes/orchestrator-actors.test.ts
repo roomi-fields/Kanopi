@@ -1,5 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { createEventBus } from '../events/bus';
+import { initAdapters } from './registry';
 import {
   bpscriptAdapter,
   setActorsSink,
@@ -9,6 +11,12 @@ import {
   type PublishedActor
 } from './bpx-adapter';
 import * as registry from './registry';
+
+// LE REGISTRE SE CONSTRUIT AVEC LE BUS — comme le cœur le fait en vrai. Ce banc lit des
+// adaptateurs AVANT de construire son cœur, il les initialise donc lui-même. C'est le cri
+// fail-loud du registre qui l'a révélé ; l'affaiblir pour faire passer le banc aurait rendu au
+// produit un « aucune voix reconnue » silencieux.
+beforeAll(() => initAdapters(createEventBus()));
 
 // Minimal WebAudio + node stubs so the orchestrator eval can build its dispatcher.
 class FakeGain {

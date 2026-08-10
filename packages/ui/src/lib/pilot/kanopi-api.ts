@@ -35,7 +35,7 @@ import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 import { pilotAudioMeter, pilotCodeVoicesRuntime } from '../runtimes/kronos-audio';
 import { lastViewInput } from './view-input-observer';
 import { startFrameMonitor, readFrameStats } from './frame-stats';
-import { startInputObserver, readInputs } from './input-observer';
+import { startInputObserver, readInputs, readVoiceEvents } from './input-observer';
 import { profileMainThread } from './stack-profiler';
 import { core } from '../core';
 
@@ -164,6 +164,16 @@ export function installKanopiApi(): void {
        *  lucarne de développement, et sans interpréter la charge. */
       inputs() {
         return readInputs();
+      },
+      /** Ce que les VOIX DE CODE ont publié sur le bus COMMUN, du plus ancien au plus récent.
+       *  Lecture seule.
+       *
+       *  POURQUOI CETTE SONDE EXISTE : depuis le 2026-08-10, les six voix publient DIRECTEMENT sur
+       *  le bus commun et le pont de republication est SUPPRIMÉ. Rien ne permettait de le PROUVER
+       *  depuis un banc — et une preuve écrite avant la suppression aurait traversé le pont qu'on
+       *  venait de retirer, donc elle n'aurait rien prouvé du nouveau chemin. */
+      voiceEvents() {
+        return readVoiceEvents();
       },
       /** La vue « flat » Kairos (`productionFeed.plat()` = `arbreCourant()` de Kairos) :
        *  durée + données d'affichage de l'arbre courant. Lecture seule.
