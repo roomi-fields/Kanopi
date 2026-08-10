@@ -66,12 +66,21 @@ const SCENES: Scene[] = readdirSync(DOSSIER)
 // La leçon qui reste vaut mieux que la conclusion perdue : une fenêtre trop courte MINIMISE, et
 // un silence ressemble exactement à « rien à corriger ».
 const MUETTES_DECLAREES: Record<string, { motif: string; attend: 'silence' | 'cris' }> = {
-  // Réécrite en deux acteurs, elle PRODUIT — et elle crie. Elle appelle `s("bd hh")`, des sons de
-  // batterie qu'aucune déclaration ne charge. Le dépôt connaît déjà ce mur : `dirt-samples` est
-  // distante et inapte au portillon, une scène strudel avait dû migrer vers une banque hébergée
-  // [809]. Un mot dans la scène suffit, et la scène est à bpscript.
+  // Réécrite en deux acteurs, elle PRODUIT — et elle crie. Elle appelle des sons de batterie
+  // qu'aucune déclaration ne CHARGE.
+  //
+  // ⚠️ `.bank('X')` DANS LE CODE NE CHARGE RIEN, il choisit parmi ce qui est déjà chargé. Le
+  // chargement se déclare sur l'ACTEUR — `eval.strudel(bank:"…")`, qui appelle `loadSampleBank`.
+  // Mesuré : `s("bd hh")` criait « sound bd not found » 9 fois ; avec `.bank('RolandTR909')` elle
+  // crie « sound RolandTR909_bd not found » 29 fois. Le préfixe change, le son manque toujours.
+  // La scène dont la forme a été reprise (`strudel/05-filter-envelope-effects.bps:22-26`) ne
+  // déclare pas de banque non plus — elle sonne par ses notes, pas par sa batterie, et n'est donc
+  // pas une preuve de chargement.
+  //
+  // Le dépôt connaît le mur : `dirt-samples` est distante et inapte au portillon ; une scène
+  // strudel a dû migrer vers une banque hébergée [809]. Défaut de contenu, il est à bpscript.
   'jeu-le-code-natif-dans-le-flux.bps': {
-    motif: 'elle SONNE, et elle crie 9 fois « sound bd/hh not found » — banque non chargée',
+    motif: 'elle SONNE, et elle crie « sound RolandTR909_bd not found » — banque non chargée',
     attend: 'cris'
   }
 };
