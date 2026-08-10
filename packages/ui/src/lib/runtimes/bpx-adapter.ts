@@ -587,7 +587,11 @@ export function flagStatesFromAst(a: SceneAstView | null): FlagStates {
 // dit (bpscript fa037e8). La branche jumelle qui le lisait est partie le jour même — code voué au
 // retrait à zéro appelant légitime, donc retiré dans le même mouvement, pas gardé « au cas où ».
 // Absent → undefined (keep the current tempo).
-function mmFromAst(a: SceneAstView | null): number | undefined {
+// EXPORTÉE pour que les bancs lisent CETTE fonction et non une copie. Le 2026-08-10, un banc en
+// portait une RÉPLIQUE LOCALE restée sur l'ancien nom de directive : elle a survécu au renommage
+// et a rendu `undefined` pendant que la vraie lisait juste. Une copie ne diverge pas bruyamment —
+// elle continue de compiler et de mentir.
+export function mmFromAst(a: SceneAstView | null): number | undefined {
   for (const d of a?.directives ?? []) {
     const node = d as { name?: string; value?: unknown };
     if (node.name === 'tempo' && typeof node.value === 'number' && node.value > 0) {
