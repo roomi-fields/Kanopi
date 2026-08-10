@@ -119,16 +119,13 @@ Une modification d'une surface partagée est **en production dès qu'elle attein
 lit** : le préavis part **à la modification**. **La frontière se règle par usage**, mesurée sur la
 résolution réelle et jamais déduite du manifeste de paquet :
 
-- **huit voisins en source, en toute condition** — BPscript, bp3-frontend, runtime-audio,
-  runtime-codevoices, runtime-in, runtime-MIDI, runtime-OSC, runtime-ui : leur seule **écriture**
-  m'atteint ;
+- **huit voisins en source, en toute condition** — BPscript, bp3-frontend et les six runtimes : leur seule **écriture** m'atteint ;
 - **trois à deux régimes** — Kairos, Kronos, BPx : mon serveur de développement et mon portillon
   lisent leur **source** pendant que ma construction de production résout leur **paquet publié**.
   **Mon portillon peut être vert sur leur source pendant que ce qui part à l'utilisateur est bâti sur
   leur paquet.**
 
-**En réception** : avant de conclure « ma régression », discriminer un rouge contre le HEAD du voisin
-par `git archive`.
+**En réception** : discriminer un rouge contre le HEAD du voisin (`git archive`) avant de conclure « ma régression ».
 
 ## ⛔ Le repli sous pression
 
@@ -142,6 +139,9 @@ autorité « en attendant ». Face au blocage, j'attends.
 - **La librairie d'abord** : ce qui peut se déclarer ou se retrouver en librairie y vit.
 - **Les commentaires sont utiles et proportionnés** : ils disent ce que le code ne montre pas, et ils
   décrivent le chemin que le code emprunte réellement.
+- **Éprouver un témoin de compensation avec une valeur NON NULLE**, et **retirer une conversion de type AVANT de conclure** sur qui porte un écart.
+- **Vérifier le dépôt concerné AU MOMENT du relais**, et qu'un composant abonné est bien **BRANCHÉ** chez qui tient le canal.
+- **Retirer une affirmation du CODE dans le même geste** que du message qui la retire.
 
 ## Écrire un document
 
