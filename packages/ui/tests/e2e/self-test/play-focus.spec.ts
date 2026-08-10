@@ -38,7 +38,6 @@ import { expectNoConsoleErrors } from '../../helpers';
 // sans scène armée il n'y a pas de Transport, donc Espace ne pourrait rien démarrer et le test
 // ne prouverait rien.
 const PROBE_SCENE = `@core
-@controls
 @alphabet.western:audio
 
 S -> C4 D4 E4 G4 C5 G4 E4 C4

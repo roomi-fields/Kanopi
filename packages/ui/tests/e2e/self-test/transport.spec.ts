@@ -28,7 +28,6 @@ const POS_LOCATOR = '.sb-item[title^="bar.beat"] .num';
 // MIDI fail-loud GATE a `:midi` scene without a device (no setupFakeMidi here)
 // would be BLOCKED at eval — the probe must stay playable without MIDI hardware.
 const PROBE_SCENE = `@core
-@controls
 @alphabet.western:audio
 
 S -> C4 D4 E4 G4 C5 G4 E4 C4
