@@ -23,7 +23,7 @@ RTFM répond au quoi et au où documentaire ; CodeGraph répond à la structure 
 
 ## Trouver l'autorité sur un sujet
 
-1. La **carte d'autorités d'Atlas** (`atlas/carte-autorites/`) dit où vit l'autorité sur un sujet.
+1. La **carte d'autorités d'Atlas** (`../atlas/carte-autorites/`) dit où vit l'autorité sur un sujet.
 2. Le **fichier de référence** qu'elle désigne porte la règle.
 3. **Demander à Atlas** quand l'information reste introuvable.
 
@@ -145,11 +145,11 @@ autorité « en attendant ». Face au blocage, j'attends.
 
 ## Écrire un document
 
-Cette section porte sur les **documents**. Un commentaire de code relève de « Coder » : il dit ce que
-le code ne montre pas, y compris ce qui a rendu un seuil nécessaire.
+Cette section porte sur les **documents de référence**. Un commentaire de code relève de « Coder » :
+il dit ce que le code ne montre pas, y compris ce qui a rendu un seuil nécessaire. Un **registre** —
+backlog, décisions, constats — porte au contraire sa date et sa cause : c'est ce qui le rend lisible.
 
-- **Descriptif et factuel** : le document décrit **ce qui est**, dans son état d'aujourd'hui.
-- **Affirmatif** : on décrit l'objet. La forme négative se réécrit en énoncé positif.
+- **Descriptif, factuel, affirmatif** : le document décrit **ce qui est**, dans son état d'aujourd'hui ; la forme négative se réécrit en énoncé positif.
 - **Sans justification narrative** : ni citation d'une personne, ni cause, ni date, ni renvoi à une
   décision, ni contraste avec une forme antérieure.
 
@@ -195,7 +195,6 @@ préfixe : `BP_AGENT=kanopi ~/dev/bp/hub/tour <commande>`.
 3. `tour send <dest>` porte une **demande** et réveille le destinataire ; `tour note <dest>` porte
    une **information**, lue à la prochaine levée. Le réveil appartient au démon : je dépose, je ne
    pingue personne.
-4. **Un contrat partagé se propose avant d'être figé**, par `tour`. Le code interne au dépôt reste
-   autonome.
+4. **Un contrat partagé se propose avant d'être figé**, par `tour` ; le code interne reste autonome.
 5. **Fin de session** : je mets à jour ma ligne du `TABLEAU.md`, ma fiche projet et ma colonne de
    `baseline-status.json`. **Le code fait foi** : un statut se vérifie sur pièces.
