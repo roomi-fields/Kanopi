@@ -48,8 +48,23 @@
 //
 // bpscript — 2026-07-29. Écriture chez un autre : elle n'est LIVRÉE que quand Kanopi l'a committée.
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// CHAQUE MOT SE POSE OÙ SA PORTÉE LE MET — `@tempo` sort du modificateur de mode.
+//
+// Cette scène portait `@mode:random(tempo:60.0000,striated,randomize)`. Le métronome déclare la
+// portée `scene` : il s'écrit en tête, jamais sur une sous-grammaire. Il était là parce que ma voie
+// de portage BP3 mettait toute la ligne de préambule natif au même endroit ; elle route désormais
+// chaque mot par sa portée déclarée, et un modificateur de sous-grammaire hors portée est REFUSÉ
+// (règle de Romain : un mot accepté vient d'une librairie invoquée).
+//
+// `striated` et `randomize` NE BOUGENT PAS : tous deux déclarent la portée `subgrammar`, et le
+// moteur natif les arme bien là (CompileGrammar.c:1531 et :1543).
+//
+// bpscript — 2026-08-10. Écriture chez un autre : elle n'est LIVRÉE que quand Kanopi l'a committée.
+// ─────────────────────────────────────────────────────────────────────────────
 @core
-@mode:random(tempo:60.0000,striated,randomize)
+@tempo:60.0000
+@mode:random(striated,randomize)
 S -> ! (/5) A_r B_r C_r D_r E_r
 A_r -> !(shuffle) {C3 B3 E3 F3 G3}
 B_r -> ![seed:1] !(shuffle) {C4 B4 E4 F4 G4}
