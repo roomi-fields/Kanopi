@@ -10,7 +10,7 @@
 
 @core
 @controls
-[@improvize]
+@improvize
 
 @gate a:midi
 @gate b:midi

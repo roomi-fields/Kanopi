@@ -4,7 +4,8 @@
 
 @core
 @controls
-[@allitems, @maxitems:500]
+@allitems
+@maxitems:500
 @alphabet.western:midi
 
 @mode:random

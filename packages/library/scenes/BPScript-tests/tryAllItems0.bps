@@ -5,7 +5,8 @@
 @core
 @controls
 @test_alphabets.abc
-[@allitems, @maxitems:500]
+@allitems
+@maxitems:500
 
 @mode:random
 S -> $X X &X

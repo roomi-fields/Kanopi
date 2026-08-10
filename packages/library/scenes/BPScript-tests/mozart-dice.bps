@@ -15,9 +15,9 @@
 @core
 @controls
 @alphabet.solfege:midi
-[@maxitems:40]
+@maxitems:40
 @qclock:11
-[@improvize]
+@improvize
 
 // --- Sous-grammaire 1 @mode:ord — structure ---
 

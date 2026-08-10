@@ -8,7 +8,7 @@
 // Les règles sans RHS (X -->) effacent le non-terminal (production epsilon).
 
 @core
-[@maxitems:20]   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
+@maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
                  // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
                  // certaines grammaires ne rendent jamais la main.
 @controls

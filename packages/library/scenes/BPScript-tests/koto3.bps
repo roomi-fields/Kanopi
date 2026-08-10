@@ -12,7 +12,7 @@
 
 @core
 @controls
-[@improvize]
+@improvize
 @qclock:20
 
 @gate a:midi

@@ -18,7 +18,7 @@
 
 @core
 @controls
-[@improvize]
+@improvize
 @quantization:50
 @alphabet.solfege:midi
 @transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:678 fait key += (C4key - 60),

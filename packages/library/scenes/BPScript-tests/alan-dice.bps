@@ -18,7 +18,7 @@
 @qclock:11
 @controls
 @alphabet.solfege:midi
-[@improvize]
+@improvize
 
 // --- Sous-grammaire 1 @mode:ord — structure ---
 

@@ -20,7 +20,7 @@
 // différence entre une improvisation et une composition écrite au hasard.
 
 @seed:20260810
-[@maxitems:12]
+@maxitems:12
 
 @core
 @alphabet.western
