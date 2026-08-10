@@ -40,7 +40,7 @@ function reduceMax(events: DispatchEvent[]): number {
 function loopBound(events: DispatchEvent[], durationSec?: number): number {
   const handle = startKronosAudio({
     now: () => 0,
-    sinks: { audio: { send() {} } },
+    sinks: { audio: {} },
     derivedTempo: 120,
     loop: true,
     startSceneSec: 0,

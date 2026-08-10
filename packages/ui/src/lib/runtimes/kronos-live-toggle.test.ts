@@ -35,7 +35,7 @@ describe('Kronos audio handle — live re-random / loop toggle', () => {
     const handle = startKronosAudio({
       durationSec: 1.0,
       now: () => now.t,
-      sinks: { audio: { send() {} } },
+      sinks: { audio: {} },
       derivedTempo: 60,
       loop: true,
       startSceneSec: 0,

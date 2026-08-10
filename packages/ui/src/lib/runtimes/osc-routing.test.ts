@@ -57,6 +57,28 @@ describe('OSC branchement (OSC-5b)', () => {
     expect(cutoff!.args).toEqual([64, 5]); // value + channel from event.output
   });
 
+  // LE BANC NOURRIT L ADAPTATEUR PAR LE BUS, comme la production depuis le 2026-08-10 : `send` a été
+  // retirée des quatre sorties, l'événement ordonnancé arrive par abonnement. Le sujet du banc — le
+  // ROUTAGE, l'adresse résolue et la garde de destination — ne change pas ; seul le chemin par lequel
+  // l'événement entre change, et il devient le VRAI.
+  function publierSur(
+    adapter: {
+      bindEvents: (b: { on: (t: 'output', cb: (e: unknown) => void) => () => void }) => unknown;
+    },
+    ev: unknown
+  ) {
+    const recus: Array<(e: unknown) => void> = [];
+    adapter.bindEvents({
+      on: (_t, cb) => {
+        recus.push(cb);
+        return () => {};
+      }
+    });
+    for (const cb of recus) {
+      cb({ schemaVersion: 1, type: 'output', t: 0, runtime: 'clock', payload: ev });
+    }
+  }
+
   it('OscAdapter emits the resolved address through its transport at the onset', async () => {
     const transport = captureTransport();
     const adapter = new OscAdapter({
@@ -68,7 +90,7 @@ describe('OSC branchement (OSC-5b)', () => {
     // the per-event device/channel come from `event.output` (KAI-9 routing).
     await adapter.prepareSurfaces(['sh_4d']);
 
-    adapter.send({
+    publierSur(adapter, {
       onset: 0,
       duration: 0.25,
       output: { runtime: 'osc', device: 'sh_4d', channel: 2 },
@@ -85,7 +107,7 @@ describe('OSC branchement (OSC-5b)', () => {
     const transport = captureTransport();
     const adapter = new OscAdapter({ transport, profile: new OscBridgeProfile(), now: () => 0 });
     // The graven address designates MIDI, not OSC → the OSC adapter does nothing.
-    adapter.send({
+    publierSur(adapter, {
       onset: 0,
       duration: 0.25,
       output: { runtime: 'midi', device: 'x', channel: 0 },
