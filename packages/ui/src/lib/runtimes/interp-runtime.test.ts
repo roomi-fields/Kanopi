@@ -1,6 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { codeVoiceAdapters } from 'runtime-codevoices';
-import { getAdapter, listRuntimes } from './registry';
+import { createCodeVoiceAdapters } from 'runtime-codevoices';
+import { createEventBus } from '../events/bus';
+import { getAdapter, listRuntimes, initAdapters, isCodeVoiceRuntime } from './registry';
+
+// LES VOIX SE CONSTRUISENT AVEC LE BUS — le tableau exporté a quitté la surface du paquet
+// (2026-08-10, chantier bus) : la fabrique est le SEUL chemin, et ce banc l'emprunte comme
+// l'application. Le registre s'initialise ici comme le cœur l'initialise en vrai.
+const bus = createEventBus();
+initAdapters(bus);
+const codeVoiceAdapters = createCodeVoiceAdapters(bus);
 
 // `runtimeForInterp` (bp3.ts) resolves a backtick eval tag to a Runtime by
 // DERIVING from the adapter registry — the same `codeVoiceAdapters` list the

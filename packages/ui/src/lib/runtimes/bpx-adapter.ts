@@ -69,6 +69,7 @@ import { exprSource } from 'runtime-audio';
 // canal (écarts #2/#3/#4/#6 rapatriés). Kanopi ne fait que l'enregistrer sur Kronos par sa clé ;
 // Kronos lui passe l'événement BRUT et câble l'horloge+le bus via `bindClock`.
 import { createMidiRuntime } from 'runtime-midi';
+import { isCodeVoiceRuntime } from './registry';
 // Pitch resolution (token → Hz) AND the alphabet-aware "sounds" classification both live
 // in KAIROS now: it OWNS the pitch module and GRAVES `content.pitch.hz` + `content.sounds`
 // per note (KAI-10), from the catalogs the host supplies as `ctx.pitchLib`. Kanopi RESOLVES
@@ -141,7 +142,6 @@ import type { VoiceOutputType } from './adapter';
 // load it through the Strudel `samples()` path. The adapter only maps ids → loader.
 import {
   loadSampleBank,
-  codeVoiceAdapters,
   createCodeVoicesRuntime,
   guestLibraries,
   mercurySamplesInPatch,
@@ -1528,7 +1528,13 @@ function srcKey(s: EvalSource): string {
 // exposes it for free. Imported from `runtime-codevoices` (already a dependency),
 // which avoids the bp3 ↔ registry module-eval cycle a static `./registry` import
 // would create.
-const codeVoiceRuntimes = new Set<Runtime>(codeVoiceAdapters.map((a) => a.id));
+// LE SET DE MODULE A DISPARU AVEC LE TABLEAU EXPORTÉ : `codeVoiceAdapters` est devenu INTERNE au
+// paquet (les voix ne s'obtiennent plus que par la fabrique, avec le bus). On interroge donc le
+// registre À L'APPEL, pas au chargement — ce qui évite aussi le cycle d'évaluation que l'ancien
+// commentaire redoutait, puisque plus rien ne se construit au chargement de ce module.
+function estVoixDeCode(r: Runtime): boolean {
+  return isCodeVoiceRuntime(r);
+}
 
 // Kanopi Runtime. The tag is the eval tag from the .bps backtick (`strudel: …`);
 // each code-voice tag IS its registered adapter's id, so an interp resolves iff
@@ -1536,7 +1542,7 @@ const codeVoiceRuntimes = new Set<Runtime>(codeVoiceAdapters.map((a) => a.id));
 // tag the code). `sc`/`py` are level-3 (osc-bridge), absent from the registry →
 // unknown-interp (surfaced clearly, never silent).
 function runtimeForInterp(interp: string): Runtime | undefined {
-  return codeVoiceRuntimes.has(interp as Runtime) ? (interp as Runtime) : undefined;
+  return estVoixDeCode(interp as Runtime) ? (interp as Runtime) : undefined;
 }
 
 // What a voice PRODUCES (ADAPTER_SPEC §1bis b). A code voice's output type is

@@ -37,6 +37,7 @@ import { warmUp } from '../runtimes/code-voice-warmup';
 // migrer ». `periphériques()` rend les instances GELÉES du paquet (voir `enableMidiInput`).
 import { periphériques, type PortInfo } from 'runtime-in';
 import { createEventBus } from '../events/bus';
+import { initAdapters } from '../runtimes/registry';
 import type { EventBus } from '../events/types';
 import { production } from '../../stores/production.svelte';
 
@@ -76,6 +77,18 @@ class RealCore implements CoreApi {
   events: EventBus = createEventBus();
 
   constructor() {
+    // LE BUS SE REMET À LA CONSTRUCTION, AVANT TOUT AUTRE APPEL — contrat
+    // `hote-runtimes-sortie.md`, amendement du 2026-08-10 point 5. Les six voix de code
+    // publient DIRECTEMENT dessus ; il n'y a plus de canal montant, plus de pont.
+    //
+    // ⚠️ CE QUI VIVAIT ICI ET QUI EST SUPPRIMÉ : une boucle qui abonnait `a.events.onAny(…)` sur
+    // chaque adaptateur et republiait sur ce bus. Deux bus et un pont — la forme même que §5.7
+    // refuse pour les entrées, et pour la même raison : deux copies d'une union à tenir
+    // assignables, et une divergence qui ne se voit pas aux noms. Elle est RETIRÉE, pas
+    // désactivée : le paquet a sorti son tableau exporté dans le même mouvement, donc la fabrique
+    // est le seul chemin et rien ne peut la contourner.
+    initAdapters(this.events);
+
     // The per-frame playhead sample + the beat/bar UI events (p5/hydra `onBeat`/`onBar`)
     // are derived by the kronos-cursor store directly off Kronos's Transport position
     // (the single authority) — it owns the rAF that used to live in the clock. Wire it
@@ -83,10 +96,6 @@ class RealCore implements CoreApi {
     // informational `bpm` field. The events only fire while running, when a handle exists,
     // so the live Transport's tempo is the authoritative value (0 when no scene is live).
     kronosCursor.setEventBus(this.events, () => kronosCursor.active?.transport.tempo ?? 0);
-    for (const id of listRuntimes()) {
-      const a = getAdapter(id);
-      if (a?.events) a.events.onAny((e) => this.events.emit(e));
-    }
     this.console.push({ runtime: 'system', level: 'info', msg: 'kanopi runtime online' });
     installConsoleBridge((e) => this.console.push(e));
     this.actors.setOnToggle((a, willBeActive) => {

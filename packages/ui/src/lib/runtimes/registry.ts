@@ -3,14 +3,44 @@ import type { RuntimeAdapter } from './adapter';
 // The 6 code voices (strudel/hydra/p5/mercury/csound/js) live in the
 // `runtime-codevoices` package and are pulled by Kronos at the backtick token
 // onset. The natives bp3/bpscript stay in Kanopi (BPx path).
-import { codeVoiceAdapters } from 'runtime-codevoices';
+import { createCodeVoiceAdapters } from 'runtime-codevoices';
+import type { EventBus } from '../events/types';
 import { bp3Adapter, bpscriptAdapter } from './bpx-adapter';
 
-const adapters = new Map<Runtime, RuntimeAdapter>([
-  ...codeVoiceAdapters.map((a): [Runtime, RuntimeAdapter] => [a.id, a]),
-  ['bp3', bp3Adapter],
-  ['bpscript', bpscriptAdapter]
-]);
+// LES VOIX SE CONSTRUISENT AVEC LE BUS, PAS APRÈS — contrat `hote-runtimes-sortie.md`,
+// amendement du 2026-08-10 point 5 : une runtime qui produit publie DIRECTEMENT sur le bus
+// commun, elle n'expose aucun canal montant, et le bus SE REMET À LA CONSTRUCTION.
+//
+// ⚠️ POURQUOI UNE FABRIQUE ET PAS UN `bindBus()` POSÉ APRÈS : une méthode d'après-coup laisse une
+// FENÊTRE où l'adaptateur existe sans son bus, et une émission dans cette fenêtre se perd sans
+// rien faire rougir. Le paquet a fermé la fenêtre pour de bon en RETIRANT son tableau exporté dans
+// le même mouvement : la fabrique est le SEUL chemin pour obtenir une voix, donc elle n'est pas
+// contournable. C'est son point, meilleur que ma proposition initiale.
+let codeVoices: ReturnType<typeof createCodeVoiceAdapters> | null = null;
+let adapters: Map<Runtime, RuntimeAdapter> | null = null;
+
+/** Construit les voix AVEC le bus commun. Appelé UNE fois, par le cœur, avant tout autre appel. */
+export function initAdapters(bus: EventBus): void {
+  codeVoices = createCodeVoiceAdapters(bus);
+  adapters = new Map<Runtime, RuntimeAdapter>([
+    ...codeVoices.map((a): [Runtime, RuntimeAdapter] => [a.id, a]),
+    ['bp3', bp3Adapter],
+    ['bpscript', bpscriptAdapter]
+  ]);
+}
+
+/** ÉCHEC BRUYANT plutôt que carte vide : un registre non initialisé rendrait « aucune voix
+ *  reconnue » — un silence qui ressemble à une scène sans voix de code, et qu'aucun garde ne
+ *  distingue de la vérité. */
+function carte(): Map<Runtime, RuntimeAdapter> {
+  if (!adapters) throw new Error('registre des runtimes lu avant initAdapters(bus)');
+  return adapters;
+}
+
+function voix(): ReturnType<typeof createCodeVoiceAdapters> {
+  if (!codeVoices) throw new Error('voix de code lues avant initAdapters(bus)');
+  return codeVoices;
+}
 
 /**
  * Runtimes Kanopi recognizes that don't (yet) have a live browser adapter:
@@ -26,7 +56,7 @@ const PLACEHOLDER_EXTENSIONS: Record<string, Runtime> = {
 };
 
 export function getAdapter(runtime: Runtime): RuntimeAdapter | undefined {
-  return adapters.get(runtime);
+  return carte().get(runtime);
 }
 
 // Code-voice runtimes (strudel/hydra/p5/mercury/csound/js). Their MASTER TEMPO
@@ -34,9 +64,8 @@ export function getAdapter(runtime: Runtime): RuntimeAdapter | undefined {
 // NOT a parallel host tempo fan-out — `clock.svelte.ts` skips them so the guest engine
 // has a single tempo authority (Kronos). bp3/bpscript are NOT here: their `setBpm`
 // retunes the Kronos handle in place (the host warp), which stays.
-const codeVoiceRuntimeIds = new Set<Runtime>(codeVoiceAdapters.map((a) => a.id));
 export function isCodeVoiceRuntime(runtime: Runtime): boolean {
-  return codeVoiceRuntimeIds.has(runtime);
+  return voix().some((a) => a.id === runtime);
 }
 
 /**
@@ -57,11 +86,11 @@ export function codeVoiceReachesMasterBus(runtime: Runtime): boolean {
   // `setMasterMuted?`) et non sur la carte locale : la carte mélange les natifs bp3/bpscript,
   // typés par le contrat d'adaptateur de l'hôte, qui ne porte pas cette méthode. Pas de copie
   // de surface à la main ici — la capacité est lue chez son propriétaire.
-  return codeVoiceAdapters.some((a) => a.id === runtime && typeof a.setMasterMuted === 'function');
+  return voix().some((a) => a.id === runtime && typeof a.setMasterMuted === 'function');
 }
 
 export function listRuntimes(): Runtime[] {
-  return [...adapters.keys()];
+  return [...carte().keys()];
 }
 
 /**
@@ -71,22 +100,29 @@ export function listRuntimes(): Runtime[] {
  * adapter and dropping the adapter into the registry.
  */
 export function knownExtensions(): string[] {
-  const live = [...adapters.values()].flatMap((a) => [...a.extensions]);
+  const live = [...carte().values()].flatMap((a) => [...a.extensions]);
   return [...live, ...Object.keys(PLACEHOLDER_EXTENSIONS)];
 }
 
-/** Lookup table: extension → Runtime, built once at module load. */
-const extToRuntime: Map<string, Runtime> = (() => {
-  const m = new Map<string, Runtime>();
-  for (const [runtime, a] of adapters) {
-    for (const ext of a.extensions) m.set(ext, runtime);
-  }
-  for (const [ext, runtime] of Object.entries(PLACEHOLDER_EXTENSIONS)) {
-    m.set(ext, runtime);
-  }
-  return m;
+/** Table extension → runtime. CONSTRUITE À LA DEMANDE, plus au chargement du module : la carte
+ *  des adaptateurs n'existe qu'après `initAdapters(bus)`, et une table bâtie trop tôt aurait été
+ *  vide sans rien dire — un fichier « inconnu » au lieu d'une erreur. */
+const extToRuntime = (() => {
+  let cache: Map<string, Runtime> | null = null;
+  return () => {
+    if (cache) return cache;
+    const m = new Map<string, Runtime>();
+    for (const [runtime, a] of carte()) {
+      for (const ext of a.extensions) m.set(ext, runtime);
+    }
+    for (const [ext, runtime] of Object.entries(PLACEHOLDER_EXTENSIONS)) {
+      m.set(ext, runtime);
+    }
+    cache = m;
+    return m;
+  };
 })();
 
 export function runtimeFromExtension(ext: string): Runtime {
-  return extToRuntime.get(ext.toLowerCase()) ?? 'bpscript';
+  return extToRuntime().get(ext.toLowerCase()) ?? 'bpscript';
 }
