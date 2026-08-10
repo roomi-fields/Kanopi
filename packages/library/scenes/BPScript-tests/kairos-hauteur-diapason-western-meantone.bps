@@ -4,7 +4,6 @@
 // western_just, mais tierce PURE (E4/C4 = 1.25 exact) — signature du tempérament, ≠ western_just.
 
 @core
-@controls
 @alphabet.western:audio
 @tuning.western_meantone
 @diapason:442

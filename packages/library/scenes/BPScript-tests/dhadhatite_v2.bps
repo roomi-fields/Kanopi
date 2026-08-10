@@ -9,7 +9,6 @@
 // with explicit backlog markers.
 
 @core
-@controls
 
 // Production mode: text (bols are non-pitched syllables, not MIDI notes)
 // No @alphabet.western — bols are literal sound objects

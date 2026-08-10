@@ -16,7 +16,6 @@
 
 @core
 @qclock:11
-@controls
 @alphabet.solfege:midi
 @improvize
 

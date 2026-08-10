@@ -5,7 +5,6 @@
 // keyxpand) est respecté — la scène retombe sur G#4, pas sur E4 (ordre inverse).
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4(scaleshift:2, keyxpand:C4 2)

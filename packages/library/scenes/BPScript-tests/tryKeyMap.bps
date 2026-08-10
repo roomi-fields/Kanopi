@@ -14,7 +14,6 @@
 // mapstep applique le mappage par pas, mapcont l'interpole en continu (y compris
 // À L'INTÉRIEUR d'un objet sonore qui accepte le mappage), mapfixed le fige.
 @core
-@controls
 // DEUX ACTEURS, et c'est structurel, pas cosmétique : cette scène fait sonner DEUX
 // vocabulaires — les notes occidentales (règle M) et les bols abstraits `a`/`b` (Part2/3/4).
 // `@alphabet.western:midi` ne pouvait pas convenir : le `:midi` désigne un ACTEUR IMPLICITE,

@@ -4,7 +4,6 @@
 // hauteur pour la chaîne keyxpand (dilatation autour d'un pivot) et scaleshift+keyxpand combinés.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> G#4

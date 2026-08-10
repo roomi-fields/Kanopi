@@ -4,7 +4,6 @@
 // l'occurrence consommée est retirée des contrôles exposés (pas de double application).
 
 @core
-@controls
 @alphabet.western:audio
 @tuning.western_just
 @tempo:60

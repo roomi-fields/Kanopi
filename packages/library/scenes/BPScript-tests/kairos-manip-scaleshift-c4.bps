@@ -5,7 +5,6 @@
 // que la fonction de lib 'scaleshift' résout exactement la hauteur de E4.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4(scaleshift:2)

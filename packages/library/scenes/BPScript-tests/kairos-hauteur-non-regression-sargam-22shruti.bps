@@ -4,7 +4,6 @@
 // référence microtonale composant (ni = 240×243/128).
 
 @core
-@controls
 @alphabet.sargam:audio
 @tuning.sargam_22shruti
 @tempo:60

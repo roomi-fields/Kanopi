@@ -5,7 +5,6 @@
 // preuve du cri de migration LOCAL (marqueur posé sur la feuille, la scène continue de sonner).
 
 @core
-@controls
 @alphabet.western:midi
 @transpose:-12
 

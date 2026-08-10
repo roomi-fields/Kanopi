@@ -11,7 +11,6 @@
 @core
 @maxitems:0
 @qclock:3
-@controls
 @alphabet.western:midi
 @tempo:120
 

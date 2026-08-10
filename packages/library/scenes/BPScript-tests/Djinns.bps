@@ -16,7 +16,6 @@
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
 @quantization:50
-@controls
 @alphabet.solfege:midi
 @transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:678 fait key += (C4key - 60),
                  // soit -12 demi-tons appliques a TOUTE touche. Image fidele = transposition

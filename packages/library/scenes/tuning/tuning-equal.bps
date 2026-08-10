@@ -9,7 +9,6 @@
 // Reference A4 = 440 Hz — standard Western tuning
 
 @core
-@controls
 @alphabet.western:audio
 @tempo:120
 

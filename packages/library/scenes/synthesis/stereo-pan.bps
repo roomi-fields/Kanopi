@@ -9,7 +9,6 @@
 // Démo : (pan:N) positionne le son (0=gauche, 64=centre, 127=droite)
 
 @core
-@controls
 @alphabet.western:audio
 
 S -> PanL PanC PanR Sweep

@@ -21,7 +21,6 @@
 // catalogue de ports (runtime-codevoices) et grave `content.action` / route
 // l'arm par le module PUITS ; runtime-audio REND le patchbay. Ctrl+. pour couper.
 @core
-@controls
 
 // Voix PERSISTANTE = câblage multi-étage : jouer `lead` arme le patch. Le filtre
 // est modulé par un LFO câblé en backtick (cv sur le port cutoff).

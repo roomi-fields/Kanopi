@@ -7,7 +7,6 @@
 // Sous-grammaire 2: résolution en notes indiennes
 
 @core
-@controls
 @alphabet.sargam:midi
 // La convention d'octave par défaut de sargam est saptak ; `@octaves.western` la SURCHARGE (comme
 // mohanam/nadaka, mêmes grammaires sargam Bernard). Sans elle, sa6/re6… résolvent mal l'octave sous

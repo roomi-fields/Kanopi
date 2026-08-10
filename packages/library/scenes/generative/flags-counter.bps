@@ -11,7 +11,6 @@
 // [count==0] = la règle ne s'applique que si count vaut 0
 
 @core
-@controls
 @alphabet.western:audio
 
 // Init : compteur à 4

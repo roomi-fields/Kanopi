@@ -6,7 +6,6 @@
 // diapason consommé (M8) ne fuite PAS dans `params`.
 
 @core
-@controls
 @tempo:60
 
 S -> A4(diapason:428,vel:100) E4

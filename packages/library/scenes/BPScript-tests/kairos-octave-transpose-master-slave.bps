@@ -4,7 +4,6 @@
 // slave porte vel seul — preuve de ZÉRO attribution croisée entre les deux invocations du template.
 
 @core
-@controls
 @alphabet.western:midi
 
 MOTIF -> C4

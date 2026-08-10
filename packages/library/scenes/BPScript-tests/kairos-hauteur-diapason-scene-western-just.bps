@@ -4,7 +4,6 @@
 // preuve que TOUS les Hz du triple C4/E4/G4 sont décalés ×442/440.
 
 @core
-@controls
 @alphabet.western:audio
 @tuning.western_just
 @diapason:442

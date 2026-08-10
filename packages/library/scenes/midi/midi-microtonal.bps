@@ -9,7 +9,6 @@
 // Le transport MIDI envoie PitchBend avant chaque NoteOn quand nécessaire
 
 @core
-@controls
 @alphabet.western:midi
 @tuning.western_just
 

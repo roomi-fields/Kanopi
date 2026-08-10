@@ -7,7 +7,6 @@
 // et solfège français (do, re, mi, fa, sol, la, si, reb, sol#, sib)
 
 @core
-@controls
 @alphabet.solfege:midi
 
 // Solfège français — une seule règle, 2 voix principales (chan 3 et 4)

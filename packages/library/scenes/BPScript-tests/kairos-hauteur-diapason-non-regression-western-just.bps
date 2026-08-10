@@ -4,7 +4,6 @@
 // référence du COMPOSANT (440) doit rester inchangée (C4=264, E4=330, G4=396).
 
 @core
-@controls
 @alphabet.western:audio
 @tuning.western_just
 @tempo:60

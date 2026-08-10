@@ -9,7 +9,6 @@
 // Démo : ! superpose des événements au même instant
 
 @core
-@controls
 @alphabet.western:audio
 @tempo:60
 

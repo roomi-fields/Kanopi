@@ -4,7 +4,6 @@
 // (240) : preuve que l'override REMPLACE la référence composant, sa=442.
 
 @core
-@controls
 @alphabet.sargam:audio
 @tuning.sargam_12TET
 @diapason:442

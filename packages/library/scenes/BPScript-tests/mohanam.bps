@@ -19,7 +19,6 @@
 @tempo:360   // horloge du natif -se.trial.mohanam : periode 167 ms par temps, soit 360 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
-@controls
 // Voix unique : svaras sargam notés en octaves numériques (sa6…). La convention
 // d'octave par défaut de sargam est saptak ; `octaves.western` la SURCHARGE
 // (EBNF.md:114,118-119 ; ACTOR.md:37 ; décision clés-acteur-six). Remplace

@@ -12,7 +12,6 @@
 @tempo:120   // horloge du natif -se.tryDESTRU : periode 500 ms par temps, soit 120 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
-@controls
 @test_alphabets.abc:midi
 
 // --- Sous-grammaire 1 @mode:random — génération de structure ---

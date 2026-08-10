@@ -5,7 +5,6 @@
 // `freqHz` ni `params` — même règle que la facette pitch du plat projeté.
 
 @core
-@controls
 @tempo:60
 
 S -> A4 - B4

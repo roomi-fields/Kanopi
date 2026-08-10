@@ -24,7 +24,6 @@
 // Mesuré sur la sortie : 1ʳᵉ note ~4× plus brillante (centroïde) et ~22× en énergie HF.
 
 @core
-@controls
 @alphabet.western:audio
 @tempo:60
 

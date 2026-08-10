@@ -4,7 +4,6 @@
 // 5/4, quinte 3/2 exactes), distinct du tempérament égal.
 
 @core
-@controls
 @alphabet.western:audio
 @tuning.western_just
 @tempo:60

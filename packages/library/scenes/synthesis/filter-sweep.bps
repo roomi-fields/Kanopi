@@ -10,7 +10,6 @@
 // Commence sombre (filtre bas) et s'ouvre progressivement
 
 @core
-@controls
 @alphabet.western:audio
 
 S -> Dark Medium Bright Open

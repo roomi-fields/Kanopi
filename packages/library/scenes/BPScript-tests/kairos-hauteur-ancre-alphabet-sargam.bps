@@ -4,7 +4,6 @@
 // venir de l'alphabet lui-même (defaultTuning), pas du socle 440.
 
 @core
-@controls
 @alphabet.sargam:audio
 @tempo:60
 

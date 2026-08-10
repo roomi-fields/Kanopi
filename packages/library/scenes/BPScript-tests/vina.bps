@@ -8,7 +8,6 @@
 // Terminaux : notes indiennes (sa3, pa3, ni3, sa4)
 
 @core
-@controls
 @alphabet.bp3_indian:midi
 // L'alphabet PORTE l'ancre native (dha4 = A4 = 440 Hz, donc sa4 = C4 = 261.6256) : BP3 RENOMME
 // le clavier occidental, il ne le transpose pas. Cette scene declarait un '@diapason:261.625'

@@ -7,7 +7,6 @@
 // Terminaux : bols de tabla (ek, do, tin, char, panch, che, sat, at)
 
 @core
-@controls
 @tempo:88
 @striated
 @maxitems:0

@@ -4,7 +4,6 @@
 // par bpscript) : doit résoudre au même Hz que l'invocation nue @alphabet.sargam:audio.
 
 @core
-@controls
 @factory.alphabets.sargam
 
 S -> sa re

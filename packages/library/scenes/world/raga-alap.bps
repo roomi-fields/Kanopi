@@ -8,7 +8,6 @@
 // Raga Alap — slow exploration with random variations
 
 @core
-@controls
 @alphabet.sargam:audio
 @tuning.sargam_22shruti
 @tempo:40

@@ -1,5 +1,5 @@
 // @language: bpscript
-@controls
+@core
 @alphabet.shruti23
 @mode:ord
 S -> !(scale:grama sa_4) {9 Full_scale _ _ _, Drone} - - ! (/3/4) {!(retro) Full_scale} _ _ _ (weight:1)

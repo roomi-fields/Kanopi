@@ -5,7 +5,6 @@
 // nom de règle intermédiaire (MOTIF) choisi pour ne pas collisionner avec un terminal de l'alphabet.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> _vel(120) MOTIF

@@ -15,7 +15,6 @@
 // TEMPO (the pace, the clock) is a SEPARATE concept: @tempo:72 (global).
 
 @core
-@controls
 @alphabet.western:audio
 @tempo:72
 

@@ -24,7 +24,6 @@
 // stay sargam-microtonal (@tuning.sargam_22shruti unchanged).
 
 @core
-@controls
 @alphabet.sargam:audio
 @tuning.sargam_22shruti
 @tempo:90

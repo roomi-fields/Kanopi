@@ -4,7 +4,6 @@
 // est une IDENTITÉ (aucune mutation de hauteur) plutôt qu'un cas particulier non résolu.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4(scaleshift:0)

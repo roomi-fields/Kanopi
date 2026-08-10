@@ -15,7 +15,6 @@
 // Polymétrie imbriquée progressive avec volume dynamique
 
 @core
-@controls
 @alphabet.western:midi
 @settings.notreich
 

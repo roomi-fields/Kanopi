@@ -18,7 +18,6 @@
 // This method is obsolete now that octave numbers are handled.
 
 @core
-@controls
 @alphabet.sargam:midi
 @octaves.western
 @tuning.sargam_22shruti

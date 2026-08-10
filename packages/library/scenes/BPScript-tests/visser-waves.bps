@@ -12,7 +12,6 @@
 // {5, A B {3, A B {2, A B C D} C D} C D}
 
 @core
-@controls
 @alphabet.western:midi
 @tempo:60
 @striated

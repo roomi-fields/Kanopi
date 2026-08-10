@@ -17,7 +17,6 @@
 // the guarded rules fire while count > 0, then the last one takes over.
 
 @core
-@controls
 @alphabet.western:audio
 
 S -> Loop [count=4]

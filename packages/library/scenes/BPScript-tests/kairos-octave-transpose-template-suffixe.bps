@@ -4,7 +4,6 @@
 // ($MOTIF) : doit descendre sur la feuille C4 de l'expansion.
 
 @core
-@controls
 @alphabet.western:midi
 
 MOTIF -> C4

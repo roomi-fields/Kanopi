@@ -5,7 +5,6 @@
 // graphie BP3 (accolades et virgule collées) sort telle quelle, sans nom interne ni repli maison.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> {C4, D4}

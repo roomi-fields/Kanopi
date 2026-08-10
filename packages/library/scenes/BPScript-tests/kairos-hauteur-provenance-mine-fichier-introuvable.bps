@@ -5,7 +5,6 @@
 // la résolution doit crier en listant les fichiers réellement fournis.
 
 @core
-@controls
 @mine.autre.sargam
 
 S -> sa

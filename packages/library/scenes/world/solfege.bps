@@ -9,7 +9,6 @@
 // Gamme majeure ascendante et descendante
 
 @core
-@controls
 @alphabet.solfege:audio
 @tempo:100
 

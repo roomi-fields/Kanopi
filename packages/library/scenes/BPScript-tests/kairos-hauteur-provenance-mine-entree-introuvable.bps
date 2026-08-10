@@ -5,7 +5,6 @@
 // listant les entrées réellement présentes dans ce fichier.
 
 @core
-@controls
 @mine.ragas.zzz
 
 S -> sa

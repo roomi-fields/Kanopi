@@ -12,7 +12,6 @@
 // arm/disarm silences one voice while the other plays on (no MIDI hardware needed).
 
 @core
-@controls
 
 @actor lead  @alphabet.western  out.audio
 @actor bass  @alphabet.western  out.audio

@@ -16,7 +16,6 @@
 // Try: click Produce several times — the result changes!
 
 @core
-@controls
 @alphabet.western:audio
 @mode:random
 

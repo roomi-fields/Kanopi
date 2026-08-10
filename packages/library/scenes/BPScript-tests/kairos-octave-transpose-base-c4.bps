@@ -4,7 +4,6 @@
 // aux scènes à suffixe transpose:-200c du même banc.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4

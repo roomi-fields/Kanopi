@@ -5,7 +5,6 @@
 // hauteur non nulle, une octave au-dessus de sa5.
 
 @core
-@controls
 @alphabet.sargam:midi
 @octaves.western
 

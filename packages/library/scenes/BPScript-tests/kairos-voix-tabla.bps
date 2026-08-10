@@ -9,7 +9,6 @@
 // de voix (binding d'alphabet) n'a rien à quoi s'accrocher.
 
 @core
-@controls
 
 @actor tabla @alphabet.tabla out.audio
 

@@ -6,7 +6,6 @@
 // ratios fractionnaires, silences. Tout sur une ligne.
 
 @core
-@controls
 @alphabet.western:midi
 @improvize
 

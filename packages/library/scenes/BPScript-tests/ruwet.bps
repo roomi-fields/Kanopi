@@ -17,7 +17,6 @@
 // (BPscript ne supporte pas encore [sub:]).
 
 @core
-@controls
 @improvize
 @quantization:50
 @alphabet.solfege:midi

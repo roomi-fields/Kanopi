@@ -9,7 +9,6 @@
 // sa re ga pa dha — sargam notation
 
 @core
-@controls
 @alphabet.sargam:audio
 @tuning.sargam_22shruti
 

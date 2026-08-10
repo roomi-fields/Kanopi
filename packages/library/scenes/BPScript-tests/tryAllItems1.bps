@@ -3,7 +3,6 @@
 // Traduit de bp3-engine/test-data/-gr.tryAllItems1
 
 @core
-@controls
 @allitems
 @maxitems:500
 @alphabet.western:midi

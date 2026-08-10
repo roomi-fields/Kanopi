@@ -5,7 +5,6 @@
 // citant les deux provenances.
 
 @core
-@controls
 @alphabet.sargam:audio
 @mine.ragas.sargam
 

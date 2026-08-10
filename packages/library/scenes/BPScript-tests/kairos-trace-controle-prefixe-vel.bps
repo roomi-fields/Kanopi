@@ -5,7 +5,6 @@
 // clair (`[vel(120)]`), jamais un sentinelle anonyme, aussi bien dans la trace que dans la chaîne finale.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> _vel(120) C4 D4

@@ -5,7 +5,6 @@
 // scènes manipulées (scaleshift, keyxpand) qui doivent retomber exactement sur elle.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> E4

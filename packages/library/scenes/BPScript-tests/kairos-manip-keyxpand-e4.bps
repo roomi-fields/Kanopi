@@ -4,7 +4,6 @@
 // liaison générique résout le token pivot en pas de grille et dilate exactement vers G#4.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> E4(keyxpand:C4 2)

@@ -13,7 +13,6 @@
 // 176 mesures terminales (T1-T176), 16 sections de sélection par dés
 
 @core
-@controls
 @alphabet.solfege:midi
 @maxitems:40
 @qclock:11

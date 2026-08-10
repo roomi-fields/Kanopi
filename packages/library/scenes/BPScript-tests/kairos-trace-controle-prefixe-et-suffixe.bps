@@ -6,7 +6,6 @@
 // de la règle S résolvent identiquement des deux côtés.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4(transpose:-1200c) _vel(90) D4

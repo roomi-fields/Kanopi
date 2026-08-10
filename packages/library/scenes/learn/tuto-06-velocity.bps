@@ -14,7 +14,6 @@
 // Try: change the values and listen to the difference.
 
 @core
-@controls
 @alphabet.western:audio
 
 S -> Soft Loud Soft

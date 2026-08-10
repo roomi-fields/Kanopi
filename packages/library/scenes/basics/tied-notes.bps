@@ -9,7 +9,6 @@
 // Démo : ~ pour lier deux notes (la seconde prolonge la première)
 
 @core
-@controls
 @alphabet.western:audio
 @tempo:80
 

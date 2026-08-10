@@ -4,7 +4,6 @@
 // qu'une entrée du catalogue factory : preuve que la provenance distingue les deux (256 Hz vs 240 Hz).
 
 @core
-@controls
 @mine.ragas.sargam
 
 S -> sa re

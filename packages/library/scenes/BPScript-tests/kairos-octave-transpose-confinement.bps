@@ -4,7 +4,6 @@
 // doit être transposée, D4 doit rester VIERGE — le containment ne déborde pas sur la note voisine.
 
 @core
-@controls
 @alphabet.western:midi
 
 MOTIF -> C4

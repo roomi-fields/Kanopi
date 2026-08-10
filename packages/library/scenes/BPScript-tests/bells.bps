@@ -8,7 +8,6 @@
              // soit 150 BPM. Sans ca BPx tombe sur son defaut 60 BPM (1000 ms) et TOUTES les
              // durees sortent au facteur 2.5. L'horloge du natif DOIT vivre dans la scene :
              // la Voie B est autosuffisante, elle ne depend d'aucun -se BP3.
-@controls
 @alphabet.solfege
 @transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:678 fait key += (C4key - 60),
                  // soit -12 demi-tons appliques a TOUTE touche. Image fidele = transposition

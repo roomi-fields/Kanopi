@@ -4,7 +4,6 @@
 // changer l'accordage à alphabet+diapason constants change le Hz (axe gamme), ni ≠ ni du 12-TET.
 
 @core
-@controls
 @alphabet.sargam:audio
 @tuning.sargam_22shruti
 @diapason:442

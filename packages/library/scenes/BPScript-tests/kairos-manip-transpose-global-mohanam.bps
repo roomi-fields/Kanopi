@@ -6,7 +6,6 @@
 // régime (registre hors table saptak) devient représentable.
 
 @core
-@controls
 @alphabet.sargam:audio
 @transpose:-2400c
 @tempo:60

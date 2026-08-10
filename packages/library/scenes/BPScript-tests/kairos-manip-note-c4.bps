@@ -5,7 +5,6 @@
 // scènes équivalentes portant un contrôle (scaleshift, transpose).
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4

@@ -18,7 +18,6 @@
 //   Their rules define the notes.
 
 @core
-@controls
 @alphabet.western:audio
 @tempo:90
 

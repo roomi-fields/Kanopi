@@ -4,7 +4,6 @@
 // un des trois formats de la décision transposition réelle, preuve hz × 2^(-700/1200) exact.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4(transpose:-700c)

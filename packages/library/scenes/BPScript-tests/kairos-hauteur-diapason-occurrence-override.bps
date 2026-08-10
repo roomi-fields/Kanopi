@@ -4,7 +4,6 @@
 // l'occurrence prime sur la valeur de scène/acteur.
 
 @core
-@controls
 @alphabet.western:audio
 @tuning.western_just
 @diapason:442

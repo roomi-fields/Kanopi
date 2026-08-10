@@ -4,7 +4,6 @@
 // ancre de comparaison pour toutes les preuves de provenance (factory vs mine, même nom).
 
 @core
-@controls
 @alphabet.sargam:audio
 
 S -> sa re

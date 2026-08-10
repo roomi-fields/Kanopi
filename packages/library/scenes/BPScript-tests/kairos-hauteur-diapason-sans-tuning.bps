@@ -4,7 +4,6 @@
 // seul suffit à porter le diapason jusqu'au binding par défaut, sans se perdre en silence.
 
 @core
-@controls
 @alphabet.western:audio
 @diapason:230
 @tempo:60

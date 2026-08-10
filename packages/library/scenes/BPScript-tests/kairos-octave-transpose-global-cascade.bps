@@ -4,7 +4,6 @@
 // resolveControls et atteint CHAQUE feuille (C4, D4) sans suffixe per-token.
 
 @core
-@controls
 @alphabet.western:midi
 @transpose:-1200c
 

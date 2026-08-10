@@ -4,7 +4,6 @@
 // sur la règle S : preuve que `reglesControles` porte bien le libellé résolu côté règle.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> _vel(90) C4 D4

@@ -9,7 +9,6 @@
 // fidèles au natif -gr.asymmetric1 (U --> 3 U, V --> 2 V).
 
 @core
-@controls
 @improvize
 
 @gate a:midi

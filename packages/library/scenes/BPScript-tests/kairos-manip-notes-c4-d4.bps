@@ -5,7 +5,6 @@
 // contrôle périmé, l'autre témoin qu'elle sonne toujours ; ou portée par un @transpose global).
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4 D4

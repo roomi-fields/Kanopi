@@ -9,7 +9,6 @@
 // Teste les CC envoyés au synthé
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> PanSweep ModWheel

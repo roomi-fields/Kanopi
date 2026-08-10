@@ -9,7 +9,6 @@
 // Traduit de bp3-engine/library/examples/drum/grammar.gr
 
 @core
-@controls
 @alphabet.western:midi
 
 // Trois voix : kick (C8), snare (C7), hihat (E7)

@@ -6,7 +6,6 @@
 // et des accords en polymétrie avec prolongations
 
 @core
-@controls
 @alphabet.western:midi
 
 // --- Sous-grammaire 1 @mode:ord ---

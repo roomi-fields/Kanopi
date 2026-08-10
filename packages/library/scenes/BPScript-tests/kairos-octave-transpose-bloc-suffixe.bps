@@ -4,7 +4,6 @@
 // descendre sur la feuille C4 du bloc.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> {C4}(transpose:-200c)

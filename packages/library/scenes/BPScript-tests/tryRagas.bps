@@ -7,7 +7,7 @@
 // fail-loud bpscript e249886 (2026-07-29).
 @alphabet.bp3_indian:midi
 
-@controls
+@core
 @mode:ord
 KishoriAmonkar1 -> Scale _ {2, dhak3 sa4 ni3 sa4} {7, rek4} _ {2, dhak3 sa4 ni3 dhak3} {2, dhak3 _ ni3 sa4} {5, rek4}
 KishoriAmonkar2 -> Scale {137/100, sa4 rek4 gak4 rek4} {31/10, rek4} {18/10, gak4} {75/100, rek4} {44/10, sa4}

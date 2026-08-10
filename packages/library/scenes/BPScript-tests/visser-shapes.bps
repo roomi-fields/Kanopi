@@ -13,7 +13,6 @@
 // sur la structure), velcont (runtime)
 
 @core
-@controls
 @alphabet.western:midi
 @tempo:60
 @striated

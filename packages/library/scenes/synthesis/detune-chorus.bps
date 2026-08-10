@@ -9,7 +9,6 @@
 // Démo : (detune:N) en cents (100 cents = 1 demi-ton)
 
 @core
-@controls
 @alphabet.western:audio
 @tempo:80
 

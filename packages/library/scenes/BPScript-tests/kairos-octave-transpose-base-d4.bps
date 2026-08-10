@@ -4,7 +4,6 @@
 // de confinement (D4 doit rester VIERGE quand C4 seule porte le suffixe).
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> D4

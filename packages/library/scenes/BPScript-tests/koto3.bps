@@ -11,7 +11,6 @@
 // Les deux autres messages de la famille sont `!(sync:start)` et `!(sync:stop)`.
 
 @core
-@controls
 @improvize
 @qclock:20
 

@@ -2,7 +2,6 @@
 // Polymetre a 2 niveaux + sequence lineaire
 
 @core
-@controls
 @alphabet.western:audio
 @tempo:100
 

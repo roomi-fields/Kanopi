@@ -12,7 +12,6 @@
 // Stretched octave (period_ratio ≈ 2.02)
 
 @core
-@controls
 @alphabet.gamelan_slendro:audio
 @tempo:60
 

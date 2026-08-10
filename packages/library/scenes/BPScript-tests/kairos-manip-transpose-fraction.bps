@@ -6,7 +6,6 @@
 // frameRatio réel). Sert aussi le cas SANS digitalLib (la résolution branchée crie au chargement).
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4(transpose:3/2)

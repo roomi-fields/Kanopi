@@ -9,7 +9,6 @@
 // sa re ga pa dha — ascending and descending
 
 @core
-@controls
 @alphabet.sargam:audio
 @tempo:80
 

@@ -15,7 +15,6 @@
 // Try: change 120 to 200, or to 40.
 
 @core
-@controls
 @alphabet.western:audio
 @tempo:120
 

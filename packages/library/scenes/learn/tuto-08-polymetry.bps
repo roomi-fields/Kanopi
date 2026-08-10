@@ -15,7 +15,6 @@
 // Try: add a third voice with 5 notes.
 
 @core
-@controls
 @alphabet.western:audio
 
 S -> {C4 E4 G4, D4 F4 A4 C5}

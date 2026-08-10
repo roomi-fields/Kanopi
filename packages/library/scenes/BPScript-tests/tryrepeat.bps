@@ -2,7 +2,7 @@
 // tryrepeat.bps — migré de bp3-engine/test-data/-gr.tryrepeat (porter bp3ToScene, 2026-07-17)
 // Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
 
-@controls
+@core
 
 // TERMINAUX DECLARES EN @var (decision Romain 2026-07-29 §5 : @var = « il ne sonne pas — ni
 // duree ni destination a donner »). Comme tryFlags et contrairement a koto1/tryLIN, l'original

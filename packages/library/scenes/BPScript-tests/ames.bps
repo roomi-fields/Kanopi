@@ -6,7 +6,6 @@
 // repos indéterminé (...), et liaisons (ties ~ / ~).
 
 @core
-@controls
 @alphabet.western:midi
 @tempo:60
 @striated

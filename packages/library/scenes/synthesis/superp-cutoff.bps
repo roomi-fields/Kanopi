@@ -19,7 +19,6 @@
 // the note's position in the group, and a fresh bus is keyed per loop occurrence.
 
 @core
-@controls
 @alphabet.western:audio
 @tempo:96
 

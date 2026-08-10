@@ -12,7 +12,6 @@
 // 3. Résolution des symboles de transposition en contrôles
 
 @core
-@controls
 @qclock:2
 @alphabet.western:midi
 @tempo:120

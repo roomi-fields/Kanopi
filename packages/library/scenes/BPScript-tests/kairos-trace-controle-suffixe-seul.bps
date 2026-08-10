@@ -5,7 +5,6 @@
 // prouve que la résolution du libellé est insensible à cette valeur.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4(transpose:-1200c) D4

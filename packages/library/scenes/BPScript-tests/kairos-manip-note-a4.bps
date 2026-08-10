@@ -4,7 +4,6 @@
 // pour la chaîne complète grille+cadre (scaleshift, keyxpand, transpose empilés).
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> A4

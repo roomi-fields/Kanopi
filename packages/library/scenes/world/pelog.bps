@@ -11,7 +11,6 @@
 // Non-equal intervals, metallic resonance
 
 @core
-@controls
 @alphabet.gamelan_pelog:audio
 @tempo:55
 

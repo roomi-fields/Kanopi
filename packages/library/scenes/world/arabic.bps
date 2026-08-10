@@ -12,7 +12,6 @@
 // avec les intervalles en quarts de ton de l'accordage arabic_24TET.
 
 @core
-@controls
 @alphabet.arabic:audio
 @tuning.arabic_24TET
 @tempo:70

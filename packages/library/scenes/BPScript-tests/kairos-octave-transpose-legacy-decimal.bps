@@ -4,7 +4,6 @@
 // prouve le cri de migration LOCAL par feuille (pitchError, jamais une hauteur fausse qui sonne).
 
 @core
-@controls
 @alphabet.western:midi
 @transpose:-12
 

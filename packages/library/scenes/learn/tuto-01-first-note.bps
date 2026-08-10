@@ -19,7 +19,6 @@
 // Try: click Produce, then Play.
 
 @core
-@controls
 @alphabet.western:audio
 
 S -> C4

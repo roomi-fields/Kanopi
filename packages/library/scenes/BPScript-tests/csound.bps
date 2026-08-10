@@ -6,7 +6,6 @@
 // Volume continu de 127→0 et 0→127 (crescendo/decrescendo).
 
 @core
-@controls
 @alphabet.western:midi
 
 @mode:random

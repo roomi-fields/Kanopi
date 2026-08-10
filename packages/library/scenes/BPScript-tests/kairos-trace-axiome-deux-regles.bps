@@ -4,7 +4,6 @@
 // point de départ `S`, jamais déductible d'un pas précédent puisqu'il n'y en a pas.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4 SUITE

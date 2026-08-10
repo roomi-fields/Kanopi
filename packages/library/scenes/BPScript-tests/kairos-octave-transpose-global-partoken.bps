@@ -4,7 +4,6 @@
 // preuve que la valeur cascade en chaîne brute verbatim jusqu'à leaf.controles.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4(transpose:-1200c) D4(transpose:-1200c)

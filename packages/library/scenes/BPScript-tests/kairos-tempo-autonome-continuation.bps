@@ -5,7 +5,6 @@
 // CONTINUATION rendant `null` (pas un contrôle illisible, juste l'absence de charge sur ce slot).
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> ! (/4) C4 D4

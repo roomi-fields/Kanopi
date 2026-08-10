@@ -12,7 +12,6 @@
 // pose la hauteur de référence (override du 440 par défaut du composant).
 
 @core
-@controls
 @alphabet.western:audio
 @tuning.western_12TET
 @diapason:442

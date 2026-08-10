@@ -6,7 +6,6 @@
 // illisible.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> ! (/4) C4

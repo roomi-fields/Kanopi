@@ -4,7 +4,6 @@
 // l'override s'applique aussi à cet accordage, husayni=442.
 
 @core
-@controls
 @alphabet.arabic:audio
 @tuning.arabic_24TET
 @diapason:442

@@ -14,7 +14,6 @@
 @tempo:360   // horloge du natif -se.dhin-- : periode 167 ms par temps, soit 360 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
-@controls
 @sound.tabla_perc
 @homomorphism.dhin
 

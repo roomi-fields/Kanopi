@@ -4,7 +4,6 @@
 // nommer d'alphabet : preuve que l'alphabet est INFÉRÉ de la déclaration `alphabet` du binding.
 
 @core
-@controls
 @mine.ragas-tunings.sargam_12TET
 
 S -> sa re

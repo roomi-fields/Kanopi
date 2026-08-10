@@ -6,7 +6,6 @@
 // Polymétrie avec taalam (mesure de temps)
 
 @core
-@controls
 @alphabet.western:midi
 @tempo:60
 

@@ -20,7 +20,6 @@
 // l'apprenant deux fois : sur ce qu'il entend, et sur ce qu'il croit avoir compris du langage.
 
 @core
-@controls
 @alphabet.western:audio
 
 S -> Up Down

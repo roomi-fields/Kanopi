@@ -10,7 +10,6 @@
 // Compare with equal temperament — thirds and fifths are purer
 
 @core
-@controls
 @alphabet.western:audio
 @tuning.western_just
 @tempo:60

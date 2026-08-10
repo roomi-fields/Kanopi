@@ -9,7 +9,6 @@
 // Démo : @mode:random, plusieurs règles, poids
 
 @core
-@controls
 @alphabet.western:audio
 @mode:random
 

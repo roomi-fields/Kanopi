@@ -17,7 +17,6 @@
 // It persists until overridden.
 
 @core
-@controls
 @alphabet.western:audio
 
 // Sub-grammar 1: structure (ORD by default)

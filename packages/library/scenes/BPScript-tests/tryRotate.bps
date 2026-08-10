@@ -3,7 +3,6 @@
 // Traduit de bp3-engine/test-data/-gr.tryRotate (Bernard, 1998)
 
 @core
-@controls
 @alphabet.western:midi
 
 @mode:random

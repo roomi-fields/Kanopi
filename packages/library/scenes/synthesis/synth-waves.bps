@@ -11,7 +11,6 @@
 // sine = doux, triangle = moyen, square = creux, sawtooth = riche
 
 @core
-@controls
 @alphabet.western:audio
 
 S -> Sine Tri Square Saw

@@ -3,7 +3,6 @@
 // Traduit de bp3-engine/test-data/-gr.tryAllItems (Bernard)
 
 @core
-@controls
 @alphabet.western:midi
 
 @mode:random

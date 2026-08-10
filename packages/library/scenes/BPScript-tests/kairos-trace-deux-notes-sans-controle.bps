@@ -5,7 +5,6 @@
 // nu, servant de témoin neutre partout où seule l'ABSENCE de contrôle/trace compte.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4 D4

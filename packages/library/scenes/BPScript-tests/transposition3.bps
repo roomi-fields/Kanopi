@@ -8,7 +8,6 @@
 // arbre derive compare EN ENTIER avant/apres, a graine fixe.
 
 @core
-@controls
 @alphabet.western:midi
 
 @mode:random

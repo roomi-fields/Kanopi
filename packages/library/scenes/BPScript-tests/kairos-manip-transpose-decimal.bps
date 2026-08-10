@@ -4,7 +4,6 @@
 // des trois formats de la décision transposition réelle, preuve hz × 1.5 exact.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4(transpose:1.5)

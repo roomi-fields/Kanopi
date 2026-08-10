@@ -5,7 +5,6 @@
 // jamais laisser passer le placeholder `_ctrl`.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> _vel(120) {C4, D4}

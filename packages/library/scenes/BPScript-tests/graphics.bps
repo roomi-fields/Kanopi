@@ -9,7 +9,6 @@
 // (-gr.tryGraphics) — en tête de voix, elles modulent les notes qui suivent.
 
 @core
-@controls
 @alphabet.western:midi
 
 // --- Sous-grammaire 1 @mode:ord ---

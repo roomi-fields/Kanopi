@@ -4,7 +4,6 @@
 // être RENIFLÉ (western par défaut) et l'override doit s'y appliquer quand même.
 
 @core
-@controls
 @diapason:230
 @tempo:60
 

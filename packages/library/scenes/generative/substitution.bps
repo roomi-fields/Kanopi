@@ -8,7 +8,6 @@
 // Substitution — réécriture en chaîne
 
 @core
-@controls
 @alphabet.western:audio
 
 // Structure

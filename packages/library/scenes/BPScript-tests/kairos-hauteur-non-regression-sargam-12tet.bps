@@ -4,7 +4,6 @@
 // composant non-440 (sa=240).
 
 @core
-@controls
 @alphabet.sargam:audio
 @tuning.sargam_12TET
 @tempo:60

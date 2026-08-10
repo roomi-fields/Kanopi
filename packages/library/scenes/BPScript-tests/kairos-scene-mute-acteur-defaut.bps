@@ -6,7 +6,6 @@
 // est écarté au drain.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4 D4

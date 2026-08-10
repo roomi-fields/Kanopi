@@ -4,7 +4,6 @@
 // cents) sur deux notes C4 D4 : preuve que CHAQUE note tombe à hz/2, noms préservés (cascade + cadre).
 
 @core
-@controls
 @alphabet.western:midi
 @transpose:-1200c
 

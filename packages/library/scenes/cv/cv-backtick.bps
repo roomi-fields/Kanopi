@@ -21,7 +21,6 @@
 //  avec la macro et son backtick n'était pas typé.)
 
 @core
-@controls
 @alphabet.western:audio
 @tempo:70
 

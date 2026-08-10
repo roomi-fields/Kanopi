@@ -16,7 +16,6 @@
 // 2026-07-29-les-formes-declaratives-de-bpscript.md §2 et §8.
 
 @core
-@controls
 @alphabet.western:audio
 @tempo:100
 

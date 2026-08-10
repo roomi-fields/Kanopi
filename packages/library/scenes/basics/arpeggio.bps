@@ -19,7 +19,6 @@
 // Ici l'écart va de 55 à 110 sur QUATRE notes chacune : il s'entend.
 
 @core
-@controls
 @alphabet.western:audio
 
 S -> Arp1 Arp2 Arp3 Final

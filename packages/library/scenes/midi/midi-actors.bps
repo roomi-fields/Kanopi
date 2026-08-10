@@ -11,7 +11,6 @@
 // Mélodie sur synthé MIDI (ch1), basse en WebAudio (navigateur)
 
 @core
-@controls
 
 @actor melody  @alphabet.western  out.midi(ch:1)
 @actor bass    @alphabet.western  out.audio

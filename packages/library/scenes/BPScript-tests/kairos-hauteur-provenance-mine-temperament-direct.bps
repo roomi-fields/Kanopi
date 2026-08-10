@@ -5,7 +5,6 @@
 // via un accordage — doit crier.
 
 @core
-@controls
 @mine.tempers.douze
 
 S -> C4

@@ -6,7 +6,6 @@
 // Poids <0> = jamais sélectionné aléatoirement, <1> = seul candidat
 
 @core
-@controls
 
 // --- Sous-grammaire 1 @mode:ord ---
 

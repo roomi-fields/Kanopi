@@ -3,7 +3,6 @@
 // Traduit de bp3-engine/library/examples/major-minor/grammar.gr
 
 @core
-@controls
 @alphabet.western:midi
 @tempo:60
 @striated

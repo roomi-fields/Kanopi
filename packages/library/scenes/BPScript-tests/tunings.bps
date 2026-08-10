@@ -6,7 +6,6 @@
 @tempo:30   // horloge du natif -se.tryTunings : periode 2000 ms par temps, soit 30 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
-@controls
 @alphabet.western:midi
 
 // --- Sous-grammaire 1 @mode:ord ---

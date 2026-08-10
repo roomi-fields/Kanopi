@@ -5,7 +5,6 @@
 // le tampon de contrôles — « aucun marqueur » ne doit pas se lire « aucune transposition ».
 
 @core
-@controls
 @alphabet.western:midi
 @transpose:-1200c
 

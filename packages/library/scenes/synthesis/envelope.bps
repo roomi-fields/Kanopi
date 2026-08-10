@@ -10,7 +10,6 @@
 // Courte attaque = percussif, longue attaque = pad
 
 @core
-@controls
 @alphabet.western:audio
 @tempo:40
 

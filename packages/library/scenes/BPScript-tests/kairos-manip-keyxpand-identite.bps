@@ -4,7 +4,6 @@
 // facteur 1 est une IDENTITÉ par le corps (présence dispatchée, pivot valide résolu, aucune mutation).
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> E4(keyxpand:C4 1)

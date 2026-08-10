@@ -13,7 +13,6 @@
 // TRADUCTION_SCRIPT.md §2) : étendre @map à la note entrante + garde de règle.
 
 @core
-@controls
 @alphabet.solfege:midi
 @qclock:11
 @improvize

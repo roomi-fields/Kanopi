@@ -5,7 +5,6 @@
 // `freqHz` note par note IDENTIQUE à `content.pitch.hz` du plat projeté (même fabrique de contenu).
 
 @core
-@controls
 @alphabet.sargam:audio
 @tuning.sargam_12TET
 @tempo:60

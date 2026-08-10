@@ -5,7 +5,6 @@
 // lexical, sans formatage ni coercition, quel que soit le type d'origine de la valeur.
 
 @core
-@controls
 @alphabet.western:midi
 
 S -> C4(transpose:-1200c, vel:80) D4

@@ -1,5 +1,5 @@
 // @language: bpscript
-@controls
+@core
 @homomorphism.transposition
 @mode:ord
 S -> ${A1} TR ${A1} TR TR ${A1} TR TR TR ${A1} ${A1}
