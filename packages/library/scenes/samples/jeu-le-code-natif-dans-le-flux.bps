@@ -26,6 +26,9 @@
 @tempo:104
 
 // La voix-code : elle porte le langage de ses backticks, et sort en natif.
+// Aucune banque déclarée, et c'est délibéré : le bloc joue une forme d'onde SYNTHÉTISÉE, donc il
+// ne charge aucun échantillon. Une scène qui enseigne ne doit pas dépendre d'un fichier distant
+// pour se faire entendre.
 @actor rythme  eval.strudel
 
 // La voix de notes : elle dit par où elle sort, et joue le clavier de la scène.
@@ -38,8 +41,7 @@ S -> Tague Porte Tague Porte
 @mode:ord
 
 // Le bloc nomme son langage lui-même : l'adresse est dans le texte.
-// La banque est nommée DANS le code : les sons appartiennent au moteur externe, pas à BPScript.
-Tague -> melodie.C4 `strudel: s("bd hh").bank('RolandTR909')` melodie.E4 melodie.G4 (vel:84, wave:sine, attack:4, release:200)
+Tague -> melodie.C4 `strudel: note("c2 c3").sound("square").lpf(500).release(.1)` melodie.E4 melodie.G4 (vel:84, wave:sine, attack:4, release:200)
 
 // Le même bloc sans tag, qualifié par l'acteur : c'est lui qui porte l'adresse.
-Porte -> melodie.C4 rythme.`s("bd hh").bank('RolandTR909')` melodie.E4 melodie.G4 (vel:84, wave:sine, attack:4, release:200)
+Porte -> melodie.C4 rythme.`note("c2 c3").sound("square").lpf(500).release(.1)` melodie.E4 melodie.G4 (vel:84, wave:sine, attack:4, release:200)
