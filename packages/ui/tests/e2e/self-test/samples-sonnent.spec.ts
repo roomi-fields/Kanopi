@@ -47,47 +47,31 @@ const SCENES: Scene[] = readdirSync(DOSSIER)
     };
   });
 
-// LES ROUGES D'INTENTION — mesurés le 2026-08-10, chacun routé, aucun à moi.
+// LE ROUGE D'INTENTION — un seul, mesuré le 2026-08-10.
 //
 // ⚠️ CE N'EST PAS UNE MISE EN SOMMEIL : l'attente est INVERSÉE. Tant que la scène échoue POUR SA
-// RAISON, le banc passe ; le jour où elle produit, le banc ROUGIT et demande le retrait de sa
-// ligne. Un défaut réparé en amont sans que personne le dise se signale donc tout seul, au lieu
-// de dormir sous un vert.
+// RAISON, le banc passe ; le jour où elle produit proprement, le banc ROUGIT et demande le
+// retrait de sa ligne. Un défaut réparé en amont sans que personne le dise se signale tout seul.
 //
-// LA COUPURE N'EST PAS UNE RESSEMBLANCE, ELLE EST MESURÉE : les quatre muettes sont EXACTEMENT
-// les quatre scènes qui déclarent un `@actor` sans `out.*`. Les deux seules scènes à acteurs QUI
-// déclarent leur sortie produisent, et les vingt-huit sans acteur du tout produisent. Aucun
-// contre-exemple dans un sens ni dans l'autre.
+// ⚠️ CE QUE CETTE TABLE A COMPTÉ HIER ET NE COMPTE PLUS, ET POURQUOI IL FAUT LE LIRE : elle a
+// porté QUATRE scènes déclarées muettes, toutes celles qui déclaraient un `@actor` sans `out.*`.
+// La coupure était nette et l'injection semblait la confirmer. Elle reposait pourtant sur une
+// fenêtre de mesure FIXE de trois secondes — et sous la file des trente-quatre pages, le premier
+// son de ces scènes arrivait après. Jouées seules, les trois dernières produisaient toutes.
 //
-// CE N'EST PAS LE PORTIER D'APPAREIL DE L'HÔTE : un acteur sans sortie déclarée reçoit `'audio'`
-// par défaut (`src/lib/runtimes/bpx-adapter.ts:741`), et le portier CRIE au lieu de sauter — or
-// ces quatre-là ne produisent aucune erreur de console.
-//
-// ET CE N'EST PAS UNE CORRÉLATION, C'EST UNE CAUSE DÉMONTRÉE : ajouter `out.audio` sous les deux
-// acteurs de `symboles-et-noms-lever-l-ambiguite.bps` la fait SONNER. La même injection prouve la
-// morsure de l'inversion — le banc rougit alors en réclamant le retrait de sa ligne ; retrait de
-// l'injection, retour au vert.
+// CE QU'ON NE PEUT PLUS DÉMÊLER, ET QU'ON N'AFFIRMERA DONC PAS : la réparation amont de la
+// cascade (bpscript 01da55b) et l'élargissement de cette fenêtre sont arrivés le même jour. Le
+// silence d'hier avait au moins une cause instrumentale ; savoir s'il en avait une autre
+// demanderait de remesurer l'ancien état avec le nouvel instrument, ce que personne n'a demandé.
+// La leçon qui reste vaut mieux que la conclusion perdue : une fenêtre trop courte MINIMISE, et
+// un silence ressemble exactement à « rien à corriger ».
 const MUETTES_DECLAREES: Record<string, { motif: string; attend: 'silence' | 'cris' }> = {
-  'fondations-le-clavier-et-son-accordage.bps': {
-    motif: 'deux `@actor` avec `tuning.<x>` et aucun `out.*` — la voix n’atteint aucune sortie',
-    attend: 'silence'
-  },
-  'fondations-le-sargam-un-autre-clavier.bps': {
-    motif: 'deux `@actor` avec `tuning.<x>` et aucun `out.*`',
-    attend: 'silence'
-  },
-  'symboles-et-noms-lever-l-ambiguite.bps': {
-    motif: 'deux `@actor` avec `tuning.<x>` et aucun `out.*`',
-    attend: 'silence'
-  },
+  // Réécrite en deux acteurs, elle PRODUIT — et elle crie. Elle appelle `s("bd hh")`, des sons de
+  // batterie qu'aucune déclaration ne charge. Le dépôt connaît déjà ce mur : `dirt-samples` est
+  // distante et inapte au portillon, une scène strudel avait dû migrer vers une banque hébergée
+  // [809]. Un mot dans la scène suffit, et la scène est à bpscript.
   'jeu-le-code-natif-dans-le-flux.bps': {
-    motif: 'un `@actor` avec `eval.strudel` et aucun `out.*`',
-    attend: 'silence'
-  },
-  'jeu-transposer-quatre-gestes.bps': {
-    motif:
-      'elle SONNE, et elle crie : 32 fail-loud `[kairos.pitch]` — keyxpand.pivotStep=0, ' +
-      'la coercition token-step attend un TOKEN de note (KAI-B03)',
+    motif: 'elle SONNE, et elle crie 9 fois « sound bd/hh not found » — banque non chargée',
     attend: 'cris'
   }
 };
@@ -162,16 +146,27 @@ for (const { fichier, source, sorties } of SCENES) {
     await evalBlockAt(page, 1);
 
     if (audio) {
-      // Fenêtre large et PIC sur la fenêtre : un instantané tombe dans un silence entre deux
-      // notes et rend un zéro qui ne veut rien dire.
-      const rms = await audio.getMaxRMS(3000);
+      // ⚠️ ON ATTEND LE SON, ON NE L'ÉCHANTILLONNE PAS UNE FOIS. Une fenêtre fixe de trois
+      // secondes a menti dans les DEUX SENS le 2026-08-10 : trois scènes rendues MUETTES dans la
+      // campagne complète produisaient toutes les trois quand on les jouait seules. Ce n'est pas
+      // la scène qui variait, c'est l'instrument — sous une file de trente-quatre pages, le
+      // premier son arrive après la fenêtre. Une fenêtre trop courte MINIMISE, et un silence
+      // ressemble exactement à « rien à corriger ».
+      //
+      // Le sondage rend la mesure indépendante de la charge sans l'affaiblir : il s'arrête au
+      // premier son, et une scène réellement muette échoue quand même, au bout du compte.
       if (silenceAttendu) {
+        // Pour un silence déclaré, on va jusqu'au bout de la fenêtre : c'est la seule façon de
+        // ne pas confondre « muette » avec « pas encore sonnée ».
+        const rms = await audio.getMaxRMS(12_000);
         expect(
           rms,
           `${fichier} PRODUIT maintenant — le défaut est réparé en amont : retirer sa ligne de MUETTES_DECLAREES`
         ).toBeLessThanOrEqual(0.001);
       } else {
-        expect(rms, `${fichier} : aucun son mesuré sur le maître`).toBeGreaterThan(0.001);
+        await expect
+          .poll(async () => audio.getMaxRMS(1500), { timeout: 15_000 })
+          .toBeGreaterThan(0.001);
       }
     }
 
@@ -186,11 +181,10 @@ for (const { fichier, source, sorties } of SCENES) {
     await page.waitForTimeout(200);
 
     if (declaree?.attend === 'cris') {
-      // Elle sonne ET elle crie : c'est le cri qui est déclaré, donc son ABSENCE est ce qui doit
-      // rougir — sinon la réparation amont passerait inaperçue sous un vert.
+      // Elle produit ET elle crie : c'est le CRI qui est déclaré, donc son ABSENCE doit rougir.
       expect(
         () => noErrors(),
-        `${fichier} ne crie plus — le défaut amont est réparé : retirer sa ligne de MUETTES_DECLAREES`
+        `${fichier} ne crie plus — le défaut est réparé : retirer sa ligne de MUETTES_DECLAREES`
       ).toThrow();
     } else {
       noErrors();
