@@ -39,4 +39,4 @@ Cellule -> D4 G4 A4 (vel:80, wave:sine, attack:5, release:200)
 Cellule -> D4 F4 C5 (vel:92, wave:sine, attack:3, release:280)
 
 // Le point d'exclamation peut re-semer en plein flux : à partir d'ici, un autre tirage.
-Cellule -> ![@seed:7] A3 D4 F4 (vel:70, wave:sine, attack:8, release:320)
+Cellule -> ![seed:7] A3 D4 F4 (vel:70, wave:sine, attack:8, release:320)
