@@ -48,7 +48,7 @@ import { createAudioRuntime } from 'runtime-audio';
 // subpath exposes only the browser-safe surface (OscAdapter/OscBridgeProfile/
 // WebSocketTransport) — deterministic under both Vite and vitest.
 import { createOscRuntime } from 'runtime-osc/browser';
-import type { EventBus } from '../events/types';
+import type { EventBus, OutputEvent } from '../events/types';
 import { DEFAULT_BEATS_PER_BAR } from './meter';
 // Relais lifecycle voix de code (chantier voix-code-transport S2) : suit l'état RÉEL du
 // Transport (pause quantifiée comprise) et relaie gel réel / reprise resynchronisée /
@@ -347,7 +347,21 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
     durationSec: duration,
     loop,
     lookahead: LOOKAHEAD_SEC,
-    intervalMs: 25
+    intervalMs: 25,
+    // LA PUBLICATION SUR LE BUS COMMUN — remise À LA CONSTRUCTION (contrat point 5), comme aux
+    // périphériques d'entrée. Kronos publie chaque événement ordonnancé au lieu d'appeler un
+    // adaptateur ; les quatre sorties, déjà abonnées, filtrent leur clé et retranchent leur
+    // latence. Je ne choisis aucune destination : elle voyage sur l'événement.
+    //
+    // ⚠️ `t` EST DU TEMPS MURAL, ET IL N'Y A RIEN À CONVERTIR ICI : la source de temps que je
+    // passe ci-dessus EST `performance.now()/1000` (décision temps-audio-multicontextes), donc
+    // l'`onset` de Kronos vit déjà dans le domaine mural — en secondes. Kronos multiplie par mille,
+    // et personne ne fabrique un second `now()`, ce que §5.7 interdit parce qu'une seconde horloge
+    // rendrait une note MIDI et un message OSC incomparables EN SILENCE.
+    //
+    // Absent (bancs, sans bus) ⇒ Kronos ne publie RIEN. Pas de voie parallèle : simplement pas de
+    // sortie, et c'est sa garde.
+    publish: opts.events ? (e: OutputEvent) => opts.events!.emit(e) : undefined
   });
 
   // 2b. AUDIO OUTPUT = the runtime-audio AudioRuntime (the 'audio' SINK). KAI-10 — it

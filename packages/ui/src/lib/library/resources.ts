@@ -13,11 +13,16 @@ import tuningsJson from 'bpscript/lib/tunings.json';
 import temperamentsJson from 'bpscript/lib/temperaments.json';
 import scalesJson from 'bpscript/lib/scales.json';
 import octavesJson from 'bpscript/lib/octaves.json';
-// BPScript language modules (`@core`/`@controls` + the `mod` CV lib): real library
-// files with browsable content (core symbols/settings, control terminals, CV
-// objects + their declarative curves). Imported AS-IS so opening one shows it.
+// BPScript language modules (`@core` + the `mod` CV lib): real library files with
+// browsable content (core symbols/settings, CV objects + their declarative curves).
+// Imported AS-IS so opening one shows it.
+//
+// ⚠️ `controls` A DISPARU DE LA LISTE LE 2026-08-10, ET SON FICHIER AVEC : bpscript a fusionné
+// `@controls` dans `@core` et supprimé `lib/controls.json` (leur 647df04, ordre de Romain). Ce
+// n'est pas une entrée retirée de l'affichage — c'est un module qui n'existe plus dans le langage.
+// L'exposer encore montrerait une forme que le langage a retirée, et c'est précisément ce que le
+// backlog KAN-42 reproche à 203 scènes.
 import coreJson from 'bpscript/lib/core.json';
-import controlsJson from 'bpscript/lib/controls.json';
 import modJson from 'bpscript/lib/mod.json';
 // Digital functions library (transpose &c., KAI-B03's twin of mod.json) — a real
 // browsable bpscript library file, same as the others above.
@@ -100,11 +105,7 @@ export const RESOURCE_GROUPS: ResourceGroup[] = [
   {
     type: 'module',
     title: 'Modules (langage)',
-    entries: [
-      moduleEntry('core', coreJson),
-      moduleEntry('controls', controlsJson),
-      moduleEntry('mod', modJson)
-    ]
+    entries: [moduleEntry('core', coreJson), moduleEntry('mod', modJson)]
   },
   {
     type: 'alphabet',
@@ -269,7 +270,6 @@ export const RESOURCE_FILES: LibraryFile[] = [
   libraryFile('temperaments', temperamentsJson, 'bpscript'),
   libraryFile('scales', scalesJson, 'bpscript'),
   libraryFile('octaves', octavesJson, 'bpscript'),
-  libraryFile('controls', controlsJson, 'bpscript'),
   libraryFile('mod', modJson, 'bpscript'),
   libraryFile('digital', digitalJson, 'bpscript'),
   // bp3 — one card per bundled `-se.<name>` auxiliary settings file.
