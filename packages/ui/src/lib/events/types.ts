@@ -2,6 +2,8 @@
 // See docs/design/EVENTS.md for the full specification.
 
 import type { Runtime } from '../core-mock/types';
+// La charge de l'événement de production vient de son PROPRIÉTAIRE, jamais d'une copie locale.
+import type { ScheduledEvent } from '@kronos/core';
 
 // 'clock' = le temps (Kronos) ; 'in' = le runtime d'ENTRÉE (`runtime-in`), symétrique des
 // runtimes de sortie. Ce n'est pas un langage de voix, d'où l'ajout ici et non dans `Runtime`.
@@ -55,6 +57,45 @@ export interface FlagEvent extends KanopiEventBase {
   readonly type: 'flag';
   readonly name: string;
   readonly value: number | string | boolean;
+}
+
+// L'ÉVÉNEMENT DE PRODUCTION — ce que Kronos PUBLIE au lieu de l'appeler sur un adaptateur.
+// Forme arrêtée entre Kronos et Kanopi le 2026-08-10, validée par Romain ; référence
+// `atlas/architecture/05-interfaces.md` §5.7.
+//
+// ⚠️ LA CHARGE EST LE `ScheduledEvent` DE KRONOS, IMPORTÉ — PAS RECOPIÉ. Une copie iso-champs
+// entretenue ici dériverait de la sienne sans que rien ne rougisse. Ce n'est pas une précaution
+// théorique : le 2026-08-10 au matin, runtime-OSC portait une copie À LA MAIN des types du bus,
+// restée à trois phases de transport quand Kronos en publiait quatre — et l'écart était INVISIBLE,
+// absorbé par une conversion à cette frontière. Il a fallu retirer la conversion pour qu'il se
+// nomme. On importe.
+//
+// ⚠️ DEUX CHAMPS PORTENT LE MOT `runtime`, ET CE NE SONT PAS LA MÊME CHOSE :
+//   · `runtime` de la base — la SOURCE, ici toujours `'clock'` : QUI a émis ;
+//   · `output.runtime` dans la charge — la DESTINATION : POUR QUI.
+// Un lecteur qui les confond route un événement audio vers le MIDI en croyant lire la source.
+// Kronos a vu cette collision avant nous ; elle est nommée ici pour qu'elle ne se redécouvre pas.
+//
+// ⚠️ DEUX INSTANTS, DEUX USAGES, ET S'EN TROMPER NE SE VOIT PAS :
+//   · `t` (base, millisecondes murales) sert à AFFICHER. Il n'est JAMAIS la référence à
+//     l'échantillon — l'horloge audio dérive de `performance.now()`, et c'est voulu ;
+//   · `payload.onset` (secondes de l'horloge audio) sert à ORDONNANCER. C'est lui qui est exact.
+// Un lecteur qui se trompe de champ ne verra jamais son erreur autrement que comme un
+// désalignement inexplicable.
+//
+// `audioTime` N'EST PAS POSÉ sur cette variante, et §5.7 le permet — le champ y est OPTIONNEL,
+// « pour les consommateurs audio-critiques ». Or ces consommateurs sont les quatre sorties, et
+// elles lisent `onset` sous son nom contractuel. Poser les deux mettrait une MÊME GRANDEUR sous
+// DEUX NOMS dont l'un n'aurait aucun lecteur : deux copies dérivent, et rien ne rougit quand elles
+// dérivent. Le critère pour revenir dessus est nommé : qu'un consommateur doive lire l'instant
+// audio SANS ouvrir la charge, uniformément sur toutes les variantes. Il n'en existe aucun
+// aujourd'hui — Kronos a refusé d'en inventer un pour justifier le champ.
+export interface OutputEvent extends KanopiEventBase {
+  readonly type: 'output';
+  readonly runtime: 'clock';
+  /** L'événement ordonnancé ENTIER, tel que Kronos le publie et tel que les quatre sorties le
+   *  lisent déjà : leur forme de lecture ne change pas, seul l'appel devient un abonnement. */
+  readonly payload: ScheduledEvent;
 }
 
 // L'ÉVÉNEMENT D'ENTRÉE — charge OPAQUE. Contrat `hub/contrats/hote-runtime-in.md`
@@ -147,6 +188,7 @@ export type KanopiEvent =
   | TriggerEvent
   | TokenEvent
   | FlagEvent
+  | OutputEvent
   | InputEvent
   | InputDeviceEvent;
 

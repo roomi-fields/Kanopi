@@ -40,6 +40,17 @@
         return e.name;
       case 'token':
         return `${e.name}${e.pitch !== undefined ? ` p${e.pitch}` : ''} d${e.duration.toFixed(0)}ms${e.locations ? ` [${e.locations.length} loc]` : ''}`;
+      case 'output':
+        // AFFICHAGE : la DESTINATION d'abord, parce que c'est ce qu'on vient lire ici quand une
+        // voix sort au mauvais endroit. `payload.output.runtime` est la destination ; le `runtime`
+        // de l'événement, lui, vaut toujours `'clock'` — c'est la source. Les deux portent le même
+        // mot et ne disent pas la même chose.
+        //
+        // On montre `onset` (secondes de l'horloge audio), pas `t` : c'est l'instant qui ORDONNE.
+        // `t` est du temps mural, de qualité affichage, et jamais la référence à l'échantillon.
+        return `→${e.payload.output?.runtime ?? '?'}${
+          e.payload.actor ? ` ${e.payload.actor}` : ''
+        } ${e.payload.kind ?? 'note'} @${e.payload.onset.toFixed(3)}s d${e.payload.duration.toFixed(3)}s`;
       case 'flag':
         return `${e.name}=${String(e.value)}`;
       case 'input':
