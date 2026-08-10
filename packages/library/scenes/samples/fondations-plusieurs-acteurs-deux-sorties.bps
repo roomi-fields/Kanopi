@@ -14,8 +14,8 @@
 // l'emporte. Ici la basse part vers un appareil MIDI et le chant vers l'audio interne :
 // une seule pièce, deux chemins de sortie, et aucun des deux acteurs n'a eu à répéter le
 // clavier ni le tempo.
-// Le premier bloc les fait sonner ENSEMBLE, chacun avec son propre découpage du temps ;
-// le second les sépare, et on entend alors à quel appareil appartient quelle voix.
+// Le premier bloc les fait frapper ENSEMBLE, sur un même instant d'attaque ; le second les
+// sépare, et on entend alors à quel appareil appartient quelle voix.
 
 @core
 @alphabet.western
@@ -36,8 +36,9 @@ S -> Ensemble Ensemble Separe
 
 @mode:ord
 
-// Deux voix dans une même durée : quatre notes en haut, deux en bas.
-Ensemble -> {chant.A4 chant.C5 chant.E5 chant.C5, basse.A2 basse.E3} (vel:82, wave:triangle, attack:5, release:280)
+// Le point d'exclamation lie les deux voix sur un même instant d'attaque : la basse et le
+// chant frappent ENSEMBLE, chacun partant vers sa propre destination.
+Ensemble -> basse.A2!chant.A4 chant.C5 basse.E3!chant.E5 chant.C5 (vel:82, wave:triangle, attack:5, release:280)
 
-// Les mêmes, l'une après l'autre : la destination de chacune s'entend.
+// Les mêmes notes, l'une après l'autre : la destination de chacune s'entend séparément.
 Separe   -> basse.A2 basse.E3 chant.A4 chant.C5 (vel:70, wave:triangle, attack:9, release:420)
