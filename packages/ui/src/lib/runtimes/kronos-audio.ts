@@ -402,8 +402,11 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // l'AudioRuntime COURANT (recréé à chaque eval ; la re-projection des niveaux persistés
   // se fait aux points d'accroche de real-core, publish + replay). Nul sous sink de test.
   currentAudioGain = audioRuntime as unknown as AudioGainControl | null;
-  const audioSink: TransportLike | null =
-    opts.sinks?.audio ?? (audioRuntime as unknown as TransportLike | null);
+  // PAS DE CONVERSION ICI — runtime-OSC m'a mesuré cette ligne le 2026-08-10 et il avait raison
+  // là où je me croyais propre : j'avais retiré les conversions aux points d'ENREGISTREMENT ce
+  // matin, pas celle-ci. Une conversion à une frontière ne cache pas UN écart, elle cache LEQUEL —
+  // et celle-ci masquait déjà le retrait de `send` en cours chez les quatre sorties.
+  const audioSink: TransportLike | null = opts.sinks?.audio ?? audioRuntime;
 
   // MIDI OUTPUT = the host-built per-actor MidiTransport, handed in as `sinks.midi`.
   const midiSink: TransportLike | null = opts.sinks?.midi ?? null;
