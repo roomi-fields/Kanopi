@@ -367,6 +367,11 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // headless), on ne crée PAS le runtime — sinon il ferait un `new AudioContext()` inutile (et
   // impossible en jsdom). En prod (pas d'override), createAudioRuntime crée+possède son contexte.
   const audioRuntime = opts.sinks?.audio ? null : createAudioRuntime({ sounds: undefined });
+  // L'ABONNEMENT AU BUS de la sortie audio — même geste que pour OSC, sur l'instance RÉELLE.
+  // Elle s'abonne, filtre `payload.output.runtime === 'audio'` et retranche sa latence ; rien de
+  // tout cela ne vit ici. Nul quand un banc injecte son propre puits : on n'abonne pas un
+  // remplaçant de test.
+  if (audioRuntime && opts.events) audioRuntime.bindEvents(opts.events);
   // PRÉCHAUFFAGE au CHARGEMENT (design ratifié archi [589]) : à un PRODUCE/LOAD (`buildOnly`, dans
   // la chaîne du geste : clic library / Ctrl+Enter), on RÉVEILLE le contexte audio de runtime-audio
   // MAINTENANT (`warmup()` = resume one-shot, 16933ca) au lieu d'attendre la 1ʳᵉ transition de play →
