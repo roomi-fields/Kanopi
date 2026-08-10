@@ -49,6 +49,7 @@ import { createAudioRuntime } from 'runtime-audio';
 // WebSocketTransport) — deterministic under both Vite and vitest.
 import { createOscRuntime } from 'runtime-osc/browser';
 import type { EventBus, OutputEvent } from '../events/types';
+import type { CodeVoicesRuntime } from 'runtime-codevoices';
 import { DEFAULT_BEATS_PER_BAR } from './meter';
 // Relais lifecycle voix de code (chantier voix-code-transport S2) : suit l'état RÉEL du
 // Transport (pause quantifiée comprise) et relaie gel réel / reprise resynchronisée /
@@ -115,7 +116,10 @@ export interface KronosAudioOptions {
    *  `evaluate`/`dispose`), construit par la dérivation hôte (table backticks BPx). Enregistré
    *  sur la clé 'code' ; c'est LUI qui tire les backticks à l'onset et s'abonne au bus de cycle
    *  de vie (le relais lifecycle a DESCENDU dans le paquet — plus de code-voice-lifecycle hôte). */
-  codeVoicesRuntime?: RuntimeAdapter;
+  // ⚠️ TYPÉE PAR CE QU'ELLE EST, pas par le contrat : élargie en `RuntimeAdapter`, cette option
+  // perdait `bindEvents` — et une conversion l'aurait masqué. Déclarer plus large que la réalité
+  // est un mensonge qui se paie au premier appel qu'on veut faire.
+  codeVoicesRuntime?: CodeVoicesRuntime;
   /** BUILD-ONLY (Model C produce/load): construire la machine (clock/scheduler/cursor/driver/
    *  transport) et la timeline SANS jouer — le transport reste 'stopped', le driver n'est PAS
    *  démarré, donc AUCUN `send` n'a lieu (zéro son, le contexte audio n'est pas réveillé ici).
@@ -512,7 +516,17 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // SEUL point où `startKronosAudio` touche `opts.codeVoicesRuntime`. Nul quand la scène n'a
   // aucun backtick (pas d'objet transmis).
   currentCodeVoicesGain = (opts.codeVoicesRuntime ?? null) as unknown as AudioGainControl | null;
-  if (opts.codeVoicesRuntime) kronos.addAdapter('code', opts.codeVoicesRuntime);
+  if (opts.codeVoicesRuntime) {
+    kronos.addAdapter('code', opts.codeVoicesRuntime);
+    // ⚠️ LA QUATRIÈME SORTIE S'ABONNE ICI, ET SON ABSENCE A COÛTÉ VINGT-NEUF BANCS. J'avais câblé
+    // midi, osc et audio, puis écrit « je ne câble pas codevoices tant que la question de contrat
+    // n'est pas tranchée ». Elle l'a été — et je ne suis jamais revenu poser cette ligne. Le paquet
+    // a retiré son `send` dans le même mouvement (leur `feb329c`), donc le chemin d'appel est parti
+    // sans que l'abonnement le remplace : les voix de code ont cessé de sonner, en silence.
+    // C'est EXACTEMENT la disparition que l'architecte avait annoncée — « un runtime abonné dans
+    // son code mais jamais branché chez toi ne recevra rien, et son propre banc restera vert ».
+    if (opts.events) opts.codeVoicesRuntime.bindEvents(opts.events);
+  }
 
   // The playing cursor (EX4 phase 2): the INVERSE of the time authority, not a separate
   // counter — it reads the same `clock` the scheduler does, so the drawn playhead is
