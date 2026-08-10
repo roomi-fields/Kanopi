@@ -38,9 +38,13 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     include: ['src/**/*.test.ts'],
-    // Le registre des runtimes se construit AVEC le bus (chantier bus 2026-08-10) et crie s'il est
-    // lu avant. L'environnement de banc fait donc le même geste que le cœur, une fois pour tous.
-    setupFiles: ['./test/init-registre.ts'],
+    // ⚠️ PAS DE `setupFiles` POUR CONSTRUIRE LE REGISTRE, ET C'EST MESURÉ : un fichier d'amorce
+    // qui importe le registre instancie TOUTE la chaîne (registre → adaptateur → `bpx`) AVANT que
+    // les simulacres d'un fichier de banc s'appliquent. L'adaptateur capture alors la VRAIE
+    // fonction, et un espion posé sur le module ne voit plus rien — `createSession` appelé quatre
+    // fois, zéro vu. Trois bancs ont rougi ainsi le 2026-08-10, et j'ai éliminé six causes avant
+    // de trouver que la septième était mon propre fichier d'amorce.
+    // Chaque banc qui lit le registre l'initialise donc LUI-MÊME, comme le cœur le fait.
     // DURCISSEMENT PC2 [450] — plafonne les workers : un run vitest à 8 workers a gonflé à
     // ~7,4 Go et contribué à un freeze machine (chaque worker ~1 Go). 3 garde le parallélisme
     // sans saturer la RAM. La ceinture OOM (choom + ulimit) est dans scripts/vitest-guard.sh.

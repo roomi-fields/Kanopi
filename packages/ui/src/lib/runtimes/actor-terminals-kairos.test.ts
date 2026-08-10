@@ -13,7 +13,6 @@ import type { Timeline } from '@kronos/core';
 // Two actors that SHARE a terminal: both `lead` and `bass` play `C4`. The shared token
 // must survive in the actor-terminals set (the regression we guard against).
 const SHARED_TERMINAL = `@core
-@controls
 
 @actor lead  @alphabet.western  out.audio
 @actor bass  @alphabet.western  out.audio

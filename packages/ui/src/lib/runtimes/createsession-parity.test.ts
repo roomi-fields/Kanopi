@@ -20,7 +20,6 @@ import type { TimedToken } from 'bpx';
 //  - arabic.bps: a non-English alphabet + maqam tuning + @mm scene (the exact kind
 //    of scene whose silence was the "FAIT means proven on REAL scenes" lesson).
 const DUAL_ACTORS = `@core
-@controls
 
 @actor lead  @alphabet.western  out.audio
 @actor bass  @alphabet.western  out.audio
@@ -32,7 +31,6 @@ Low  -> bass.C2(wave:sawtooth, vel:90) - bass.G2 - bass.A2 - bass.F2 -
 `;
 
 const ARABIC = `@core
-@controls
 @alphabet.arabic:audio
 @tuning.maqam_rast
 @tempo:70

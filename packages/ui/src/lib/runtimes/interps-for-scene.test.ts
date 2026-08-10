@@ -24,7 +24,7 @@ describe('interpsForScene — engines a scene declares (for on-open preload)', (
 
   it('returns empty for a pure-note scene with no code voice', () => {
     const code =
-      '@core\n@controls\n@alphabet.western:audio\n@tempo:120\nS -> Bass\nBass -> C2 C2 (wave:sawtooth)';
+      '@core\n@alphabet.western:audio\n@tempo:120\nS -> Bass\nBass -> C2 C2 (wave:sawtooth)';
     expect(interpsForScene(code)).toEqual([]);
   });
 

@@ -125,7 +125,6 @@ describe('orchestrator actor publication', () => {
 // `ready:false, reason:'no-webmidi'` for real — the actual "MIDI unavailable"
 // condition, no mocking of runtime-midi needed.
 const MIDI_PLUS_WEBAUDIO = `@core
-@controls
 
 @actor melody  @alphabet.western  out.midi(ch:1)
 @actor bass    @alphabet.western  out.audio

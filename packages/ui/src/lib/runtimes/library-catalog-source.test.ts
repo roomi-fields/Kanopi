@@ -50,7 +50,7 @@ describe('resourceResolutionErrors — signal 2 du voyant de santé (décision 2
   });
 
   it('aucune déclaration @library → aucune erreur', () => {
-    const code = `@core\n@controls\n@alphabet.western:audio\nS -> Bass\nBass -> C2 (wave:sawtooth)`;
+    const code = `@core\n@alphabet.western:audio\nS -> Bass\nBass -> C2 (wave:sawtooth)`;
     expect(resourceResolutionErrors(code)).toEqual([]);
   });
 
