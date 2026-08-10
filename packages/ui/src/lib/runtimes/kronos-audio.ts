@@ -48,6 +48,7 @@ import { createAudioRuntime } from 'runtime-audio';
 // subpath exposes only the browser-safe surface (OscAdapter/OscBridgeProfile/
 // WebSocketTransport) — deterministic under both Vite and vitest.
 import { createOscRuntime } from 'runtime-osc/browser';
+import type { EventBus } from '../events/types';
 import { DEFAULT_BEATS_PER_BAR } from './meter';
 // Relais lifecycle voix de code (chantier voix-code-transport S2) : suit l'état RÉEL du
 // Transport (pause quantifiée comprise) et relaie gel réel / reprise resynchronisée /
@@ -83,6 +84,12 @@ export interface KronosAudioOptions {
   beatsPerBar?: number;
   /** Whether to loop the scene. */
   loop: boolean;
+  /** LE BUS D'ÉVÉNEMENTS DE L'HÔTE, remis aux sorties construites ICI pour qu'elles s'y ABONNENT
+   *  elles-mêmes (§5.7 : l'hôte le tient sans le posséder). Miroir de `bindClock` côté temps —
+   *  la sortie filtre sur SA clé et retranche SA latence, rien de tout cela ne vit ici.
+   *  Absent (tests, headless) ⇒ aucune sortie ne s'abonne, et rien ne casse : tant que Kronos
+   *  APPELLE au lieu de publier, l'abonnement ne reçoit rien. */
+  events?: EventBus;
   /** Per-runtime OUTPUT SINKS built by the host (e.g. the per-actor MIDI transport), keyed
    *  by the runtime name Kairos emits in `event.output.runtime` ('midi', …). The AUDIO
    *  ('audio') and OSC sinks are built HERE (they need the shared clock); a key
@@ -412,6 +419,15 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // trois phases de transport quand Kronos en publiait quatre. Mesuré au vérificateur de types,
   // signalé, resynchronisé chez lui (leur `ac11458`, ajout purement additif de `waiting`) — la
   // conversion part avec sa cause, dans le même mouvement.
+  // L'ABONNEMENT AU BUS — posé sur l'instance RÉELLE (`oscRuntime`), jamais sur un puits de test.
+  // Il s'abonne, filtre `payload.output.runtime === 'osc'` et retranche sa latence à la réception ;
+  // le désabonnement part avec son `dispose()`.
+  //
+  // ⚠️ ON S'ABONNE AVANT QUE KRONOS BASCULE, et c'est l'ordre imposé : tant qu'il appelle au lieu
+  // de publier, l'abonnement ne reçoit rien et ne coûte rien. L'inverse — publier devant des
+  // sorties non abonnées — publie dans le vide et coupe le son.
+  if (oscRuntime && opts.events) oscRuntime.bindEvents(opts.events);
+
   const oscSink: TransportLike | null = opts.sinks?.osc ?? oscRuntime;
 
   // 3. PER-RUNTIME adapters. Each ScheduledEvent already carries its `output.runtime` route

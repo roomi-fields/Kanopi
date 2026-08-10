@@ -2487,6 +2487,9 @@ function makeBpxAdapter(
                 ? totalDurationBeats * beatDurSec
                 : undefined,
             loop: looping,
+            // Le bus, remis aux sorties construites dans la fabrique (OSC aujourd'hui) pour
+            // qu'elles s'y abonnent elles-mêmes. Le MIDI, lui, est câblé à sa création plus haut.
+            events: adapterEvents,
             // Per-runtime OUTPUT SINKS the host builds: only MIDI (per-actor resolver). The
             // 'audio' (AudioRuntime) and 'osc' (OscAdapter) sinks are built inside
             // startKronosAudio (they need the shared clock).
