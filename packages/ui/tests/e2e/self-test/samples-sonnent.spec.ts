@@ -47,65 +47,30 @@ const SCENES: Scene[] = readdirSync(DOSSIER)
     };
   });
 
-// LE ROUGE D'INTENTION — un seul, mesuré le 2026-08-10.
+// AUCUNE EXCEPTION — les trente-quatre produisent ce qu'elles déclarent, et rien n'est excusé.
 //
-// ⚠️ CE N'EST PAS UNE MISE EN SOMMEIL : l'attente est INVERSÉE. Tant que la scène échoue POUR SA
-// RAISON, le banc passe ; le jour où elle produit proprement, le banc ROUGIT et demande le
-// retrait de sa ligne. Un défaut réparé en amont sans que personne le dise se signale tout seul.
+// ⚠️ CE FICHIER A PORTÉ UNE TABLE DE ROUGES DÉCLARÉS, et elle est partie ligne à ligne parce que
+// chaque ligne a été RÉCLAMÉE par le banc lui-même : l'attente y était INVERSÉE, donc une scène
+// réparée faisait rougir au lieu de dormir sous un vert. Cinq lignes, cinq retraits en une nuit.
+// Le motif est dans l'historique (`git log -- ce fichier`) : le rouvrir coûte un commit, et il
+// vaut mieux qu'un banc rouge en permanence quand un défaut est routé et attend son propriétaire.
 //
-// ⚠️ CE QUE CETTE TABLE A COMPTÉ HIER ET NE COMPTE PLUS, ET POURQUOI IL FAUT LE LIRE : elle a
-// porté QUATRE scènes déclarées muettes, toutes celles qui déclaraient un `@actor` sans `out.*`.
-// La coupure était nette et l'injection semblait la confirmer. Elle reposait pourtant sur une
-// fenêtre de mesure FIXE de trois secondes — et sous la file des trente-quatre pages, le premier
-// son de ces scènes arrivait après. Jouées seules, les trois dernières produisaient toutes.
-//
-// CE QU'ON NE PEUT PLUS DÉMÊLER, ET QU'ON N'AFFIRMERA DONC PAS : la réparation amont de la
-// cascade (bpscript 01da55b) et l'élargissement de cette fenêtre sont arrivés le même jour. Le
-// silence d'hier avait au moins une cause instrumentale ; savoir s'il en avait une autre
-// demanderait de remesurer l'ancien état avec le nouvel instrument, ce que personne n'a demandé.
-// La leçon qui reste vaut mieux que la conclusion perdue : une fenêtre trop courte MINIMISE, et
-// un silence ressemble exactement à « rien à corriger ».
-const MUETTES_DECLAREES: Record<string, { motif: string; attend: 'silence' | 'cris' }> = {
-  // Réécrite en deux acteurs, elle PRODUIT — et elle crie. Elle appelle des sons de batterie
-  // qu'aucune déclaration ne CHARGE.
-  //
-  // ⚠️ `.bank('X')` DANS LE CODE NE CHARGE RIEN, il choisit parmi ce qui est déjà chargé. Le
-  // chargement se déclare sur l'ACTEUR — `eval.strudel(bank:"…")`, qui appelle `loadSampleBank`.
-  // Mesuré : `s("bd hh")` criait « sound bd not found » 9 fois ; avec `.bank('RolandTR909')` elle
-  // crie « sound RolandTR909_bd not found » 29 fois. Le préfixe change, le son manque toujours.
-  // La scène dont la forme a été reprise (`strudel/05-filter-envelope-effects.bps:22-26`) ne
-  // déclare pas de banque non plus — elle sonne par ses notes, pas par sa batterie, et n'est donc
-  // pas une preuve de chargement.
-  //
-  // Le dépôt connaît le mur : `dirt-samples` est distante et inapte au portillon ; une scène
-  // strudel a dû migrer vers une banque hébergée [809]. Défaut de contenu, il est à bpscript.
-  'jeu-le-code-natif-dans-le-flux.bps': {
-    motif: 'elle SONNE, et elle crie « sound RolandTR909_bd not found » — banque non chargée',
-    attend: 'cris'
-  }
-};
+// ⚠️ ET CE QU'ELLE A ENSEIGNÉ SUR L'INSTRUMENT, QUI VAUT PLUS QUE CE QU'ELLE A COMPTÉ : quatre de
+// ces cinq lignes accusaient une scène pour un défaut qui était le MIEN. Deux scènes MIDI muettes
+// parce que je ne désignais aucun port ; trois scènes muettes parce que je mesurais le son sur
+// une fenêtre fixe trop courte. À chaque fois la mesure était cohérente, reproductible, et fausse.
+// Ce qui a coupé, à chaque fois, est un point de contrôle où la chose mesurée devait être ABSENTE
+// — un scénario témoin qui devait sonner et se taisait, une scène jouée seule au lieu d'en file.
 
 test('le dossier des scènes d’exemple n’est pas vide', () => {
   expect(SCENES.length).toBeGreaterThan(0);
 });
 
-test('aucune muette déclarée ne désigne un fichier disparu', () => {
-  const presents = new Set(SCENES.map((s) => s.fichier));
-  const fantomes = Object.keys(MUETTES_DECLAREES).filter((f) => !presents.has(f));
-  expect(fantomes, 'lignes à retirer de MUETTES_DECLAREES').toEqual([]);
-});
-
 for (const { fichier, source, sorties } of SCENES) {
-  const declaree = MUETTES_DECLAREES[fichier];
-  const silenceAttendu = declaree?.attend === 'silence';
   const attendAudio = sorties.includes('audio');
-  const attendMidi = sorties.includes('midi') && !silenceAttendu;
+  const attendMidi = sorties.includes('midi');
 
-  const titre = declaree
-    ? `${fichier} — rouge déclaré : ${declaree.motif}`
-    : `${fichier} produit (${sorties.join(' + ')})`;
-
-  test(titre, async ({ page }) => {
+  test(`${fichier} produit (${sorties.join(' + ')})`, async ({ page }) => {
     const audio = attendAudio ? await setupAudioCapture(page) : null;
     const midi = attendMidi ? await setupFakeMidi(page) : null;
     const noErrors = expectNoConsoleErrors(page);
@@ -164,19 +129,9 @@ for (const { fichier, source, sorties } of SCENES) {
       //
       // Le sondage rend la mesure indépendante de la charge sans l'affaiblir : il s'arrête au
       // premier son, et une scène réellement muette échoue quand même, au bout du compte.
-      if (silenceAttendu) {
-        // Pour un silence déclaré, on va jusqu'au bout de la fenêtre : c'est la seule façon de
-        // ne pas confondre « muette » avec « pas encore sonnée ».
-        const rms = await audio.getMaxRMS(12_000);
-        expect(
-          rms,
-          `${fichier} PRODUIT maintenant — le défaut est réparé en amont : retirer sa ligne de MUETTES_DECLAREES`
-        ).toBeLessThanOrEqual(0.001);
-      } else {
-        await expect
-          .poll(async () => audio.getMaxRMS(1500), { timeout: 15_000 })
-          .toBeGreaterThan(0.001);
-      }
+      await expect
+        .poll(async () => audio.getMaxRMS(1500), { timeout: 15_000 })
+        .toBeGreaterThan(0.001);
     }
 
     if (midi) {
@@ -189,14 +144,6 @@ for (const { fichier, source, sorties } of SCENES) {
     await page.keyboard.press('ControlOrMeta+Period');
     await page.waitForTimeout(200);
 
-    if (declaree?.attend === 'cris') {
-      // Elle produit ET elle crie : c'est le CRI qui est déclaré, donc son ABSENCE doit rougir.
-      expect(
-        () => noErrors(),
-        `${fichier} ne crie plus — le défaut est réparé : retirer sa ligne de MUETTES_DECLAREES`
-      ).toThrow();
-    } else {
-      noErrors();
-    }
+    noErrors();
   });
 }
