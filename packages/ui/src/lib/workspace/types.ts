@@ -26,7 +26,14 @@ export interface TreeNode {
  * adding a new language is self-contained in its adapter (the adapter
  * declares its `extensions: ['.foo']` and everything else follows).
  */
-export const KNOWN_EXTENSIONS: string[] = knownExtensions();
+// ⚠️ FONCTION, PLUS CONSTANTE DE MODULE : les extensions se dérivent du registre, et le registre
+// n'existe qu'après `initAdapters(bus)` (chantier bus 2026-08-10 — les voix reçoivent le bus à
+// leur construction). Calculée au CHARGEMENT, cette valeur lisait un registre vide et faisait
+// crier l'import lui-même. C'est la seconde de cette famille que je trouve après coup : une valeur
+// dérivée d'un registre construit tardivement ne peut plus être figée au chargement.
+export function knownFileExtensions(): string[] {
+  return knownExtensions();
+}
 
 export function runtimeFromExt(name: string): Runtime {
   const idx = name.lastIndexOf('.');

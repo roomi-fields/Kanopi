@@ -38,6 +38,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     include: ['src/**/*.test.ts'],
+    // Le registre des runtimes se construit AVEC le bus (chantier bus 2026-08-10) et crie s'il est
+    // lu avant. L'environnement de banc fait donc le même geste que le cœur, une fois pour tous.
+    setupFiles: ['./test/init-registre.ts'],
     // DURCISSEMENT PC2 [450] — plafonne les workers : un run vitest à 8 workers a gonflé à
     // ~7,4 Go et contribué à un freeze machine (chaque worker ~1 Go). 3 garde le parallélisme
     // sans saturer la RAM. La ceinture OOM (choom + ulimit) est dans scripts/vitest-guard.sh.

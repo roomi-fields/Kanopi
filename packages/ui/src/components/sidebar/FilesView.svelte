@@ -3,7 +3,7 @@
   import { workspace } from '../../stores/workspace.svelte';
   import { session } from '../../stores/session.svelte';
   import { cloudDocs } from '../../stores/cloud-docs.svelte';
-  import { KNOWN_EXTENSIONS } from '../../lib/workspace/types';
+  import { knownFileExtensions } from '../../lib/workspace/types';
   import { buildTree } from '../../lib/workspace/build-tree';
   import FileTree from './FileTree.svelte';
   import CloudFileTree from './CloudFileTree.svelte';
@@ -27,7 +27,7 @@
   // `.json` catalog file (decision 2026-07-13-invocation-librairies-factory-
   // mine.md) — accepted under the reserved `libraries/` prefix only (see
   // `submit()` below).
-  const exts = KNOWN_EXTENSIONS;
+  const exts = knownFileExtensions();
 
   // Secondary split INSIDE the Mine origin (ESPACE_PERSO_SPEC §10.3): a personal
   // LIBRARY is just a doc filed under the reserved `libraries/` folder — no

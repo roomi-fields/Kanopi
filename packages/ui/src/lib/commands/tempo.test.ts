@@ -18,6 +18,14 @@ import { workspace } from '../../stores/workspace.svelte';
 vi.mock('runtime-ui', () => ({ traceEnabled: () => false, setTraceEnabled: () => {} }));
 
 import { setTempo } from './tempo';
+import { createEventBus } from '../events/bus';
+import { initAdapters } from '../runtimes/registry';
+
+// LE REGISTRE SE CONSTRUIT AVEC LE BUS, ET `vi.mock` RÉINSTANCIE LE GRAPHE DE MODULES DE CE
+// FICHIER — l'initialisation globale de l'environnement de banc ne le suit donc pas jusqu'ici.
+// Ce fichier construit comme le cœur construit. Faire taire le cri à la place aurait rendu au
+// produit un « aucune voix reconnue » silencieux.
+initAdapters(createEventBus());
 
 const SCENE = `// @language: bpscript
 @core

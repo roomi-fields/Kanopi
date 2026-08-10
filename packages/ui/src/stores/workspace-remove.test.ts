@@ -14,6 +14,14 @@
 //   • les AUTRES fichiers et leur ordre ne bougent pas — une suppression ne réordonne pas.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { workspace } from './workspace.svelte';
+import { createEventBus } from '../lib/events/bus';
+import { initAdapters } from '../lib/runtimes/registry';
+
+// LE REGISTRE SE CONSTRUIT AVEC LE BUS, ET `vi.mock` RÉINSTANCIE LE GRAPHE DE MODULES DE CE
+// FICHIER — l'initialisation globale de l'environnement de banc ne le suit donc pas jusqu'ici.
+// Ce fichier construit comme le cœur construit. Faire taire le cri à la place aurait rendu au
+// produit un « aucune voix reconnue » silencieux.
+initAdapters(createEventBus());
 
 function repartirDeZero() {
   for (const f of [...workspace.files]) workspace.removeFile(f.id);
