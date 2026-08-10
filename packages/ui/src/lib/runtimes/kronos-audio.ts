@@ -53,13 +53,18 @@ import { DEFAULT_BEATS_PER_BAR } from './meter';
 // Transport (pause quantifiée comprise) et relaie gel réel / reprise resynchronisée /
 // tais-toi aux moteurs de voix (option (b) 2026-07-03, arbitrage [524]).
 
-/** A per-runtime OUTPUT SINK this module drives. The host registers sinks BY RUNTIME
- *  NAME (the key Kairos emits in `event.output.runtime`); Kanopi chooses no sink itself —
- *  each ScheduledEvent already carries its route. `absTime` is optional: the AudioRuntime
- *  sink reads the onset off the event, a MIDI sink takes the absolute time. */
-interface TransportLike {
-  send(event: Record<string, unknown>, absTime?: number): void;
-}
+/** Une SORTIE que ce module enregistre, par NOM DE RUNTIME (la clé que Kairos grave dans
+ *  `event.output.runtime`) ; Kanopi n'en choisit aucune — chaque ScheduledEvent porte déjà sa
+ *  route.
+ *
+ *  C'EST LE CONTRAT DE KRONOS, PAS UNE FORME D'HÔTE. Ce module a porté jusqu'au 2026-08-10 un
+ *  `TransportLike` local — `send(event, absTime?)` — qui ressemblait au contrat sans être lui, et
+ *  qui coûtait une conversion forcée à chaque enregistrement. Mesuré avant de le retirer : le
+ *  second paramètre n'était appelé de NULLE PART (l'hôte ne pousse jamais dans une sortie, c'est
+ *  Kronos qui envoie), et les conversions de `audio` et `midi` ne cachaient RIEN — leurs surfaces
+ *  publiées satisfont le contrat telles quelles. Une forme d'hôte qui double un contrat ratifié
+ *  cache les écarts au lieu de les montrer. */
+type TransportLike = RuntimeAdapter;
 
 export interface KronosAudioOptions {
   /** Compiled loop length in scene seconds (BPx-compiled scene end). Seeds the placeholder
@@ -401,7 +406,16 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // `OscAdapter` porte structurellement `setMasterGain`/`setMasterMuted`/`setActorGain` et
   // `send`, donc aucun cast n'est nécessaire — le `| null` circule tel quel.
   currentOscGain = oscRuntime;
-  const oscSink: TransportLike | null = opts.sinks?.osc ?? oscRuntime;
+  // ⚠️ LA SEULE CONVERSION QUI RESTE, ET ELLE NOMME UN ÉCART RÉEL CHEZ LE VOISIN : `OscAdapter`
+  // ne satisfait pas `RuntimeAdapter`, parce que runtime-OSC porte SA PROPRE COPIE des types du
+  // bus (`runtime-OSC/types/kronos-bus-types`) et que cette copie IGNORE la phase `waiting` —
+  // son `TransportPhase` est plus étroit que celui de Kronos. Mesuré au vérificateur de types le
+  // 2026-08-10, en retirant la conversion : c'est le seul écart des quatre sorties.
+  // CE QUI LA RETIRE : que runtime-OSC remette sa copie à jour. Propager chez le voisin est
+  // nécessaire ET suffisant ; élargir la mienne ou garder ce cast à sa place serait la voie
+  // parallèle interdite. Signalé, la conversion part avec leur correction.
+  const oscSink: RuntimeAdapter | null = (opts.sinks?.osc ??
+    oscRuntime) as unknown as RuntimeAdapter | null;
 
   // 3. PER-RUNTIME adapters. Each ScheduledEvent already carries its `output.runtime` route
   //    key (graven by Kairos); the scheduler selects the adapter on that key alone
@@ -451,11 +465,11 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // L'adaptateur uniforme de runtime-audio enregistré DIRECTEMENT (send(ev) VERBATIM + bindClock ;
   // Kronos câble l'horloge lui-même à l'enregistrement).
   if (audioSink) {
-    kronos.addAdapter('audio', audioSink as unknown as RuntimeAdapter);
+    kronos.addAdapter('audio', audioSink);
   }
   // L'adaptateur uniforme de runtime-MIDI est enregistré DIRECTEMENT (il expose send(ev)/bindClock ;
   // Kronos appelle bindClock lui-même à l'enregistrement — vue horloge + bus de cycle de vie).
-  if (midiSink) kronos.addAdapter('midi', midiSink as unknown as RuntimeAdapter);
+  if (midiSink) kronos.addAdapter('midi', midiSink);
   // L'adaptateur uniforme de runtime-OSC est enregistré DIRECTEMENT (send(ev)/bindClock ; Kronos
   // câble l'horloge lui-même à l'enregistrement — plus de now:audioCtx hôte pour OSC).
   if (oscSink) kronos.addAdapter('osc', oscSink as unknown as RuntimeAdapter);
