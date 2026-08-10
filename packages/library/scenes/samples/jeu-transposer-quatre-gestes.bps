@@ -1,6 +1,6 @@
 // @name: Four Ways to Transpose
-// @tagline: Chromatic, scalar, microtonal, expanded — not the same move
-// @description: Transposition chromatique, scalaire, échelle microtonale, expansion d'intervalles.
+// @tagline: Real, chromatic, scalar, expanded — not the same move
+// @description: Transposition réelle, chromatique, scalaire, et expansion d'intervalles autour d'un pivot.
 // @language: bpscript
 // @outputs: audio
 // @level: advanced
@@ -11,31 +11,37 @@
 //
 // « Transposer » recouvre quatre opérations distinctes, et les confondre donne des
 // résultats faux.
-// La transposition CHROMATIQUE déplace tout d'un intervalle réel : le motif est
-// identique, plus haut. La transposition SCALAIRE déplace de N degrés DANS l'échelle :
-// les intervalles changent, la couleur modale reste. L'ÉCHELLE microtonale change la
-// grille elle-même, sans bouger les degrés écrits. L'EXPANSION écarte ou resserre les
-// intervalles autour d'un pivot : le contour est reconnaissable, l'ambitus ne l'est plus.
+// La transposition RÉELLE déplace l'ancre de l'alphabet d'un intervalle : les rapports
+// sont préservés exactement, y compris hors du tempérament égal. La transposition
+// CHROMATIQUE déplace de N touches sur la grille de douze et renomme dans la tonalité
+// d'arrivée. La transposition SCALAIRE déplace de N degrés DANS l'échelle : les degrés
+// sont préservés, les intervalles non — c'est ce qui fait la couleur modale. L'EXPANSION
+// ne déplace rien : elle dilate l'écart au PIVOT, qui reste fixe.
+// Le pivot est une NOTE, pas un nombre : on écarte autour de quelque chose qui sonne.
 // Le même motif, joué nu puis par les quatre gestes.
 
 @core
 @alphabet.western
 @tempo:84
 
-S -> Origine Chromatique Scalaire Elargi Origine
+S -> Origine Reelle Chromatique Scalaire Elargi Origine
 
 -----
 
 @mode:ord
 
 // Le motif de référence, sans rien.
-Origine      -> C4 E4 G4 E4 (vel:82, wave:triangle, attack:4, release:220)
+Origine     -> C4 E4 G4 E4 (vel:82, wave:triangle, attack:4, release:220)
 
-// Chromatique : sept demi-tons plus haut, intervalle pour intervalle identique.
-Chromatique  -> C4 E4 G4 E4 (transpose:7, vel:82, wave:triangle, attack:4, release:220)
+// Réelle : l'ancre se déplace d'une quinte juste, les rapports sont gardés à l'identique.
+Reelle      -> C4 E4 G4 E4 (transpose:3/2, vel:82, wave:triangle, attack:4, release:220)
+
+// Chromatique : trois touches plus haut sur la grille de douze, renommé dans sa tonalité.
+Chromatique -> C4 E4 G4 E4 (chromashift:3, vel:82, wave:triangle, attack:4, release:220)
 
 // Scalaire : deux degrés plus loin dans l'échelle — les intervalles ne sont plus les mêmes.
-Scalaire     -> C4 E4 G4 E4 (scaleshift:2, vel:82, wave:triangle, attack:4, release:220)
+Scalaire    -> C4 E4 G4 E4 (scaleshift:2, vel:82, wave:triangle, attack:4, release:220)
 
-// Expansion : les intervalles doublent autour du pivot, le contour survit à l'étirement.
-Elargi       -> C4 E4 G4 E4 (keyxpand:0 2, vel:82, wave:triangle, attack:4, release:220)
+// Expansion : l'écart au pivot double, et le pivot C4 ne bouge pas. Le contour survit à
+// l'étirement, l'ambitus non.
+Elargi      -> C4 E4 G4 E4 (keyxpand:C4 2, vel:82, wave:triangle, attack:4, release:220)
