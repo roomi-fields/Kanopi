@@ -406,16 +406,13 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   // `OscAdapter` porte structurellement `setMasterGain`/`setMasterMuted`/`setActorGain` et
   // `send`, donc aucun cast n'est nécessaire — le `| null` circule tel quel.
   currentOscGain = oscRuntime;
-  // ⚠️ LA SEULE CONVERSION QUI RESTE, ET ELLE NOMME UN ÉCART RÉEL CHEZ LE VOISIN : `OscAdapter`
-  // ne satisfait pas `RuntimeAdapter`, parce que runtime-OSC porte SA PROPRE COPIE des types du
-  // bus (`runtime-OSC/types/kronos-bus-types`) et que cette copie IGNORE la phase `waiting` —
-  // son `TransportPhase` est plus étroit que celui de Kronos. Mesuré au vérificateur de types le
-  // 2026-08-10, en retirant la conversion : c'est le seul écart des quatre sorties.
-  // CE QUI LA RETIRE : que runtime-OSC remette sa copie à jour. Propager chez le voisin est
-  // nécessaire ET suffisant ; élargir la mienne ou garder ce cast à sa place serait la voie
-  // parallèle interdite. Signalé, la conversion part avec leur correction.
-  const oscSink: RuntimeAdapter | null = (opts.sinks?.osc ??
-    oscRuntime) as unknown as RuntimeAdapter | null;
+  // OSC — enregistré par le CONTRAT, comme les trois autres. Ce module a porté du 2026-08-10
+  // au 2026-08-10 une conversion pour cette sortie SEULE : `OscAdapter` ne satisfaisait pas
+  // `RuntimeAdapter` parce que runtime-OSC portait sa propre copie des types du bus, restée sur
+  // trois phases de transport quand Kronos en publiait quatre. Mesuré au vérificateur de types,
+  // signalé, resynchronisé chez lui (leur `ac11458`, ajout purement additif de `waiting`) — la
+  // conversion part avec sa cause, dans le même mouvement.
+  const oscSink: TransportLike | null = opts.sinks?.osc ?? oscRuntime;
 
   // 3. PER-RUNTIME adapters. Each ScheduledEvent already carries its `output.runtime` route
   //    key (graven by Kairos); the scheduler selects the adapter on that key alone
@@ -472,7 +469,7 @@ export function startKronosAudio(opts: KronosAudioOptions): KronosAudioHandle {
   if (midiSink) kronos.addAdapter('midi', midiSink);
   // L'adaptateur uniforme de runtime-OSC est enregistré DIRECTEMENT (send(ev)/bindClock ; Kronos
   // câble l'horloge lui-même à l'enregistrement — plus de now:audioCtx hôte pour OSC).
-  if (oscSink) kronos.addAdapter('osc', oscSink as unknown as RuntimeAdapter);
+  if (oscSink) kronos.addAdapter('osc', oscSink);
   // MIXAGE : même mise à jour que la sonde audio/midi/osc — reçu (pas construit) ici, c'est le
   // SEUL point où `startKronosAudio` touche `opts.codeVoicesRuntime`. Nul quand la scène n'a
   // aucun backtick (pas d'objet transmis).
