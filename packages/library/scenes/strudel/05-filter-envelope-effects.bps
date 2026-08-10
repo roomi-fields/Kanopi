@@ -15,6 +15,16 @@
 //
 // A/B — strudel — Filter Envelope effects chain. Original: https://strudel.cc/learn/effects/.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original.
+//
+// ⚠️ CE QUI MANQUE À L'ÉCOUTE, ET QU'IL FAUT SAVOIR AVANT DE COMPARER : la couche de batterie
+// — `.stack(s("bd*2").bank('RolandTR909'))` — NE SONNE PAS ici. Le patch est intact et fidèle à
+// l'original ; c'est la collection d'échantillons qui manque. `RolandTR909` est un nom de machine
+// à l'intérieur de la collection `tidal-drum-machines`, et cette collection a disparu de son dépôt
+// d'origine : le dépôt a déménagé, la nouvelle adresse ne porte aucun manifeste Strudel, et
+// l'entrée est sortie du catalogue.
+// La comparaison reste valable sur tout le reste — enveloppe de filtre, réverbération, stéréo
+// décalée, aléatoire conditionnel. Ce qu'on entend de moins que l'original est le kick, et rien
+// d'autre. Sans cette ligne, le silence s'attribuerait au patch.
 
 @core
 @tempo:120
