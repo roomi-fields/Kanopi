@@ -233,6 +233,28 @@ const ROUGES_DECLAREES: Array<{
   // réglages de départ » — existe dans la référence du langage mais pas dans le parseur, et elle
   // sera COMPLÈTEMENT REVUE avec l'arrivée de FaustX : l'écrire maintenant serait écrire une
   // forme qu'on remplacera. Elles RESTENT dans le corpus, déclarées rouges. Suivi : KAN-40.
+  // FENÊTRE ROUGE DU CHANTIER DES GABARITS, annoncée AVANT d'être ouverte et non une régression.
+  // BPscript a frappé le premier : il émet désormais la LIGNE VERBATIM du gabarit. BPx n'a pas
+  // encore porté sa moitié — son chargeur cherche encore l'ancienne forme, d'où l'erreur de TYPE.
+  // L'ordre de frappe est bpscript, puis BPx, puis bp3-frontend ; bp3-frontend porte le même rouge
+  // chez lui (son E-028) avec sa condition de levée.
+  //
+  // ⚠️ INSCRITES POUR NE PAS ÊTRE RECHERCHÉES : sans cette entrée, le prochain passage rouvre une
+  // enquête déjà close et l'impute au moteur. Elles se lèvent quand BPx frappe, pas avant.
+  {
+    fichier: 'BPScript-tests/simpletemplates.bps',
+    motif: /elements is not iterable/,
+    cause: 'forme-a-venir',
+    attend:
+      "la moitié BPx du chantier des gabarits : bpscript émet la ligne verbatim, le chargeur de BPx cherche encore l'ancienne forme. Fenêtre annoncée par BPx avant ouverture."
+  },
+  {
+    fichier: 'samples/catalogue-de-gabarits-les-rangs.bps',
+    motif: /elements is not iterable/,
+    cause: 'forme-a-venir',
+    attend:
+      'la moitié BPx du chantier des gabarits — même cause que simpletemplates.bps, même fenêtre.'
+  },
   {
     fichier: 'cv/cv-adsr.bps',
     motif: /'@cv env1' est supprim(é|e) du langage/,
