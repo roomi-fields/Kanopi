@@ -37,6 +37,17 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/romi/dev/bp/hub/tools/hooks/index-dabord.sh"
+          }
+        ]
+      }
     ]
   }
 }

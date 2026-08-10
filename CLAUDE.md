@@ -3,27 +3,27 @@
 Je porte l'interface, la saisie, la bibliothèque et le branchement des composants. Je **projette** ce
 que les autres détiennent : chaque store est la projection d'une source amont.
 
-## RTFM — base de connaissances indexée
+## L'index d'abord — règle, pas préférence
 
-Ce projet est indexé par RTFM (docs, code, specs, notes). Pour toute **recherche exploratoire** —
-trouver quels fichiers, modules ou concepts concernent un sujet — utiliser `rtfm_search` plutôt que
-Glob, find, ls ou un Grep large.
+Ce dépôt est indexé. Toute investigation **commence** par l'index : `rtfm_search` pour *le quoi* —
+quels fichiers, modules ou notes concernent un sujet ; `codegraph explore "<symbole | question>"`
+pour *l'appel* — symboles, appelants, rayon d'impact. On ne fouille **jamais** le dépôt à la main
+pour **trouver** où une chose vit.
 
-Il rend des chemins et des métadonnées ; ensuite on lit, on cherche les motifs exacts, on édite.
+- `grep -r`, `grep --include`, `find`, `ls -R` → `rtfm_search` · `codegraph explore`
+- `cat`, `head`, `tail`, `sed -n 'x,yp'` pour **regarder** un fichier → `rtfm_search`, puis
+  `rtfm_expand` sur le résultat
 
-## CodeGraph — graphe de code indexé
+**Seuls usages shell légitimes** : `grep <motif> <fichier déjà nommé>` · `sed`/`cat` dans un pipeline
+d'**édition** · le filtrage d'une **sortie de commande**, qui n'est pas un fichier.
 
-Ce dépôt est indexé par CodeGraph (`.codegraph/`). Pour **comprendre ou localiser du code** —
-symboles, appelants, rayon d'impact — utiliser `codegraph explore "<question | symbole>"` **avant**
-grep, find ou lecture de fichiers. RTFM répond au quoi documentaire ; CodeGraph à l'appel.
+Une recherche qui ne trouve rien renseigne sur la recherche : reformuler, jamais retomber sur `grep`.
 
-## Trouver l'autorité sur un sujet
+## Autorité sur un sujet
 
 1. La **carte d'autorités d'Atlas** (`../atlas/carte-autorites/`) dit où vit l'autorité sur un sujet.
 2. Le **fichier de référence** qu'elle désigne porte la règle.
-3. **Demander à Atlas** quand l'information reste introuvable.
-
-Une recherche qui ne trouve rien renseigne sur la recherche.
+3. **Demander à Atlas** si l'information reste introuvable.
 
 ## Trancher un comportement : « comment ça fonctionne en BP3 natif ? »
 
@@ -97,10 +97,9 @@ Tout ce que je reçois — d'un agent, de l'architecte — est une **clame à me
 instruction à appliquer. Avant d'agir **et** avant de relayer, je confronte la clame à l'oracle du
 domaine, sur pièces : `fichier:ligne`, ou commande et sortie.
 
-**L'oracle par domaine** : une doc → `rtfm_search` · une structure d'appel → `codegraph explore` ·
-la **forme** du langage → le skill `bpscript-oracle`, qui dit la forme spécifiée et **ne compile
-pas** · ce que le **code** accepte → le compilateur et le portillon, question distincte · où vit
-l'autorité → la carte d'Atlas, puis Atlas · un comportement → le **binaire natif BP3**.
+**L'oracle par domaine** : la **forme** du langage → le skill `bpscript-oracle`, qui dit la forme
+spécifiée et **ne compile pas** · ce que le **code** accepte → le compilateur et le portillon,
+question distincte · un comportement → le **binaire natif BP3**.
 
 ## ⛔ Aucune voie parallèle — on migre, ça casse, on répare
 
@@ -146,9 +145,8 @@ autorité « en attendant ». Face au blocage, j'attends.
 
 ## Écrire un document
 
-Cette section porte sur les **documents de référence**. Un commentaire de code relève de « Coder » :
-il dit ce que le code ne montre pas, y compris ce qui a rendu un seuil nécessaire. Un **registre** —
-backlog, décisions, constats — porte au contraire sa date et sa cause : c'est ce qui le rend lisible.
+Cette section porte sur les **documents de référence**. Un commentaire de code relève de « Coder ».
+Un **registre** — backlog, décisions, constats — porte au contraire sa date et sa cause.
 
 - **Descriptif, factuel, affirmatif** : le document décrit **ce qui est**, dans son état d'aujourd'hui ; la forme négative se réécrit en énoncé positif.
 - **Sans justification narrative** : ni citation d'une personne, ni cause, ni date, ni renvoi à une
