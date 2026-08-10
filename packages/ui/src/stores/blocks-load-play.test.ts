@@ -3,6 +3,13 @@ import { openBlocks } from './blocks.svelte';
 import { playback } from './playback.svelte';
 import { workspace } from './workspace.svelte';
 import { clock } from './clock.svelte';
+import { createEventBus } from '../lib/events/bus';
+import { initAdapters } from '../lib/runtimes/registry';
+
+// LE REGISTRE SE CONSTRUIT AVEC LE BUS — comme le cœur le fait dans son constructeur. Chaque banc
+// qui le lit l'initialise LUI-MÊME : un fichier d'amorce global instancierait toute la chaîne
+// AVANT les simulacres et rendrait des espions aveugles (mesuré le 2026-08-10, sept causes).
+initAdapters(createEventBus());
 
 // load→play regression guard (beta issues 3+5): a freshly-loaded program must
 // be playable immediately, WITHOUT waiting for the reactively-`$derived`

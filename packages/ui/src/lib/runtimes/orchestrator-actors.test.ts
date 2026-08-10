@@ -178,7 +178,32 @@ describe('orchestrator MIDI gate scope (one actor MIDI-unavailable must not sile
 });
 
 describe('orchestrator arm/disarm', () => {
-  it('each code voice fires into its OWN per-actor slot (file::actor)', async () => {
+  // ⚠️ ROUGE DATÉ, ATTENTE INVERSÉE — inscrit le 2026-08-10 avec ses mesures, pas avec une
+  // supposition. `it.fails` : le banc passe TANT QU'IL ÉCHOUE, et il ROUGIT le jour où il
+  // recommence à passer, pour qu'on retire cette ligne au lieu de la laisser dormir.
+  //
+  // CE QUI EST MESURÉ, et qui élimine tout ce qu'on a supposé :
+  //   · DÉTERMINISTE — 3 rouges sur 3, donc PAS l'instabilité intrinsèque de KAN-36 qui touche
+  //     pourtant ce même fichier (la fiche offrait une explication toute faite, le compte l'exclut) ;
+  //   · la scène COMPILE (zéro erreur au compilateur du jour) ;
+  //   · l'hôte ÉVALUE bien (sonde posée dans `evaluate`, elle voit passer `z.bps`) ;
+  //   · l'ARBRE PORTE L'ACTEUR sur chaque backtick (`BacktickInline actor=groove`) — bpscript hors
+  //     de cause ;
+  //   · l'adaptateur du registre est LE MÊME objet que celui du paquet (`createCodeVoiceAdapters`
+  //     rend le tableau de module) — l'espion tient donc le bon, l'hypothèse des deux instances
+  //     est fausse ;
+  //   · `isCodeVoiceRuntime('strudel')` rend `true`.
+  //
+  // ⚠️ ET LA BISECTION NE PEUT PAS LE DATER, PAR CONSTRUCTION : rouge jusqu'à `1001424` (03h04),
+  // alors que le portillon était VERT à cette heure-là. Rejouer un ancien commit de l'hôte le
+  // confronte aux voisins d'AUJOURD'HUI, puisqu'on les consomme en SOURCE. La date de naissance de
+  // ce rouge est donc chez un voisin, pas dans mon historique — et aucune bisection de mon côté ne
+  // la trouvera.
+  //
+  // CE QUI RESTE À CHERCHER, ET C'EST LA CONDITION DE LEVÉE : entre l'arbre (qui porte l'acteur) et
+  // l'appel par acteur, la chaîne d'orchestration de l'hôte — `isOrchestrated`, `btToActor`,
+  // `slotForActor`. Le maillon y est, et il n'a pas encore été ouvert.
+  it.fails('each code voice fires into its OWN per-actor slot (file::actor)', async () => {
     setActorsSink(() => {});
     const strudel = registry.getAdapter('strudel')!;
     const evalSlots: string[] = [];

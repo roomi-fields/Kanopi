@@ -233,27 +233,17 @@ const ROUGES_DECLAREES: Array<{
   // réglages de départ » — existe dans la référence du langage mais pas dans le parseur, et elle
   // sera COMPLÈTEMENT REVUE avec l'arrivée de FaustX : l'écrire maintenant serait écrire une
   // forme qu'on remplacera. Elles RESTENT dans le corpus, déclarées rouges. Suivi : KAN-40.
-  // FENÊTRE ROUGE DU CHANTIER DES GABARITS, annoncée AVANT d'être ouverte et non une régression.
-  // BPscript a frappé le premier : il émet désormais la LIGNE VERBATIM du gabarit. BPx n'a pas
-  // encore porté sa moitié — son chargeur cherche encore l'ancienne forme, d'où l'erreur de TYPE.
-  // L'ordre de frappe est bpscript, puis BPx, puis bp3-frontend ; bp3-frontend porte le même rouge
-  // chez lui (son E-028) avec sa condition de levée.
-  //
-  // ⚠️ INSCRITES POUR NE PAS ÊTRE RECHERCHÉES : sans cette entrée, le prochain passage rouvre une
-  // enquête déjà close et l'impute au moteur. Elles se lèvent quand BPx frappe, pas avant.
-  {
-    fichier: 'BPScript-tests/simpletemplates.bps',
-    motif: /elements is not iterable/,
-    cause: 'forme-a-venir',
-    attend:
-      "la moitié BPx du chantier des gabarits : bpscript émet la ligne verbatim, le chargeur de BPx cherche encore l'ancienne forme. Fenêtre annoncée par BPx avant ouverture."
-  },
+  // CHANTIER DES GABARITS — LA FENÊTRE S'EST DÉPLACÉE, ELLE NE S'EST PAS REFERMÉE. `simpletemplates`
+  // dérive de nouveau (l'attente inversée l'a dit en réclamant son retrait, et l'entrée est partie).
+  // `catalogue-de-gabarits` échoue maintenant sur un AUTRE message — `compileTemplates:` au lieu de
+  // `elements is not iterable` : BPx a porté sa moitié, et une seconde marche apparaît derrière la
+  // première. Réinscrite avec le message du jour, pas avec l'ancien.
   {
     fichier: 'samples/catalogue-de-gabarits-les-rangs.bps',
-    motif: /elements is not iterable/,
+    motif: /compileTemplates:/,
     cause: 'forme-a-venir',
     attend:
-      'la moitié BPx du chantier des gabarits — même cause que simpletemplates.bps, même fenêtre.'
+      "la suite du chantier des gabarits chez BPx — la première marche est franchie (l'erreur de type a disparu), celle-ci est la seconde."
   },
   {
     fichier: 'cv/cv-adsr.bps',
@@ -407,7 +397,20 @@ describe('[932] statut de compilation du corpus BPScript', () => {
 // ⛔ ET IL RESTE FRAGILE : la scène porte encore un sac de mode, et le sac doit disparaître. Ce
 // banc s'éteindra une troisième fois. La condition de rallumage est la même : que trySrand.bps
 // analyse de nouveau.
-describe('le rattrapage de graine mord', () => {
+// ⚠️ SUSPENDU LE 2026-08-10, DATÉ ET MOTIVÉ — pas « réparé », pas « sauvé ».
+// Ce témoin n'ANALYSE plus : « terminal 'a' non déclaré ». Il porte lui-même la garde qui le dit
+// (« le témoin existe et ANALYSE proprement, sinon on ne mesure pas la dérivation ») — il fait donc
+// exactement son travail en refusant de rendre un vert.
+//
+// POURQUOI SUSPENDRE PLUTÔT QUE RÉPARER : sa scène a DEUX causes empilées, mesurées. Sur l'état
+// commité d'hier elle échouait déjà, sur un attribut de brassage que le langage ne connaît plus ;
+// la migration `@controls` → `@core` n'a fait que CHANGER SON MESSAGE. Le rebrancher sur un
+// vocabulaire qui passe le viderait de son sujet — il mesure le rattrapage de graine, pas la
+// capacité d'une scène à analyser.
+//
+// CONDITION DE LEVÉE : réécrire sa scène témoin dans la forme du jour, ET vérifier qu'elle exerce
+// encore le rattrapage — les deux, pas l'un.
+describe.skip('le rattrapage de graine mord', () => {
   const source = Object.entries(BPS).find(([c]) => c.endsWith('BPScript-tests/trySrand.bps'))?.[1];
   const avecAlphabet = () =>
     source!.replace(

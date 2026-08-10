@@ -4,6 +4,13 @@ import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 import { core } from '../core';
 import { AudioRuntime } from 'runtime-audio';
 import type { KronosAudioHandle } from './kronos-audio';
+import { createEventBus } from '../events/bus';
+import { initAdapters } from '../runtimes/registry';
+
+// LE REGISTRE SE CONSTRUIT AVEC LE BUS — comme le cœur le fait dans son constructeur. Chaque banc
+// qui le lit l'initialise LUI-MÊME : un fichier d'amorce global instancierait toute la chaîne
+// AVANT les simulacres et rendrait des espions aveugles (mesuré le 2026-08-10, sept causes).
+initAdapters(createEventBus());
 
 // Model C — the DERIVED timeline PERSISTS. Stop returns the playhead to 0 and cuts the
 // sound but KEEPS the handle; Play replays the SAME scheduler from 0 with ZERO re-derivation.

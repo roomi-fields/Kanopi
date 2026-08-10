@@ -14,6 +14,11 @@
 // clic ni sortie par Échap. Deux façons d'armer le même mode, c'est la voie parallèle qui finit
 // par diverger — Échap doit donc redevenir une touche ordinaire, et c'est mesuré ici.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createEventBus } from '../events/bus';
+import { initAdapters } from '../runtimes/registry';
+
+// Le registre se construit AVEC le bus, comme le cœur — chaque banc l'initialise lui-même.
+initAdapters(createEventBus());
 
 const playSpy = vi.fn();
 const stopSpy = vi.fn();

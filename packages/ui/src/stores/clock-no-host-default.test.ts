@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { clock } from './clock.svelte';
 import { kronosCursor } from './kronos-cursor.svelte';
+import { createEventBus } from '../lib/events/bus';
+import { initAdapters } from '../lib/runtimes/registry';
+
+// LE REGISTRE SE CONSTRUIT AVEC LE BUS — comme le cœur le fait dans son constructeur. Chaque banc
+// qui le lit l'initialise LUI-MÊME : un fichier d'amorce global instancierait toute la chaîne
+// AVANT les simulacres et rendrait des espions aveugles (mesuré le 2026-08-10, sept causes).
+initAdapters(createEventBus());
 
 // KAN-C20 (display side) — a fresh session with no live scene and no user input shows
 // NO tempo (`state.bpm === null`), so the UI renders « — » instead of a host-invented

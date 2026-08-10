@@ -20,6 +20,13 @@
 // détecteur MORD (rouge sur violation synthétique), donc le vert sur le vrai code a un sens.
 
 import { describe, it, expect } from 'vitest';
+import { createEventBus } from '../events/bus';
+import { initAdapters } from '../runtimes/registry';
+
+// LE REGISTRE SE CONSTRUIT AVEC LE BUS — comme le cœur le fait dans son constructeur. Chaque banc
+// qui le lit l'initialise LUI-MÊME : un fichier d'amorce global instancierait toute la chaîne
+// AVANT les simulacres et rendrait des espions aveugles (mesuré le 2026-08-10, sept causes).
+initAdapters(createEventBus());
 
 // Corpus = TOUT le code de LOGIQUE de l'hôte (packages/ui/src), chargé en brut via le glob
 // Vite (natif, pas de types Node → passe svelte-check). Exclut tests, `.d.ts` (déclarations de

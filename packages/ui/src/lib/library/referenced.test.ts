@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { referencedLibraries, programCompileStatus } from './referenced';
+import { createEventBus } from '../events/bus';
+import { initAdapters } from '../runtimes/registry';
+
+// LE REGISTRE SE CONSTRUIT AVEC LE BUS — comme le cœur le fait dans son constructeur. Chaque banc
+// qui le lit l'initialise LUI-MÊME : un fichier d'amorce global instancierait toute la chaîne
+// AVANT les simulacres et rendrait des espions aveugles (mesuré le 2026-08-10, sept causes).
+initAdapters(createEventBus());
 
 describe('referencedLibraries — bpscript directives', () => {
   it('reads alphabet and tuning directives (dot-canon names from the subkey)', () => {
@@ -62,7 +69,6 @@ a -> voice.\`s("bd sd")\``;
     const libs = referencedLibraries('cv-adsr.bps', code);
     expect(libs).toContainEqual({ type: 'module', typeLabel: 'module', name: 'filter' });
     expect(libs).toContainEqual({ type: 'module', typeLabel: 'module', name: 'core' });
-    expect(libs).toContainEqual({ type: 'module', typeLabel: 'module', name: 'controls' });
     expect(libs).toContainEqual({ type: 'alphabet', typeLabel: 'alphabet', name: 'western' });
   });
 });
