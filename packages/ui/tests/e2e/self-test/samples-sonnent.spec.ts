@@ -62,6 +62,18 @@ const SCENES: Scene[] = readdirSync(DOSSIER)
 // Ce qui a coupé, à chaque fois, est un point de contrôle où la chose mesurée devait être ABSENTE
 // — un scénario témoin qui devait sonner et se taisait, une scène jouée seule au lieu d'en file.
 
+// LE ROUGE DÉCLARÉ — une seule scène, et c'est LA MÊME que `corpus-compile.test.ts` déclare, avec
+// LA MÊME cause et LA MÊME condition de levée. Une scène qui ne DÉRIVE pas ne peut pas SONNER :
+// l'inscrire ici n'excuse rien, elle constate la conséquence de ce qui est déjà inscrit là-bas.
+//
+// CAUSE : chantier des gabarits, fenêtre annoncée AVANT d'être ouverte. bpscript a frappé le
+// premier (il émet la ligne verbatim), BPx a porté une première marche — l'erreur de type a
+// disparu — et il en reste une seconde (`compileTemplates:`).
+// CONDITION DE LEVÉE : la suite de ce chantier chez BPx. Le jour où elle sonne, ce banc ROUGIT en
+// réclamant le retrait de cette ligne, comme les trois inscriptions qui se sont levées seules le
+// 2026-08-10.
+const MUETTE_DECLAREE = 'catalogue-de-gabarits-les-rangs.bps';
+
 test('le dossier des scènes d’exemple n’est pas vide', () => {
   expect(SCENES.length).toBeGreaterThan(0);
 });
@@ -70,7 +82,11 @@ for (const { fichier, source, sorties } of SCENES) {
   const attendAudio = sorties.includes('audio');
   const attendMidi = sorties.includes('midi');
 
-  test(`${fichier} produit (${sorties.join(' + ')})`, async ({ page }) => {
+  const declaree = fichier === MUETTE_DECLAREE;
+
+  test(`${fichier} ${declaree ? '— rouge déclaré : ne dérive pas (chantier gabarits)' : `produit (${sorties.join(' + ')})`}`, async ({
+    page
+  }) => {
     const audio = attendAudio ? await setupAudioCapture(page) : null;
     const midi = attendMidi ? await setupFakeMidi(page) : null;
     const noErrors = expectNoConsoleErrors(page);
@@ -129,9 +145,19 @@ for (const { fichier, source, sorties } of SCENES) {
       //
       // Le sondage rend la mesure indépendante de la charge sans l'affaiblir : il s'arrête au
       // premier son, et une scène réellement muette échoue quand même, au bout du compte.
-      await expect
-        .poll(async () => audio.getMaxRMS(1500), { timeout: 15_000 })
-        .toBeGreaterThan(0.001);
+      if (declaree) {
+        // Attente INVERSÉE : elle ne dérive pas, donc elle ne peut pas sonner. Le jour où elle
+        // sonne, ce banc rougit et réclame le retrait de sa ligne.
+        const rms = await audio.getMaxRMS(6000);
+        expect(
+          rms,
+          `${fichier} SONNE maintenant — le chantier des gabarits est fini : retirer MUETTE_DECLAREE`
+        ).toBeLessThanOrEqual(0.001);
+      } else {
+        await expect
+          .poll(async () => audio.getMaxRMS(1500), { timeout: 15_000 })
+          .toBeGreaterThan(0.001);
+      }
     }
 
     if (midi) {
