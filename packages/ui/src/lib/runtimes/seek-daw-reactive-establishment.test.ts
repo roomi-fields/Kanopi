@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { createEventBus } from '../events/bus';
 import { startKronosAudio } from './kronos-audio';
 import { kairosFromEvents } from './kairos-test-helpers';
 import type { DispatchEvent } from './kairos-test-helpers';
@@ -85,10 +86,15 @@ afterEach(() => {
 });
 
 // One note at the scene start — within the driver's lookahead window (0.12s default) so the
-// very first pump sends it deterministically (fixed `now: () => 0` seam, no real-timer race).
+// very first pump publishes it deterministically (fixed `now: () => 0` seam, no real-timer race).
 // `output.runtime: 'audio'` (KAI-9 routing label) — WITHOUT it the scheduler has no route key
-// (no `actor`, no default adapter registered) and silently drops the event, never reaching the
-// AudioRuntime's `send()` the spy watches.
+// (no `actor`, no default adapter registered) and silently drops the event.
+//
+// ⚠️ LE POINT D'OBSERVATION A CHANGÉ LE 2026-08-10, PAS LE SUJET : ce banc espionnait
+// `AudioRuntime.prototype.send`. Cette méthode N'EXISTE PLUS — les quatre sorties l'ont retirée et
+// Kronos l'a retirée de son contrat (leur `b0a2d5a`). L'événement ordonnancé part désormais SUR LE
+// BUS, et chaque sortie s'y abonne. On observe donc la PUBLICATION, qui est le même fait au
+// nouveau bord : « le premier battement a bien émis l'événement ».
 const EVENTS: DispatchEvent[] = [
   {
     token: 'C4',
@@ -103,25 +109,28 @@ const EVENTS: DispatchEvent[] = [
 describe('seek-daw — transport.playFrom(sec) FROM STOPPED re-establishes the audio output', () => {
   it('bypassing the handle entirely (calling transport.playFrom directly, the ProductionViewHost path) still resets + re-pumps', () => {
     const resetSpy = vi.spyOn(AudioRuntime.prototype as unknown as { reset: () => void }, 'reset');
-    const sendSpy = vi.spyOn(AudioRuntime.prototype as unknown as { send: () => void }, 'send');
+    const publies: unknown[] = [];
+    const bus = createEventBus();
+    bus.on('output', (e) => publies.push(e));
 
     const handle = startKronosAudio({
       now: () => 0,
       derivedTempo: 120,
       loop: true,
       startSceneSec: 0,
+      events: bus,
       kairos: kairosFromEvents(EVENTS, 4)
     });
 
     // Initial play (construction) already sounds — the FIRST pump sent the note.
     expect(handle.transport.state).toBe('running');
-    expect(sendSpy).toHaveBeenCalled();
+    expect(publies.length).toBeGreaterThan(0);
 
     // STOP-IN-PLACE (Model C transport Stop): playhead to 0, driver parked, handle KEPT.
     handle.stopInPlace();
     expect(handle.transport.state).toBe('stopped');
     resetSpy.mockClear();
-    sendSpy.mockClear();
+    publies.length = 0;
 
     // THE BUG PATH: the view's seek calls `transport.playFrom(sec)` DIRECTLY on the Kronos
     // Transport — NOT `handle.replay()`, NOT any handle command. Before the fix, nothing in
@@ -134,7 +143,7 @@ describe('seek-daw — transport.playFrom(sec) FROM STOPPED re-establishes the a
     // actually resumed sending (audio is NOT muted).
     expect(handle.transport.state).toBe('running');
     expect(resetSpy).toHaveBeenCalled();
-    expect(sendSpy).toHaveBeenCalled();
+    expect(publies.length).toBeGreaterThan(0);
 
     handle.stop();
   });
