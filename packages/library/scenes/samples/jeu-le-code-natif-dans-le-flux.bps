@@ -38,7 +38,8 @@ S -> Tague Porte Tague Porte
 @mode:ord
 
 // Le bloc nomme son langage lui-même : l'adresse est dans le texte.
-Tague -> melodie.C4 `strudel: s("bd hh")` melodie.E4 melodie.G4 (vel:84, wave:sine, attack:4, release:200)
+// La banque est nommée DANS le code : les sons appartiennent au moteur externe, pas à BPScript.
+Tague -> melodie.C4 `strudel: s("bd hh").bank('RolandTR909')` melodie.E4 melodie.G4 (vel:84, wave:sine, attack:4, release:200)
 
 // Le même bloc sans tag, qualifié par l'acteur : c'est lui qui porte l'adresse.
-Porte -> melodie.C4 rythme.`s("bd hh")` melodie.E4 melodie.G4 (vel:84, wave:sine, attack:4, release:200)
+Porte -> melodie.C4 rythme.`s("bd hh").bank('RolandTR909')` melodie.E4 melodie.G4 (vel:84, wave:sine, attack:4, release:200)
