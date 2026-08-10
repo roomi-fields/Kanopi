@@ -180,6 +180,77 @@ les périphériques d'entrée (MIDI/OSC/clavier) — cf. décision
 la fermeture d'un périphérique comme événement distinct, sans rapport avec le retrait d'audio-attach)
 et la définition complète des deux interfaces dans `packages/ui/src/lib/events/types.ts:104-151`.
 
+#### `output` — l'événement de PRODUCTION
+
+Kronos **publie** l'événement ordonnancé au lieu de l'appeler sur un adaptateur. Forme arrêtée
+entre Kronos et Kanopi le 2026-08-10, validée par Romain ; référence
+`atlas/architecture/05-interfaces.md` §5.7. Définition : `packages/ui/src/lib/events/types.ts`.
+
+```ts
+interface OutputEvent extends KanopiEventBase {
+  readonly type: 'output';
+  readonly runtime: 'clock';        // la SOURCE
+  readonly payload: ScheduledEvent; // importé de @kronos/core, JAMAIS recopié
+}
+```
+
+**La charge est le `ScheduledEvent` de Kronos, importé.** Ses champs : `onset` (secondes de
+l'horloge audio), `duration`, `actor?`, `output?` `{runtime, device?, channel?}`, `content`
+(opaque : terminal, contrôles, hauteur résolue, modulations, `startSec`), `kind?`, `nature?`,
+`occurrence?`. Les quatre sorties lisent donc **exactement** ce qu'elles reçoivent aujourd'hui par
+`send()` : seul l'appel devient un abonnement.
+
+**⚠️ Deux champs portent le mot `runtime` et ce ne sont pas la même chose.** Celui de la base est
+la **source** (toujours `'clock'`) ; `payload.output.runtime` est la **destination**. Un lecteur
+qui les confond route un événement audio vers le MIDI en croyant lire la source.
+
+**⚠️ Deux instants, deux usages, et s'en tromper ne se voit pas.** `t` (base, millisecondes
+murales) sert à **afficher** — il n'est jamais la référence à l'échantillon, l'horloge audio dérive
+de `performance.now()`. `payload.onset` (secondes audio) sert à **ordonnancer** : c'est lui qui est
+exact.
+
+**`audioTime` n'est pas posé sur cette variante**, et §5.7 le permet — le champ y est *optionnel*.
+L'instant audio est déjà dans la charge sous son nom contractuel ; le poser en plus mettrait une
+même grandeur sous deux noms dont l'un n'aurait aucun lecteur. Le critère pour revenir dessus :
+qu'un consommateur doive lire l'instant audio **sans ouvrir la charge**, uniformément sur toutes les
+variantes. Il n'en existe aucun.
+
+#### La poignée d'abonnement d'une sortie
+
+Une sortie **reçoit le bus** et s'abonne elle-même. L'hôte tient le bus sans le posséder (§5.7) :
+il le remet au runtime au **branchement**, miroir exact de `bindClock` côté temps.
+
+```js
+// chez le runtime — il s'abonne, filtre sur SA clé, retranche SA latence
+bindEvents(bus) {
+  return bus.on('output', (e) => {
+    const ev = e.payload;
+    if (ev?.output?.runtime !== 'midi') return;        // pas ma clé
+    this.send(this.latency ? { ...ev, onset: ev.onset - this.latency } : ev);
+  });
+}
+```
+
+```js
+// chez l'hôte — au branchement, une ligne
+midi.bindEvents(core.events);
+```
+
+**Le paramètre se déclare sur le type qu'on écoute, pas sur `string`.** Mesuré au compilateur le
+2026-08-10 : un bus générique `on<T extends EventType>` **n'est pas** assignable à
+`{ on: (type: string, …) }` — `string` est plus large que l'union — alors qu'il l'est à
+`{ on: (type: 'output', …) }`. Déclarer le type littéral qu'on écoute est à la fois ce qui compile
+et ce qui dit vrai.
+
+**⚠️ On s'abonne AVANT que Kronos bascule.** Tant qu'il appelle au lieu de publier, l'abonnement ne
+reçoit rien et ne coûte rien. L'inverse — publier devant des sorties non abonnées — publie dans le
+vide et coupe le son.
+
+**La latence se partage.** Le retard commun (le maximum des sorties actives) appartient à Kronos,
+qui émet avec cet horizon. L'écart au commun appartient à chaque runtime, qui applique
+`onset − sa_latence` à la réception. L'événement est **partagé** : un runtime qui le modifie en
+copie une version superficielle, il ne le mute jamais.
+
 ### Normalisation
 
 - `name` (trigger, token, flag) : UTF-8 NFC imposé par l'émetteur (`String.prototype.normalize('NFC')`).

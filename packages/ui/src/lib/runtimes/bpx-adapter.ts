@@ -2296,6 +2296,16 @@ function makeBpxAdapter(
           // sur Kronos dans startKronosAudio ; teardown = `midi.dispose()` (ci-dessous), plus de
           // `dispatcher.addTransport` (le paquet possède le cycle de vie de son transport).
           midi = createMidiRuntime({});
+          // LA POIGNÉE D'ABONNEMENT AU BUS — miroir de `bindClock` côté temps. Je TIENS le bus
+          // sans le posséder (§5.7) : je le lui remets, il s'abonne lui-même sur `'output'`,
+          // filtre sur SA clé et retranche SA latence à la réception. Rien de tout cela n'est ici.
+          //
+          // ⚠️ ON CÂBLE AVANT QUE KRONOS BASCULE, et c'est l'ordre imposé : tant qu'il APPELLE au
+          // lieu de publier, l'abonnement ne reçoit rien et ne coûte rien. L'inverse — Kronos qui
+          // publie devant des sorties non abonnées — publie dans le vide et coupe le son.
+          // Le désabonnement part avec `midi.dispose()` (cycle déjà correct : un runtime frais par
+          // lecture), donc rien à défaire ici.
+          midi.bindEvents(adapterEvents);
           // RÈGLE PRODUIT (Romain, [619]) : une scène écrite pour MIDI sans périphérique au
           // PLAY NE joue PAS en silence trompeur — l'hôte GATE (bloque) et CRIE. Contrat pinné
           // hub/contrats/kanopi-runtime-midi.md §3 (2bcbdc9). `init()` ouvre/réutilise le
