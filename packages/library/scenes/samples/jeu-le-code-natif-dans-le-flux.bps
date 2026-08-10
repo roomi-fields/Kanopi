@@ -1,6 +1,6 @@
 // @name: Native Code in the Flow
 // @tagline: A backtick is an event — it fires at its own instant
-// @description: Le backtick : du code externe joué à son instant. Tag explicite, ou langage hérité de l'acteur.
+// @description: Le backtick : du code externe joué à son instant. Tag explicite, ou langage porté par l'acteur.
 // @language: bpscript
 // @outputs: audio
 // @level: advanced
@@ -13,25 +13,32 @@
 // adresse : il nomme le langage, et le langage nomme son interprète. Ce qui compte est
 // que le bloc est un ÉVÉNEMENT DU FLUX — il tombe à son instant, entre deux notes,
 // exactement comme une note tomberait. BPScript ordonne ; le code calcule.
-// Un acteur peut donner le langage par défaut de ses backticks : le bloc n'a alors plus
-// besoin de le nommer. Les deux écritures se suivent ici, et elles font la même chose.
+//
+// DEUX ACTEURS, DEUX RÔLES, et ce n'est pas une commodité d'écriture. Une voix-code
+// PRODUIT ET SORT par ses propres moyens : on ne route pas sa sortie. Une voix de notes,
+// elle, a besoin qu'on dise par où elle sort. Les mélanger dans un seul acteur donne une
+// scène qui compile et que rien ne rend jouable.
+// Le langage du bloc s'écrit de deux façons — dans le tag, ou porté par l'acteur qui le
+// qualifie. Les deux se suivent ici, et elles font la même chose.
 
 @core
 @alphabet.western
 @tempo:104
 
-// Cet acteur parle Strudel : ses backticks n'ont pas à le redire.
-@actor rythme
-  eval.strudel
+// La voix-code : elle porte le langage de ses backticks, et sort en natif.
+@actor rythme  eval.strudel
 
-S -> Nomme Herite Nomme Herite
+// La voix de notes : elle dit par où elle sort, et joue le clavier de la scène.
+@actor melodie  out.audio
+
+S -> Tague Porte Tague Porte
 
 -----
 
 @mode:ord
 
 // Le bloc nomme son langage lui-même : l'adresse est dans le texte.
-Nomme  -> C4 `strudel: s("bd hh")` E4 G4 (vel:84, wave:sine, attack:4, release:200)
+Tague -> melodie.C4 `strudel: s("bd hh")` melodie.E4 melodie.G4 (vel:84, wave:sine, attack:4, release:200)
 
 // Le même bloc sans tag, qualifié par l'acteur : c'est lui qui porte l'adresse.
-Herite -> C4 rythme.`s("bd hh")` E4 G4 (vel:84, wave:sine, attack:4, release:200)
+Porte -> melodie.C4 rythme.`s("bd hh")` melodie.E4 melodie.G4 (vel:84, wave:sine, attack:4, release:200)
