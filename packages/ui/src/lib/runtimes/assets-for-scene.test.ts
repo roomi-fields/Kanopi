@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { guestLibraries } from 'runtime-codevoices';
 import { assetsForScene } from './bpx-adapter';
 
 // [788] — prove the on-OPEN preload also transports the ASSETS a scene declares (strudel banks +
@@ -40,15 +41,32 @@ describe('assetsForScene — declared strudel banks + used gm_* instruments (for
     expect(assetsForScene(code)).toEqual({});
   });
 
-  it('does NOT prefetch a REMOTE bank (selfHosted:false, e.g. dirt-samples) — it lazy-loads at eval', () => {
-    // Filtre selfHosted [788] : préfetcher une banque distante déclenche un console.error interne de
-    // strudel si son fetch échoue à l'ouverture (régression du gate). Seules les banques VPS sont
-    // préfetchées ; la banque distante reste chargée paresseusement à l'éval (inchangé).
-    const code =
-      '@core\n@tempo:120\n\n@actor v  eval.strudel(bank:"dirt-samples")\n\nS -> v\n\nv -> `s("bd hh sd")`:4';
+  it("ne préfetche PAS une banque DISTANTE — elle se charge paresseusement à l'éval", () => {
+    // Filtre selfHosted [788] : préfetcher une banque distante déclenche un console.error interne
+    // de strudel si son fetch échoue à l'ouverture (régression du gate). Seules les banques
+    // hébergées sont préfetchées.
+    //
+    // ⚠️ LA BANQUE SE DÉRIVE DU CATALOGUE, ELLE NE S'ÉCRIT PLUS EN DUR. Ce banc visait
+    // `dirt-samples`, et il a rougi le 2026-08-10 quand runtime-codevoices l'a RAPATRIÉE sur nos
+    // serveurs (leur e658835, `selfHosted` passé à vrai). Rien n'avait dérivé : la propriété sur
+    // laquelle le banc s'appuyait avait changé de valeur, légitimement. Un nom écrit en dur fige
+    // un état, pas une propriété.
+    //
+    // ⚠️ ET IL CRIE SI SON SUJET DISPARAÎT : le jour où toutes les banques seront hébergées, ce
+    // banc n'aura plus rien à mesurer — et le sauver en le pointant sur une banque hébergée le
+    // viderait de son sujet tout en le laissant vert. Il échoue alors en le disant.
+    const distante = guestLibraries.find(
+      (l) => l.engine === 'strudel' && !l.selfHosted && l.declarable
+    );
+    expect(
+      distante,
+      "plus aucune banque strudel distante au catalogue : ce banc n'a plus de sujet, le retirer ou le redéfinir"
+    ).toBeDefined();
+
+    const code = `@core\n@tempo:120\n\n@actor v  eval.strudel(bank:"${distante!.id}")\n\nS -> v\n\nv -> \`s("bd hh sd")\`:4`;
     const assets = assetsForScene(code);
-    expect(assets.strudel?.banks ?? []).not.toContain('dirt-samples');
-    expect(assets).toEqual({}); // pas de banque VPS ni d'instrument GM → rien à préfetcher
+    expect(assets.strudel?.banks ?? []).not.toContain(distante!.id);
+    expect(assets).toEqual({}); // pas de banque hébergée ni d'instrument GM → rien à préfetcher
   });
 
   it('returns {} on unparseable / empty text (best-effort, never throws)', () => {
