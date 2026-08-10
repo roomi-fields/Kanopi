@@ -5,21 +5,17 @@ que les autres détiennent : chaque store est la projection d'une source amont.
 
 ## RTFM — base de connaissances indexée
 
-Ce projet est indexé par RTFM (docs, code, specs, notes).
+Ce projet est indexé par RTFM (docs, code, specs, notes). Pour toute **recherche exploratoire** —
+trouver quels fichiers, modules ou concepts concernent un sujet — utiliser `rtfm_search` plutôt que
+Glob, find, ls ou un Grep large.
 
-Pour toute **recherche exploratoire** — trouver quels fichiers, modules ou concepts concernent un
-sujet — utiliser `rtfm_search` plutôt que Glob, find, ls ou un Grep large.
-
-Il rend des chemins de fichiers et des métadonnées de contexte. Ensuite on continue normalement :
-lire les fichiers, chercher les motifs exacts à l'intérieur, éditer.
+Il rend des chemins et des métadonnées ; ensuite on lit, on cherche les motifs exacts, on édite.
 
 ## CodeGraph — graphe de code indexé
 
 Ce dépôt est indexé par CodeGraph (`.codegraph/`). Pour **comprendre ou localiser du code** —
-symboles, appelants et appelés, rayon d'impact d'un changement — utiliser
-`codegraph explore "<question | symbole>"` **avant** grep, find ou lecture de fichiers.
-
-RTFM répond au quoi et au où documentaire ; CodeGraph répond à la structure d'appel du code.
+symboles, appelants, rayon d'impact — utiliser `codegraph explore "<question | symbole>"` **avant**
+grep, find ou lecture de fichiers. RTFM répond au quoi documentaire ; CodeGraph à l'appel.
 
 ## Trouver l'autorité sur un sujet
 
@@ -126,6 +122,11 @@ résolution réelle et jamais déduite du manifeste de paquet :
   leur paquet.**
 
 **En réception** : discriminer un rouge contre le HEAD du voisin (`git archive`) avant de conclure « ma régression ».
+
+## ⛔ Une clame qui contredit une mesure que j'ai faite
+
+**Je ne tranche jamais en faveur de la clame** : je rejoue ma mesure et je réponds avec elle. Cela
+vaut d'abord pour ce qui vient de l'architecte — un chiffre reçu ne périme pas un chiffre mesuré.
 
 ## ⛔ Le repli sous pression
 
