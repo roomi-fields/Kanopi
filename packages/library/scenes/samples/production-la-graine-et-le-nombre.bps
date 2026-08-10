@@ -12,13 +12,14 @@
 // Deux réglages ne parlent ni des notes ni des règles : ils parlent de la PRODUCTION
 // elle-même. La GRAINE fixe le tirage — le hasard devient reproductible, et deux
 // exécutions donnent exactement la même pièce. Le NOMBRE D'ITEMS dit combien la
-// production en tire. Ils s'écrivent dans un bloc, en tête, parce qu'ils gouvernent la
-// fabrication et non la matière.
+// production en tire. Ils s'écrivent en tête, parce qu'ils gouvernent la fabrication et non la
+// matière — et leur signe diffère : la graine s'appelle par l'arobase comme toute directive de
+// scène, le nombre d'items vit dans le bloc de production.
 // Ici le hasard est semé : relancer la scène redonne le même parcours, note pour note.
 // Retirer la ligne de graine, et chaque écoute devient différente — c'est la seule
 // différence entre une improvisation et une composition écrite au hasard.
 
-[@seed:20260810]
+@seed:20260810
 [@maxitems:12]
 
 @core
