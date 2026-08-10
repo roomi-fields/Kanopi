@@ -5,7 +5,7 @@ import type { RuntimeAdapter } from './adapter';
 // onset. The natives bp3/bpscript stay in Kanopi (BPx path).
 import { createCodeVoiceAdapters } from 'runtime-codevoices';
 import type { EventBus } from '../events/types';
-import { bp3Adapter, bpscriptAdapter } from './bpx-adapter';
+import { bp3Adapter, bpscriptAdapter, setCodeVoicePredicate } from './bpx-adapter';
 
 // LES VOIX SE CONSTRUISENT AVEC LE BUS, PAS APRÈS — contrat `hote-runtimes-sortie.md`,
 // amendement du 2026-08-10 point 5 : une runtime qui produit publie DIRECTEMENT sur le bus
@@ -22,6 +22,9 @@ let adapters: Map<Runtime, RuntimeAdapter> | null = null;
 /** Construit les voix AVEC le bus commun. Appelé UNE fois, par le cœur, avant tout autre appel. */
 export function initAdapters(bus: EventBus): void {
   codeVoices = createCodeVoiceAdapters(bus);
+  // Le prédicat descend VERS l'adaptateur au lieu d'être importé PAR lui : l'import inverse
+  // fermait un cycle d'évaluation (le registre prend déjà ses adaptateurs natifs là-bas).
+  setCodeVoicePredicate((r) => voix().some((a) => a.id === r));
   adapters = new Map<Runtime, RuntimeAdapter>([
     ...codeVoices.map((a): [Runtime, RuntimeAdapter] => [a.id, a]),
     ['bp3', bp3Adapter],

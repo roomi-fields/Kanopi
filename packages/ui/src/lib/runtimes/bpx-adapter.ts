@@ -69,7 +69,6 @@ import { exprSource } from 'runtime-audio';
 // canal (écarts #2/#3/#4/#6 rapatriés). Kanopi ne fait que l'enregistrer sur Kronos par sa clé ;
 // Kronos lui passe l'événement BRUT et câble l'horloge+le bus via `bindClock`.
 import { createMidiRuntime } from 'runtime-midi';
-import { isCodeVoiceRuntime } from './registry';
 // Pitch resolution (token → Hz) AND the alphabet-aware "sounds" classification both live
 // in KAIROS now: it OWNS the pitch module and GRAVES `content.pitch.hz` + `content.sounds`
 // per note (KAI-10), from the catalogs the host supplies as `ctx.pitchLib`. Kanopi RESOLVES
@@ -1528,12 +1527,27 @@ function srcKey(s: EvalSource): string {
 // exposes it for free. Imported from `runtime-codevoices` (already a dependency),
 // which avoids the bp3 ↔ registry module-eval cycle a static `./registry` import
 // would create.
-// LE SET DE MODULE A DISPARU AVEC LE TABLEAU EXPORTÉ : `codeVoiceAdapters` est devenu INTERNE au
-// paquet (les voix ne s'obtiennent plus que par la fabrique, avec le bus). On interroge donc le
-// registre À L'APPEL, pas au chargement — ce qui évite aussi le cycle d'évaluation que l'ancien
-// commentaire redoutait, puisque plus rien ne se construit au chargement de ce module.
+// ⚠️ LE PRÉDICAT EST INJECTÉ, IL N'EST PAS IMPORTÉ — et cette inversion répare un cycle QUE J'AI
+// CRÉÉ le 2026-08-10. Le tableau des voix étant devenu interne au paquet, j'avais fait importer
+// `./registry` par ce module ; or le registre importe DÉJÀ ce module (il y prend `bp3Adapter` et
+// `bpscriptAdapter`). Cycle d'évaluation — exactement celui que le commentaire d'origine disait
+// éviter, et que mon propre message de commit prétendait supprimer. Il faisait capturer à cet
+// adaptateur une liaison figée avant l'application des simulacres, et trois bancs voyaient un
+// espion aveugle : `createSession` appelé, jamais vu.
+//
+// LE REGISTRE POSE LE PRÉDICAT à `initAdapters`, quand il connaît ses voix. Sans lui, aucun
+// interprète ne résout — et c'est un ÉCHEC BRUYANT, pas un silence : un `false` par défaut aurait
+// rendu « ce tag n'est pas une voix de code », ce qui est indiscernable de la vérité.
+let predicatVoixDeCode: ((r: Runtime) => boolean) | null = null;
+
+/** Posé par le registre à `initAdapters`, quand les voix existent. */
+export function setCodeVoicePredicate(p: (r: Runtime) => boolean): void {
+  predicatVoixDeCode = p;
+}
+
 function estVoixDeCode(r: Runtime): boolean {
-  return isCodeVoiceRuntime(r);
+  if (!predicatVoixDeCode) throw new Error('prédicat des voix de code lu avant initAdapters(bus)');
+  return predicatVoixDeCode(r);
 }
 
 // Kanopi Runtime. The tag is the eval tag from the .bps backtick (`strudel: …`);
