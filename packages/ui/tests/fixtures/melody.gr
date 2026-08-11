@@ -1,2 +1,9 @@
--se.melody
+// ⛔ CETTE GRAMMAIRE NE DÉCLARE PLUS DE RÉGLAGE, ET C'EST LA RÉPARATION D'UN MENSONGE.
+// Elle portait `-se.melody` — un fichier qui n'a JAMAIS existé, ni dans le corpus natif ni dans
+// la vitrine. Elle ne « marchait » que parce que le frontal retombait EN SILENCE sur son tempo
+// par défaut. Le 2026-08-11 (bp3-frontend 0abfaaf, E-031) ce repli est devenu une ERREUR, sur
+// arbitrage de l'architecte — et ce banc est tombé le jour même. Il avait raison de tomber.
+// Sans ligne de réglage : zéro erreur, et le moteur applique son défaut À BON DROIT (mesuré).
+// Le sujet de ce banc est la chaîne audio d'une grammaire, pas la résolution des réglages —
+// celle-ci se mesure dans `bp3-settings.test.ts` et `se-bundle-coverage.test.ts`.
 gram#1[1] S --> C4 D4 E4 G4 C5 G4 E4 C4

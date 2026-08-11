@@ -22,8 +22,18 @@ import { resolveSeSettings } from './bpx-adapter';
 // LA FAUTE EST DANS L'INSTRUMENT, PAS DANS LA LECTURE : le garde écrit pour empêcher exactement ce
 // défaut regardait ailleurs. Un garde ne prouve que sur le périmètre qu'il balaie, et son vert ne
 // dit jamais lequel — il faut donc que le périmètre soit ÉCRIT ici, pas déduit d'un chemin.
+//
+// ⚠️ LES TÉMOINS DE BANC SONT DANS LE PÉRIMÈTRE, ET ILS ONT MENTI AUSSI. Deux `.gr` de
+// `tests/fixtures` déclaraient un réglage qui n'a JAMAIS existé (`-se.melody`, `-se.bols`) : ils
+// ne passaient que grâce au repli silencieux du frontal. Le jour où l'amont a rendu ce repli
+// bruyant (bp3-frontend 0abfaaf, E-031, 2026-08-11), le banc principal est tombé — à juste titre.
+// Un témoin qui ment est pire qu'un témoin absent : il rend un vert sur une forme impossible.
 const GR = import.meta.glob(
-  ['../../../../library/scenes/bp3/*.gr', '../../../../library/scenes/BP3-tests/*.gr'],
+  [
+    '../../../../library/scenes/bp3/*.gr',
+    '../../../../library/scenes/BP3-tests/*.gr',
+    '../../../tests/fixtures/*.gr'
+  ],
   {
     query: '?raw',
     import: 'default',
