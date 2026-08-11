@@ -410,7 +410,32 @@ describe('[932] statut de compilation du corpus BPScript', () => {
 //
 // CONDITION DE LEVÉE : réécrire sa scène témoin dans la forme du jour, ET vérifier qu'elle exerce
 // encore le rattrapage — les deux, pas l'un.
-describe.skip('le rattrapage de graine mord', () => {
+//
+// ═════════════════════════════════════════════════════════════════════════════
+// ⛔ LE SAUT EST RETIRÉ — UNE EXCEPTION SE NOMME, JAMAIS NE SE COMPTE (architecte [1283]/[1288]).
+//
+// CE BLOC A ÉTÉ UN `describe.skip` DU 2026-08-10 AU 2026-08-11, ET CE QUE LE RALLUMAGE A MONTRÉ
+// EST LA RAISON MÊME DE LA RÈGLE : le saut couvrait TROIS bancs, et L'UN DES TROIS PASSAIT —
+// « sous graine figée, la scène REFUSE » était VERT, et l'a été pendant toute la suspension.
+// Un saut n'anesthésie pas ce qui casse : il anesthésie TOUT CE QU'IL CONTIENT, y compris la
+// mesure qui marchait et qu'on croyait éteinte. Personne ne pouvait le savoir sans le rallumer.
+//
+// LA FORME QUI REMPLACE : la suspension devient une CLÉ, avec son MOTIF, exactement comme
+// `ROUGES_DECLAREES` plus haut — et elle mord dans les deux sens.
+//  · SENS 2 — le témoin se remet à analyser ⇒ ces bancs ROUGISSENT en réclamant leur propre
+//    restauration. Une suspension morte ne peut plus survivre en affirmant un problème résolu.
+//  · SENS 1 — le témoin échoue POUR UNE AUTRE RAISON ⇒ non couvert, donc rouge. Une seconde
+//    casse ne peut plus se cacher derrière la première.
+const SUSPENSION_TEMOIN = {
+  /** La cause EXACTE, mesurée le 2026-08-11 : `analyse : terminal 'a' non déclaré — absent des
+   *  alphabets en portée | terminal 'b' non déclaré — absent des alphabets en portée`. */
+  motif: /terminal '[ab]' non déclaré/,
+  /** Deux causes empilées : la scène porte encore un sac de mode que le langage ne connaît plus,
+   *  et son alphabet en mémoire ne déclare plus ses deux terminaux. */
+  levee:
+    'réécrire la scène témoin dans la forme du jour ET vérifier qu’elle exerce encore le rattrapage'
+} as const;
+describe('le rattrapage de graine mord', () => {
   const source = Object.entries(BPS).find(([c]) => c.endsWith('BPScript-tests/trySrand.bps'))?.[1];
   const avecAlphabet = () =>
     source!.replace(
@@ -418,10 +443,22 @@ describe.skip('le rattrapage de graine mord', () => {
       '@alphabet.bp3_english:midi\n@gate a:midi\n@gate b:midi\n@controls'
     );
 
-  it('le témoin existe et ANALYSE proprement (sinon on ne mesure pas la dérivation)', () => {
+  it('SUSPENDU — le témoin n’analyse pas, et POUR SA RAISON déclarée', () => {
     expect(source, 'trySrand.bps introuvable dans le corpus').toBeDefined();
-    const { errors } = compileToBPxAST(avecAlphabet()) as { ast: unknown; errors: unknown[] };
-    expect(errors).toEqual([]);
+    const { errors } = compileToBPxAST(avecAlphabet()) as {
+      ast: unknown;
+      errors: { message?: string }[];
+    };
+    const msg = errors.map((e) => e.message ?? String(e)).join(' | ');
+    // SENS 2 — elle analyse de nouveau : la suspension est levée, elle réclame son propre retrait.
+    expect(
+      errors.length,
+      `trySrand.bps ANALYSE de nouveau — la suspension est levée : restaurer \`expect(errors).toEqual([])\` ici ET \`expect(statut(avecAlphabet())).toBeNull()\` plus bas, puis retirer SUSPENSION_TEMOIN (${SUSPENSION_TEMOIN.levee})`
+    ).toBeGreaterThan(0);
+    // SENS 1 — et pour LA raison déclarée, pas pour une seconde casse qui se cacherait derrière.
+    expect(msg, `le témoin échoue, mais pas sur « terminal non déclaré » : ${msg}`).toMatch(
+      SUSPENSION_TEMOIN.motif
+    );
   });
 
   // VERROU REMIS À L'ENDROIT LE 2026-08-09, après avoir été RETOURNÉ quelques heures le même jour.
@@ -449,8 +486,18 @@ describe.skip('le rattrapage de graine mord', () => {
   // lieu de le laisser vert : il passait parce que le rattrapage AVALAIT le refus ; il passe
   // aujourd'hui parce qu'il n'y a plus de refus à avaler. Même vert, deux causes opposées — et
   // rien dans le résultat ne les distingue. Il reprend son sens quand l'amont répare.
-  it('sait MORDRE : le garde rend VERT une scène que la graine figée refuse', () => {
-    expect(statut(avecAlphabet())).toBeNull();
+  it('SUSPENDU — le rattrapage ne se mesure pas, et POUR LA MÊME RAISON', () => {
+    const echec = statut(avecAlphabet());
+    // SENS 2 — le garde rend VERT : la cause est levée, ce banc reprend son assertion d'origine.
+    expect(
+      echec,
+      `le garde rend VERT sur le témoin — la suspension est levée : restaurer \`expect(statut(avecAlphabet())).toBeNull()\` et retirer SUSPENSION_TEMOIN`
+    ).not.toBeNull();
+    // SENS 1 — et pour LA raison déclarée. Sans ceci, un échec de DÉRIVATION (le sujet du banc)
+    // passerait pour l'échec d'ANALYSE de la suspension, et la mesure serait perdue en silence.
+    expect(echec!, `il échoue, mais pas sur « terminal non déclaré » : ${echec}`).toMatch(
+      SUSPENSION_TEMOIN.motif
+    );
   });
 });
 

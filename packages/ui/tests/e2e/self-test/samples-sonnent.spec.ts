@@ -72,7 +72,19 @@ const SCENES: Scene[] = readdirSync(DOSSIER)
 // CONDITION DE LEVÉE : la suite de ce chantier chez BPx. Le jour où elle sonne, ce banc ROUGIT en
 // réclamant le retrait de cette ligne, comme les trois inscriptions qui se sont levées seules le
 // 2026-08-10.
+//
+// ⛔ ET ELLE PORTE MAINTENANT UNE EMPREINTE DE CE QU'ELLE MESURE — c'est le point que l'architecte
+// a tranché ([1288]) et que je n'avais pas vu seul. Un silence n'a PAS de message à comparer :
+// tant que cette ligne n'exigeait QUE l'absence de son, un mutisme venu d'une AUTRE cause y
+// passait sous le vert. Elle ne tenait donc qu'un seul des deux sens du registre.
+// LE CANAL DE L'EMPREINTE, et il n'est pas inventé : le voyant de santé porte déjà la cause en
+// clair dans son infobulle (`health-chip.spec.ts:74` fait exactement cette lecture). On lit donc
+// CE QUE L'UTILISATEUR VOIT — pas un store, pas une seconde analyse du texte.
+// Une scène muette pour une autre raison affiche une autre cause : elle cesse de passer.
 const MUETTE_DECLAREE = 'catalogue-de-gabarits-les-rangs.bps';
+/** L'empreinte : la cause EXACTE de son mutisme, celle que `corpus-compile.test.ts` déclare pour
+ *  la même scène. Un mutisme qui n'affiche pas celle-là n'est pas celui qui est excusé ici. */
+const EMPREINTE_MUETTE = /compileTemplates/;
 
 test('le dossier des scènes d’exemple n’est pas vide', () => {
   expect(SCENES.length).toBeGreaterThan(0);
@@ -146,13 +158,20 @@ for (const { fichier, source, sorties } of SCENES) {
       // Le sondage rend la mesure indépendante de la charge sans l'affaiblir : il s'arrête au
       // premier son, et une scène réellement muette échoue quand même, au bout du compte.
       if (declaree) {
-        // Attente INVERSÉE : elle ne dérive pas, donc elle ne peut pas sonner. Le jour où elle
-        // sonne, ce banc rougit et réclame le retrait de sa ligne.
+        // SENS 2 — attente INVERSÉE : elle ne dérive pas, donc elle ne peut pas sonner. Le jour
+        // où elle sonne, ce banc rougit et réclame le retrait de sa ligne.
         const rms = await audio.getMaxRMS(6000);
         expect(
           rms,
           `${fichier} SONNE maintenant — le chantier des gabarits est fini : retirer MUETTE_DECLAREE`
         ).toBeLessThanOrEqual(0.001);
+        // SENS 1 — L'EMPREINTE : et elle est muette POUR SA RAISON. Sans cette lecture, un
+        // mutisme d'une autre cause serait excusé par cette même ligne, en silence.
+        const cause = await page.locator('.compile-chip').first().getAttribute('title');
+        expect(
+          cause ?? '',
+          `${fichier} est muette, mais pas sur « ${EMPREINTE_MUETTE} » — c'est un AUTRE défaut, non couvert : ${cause}`
+        ).toMatch(EMPREINTE_MUETTE);
       } else {
         await expect
           .poll(async () => audio.getMaxRMS(1500), { timeout: 15_000 })
