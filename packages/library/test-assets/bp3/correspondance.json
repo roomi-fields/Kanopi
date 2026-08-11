@@ -27,11 +27,34 @@
   "REFUSE. Tout appelant du binaire natif doit passer les drapeaux explicites ; la chaine Kanopi",
   "passe par son propre frontal, donc ca ne la mord pas — mais c est le genre de fait qu on oublie.",
   "",
+  "UN AUXILIAIRE QUI NE PORTE PAS LE NOM DE SA GRAMMAIRE PORTE SON MOTIF, mesure cas par cas,",
+  "dans 'pourquoi_pas_le_fichier_de_meme_nom'. Trois realites s y cachent, et un remede en bloc",
+  "en casserait deux sur trois :",
+  "  · le fichier de meme nom est au format 'texte BP2' : le binaire natif l ouvre, en deverse les",
+  "    valeurs brutes et ne produit rien. L emprunt est indispensable.",
+  "  · il est au format JSON et se charge, mais le couple retenu vient de la reference PHP et rend",
+  "    une AUTRE production. Le substituer change la reference.",
+  "  · ce n est pas un emprunt : c est une variante de la meme grammaire, declaree par sa propre",
+  "    en-tete (ex. 'ShapesInRhythm' declare '-se.ShapesInRhythm.QTM').",
+  "SEULS LES REGLAGES CONNAISSENT CES DEUX FORMES. Les 81 alphabets, csound, objets et tonalites",
+  "sont du texte par nature : leur champ 'format' dit 'texte', sans opposition BP2/BP3.",
+  "LE COMPTE SEUL NE TRANCHE RIEN : sur 'shapes-rhythm' les deux reglages rendent 1952 jetons et",
+  "4685 mots — et les 1952 jetons different tous, d une octave et d un placement (C4key 48 vs 60,",
+  "Quantization 30 vs 10). Comparer des totaux aurait conclu 'identique'.",
+  "",
   "Chemins RELATIFS a packages/library, pour rester valides ou qu on clone.",
   "Regenerer avec bp3-engine/scripts/table-correspondance.py (verifie chaque chemin avant d ecrire)."
  ],
  "produit_par": "bp3-engine/scripts/table-correspondance.py",
  "source": "bp3-engine/baseline-native/baseline.json (baseline vv13, 2026-07-19)",
+ "conditions_de_mesure": {
+  "binaire": "bp3 v3.4.7 (graphics-for-BP3)",
+  "empreinte": "0fa0f3d466613974b4ea2f1c78548955",
+  "archive": "builds/v3.4.2-wasm.2_auto.31/bp3",
+  "graine": "1",
+  "commande": "bp3 <action> -e -gr <gr-nettoyee> --seed 1 [conv] [cfg...] -o <texte> --tokensout <jetons> ; cwd=capture-run ; clean capture.py:52-61 ; un-item capture.py:96-110",
+  "scelle": "baseline-native/SCELLE.json (commande complète, protocole, preuve 96/98)"
+ },
  "moteur": "bp3 v3.4.7 (graphics-for-BP3)",
  "racine_des_chemins": "packages/library",
  "n": 113,
@@ -45,11 +68,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.765432",
-     "nom_amont": "-se.765432"
+     "nom_amont": "-se.765432",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "Alarm",
@@ -59,11 +84,13 @@
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-ho.Frenchnotes",
-     "nom_amont": "-ho.Frenchnotes"
+     "nom_amont": "-ho.Frenchnotes",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "Djinns",
@@ -73,11 +100,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Djinns",
-     "nom_amont": "-se.Djinns"
+     "nom_amont": "-se.Djinns",
+     "format": "JSON court"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "Mozartexpression",
@@ -87,11 +116,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Mozartexpression",
-     "nom_amont": "-se.Mozartexpression"
+     "nom_amont": "-se.Mozartexpression",
+     "format": "JSON court"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "MyMelody",
@@ -101,16 +132,20 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.765432",
-     "nom_amont": "-se.765432"
+     "nom_amont": "-se.765432",
+     "format": "JSON BP3",
+     "pourquoi_pas_le_fichier_de_meme_nom": "emprunt atteste : '-se.MyMelody' (JSON court) se charge, mais le couple retenu vient de php_ref et rend une production differente. Le substituer change la reference."
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-ho.Frenchnotes",
-     "nom_amont": "-ho.Frenchnotes"
+     "nom_amont": "-ho.Frenchnotes",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "Nadaka-1er-essai",
@@ -120,11 +155,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.hamsad",
-     "nom_amont": "-se.hamsad"
+     "nom_amont": "-se.hamsad",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "Nadaka1",
@@ -134,11 +171,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.hamsad",
-     "nom_amont": "-se.hamsad"
+     "nom_amont": "-se.hamsad",
+     "format": "JSON BP3"
     }
    },
    "produit": false,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "PP",
@@ -148,16 +187,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.koto3",
-     "nom_amont": "-se.koto3"
+     "nom_amont": "-se.koto3",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "Rajeev",
@@ -167,11 +209,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Rajeev",
-     "nom_amont": "-se.Rajeev"
+     "nom_amont": "-se.Rajeev",
+     "format": "JSON court"
     }
    },
    "produit": false,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "a",
@@ -179,7 +223,8 @@
    "nom_amont": "-gr.a",
    "auxiliaires": {},
    "produit": false,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "a.html",
@@ -187,7 +232,8 @@
    "nom_amont": "-gr.a.html",
    "auxiliaires": {},
    "produit": false,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "acceleration",
@@ -197,11 +243,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Visser2",
-     "nom_amont": "-se.Visser2"
+     "nom_amont": "-se.Visser2",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "acceleration_v2",
@@ -211,11 +259,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Visser2",
-     "nom_amont": "-se.Visser2"
+     "nom_amont": "-se.Visser2",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "alan-dice",
@@ -225,11 +275,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Alan",
-     "nom_amont": "-se.Alan"
+     "nom_amont": "-se.Alan",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "all-items",
@@ -239,11 +291,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryAllItems",
-     "nom_amont": "-se.tryAllItems"
+     "nom_amont": "-se.tryAllItems",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "all-items1",
@@ -253,11 +307,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryAllItems1",
-     "nom_amont": "-se.tryAllItems1"
+     "nom_amont": "-se.tryAllItems1",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "ames",
@@ -267,11 +323,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Ames",
-     "nom_amont": "-se.Ames"
+     "nom_amont": "-se.Ames",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "asymmetric",
@@ -281,16 +339,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.asymmetric1",
-     "nom_amont": "-se.asymmetric1"
+     "nom_amont": "-se.asymmetric1",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.asymmetric1",
-     "nom_amont": "-al.asymmetric1"
+     "nom_amont": "-al.asymmetric1",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "beatrix-dice",
@@ -300,11 +361,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Beatrix",
-     "nom_amont": "-se.Beatrix"
+     "nom_amont": "-se.Beatrix",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "bells",
@@ -314,16 +377,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.cloches",
-     "nom_amont": "-se.cloches"
+     "nom_amont": "-se.cloches",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-ho.cloches1",
-     "nom_amont": "-ho.cloches1"
+     "nom_amont": "-ho.cloches1",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": null
+   "convention": null,
+   "origine_du_couple": "en-tete"
   },
   {
    "nom": "blurb",
@@ -333,16 +399,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.blurb",
-     "nom_amont": "-se.blurb"
+     "nom_amont": "-se.blurb",
+     "format": "JSON court"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.tryCsound",
-     "nom_amont": "-cs.tryCsound"
+     "nom_amont": "-cs.tryCsound",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "check&",
@@ -352,11 +421,14 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.765432",
-     "nom_amont": "-se.765432"
+     "nom_amont": "-se.765432",
+     "format": "JSON BP3",
+     "pourquoi_pas_le_fichier_de_meme_nom": "emprunt indispensable : '-se.check&' est au format texte BP2, que le binaire natif n exploite pas — la grammaire ne produit rien avec lui."
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "checkAllCsound",
@@ -366,16 +438,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.checkAllCsound",
-     "nom_amont": "-se.checkAllCsound"
+     "nom_amont": "-se.checkAllCsound",
+     "format": "JSON BP3"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.tryCsound",
-     "nom_amont": "-cs.tryCsound"
+     "nom_amont": "-cs.tryCsound",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "checkBT",
@@ -385,16 +460,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.koto3",
-     "nom_amont": "-se.koto3"
+     "nom_amont": "-se.koto3",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc1",
-     "nom_amont": "-al.abc1"
+     "nom_amont": "-al.abc1",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "checkHomo",
@@ -404,11 +482,13 @@
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.checkhomo",
-     "nom_amont": "-al.checkhomo"
+     "nom_amont": "-al.checkhomo",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "checkSUB",
@@ -418,11 +498,13 @@
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "checkSUB.new",
@@ -432,11 +514,13 @@
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "checkSUB1",
@@ -446,16 +530,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.checkSUB1",
-     "nom_amont": "-se.checkSUB1"
+     "nom_amont": "-se.checkSUB1",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "checkVolChan",
@@ -465,11 +552,13 @@
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-ho.Frenchnotes",
-     "nom_amont": "-ho.Frenchnotes"
+     "nom_amont": "-ho.Frenchnotes",
+     "format": "texte"
     }
    },
    "produit": false,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "checkVolMasterSlave",
@@ -477,7 +566,8 @@
    "nom_amont": "-gr.checkVolMasterSlave",
    "auxiliaires": {},
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "checkcontext",
@@ -487,16 +577,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.koto3",
-     "nom_amont": "-se.koto3"
+     "nom_amont": "-se.koto3",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": false,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "checkhomo2",
@@ -506,11 +599,13 @@
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.checkhomo",
-     "nom_amont": "-al.checkhomo"
+     "nom_amont": "-al.checkhomo",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "checkrests",
@@ -518,7 +613,8 @@
    "nom_amont": "-gr.checkrests",
    "auxiliaires": {},
    "produit": false,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "cloches1",
@@ -528,16 +624,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.cloches",
-     "nom_amont": "-se.cloches"
+     "nom_amont": "-se.cloches",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-ho.cloches1",
-     "nom_amont": "-ho.cloches1"
+     "nom_amont": "-ho.cloches1",
+     "format": "texte"
     }
    },
    "produit": false,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "csound",
@@ -547,16 +646,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryCsound",
-     "nom_amont": "-se.tryCsound"
+     "nom_amont": "-se.tryCsound",
+     "format": "JSON BP3"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.tryCsound",
-     "nom_amont": "-cs.tryCsound"
+     "nom_amont": "-cs.tryCsound",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "en-tete"
   },
   {
    "nom": "destru",
@@ -566,16 +668,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryDESTRU",
-     "nom_amont": "-se.tryDESTRU"
+     "nom_amont": "-se.tryDESTRU",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "dhadhatite",
@@ -585,16 +690,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.dhadhatite",
-     "nom_amont": "-se.dhadhatite"
+     "nom_amont": "-se.dhadhatite",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.dhadhatite",
-     "nom_amont": "-al.dhadhatite"
+     "nom_amont": "-al.dhadhatite",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "dhadhatite1",
@@ -604,16 +712,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.dhadhatite",
-     "nom_amont": "-se.dhadhatite"
+     "nom_amont": "-se.dhadhatite",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.dhadhatite",
-     "nom_amont": "-al.dhadhatite"
+     "nom_amont": "-al.dhadhatite",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "dhadhatite_v2",
@@ -623,16 +734,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.dhadhatite",
-     "nom_amont": "-se.dhadhatite"
+     "nom_amont": "-se.dhadhatite",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.dhadhatite",
-     "nom_amont": "-al.dhadhatite"
+     "nom_amont": "-al.dhadhatite",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "dhati",
@@ -642,21 +756,25 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.dhati",
-     "nom_amont": "-se.dhati"
+     "nom_amont": "-se.dhati",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.dhati",
-     "nom_amont": "-al.dhati"
+     "nom_amont": "-al.dhati",
+     "format": "texte"
     },
     "-so": {
      "role": "objets",
      "chemin": "test-assets/bp3/commun/-so.dhati",
-     "nom_amont": "-so.dhati"
+     "nom_amont": "-so.dhati",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "dhati2",
@@ -666,16 +784,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.dhati2",
-     "nom_amont": "-se.dhati2"
+     "nom_amont": "-se.dhati2",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.dhati",
-     "nom_amont": "-al.dhati"
+     "nom_amont": "-al.dhati",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "dhati3",
@@ -685,16 +806,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.dhati2",
-     "nom_amont": "-se.dhati2"
+     "nom_amont": "-se.dhati2",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.dhati",
-     "nom_amont": "-al.dhati"
+     "nom_amont": "-al.dhati",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "dhin",
@@ -704,16 +828,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.dhin--",
-     "nom_amont": "-se.dhin--"
+     "nom_amont": "-se.dhin--",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.dhin--",
-     "nom_amont": "-al.dhin--"
+     "nom_amont": "-al.dhin--",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "en-tete"
   },
   {
    "nom": "dhin1",
@@ -723,16 +850,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.dhin--",
-     "nom_amont": "-se.dhin--"
+     "nom_amont": "-se.dhin--",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-ho.dhin--",
-     "nom_amont": "-ho.dhin--"
+     "nom_amont": "-ho.dhin--",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "doeslittle",
@@ -742,11 +872,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.doeslittle",
-     "nom_amont": "-se.doeslittle"
+     "nom_amont": "-se.doeslittle",
+     "format": "JSON court"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "drum",
@@ -754,7 +886,8 @@
    "nom_amont": "-gr.drum",
    "auxiliaires": {},
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "ek-do-tin",
@@ -764,16 +897,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.EkDoTin",
-     "nom_amont": "-se.EkDoTin"
+     "nom_amont": "-se.EkDoTin",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.EkDoTin",
-     "nom_amont": "-al.EkDoTin"
+     "nom_amont": "-al.EkDoTin",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "flags",
@@ -783,11 +919,13 @@
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "gramgene1",
@@ -797,16 +935,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.gramgene",
-     "nom_amont": "-se.gramgene"
+     "nom_amont": "-se.gramgene",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.gramgene",
-     "nom_amont": "-al.gramgene"
+     "nom_amont": "-al.gramgene",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "gramgene2",
@@ -816,16 +957,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.gramgene",
-     "nom_amont": "-se.gramgene"
+     "nom_amont": "-se.gramgene",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.gramgene",
-     "nom_amont": "-al.gramgene"
+     "nom_amont": "-al.gramgene",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "graphics",
@@ -835,11 +979,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryGraphics",
-     "nom_amont": "-se.tryGraphics"
+     "nom_amont": "-se.tryGraphics",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "harmony",
@@ -849,21 +995,25 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryHarmony",
-     "nom_amont": "-se.tryHarmony"
+     "nom_amont": "-se.tryHarmony",
+     "format": "JSON BP3"
     },
     "-to": {
      "role": "tonalite",
      "chemin": "test-assets/bp3/commun/-to.tryHarmony",
-     "nom_amont": "-to.tryHarmony"
+     "nom_amont": "-to.tryHarmony",
+     "format": "texte"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.tryHarmony",
-     "nom_amont": "-cs.tryHarmony"
+     "nom_amont": "-cs.tryHarmony",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "keys",
@@ -873,16 +1023,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.koto3",
-     "nom_amont": "-se.koto3"
+     "nom_amont": "-se.koto3",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-ho.keys",
-     "nom_amont": "-ho.keys"
+     "nom_amont": "-ho.keys",
+     "format": "texte"
     }
    },
    "produit": false,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "koto1",
@@ -892,16 +1045,20 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.koto3",
-     "nom_amont": "-se.koto3"
+     "nom_amont": "-se.koto3",
+     "format": "JSON BP3",
+     "pourquoi_pas_le_fichier_de_meme_nom": "emprunt indispensable : '-se.koto1' est au format texte BP2, que le binaire natif n exploite pas — la grammaire ne produit rien avec lui."
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc1",
-     "nom_amont": "-al.abc1"
+     "nom_amont": "-al.abc1",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "koto2",
@@ -911,16 +1068,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.koto3",
-     "nom_amont": "-se.koto3"
+     "nom_amont": "-se.koto3",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc1",
-     "nom_amont": "-al.abc1"
+     "nom_amont": "-al.abc1",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "koto3",
@@ -930,16 +1090,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.koto3",
-     "nom_amont": "-se.koto3"
+     "nom_amont": "-se.koto3",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc1",
-     "nom_amont": "-al.abc1"
+     "nom_amont": "-al.abc1",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "kss2",
@@ -949,11 +1112,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.kss",
-     "nom_amont": "-se.kss"
+     "nom_amont": "-se.kss",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "indian"
+   "convention": "indian",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "livecode1",
@@ -963,11 +1128,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.livecode1",
-     "nom_amont": "-se.livecode1"
+     "nom_amont": "-se.livecode1",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "livecode2",
@@ -977,11 +1144,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.livecode2",
-     "nom_amont": "-se.livecode2"
+     "nom_amont": "-se.livecode2",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "en-tete"
   },
   {
    "nom": "look-and-say",
@@ -991,11 +1160,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.look-and-say",
-     "nom_amont": "-se.look-and-say"
+     "nom_amont": "-se.look-and-say",
+     "format": "JSON BP3"
     }
    },
    "produit": false,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "major-minor",
@@ -1005,16 +1176,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryMajorMinor",
-     "nom_amont": "-se.tryMajorMinor"
+     "nom_amont": "-se.tryMajorMinor",
+     "format": "JSON BP3"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.Mozart",
-     "nom_amont": "-cs.Mozart"
+     "nom_amont": "-cs.Mozart",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": null
+   "convention": null,
+   "origine_du_couple": "en-tete"
   },
   {
    "nom": "mohanam",
@@ -1024,26 +1198,31 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.trial.mohanam",
-     "nom_amont": "-se.trial.mohanam"
+     "nom_amont": "-se.trial.mohanam",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.trial.mohanam",
-     "nom_amont": "-al.trial.mohanam"
+     "nom_amont": "-al.trial.mohanam",
+     "format": "texte"
     },
     "-to": {
      "role": "tonalite",
      "chemin": "test-assets/bp3/commun/-to.trial.mohanam",
-     "nom_amont": "-to.trial.mohanam"
+     "nom_amont": "-to.trial.mohanam",
+     "format": "texte"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.trial.mohanam",
-     "nom_amont": "-cs.trial.mohanam"
+     "nom_amont": "-cs.trial.mohanam",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "indian"
+   "convention": "indian",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "mozart-dice",
@@ -1053,21 +1232,25 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Mozart",
-     "nom_amont": "-se.Mozart"
+     "nom_amont": "-se.Mozart",
+     "format": "JSON BP3"
     },
     "-to": {
      "role": "tonalite",
      "chemin": "test-assets/bp3/commun/-to.Mozart",
-     "nom_amont": "-to.Mozart"
+     "nom_amont": "-to.Mozart",
+     "format": "texte"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.Mozart",
-     "nom_amont": "-cs.Mozart"
+     "nom_amont": "-cs.Mozart",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "nadaka",
@@ -1077,21 +1260,25 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.hamsad",
-     "nom_amont": "-se.hamsad"
+     "nom_amont": "-se.hamsad",
+     "format": "JSON BP3"
     },
     "-to": {
      "role": "tonalite",
      "chemin": "test-assets/bp3/commun/-to.Nadaka",
-     "nom_amont": "-to.Nadaka"
+     "nom_amont": "-to.Nadaka",
+     "format": "texte"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.Nadaka",
-     "nom_amont": "-cs.Nadaka"
+     "nom_amont": "-cs.Nadaka",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "indian"
+   "convention": "indian",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "negative-context",
@@ -1101,11 +1288,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.checkNegativeContext",
-     "nom_amont": "-se.checkNegativeContext"
+     "nom_amont": "-se.checkNegativeContext",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "not-reich",
@@ -1115,11 +1304,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.NotReich",
-     "nom_amont": "-se.NotReich"
+     "nom_amont": "-se.NotReich",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "one-scale",
@@ -1129,21 +1320,25 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryOneScale",
-     "nom_amont": "-se.tryOneScale"
+     "nom_amont": "-se.tryOneScale",
+     "format": "JSON BP3"
     },
     "-to": {
      "role": "tonalite",
      "chemin": "test-assets/bp3/commun/-to.tryOneScale",
-     "nom_amont": "-to.tryOneScale"
+     "nom_amont": "-to.tryOneScale",
+     "format": "texte"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.tryOneScale",
-     "nom_amont": "-cs.tryOneScale"
+     "nom_amont": "-cs.tryOneScale",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "polyphony1",
@@ -1153,16 +1348,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.polyphony1",
-     "nom_amont": "-se.polyphony1"
+     "nom_amont": "-se.polyphony1",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "repeat",
@@ -1172,16 +1370,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryrepeat",
-     "nom_amont": "-se.tryrepeat"
+     "nom_amont": "-se.tryrepeat",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "ruwet",
@@ -1191,16 +1392,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Ruwet",
-     "nom_amont": "-se.Ruwet"
+     "nom_amont": "-se.Ruwet",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.Ruwet",
-     "nom_amont": "-al.Ruwet"
+     "nom_amont": "-al.Ruwet",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "scales",
@@ -1210,16 +1414,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryScales",
-     "nom_amont": "-se.tryScales"
+     "nom_amont": "-se.tryScales",
+     "format": "JSON BP3"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.tryScales",
-     "nom_amont": "-cs.tryScales"
+     "nom_amont": "-cs.tryScales",
+     "format": "texte"
     }
    },
    "produit": false,
-   "convention": null
+   "convention": null,
+   "origine_du_couple": "en-tete"
   },
   {
    "nom": "shapes-rhythm",
@@ -1229,11 +1436,14 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.ShapesInRhythm.QTM",
-     "nom_amont": "-se.ShapesInRhythm.QTM"
+     "nom_amont": "-se.ShapesInRhythm.QTM",
+     "format": "JSON BP3",
+     "pourquoi_pas_le_fichier_de_meme_nom": "variante de la meme grammaire : '-se.ShapesInRhythm.QTM' est declare par l en-tete de la grammaire elle-meme. '-se.ShapesInRhythm' (JSON court) existe et se charge, mais rend une autre production."
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "en-tete"
   },
   {
    "nom": "simpletemplates",
@@ -1243,11 +1453,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.simpletemplates",
-     "nom_amont": "-se.simpletemplates"
+     "nom_amont": "-se.simpletemplates",
+     "format": "JSON court"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "templates",
@@ -1257,11 +1469,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.checktemplates",
-     "nom_amont": "-se.checktemplates"
+     "nom_amont": "-se.checktemplates",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "testHO2",
@@ -1271,11 +1485,13 @@
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "testNC1",
@@ -1283,7 +1499,8 @@
    "nom_amont": "-gr.testNC1",
    "auxiliaires": {},
    "produit": true,
-   "convention": null
+   "convention": null,
+   "origine_du_couple": "en-tete"
   },
   {
    "nom": "testTie7",
@@ -1291,7 +1508,8 @@
    "nom_amont": "-gr.testTie7",
    "auxiliaires": {},
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "en-tete"
   },
   {
    "nom": "time-patterns",
@@ -1301,11 +1519,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryTimePatterns",
-     "nom_amont": "-se.tryTimePatterns"
+     "nom_amont": "-se.tryTimePatterns",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "transposition",
@@ -1315,16 +1535,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryTranspose",
-     "nom_amont": "-se.tryTranspose"
+     "nom_amont": "-se.tryTranspose",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.tryKeyMap",
-     "nom_amont": "-al.tryKeyMap"
+     "nom_amont": "-al.tryKeyMap",
+     "format": "texte"
     }
    },
    "produit": false,
-   "convention": null
+   "convention": null,
+   "origine_du_couple": "en-tete"
   },
   {
    "nom": "transposition1",
@@ -1334,16 +1557,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.transposition3",
-     "nom_amont": "-se.transposition3"
+     "nom_amont": "-se.transposition3",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-ho.transposition",
-     "nom_amont": "-ho.transposition"
+     "nom_amont": "-ho.transposition",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "transposition3",
@@ -1353,11 +1579,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.transposition3",
-     "nom_amont": "-se.transposition3"
+     "nom_amont": "-se.transposition3",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryAllItems0",
@@ -1367,16 +1595,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryAllItems0",
-     "nom_amont": "-se.tryAllItems0"
+     "nom_amont": "-se.tryAllItems0",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryAllItems1",
@@ -1386,11 +1617,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryAllItems1",
-     "nom_amont": "-se.tryAllItems1"
+     "nom_amont": "-se.tryAllItems1",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryConsoleMaxTime",
@@ -1398,7 +1631,8 @@
    "nom_amont": "-gr.tryConsoleMaxTime",
    "auxiliaires": {},
    "produit": false,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryCsoundObjects",
@@ -1408,26 +1642,31 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryCsoundObjects",
-     "nom_amont": "-se.tryCsoundObjects"
+     "nom_amont": "-se.tryCsoundObjects",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.tryCsoundObjects",
-     "nom_amont": "-al.tryCsoundObjects"
+     "nom_amont": "-al.tryCsoundObjects",
+     "format": "texte"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.tryCsoundObjects",
-     "nom_amont": "-cs.tryCsoundObjects"
+     "nom_amont": "-cs.tryCsoundObjects",
+     "format": "texte"
     },
     "-so": {
      "role": "objets",
      "chemin": "test-assets/bp3/commun/-so.tryCsoundObjects",
-     "nom_amont": "-so.tryCsoundObjects"
+     "nom_amont": "-so.tryCsoundObjects",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryGOTO",
@@ -1437,16 +1676,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryGOTO",
-     "nom_amont": "-se.tryGOTO"
+     "nom_amont": "-se.tryGOTO",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryKeyMap",
@@ -1456,21 +1698,25 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryKeyMap",
-     "nom_amont": "-se.tryKeyMap"
+     "nom_amont": "-se.tryKeyMap",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.tryKeyMap",
-     "nom_amont": "-al.tryKeyMap"
+     "nom_amont": "-al.tryKeyMap",
+     "format": "texte"
     },
     "-so": {
      "role": "objets",
      "chemin": "test-assets/bp3/commun/-so.tryKeyMap",
-     "nom_amont": "-so.tryKeyMap"
+     "nom_amont": "-so.tryKeyMap",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryKeyXpand",
@@ -1480,16 +1726,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryKeyXpand",
-     "nom_amont": "-se.tryKeyXpand"
+     "nom_amont": "-se.tryKeyXpand",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.tryKeyXpand",
-     "nom_amont": "-al.tryKeyXpand"
+     "nom_amont": "-al.tryKeyXpand",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryLIN",
@@ -1499,16 +1748,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryLIN",
-     "nom_amont": "-se.tryLIN"
+     "nom_amont": "-se.tryLIN",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryMIDIfile",
@@ -1518,11 +1770,14 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.asymmetric1",
-     "nom_amont": "-se.asymmetric1"
+     "nom_amont": "-se.asymmetric1",
+     "format": "JSON BP3",
+     "pourquoi_pas_le_fichier_de_meme_nom": "emprunt indispensable : '-se.tryMIDIfile' est au format texte BP2, que le binaire natif n exploite pas — la grammaire ne produit rien avec lui."
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryObjects",
@@ -1532,16 +1787,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.koto3",
-     "nom_amont": "-se.koto3"
+     "nom_amont": "-se.koto3",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc1",
-     "nom_amont": "-al.abc1"
+     "nom_amont": "-al.abc1",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryPatternGrammar",
@@ -1551,16 +1809,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryPatternGrammar",
-     "nom_amont": "-se.tryPatternGrammar"
+     "nom_amont": "-se.tryPatternGrammar",
+     "format": "JSON BP3"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.tryPatternGrammar",
-     "nom_amont": "-al.tryPatternGrammar"
+     "nom_amont": "-al.tryPatternGrammar",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryRagas",
@@ -1570,21 +1831,25 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryRagas",
-     "nom_amont": "-se.tryRagas"
+     "nom_amont": "-se.tryRagas",
+     "format": "JSON BP3"
     },
     "-to": {
      "role": "tonalite",
      "chemin": "test-assets/bp3/commun/-to.raga",
-     "nom_amont": "-to.raga"
+     "nom_amont": "-to.raga",
+     "format": "texte"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.raga",
-     "nom_amont": "-cs.raga"
+     "nom_amont": "-cs.raga",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryRotate",
@@ -1594,11 +1859,14 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.asymmetric1",
-     "nom_amont": "-se.asymmetric1"
+     "nom_amont": "-se.asymmetric1",
+     "format": "JSON BP3",
+     "pourquoi_pas_le_fichier_de_meme_nom": "emprunt atteste : '-se.tryRotate' (JSON court) se charge, mais le couple retenu vient de php_ref et rend une production differente. Le substituer change la reference."
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "trySerial",
@@ -1608,16 +1876,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.trySerial",
-     "nom_amont": "-se.trySerial"
+     "nom_amont": "-se.trySerial",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryShruti",
@@ -1627,21 +1898,25 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryShruti",
-     "nom_amont": "-se.tryShruti"
+     "nom_amont": "-se.tryShruti",
+     "format": "JSON BP3"
     },
     "-to": {
      "role": "tonalite",
      "chemin": "test-assets/bp3/commun/-to.tryShruti",
-     "nom_amont": "-to.tryShruti"
+     "nom_amont": "-to.tryShruti",
+     "format": "texte"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.tryShruti",
-     "nom_amont": "-cs.tryShruti"
+     "nom_amont": "-cs.tryShruti",
+     "format": "texte"
     }
    },
    "produit": false,
-   "convention": "indian"
+   "convention": "indian",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "trySrand",
@@ -1651,16 +1926,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.trySrand",
-     "nom_amont": "-se.trySrand"
+     "nom_amont": "-se.trySrand",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.tryKeyXpand",
-     "nom_amont": "-al.tryKeyXpand"
+     "nom_amont": "-al.tryKeyXpand",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryTicks",
@@ -1670,11 +1948,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryTicks",
-     "nom_amont": "-se.tryTicks"
+     "nom_amont": "-se.tryTicks",
+     "format": "JSON court"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryflags2",
@@ -1684,16 +1964,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryflags2",
-     "nom_amont": "-se.tryflags2"
+     "nom_amont": "-se.tryflags2",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryflags3",
@@ -1703,16 +1986,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryflags3",
-     "nom_amont": "-se.tryflags3"
+     "nom_amont": "-se.tryflags3",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryflags3.html",
@@ -1720,7 +2006,8 @@
    "nom_amont": "-gr.tryflags3.html",
    "auxiliaires": {},
    "produit": false,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tryhomomorphism",
@@ -1730,16 +2017,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryhomomorphism",
-     "nom_amont": "-se.tryhomomorphism"
+     "nom_amont": "-se.tryhomomorphism",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.tryhomomorphism",
-     "nom_amont": "-al.tryhomomorphism"
+     "nom_amont": "-al.tryhomomorphism",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "trytemplates",
@@ -1749,16 +2039,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.trytemplates",
-     "nom_amont": "-se.trytemplates"
+     "nom_amont": "-se.trytemplates",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "french"
+   "convention": "french",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "trytemplates2",
@@ -1768,16 +2061,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.trytemplates2",
-     "nom_amont": "-se.trytemplates2"
+     "nom_amont": "-se.trytemplates2",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
      "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc"
+     "nom_amont": "-al.abc",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "tunings",
@@ -1787,16 +2083,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryTunings",
-     "nom_amont": "-se.tryTunings"
+     "nom_amont": "-se.tryTunings",
+     "format": "JSON BP3"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.tryTunings",
-     "nom_amont": "-cs.tryTunings"
+     "nom_amont": "-cs.tryTunings",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": null
+   "convention": null,
+   "origine_du_couple": "en-tete"
   },
   {
    "nom": "vina",
@@ -1806,16 +2105,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Vina",
-     "nom_amont": "-se.Vina"
+     "nom_amont": "-se.Vina",
+     "format": "JSON BP3"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.Vina",
-     "nom_amont": "-cs.Vina"
+     "nom_amont": "-cs.Vina",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "indian"
+   "convention": "indian",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "vina2",
@@ -1825,16 +2127,19 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Vina",
-     "nom_amont": "-se.Vina"
+     "nom_amont": "-se.Vina",
+     "format": "JSON BP3"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.Vina",
-     "nom_amont": "-cs.Vina"
+     "nom_amont": "-cs.Vina",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "indian"
+   "convention": "indian",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "vina3",
@@ -1844,21 +2149,25 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Vina3",
-     "nom_amont": "-se.Vina3"
+     "nom_amont": "-se.Vina3",
+     "format": "JSON BP3"
     },
     "-to": {
      "role": "tonalite",
      "chemin": "test-assets/bp3/commun/-to.Vina",
-     "nom_amont": "-to.Vina"
+     "nom_amont": "-to.Vina",
+     "format": "texte"
     },
     "-cs": {
      "role": "csound",
      "chemin": "test-assets/bp3/commun/-cs.Vina",
-     "nom_amont": "-cs.Vina"
+     "nom_amont": "-cs.Vina",
+     "format": "texte"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "en-tete"
   },
   {
    "nom": "visser-shapes",
@@ -1868,11 +2177,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Visser.Shapes",
-     "nom_amont": "-se.Visser.Shapes"
+     "nom_amont": "-se.Visser.Shapes",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "visser-waves",
@@ -1882,11 +2193,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Visser.Waves",
-     "nom_amont": "-se.Visser.Waves"
+     "nom_amont": "-se.Visser.Waves",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "visser3",
@@ -1896,11 +2209,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Visser3",
-     "nom_amont": "-se.Visser3"
+     "nom_amont": "-se.Visser3",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "visser5",
@@ -1910,11 +2225,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Visser5",
-     "nom_amont": "-se.Visser5"
+     "nom_amont": "-se.Visser5",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   },
   {
    "nom": "watch",
@@ -1924,11 +2241,13 @@
     "-se": {
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.Watch_What_Happens",
-     "nom_amont": "-se.Watch_What_Happens"
+     "nom_amont": "-se.Watch_What_Happens",
+     "format": "JSON BP3"
     }
    },
    "produit": true,
-   "convention": "english"
+   "convention": "english",
+   "origine_du_couple": "php_ref"
   }
  ]
 }
