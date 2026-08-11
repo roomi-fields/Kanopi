@@ -29,7 +29,7 @@ import { transport } from '../../stores/transport.svelte';
 import { openBlocks } from '../../stores/blocks.svelte';
 import { workspace } from '../../stores/workspace.svelte';
 import { isNonProgramFile } from '../workspace/types';
-import { declaredInputsForScene } from '../runtimes/bpx-adapter';
+import { declaredInputsForScene, regimeDeGraineCourant } from '../runtimes/bpx-adapter';
 import { productionFeed } from '../../stores/production-feed.svelte';
 import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 import { pilotAudioMeter, pilotCodeVoicesRuntime } from '../runtimes/kronos-audio';
@@ -174,6 +174,17 @@ export function installKanopiApi(): void {
        *  venait de retirer, donc elle n'aurait rien prouvé du nouveau chemin. */
       voiceEvents() {
         return readVoiceEvents();
+      },
+      /** LE RÉGIME DE GRAINE de la dérivation courante — `{regime:'graine-figee', graine:N}` ou
+       *  `{regime:'horloge', graine:null, cause}`. `null` si rien n'a dérivé.
+       *
+       *  POURQUOI CETTE LECTURE EXISTE : sur le refus d'une grammaire à re-semence, la chaîne
+       *  rejoue SANS graine. Le rattrapage est juste, mais il était MUET — deux dérivations de la
+       *  même scène, l'une reproductible et l'autre non, étaient indistinguables après coup.
+       *  Une capture qui ne consigne pas ce régime peut affirmer un écart entre deux productions
+       *  dont l'une n'a jamais été reproductible. */
+      seedRegime() {
+        return regimeDeGraineCourant();
       },
       /** La vue « flat » Kairos (`productionFeed.plat()` = `arbreCourant()` de Kairos) :
        *  durée + données d'affichage de l'arbre courant. Lecture seule.

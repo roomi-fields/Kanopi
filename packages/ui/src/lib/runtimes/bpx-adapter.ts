@@ -256,6 +256,49 @@ const ACTION_LIB = {
 // un mécanisme BPx séparé et inchangé, non concerné par cette lib.
 const HOMOMORPHISM_LIB = BPSCRIPT_LIBS.homomorphism;
 
+// ════════════════════════════════════════════════════════════════════════════════
+// LE CONTEXTE DE PROJECTION — UNE SEULE SOURCE, TROIS APPELS.
+//
+// ⛔ CE QU'IL RÉPARE, ET C'EST MOI QUI L'AI MESURÉ AVANT DE LE SUBIR : les sept catalogues
+// étaient recopiés à la main sur TROIS sites — l'évaluation, la mise à jour vivante, le
+// re-tirage de boucle. Trois listes à tenir d'accord, sans rien pour le vérifier.
+//
+// POURQUOI C'EST GRAVE PLUTÔT QUE LAID : un câblage PARTIEL ne CRIE PAS. Kairos refuse
+// bruyamment quand rien n'est branché, mais un catalogue manquant sur UN des trois sites fait
+// simplement DISPARAÎTRE sa facette — la hauteur devient absente, les sons ne se résolvent plus,
+// et la scène continue de jouer. Le défaut se lit alors comme « cette scène est comme ça ».
+// Trois copies, c'est trois occasions que ça arrive au lieu d'une, et les deux copies dérivées
+// ne sont exercées QUE par un geste vivant (re-éval du même fichier, bord de boucle) — les
+// chemins que les bancs traversent le moins.
+//
+// ⛔ ELLE PREND LA BASE DÉJÀ CONSTRUITE, ET JAMAIS LA SESSION — c'est délibéré et ça a failli
+// m'échapper : `buildProjectionContext()` doit être appelé UNE SEULE FOIS par dérivation. Au site
+// d'éval il sert DEUX FOIS (ici et à `resolveName` pour la chaîne d'items) ; le rappeler
+// fabriquerait un SECOND résolveur côté hôte, exactement ce que l'invariant interdit. On reçoit
+// donc le contexte de BPx et on n'y ajoute que les catalogues.
+// ⚠️ `personalPitchLib` et `onExprSource` sont lus AU MOMENT DE L'APPEL, pas figés à la
+// définition : le premier arrive après l'ouverture de session, le second est injecté par le
+// câblage audio. Les figer ici les rendrait vides pour la première scène.
+function contexteDeProjection(base: unknown): Parameters<Kairos['charger']>[1] {
+  return {
+    // Le contexte construit PAR BPx — l'hôte n'assemble AUCUN résolveur (KAI-8).
+    ...(base as object),
+    // KAI-10 — catalogues de hauteur (données de librairie, lecture seule).
+    pitchLib: PITCH_LIB,
+    // Librairies personnelles : map PLATE chemin→contenu BRUT, opaque à l'hôte (Kairos la lit).
+    pitchLibMine: personalPitchLib,
+    // KAI-B03 — fonctions numériques fournies (transpose &c.).
+    digitalLib: DIGITAL_LIB,
+    // LANG-SONS-3 — registre des voix (Kairos grave `content.voice`).
+    voicesLib: voicesJson,
+    // LANG-SONS §4/§8 — catalogue d'actions + substitution de symboles.
+    actionLib: ACTION_LIB,
+    homomorphismeLib: HOMOMORPHISM_LIB,
+    // KRO-24 — registre CV + fabrique de courbe : Kairos COMPOSE à l'aplatissement.
+    modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
+  } as unknown as Parameters<Kairos['charger']>[1];
+}
+
 // A front-end turns language source into a derivable BP3 SceneAST + parse
 // errors. Both languages produce the SAME `ast` shape (BPScript compiles down
 // to a BP3 grammar that the BP3 front-end then parses), so the rest of the
@@ -1279,6 +1322,40 @@ export function setUserTempo(bpm: number): void {
 // inversion (BPx b4a8b3e, décision Romain : on tire frais par défaut, on ne fige
 // QU'AVEC une graine posée). A scene with no random rules is unaffected either way.
 let currentSeed: number | undefined;
+
+// ════════════════════════════════════════════════════════════════════════════════
+// LE RÉGIME DE GRAINE SE DÉCLARE — il ne se devine pas après coup.
+//
+// ⛔ LE DÉFAUT QU'IL FERME, mesuré par moi et ordonné par l'architecte [1290] : sur le refus
+// précis d'une grammaire à re-semence, la chaîne OUBLIE la graine (`currentSeed = undefined`) et
+// rejoue SANS elle. Le rattrapage est juste — sans lui la scène ne jouerait pas — mais il était
+// MUET. Deux dérivations de la MÊME scène, l'une figée et l'autre tirée sur l'horloge, étaient
+// donc INDISTINGUABLES après coup.
+//
+// POURQUOI ÇA COMPTE AU-DELÀ DU CONFORT : c'est le défaut qui invalide une référence sans qu'on
+// le voie. On compare deux productions, elles diffèrent, et rien ne dit que l'une des deux n'a
+// jamais été reproductible. Le nombre est là, l'écart est réel, et la conclusion est fausse.
+//
+// CE N'EST PAS UN CHANGEMENT DE COMPORTEMENT : le rattrapage fait exactement ce qu'il faisait,
+// et le mode test continue de REFUSER au lieu de rejouer. Seule l'absence de déclaration est
+// réparée.
+export type RegimeDeGraine =
+  | { regime: 'graine-figee'; graine: number }
+  | {
+      regime: 'horloge';
+      graine: null;
+      /** `grammaire-a-re-semence` = une graine ÉTAIT posée et le moteur l'a refusée ;
+       *  `aucune-graine-posee` = il n'y en a jamais eu. Deux causes, deux lectures. */
+      cause: 'grammaire-a-re-semence' | 'aucune-graine-posee';
+    };
+
+let regimeDeGraine: RegimeDeGraine | null = null;
+
+/** Le régime sous lequel la dérivation COURANTE a été prise, ou `null` si rien n'a dérivé.
+ *  Lecture seule — exposé à l'API pilote pour qu'une capture puisse le consigner. */
+export function regimeDeGraineCourant(): RegimeDeGraine | null {
+  return regimeDeGraine;
+}
 // Graine FRAÎCHE pour le re-roll (PRODUCE + re-random) : distincte à CHAQUE clic. On
 // NE la remplace PAS par le défaut horloge du moteur — celui-ci est à granularité
 // SECONDE (deux re-rolls dans la même seconde ⇒ MÊME graine ⇒ même variation, une
@@ -1916,11 +1993,34 @@ function makeBpxAdapter(
         let deriveResult;
         try {
           deriveResult = bpx.derive();
+          // Passée du premier coup : le régime est celui qu'on a demandé.
+          regimeDeGraine =
+            currentSeed !== undefined
+              ? { regime: 'graine-figee', graine: currentSeed }
+              : { regime: 'horloge', graine: null, cause: 'aucune-graine-posee' };
         } catch (err) {
           if (currentSeed !== undefined && !isTestMode() && isRandomizeNeedsClock(err)) {
+            // ⛔ LE RÉGIME CHANGE ICI, ET IL SE DÉCLARE — mandat architecte [1290].
+            // Le rattrapage est INCHANGÉ (le comportement n'est pas le défaut) : ce qui l'était,
+            // c'est qu'il était MUET. Deux captures de la même scène, l'une sous graine figée et
+            // l'autre sous horloge, étaient indistinguables après coup — de quoi invalider une
+            // baseline sans que rien ne le montre.
+            const abandonnee = currentSeed;
             currentSeed = undefined;
             bpx = buildSession(false);
             deriveResult = bpx.derive();
+            regimeDeGraine = {
+              regime: 'horloge',
+              graine: null,
+              cause: 'grammaire-a-re-semence'
+            };
+            // Et il se dit AUSSI à l'écran : une bascule de régime n'est pas un détail interne,
+            // elle change ce que la scène produit à chaque relecture.
+            log({
+              runtime: id,
+              level: 'warn',
+              msg: `graine ${abandonnee} ABANDONNÉE : cette grammaire exige une graine d'horloge (re-semence). La dérivation est REJOUÉE sans graine — elle n'est plus reproductible, et deux lectures ne donneront pas la même suite.`
+            });
           } else {
             throw err;
           }
@@ -1997,47 +2097,8 @@ function makeBpxAdapter(
         const evalProjectionCtx = bpx.buildProjectionContext();
         kairos.charger(
           derived.tree as unknown as Parameters<Kairos['charger']>[0],
-          {
-            ...(evalProjectionCtx as object),
-            // KAI-10 — hand Kairos the shared pitch CATALOGS (read-only library DATA,
-            // the 5 `bpscript/lib` JSONs bundled at `PITCH_LIB`), the exact sibling of
-            // `modulation.registry`: host-composed data on the projection context, NOT a
-            // Kairos-side import (the host is the single freshness gatekeeper, LAN-14).
-            // The declared identity (alphabet/tuning per actor) rides the TREE
-            // (`metadata.actors` + `metadata.scenePitch`, written by BPx) — Kanopi poses ONLY
-            // the catalogs. Kairos consumes this to build the resolver and grave
-            // `content.pitch.hz` + `content.sounds`; the host calls no resolver itself.
-            pitchLib: PITCH_LIB,
-            // Librairies PERSONNELLES (`ctx.pitchLibMine`) : MAP PLATE chemin→contenu BRUT
-            // (chaque fichier déclare son domaine dedans, Kairos lit/parse). Vide par défaut =
-            // no-op total, factory intact ([714]/[713]). Cast `as unknown` ci-dessous : absorbe
-            // l'écart avec le kairos consommé (type PitchLib de l'ancien modèle, sans crash).
-            pitchLibMine: personalPitchLib,
-            // KAI-B03 — hand Kairos the provided DIGITAL function lib (transpose &c.), exact
-            // sibling of `pitchLib`. Kairos applies it at projection; without it the sound transpose
-            // falls back to Kairos's legacy hardcode (decision tout-par-librairies, 2026-06-29).
-            digitalLib: DIGITAL_LIB,
-            // LANG-SONS-3 — the voices registry (sibling of pitchLib/digitalLib). Kairos resolves
-            // terminal→voice and graves `content.voice`; absent ⇒ no voice facet (backward-compat).
-            voicesLib: voicesJson,
-            // LANG-SONS §4/§8 — action catalog (flattened runtime-codevoices ports) + §homomorphism
-            // lib. Kairos graves `content.action` (opaque module.port classed from the catalog) and
-            // applies symbol substitution at resolution; runtime-audio renders the patchbay. Siblings
-            // of pitchLib/voicesLib — host transports DATA, resolves nothing.
-            actionLib: ACTION_LIB,
-            homomorphismeLib: HOMOMORPHISM_LIB,
-            // KRO-24 — hand Kairos the CV registry (hoisted, cycle-invariant) + the
-            // `exprSource` factory so `projeter` COMPOSES the modulations AT FLATTEN and
-            // carries them on `content.modulations` (+ scene span) for the audio runtime
-            // to sample. Empty registry (no CV) ⇒ no bindings ⇒ notes without automation,
-            // unchanged (normal/maqâm parity preserved). Kanopi composes no CV bindings itself
-            // — the Kairos projection is the single owner of CV composition.
-            // KAI-10 — the SOUND transpose now lives in Kairos (`resolvePitch` = resolve ∘
-            // transpose per actor, off `ctx.pitchLib` + the tree). The host lends no
-            // `transposeToken` (the old host path was a prod no-op, FLAG3); a display-only
-            // token transpose, if ever needed, comes from the Kairos views (KAN-18).
-            modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
-          } as unknown as Parameters<Kairos['charger']>[1],
+          // Les sept catalogues viennent de `contexteDeProjection` — UNE source, trois appels.
+          contexteDeProjection(evalProjectionCtx),
           // [745] Relais de la trace COMPAGNON : l'hôte remet la trace BPx à Kairos AVEC
           // l'arbre, verbatim (PORTER ≠ RÉSOUDRE). Absente quand éteint ⇒ 3e arg undefined
           // ⇒ Kairos #trace reste null ⇒ coût nul par construction.
@@ -2062,16 +2123,9 @@ function makeBpxAdapter(
         // pour re-charger le Kairos VIVANT au teardown sans reconstruire la scène (bpx/derived ne
         // vivent que dans ce bloc). Contexte reconstruit à frais comme le fait le re-random.
         liveUpdateTree = derived.tree as unknown as Parameters<Kairos['charger']>[0];
-        liveUpdateCtx = {
-          ...(bpx.buildProjectionContext() as object),
-          pitchLib: PITCH_LIB,
-          pitchLibMine: personalPitchLib,
-          digitalLib: DIGITAL_LIB,
-          voicesLib: voicesJson,
-          actionLib: ACTION_LIB,
-          homomorphismeLib: HOMOMORPHISM_LIB,
-          modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
-        } as unknown as Parameters<Kairos['charger']>[1];
+        // Contexte RECONSTRUIT à frais (comme le re-tirage) — mais les catalogues viennent de la
+        // MÊME source que les deux autres sites : c'est tout l'objet du chantier.
+        liveUpdateCtx = contexteDeProjection(bpx.buildProjectionContext());
         // [745]/[97] Idem site d'éval : même trace au nouveau contrat CompagnonTrace
         // (`entrees` + `rendreChaine`), portée pour le rechargement vivant.
         liveUpdateTrace =
@@ -2435,23 +2489,9 @@ function makeBpxAdapter(
               // Kronos re-pull this fresh flat at the edge.
               kairos!.charger(
                 rtree as unknown as Parameters<Kairos['charger']>[0],
-                {
-                  ...(rProjectionCtx as object),
-                  // KAI-10 — same read-only catalogs on every re-derive (cycle-invariant).
-                  pitchLib: PITCH_LIB,
-                  // Catalogue perso — même patron, cycle-invariant lui aussi (lu par référence
-                  // module au moment du re-derive, pas re-composé ici).
-                  pitchLibMine: personalPitchLib,
-                  // KAI-B03 — same provided digital lib on every re-derive (transpose &c.).
-                  digitalLib: DIGITAL_LIB,
-                  // LANG-SONS-3 — same voices registry on every re-derive (cycle-invariant).
-                  voicesLib: voicesJson,
-                  // LANG-SONS §4/§8 — same action catalog + homomorphism lib every re-derive.
-                  actionLib: ACTION_LIB,
-                  homomorphismeLib: HOMOMORPHISM_LIB,
-                  // KAI-10 — sound transpose in Kairos; host lends no transposeToken.
-                  modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
-                } as unknown as Parameters<Kairos['charger']>[1],
+                // Mêmes catalogues qu'aux deux autres sites, par construction : ils sont
+                // invariants de cycle et viennent tous de `contexteDeProjection`.
+                contexteDeProjection(rProjectionCtx),
                 // [745]/[97] Idem site d'éval : relais verbatim de la trace COMPAGNON au
                 // re-random, nouveau contrat (`entrees` + `rendreChaine`).
                 rDerive.trace !== undefined
