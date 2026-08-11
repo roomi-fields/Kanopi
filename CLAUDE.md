@@ -19,6 +19,9 @@ d'**édition** · le filtrage d'une **sortie de commande**, qui n'est pas un fic
 
 Une recherche qui ne trouve rien renseigne sur la recherche : reformuler, jamais retomber sur `grep`.
 
+**L'index d'un VOISIN se lit par `~/dev/bp/hub/tools/rtfm-tour.sh <dépôt> "<requête>"`** — chaque
+dépôt porte le sien, et `rtfm_search` ne voit que le courant. `--tous` interroge toute la tour.
+
 ## Autorité sur un sujet
 
 1. La **carte d'autorités d'Atlas** (`../atlas/carte-autorites/`) dit où vit l'autorité sur un sujet.
@@ -145,17 +148,17 @@ autorité « en attendant ». Face au blocage, j'attends.
 
 ## Écrire un document
 
-Cette section porte sur les **documents de référence**. Un commentaire de code relève de « Coder ».
-Un **registre** — backlog, décisions, constats — porte au contraire sa date et sa cause.
+Elle porte sur les **documents de référence** ; un commentaire de code relève de « Coder », et un
+**registre** — backlog, décisions, constats — porte au contraire sa date et sa cause.
 
-- **Descriptif, factuel, affirmatif** : le document décrit **ce qui est**, dans son état d'aujourd'hui ; la forme négative se réécrit en énoncé positif.
-- **Sans justification narrative** : ni citation d'une personne, ni cause, ni date, ni renvoi à une
-  décision, ni contraste avec une forme antérieure.
+- **Descriptif, factuel, affirmatif** : il décrit **ce qui est** ; la forme négative se réécrit en
+  énoncé positif.
+- **Sans justification narrative** : ni citation, ni cause, ni date, ni renvoi à une décision.
 
 ## Carte d'autorités — signaler toute modification
 
-Toute modification d'un document de la carte d'autorités est **systématiquement signalée et reportée
-à Romain**. Leur **mise en conformité est un objectif permanent**.
+Toute modification d'un document de la carte d'autorités est **signalée et reportée à Romain** ;
+leur mise en conformité est un objectif permanent.
 
 ## Structure et environnement
 
@@ -166,9 +169,7 @@ développement se lance par `cd packages/ui && npm run dev`.
 Mes skills vivent dans `.claude/skills/`. Ma mémoire de session vit dans
 `~/.claude/projects/-home-romi-dev-bp-kanopi/memory/`, distincte de celle des autres dépôts.
 
-## Sous-agents de développement
-
-Un sous-agent de développement se lance **toujours** en `claude-sonnet-5`.
+## Sous-agents de développement — Un sous-agent de développement se lance **toujours** en `claude-sonnet-5`.
 
 ## Backlog
 
