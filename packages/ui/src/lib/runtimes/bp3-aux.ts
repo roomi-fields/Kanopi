@@ -9,62 +9,49 @@
 // Keyed by the `-se` reference name (the `name` in `fileRefs`). Bundled as raw
 // text so the upstream parser does the interpretation — no values duplicated.
 
-import seVisser2 from '../../../../library/scenes/bp3/se.Visser2.json?raw';
-import seAmes from '../../../../library/scenes/bp3/se.Ames.json?raw';
-import seNotReich from '../../../../library/scenes/bp3/se.NotReich.json?raw';
-import seTryRotate from '../../../../library/scenes/bp3/se.tryRotate.json?raw';
-import seTransposition3 from '../../../../library/scenes/bp3/se.transposition3.json?raw';
-import seVisser5 from '../../../../library/scenes/bp3/se.Visser5.json?raw';
-import se765432 from '../../../../library/scenes/bp3/se.765432.json?raw';
-import seAlan from '../../../../library/scenes/bp3/se.Alan.json?raw';
-import seBeatrix from '../../../../library/scenes/bp3/se.Beatrix.json?raw';
-import seDjinns from '../../../../library/scenes/bp3/se.Djinns.json?raw';
-import seDoeslittle from '../../../../library/scenes/bp3/se.doeslittle.json?raw';
-import seKss from '../../../../library/scenes/bp3/se.kss.json?raw';
-import seLivecode1 from '../../../../library/scenes/bp3/se.livecode1.json?raw';
-import seLivecode2 from '../../../../library/scenes/bp3/se.livecode2.json?raw';
-import seMozart from '../../../../library/scenes/bp3/se.Mozart.json?raw';
-import seMyMelody from '../../../../library/scenes/bp3/se.MyMelody.json?raw';
-import seRajeev from '../../../../library/scenes/bp3/se.Rajeev.json?raw';
-import seRuwet from '../../../../library/scenes/bp3/se.Ruwet.json?raw';
-import seVisser3 from '../../../../library/scenes/bp3/se.Visser3.json?raw';
-// KAN-GRAMMAIRES-SCENES (GO archi [822], Phase B [826]): 7 grammaires publiées
-// FIDÈLES du corpus Bernard Bel (cf. bp-flags.gr…bp-ticks.gr headers for
-// provenance/dates). asymmetric/vina/csound-objects/nadaka-essai triaged OUT of
-// Phase B (respectively: off the iso-native list ×2, mute — sound-objects with
-// no rendering, and mute — A8 not resolved to a pitch; gate 'joue vraiment' [825]).
-import seTryGraphics from '../../../../library/scenes/bp3/se.tryGraphics.json?raw';
-import seTryHarmony from '../../../../library/scenes/bp3/se.tryHarmony.json?raw';
-import seCheckNegativeContext from '../../../../library/scenes/bp3/se.checkNegativeContext.json?raw';
-import seTryrepeat from '../../../../library/scenes/bp3/se.tryrepeat.json?raw';
-import seTryTicks from '../../../../library/scenes/bp3/se.tryTicks.json?raw';
+// ⛔ CETTE LISTE ÉTAIT ÉCRITE À LA MAIN, ET ELLE A MENTI PENDANT DES MOIS.
+// Vingt-quatre `import` posés un par un, pour un corpus qui en référence QUATRE-VINGT-UN.
+// Cinquante-sept grammaires dérivaient donc au timing moteur par défaut au lieu du leur — pas
+// d'erreur, pas de rouge, un `console.warn` que personne ne lit, et la scène joue faux.
+// UNE LISTE SE PÉRIME, UNE DÉRIVATION NON : on énumère les DOSSIERS, et déposer un réglage suffit
+// à le rendre disponible. C'est la forme que l'architecte a arbitrée ([1303]) et celle que
+// bp3-frontend emploie déjà de son côté.
 
-// reference name (as it appears in the .gr `-se.<name>` line) → raw -se text
+/** Les réglages CONVERTIS de la vitrine (`se.<nom>.json`) — le chemin déjà éprouvé. */
+const SE_VITRINE = import.meta.glob('../../../../library/scenes/bp3/se.*.json', {
+  query: '?raw',
+  import: 'default',
+  eager: true
+}) as Record<string, string>;
+
+/** Les réglages NATIFS du corpus (`-se.<nom>`, sans extension), tels que la table de
+ *  correspondance de bp3-engine les désigne — 143 fichiers, la source de vérité du couple. */
+const SE_CORPUS = import.meta.glob('../../../../library/test-assets/bp3/commun/-se.*', {
+  query: '?raw',
+  import: 'default',
+  eager: true
+}) as Record<string, string>;
+
+/** Le nom de RÉFÉRENCE porté par la ligne `-se.<nom>` d'une grammaire, tiré du chemin.
+ *  Le point fait partie du nom (`ShapesInRhythm.QTM`, `trial.mohanam`) : on retire le préfixe
+ *  et, côté vitrine, le seul suffixe `.json` — jamais « tout ce qui suit le premier point ». */
+function nomDeReference(chemin: string, prefixe: string, suffixe = ''): string {
+  const base = chemin.split('/').pop() ?? '';
+  const sansPrefixe = base.slice(prefixe.length);
+  return suffixe && sansPrefixe.endsWith(suffixe)
+    ? sansPrefixe.slice(0, -suffixe.length)
+    : sansPrefixe;
+}
+
+// Nom de référence (tel qu'il apparaît dans la ligne `-se.<nom>`) → texte brut du réglage.
+// ⚠️ LA VITRINE GAGNE SUR LE CORPUS quand les deux portent le même nom, et c'est délibéré : les
+// vingt-quatre convertis sont le chemin PROUVÉ (scènes de vitrine vertes au portillon). Les
+// natifs viennent COMPLÉTER, jamais remplacer — zéro régression sur ce qui marchait déjà.
 export const BUNDLED_SE: Record<string, string> = {
-  Visser2: seVisser2,
-  Ames: seAmes,
-  NotReich: seNotReich,
-  tryRotate: seTryRotate,
-  transposition3: seTransposition3,
-  Visser5: seVisser5,
-  '765432': se765432,
-  Alan: seAlan,
-  Beatrix: seBeatrix,
-  Djinns: seDjinns,
-  doeslittle: seDoeslittle,
-  kss: seKss,
-  livecode1: seLivecode1,
-  livecode2: seLivecode2,
-  Mozart: seMozart,
-  MyMelody: seMyMelody,
-  Rajeev: seRajeev,
-  Ruwet: seRuwet,
-  Visser3: seVisser3,
-  tryGraphics: seTryGraphics,
-  tryHarmony: seTryHarmony,
-  checkNegativeContext: seCheckNegativeContext,
-  tryrepeat: seTryrepeat,
-  tryTicks: seTryTicks
+  ...Object.fromEntries(Object.entries(SE_CORPUS).map(([c, t]) => [nomDeReference(c, '-se.'), t])),
+  ...Object.fromEntries(
+    Object.entries(SE_VITRINE).map(([c, t]) => [nomDeReference(c, 'se.', '.json'), t])
+  )
 };
 
 // Sound-object aux files (-so/-mi/-cs) → which alphabet symbols carry a sound,
