@@ -24,7 +24,17 @@
 // `lib/homomorphism.json`). Je les avais renommées avec le reste ; kanopi l'a relevé et a raison :
 // une trace qui se renomme ment sur elle-même. Restauré par bpscript, 2026-08-07.
 @homomorphism.dhin
-@tempo:360.0000
+// ─────────────────────────────────────────────────────────────────────────────
+// LE TEMPO EST DÉCLARÉ PLUS HAUT — `@tempo:360.0000` retiré d'ici.
+//
+// Cette scène posait DEUX FOIS le même métronome : `@tempo:360` en tête (ligne 5, avec sa
+// justification) et `@tempo:360.0000` ici, venu du portage natif. Même valeur, deux écritures.
+// Le moteur natif refuse la grammaire ENTIÈRE dans ce cas (CompileGrammar.c:1535-1541,
+// `return(7)`) : un réglage qui ne se pose qu'une fois ne se pose pas deux. La règle vient
+// d'entrer dans le compilateur BPScript, elle ne faisait que manquer.
+//
+// bpscript — 2026-08-10. Écriture chez un autre : elle n'est LIVRÉE que quand Kanopi l'a committée.
+// ─────────────────────────────────────────────────────────────────────────────
 @striated
 @mode:random
 S <> S48 (meter:4+4/6)
