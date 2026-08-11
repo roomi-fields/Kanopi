@@ -46,16 +46,16 @@
   "Regenerer avec bp3-engine/scripts/table-correspondance.py (verifie chaque chemin avant d ecrire)."
  ],
  "produit_par": "bp3-engine/scripts/table-correspondance.py",
- "source": "bp3-engine/baseline-native/baseline.json (baseline vv13, 2026-07-19)",
+ "source": "bp3-engine/baseline-native/baseline.json (baseline vv14, 2026-07-19)",
  "conditions_de_mesure": {
-  "binaire": "bp3 v3.4.7 (graphics-for-BP3)",
-  "empreinte": "0fa0f3d466613974b4ea2f1c78548955",
-  "archive": "builds/v3.4.2-wasm.2_auto.31/bp3",
+  "binaire": "bp3 v3.5.1 (graphics-for-BP3)",
+  "empreinte": "fb6df5ad5ee18a0398ae3cdb1817287d",
+  "archive": "builds/v3.5.1-iso.1/bp3",
   "graine": "1",
   "commande": "bp3 <action> -e -gr <gr-nettoyee> --seed 1 [conv] [cfg...] -o <texte> --tokensout <jetons> ; cwd=capture-run ; clean capture.py:52-61 ; un-item capture.py:96-110",
   "scelle": "baseline-native/SCELLE.json (commande complète, protocole, preuve 96/98)"
  },
- "moteur": "bp3 v3.4.7 (graphics-for-BP3)",
+ "moteur": "bp3 v3.5.1 (graphics-for-BP3)",
  "racine_des_chemins": "packages/library",
  "n": 113,
  "n_references_auxiliaires": 177,
@@ -131,10 +131,9 @@
    "auxiliaires": {
     "-se": {
      "role": "reglages",
-     "chemin": "test-assets/bp3/commun/-se.765432",
-     "nom_amont": "-se.765432",
-     "format": "JSON BP3",
-     "pourquoi_pas_le_fichier_de_meme_nom": "emprunt atteste : '-se.MyMelody' (JSON court) se charge, mais le couple retenu vient de php_ref et rend une production differente. Le substituer change la reference."
+     "chemin": "test-assets/bp3/commun/-se.MyMelody",
+     "nom_amont": "-se.MyMelody",
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
@@ -145,7 +144,7 @@
    },
    "produit": true,
    "convention": "french",
-   "origine_du_couple": "php_ref"
+   "origine_du_couple": "reglage nominal (arbitrage Romain 2026-08-11 : le reglage d une grammaire est le sien des qu il fonctionne)"
   },
   {
    "nom": "Nadaka-1er-essai",
@@ -1858,15 +1857,14 @@
    "auxiliaires": {
     "-se": {
      "role": "reglages",
-     "chemin": "test-assets/bp3/commun/-se.asymmetric1",
-     "nom_amont": "-se.asymmetric1",
-     "format": "JSON BP3",
-     "pourquoi_pas_le_fichier_de_meme_nom": "emprunt atteste : '-se.tryRotate' (JSON court) se charge, mais le couple retenu vient de php_ref et rend une production differente. Le substituer change la reference."
+     "chemin": "test-assets/bp3/commun/-se.tryRotate",
+     "nom_amont": "-se.tryRotate",
+     "format": "JSON court"
     }
    },
    "produit": true,
    "convention": "english",
-   "origine_du_couple": "php_ref"
+   "origine_du_couple": "reglage nominal (arbitrage Romain 2026-08-11 : le reglage d une grammaire est le sien des qu il fonctionne)"
   },
   {
    "nom": "trySerial",
