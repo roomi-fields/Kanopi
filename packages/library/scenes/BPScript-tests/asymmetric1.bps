@@ -7,9 +7,13 @@
 // pas des durées) — émis en TERMINAL NEUTRE (kind numeric-terminal, ratifié 2026-07-17),
 // fidèles au natif -gr.asymmetric1 (U --> 3 U, V --> 2 V).
 //
-// Les flags PRÉFIXENT le goto (`[B=3, A=3] [goto:3 0]`), fidèle au natif qui pose les flags
+// Les flags PRÉFIXENT le goto (`[nbB=3, nbA=3] [goto:3 0]`), fidèle au natif qui pose les flags
 // avant le saut. Forme ratifiée Romain 2026-07-18 (flag-prefixe-sur-controle-rhs).
 
+// ⚠️ DRAPEAUX A ET B RENOMMES EN nbA / nbB — ecrit par bpscript, 2026-08-12, a valider et
+// committer par kanopi. Arbitrage de Romain : un drapeau ne porte qu un nom de drapeau, et
+// A comme B sont des NOTES de l alphabet en portee. Le compilateur les refuse desormais.
+// Seuls les deux compteurs sont renommes ; Atrans et Btrans ne sont pas des noms de note.
 @core
 @improvize
 
@@ -22,19 +26,19 @@ S -> Head U V [Reverse=0, beats=24, K1]
 
 -----
 
-// --- Sous-grammaire 2 @mode:random — choix du nombre de B (impair) ---
+// --- Sous-grammaire 2 @mode:random — choix du nombre de transformations b (impair) ---
 
 @mode:random
-Head -> Head [B=3, A=3] [goto:3 0] (weight:3)
-Head -> Head [B=9, A=1] [goto:3 0] (weight:1)
+Head -> Head [nbB=3, nbA=3] [goto:3 0] (weight:3)
+Head -> Head [nbB=9, nbA=1] [goto:3 0] (weight:1)
 
 -----
 
 // --- Sous-grammaire 3 @mode:random — choix d'une transformation ---
 
 @mode:random
-[K1-1] [A>0] Head -> Head a [Atrans, A-1, K2, K3]
-[K1-1] [B>0] Head -> Head b [Btrans, B-1, K4]
+[K1-1] [nbA>0] Head -> Head a [Atrans, nbA-1, K2, K3]
+[K1-1] [nbB>0] Head -> Head b [Btrans, nbB-1, K4]
 
 -----
 
@@ -56,8 +60,8 @@ Head -> Head [B=9, A=1] [goto:3 0] (weight:1)
 
 // --- Sous-grammaire 6 — reboucler si transformations restantes (pas de mode = default) ---
 
-[A>=1] Head -> Head [K1] [goto:3 0]
-[B>=1] Head -> Head [K1] [goto:3 0]
+[nbA>=1] Head -> Head [K1] [goto:3 0]
+[nbB>=1] Head -> Head [K1] [goto:3 0]
 
 -----
 
