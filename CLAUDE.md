@@ -198,3 +198,11 @@ préfixe : `BP_AGENT=kanopi ~/dev/bp/hub/tour <commande>`.
 4. **Un contrat partagé se propose avant d'être figé**, par `tour` ; le code interne reste autonome.
 5. **Fin de session** : je mets à jour ma ligne du `TABLEAU.md`, ma fiche projet et ma colonne de
    `baseline-status.json`. **Le code fait foi** : un statut se vérifie sur pièces.
+## ⛔ Un dépôt lié est consommé VIVANT
+
+Les dépôts s'intègrent par **lien symbolique** : ce que j'enregistre atteint mes consommateurs **sans
+construction ni publication**. Un fichier non commité est déjà en usage chez eux — « hors du dépôt »
+n'est pas « hors d'usage ». Kairos lit BPx ; Kanopi lit BPx, bp3-frontend et les cinq runtimes.
+
+Un agent qui **compile** publie **deux instances** : une de développement, une de production.
+
