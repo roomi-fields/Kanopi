@@ -1,11 +1,14 @@
 // @language: bpscript
+// MIGRÉE PAR bpscript le 2026-08-12 : la graphie native `_vel(120)` est REFUSÉE par le
+// compilateur depuis la décision de Romain du 2026-08-12 (elle n'appartient pas au langage). La forme
+// du langage est `!(clé:valeur)`. Rendu mesuré après migration : le contrôle sort en `(vel:120)`.
 // kairos-trace-controle-prefixe-et-suffixe.bps — sert src/trace/vue-trace.test.ts (kairos,
 // CONTRE-SIGNATURE [499] — ruleControlMarkers et controlMarkers portent la MÊME charge ; et E2E
 // RÈGLE [510][511] — ruleText de BPx + mes libellés). Contrôles sur les DEUX formes à la fois : le
-// suffixe (`transpose:-1200c`) et le préfixe (`_vel(90)`), pour prouver que la production ET la RHS
+// suffixe (`transpose:-1200c`) et le préfixe (`!(vel:90)`), pour prouver que la production ET la RHS
 // de la règle S résolvent identiquement des deux côtés.
 
 @core
 @alphabet.western:midi
 
-S -> C4(transpose:-1200c) _vel(90) D4
+S -> C4(transpose:-1200c) !(vel:90) D4

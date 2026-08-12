@@ -1,10 +1,13 @@
 // @language: bpscript
+// MIGRÉE PAR bpscript le 2026-08-12 : la graphie native `_vel(120)` est REFUSÉE par le
+// compilateur depuis la décision de Romain du 2026-08-12 (elle n'appartient pas au langage). La forme
+// du langage est `!(clé:valeur)`. Rendu mesuré après migration : le contrôle sort en `(vel:120)`.
 // kairos-trace-controle-sur-accord.bps — sert src/trace/vue-trace.test.ts (kairos, MA part dans SA
-// graphie — le contenu opaque d'un contrôle sort en clair par son crochet). Un `_vel(120)` préfixé
+// graphie — le contenu opaque d'un contrôle sort en clair par son crochet). Un `!(vel:120)` préfixé
 // devant un accord `{C4, D4}` : preuve que mon libellé résolu s'insère dans la graphie de BPx sans
 // jamais laisser passer le placeholder `_ctrl`.
 
 @core
 @alphabet.western:midi
 
-S -> _vel(120) {C4, D4}
+S -> !(vel:120) {C4, D4}

@@ -1,10 +1,13 @@
 // @language: bpscript
+// MIGRÉE PAR bpscript le 2026-08-12 : la graphie native `_vel(120)` est REFUSÉE par le
+// compilateur depuis la décision de Romain du 2026-08-12 (elle n'appartient pas au langage). La forme
+// du langage est `!(clé:valeur)`. Rendu mesuré après migration : le contrôle sort en `(vel:120)`.
 // kairos-trace-controle-prefixe-vel.bps — sert src/trace/vue-trace.test.ts (kairos, un contrôle
 // apparaît EN CLAIR dans la chaîne résolue ; et VUE TEXTE — rendreChaineFinale se nourrit du
-// RÉSULTAT de dérivation). Un `_vel(120)` préfixé sur la production : preuve que le libellé sort en
+// RÉSULTAT de dérivation). Un `!(vel:120)` préfixé sur la production : preuve que le libellé sort en
 // clair (`[vel(120)]`), jamais un sentinelle anonyme, aussi bien dans la trace que dans la chaîne finale.
 
 @core
 @alphabet.western:midi
 
-S -> _vel(120) C4 D4
+S -> !(vel:120) C4 D4

@@ -1,9 +1,12 @@
 // @language: bpscript
+// MIGRÉE PAR bpscript le 2026-08-12 : la graphie native `_vel(120)` est REFUSÉE par le
+// compilateur depuis la décision de Romain du 2026-08-12 (elle n'appartient pas au langage). La forme
+// du langage est `!(clé:valeur)`. Rendu mesuré après migration : le contrôle sort en `(vel:120)`.
 // kairos-trace-controle-prefixe-regle.bps — sert src/trace/vue-trace.test.ts (kairos, rendrePasTrace
-// expose les contrôles de règle résolus, indexés par position dans rule.rhs). Un `_vel(90)` préfixé
+// expose les contrôles de règle résolus, indexés par position dans rule.rhs). Un `!(vel:90)` préfixé
 // sur la règle S : preuve que `reglesControles` porte bien le libellé résolu côté règle.
 
 @core
 @alphabet.western:midi
 
-S -> _vel(90) C4 D4
+S -> !(vel:90) C4 D4

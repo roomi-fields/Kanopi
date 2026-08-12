@@ -1,11 +1,14 @@
 // @language: bpscript
+// MIGRÉE PAR bpscript le 2026-08-12 : la graphie native `_vel(120)` est REFUSÉE par le
+// compilateur depuis la décision de Romain du 2026-08-12 (elle n'appartient pas au langage). La forme
+// du langage est `!(clé:valeur)`. Rendu mesuré après migration : le contrôle sort en `(vel:120)`.
 // kairos-trace-libelle-prefixe-imbrique.bps — sert src/trace/libelle-controle.test.ts (kairos, forme
-// PRÉFIXÉE `_vel(120)` / `_chan(3)` : nom et arguments en clair). Deux règles imbriquées, chacune
+// POSÉE DANS LE FLUX `!(vel:120)` / `!(chan:3)` : nom et arguments en clair). Deux règles imbriquées, chacune
 // avec son propre contrôle préfixé : preuve que le libellé de chaque marqueur se rend indépendamment,
 // nom de règle intermédiaire (MOTIF) choisi pour ne pas collisionner avec un terminal de l'alphabet.
 
 @core
 @alphabet.western:midi
 
-S -> _vel(120) MOTIF
-MOTIF -> _chan(3) C4 D4
+S -> !(vel:120) MOTIF
+MOTIF -> !(chan:3) C4 D4
