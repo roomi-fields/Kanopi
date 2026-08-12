@@ -2,23 +2,6 @@ import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// runtime-ui (display runtime, linked via `link:`) imports bpscript's SHARED order
-// tokenizer with a deep specifier (`bpscript/src/transpiler/orderTokens.js`). runtime-ui
-// declares `bpscript` as an OPTIONAL peer and carries no copy, so Vite — resolving that
-// import from runtime-ui's own location — substitutes a `__vite-optional-peer-dep` stub
-// that exports nothing → `tokenizeOrder` is undefined and the whole graph throws (blank
-// screen). bpscript IS present in Kanopi's tree (hoisted to the repo-root node_modules);
-// this alias pins the deep specifier to Kanopi's real bpscript. Resolved off `import.meta.url`
-// (no `node:` import — the type-checker has no @types/node) against THIS package's node_modules,
-// where npm symlinks the `file:` bpscript dep (`packages/ui/node_modules/bpscript -> .../BPscript`,
-// lockfile `link:true`). NB: bpscript is NOT hoisted to the repo root (the others are) — pointing
-// this alias at the root used to rely on a STALE MANUAL COPY there (removed 2026-06-30, deps-fraîches);
-// the npm-managed per-package symlink is the durable source. Host-side wiring glue — not a contract change.
-const BPSCRIPT_ORDER_TOKENS = new URL(
-  './node_modules/bpscript/src/transpiler/orderTokens.js',
-  import.meta.url
-).pathname;
-
 // Same class of glue for the BPScript EDITOR MODE (`bpscript/public/editor/bpscript-lang.js`,
 // consumed AS-IS): it imports @codemirror/language + @lezer/highlight as bare specifiers, but
 // the BPscript repo ships no node_modules — dev resolution falls back to Kanopi's copy while
@@ -122,8 +105,6 @@ export default defineConfig({
   // haps aren't duplicated. Verified via a per-hap counter run on 2026-04-19.
   resolve: {
     alias: {
-      // Pin runtime-ui's deep bpscript import to Kanopi's real copy (see note above).
-      'bpscript/src/transpiler/orderTokens.js': BPSCRIPT_ORDER_TOKENS,
       // Pin the editor mode's CM6/Lezer bare imports to Kanopi's copies (see note above).
       '@codemirror/language': CM_LANGUAGE,
       '@lezer/highlight': LEZER_HIGHLIGHT
