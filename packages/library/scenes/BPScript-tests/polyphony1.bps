@@ -1,0 +1,60 @@
+// @language: bpscript
+// polyphony1.bps — banc d'expressions polymétriques.
+// Traduit à la main de bp3-engine/test-data/-gr.polyphony1 (BP2.5, 5 juin 1995).
+// Réglages natifs bp3-engine/test-data/-se.polyphony1 : horloge 1/1, quantification 1,
+// vingt-cinq items à l'énumération — repris ci-dessous en directives de scène.
+//
+// Chaque règle est une expression polymétrique différente, et l'annotation entre crochets de
+// l'original donne la durée totale attendue. Ces annotations sont des commentaires côté natif :
+// elles sont reportées telles quelles, en commentaire, jamais en forme.
+//
+// L'alphabet abc donne des terminaux d'un seul caractère : `fg` se lit `f g`, `ab` se lit `a b`.
+// Les vitesses `/N` de l'original s'écrivent `! (/N)` dans le flux.
+
+@core
+@test_alphabets.abc
+@maxitems:25
+@quantization:1
+@striated
+
+@mode:random
+
+S -> ! (/2) a b c d ! (/3) d e f g h i (weight:1)                     // 4/1
+S -> a {- b, a c} (weight:1)                                          // 3
+S -> ! (/2) a b c {! (/3) d e} f g (weight:1)                         // 19/6
+S -> ! (/2) a b c {! (/3) d e {f g} h} i j (weight:1)                 // 25/6
+S -> {{a b {a b, ! (/1) c d e}, 5}, f g {h i, ! (/1) j k l}} (weight:1)   // 5/1
+S -> {f g {h i, ! (/1) j k l}, 5} (weight:1)                          // 5/1
+S -> a b {a b, c d e} c d (weight:1)                                  // 7/1
+S -> a b {c d e, ! (/1) a b} c d (weight:1)                           // 6/1
+S -> a b {a b, ! (/1) c d e} c d (weight:1)                           // 7/1
+S -> a b {! (/2) a b, c d e} c d (weight:1)
+S -> a b {c d e, ! (/2) a b} c d (weight:1)                           // 5/1
+S -> a b {! (/5) a b, c d e} c d (weight:1)                           // 22/5
+S -> a b {c d e, ! (/5) a b} c d (weight:1)                           // 22/5
+S -> a b {! (/2) a b, ! (/3) c d e} c d (weight:1)                    // 5/1, echelle 1
+S -> a b {! (/3) c d e, ! (/2) a b} c d (weight:1)
+S -> a b {! (/2) a b, ! (/2) c d e} c d (weight:1)                    // impossible
+S -> a b {! (/2) c d e, ! (/2) a b} c d (weight:1)                    // impossible
+S -> {a {b c, d e f}, g h i j k} (weight:1)                           // 5/1
+S -> {g h i j k, a {b c, d e f}} (weight:1)                           // 5/1
+S -> ! (/3) a b' {c d e, a b'} c d (weight:1)                         // 7/3
+S -> ! (/3) a b {c d e, a b} c d (weight:1)                           // 7/3
+S -> ! (/3) a' b {! (/2) a' b, c d e} c d (weight:1)                  // 7/3
+S -> {! (/2) a b {! (/3) a b c, d e}, f g h i} (weight:1)             // 2/1
+S -> {! (/2) a b {d e, ! (/3) a b c}, f g h i} (weight:1)             // 2/1
+S -> {b - b a, ! (/2) a' c {d e, ! (/3) a - c}} (weight:1)            // 2/1
+S -> {a b ! (/3) c d e, f g} (weight:1)                               // 3/1
+S -> {f g, a b ! (/3) c d e} (weight:1)
+S -> {! (/1) a b ! (/3) c d e, f g} (weight:1)                        // 3/1
+S -> f g {a b c d e, 4} (weight:1)                                    // 7/1
+S -> f g {! (/4) a b c d e} (weight:1)
+S -> f g {a b c d e, ! (/4) i j k l m} (weight:1)                     // 13/4
+S -> f g {a b c d e, 5/4} (weight:1)                                  // 7/1
+S -> i j {i j k, a b 5/3 c d} l m (weight:1)                          // 7/1
+S -> i j {a b 5/3 c d, i j k} l m (weight:1)                          // 29/3
+S -> i j {17/3, a b 5/3 c d, i j k} l m (weight:1)                    // 29/3, pas de remise a l echelle de `a b 5/3 c d`
+S -> c d {17/3, a b 9/2 c d, a b e} d e (weight:1)                    // 29/3, remise a l echelle de `a b 9/2 c d`
+S -> a b ! (/2) c d e f 4/3 g h (weight:1)                            // 17/3
+S -> a b {c d 2, 2} (weight:1)
+S -> {i {a b, c d e}, j k} (weight:1)                                 // exemple de la these

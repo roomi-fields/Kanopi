@@ -1,0 +1,20 @@
+// @language: bpscript
+// testTie7.bps — liaison d'un son tenu à travers une expression polymétrique, sous inflexion
+// continue de hauteur.
+// Traduit à la main de bp3-engine/test-data/-gr.testTie7 (règle unique, sans fichier de réglages).
+//
+// La liaison de l'original s'écrit `&` en fin d'objet et en tête du suivant ; en BPScript elle
+// s'écrit `~` collé au nom : `do4~` ouvre, `~do4~` continue, `~do4` ferme. Le do4 est donc UN
+// SEUL son, tenu du début à la fin, pendant que le sol4 de l'autre voix se déroule.
+//
+// La règle est identique à la septième de `-gr.check&`.
+//
+// ÉCART MESURÉ CONTRE LA CAPTURE NATIVE, et il ne vient pas de la transcription : le natif
+// capture le do4 sur 0–4000 ms, c'est-à-dire la durée de son PREMIER segment, là où la liaison
+// le tient jusqu'à 23000 ms. Le sol4 coïncide exactement (4000–19000 ms), et les deux voies
+// rendent deux jetons.
+
+@core
+@alphabet.solfege:midi
+
+S -> !(pitchrange:200) !(pitchbend:-200) pitchcont do4~ _ _ _ {~do4~ _ _ _ _ _ _ _ _ _ _ _ _ _ _, sol4 _ _ _ _ _ _ _ _ _ _ _ _ _ _} ~do4 _ _ _ !(pitchbend:200)
