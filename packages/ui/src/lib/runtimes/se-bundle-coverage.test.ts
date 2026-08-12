@@ -66,28 +66,42 @@ function referencedSe(gr: string): string[] {
 // levée (architecte [1303] : « les 57 se traitent ou se nomment une par une »). Cinquante-quatre
 // ont été TRAITÉES en dérivant le bundle des dossiers ; il en reste TROIS, et aucune ne se
 // ressemble.
+//
+// ⛔ LEURS CAUSES ONT ÉTÉ RÉÉCRITES LE 2026-08-12, ET C'EST UN RENVERSEMENT. Je les tenais pour
+// TROIS TROUS EN ATTENTE D'UN VOISIN — « que bp3-engine livre le fichier ou déclare le couple ».
+// Mesuré contre la baseline native GELÉE (bp3-engine da269b0, v14, `baseline-native/baseline.json`,
+// figée par Romain le 2026-08-11) : AUCUNE des trois n'est un trou.
+// Les trois portent `config` SANS `-se` dans la référence scellée, et les trois ont `produit:false`
+// — le moteur natif ne les compile même pas. MON HÔTE FAIT DONC DÉJÀ CE QUE FAIT LA RÉFÉRENCE :
+// aucun réglage, défaut moteur. Il n'y a rien à livrer, rien à attendre.
+// Ce qui reste vrai : la grammaire DÉCLARE un réglage qui n'existe pas, et l'avertissement le dit.
 const SANS_REGLAGE: { cle: string; cause: string; levee: string }[] = [
   {
-    // Le fichier `-se.checkVolChan` n'existe PAS dans `test-assets/bp3/commun`, et la table de
-    // correspondance de bp3-engine ne donne AUCUN `-se` à cette grammaire (seulement un `-al`).
-    // Ce n'est donc pas un oubli de bundle : le réglage n'existe nulle part.
+    // Baseline v14 : `config = {"-al":"-ho.Frenchnotes"}` — aucun `-se`. `produit:false`,
+    // « 5 erreur(s) de compilation : => Incorrect note. (May be wrong note convention) ».
     cle: 'checkVolChan.gr → -se.checkVolChan ABSENT de BUNDLED_SE',
-    cause: 'réglage inexistant — ni fichier, ni entrée dans la table de correspondance',
-    levee: 'que bp3-engine livre le fichier ou déclare le couple'
+    cause:
+      'la grammaire déclare un réglage qui n’a jamais existé ; la référence scellée n’en donne ' +
+      'aucun et le natif ne compile pas la grammaire — mon défaut moteur EST le sien',
+    levee: 'que la ligne -se. soit retirée de la grammaire du corpus, par qui possède le corpus'
   },
   {
-    // Identique : aucun fichier, aucune entrée `-se` dans la table.
+    // Baseline v14 : `config = {}`. `produit:false`, « Calculation overflow (10000 derivations) ».
     cle: 'tryConsoleMaxTime.gr → -se.tryConsoleMaxTime ABSENT de BUNDLED_SE',
-    cause: 'réglage inexistant — ni fichier, ni entrée dans la table de correspondance',
-    levee: 'que bp3-engine livre le fichier ou déclare le couple'
+    cause:
+      'la grammaire déclare un réglage qui n’a jamais existé ; la référence scellée n’en donne ' +
+      'aucun et le natif abandonne la dérivation — mon défaut moteur EST le sien',
+    levee: 'que la ligne -se. soit retirée de la grammaire du corpus, par qui possède le corpus'
   },
   {
     // ⚠️ CELLE-CI N'EST PAS UN TROU DE BUNDLE, C'EST UNE GRAMMAIRE ABÎMÉE. Le réglage
     // `-se.tryflags3` EXISTE. La ligne du fichier porte littéralement `-se.tryflags3<br>` : le
     // corpus contient deux fichiers `*.html.gr` exportés depuis une page web, balises comprises.
-    // Le frontal lira donc le même nom fantaisiste que ce garde — la grammaire est cassée pour
-    // tout le monde, pas seulement ici. NE PAS « nettoyer » la balise dans le lecteur : ce serait
-    // réparer un corpus dans un instrument de mesure, et masquer un fichier à corriger.
+    // La baseline v14 le confirme des deux côtés : `config = {}` et `produit:false`, « 19 erreur(s)
+    // de compilation ». La grammaire est cassée pour tout le monde, et la capture native passe par
+    // un nettoyage (`baseline.json.commande` : `-gr <gr-nettoyee>`) que je n'ai PAS à imiter.
+    // NE PAS « nettoyer » la balise dans le lecteur : ce serait réparer un corpus dans un
+    // instrument de mesure, et masquer un fichier à corriger.
     cle: 'tryflags3.html.gr → -se.tryflags3<br> ABSENT de BUNDLED_SE',
     cause: 'grammaire exportée en HTML — la balise <br> est collée au nom du réglage',
     levee: 'que le fichier du corpus soit nettoyé de ses balises (le réglage, lui, existe)'
