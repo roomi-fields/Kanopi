@@ -5,7 +5,7 @@
 //
 // L'hôte NE fait que TRANSPORTER la liste d'interprètes (lus sur l'AST compilé par `interpsForScene`,
 // mêmes extracteurs que le produce — aucune re-dérivation texte) + les assets qu'elle déclare
-// (`assetsForScene` : banques `@library.strudel` + instruments `gm_*` utilisés) vers l'entrée paquet
+// (`assetsForScene` : banques `eval.strudel(bank:…)` + instruments `gm_*` utilisés) vers l'entrée paquet
 // `preload` de runtime-codevoices, idempotente (optional-chained : no-op tant que le pair ne l'exporte
 // pas). [788] — le préfetch d'assets (fetch+décode GM, ~1s) est ainsi payé à l'ouverture, hors du
 // chemin play.

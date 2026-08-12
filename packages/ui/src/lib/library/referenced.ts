@@ -3,7 +3,7 @@
 // as the active file changes. NOT the demo catalogue.
 //
 // Source: bpscript / bp3 (`.bps`, `.gr`) — compileToBPxAST(contents) emits
-// `.directives` (alphabet, tuning, scale, octaves, sound, transport/devices) and
+// `.directives` (alphabet, tuning, scale, octaves, sound, devices) and
 // `.actors` (each actor's engine + its `entityParams` — audio banks live there,
 // `eval.strudel(bank:"dirt-samples")`) — read AS-IS.
 // Anything else, parse errors, or compile throws → empty list (graceful).
@@ -42,7 +42,10 @@ const DIRECTIVE_TYPES: Record<string, { type: string; typeLabel: string }> = {
   scale: { type: 'scale', typeLabel: 'scale' },
   octaves: { type: 'octaves', typeLabel: 'octaves' },
   sound: { type: 'sound', typeLabel: 'sound' },
-  transport: { type: 'device', typeLabel: 'device' },
+  // PAS de `transport` ici : `@transport.<canal>` est SORTIE du langage (décision Romain
+  // 2026-08-04, BPscript parser.js:1692) — la direction se déclare sur l'acteur, `out.<canal>`.
+  // Une scène qui l'écrit encore ne compile plus : elle tombe donc dans le repli-texte, où
+  // cette entrée l'aurait affichée comme un appareil valide au panneau des ressources.
   devices: { type: 'device', typeLabel: 'devices' },
   // `@core` / `@controls` / `@filter` are bare module directives (no
   // sub-reference): they pull in a BPScript library — core grammar functions, the
@@ -89,12 +92,12 @@ function directivesFromText(contents: string): ReferencedLib[] {
   for (const raw of contents.split('\n')) {
     const line = raw.trim();
     if (!line.startsWith('@')) continue;
-    // Audio bank: `@library.<engine> "<bank>"`.
-    const bank = /^@library\.\w+\s+"([^"]+)"/.exec(line);
-    if (bank) {
-      out.push({ type: 'audio-bank', typeLabel: 'audio bank', name: bank[1] });
-      continue;
-    }
+    // PAS de branche `@library.<moteur> "<banque>"` : la directive est SUPPRIMÉE du langage
+    // (décision Romain 2026-08-06, BPscript parser.js:1642) — la banque est un paramètre de
+    // l'acteur, lu plus haut sur `entityParams.eval.bank`. Ce repli est précisément la voie
+    // qui tourne sur une scène qui ne compile plus : la garder aurait affiché « audio bank »
+    // pour une scène qui ne jouera aucun son. Le message du compilateur, lui, nomme déjà la
+    // relève au voyant santé (programCompileStatus, phase `parse`).
     // `@name(.subkey)?(:value)?` — e.g. `@alphabet.western:audio`, `@tuning.sargam_22shruti`.
     const m = /^@(\w+)(?:\.([\w-]+))?(?::\s*(\S+))?/.exec(line);
     if (!m) continue;

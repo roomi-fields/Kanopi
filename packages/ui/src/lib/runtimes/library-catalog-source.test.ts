@@ -1,7 +1,8 @@
 // Non-régression [773] : le chargeur `eval.strudel(bank:<id>)` doit résoudre contre
 // `guestLibraries` (runtime-codevoices), la SOURCE DE VÉRITÉ — plus le doublon
 // écrit à la main `packages/ui/src/lib/library/audio-banks/catalog.json` (supprimé).
-// Bug observé : `@library.strudel gm` → son MUET, « banque inconnue » (le doublon
+// Bug observé (à l'époque de `@library.strudel gm`, forme depuis SORTIE du langage —
+// Romain 2026-08-06) : son MUET, « banque inconnue » (le doublon
 // n'avait QUE dirt-samples/tidal-drum-machines/emu-sp12, pas gm/xen).
 //
 // `resolveStrudelLibrary` (bpx-adapter.ts) est la fonction RÉELLE consommée par le
@@ -49,7 +50,7 @@ describe('resourceResolutionErrors — signal 2 du voyant de santé (décision 2
     expect(resourceResolutionErrors(code)).toEqual([]);
   });
 
-  it('aucune déclaration @library → aucune erreur', () => {
+  it('aucune banque déclarée → aucune erreur', () => {
     const code = `@core\n@alphabet.western:audio\nS -> Bass\nBass -> C2 (wave:sawtooth)`;
     expect(resourceResolutionErrors(code)).toEqual([]);
   });

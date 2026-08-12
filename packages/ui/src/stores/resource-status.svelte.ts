@@ -1,6 +1,6 @@
 // Fail-loud RESOURCE-RESOLUTION status of the last eval attempt, per file — signal 2
 // of the compile chip's 3-signal health voyant (decision 2026-07-15-voyant-sante-
-// niveau3.md). A scene can PARSE and DERIVE cleanly yet declare a `@library.strudel`
+// niveau3.md). A scene can PARSE and DERIVE cleanly yet declare an `eval.strudel(bank:…)`
 // bank the host's catalog doesn't know (Romain's bug: console said "banque inconnue"
 // while the chip stayed green) — this store makes that resolution outcome visible to
 // the chip instead of console-only.

@@ -18,7 +18,7 @@ const warmups = new Map<string, Promise<void>>();
 
 /**
  * Préchauffe les `interps` donnés, PUIS pré-tire les `assets` déclarés par la scène qui a
- * déclenché cet appel (chantier latence [788] : banques `@library.strudel` + instruments `gm_*`
+ * déclenché cet appel (chantier latence [788] : banques `eval.strudel(bank:…)` + instruments `gm_*`
  * — voir `bpx-adapter.ts:assetsForScene`). Idempotent + dédupliqué PAR INTERPRÈTE : les
  * interprètes déjà en vol/chauds ne redéclenchent pas `preload`, seuls les nouveaux sont groupés
  * en UN appel `preload(nouveaux, assets)`. Best-effort : ne rejette jamais, un `preload` absent
