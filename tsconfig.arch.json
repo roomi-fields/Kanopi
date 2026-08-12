@@ -2,20 +2,15 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "bpx": ["packages/ui/src/lib/runtimes/bp3-deps.d.ts"],
-      "bp3-frontend": ["packages/ui/src/lib/runtimes/bp3-deps.d.ts"],
-      "bpscript/src/transpiler/index.js": [
+      "bpx": [
         "packages/ui/src/lib/runtimes/bp3-deps.d.ts"
       ],
-      "bpscript/src/transpiler/orderTokens.js": [
-        "packages/ui/src/lib/text-order/order-tokens.d.ts"
+      "bp3-frontend": [
+        "packages/ui/src/lib/runtimes/bp3-deps.d.ts"
       ],
-      "runtime-midi": ["packages/ui/src/lib/runtimes/runtime-midi.d.ts"],
-      "runtime-audio": ["packages/ui/src/lib/runtimes/runtime-audio.d.ts"],
-      "runtime-codevoices": [
-        "packages/ui/src/lib/runtimes/runtime-codevoices.d.ts"
-      ],
-      "runtime-osc/browser": ["packages/ui/src/lib/runtimes/runtime-osc.d.ts"]
+      "bpscript/src/transpiler/index.js": [
+        "packages/ui/src/lib/runtimes/bp3-deps.d.ts"
+      ]
     },
     "moduleResolution": "bundler",
     "allowJs": true,
