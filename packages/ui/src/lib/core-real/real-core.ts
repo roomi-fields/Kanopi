@@ -14,6 +14,7 @@ import { kronosCursor } from '../../stores/kronos-cursor.svelte';
 // KAN-UX3 — la couche mute MIXER (intention performeur, persistante) : consultée en
 // garde des chemins d'armement pour qu'un arm/replay/publish ne ré-arme jamais un
 // acteur que le mixer tient muet (module pur, importable sans cycle).
+import { EMPREINTE } from '@kairos/core';
 import { mixerMutedFor } from '../mixer/mixer-intent';
 import { applyMixerGains } from '../mixer/mixer-gain';
 // VOIE B (chantier voix-code-transport [523]) : le transport Kronos partagé des voix de code
@@ -97,6 +98,25 @@ class RealCore implements CoreApi {
     // so the live Transport's tempo is the authoritative value (0 when no scene is live).
     kronosCursor.setEventBus(this.events, () => kronosCursor.active?.transport.tempo ?? 0);
     this.console.push({ runtime: 'system', level: 'info', msg: 'kanopi runtime online' });
+    // JE NOMME CE QUE J'EXÉCUTE (empreinte Kairos, arbitrage Romain 2026-08-13). Kairos vit hors
+    // du suivi de version chez moi : une construction lancée à la main le republie EN SILENCE, et
+    // rien ne disait laquelle je faisais tourner. Son empreinte répond dans les DEUX régimes et dit
+    // lequel — mesuré : ma production prend son `dist` (28 fichiers entrés dans mon paquet), mon
+    // dev et mon portillon prennent sa source par la condition `development`. Une empreinte qui
+    // n'aurait parlé que du paquet aurait été muette là où je passe le plus de temps.
+    // `propre: false` = paquet bâti sur un arbre que son commit ne décrit pas → on le CRIE, c'est
+    // la même chose que mon refus de construire, vue depuis l'autre bout.
+    this.console.push(
+      EMPREINTE.regime === 'source-vive'
+        ? { runtime: 'system', level: 'info', msg: 'kairos — SOURCE VIVE (aucun paquet)' }
+        : {
+            runtime: 'system',
+            level: EMPREINTE.propre ? 'info' : 'error',
+            msg:
+              `kairos — paquet ${EMPREINTE.abrege}, bâti le ${EMPREINTE.construitLe}` +
+              (EMPREINTE.propre ? '' : ' ⛔ ARBRE MODIFIÉ : ce paquet ne sort d’aucun commit')
+          }
+    );
     installConsoleBridge((e) => this.console.push(e));
     this.actors.setOnToggle((a, willBeActive) => {
       void this.handleActorToggle(a, willBeActive);
