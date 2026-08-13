@@ -1,6 +1,41 @@
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { VitePWA } from 'vite-plugin-pwa';
+// @ts-expect-error — module Node en .mjs, hors du programme typé de `packages/ui` (svelte-check
+// n'admet pas les modules Node sous `src/`). Il n'est lu que par la configuration, en Node.
+import { voisinsLies, raisonDuRefus } from '../../scripts/lib/voisins-lies.mjs';
+
+const RACINE_ATELIER = new URL('../..', import.meta.url).pathname;
+
+/**
+ * REFUS DE DÉMARRER EN PRODUCTION SUR DU NON ENREGISTRÉ (décision Romain 2026-08-13,
+ * `hub/decisions/2026-08-13-un-depot-qui-ne-construit-pas-publie-une-seule-instance.md`).
+ *
+ * Mes voisins sont lus VIVANTS, par lien symbolique : leur arbre de travail est déjà dans ce
+ * paquet, sans construction ni publication. Construire la production pendant qu'un d'eux porte
+ * des modifications non enregistrées produirait un artefact bâti sur un état qui n'existe dans
+ * aucun historique — irreproductible, et impossible à revenir en arrière.
+ *
+ * C'EST LA PROTECTION QUI REMPLACE LES DEUX INSTANCES. Elle vient à la place de la convention
+ * abandonnée où chaque voisin publiait un dossier de production séparé : un dépôt dont les
+ * exports désignent sa source ne construit rien et publie une seule instance, et c'est ce garde
+ * qui porte désormais la garantie (runtime-audio et runtime-midi ont démonté la leur en
+ * conséquence). Il aurait fermé la fenêtre de quatorze secondes du 2026-08-12, où le nom nu d'un
+ * voisin pointait sur une cible qui n'existait pas encore.
+ *
+ * `apply: 'build'` : il ne gêne aucune boucle de développement — un voisin a le droit d'avoir un
+ * arbre en cours pendant qu'on travaille. C'est la PRODUCTION qui refuse.
+ */
+function refusDuNonEnregistre() {
+  return {
+    name: 'kanopi:voisins-enregistres',
+    apply: 'build' as const,
+    buildStart() {
+      const raison = raisonDuRefus(voisinsLies(RACINE_ATELIER));
+      if (raison) throw new Error(raison);
+    }
+  };
+}
 
 // Same class of glue for the BPScript EDITOR MODE (`bpscript/public/editor/bpscript-lang.js`,
 // consumed AS-IS): it imports @codemirror/language + @lezer/highlight as bare specifiers, but
@@ -28,6 +63,7 @@ export default defineConfig({
   // Vite s'arrête et dit que le port est occupé. Un serveur qui démarre sur une origine que le
   // service refuse est un faux vert — mieux vaut pas de serveur du tout.
   plugins: [
+    refusDuNonEnregistre(),
     svelte(),
     VitePWA({
       // WORKER PWA SUPPRIMÉ (demande Romain 2026-07-04) : le précache servait de VIEILLES
@@ -73,15 +109,10 @@ export default defineConfig({
         // lieu des pages .html RÉELLES. En dev il n'y a pas de service worker → sans effet.
         globIgnores: ['**/docs/**'],
         navigateFallbackDenylist: [/^\/kanopi\/docs\//],
+        // La règle qui mettait en cache le service de polices de Google est SUPPRIMÉE avec la
+        // forme qu'elle servait (décision Romain 2026-08-13, polices locales) : l'application ne
+        // demande plus cette adresse, donc la règle n'avait plus de requête à intercepter.
         runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts',
-              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 }
-            }
-          },
           {
             urlPattern: /^https:\/\/raw\.githubusercontent\.com\/tidalcycles\/dirt-samples\//i,
             handler: 'CacheFirst',

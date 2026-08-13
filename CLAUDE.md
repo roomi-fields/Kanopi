@@ -206,3 +206,8 @@ n'est pas « hors d'usage ». Kairos lit BPx ; Kanopi lit BPx, bp3-frontend et l
 
 Un agent qui **compile** publie **deux instances** : une de développement, une de production.
 
+Un agent dont le champ d'exports désigne sa source ne construit rien et publie une seule instance.
+Kanopi refuse de démarrer en production quand un dépôt qu'il consomme par lien symbolique porte des
+modifications non enregistrées : mon arbre de travail propre est une condition de son démarrage,
+donc j'enregistre au fil, jamais en fin de course.
+

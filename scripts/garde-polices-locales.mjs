@@ -63,7 +63,10 @@ function fichiers(dir, extensions, exclus = /\.(test|spec)\./) {
 const erreurs = [];
 
 // ── 1) Ni la page d'entrée ni le code de l'hôte ne citent un service de polices.
-const SOURCES = [join(UI, "index.html"), ...fichiers(join(UI, "src"), /\.(css|ts|svelte|html)$/)];
+const SOURCES = [
+  join(UI, "index.html"),
+  ...fichiers(join(UI, "src"), /\.(css|ts|svelte|html)$/),
+];
 let luNonVide = 0;
 for (const f of SOURCES) {
   const texte = readFileSync(f, "utf8");
@@ -80,7 +83,9 @@ if (luNonVide < 50) {
 
 // ── 2) La déclaration locale est complète et pointe des fichiers présents.
 if (!existsSync(FONTS_CSS)) {
-  erreurs.push("packages/ui/src/styles/fonts.css absent — les polices ne sont plus déclarées.");
+  erreurs.push(
+    "packages/ui/src/styles/fonts.css absent — les polices ne sont plus déclarées.",
+  );
 } else {
   const css = readFileSync(FONTS_CSS, "utf8");
   for (const famille of ["IBM Plex Mono", "IBM Plex Sans", "JetBrains Mono"]) {
@@ -88,24 +93,33 @@ if (!existsSync(FONTS_CSS)) {
       erreurs.push(`fonts.css ne déclare plus la famille « ${famille} ».`);
     }
   }
-  const sources = [...css.matchAll(/src:\s*url\('([^']+)'\)/g)].map((m) => m[1]);
-  if (sources.length === 0) erreurs.push("fonts.css ne déclare aucun fichier de police.");
+  const sources = [...css.matchAll(/src:\s*url\('([^']+)'\)/g)].map(
+    (m) => m[1],
+  );
+  if (sources.length === 0)
+    erreurs.push("fonts.css ne déclare aucun fichier de police.");
   for (const s of sources) {
     if (!/^\.\.\/assets\/fonts\/[a-z0-9-]+\.woff2$/.test(s)) {
       erreurs.push(`fonts.css : « ${s} » n'est pas un fichier de ce dépôt.`);
       continue;
     }
     const fichier = join(UI, "src/styles", s);
-    if (!existsSync(fichier)) erreurs.push(`fonts.css : « ${s} » déclarée mais absente du dépôt.`);
-    else if (statSync(fichier).size < 1000) erreurs.push(`fonts.css : « ${s} » est vide ou tronquée.`);
+    if (!existsSync(fichier))
+      erreurs.push(`fonts.css : « ${s} » déclarée mais absente du dépôt.`);
+    else if (statSync(fichier).size < 1000)
+      erreurs.push(`fonts.css : « ${s} » est vide ou tronquée.`);
   }
 
   // Chaque graisse que les feuilles de style demandent doit être déclarée localement.
-  const declarees = new Set([...css.matchAll(/font-weight:\s*(\d+)/g)].map((m) => Number(m[1])));
+  const declarees = new Set(
+    [...css.matchAll(/font-weight:\s*(\d+)/g)].map((m) => Number(m[1])),
+  );
   const demandees = new Set();
   for (const f of SOURCES) {
     if (f === FONTS_CSS) continue;
-    for (const m of readFileSync(f, "utf8").matchAll(/font-?[Ww]eight:\s*'?(\d{3})'?/g)) {
+    for (const m of readFileSync(f, "utf8").matchAll(
+      /font-?[Ww]eight:\s*'?(\d{3})'?/g,
+    )) {
       demandees.add(Number(m[1]));
     }
   }
@@ -119,12 +133,21 @@ if (!existsSync(FONTS_CSS)) {
 
 // ── 3) La licence accompagne les fichiers de police.
 if (!existsSync(DOSSIER_POLICES)) {
-  erreurs.push("packages/ui/src/assets/fonts absent — aucune police dans le dépôt.");
+  erreurs.push(
+    "packages/ui/src/assets/fonts absent — aucune police dans le dépôt.",
+  );
 } else {
-  const licences = readdirSync(DOSSIER_POLICES).filter((f) => f.startsWith("LICENSE"));
-  if (licences.length === 0) erreurs.push("les fichiers de police n'ont pas leur licence jointe.");
+  const licences = readdirSync(DOSSIER_POLICES).filter((f) =>
+    f.startsWith("LICENSE"),
+  );
+  if (licences.length === 0)
+    erreurs.push("les fichiers de police n'ont pas leur licence jointe.");
   for (const l of licences) {
-    if (!readFileSync(join(DOSSIER_POLICES, l), "utf8").includes("SIL Open Font License")) {
+    if (
+      !readFileSync(join(DOSSIER_POLICES, l), "utf8").includes(
+        "SIL Open Font License",
+      )
+    ) {
       erreurs.push(`${l} ne porte pas la licence attendue.`);
     }
   }
@@ -154,7 +177,8 @@ if (existsSync(DIST)) {
       continue;
     }
     distLu++;
-    if (v.length) erreurs.push(`CONSTRUITE — ${relative(racine, f)} — ${v.join(", ")}`);
+    if (v.length)
+      erreurs.push(`CONSTRUITE — ${relative(racine, f)} — ${v.join(", ")}`);
   }
 }
 
@@ -171,12 +195,16 @@ const MORSURES = [
 ];
 for (const [echantillon, attendu] of MORSURES) {
   if (!violations(echantillon).includes(attendu)) {
-    erreurs.push(`le détecteur NE MORD PAS sur « ${attendu} » — ce garde ne prouve rien.`);
+    erreurs.push(
+      `le détecteur NE MORD PAS sur « ${attendu} » — ce garde ne prouve rien.`,
+    );
   }
 }
 
 if (erreurs.length) {
-  console.error("✗ garde polices-locales — l'application irait chercher une police ailleurs :");
+  console.error(
+    "✗ garde polices-locales — l'application irait chercher une police ailleurs :",
+  );
   for (const e of erreurs) console.error(`  • ${e}`);
   console.error(
     "\nRappel : Kanopi héberge ses polices dans son dépôt (décision Romain 2026-08-13).\n" +
@@ -187,7 +215,9 @@ if (erreurs.length) {
 
 console.log(
   `✓ polices locales — ${SOURCES.length} fichier(s) source` +
-    (distLu ? ` + ${distLu} fichier(s) construit(s)` : " (construction absente, non mesurée)") +
+    (distLu
+      ? ` + ${distLu} fichier(s) construit(s)`
+      : " (construction absente, non mesurée)") +
     " : aucune adresse de service tiers, déclaration locale complète, licence jointe.",
 );
 

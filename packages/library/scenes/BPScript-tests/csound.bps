@@ -4,10 +4,20 @@
 //
 // 2 règles avec poids décroissants — après 2 items, la grammaire s'arrête.
 // Volume continu de 127→0 et 0→127 (crescendo/decrescendo).
+//
+// LA VALEUR DE CLÔTURE SE POSE APRÈS LA DERNIÈRE NOTE, jamais portée par elle
+// (décision Romain 2026-08-13, hub/decisions/2026-08-13-une-scene-du-corpus-dit-la-musique-de-
+// sa-grammaire.md). La grammaire native dont cette scène dérive l'écrit ainsi — un terme à part
+// en fin de séquence : `_volumecont _volume(127) A4 G4 C5 A5 A4 G4 C5 A5 _volume(0)`
+// (-da.checkAllCsound:105). Portée par la dernière note, elle donne une AUTRE musique : la
+// dernière note s'éteint elle-même au lieu de fermer la rampe derrière elle.
+//
+// La graphie est le sac de flux `!(…)` : « réglage posé dans le flux », espacé, événement séparé
+// dans la séquence (EBNF.md:484, et la correspondance `!(rotate:2)` ↔ `_rotate(2)` en EBNF.md:751).
 
 @core
 @alphabet.western:midi
 
 @mode:random
-S -> A4 G4 C5 A5 A4 G4 C5 A5(volume:0) (ins:3, volumecont, volume:127) (weight:1-1)
-S -> A4 G4 C5 A5 A4 G4 C5 A5(volume:127) (ins:3, volumecont, volume:0) (weight:1-1)
+S -> A4 G4 C5 A5 A4 G4 C5 A5 !(volume:0) (ins:3, volumecont, volume:127) (weight:1-1)
+S -> A4 G4 C5 A5 A4 G4 C5 A5 !(volume:127) (ins:3, volumecont, volume:0) (weight:1-1)

@@ -20,10 +20,10 @@
 // sur src pour la prod ») appartient au portillon de CET amont (il possède son
 // build), pas à celui de Kanopi. La garde jumelle y est définie séparément.
 
-import { readFileSync, existsSync, lstatSync, realpathSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+import { readFileSync, existsSync, lstatSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, join } from "node:path";
+import { voisinsLies } from "./lib/voisins-lies.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
@@ -113,65 +113,43 @@ for (const dep of ["bpscript", ...SOURCE_DEPS]) {
 // portillon vert de l'heure précédente avait tourné AVEC. Un revert chez lui aurait changé le
 // SENS de mon vert sans qu'un seul de mes fichiers bouge, et RIEN chez moi ne l'aurait signalé.
 //
-// CE N'EST DÉLIBÉRÉMENT PAS UNE ERREUR : un voisin a le droit d'avoir un arbre en cours, c'est
-// son travail normal. Échouer là-dessus rendrait mon portillon otage de leurs brouillons. Ce qui
-// manquait n'est pas un veto, c'est une LÉGENDE : un vert doit dire contre QUOI il a été mesuré.
+// ICI, CE N'EST PAS UNE ERREUR, ET LE VETO VIT AILLEURS. Ce fichier tourne dans la boucle de
+// DÉVELOPPEMENT et au portillon, où un voisin a le droit d'avoir un arbre en cours : échouer
+// là-dessus rendrait cette boucle otage de leurs brouillons. Ce qu'il rend est une LÉGENDE — un
+// vert doit dire contre QUOI il a été mesuré.
 //
-// ET LE DOSAGE COMPTE, il a été mesuré aussi : au moment d'écrire ceci, kairos portait un seul
-// fichier modifié — son BACKLOG. Un compte brut de fichiers aurait donc crié au loup dès la
-// première note de backlog, et un signal qui crie pour rien est un signal qu'on cesse de lire.
-// On ne déclare donc que ce qui peut ATTEINDRE le build : ni documentation, ni bancs.
-const HORS_BUILD =
-  /(^|\/)(BACKLOG|CHANGELOG|README|MEMORY)|\.md$|(^|\/)docs\//i;
-const EST_BANC = /\.(test|spec)\.[cm]?[jt]sx?$/;
-const etats = [];
-for (const dep of ["bpscript", ...SOURCE_DEPS]) {
-  for (const base of ["node_modules", "packages/ui/node_modules"]) {
-    const p = join(repoRoot, base, dep);
-    if (!existsSync(p)) continue;
-    let cible;
-    try {
-      cible = realpathSync(p);
-    } catch {
-      continue;
-    }
-    let tete, sale;
-    try {
-      const top = execFileSync(
-        "git",
-        ["-C", cible, "rev-parse", "--show-toplevel"],
-        {
-          encoding: "utf8",
-          stdio: ["ignore", "pipe", "ignore"],
-        },
-      ).trim();
-      tete = execFileSync("git", ["-C", top, "rev-parse", "--short", "HEAD"], {
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "ignore"],
-      }).trim();
-      sale = execFileSync("git", ["-C", top, "status", "--porcelain"], {
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "ignore"],
-      })
-        .split("\n")
-        .map((l) => l.slice(3).trim())
-        .filter(Boolean)
-        .filter((f) => !HORS_BUILD.test(f) && !EST_BANC.test(f));
-    } catch {
-      etats.push(`${dep} : hors git (${cible}) — état non mesurable`);
-      break;
-    }
-    etats.push(
-      sale.length === 0
-        ? `${dep} @ ${tete} — propre`
-        : `${dep} @ ${tete} — ⚠ ${sale.length} fichier(s) NON COMMITÉ(S) dans le build : ` +
-            sale.slice(0, 4).join(", ") +
-            (sale.length > 4 ? `, +${sale.length - 4}` : ""),
-    );
-    break;
+// LE REFUS, LUI, EST EN PRODUCTION (décision Romain 2026-08-13) : le greffon `vite.config.ts`
+// arrête la construction dès qu'un voisin porte du non enregistré. Deux lieux, une seule mesure
+// (`voisinsLies`) — ce n'est pas une seconde autorité, c'est la même lue à deux moments.
+//
+// ET LE DOSAGE COMPTE, il a été mesuré : au moment d'écrire ceci, kairos portait un seul fichier
+// modifié — son BACKLOG. Un compte brut aurait crié au loup dès la première note de backlog, et
+// un signal qui crie pour rien est un signal qu'on cesse de lire. La légende QUALIFIE donc ce
+// qu'elle compte — « dans le build » ou non — au lieu de le cacher.
+// LA LISTE NE S'ÉCRIT PLUS ICI, ELLE SE DÉCOUVRE. Elle était en dur et comptait QUATRE deps ;
+// mesuré le 2026-08-13, l'atelier en lie ONZE — bp3-frontend et les six runtimes manquaient à
+// l'appel, donc leur état ne figurait dans aucune légende. `voisinsLies` énumère les liens réels,
+// et c'est LA MÊME mesure que le refus de production (`vite.config.ts`) : deux lecteurs, une
+// seule vérité, jamais deux chiffres qui se contredisent à l'écran.
+const etats = voisinsLies(repoRoot).map((v) => {
+  const nom = v.depot.split("/").pop();
+  if (v.tete === null)
+    return `${nom} : hors git (${v.chemin}) — état non mesurable`;
+  const atteignant = v.modifications.filter((m) => m.atteintLeBuild);
+  if (v.modifications.length === 0) return `${nom} @ ${v.tete} — propre`;
+  if (atteignant.length === 0) {
+    return `${nom} @ ${v.tete} — ${v.modifications.length} non enregistré(s), aucun dans le build`;
   }
-}
-console.log("• état des amonts consommés EN SOURCE (la légende du vert) :");
+  return (
+    `${nom} @ ${v.tete} — ⚠ ${atteignant.length} fichier(s) NON COMMITÉ(S) dans le build : ` +
+    atteignant
+      .slice(0, 4)
+      .map((m) => m.fichier)
+      .join(", ") +
+    (atteignant.length > 4 ? `, +${atteignant.length - 4}` : "")
+  );
+});
+console.log("• état des voisins lus VIVANTS (la légende du vert) :");
 for (const e of etats) console.log(`    ${e}`);
 if (etats.some((e) => e.includes("NON COMMITÉ"))) {
   console.log(
