@@ -16,21 +16,62 @@
 // symboliques réels de `node_modules`, y compris à portée (`@kairos/core`), aux deux niveaux où
 // npm les pose (racine hoistée et paquet).
 
-import { readdirSync, lstatSync, realpathSync, existsSync } from "node:fs";
+import { readdirSync, lstatSync, realpathSync, existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 
-/** Ce qui, chez un voisin, ne peut pas atteindre mon paquet : sa documentation et ses bancs.
+/**
+ * LES RACINES QU'UN PAQUET EXPOSE — dérivées de SON manifeste, jamais énumérées ici.
  *
- *  CE QUALIFICATIF EST CE SUR QUOI LE REFUS SE PRONONCE. Mesuré le 2026-08-13 : la lecture
- *  littérale — refuser sur l'arbre de travail ENTIER — rendait le portillon définitivement rouge.
- *  Cinq voisins, neuf fichiers, et pas un seul n'arrivait dans le paquet : un backlog, une note,
- *  de l'outillage d'agent. Romain a tranché sur ce fait : le refus regarde ce qui RENTRE.
- *  Une modification hors-build reste NOMMÉE dans la légende du portillon — qualifier n'est pas
- *  masquer. */
-const HORS_BUILD =
-  /(^|\/)(BACKLOG|CHANGELOG|README|MEMORY|TABLEAU)|\.md$|(^|\/)(docs|\.claude|\.codegraph)\//i;
-const EST_BANC = /(^|\/)(test|tests)\/|\.(test|spec)\.[cm]?[jt]sx?$/;
+ * CE QUALIFICATIF EST CE SUR QUOI LE REFUS SE PRONONCE. Mesuré le 2026-08-13 : la lecture
+ * littérale — refuser sur l'arbre de travail ENTIER — rendait le portillon définitivement rouge.
+ * Cinq voisins, neuf fichiers, et pas un seul n'arrivait dans le paquet. Romain a tranché sur ce
+ * fait : le refus regarde ce qui RENTRE.
+ *
+ * ⛔ ET LA PREMIÈRE VERSION DE CE QUALIFICATIF ÉNUMÉRAIT DES EMPLACEMENTS PAR LEUR NOM —
+ * `docs/`, `test/`, `.claude/` — ce qui l'a fait mordre à tort le jour même : kairos a pris une
+ * copie de mon corpus dans `fixtures/`, un nom que la liste ne connaissait pas, et ma construction
+ * de production a refusé de démarrer sur des données de banc qui n'entrent nulle part chez moi.
+ * Un garde trop large fait remiser du travail pour rien, et c'est exactement ce que l'arbitrage
+ * voulait éviter. LA LISTE NE S'ÉCRIT DONC PLUS : chaque paquet DIT lui-même ce qu'il expose, dans
+ * son manifeste, et c'est cela qu'on lit. Un manifeste illisible fait tout compter — l'ignorance
+ * penche du côté du refus, jamais du laissez-passer.
+ */
+export function racinesExposees(depot) {
+  let manifeste;
+  try {
+    manifeste = JSON.parse(readFileSync(join(depot, "package.json"), "utf8"));
+  } catch {
+    return null; // manifeste illisible → on ne qualifie pas, tout compte
+  }
+
+  const cibles = [];
+  const recolter = (v) => {
+    if (typeof v === "string") cibles.push(v);
+    else if (v && typeof v === "object") for (const x of Object.values(v)) recolter(x);
+  };
+  recolter(manifeste.exports);
+  for (const champ of ["main", "module", "types", "browser", "bin"]) {
+    recolter(manifeste[champ]);
+  }
+  // `files` dit ce que le paquet EMPORTE à la publication — même autorité, même lecture.
+  if (Array.isArray(manifeste.files)) recolter(manifeste.files);
+
+  const racines = new Set();
+  for (const c of cibles) {
+    const segment = c.replace(/^\.?\//, "").split("/")[0];
+    if (segment && segment !== "." && !segment.startsWith("*")) racines.add(segment);
+  }
+  return racines.size > 0 ? racines : null;
+}
+
+/** Ce fichier peut-il atteindre mon paquet ? Vrai dès qu'il vit sous une racine que le voisin
+ *  expose lui-même — et vrai par défaut quand son manifeste ne dit rien. */
+export function atteintLePaquet(fichier, racines) {
+  if (racines === null) return true;
+  const segment = fichier.split("/")[0];
+  return racines.has(segment);
+}
 
 /** Sortie BRUTE de git, sans `trim` global : `status --porcelain` code l'état sur DEUX colonnes
  *  de largeur fixe, et un fichier modifié non indexé commence par une ESPACE (` M chemin`). Un
@@ -124,6 +165,7 @@ export function voisinsLies(racine) {
         continue;
       }
 
+      const racines = racinesExposees(depot);
       const modifications = git(depot, ["status", "--porcelain"])
         .split("\n")
         .filter(Boolean)
@@ -132,8 +174,7 @@ export function voisinsLies(racine) {
           return {
             etat: l.slice(0, 2).trim(),
             fichier,
-            atteintLeBuild:
-              !HORS_BUILD.test(fichier) && !EST_BANC.test(fichier),
+            atteintLeBuild: atteintLePaquet(fichier, racines),
           };
         });
 

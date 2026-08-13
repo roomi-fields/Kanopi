@@ -23,7 +23,12 @@
 import { readFileSync, existsSync, lstatSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, join } from "node:path";
-import { voisinsLies, raisonDuRefus } from "./lib/voisins-lies.mjs";
+import {
+  voisinsLies,
+  raisonDuRefus,
+  racinesExposees,
+  atteintLePaquet,
+} from "./lib/voisins-lies.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
@@ -157,6 +162,39 @@ if (etats.some((e) => e.includes("NON COMMITÉ"))) {
     "    ⚠ Ce portillon mesure donc contre du travail non poussé chez un voisin : un revert chez lui\n" +
       "      changerait le SENS de ce résultat sans qu’un fichier bouge ici. À citer dans tout rapport.",
   );
+}
+
+// 5bis) LE QUALIFICATIF SE DÉRIVE DU MANIFESTE DU VOISIN, et il doit trancher DANS LES DEUX SENS.
+//    Éprouvé sur MON PROPRE voisin, pas sur un manifeste inventé : kairos expose `dist` et `src`,
+//    et rien d'autre. C'est le cas qui a fait mordre à tort la première version — elle énumérait
+//    des dossiers par leur nom et ne connaissait pas `fixtures/`, où kairos venait de copier mon
+//    corpus. Un manifeste illisible fait TOUT compter : l'ignorance penche du côté du refus.
+const RACINES_KAIROS = racinesExposees("/home/romi/dev/bp/kairos");
+if (RACINES_KAIROS === null) {
+  errors.push(
+    "le manifeste de kairos n'est plus lisible — le qualificatif du refus ne se dérive plus, tout compterait.",
+  );
+} else {
+  const CAS = [
+    ["src/index.ts", true],
+    ["dist/index.js", true],
+    ["fixtures/scenes/vina.bps", false],
+    ["docs/note.md", false],
+    ["BACKLOG.md", false],
+  ];
+  for (const [fichier, attendu] of CAS) {
+    if (atteintLePaquet(fichier, RACINES_KAIROS) !== attendu) {
+      errors.push(
+        `le qualificatif se trompe sur « ${fichier} » : attendu ${attendu ? "DANS" : "HORS"} le paquet. ` +
+          "Un garde trop large fait remiser du travail pour rien, un garde trop étroit laisse passer une source vive.",
+      );
+    }
+  }
+  if (atteintLePaquet("n-importe-quoi", null) !== true) {
+    errors.push(
+      "un manifeste illisible doit faire TOUT compter — l'ignorance penche du côté du refus.",
+    );
+  }
 }
 
 // 5) LE REFUS DE PRODUCTION MORD, ET SUR LA BONNE FRONTIÈRE. `raisonDuRefus` ne s'exerce qu'au
