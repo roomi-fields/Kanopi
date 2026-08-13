@@ -8,7 +8,8 @@
 //   • la LÉGENDE du portillon (`deps-fraicheur.mjs`) — contre quel état ce vert a-t-il été mesuré ;
 //   • le REFUS de production (greffon Vite de `packages/ui/vite.config.ts`) — Kanopi refuse de
 //     démarrer en production quand un dépôt consommé par lien symbolique porte des modifications
-//     non enregistrées (décision Romain 2026-08-13).
+//     non enregistrées QUI ENTRENT DANS SON PAQUET (décision Romain 2026-08-13, précisée le même
+//     jour : le refus regarde ce qui rentre, pas l'arbre de travail entier).
 //
 // LA LISTE N'EST PAS ÉCRITE : elle se DÉCOUVRE. Une liste en dur des voisins vieillit en silence —
 // un lien ajouté n'y entrerait pas et ne serait donc jamais mesuré. On énumère les liens
@@ -20,8 +21,13 @@ import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 
 /** Ce qui, chez un voisin, ne peut pas atteindre mon paquet : sa documentation et ses bancs.
- *  Sert à QUALIFIER une modification, jamais à la masquer — un voisin a le droit d'avoir un
- *  arbre en cours, et le refus se prononce sur la mesure entière. */
+ *
+ *  CE QUALIFICATIF EST CE SUR QUOI LE REFUS SE PRONONCE. Mesuré le 2026-08-13 : la lecture
+ *  littérale — refuser sur l'arbre de travail ENTIER — rendait le portillon définitivement rouge.
+ *  Cinq voisins, neuf fichiers, et pas un seul n'arrivait dans le paquet : un backlog, une note,
+ *  de l'outillage d'agent. Romain a tranché sur ce fait : le refus regarde ce qui RENTRE.
+ *  Une modification hors-build reste NOMMÉE dans la légende du portillon — qualifier n'est pas
+ *  masquer. */
 const HORS_BUILD =
   /(^|\/)(BACKLOG|CHANGELOG|README|MEMORY|TABLEAU)|\.md$|(^|\/)(docs|\.claude|\.codegraph)\//i;
 const EST_BANC = /(^|\/)(test|tests)\/|\.(test|spec)\.[cm]?[jt]sx?$/;
@@ -144,30 +150,39 @@ export function voisinsLies(racine) {
   return [...parDepot.values()].sort((a, b) => a.depot.localeCompare(b.depot));
 }
 
-/** Le texte que le refus de production affiche : ce qui bloque, et où le régler. */
+/**
+ * Le texte que le refus de production affiche : ce qui bloque, et où le régler.
+ *
+ * NE COMPTE QUE CE QUI ENTRE DANS LE PAQUET. Un backlog en cours, une note, de l'outillage
+ * d'agent chez un voisin ne changent rien à l'artefact livré : les compter arrêterait la
+ * construction sur du bruit, et un refus qui se déclenche sur du bruit finit désarmé.
+ * Rend `null` quand rien n'entre — c'est un feu vert, jamais un silence : la légende du
+ * portillon nomme et chiffre le reste à chaque passage.
+ */
 export function raisonDuRefus(voisins) {
-  const sales = voisins.filter((v) => v.modifications.length > 0);
+  const sales = voisins
+    .map((v) => ({ v, entrantes: v.modifications.filter((m) => m.atteintLeBuild) }))
+    .filter(({ entrantes }) => entrantes.length > 0);
   if (sales.length === 0) return null;
 
-  const lignes = sales.map((v) => {
+  const lignes = sales.map(({ v, entrantes }) => {
     const nom = v.depot.split("/").pop();
-    const detail = v.modifications
+    const detail = entrantes
       .slice(0, 6)
-      .map(
-        (m) =>
-          `${m.etat || "??"} ${m.fichier}${m.atteintLeBuild ? "  ← dans le paquet" : ""}`,
-      )
+      .map((m) => `${m.etat || "??"} ${m.fichier}`)
       .join("\n        ");
     const reste =
-      v.modifications.length > 6
-        ? `\n        … +${v.modifications.length - 6}`
-        : "";
-    return `  • ${nom} @ ${v.tete ?? "hors git"} — ${v.modifications.length} non enregistré(s)\n        ${detail}${reste}`;
+      entrantes.length > 6 ? `\n        … +${entrantes.length - 6}` : "";
+    const horsBuild = v.modifications.length - entrantes.length;
+    const aparte = horsBuild
+      ? ` (+ ${horsBuild} hors paquet, sans effet ici)`
+      : "";
+    return `  • ${nom} @ ${v.tete ?? "hors git"} — ${entrantes.length} non enregistré(s) dans le paquet${aparte}\n        ${detail}${reste}`;
   });
 
   return (
     "CONSTRUCTION DE PRODUCTION REFUSÉE — un dépôt consommé par lien symbolique porte des\n" +
-    "modifications non enregistrées (décision Romain 2026-08-13).\n\n" +
+    "modifications non enregistrées QUI ENTRENT DANS CE PAQUET (décision Romain 2026-08-13).\n\n" +
     "Ces dépôts sont lus VIVANTS : leur arbre de travail est DÉJÀ dans ce paquet. Construire ici\n" +
     "produirait un artefact bâti sur un état qui n'existe dans aucun historique — irreproductible,\n" +
     "et impossible à revenir en arrière.\n\n" +

@@ -208,6 +208,7 @@ Un agent qui **compile** publie **deux instances** : une de développement, une 
 
 Un agent dont le champ d'exports désigne sa source ne construit rien et publie une seule instance.
 Kanopi refuse de démarrer en production quand un dépôt qu'il consomme par lien symbolique porte des
-modifications non enregistrées : mon arbre de travail propre est une condition de son démarrage,
-donc j'enregistre au fil, jamais en fin de course.
+modifications non enregistrées **qui entrent dans son paquet** ; la documentation, le backlog et
+l'outillage d'un voisin n'y entrent pas. La source propre d'un voisin est donc une condition de mon
+démarrage, et j'enregistre ma source au fil, jamais en fin de course.
 

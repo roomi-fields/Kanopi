@@ -23,7 +23,7 @@
 import { readFileSync, existsSync, lstatSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, join } from "node:path";
-import { voisinsLies } from "./lib/voisins-lies.mjs";
+import { voisinsLies, raisonDuRefus } from "./lib/voisins-lies.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
@@ -119,8 +119,9 @@ for (const dep of ["bpscript", ...SOURCE_DEPS]) {
 // vert doit dire contre QUOI il a été mesuré.
 //
 // LE REFUS, LUI, EST EN PRODUCTION (décision Romain 2026-08-13) : le greffon `vite.config.ts`
-// arrête la construction dès qu'un voisin porte du non enregistré. Deux lieux, une seule mesure
-// (`voisinsLies`) — ce n'est pas une seconde autorité, c'est la même lue à deux moments.
+// arrête la construction dès qu'un voisin porte du non enregistré QUI ENTRE DANS LE PAQUET.
+// Deux lieux, une seule mesure (`voisinsLies`) — ce n'est pas une seconde autorité, c'est la même
+// lue à deux moments, et la légende ci-dessous nomme AUSSI ce que le refus laisse passer.
 //
 // ET LE DOSAGE COMPTE, il a été mesuré : au moment d'écrire ceci, kairos portait un seul fichier
 // modifié — son BACKLOG. Un compte brut aurait crié au loup dès la première note de backlog, et
@@ -156,6 +157,39 @@ if (etats.some((e) => e.includes("NON COMMITÉ"))) {
     "    ⚠ Ce portillon mesure donc contre du travail non poussé chez un voisin : un revert chez lui\n" +
       "      changerait le SENS de ce résultat sans qu’un fichier bouge ici. À citer dans tout rapport.",
   );
+}
+
+// 5) LE REFUS DE PRODUCTION MORD, ET SUR LA BONNE FRONTIÈRE. `raisonDuRefus` ne s'exerce qu'au
+//    `vite build`, où l'atelier est presque toujours propre : sans ces échantillons, il pourrait
+//    être devenu aveugle depuis des semaines sans qu'un seul vert le dise. Deux échantillons, et
+//    le second compte autant que le premier — depuis l'arbitrage du 2026-08-13 la frontière n'est
+//    plus « un fichier modifié » mais « un fichier QUI ENTRE », et un garde trop large ferait
+//    remiser du travail pour rien.
+const ECHANTILLONS = [
+  [
+    "un fichier de source non enregistré",
+    [{ etat: "M", fichier: "src/index.ts", atteintLeBuild: true }],
+    true,
+  ],
+  [
+    "un backlog et de l'outillage d'agent",
+    [
+      { etat: "M", fichier: "BACKLOG.md", atteintLeBuild: false },
+      { etat: "??", fichier: ".claude/settings.json", atteintLeBuild: false },
+    ],
+    false,
+  ],
+];
+for (const [quoi, modifications, doitRefuser] of ECHANTILLONS) {
+  const rendu = raisonDuRefus([
+    { depot: "/tmp/voisin-temoin", chemin: "/tmp/voisin-temoin", tete: "0000000", specificateurs: [], modifications },
+  ]);
+  if (Boolean(rendu) !== doitRefuser) {
+    errors.push(
+      `le refus de production ${doitRefuser ? "NE MORD PAS" : "MORD À TORT"} sur ${quoi} — ` +
+        "il ne prouve plus rien (décision Romain 2026-08-13 : le refus porte sur ce qui entre dans le paquet).",
+    );
+  }
 }
 
 if (errors.length) {
