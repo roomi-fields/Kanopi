@@ -258,7 +258,7 @@ flowchart TD
 - **makeBpxAdapter** — FABRIQUE du hub : construit un RuntimeAdapter clos sur (id, extensions, frontend), avec son propre EventBus, sa map `voices` (une entrée `BP3Voice` par source — plus de Dispatcher, husk éliminé [842]) et l'enregistrement d'un updater de toggles live. Retourne l'objet {evaluate, setBpm, stop, dispose}. Source unique des deux jumeaux bp3/bpscript.
 - **evaluate** — HUB du cycle. Frontal→AST, charge les banques déclarées, sème le seed, dérive via BPx, réconcilie le tempo, construit le registre CV, projette dans Kairos, publie la production, monte le routage par acteur (gate device, sink MIDI, startKronosAudio), enregistre les poignées d'arm/disarm. Gère les modes produce-only (build silencieux) et STEP. Conforme dans l'intention (assemble/route) mais porte BEAUCOUP de décisions hôte (voir natureComplexite).
 - **grFrontend** — Frontal .gr : parseWithSound (BP3 natif) → lit sections et orchestration depuis l'AST. Glue de frontal.
-- **bpsFrontend** — Frontal .bps : compileToBPxAST puis LIT tout (tempo @mm, flagStates, libraries, backticks, sections, orchestration) DEPUIS l'AST, source unique. Glue de frontal.
+- **bpsFrontend** — Frontal .bps : compileToBPxAST puis LIT tout (tempo — voir `mmFromAst` et sa réserve sur `@mm`, flagStates, libraries, backticks, sections, orchestration) DEPUIS l'AST, source unique. Glue de frontal.
 - **parseWithSound** — Orchestre le parse .gr à deux passes : parse, apprend les symboles sonnants via resolveGrAux, re-parse. Travail de RÉSOLUTION d'auxiliaires de grammaire côté hôte (délégué à bp3-frontend mais piloté ici).
 - **resolveGrAux** — Résout la chaîne d'aux .gr (-al → -so/-mi/-cs) : alphabet + symboles sonnants. Suit alphabetSoundRef, charge et parse les fichiers aux. Résolution de domaine (frontal) portée par l'hôte.
 - **soundFromRef** — Charge un texte d'aux par référence et le parse en symboles-sons (parseSoundObjects). Helper de resolveGrAux.
@@ -267,7 +267,7 @@ flowchart TD
 - **buildOrchestration** — Construit la vue d'orchestration depuis les acteurs de l'AST (table + liste + drapeau synthetic lu de l'AST). Lecture/assemblage de facette, jamais d'acteur 'default' inventé.
 - **actorTableFromAst** — Lit chaque ActorDirective → {transport, alphabet, eval}. Lecture de facette.
 - **flagStatesFromAst** — Lit les FlagStatesDirective (@flag scene: calm:1…) → table nom→int. Lecture de facette.
-- **mmFromAst** — Lit le métronome déclaré @mm depuis les directives. Lecture de facette.
+- **mmFromAst** — Lit le métronome déclaré @mm depuis les directives. Lecture de facette. ⚠️ `@mm` est une COMPATIBILITÉ D'ENTRÉE BP3, pas la forme BPScript : le compilateur REFUSE `@mm` dans une scène BPScript et renvoie à `@tempo:<N>` (décision Romain 2026-06-26, `BPscript/src/transpiler/parser.js:1819`). Ce lecteur est en retard sur cette forme — REV-F12.
 - **librariesFromAst** — Lit les LibraryDirective (@library.strudel …) → {engine→[ids]}. Lecture de facette.
 - **backticksFromAst** — DFS de l'arbre pour les nœuds BacktickInline → {\_btName→{interp,code}}. Lecture de facette (avec garde anti-cycle).
 - **btTokenByActor** — DFS : pour chaque Rule, apparie le LHS (nom d'acteur) au token BT de son RHS. Lecture de facette pour l'arm/disarm par voix-code.

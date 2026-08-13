@@ -1,6 +1,14 @@
 # Kanopi Session Language — Specification
 
-**Status:** v0.1 (Phase 1 Alpha) · **File extension:** `.kanopi`
+> ⛔ **PIERRE TOMBALE — CE LANGAGE EST MORT.** Le langage de session `.kanopi` est supplanté par
+> BPScript ; la migration est faite et le support des sessions `.kanopi` a été retiré du code
+> (`d02366e`). Rien de ce document ne décrit une surface vivante : il est conservé pour
+> l'historique, et **aucune de ses formes ne s'écrit aujourd'hui**. La spécification vivante du
+> langage est `BPscript/docs/spec/LANGUAGE.md`.
+>
+> Lu en l'état, ce document se lisait comme courant — c'est ce que cette pierre ferme.
+
+**Status:** MORT (v0.1, Phase 1 Alpha — historique) · **File extension:** `.kanopi`
 
 A `.kanopi` file declares a **session**: a list of *actors* (live-coding sources),
 *scenes* (snapshots of which actors are on/off), and *maps* (MIDI/OSC
