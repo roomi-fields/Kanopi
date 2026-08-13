@@ -23,7 +23,7 @@
     "e2e:cross": "KANOPI_CROSS_BROWSER=1 playwright test",
     "e2e:prod:cross": "KANOPI_BASE_URL=https://roomi-fields.com/kanopi/ KANOPI_CROSS_BROWSER=1 playwright test",
     "e2e:visual:update": "playwright test tests/e2e/self-test/visual.spec.ts --update-snapshots",
-    "verify": "npm run check && npm run lint && npm run build && npm run test && npm run e2e"
+    "verify": "npm run check && npm run lint && npm run build && node ../../scripts/garde-polices-locales.mjs && npm run test && npm run e2e"
   },
   "dependencies": {
     "@codemirror/commands": "^6.6.0",
