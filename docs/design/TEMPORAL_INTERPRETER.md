@@ -1,8 +1,18 @@
 # Interprétateur temporel — architecture
 
-> **Statut : proposition (à étudier avec l'architecte).** Document de cadrage
-> structurel, antérieur à toute implémentation. Rien ici n'est figé tant que
-> l'architecte et BPx ne l'ont pas relu.
+> ⛔ **PIERRE DATÉE — 2026-08-13. LA PIÈCE DÉCRITE ICI EXISTE, ET ELLE N'EST PAS CHEZ MOI.**
+> Ce document a été le **cadrage qui a conduit à Kronos** : l'interprétateur temporel est
+> aujourd'hui un dépôt à part entière, propriétaire canonique du cœur temporel et du contrat
+> aval, que je consomme par lien direct. Son statut a changé, pas sa valeur — le raisonnement
+> qui l'a produit (les trois systèmes de coordonnées mêlés, la portée devinée puis connue) reste
+> lisible tel quel, et c'est pourquoi le corps n'est pas réécrit.
+>
+> **Ce qui est périmé, c'est le STATUT de l'ensemble, pas un détail** : lu sans cette pierre, ce
+> document donne à croire qu'on étudie une pièce à construire alors qu'elle tourne. L'autorité
+> vivante est `hub/contrats/kronos-transport.md` et `hub/contrats/temps-horloge.md`.
+>
+> _Statut d'origine, conservé : « proposition (à étudier avec l'architecte), document de cadrage
+> structurel, antérieur à toute implémentation »._
 
 ## 1. Objet et pourquoi c'est critique
 
@@ -234,6 +244,10 @@ disparaissent parce que la source du temps et de la portée devient unique.
 
 ## 12. Migration (ce que ça remplace)
 
+> ⚠️ **LA DESTINATION DE CETTE MIGRATION VIT CHEZ KRONOS** (mesuré le 2026-08-13). Ce qui suit
+> décrit ce que l'IR devait remplacer *chez moi* ; l'IR ayant émigré, cette liste se relit
+> avec `hub/contrats/kronos-transport.md` et non comme un plan de travail hôte.
+
 - La passe `resolveCvControls` (heuristique de phrase par `ruleRef`) → **remplacée**
   par la construction d'IR consommant la portée structurelle (couche 2).
 - Le parcours `treeToDispatchEvents` → devient une **projection** de l'IR.
@@ -250,8 +264,11 @@ existante, basculer un consommateur à la fois (audio d'abord, curseur ensuite).
 
 1. **Contrat de portée (BPx)** — forme exacte d'exposition du span de contenance
    par contrôle (champ sur la feuille vs nœud d'occurrence préservé) ? §7.
-2. **Propriété de l'IR** — la `TimelineIR` est-elle purement Kanopi, ou une partie
-   relève-t-elle d'une projection BPx partagée (cf. calques) ?
+2. ✅ **Propriété de l'IR — TRANCHÉE PAR LE FAIT (2026-08-13), ne pas rouvrir.** La question
+   demandait si la `TimelineIR` était purement Kanopi ou une projection BPx partagée : elle
+   n'est ni l'une ni l'autre. Elle vit chez **Kronos** (`src/ir/`), avec le reste du cœur
+   temporel. Une question ouverte qui a reçu sa réponse ailleurs fait rouvrir un sujet clos —
+   c'est pire qu'une réponse fausse.
 3. **Sémantique de portée en groupe imbriqué** — le `()` d'un groupe parent vs
    enfant : quelle fenêtre gagne ? (précédence de contenance, à aligner avec BPx).
 4. **Voix sœur à cheval sur deux segments** — une note qui chevauche deux segments
@@ -261,11 +278,11 @@ existante, basculer un consommateur à la fois (audio d'abord, curseur ensuite).
 
 ## 14. Références
 
-- `docs/design/PLAYBACK_LOOP.md` — boucle de lecture actuelle (état des lieux).
 - `docs/design/MODULATION_INPUTS.md` — les 5 entrées de modulation et leurs plages.
 - `docs/design/ADAPTER_SPEC.md` — interface runtime/adaptateur.
 - BPx `src/passes/resolveControls.ts` — sujet de paire + réf voix sœur (amont).
-- `packages/core/src/dispatcher/clock.js` — `musicalNow` / `audioTimeFor` (germe de
-  l'autorité unique).
+- `@kronos/core` — `musicalNow` / `audioTimeFor` et l'autorité unique dont ce document ne
+  décrivait que le germe. (L'ancienne référence pointait `packages/core/src/dispatcher/clock.js`,
+  supprimé ; mesuré le 2026-08-13.)
 - Contrat de projection par calques (mémoire projet) — l'IR comme source des
   projections audio/texte/piano-roll/MIDI.

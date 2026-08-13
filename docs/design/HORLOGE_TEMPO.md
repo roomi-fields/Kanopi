@@ -11,5 +11,6 @@
 - **Contrat opposable** (frontières + invariants ratifiés) :
   `hub/contrats/temps-horloge.md`
 
-Rappel local : `PLAYBACK_LOOP.md` et `TEMPORAL_INTERPRETER.md` sont **périmés** sur l'horloge
-(ancien `MockClock`/`Dispatcher`, remplacés par Kronos) — se référer au document central.
+Rappel local : `TEMPORAL_INTERPRETER.md` est **périmé** sur l'horloge (ancien
+`MockClock`/`Dispatcher`, remplacés par Kronos) et porte désormais sa pierre datée — se référer au
+document central. `PLAYBACK_LOOP.md` a été **supprimé** (`729844a`) : cette ligne le citait encore.
