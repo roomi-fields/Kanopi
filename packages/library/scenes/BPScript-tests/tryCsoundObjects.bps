@@ -4,6 +4,21 @@
                  // certaines grammaires ne rendent jamais la main.
 @core
 @mode:ord
+
+// ── MIGRATION DE FORME, écrite par bpscript le 2026-08-13 — À RELIRE ET COMMITTER PAR VOUS ──
+// La graphie générique `!(value:X n)` / `!(cont:X)` / `!(fixed:X)` est RETIRÉE du langage :
+// elle inversait le sujet et la valeur (`:` lie un SUJET à une valeur, or le sujet écrit était
+// `cont` et la « valeur » était le paramètre), et `value:` cachait le sujet DANS la valeur.
+// Forme canonique ratifiée par Romain : le PARAMÈTRE devient la clé, et le mode se COLLE à lui —
+// la même construction que les vingt-sept mots des neuf paramètres de jeu (`velstep`, `volumecont`).
+//   !(value:slide 101)  →  !(slide:101)
+//   !(cont:slide)       →  !(slidecont)
+//   !(fixed:slide)      →  !(slidefixed)
+// Le paramètre se DÉCLARE désormais, sinon son nom est refusé : `@var <nom> signal` — « un flux de
+// nombres, sans convention de lecture » (LANGUAGE.md). C'est la déclaration ajoutée ci-dessous.
+@var blurb signal
+@var oops signal
+
 S -> a (weight:0)
 S -> {a, b} c (weight:1)
 S -> b midiobject (weight:0)
@@ -13,7 +28,7 @@ S -> !(pitchrange:200) pitchcont !(pitchbend:0) c !(pitchbend:100) (weight:0)
 S -> volumecont !(volume:30) a !(volume:127) (weight:0)
 S -> !(pitchrange:200) pitchcont !(pitchbend:100) d !(pitchbend:0) (weight:0)
 S -> !(pitchrange:200) pitchcont volumecont !(volume:30) !(pitchbend:-10) a C4 D4 b c !(pitchbend:100) !(volume:127) (weight:0)
-S -> !(cont:blurb) !(value:blurb 25.6) e !(value:blurb 100) (weight:0)
-S -> !(cont:blurb) !(value:blurb 12) e !(value:blurb 110) _ !(value:blurb 130) _ _ !(value:blurb 80) _ _ !(value:blurb -20) _ !(value:blurb -10) _ _ _ !(value:blurb 40) (weight:0)
+S -> !(blurbcont) !(blurb:25.6) e !(blurb:100) (weight:0)
+S -> !(blurbcont) !(blurb:12) e !(blurb:110) _ !(blurb:130) _ _ !(blurb:80) _ _ !(blurb:-20) _ !(blurb:-10) _ _ _ !(blurb:40) (weight:0)
 S -> f (weight:0)
-S -> !(cont:oops) !(value:oops 0) f !(value:oops 4) (weight:0)
+S -> !(oopscont) !(oops:0) f !(oops:4) (weight:0)

@@ -12,6 +12,20 @@
 // --- Sous-grammaire 1 @mode:random — structure ---
 
 @mode:random
+
+// ── MIGRATION DE FORME, écrite par bpscript le 2026-08-13 — À RELIRE ET COMMITTER PAR VOUS ──
+// La graphie générique `!(value:X n)` / `!(cont:X)` / `!(fixed:X)` est RETIRÉE du langage :
+// elle inversait le sujet et la valeur (`:` lie un SUJET à une valeur, or le sujet écrit était
+// `cont` et la « valeur » était le paramètre), et `value:` cachait le sujet DANS la valeur.
+// Forme canonique ratifiée par Romain : le PARAMÈTRE devient la clé, et le mode se COLLE à lui —
+// la même construction que les vingt-sept mots des neuf paramètres de jeu (`velstep`, `volumecont`).
+//   !(value:slide 101)  →  !(slide:101)
+//   !(cont:slide)       →  !(slidecont)
+//   !(fixed:slide)      →  !(slidefixed)
+// Le paramètre se DÉCLARE désormais, sinon son nom est refusé : `@var <nom> signal` — « un flux de
+// nombres, sans convention de lecture » (LANGUAGE.md). C'est la déclaration ajoutée ci-dessous.
+@var slide signal
+
 S -> !(scale:just_intonation 0) {Taalam4 Taalam4,Pallavi Pallavi}(volumecont, volume:64) Taalam(volume:0) - !(ins:Vina, volume:40)
 
 Pallavi -> {Maa Yaa Tii . Ta {Sva Ruu Pi}:2 . {Ni}:2 {Nan Nu}:1 . Bro {Va Ve}:2}
@@ -71,15 +85,15 @@ Pull0 -> !(pitchbend:0)
 Pull1 -> !(pitchbend:100)
 Pull2 -> !(pitchbend:200)
 
-Slide0 -> !(value:slide 0)
-SlideBack1 -> !(value:slide -101)
-SlideBack2 -> !(value:slide -201)
-SlideBack3 -> !(value:slide -301)
-Slide1 -> !(value:slide 101)
-Slide2 -> !(value:slide 201)
-Slide4 -> !(value:slide 401)
+Slide0 -> !(slide:0)
+SlideBack1 -> !(slide:-101)
+SlideBack2 -> !(slide:-201)
+SlideBack3 -> !(slide:-301)
+Slide1 -> !(slide:101)
+Slide2 -> !(slide:201)
+Slide4 -> !(slide:401)
 
-StartSlide -> !(cont:slide) !(value:slide 0)
-StopSlide -> !(fixed:slide)
+StartSlide -> !(slidecont) !(slide:0)
+StopSlide -> !(slidefixed)
 StartPull -> pitchcont !(pitchrange:500) !(pitchbend:0)
 StopPull -> pitchfixed
