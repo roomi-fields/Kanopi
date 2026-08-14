@@ -104,6 +104,11 @@ domaine, sur pièces : `fichier:ligne`, ou commande et sortie.
 spécifiée et **ne compile pas** · ce que le **code** accepte → le compilateur et le portillon,
 question distincte · un comportement → le **binaire natif BP3**.
 
+## ⛔ Gardes
+
+- **Une absence n'est une preuve que si le périmètre de recherche est établi.** Dire où l'on a cherché,
+  avant de conclure que la chose n'existe pas.
+
 ## ⛔ Aucune voie parallèle — on migre, ça casse, on répare
 
 Remplacer X par Y = **supprimer X dans le même mouvement**. On migre, on regarde où ça casse, on
