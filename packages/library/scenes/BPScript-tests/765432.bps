@@ -12,9 +12,13 @@
 @quantization:50
 @qclock:3
 @alphabet.solfege:midi
-@transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:678 fait key += (C4key - 60),
-                 // soit -12 demi-tons appliques a TOUTE touche. Image fidele = transposition
-                 // REELLE d'une octave vers le bas, qui preserve les noms ecrits.
+@transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliquent
+                 // key += (C4key - 60) A L'ENCODAGE, avant que le moindre axe de sortie ne voie la
+                 // note -- la colonne transpos du natif vaut zero, ce n'est donc pas une
+                 // transposition chez lui. MESURE (bp3-engine, binaire 3.5.1, empreinte 372dd047) :
+                 // le natif rend A3 @ 220 Hz, unanime sur ses quatre axes. Cette ligne rejoint sa
+                 // FREQUENCE et diverge de son NOM -- elle rend A4 @ 220 Hz. Le choix entre le nom
+                 // ecrit et le nom natif est en arbitrage chez Romain, sur dix-neuf grammaires.
 
 // --- Sous-grammaire 1 @mode:ord ---
 
