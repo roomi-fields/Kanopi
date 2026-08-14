@@ -25,9 +25,9 @@ description: >
 
 | document | ce qu'il dit | quand l'ouvrir |
 |---|---|---|
-| `BPscript/docs/spec/LANGUAGE.md` | le **sens** — ce qu'une forme veut dire, pourquoi elle est ainsi | toujours en premier |
-| `BPscript/docs/spec/EBNF.md` | la **forme écrite** — ce qui est grammaticalement admis | dès qu'il s'agit d'une graphie |
-| `BPscript/docs/spec/AST.md` | ce que **l'arbre porte** — les nœuds, les champs, ce qui traverse | dès qu'il s'agit de l'aval |
+| `docs/spec/LANGUAGE.md`, **dans le dépôt BPscript** | le **sens** — ce qu'une forme veut dire, pourquoi elle est ainsi | toujours en premier |
+| `docs/spec/EBNF.md`, **dans le dépôt BPscript** | la **forme écrite** — ce qui est grammaticalement admis | dès qu'il s'agit d'une graphie |
+| `docs/spec/AST.md`, **dans le dépôt BPscript** | ce que **l'arbre porte** — les nœuds, les champs, ce qui traverse | dès qu'il s'agit de l'aval |
 
 Ils se citent l'un l'autre et se répartissent le travail. Tu les lis dans cet ordre.
 

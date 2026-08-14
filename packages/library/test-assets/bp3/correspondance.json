@@ -15,9 +15,9 @@
   "(ConsoleMain.c:951-963), dont le chemin est arbitraire.",
   "",
   "ET CES EN-TETES SONT PARFOIS FAUSSES — mesure sur les 113 :",
-  "  · 39 grammaires declarent une facette DIFFERENTE de celle retenue (ex. 'check&' declare '-se.check&', le couple retenu porte '-se.765432')",
-  "  · 13 grammaires utilisent une facette que leur en-tete ne mentionne pas du tout",
-  "  · soit 45 grammaires sur 113 ou l en-tete induit en erreur",
+  "  · 33 grammaires declarent une facette DIFFERENTE de celle retenue (ex. 'checkBT' declare '-ho.abc1', le couple retenu porte '-al.abc1')",
+  "  · 12 grammaires utilisent une facette que leur en-tete ne mentionne pas du tout",
+  "  · soit 39 grammaires sur 113 ou l en-tete induit en erreur",
   "Pire : les fichiers nommes par ces en-tetes EXISTENT. Reconstruire le couple depuis les",
   "en-tetes donnerait donc une reponse plausible et silencieusement FAUSSE.",
   "",
@@ -45,19 +45,19 @@
   "Regenerer avec bp3-engine/scripts/table-correspondance.py (verifie chaque chemin avant d ecrire)."
  ],
  "produit_par": "bp3-engine/scripts/table-correspondance.py",
- "source": "bp3-engine/baseline-native/baseline.json (baseline vv14, 2026-07-19)",
+ "source": "bp3-engine/baseline-native/baseline.json (baseline vv15, 2026-08-12)",
  "conditions_de_mesure": {
-  "binaire": "bp3 v3.5.1 (graphics-for-BP3)",
-  "empreinte": "fb6df5ad5ee18a0398ae3cdb1817287d",
-  "archive": "builds/v3.5.1-iso.1/bp3",
+  "binaire": "Version 3.5.1 (Aug 11 2026 - 13:16:56)",
+  "empreinte": "372dd047bc52fd152ff51ec6715fae74",
+  "archive": null,
   "graine": "1",
   "commande": "bp3 <action> -e -gr <gr-nettoyee> --seed 1 [conv] [cfg...] -o <texte> --tokensout <jetons> ; cwd=capture-run ; clean capture.py:52-61 ; un-item capture.py:96-110",
-  "scelle": "baseline-native/SCELLE.json (commande complète, protocole, preuve 96/98)"
+  "scelle": null
  },
- "moteur": "bp3 v3.5.1 (graphics-for-BP3)",
+ "moteur": "Version 3.5.1 (Aug 11 2026 - 13:16:56)",
  "racine_des_chemins": "packages/library",
  "n": 113,
- "n_references_auxiliaires": 177,
+ "n_references_auxiliaires": 176,
  "grammaires": [
   {
    "nom": "765432",
@@ -182,22 +182,16 @@
    "grammaire": "scenes/BP3-tests/PP.gr",
    "nom_amont": "-gr.PP",
    "auxiliaires": {
-    "-se": {
-     "role": "reglages",
-     "chemin": "test-assets/bp3/commun/-se.koto3",
-     "nom_amont": "-se.koto3",
-     "format": "JSON BP3"
-    },
     "-al": {
      "role": "alphabet",
-     "chemin": "test-assets/bp3/commun/-al.abc",
-     "nom_amont": "-al.abc",
+     "chemin": "test-assets/bp3/commun/-ho.abc",
+     "nom_amont": "-ho.abc",
      "format": "texte"
     }
    },
    "produit": true,
    "convention": "english",
-   "origine_du_couple": "php_ref"
+   "origine_du_couple": "declare par la grammaire (en-tete -ho.abc, aucun reglage)"
   },
   {
    "nom": "Rajeev",
@@ -418,15 +412,14 @@
    "auxiliaires": {
     "-se": {
      "role": "reglages",
-     "chemin": "test-assets/bp3/commun/-se.765432",
-     "nom_amont": "-se.765432",
-     "format": "JSON BP3",
-     "pourquoi_pas_le_fichier_de_meme_nom": "emprunt indispensable : '-se.check&' est au format texte BP2, que le binaire natif n exploite pas — la grammaire ne produit rien avec lui."
+     "chemin": "test-assets/bp3/commun/-se.check&",
+     "nom_amont": "-se.check&",
+     "format": "texte BP2"
     }
    },
-   "produit": true,
+   "produit": false,
    "convention": "french",
-   "origine_du_couple": "php_ref"
+   "origine_du_couple": "le couple est celui que la grammaire declare. Son fichier de reglages est au format texte BP2 : le moteur le refuse et s arrete. L entree ne produit rien, et c est la mesure."
   },
   {
    "nom": "checkAllCsound",
@@ -1042,21 +1035,20 @@
    "auxiliaires": {
     "-se": {
      "role": "reglages",
-     "chemin": "test-assets/bp3/commun/-se.koto3",
-     "nom_amont": "-se.koto3",
-     "format": "JSON BP3",
-     "pourquoi_pas_le_fichier_de_meme_nom": "emprunt indispensable : '-se.koto1' est au format texte BP2, que le binaire natif n exploite pas — la grammaire ne produit rien avec lui."
+     "chemin": "test-assets/bp3/commun/-se.koto1",
+     "nom_amont": "-se.koto1",
+     "format": "texte BP2"
     },
     "-al": {
      "role": "alphabet",
-     "chemin": "test-assets/bp3/commun/-al.abc1",
-     "nom_amont": "-al.abc1",
+     "chemin": "test-assets/bp3/commun/-ho.abc1",
+     "nom_amont": "-ho.abc1",
      "format": "texte"
     }
    },
-   "produit": true,
+   "produit": false,
    "convention": "english",
-   "origine_du_couple": "php_ref"
+   "origine_du_couple": "le couple est celui que la grammaire declare. Son fichier de reglages est au format texte BP2 : le moteur le refuse et s arrete. L entree ne produit rien, et c est la mesure."
   },
   {
    "nom": "koto2",
@@ -1065,20 +1057,20 @@
    "auxiliaires": {
     "-se": {
      "role": "reglages",
-     "chemin": "test-assets/bp3/commun/-se.koto3",
-     "nom_amont": "-se.koto3",
-     "format": "JSON BP3"
+     "chemin": "test-assets/bp3/commun/-se.koto1",
+     "nom_amont": "-se.koto1",
+     "format": "texte BP2"
     },
     "-al": {
      "role": "alphabet",
-     "chemin": "test-assets/bp3/commun/-al.abc1",
-     "nom_amont": "-al.abc1",
+     "chemin": "test-assets/bp3/commun/-ho.abc1",
+     "nom_amont": "-ho.abc1",
      "format": "texte"
     }
    },
-   "produit": true,
+   "produit": false,
    "convention": "english",
-   "origine_du_couple": "php_ref"
+   "origine_du_couple": "le couple est celui que la grammaire declare. Son fichier de reglages est au format texte BP2 : le moteur le refuse et s arrete. L entree ne produit rien, et c est la mesure."
   },
   {
    "nom": "koto3",
@@ -1554,9 +1546,9 @@
    "auxiliaires": {
     "-se": {
      "role": "reglages",
-     "chemin": "test-assets/bp3/commun/-se.transposition3",
-     "nom_amont": "-se.transposition3",
-     "format": "JSON BP3"
+     "chemin": "test-assets/bp3/commun/-se.transposition",
+     "nom_amont": "-se.transposition",
+     "format": "texte BP2"
     },
     "-al": {
      "role": "alphabet",
@@ -1565,9 +1557,9 @@
      "format": "texte"
     }
    },
-   "produit": true,
+   "produit": false,
    "convention": "english",
-   "origine_du_couple": "php_ref"
+   "origine_du_couple": "le couple est celui que la grammaire declare. Son fichier de reglages est au format texte BP2 : le moteur le refuse et s arrete. L entree ne produit rien, et c est la mesure."
   },
   {
    "nom": "transposition3",
@@ -1767,15 +1759,14 @@
    "auxiliaires": {
     "-se": {
      "role": "reglages",
-     "chemin": "test-assets/bp3/commun/-se.asymmetric1",
-     "nom_amont": "-se.asymmetric1",
-     "format": "JSON BP3",
-     "pourquoi_pas_le_fichier_de_meme_nom": "emprunt indispensable : '-se.tryMIDIfile' est au format texte BP2, que le binaire natif n exploite pas — la grammaire ne produit rien avec lui."
+     "chemin": "test-assets/bp3/commun/-se.tryMIDIfile",
+     "nom_amont": "-se.tryMIDIfile",
+     "format": "texte BP2"
     }
    },
-   "produit": true,
+   "produit": false,
    "convention": "english",
-   "origine_du_couple": "php_ref"
+   "origine_du_couple": "le couple est celui que la grammaire declare. Son fichier de reglages est au format texte BP2 : le moteur le refuse et s arrete. L entree ne produit rien, et c est la mesure."
   },
   {
    "nom": "tryObjects",
