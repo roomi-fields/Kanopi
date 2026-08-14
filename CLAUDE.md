@@ -24,7 +24,7 @@ dépôt porte le sien, et `rtfm_search` ne voit que le courant. `--tous` interro
 
 ## Autorité sur un sujet
 
-1. La **carte d'autorités d'Atlas** (`../atlas/carte-autorites/`) dit où vit l'autorité sur un sujet.
+1. La **carte d'autorités**, `carte-autorites/` **dans le dépôt Atlas**, dit où vit l'autorité sur un sujet.
 2. Le **fichier de référence** qu'elle désigne porte la règle.
 3. **Demander à Atlas** si l'information reste introuvable.
 
@@ -38,7 +38,7 @@ doute se lève dans le **code C de l'original**, jamais par raisonnement ni par 
 
 ## ⛔ Le langage se définit avec Romain, et par lui seul
 
-`BPscript/docs/spec/LANGUAGE.md` est la bible du langage — elle **est ce que le code doit dire**, et
+La bible du langage est `docs/spec/LANGUAGE.md`, **dans le dépôt BPscript** — elle **est ce que le code doit dire**, et
 un écart entre les deux est un défaut du code. `AST.md` et `EBNF.md` en sont des dérivés.
 
 - **Interdiction formelle d'y écrire** sans autorisation explicite de Romain pour le geste précis.
@@ -147,8 +147,8 @@ gardes s'exécutent après lui. Un vert se juge sur le **code de sortie du croch
 - **Un banc qui appelle ma propre porte prouve la porte, jamais le branchement** : abonné des deux
   côtés et branché nulle part reste vert de bout en bout.
 - **Suspecter l'instrument avant le sujet** quand un chiffre surprend, et le vérifier **avant**
-  d'envoyer la mesure. Une recherche qui rend zéro se mesure elle-même : `file` avant de conclure —
-  un fichier classé « data » rend `grep` muet sans le dire.
+  d'envoyer la mesure. **Une recherche qui rend zéro se mesure elle-même** — périmètre, **casse**, et
+  **nature du fichier** : un fichier classé « data » rend `grep` muet sans le dire.
 
 ## ⛔ Aucune voie parallèle — on migre, ça casse, on répare
 
@@ -199,6 +199,8 @@ j'attends.
 - **Une valeur écrite en dur est invisible** : personne ne peut la lire ni la surcharger.
 - **Après une reprise verbatim, je relis mon diff en RETRAIT** : ce qui disparaît ne rougit nulle
   part, et une comparaison par titre ne voit pas ce que le verbatim a mangé dans la section.
+- **Puis je relis mes sections PROPRES contre les règles communes que je viens de poser** : une règle
+  périmée survit sous un titre local, en contradiction avec sa version à jour, et rien ne la compare.
 - **Propre à ce dépôt** : un commentaire décrit le chemin que le code emprunte RÉELLEMENT.
 
 ## Écrire un document
