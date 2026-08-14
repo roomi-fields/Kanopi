@@ -112,6 +112,7 @@ l'oracle du domaine, sur pièces : `fichier:ligne`, ou commande et sortie.
 | ce que le **code** accepte | le compilateur et le portillon — question distincte de la précédente |
 | où vit l'autorité sur un sujet | la carte d'autorités d'Atlas, puis Atlas |
 | un comportement, une primitive | le **binaire natif BP3** |
+| un arbitrage rendu | `hub/decisions/` |
 
 ## ⛔ La définition de « fait »
 
@@ -182,6 +183,9 @@ j'attends.
 - **Les commentaires sont utiles et proportionnés** : ils disent ce que le code ne montre pas.
 - **Un renommage global se fait du plus long au plus court**, en nommant chaque symbole : renommer
   d'abord le nom court transforme aussi les longs qui le contiennent.
+- **Une valeur écrite en dur est invisible** : personne ne peut la lire ni la surcharger.
+- **Après une reprise verbatim, je relis mon diff en RETRAIT** : ce qui disparaît ne rougit nulle
+  part, et une comparaison par titre ne voit pas ce que le verbatim a mangé dans la section.
 - **Propre à ce dépôt** : un commentaire décrit le chemin que le code emprunte RÉELLEMENT.
 
 ## Écrire un document
@@ -194,6 +198,7 @@ backlog, décisions, constats — porte au contraire sa date et sa cause : c'est
 - **Affirmatif** : on décrit l'objet. La forme négative se réécrit en énoncé positif.
 - **Sans justification narrative** : ni citation d'une personne, ni cause, ni date, ni renvoi à une
   décision, ni contraste avec une forme antérieure.
+- **Le test** : un lecteur qui découvre le sujet aujourd'hui y apprend-il quelque chose ?
 
 ## Carte d'autorités — signaler toute modification
 
@@ -250,7 +255,8 @@ préfixe : `BP_AGENT=<nom> ~/dev/bp/hub/tour <commande>`.
 
 Les dépôts s'intègrent par **lien symbolique** : ce que j'enregistre atteint mes consommateurs **sans
 construction ni publication**. Un fichier non commité est déjà en usage chez eux — « hors du dépôt »
-n'est pas « hors d'usage ». Kairos lit BPx ; Kanopi lit BPx, bp3-frontend et les cinq runtimes.
+n'est pas « hors d'usage ». **Je mesure qui me lie et par quelle porte** : un lien symbolique dit
+que le dépôt est atteint, le champ d'exports du lié dit si c'est sa source ou son paquet construit.
 
 Un agent qui **compile** publie **deux instances** : une de développement, une de production.
 
