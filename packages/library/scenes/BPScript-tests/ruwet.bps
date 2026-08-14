@@ -27,10 +27,11 @@
                  // le natif rend A3 @ 220 Hz, unanime sur ses quatre axes. Cette ligne rejoint sa
                  // FREQUENCE et diverge de son NOM -- elle rend A4 @ 220 Hz. Le choix entre le nom
                  // ecrit et le nom natif est en arbitrage chez Romain, sur dix-neuf grammaires.
-                 // ⛔ RESERVE PROPRE A CETTE SCENE : son reglage natif est C4key=48 avec
-                 // A4freq=440, la SEULE du corpus a ne decaler qu'une ancre sur deux. La composition
-                 // n'y est donc plus l'identite et cette ligne pourrait la descendre d'une octave.
-                 // Mesure demandee a bp3-engine ; a retirer si son premier jeton sonne 440.
+                 // Son reglage natif est C4key=48 avec A4freq=440, la SEULE du corpus a ne
+                 // decaler qu'une ancre sur deux. MESURE (kairos, scene sonnee) : les frequences
+                 // concordent quand meme -- fa4 @ 174,61 · do5 @ 261,63 · si4 @ 233,08 · la4 @ 220,
+                 // contre fa3 · do4 · la#3 · la3 au natif. La transposition abaisse la frequence et
+                 // preserve le nom, donc l'ecart tient au NOM seul, quelle que soit la paire.
 
 // --- Sous-grammaire 1 @mode:ord --- structure thematique
 @mode:ord
