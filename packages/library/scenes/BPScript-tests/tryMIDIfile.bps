@@ -4,6 +4,9 @@
 
 @core
 @alphabet.western:midi
+@transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:678 fait key += (C4key - 60),
+                 // soit -12 demi-tons appliques a TOUTE touche. Image fidele = transposition
+                 // REELLE d'une octave vers le bas, qui preserve les noms ecrits.
 
 @mode:random
 S -> A4 G4 C5 A5 A4 G4 C5 A5 (volume:127) (weight:1-1)
