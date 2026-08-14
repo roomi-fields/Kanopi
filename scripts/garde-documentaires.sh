@@ -12,9 +12,14 @@
 # ⛔ IL ÉCHOUE, IL N'AVERTIT PAS. Le bloc greffé imprimait un avertissement quand le dossier partagé
 # était introuvable, et la poussée passait au VERT sans que les deux gardes aient tourné. Un garde
 # qu'on peut sauter doit échouer : présent dans le portillon n'est pas exécuté.
+# ⛔ COUTURE DE MESURE, ET ELLE EXISTE POUR UNE RAISON MESUREE : éprouver la branche
+# « dossier introuvable » en DÉPLAÇANT le dépôt partagé le retire aux quinze autres agents pendant
+# la mesure. Leurs portillons échouent alors sur un « hub introuvable » vrai deux secondes et
+# incompréhensible. Quatorze agents ont choisi ce geste le 2026-08-14, moi compris, parce que la
+# consigne disait QUOI éprouver sans dire COMMENT. On surcharge le chemin, on ne déplace rien.
 set -e
 racine="$(git rev-parse --show-toplevel)"
-hub="$(cd "$racine/.." && pwd)/hub"
+hub="${KANOPI_HUB:-$(cd "$racine/.." && pwd)/hub}"
 moi="$(basename "$racine")"
 
 if [ ! -f "$hub/tools/garde-navigation.py" ]; then
