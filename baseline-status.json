@@ -1,12 +1,47 @@
 {
   "component": "Kanopi",
-  "updated": "2026-06-14",
-  "source": "packages/library/bundled + tests/e2e",
-  "grammars": {
-    "ames": "green",
-    "not-reich": "green",
-    "visser5": "green",
-    "acceleration": "yellow",
-    "transposition": "yellow"
-  }
+  "updated": "2026-08-14",
+  "mesure": "chaque chiffre vient d'une commande relancée ce jour, jamais recopié du relevé précédent",
+  "sources": {
+    "grammaires": "ls packages/library/scenes/BP3-tests/*.gr",
+    "scenes": "find packages/library/scenes -name '*.bps'",
+    "bancs": "node scripts/meta-garde-tests.mjs",
+    "corpus": "vitest src/lib/library/corpus-compile.test.ts",
+    "backlog": "BACKLOG.md",
+    "navigation": "hub/tools/garde-navigation.py --depot kanopi",
+    "charte": "hub/tools/garde-chartes.py"
+  },
+  "bibliotheque": {
+    "grammaires_gr": 113,
+    "scenes_bps": 326,
+    "corpus_compile": "337/337 — analyse ET dérive, rouges déclarés compris"
+  },
+  "bancs": {
+    "declares": 120,
+    "vitest": 79,
+    "playwright": 41,
+    "hors_portillon": 0
+  },
+  "backlog": {
+    "total": 193,
+    "ouverts": 66,
+    "note": "l'architecte clôt, je reporte"
+  },
+  "gardes": {
+    "racine": 7,
+    "hors_portillon": 0,
+    "navigation": "0 orphelin",
+    "charte": "19/19 contre le gabarit a5a6cd3",
+    "sosie_de_portillon": "aucun"
+  },
+  "voisins": {
+    "lus_en_source": "BPscript, bp3-frontend et les six runtimes — leur écriture m'atteint",
+    "deux_regimes": "Kairos, Kronos, BPx — source au portillon, paquet publié en production",
+    "refus_de_production": "actif ; il lit le manifeste du voisin, il ne devine pas ses dossiers"
+  },
+  "ouvert": [
+    "KAN-49 — deux runtimes audio vivants quand jeu et évaluation passent tous deux ; à instruire avant de corriger",
+    "KAN-16 et KAN-37 — remèdes périmés, énoncés à réécrire",
+    "@strudel/web — dépendance morte à élaguer, preuve par campagne audio"
+  ]
 }
