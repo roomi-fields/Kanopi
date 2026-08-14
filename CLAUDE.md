@@ -164,15 +164,15 @@ qui écrit. Le préavis nomme ce qui change, ce qu'il **périme chez lui**, et u
 falsifiable. Un voisin qui lit ma **source** est prévenu à la frappe ; celui qui exécute mon **paquet
 publié**, à la publication.
 
-**Ma carte, application de cette règle ici** — mesurée sur la résolution réelle, jamais déduite du
-manifeste de paquet :
+**Le courrier se relit au moment de PUBLIER, pas au réveil** : un préavis reçu entre-temps porte
+peut-être sur ce que je m'apprête à écraser.
 
-- **huit voisins en source, en toute condition** — BPscript, bp3-frontend et les six runtimes : leur
-  seule **écriture** m'atteint ;
-- **trois à deux régimes** — Kairos, Kronos, BPx : mon serveur de développement et mon portillon
-  lisent leur **source** pendant que ma construction de production résout leur **paquet publié**.
-  **Mon portillon peut être vert sur leur source pendant que ce qui part à l'utilisateur est bâti sur
-  leur paquet.**
+**Ma carte, application de cette règle ici** — mesurée sur la résolution réelle, jamais déduite du
+manifeste de paquet : **huit voisins en source, en toute condition** — BPscript, bp3-frontend et les
+six runtimes : leur seule **écriture** m'atteint. **Trois à deux régimes** — Kairos, Kronos, BPx :
+mon serveur de développement et mon portillon lisent leur **source** pendant que ma construction de
+production résout leur **paquet publié**. **Mon portillon peut être vert sur leur source pendant que
+ce qui part à l'utilisateur est bâti sur leur paquet.**
 
 **En réception** : discriminer un rouge contre le HEAD du voisin (`git archive`) avant de conclure
 « ma régression ».
