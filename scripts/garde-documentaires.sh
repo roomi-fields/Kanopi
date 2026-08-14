@@ -22,11 +22,29 @@ racine="$(git rev-parse --show-toplevel)"
 hub="${KANOPI_HUB:-$(cd "$racine/.." && pwd)/hub}"
 moi="$(basename "$racine")"
 
-if [ ! -f "$hub/tools/garde-navigation.py" ]; then
+# ⛔ CHAQUE OUTIL SE SONDE PAR SON NOM, ET LE DOSSIER SE DISTINGUE DE L'OUTIL. Ma première
+# version sondait UN fichier et en appelait DEUX : le second manquant, la sonde passait et l'appel
+# cassait sur « can't open file », sans cause nommée. Et l'inverse accusait « hub introuvable »
+# alors que le dossier était là. Défaut hérité du bloc greffé, corrigé chez son auteur et survivant
+# chez son jumeau — c'est exactement ce que la douzième directive de mesure décrit.
+OUTILS="garde-navigation.py garde-copies.py"
+
+if [ ! -d "$hub/tools" ]; then
   echo "✗ gardes documentaires INEXÉCUTABLES — hub introuvable à $hub" >&2
   echo "  Ces gardes ne se sautent pas : sans eux, le portillon n'est pas complet." >&2
   exit 1
 fi
 
-python3 "$hub/tools/garde-navigation.py" --depot "$moi"
-python3 "$hub/tools/garde-copies.py"      --depot "$moi"
+manquants=""
+for outil in $OUTILS; do
+  [ -f "$hub/tools/$outil" ] || manquants="$manquants $outil"
+done
+if [ -n "$manquants" ]; then
+  echo "✗ gardes documentaires INEXÉCUTABLES — absent(s) de $hub/tools :$manquants" >&2
+  echo "  Ces gardes ne se sautent pas : sans eux, le portillon n'est pas complet." >&2
+  exit 1
+fi
+
+for outil in $OUTILS; do
+  python3 "$hub/tools/$outil" --depot "$moi"
+done
