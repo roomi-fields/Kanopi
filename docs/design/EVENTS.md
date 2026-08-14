@@ -176,9 +176,15 @@ variants absents du dépôt (zéro occurrence) — retirés le 2026-04-22 (commi
 gérant désormais son propre analyser via `.scope()`/`.spectrum()`/`.fscope()` (plus besoin de
 master tap). L'union réelle porte `input` (2026-07-27, `0df8a68`) et `input-device` (2026-07-28, `9a13390`) — ajoutés indépendamment l'un de l'autre, à un jour d'écart — pour
 les périphériques d'entrée (MIDI/OSC/clavier) — cf. décision
-`2026-07-27-la-fermeture-d-un-peripherique-est-un-evenement-distinct-pas-un-signal.md` (qui traite
-la fermeture d'un périphérique comme événement distinct, sans rapport avec le retrait d'audio-attach)
-et la définition complète des deux interfaces dans `packages/ui/src/lib/events/types.ts:104-151`.
+`2026-07-27-forme-du-bus-etat-de-commutateur-identite-de-port-fermeture.md`, qui porte la forme du
+bus, et la définition complète des deux interfaces dans `packages/ui/src/lib/events/types.ts`.
+
+> ⛔ **Le renvoi précédent est tombé le 2026-08-14.** Ce paragraphe citait la décision
+> « la fermeture d'un périphérique est un événement distinct, pas un signal », supprimée par Romain
+> parce qu'elle posait qu'un composant referme les barrières ouvertes — un rattrapage en aval.
+> **Le modèle est celui du patch** : on retire le câble, la source du signal CESSE, et ce qui en
+> dépendait retombe de soi-même. Personne ne referme. La forme du bus, elle, est intacte et vit
+> dans la décision citée ci-dessus.
 
 #### `output` — l'événement de PRODUCTION
 

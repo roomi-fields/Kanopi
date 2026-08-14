@@ -159,9 +159,15 @@ export interface InputEvent extends KanopiEventBase {
 
 /**
  * UN ÉTAT DE PÉRIPHÉRIQUE — type d'événement DISTINCT, jamais une cinquième nature de signal :
- * personne n'a joué quoi que ce soit (décision `2026-07-27-la-fermeture-d-un-peripherique-est-un-
- * evenement-distinct-pas-un-signal.md`). `runtime-in` PORTE le fait ; c'est le consommateur qui
- * tient l'état des barrières ouvertes.
+ * personne n'a joué quoi que ce soit. `runtime-in` PORTE le fait, et il ne commande aucun geste.
+ * Forme du bus : décision `2026-07-27-forme-du-bus-etat-de-commutateur-identite-de-port-fermeture.md`.
+ *
+ * ⛔ CE COMMENTAIRE AFFIRMAIT « c'est le CONSOMMATEUR qui tient l'état des barrières ouvertes »,
+ * sur une décision supprimée le 2026-08-14. L'affirmation tombe, et je garde sa réfutation plutôt
+ * que de l'effacer. LE MODÈLE ARRÊTÉ PAR ROMAIN EST CELUI DU PATCH : quand on retire un câble, la
+ * SOURCE DU SIGNAL CESSE — personne ne rattrape en aval, rien ne se referme, ce qui en dépendait
+ * retombe de soi-même. Un état de périphérique porte donc le FAIT qu'une source a cessé, jamais un
+ * ordre. Qui devrait porter ce geste n'est tranché nulle part, et ce commentaire ne le dit pas.
  *
  * POURQUOI IL EST ICI ALORS QUE L'HÔTE N'EN LIT AUCUN : un type nouveau se propage MÊME chez ceux
  * qui ne le liront jamais. Ce n'est pas un excès de zèle, c'est le type qui l'exige — une copie
