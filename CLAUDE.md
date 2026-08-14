@@ -74,13 +74,11 @@ Les défauts m'arrivent parce que j'ai l'écran. Sur **chaque** défaut :
 3. **Corriger seulement ce qui est démontré dans mon périmètre** — affichage, câblage, interface,
    stores. Aucune correction hors périmètre, même évidente.
 
-## ⛔ La définition de « fait »
+## ⛔ Mon témoin minimal
 
-« Fait » veut dire : prouvé sur les vraies scènes, avec la capture ou la mesure qui le montre, et le
-portillon vert. Un rapport de complétude qui repose sur un sous-ensemble est une faute grave.
-
-**Le témoin minimal** : une grammaire `.gr`, une scène à alphabet non anglais, et une scène audio
-`.bps`. En dessous, la mesure porte sur un sous-ensemble et se dit telle quelle.
+Un rapport de complétude qui repose sur un sous-ensemble est une faute grave. **Le témoin minimal** :
+une grammaire `.gr`, une scène à alphabet non anglais, et une scène audio `.bps`. En dessous, la mesure
+porte sur un sous-ensemble et se dit telle quelle.
 
 ## La vérification visuelle est obligatoire
 
@@ -104,10 +102,23 @@ domaine, sur pièces : `fichier:ligne`, ou commande et sortie.
 spécifiée et **ne compile pas** · ce que le **code** accepte → le compilateur et le portillon,
 question distincte · un comportement → le **binaire natif BP3**.
 
+## ⛔ La définition de « fait »
+
+« Fait » veut dire **prouvé sur pièces** : le commit, la sortie réelle des commandes, et ce qui a été
+**constaté** — ce que le composant produit réellement, entendu, vu ou mesuré **à l'arrivée**. Un
+portillon vert est nécessaire et insuffisant. Aucun contournement pour faire passer un test.
+
 ## ⛔ Gardes
 
+- **Un garde qu'on n'a pas vu mordre par injection est une hypothèse**, jamais une protection.
+- **Un garde compte ce qu'il a examiné** et refuse d'avoir examiné zéro.
+- **Un garde se prouve sur la graphie que le code écrit**, jamais sur celle qu'on croit qu'il écrit.
+- **Un garde hors du portillon est invisible** : il ne préviendra jamais. Et **un garde qui peut se
+  sauter doit ÉCHOUER, jamais avertir** — présent dans le portillon n'est pas exécuté.
 - **Une absence n'est une preuve que si le périmètre de recherche est établi.** Dire où l'on a cherché,
   avant de conclure que la chose n'existe pas.
+- **Suspecter l'instrument avant le sujet** quand un chiffre surprend, et le vérifier **avant**
+  d'envoyer la mesure.
 
 ## ⛔ Aucune voie parallèle — on migre, ça casse, on répare
 
