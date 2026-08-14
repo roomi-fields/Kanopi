@@ -871,9 +871,18 @@ export function declaredInputsForScene(text: string): readonly DeclaredInput[] {
 //      l'inverse, donc le routeur ne peut pas l'importer ;
 //   2. il POUSSE l'événement du bus vers ce routeur, VERBATIM.
 // Il ne lit aucun signal, ne compare aucune adresse, ne connaît aucune touche : `signal` traverse
-// opaque. Décisions `2026-07-27-le-routage-d-entree-rejoint-le-map-existant.md` (« l'hôte branche
-// le bus, il ne route pas ») et `2026-07-27-la-levee-passe-par-la-porte-de-kairos-le-streaming-
-// sort.md` (la porte de Kairos est l'unique voie de levée).
+// opaque.
+//
+// ⛔ CE COMMENTAIRE AFFIRMAIT DEUX CHOSES QUI SONT TOMBÉES LE 2026-08-14, et je garde la trace
+// plutôt que de l'effacer : il citait deux décisions du 2026-07-27 — « le routage d'entrée rejoint
+// le map existant » et « la levée passe par la porte de Kairos » — pour poser que le raccord des
+// entrées vivait chez BPx et que la porte de Kairos était l'unique voie de levée. Romain a supprimé
+// les deux décisions (hub c28abd6) et énoncé le flux : BPx produit la structure TEMPORELLE, Kairos
+// l'enrichit en structure MUSICALE, Kronos la JOUE — et SEUL KRONOS lève un point d'attente. BPx
+// n'en lève jamais.
+// LE DOMICILE DU ROUTAGE D'ENTRÉE N'EST PAS TRANCHÉ : la décision qui le posait est retirée, aucune
+// ne la remplace, la question est chez Romain. Ce commentaire ne dit donc plus OÙ il vit — il décrit
+// seulement le geste que ce fichier exécute, et rien de ce câblage n'a changé.
 //
 // POURQUOI LA SESSION VIVANTE EST TENUE ICI, ET PAS AILLEURS. Le routeur résout sur l'arbre de SA
 // session ; une session périmée viserait un arbre que Kronos ne joue plus. Elle est donc posée au
@@ -2115,10 +2124,12 @@ function makeBpxAdapter(
             : undefined
         );
         // [994] LA PORTE D'ATTENTE — l'hôte REMET, il ne route pas. Kairos dépend de BPx et
-        // jamais l'inverse : le raccord entrée→attente vit chez BPx (`entrees/routeur.ts`,
-        // décision `2026-07-27-le-routage-d-entree-rejoint-le-map-existant.md`) et ne peut pas
-        // importer la porte de Kairos — c'est la boîte de branchement qui la lui tend, une fois,
-        // avec l'arbre. Sans ce geste, BPx CRIE au premier événement (jamais un silence).
+        // jamais l'inverse, donc la porte ne peut pas s'importer depuis l'autre côté : c'est la
+        // boîte de branchement qui la tend, une fois, avec l'arbre. Sans ce geste, BPx CRIE au
+        // premier événement (jamais un silence).
+        // ⛔ CE COMMENTAIRE DISAIT « le raccord entrée→attente VIT chez BPx », sur une décision
+        // supprimée le 2026-08-14. L'affirmation tombe : seul Kronos lève un point d'attente, et le
+        // domicile du raccord n'est tranché nulle part. Le geste ci-dessous est inchangé.
         brancherAttente(bpx, kairos);
         // Capture pour la MISE À JOUR VIVANTE (re-éval same-file) : arbre + contexte de projection,
         // pour re-charger le Kairos VIVANT au teardown sans reconstruire la scène (bpx/derived ne

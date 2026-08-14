@@ -22,7 +22,7 @@
 #
 # Prérequis :
 #   - Node (>=18) + npm, deps installées (npm ci à la racine du monorepo)
-#   - Les deps frères présentes : /home/romi/dev/bp/{BPx,kronos,kairos,BPscript,…}
+#   - Les deps frères présentes dans l'atelier, à côté de ce dépôt : BPx, kronos, kairos, BPscript…
 #   - prod seulement : clé SSH VPS (~/.ssh/claude_hostinger_temp) + conteneur kanopi-web up
 #
 # Variables d'environnement (avec valeurs par défaut) :
@@ -82,7 +82,13 @@ fi
 # périmées (site potentiellement muet, 'ax is not a constructor'). On REBUILD dans
 # l'ordre de dépendance (bpx et kronos, puis kairos qui dépend des deux), puis une GARDE
 # refuse BRUYAMMENT le deploy si un dist reste plus vieux que sa source.
-UPSTREAMS=(/home/romi/dev/bp/BPx /home/romi/dev/bp/kronos /home/romi/dev/bp/kairos)
+# ⛔ LES CHEMINS SE DÉRIVENT, ILS NE S'ÉCRIVENT PAS. Ils portaient `/home/romi/dev/bp/...` en
+# absolu : sur une autre machine, ce déploiement échouerait au premier `cd`, et rien ne l'aurait
+# dit avant. Un chemin absolu ne se déclare nulle part et ne se voit qu'au moment où il échoue,
+# ailleurs que là où il a été écrit (mesure d'atlas, 2026-08-14 : douze sites chez lui, dont son
+# oracle et deux étapes de son portillon).
+ATELIER="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
+UPSTREAMS=("$ATELIER/BPx" "$ATELIER/kronos" "$ATELIER/kairos")
 echo ">> [0bis/6] Rebuild des dist amont (bpx, kronos, kairos)…"
 for d in "${UPSTREAMS[@]}"; do
   echo "   - $(basename "$d")"

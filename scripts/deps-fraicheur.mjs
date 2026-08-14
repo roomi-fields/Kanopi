@@ -169,7 +169,11 @@ if (etats.some((e) => e.includes("NON COMMITÉ"))) {
 //    et rien d'autre. C'est le cas qui a fait mordre à tort la première version — elle énumérait
 //    des dossiers par leur nom et ne connaissait pas `fixtures/`, où kairos venait de copier mon
 //    corpus. Un manifeste illisible fait TOUT compter : l'ignorance penche du côté du refus.
-const RACINES_KAIROS = racinesExposees("/home/romi/dev/bp/kairos");
+// ⛔ LE CHEMIN SE DÉRIVE, IL NE S'ÉCRIT PAS. Il portait `/home/romi/dev/bp/kairos` en absolu :
+// sur une autre machine ce garde aurait déclaré le manifeste illisible et mon portillon serait
+// devenu rouge pour une cause étrangère au dépôt. Un chemin absolu ne se déclare nulle part et
+// ne se voit qu'au moment où il échoue, ailleurs que là où il a été écrit (atlas, 2026-08-14).
+const RACINES_KAIROS = racinesExposees(resolve(repoRoot, "..", "kairos"));
 if (RACINES_KAIROS === null) {
   errors.push(
     "le manifeste de kairos n'est plus lisible — le qualificatif du refus ne se dérive plus, tout compterait.",
