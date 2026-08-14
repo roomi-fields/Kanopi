@@ -9,7 +9,7 @@
   "scripts": {
     "postinstall": "simple-git-hooks && patch-package",
     "arch": "node scripts/deps-fraicheur.mjs && depcruise \"packages/ui/src/**/*.{ts,svelte}\" \"packages/core/src/**/*.js\" --config .dependency-cruiser.cjs --output-type err && node scripts/arch-hote-runtimes.mjs && node scripts/meta-garde-tests.mjs && node scripts/anti-retrocompat-garde.mjs && node scripts/garde-correspondance-bp3.mjs && node scripts/garde-copies-miroir.mjs",
-    "verify": "cd packages/ui && npm run verify"
+    "verify": "cd packages/ui && npm run verify && cd ../.. && bash scripts/garde-documentaires.sh"
   },
   "simple-git-hooks": {
     "pre-push": "npm run arch && npm run verify"
