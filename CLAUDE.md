@@ -42,6 +42,8 @@ doute se lève dans le **code C de l'original**, jamais par raisonnement ni par 
 un écart entre les deux est un défaut du code. `AST.md` et `EBNF.md` en sont des dérivés.
 
 - **Interdiction formelle d'y écrire** sans autorisation explicite de Romain pour le geste précis.
+  L'interdiction couvre l'**ajout**, le **retrait**, la **réécriture**, la **correction d'une forme**,
+  et l'**ajout d'un socle à un exemple qui ne compile pas**.
 - **Interdiction formelle de définir un élément de langage** sans son autorisation.
 - Un arbitrage de Romain **sur** le langage autorise le changement, jamais l'écriture dans le fichier.
 
@@ -138,10 +140,15 @@ gardes s'exécutent après lui. Un vert se juge sur le **code de sortie du croch
 - **Un garde se prouve sur la graphie que le code écrit**, jamais sur celle qu'on croit qu'il écrit.
 - **Un garde hors du portillon est invisible** : il ne préviendra jamais. Et **un garde qui peut se
   sauter doit ÉCHOUER, jamais avertir** — présent dans le portillon n'est pas exécuté.
+- **Le portillon est le crochet que GIT EXÉCUTE** : il se lit par `core.hooksPath`, jamais au chemin
+  par défaut. Un fichier au mauvais chemin ressemble au portillon et ne tourne pas.
 - **Une absence n'est une preuve que si le périmètre de recherche est établi.** Dire où l'on a cherché,
   avant de conclure que la chose n'existe pas.
+- **Un banc qui appelle ma propre porte prouve la porte, jamais le branchement** : abonné des deux
+  côtés et branché nulle part reste vert de bout en bout.
 - **Suspecter l'instrument avant le sujet** quand un chiffre surprend, et le vérifier **avant**
-  d'envoyer la mesure.
+  d'envoyer la mesure. Une recherche qui rend zéro se mesure elle-même : `file` avant de conclure —
+  un fichier classé « data » rend `grep` muet sans le dire.
 
 ## ⛔ Aucune voie parallèle — on migre, ça casse, on répare
 
@@ -152,17 +159,23 @@ vivant, et son mordant se prouve par injection. Une surface publiée se **dériv
 
 ## Prévenir un voisin
 
-Une modification d'une surface partagée est **en production dès qu'elle atteint ce que le voisin
-lit** : le préavis part **à la modification**. **La frontière se règle par usage**, mesurée sur la
-résolution réelle et jamais déduite du manifeste de paquet :
+Une écriture qui touche une surface qu'un voisin consomme se **préavise avant la frappe**, par celui
+qui écrit. Le préavis nomme ce qui change, ce qu'il **périme chez lui**, et une prédiction
+falsifiable. Un voisin qui lit ma **source** est prévenu à la frappe ; celui qui exécute mon **paquet
+publié**, à la publication.
 
-- **huit voisins en source, en toute condition** — BPscript, bp3-frontend et les six runtimes : leur seule **écriture** m'atteint ;
+**Ma carte, application de cette règle ici** — mesurée sur la résolution réelle, jamais déduite du
+manifeste de paquet :
+
+- **huit voisins en source, en toute condition** — BPscript, bp3-frontend et les six runtimes : leur
+  seule **écriture** m'atteint ;
 - **trois à deux régimes** — Kairos, Kronos, BPx : mon serveur de développement et mon portillon
   lisent leur **source** pendant que ma construction de production résout leur **paquet publié**.
   **Mon portillon peut être vert sur leur source pendant que ce qui part à l'utilisateur est bâti sur
   leur paquet.**
 
-**En réception** : discriminer un rouge contre le HEAD du voisin (`git archive`) avant de conclure « ma régression ».
+**En réception** : discriminer un rouge contre le HEAD du voisin (`git archive`) avant de conclure
+« ma régression ».
 
 ## ⛔ Une clame qui contredit une mesure que j'ai faite
 
@@ -195,9 +208,10 @@ il dit ce que le code ne montre pas, y compris ce qui a rendu un seuil nécessai
 backlog, décisions, constats — porte au contraire sa date et sa cause : c'est ce qui le rend lisible.
 
 - **Descriptif et factuel** : le document décrit **ce qui est**, dans son état d'aujourd'hui.
-- **Affirmatif** : on décrit l'objet. La forme négative se réécrit en énoncé positif.
+- **Affirmatif** : on décrit l'objet. La forme négative — « ce n'est pas », « au lieu de », « sans » —
+  se réécrit en énoncé positif.
 - **Sans justification narrative** : ni citation d'une personne, ni cause, ni date, ni renvoi à une
-  décision, ni contraste avec une forme antérieure.
+  décision, ni contraste avec une forme antérieure. **Le pourquoi vit dans sa décision datée.**
 - **Le test** : un lecteur qui découvre le sujet aujourd'hui y apprend-il quelque chose ?
 
 ## Carte d'autorités — signaler toute modification
@@ -233,8 +247,8 @@ identifiant court et un statut par entrée.
 
 ## Tour de contrôle
 
-Mon identité : `BP_AGENT=<nom>`. Elle ne persiste pas entre appels shell, donc chaque commande se
-préfixe : `BP_AGENT=<nom> ~/dev/bp/hub/tour <commande>`.
+Mon identité : `BP_AGENT=kanopi`. Elle ne persiste pas entre appels shell, donc chaque commande se
+préfixe : `BP_AGENT=kanopi ~/dev/bp/hub/tour <commande>`.
 
 1. **Au réveil, le courrier d'abord** : `tour inbox`, puis `TABLEAU.md` et mes contrats.
    `tour inbox --ack` une fois traité.
@@ -248,8 +262,9 @@ préfixe : `BP_AGENT=<nom> ~/dev/bp/hub/tour <commande>`.
    pingue personne.
 5. **Un contrat partagé se propose avant d'être figé**, par `tour`. Le code interne au dépôt reste
    autonome.
-6. **Fin de session** : je mets à jour ma ligne du `TABLEAU.md`, ma fiche projet et ma colonne de
-   `baseline-status.json`. **Le code fait foi** : un statut se vérifie sur pièces.
+6. **Fin de session** : je mets à jour ma ligne du `TABLEAU.md`, ma fiche projet et — quand mon
+   dépôt en porte un à sa racine — mon entrée de `baseline-status.json`. **Le code fait foi** : un
+   statut se vérifie sur pièces.
 
 ## ⛔ Un dépôt lié est consommé VIVANT
 
