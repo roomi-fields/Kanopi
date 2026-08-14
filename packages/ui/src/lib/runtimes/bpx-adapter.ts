@@ -1,3 +1,4 @@
+import { LIBS } from 'bpscript/src/transpiler/libs-data.js';
 import type { RuntimeAdapter, EvalSource, LogPush } from './adapter';
 import type { Runtime } from '../core-mock';
 import { compileBps } from './compile-cache';
@@ -19,22 +20,22 @@ import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 // bpscript's musical catalogs, imported AS-IS (same path as
 // lib/library/resources.ts). A `.bps` that declares `@alphabet.X` (+ optional
 // `@tuning.Y`) resolves its pitches through these — bohlen-pierce, gamelan, etc.
-import alphabetsJson from 'bpscript/lib/alphabets.json';
-import tuningsJson from 'bpscript/lib/tunings.json';
-import temperamentsJson from 'bpscript/lib/temperaments.json';
-import octavesJson from 'bpscript/lib/octaves.json';
-import scalesJson from 'bpscript/lib/scales.json';
+const alphabetsJson = LIBS.alphabets;
+const tuningsJson = LIBS.tunings;
+const temperamentsJson = LIBS.temperaments;
+const octavesJson = LIBS.octaves;
+const scalesJson = LIBS.scales;
 // CV modulation library (`mod.adsr/lfo/ramp`): the param signatures AND the curve
 // shape live here (declarative segments), consumed AS-IS — Kanopi's transport
 // renders the curve generically, no built-in modulator. See CV.md.
-import modLibJson from 'bpscript/lib/mod.json';
+const modLibJson = LIBS.mod;
 // Registre des VOIX (`lib/voices.json`, domaine 'voice' — LANG-SONS-3, résolution voix Kairos
 // 79118df) : jumelle de `pitchLib`/`digitalLib`, donnée read-only fournie par l'hôte (L26).
 // Kairos RÉSOUT terminal→voix (réf de l'acteur / binding d'alphabet), cascade `for:<device>`,
 // et grave `content.voice`. ABSENT ⇒ pas de facette voix (rétro-compat : oscillateur du runtime).
 // L'hôte TRANSPORTE le registre, il ne l'interprète pas. Le RENDU du backtick de voix (aval,
 // runtime-audio) est tenu jusqu'à l'étude son [828] — ici c'est la plomberie de l'injection.
-import voicesJson from 'bpscript/lib/voices.json';
+const voicesJson = LIBS.voices;
 // Lib de FONCTIONS DIGITALES fournie (KAI-B03) — jumelle de `mod.json` (CV) : Kairos applique
 // ces fonctions TS déterministes (ex. `transpose`) à la projection. Donnée read-only fournie par
 // l'hôte (3 provenances, comme PITCH_LIB) ; sans elle Kairos retombe sur un repli hérité hardcodé.
@@ -219,7 +220,7 @@ const PITCH_LIB: PitchLib = {
   octaves: octavesJson as unknown as PitchLib['octaves']
 };
 
-// The provided DIGITAL function library (`bpscript/lib/digital.json`), handed to Kairos as the
+// The provided DIGITAL function library (catalogue `digital` de `bpscript/src/transpiler/libs-data.js`), handed to Kairos as the
 // read-only `ctx.digitalLib` — the exact sibling of `PITCH_LIB`. Kairos applies these deterministic
 // TS functions (e.g. `transpose`) AT PROJECTION (KAI-B03); the host supplies the DATA and runs no
 // function itself. Without it Kairos falls back to its legacy hardcoded transpose. `_comment` doc

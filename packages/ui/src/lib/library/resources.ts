@@ -8,11 +8,11 @@
 //   - Kanopi's own catalogs (audio banks, visuals, devices) — already parsed by
 //     their existing modules; reused, never re-read.
 
-import alphabetsJson from 'bpscript/lib/alphabets.json';
-import tuningsJson from 'bpscript/lib/tunings.json';
-import temperamentsJson from 'bpscript/lib/temperaments.json';
-import scalesJson from 'bpscript/lib/scales.json';
-import octavesJson from 'bpscript/lib/octaves.json';
+const alphabetsJson = LIBS.alphabets;
+const tuningsJson = LIBS.tunings;
+const temperamentsJson = LIBS.temperaments;
+const scalesJson = LIBS.scales;
+const octavesJson = LIBS.octaves;
 // BPScript language modules (`@core` + the `mod` CV lib): real library files with
 // browsable content (core symbols/settings, CV objects + their declarative curves).
 // Imported AS-IS so opening one shows it.
@@ -22,12 +22,13 @@ import octavesJson from 'bpscript/lib/octaves.json';
 // n'est pas une entrée retirée de l'affichage — c'est un module qui n'existe plus dans le langage.
 // L'exposer encore montrerait une forme que le langage a retirée, et c'est précisément ce que le
 // backlog KAN-42 reproche à 203 scènes.
-import coreJson from 'bpscript/lib/core.json';
-import modJson from 'bpscript/lib/mod.json';
+const coreJson = LIBS.core;
+const modJson = LIBS.mod;
 // Digital functions library (transpose &c., KAI-B03's twin of mod.json) — a real
 // browsable bpscript library file, same as the others above.
-import digitalJson from 'bpscript/lib/digital.json';
+const digitalJson = LIBS.digital;
 
+import { LIBS } from 'bpscript/src/transpiler/libs-data.js';
 import { guestLibraries, type GuestLibrary } from 'runtime-codevoices';
 import { visualsCatalog } from './visuals';
 import type { VisualItem } from './visuals';

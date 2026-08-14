@@ -25,8 +25,9 @@
 // possède) ou à Kairos (qui le lit). Le fait qui l'a montré : quand le champ d'accordage a été
 // renommé en amont le 2026-08-08, le SEUL code cassé chez nous était ce verrou — nous avons été
 // mis en rouge par un champ que l'application ne lit jamais.
+import { LIBS } from 'bpscript/src/transpiler/libs-data.js';
 import { describe, it, expect } from 'vitest';
-import alphabetsJson from 'bpscript/lib/alphabets.json';
+const alphabetsJson = LIBS.alphabets;
 
 // Source de l'adaptateur lue par le bundler (même route que le garde de corpus,
 // `library/corpus-compile.test.ts:60`) : rien de Node ici, `src/` n'en porte pas les types.

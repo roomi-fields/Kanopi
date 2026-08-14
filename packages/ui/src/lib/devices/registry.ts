@@ -9,12 +9,13 @@
 // Glue: the bundled library is shipped as raw JSON (same `?raw` pattern as the
 // `-se` aux files in bp3-aux.ts) and parsed here.
 
+import { LIBS } from 'bpscript/src/transpiler/libs-data.js';
 import type { VoiceOutputType } from '../runtimes/adapter';
 import bundledDevicesRaw from '../../../../library/devices.json?raw';
 // The channel catalog is bpscript's, imported AS-IS (same pattern as
 // bpx-adapter.ts:22's `alphabets.json`) — directions (`in`/`out`) and default
 // connection `params` are amont data, not a second copy kept here.
-import coreJson from 'bpscript/lib/core.json';
+const coreJson = LIBS.core;
 
 const CANAUX = coreJson.schema.channels;
 
