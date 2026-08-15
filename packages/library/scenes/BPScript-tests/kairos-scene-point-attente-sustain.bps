@@ -4,11 +4,15 @@
 // Une scène qui écrit `<!sustain` : prouve que le point d'attente posé par la graphie du langage
 // expose bien son signal par la porte `pointsAttente()`, sur une dérivation BPx réelle (pas un
 // arbre fabriqué à la main).
+// `@var sustain in.midi` DÉCLARE LE RÔLE que le point attend — un point d'attente dont le nom
+// n'est déclaré nulle part est refusé (arbitrage Romain, 2026-08-15). La ligne nomme un rôle et
+// rien de plus : l'adresse se collerait AU POINT (`<!sustain.64`), et cette scène n'en écrit pas.
 
 @core
 @alphabet.western:midi
 @tempo:60
 @striated
+@var sustain in.midi
 
 @mode:ord
 S -> C4 <!sustain D4
