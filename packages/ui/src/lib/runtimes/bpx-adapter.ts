@@ -54,6 +54,11 @@ import {
 // matière propre de la vue Texte). L'hôte PORTE la valeur à la construction de la
 // Session, il ne la résout ni ne l'abonne.
 import { traceEnabled } from 'runtime-ui';
+// [1497] LE ROUTEUR D'ENTRÉE — mandat de runtime-in, tranché par Romain
+// (`hub/decisions/2026-08-14-le-routage-d-entree-est-le-mandat-de-runtime-in.md`). Fonction PURE
+// consommée TELLE QUELLE : je lui remets l'événement et les pièces de la scène, elle me rend des
+// demandes. Je ne lis aucun signal, je ne compare aucune adresse.
+import { routerEvenementEntree, type DemandeAttente } from 'runtime-in';
 // KAN-orchestration P1 — Kairos is the SOURCE of the played timeline (projects the BPx
 // tree into a Kronos Timeline, exposes a StructureSource the Transport PULLs). Consumed
 // AS-IS: the host `charger`s it with the tree + BPx projection context, then hands it to
@@ -837,7 +842,7 @@ export interface DeclaredInput {
  *
  * CE QUE L'HÔTE EN FAIT, ET SA LIMITE : il PRÉSENTE ces rôles et laisse l'utilisateur y associer un
  * appareil réel. Il ne route rien — associer un événement reçu au rôle qui l'attend est le mandat
- * du routeur de BPx (`entrees/routeur.ts`), à qui l'hôte tend l'événement VERBATIM et l'association
+ * de runtime-in (`routerEvenementEntree`), à qui l'hôte tend l'événement VERBATIM et l'association
  * en DONNÉE (voir `pousserEvenementEntree` plus bas ; contrat `hub/contrats/hote-runtime-in.md`).
  */
 export function declaredInputsForScene(text: string): readonly DeclaredInput[] {
@@ -861,50 +866,79 @@ export function declaredInputsForScene(text: string): readonly DeclaredInput[] {
 // [994] LE BRANCHEMENT DU POINT D'ATTENTE — deux fils, aucune décision
 // ════════════════════════════════════════════════════════════════════════════════
 //
-// La chaîne complète est : une touche arrive sur le bus → le routeur de BPx décide QUEL point
-// d'attente elle lève (il connaît les `@in` déclarés ET les points écrits dans l'arbre) → la porte
+// La chaîne complète est : une touche arrive sur le bus → `routerEvenementEntree` (runtime-in)
+// décide QUELS points d'attente elle lève, sur les pièces de la scène que BPx lui remet → la porte
 // de Kairos désarme le point → Kronos, qui consulte l'état armé à l'instant du gel, repart.
 //
-// L'HÔTE N'EST NI L'UN NI L'AUTRE BOUT. Il tient exactement les deux fils que personne d'autre ne
-// peut tenir, parce que lui seul voit les deux côtés à la fois :
-//   1. il REMET la porte de Kairos à BPx (`brancherPorteAttente`) — Kairos dépend de BPx et jamais
-//      l'inverse, donc le routeur ne peut pas l'importer ;
-//   2. il POUSSE l'événement du bus vers ce routeur, VERBATIM.
+// L'HÔTE N'EST AUCUN DE CES BOUTS. Il tient exactement les fils que personne d'autre ne peut tenir,
+// parce que lui seul voit les trois côtés à la fois :
+//   1. il PREND les pièces de la scène chez BPx (`contexteEntrees()` — deux listes plates, aucun
+//      nœud d'arbre) ;
+//   2. il REMET l'événement du bus et ces pièces au routeur de runtime-in, VERBATIM ;
+//   3. il PORTE les demandes rendues à la porte de Kairos (`demande`) — Kairos dépend de BPx et
+//      jamais l'inverse, et le routeur est une fonction pure qui n'importe personne.
 // Il ne lit aucun signal, ne compare aucune adresse, ne connaît aucune touche : `signal` traverse
 // opaque.
 //
-// ⛔ CE COMMENTAIRE AFFIRMAIT DEUX CHOSES QUI SONT TOMBÉES LE 2026-08-14, et je garde la trace
-// plutôt que de l'effacer : il citait deux décisions du 2026-07-27 — « le routage d'entrée rejoint
-// le map existant » et « la levée passe par la porte de Kairos » — pour poser que le raccord des
-// entrées vivait chez BPx et que la porte de Kairos était l'unique voie de levée. Romain a supprimé
-// les deux décisions (hub c28abd6) et énoncé le flux : BPx produit la structure TEMPORELLE, Kairos
-// l'enrichit en structure MUSICALE, Kronos la JOUE — et SEUL KRONOS lève un point d'attente. BPx
-// n'en lève jamais.
-// LE DOMICILE DU ROUTAGE D'ENTRÉE N'EST PAS TRANCHÉ : la décision qui le posait est retirée, aucune
-// ne la remplace, la question est chez Romain. Ce commentaire ne dit donc plus OÙ il vit — il décrit
-// seulement le geste que ce fichier exécute, et rien de ce câblage n'a changé.
+// LE DOMICILE DU ROUTAGE EST TRANCHÉ PAR ROMAIN, le 2026-08-14 :
+// `hub/decisions/2026-08-14-le-routage-d-entree-est-le-mandat-de-runtime-in.md`. Le routage d'un
+// événement d'entrée est le mandat de runtime-in ; BPx n'a rien à voir avec le routage. Le flux :
+// BPx produit la structure TEMPORELLE, Kairos l'enrichit en structure MUSICALE, Kronos la JOUE — et
+// SEUL KRONOS lève un point d'attente.
 //
-// POURQUOI LA SESSION VIVANTE EST TENUE ICI, ET PAS AILLEURS. Le routeur résout sur l'arbre de SA
-// session ; une session périmée viserait un arbre que Kronos ne joue plus. Elle est donc posée au
-// même endroit et au même instant que l'arbre remis à Kairos — à l'éval ET à chaque re-derive — et
-// RETIRÉE au démontage, pour qu'une touche frappée après un stop ne trouve rien plutôt que de
-// lever un point d'un arbre mort.
+// ⛔ CE FICHIER APPELAIT `session.evenementEntree` ET REMETTAIT LA PORTE DE KAIROS À BPx
+// (`brancherPorteAttente`) : le routeur de BPx résolvait, l'hôte ne portait rien. Les deux gestes
+// sont tombés le 2026-08-15 avec cette décision, et rien ne les remplace en parallèle — le routeur
+// de BPx n'a plus d'appelant ici. Son retrait chez lui suit, sur le mot de l'architecte.
+//
+// POURQUOI LA SESSION VIVANTE ET LA PORTE SONT TENUES ICI, ET PAS AILLEURS. Les pièces se lisent
+// sur l'arbre de la session COURANTE ; une session périmée décrirait un arbre que Kronos ne joue
+// plus. Elles sont donc posées au même endroit et au même instant que l'arbre remis à Kairos — à
+// l'éval ET à chaque re-derive — et RETIRÉES au démontage, pour qu'une touche frappée après un stop
+// ne trouve rien plutôt que de lever un point d'un arbre mort.
 
-/** La session BPx qui a chargé l'arbre COURANT — celle dont le routeur vise l'arbre que Kronos joue. */
+/** La session BPx qui a chargé l'arbre COURANT — celle dont je lis les pièces d'entrée. */
 let sessionEntrees: Session | null = null;
 
-/** Remet la porte de Kairos au routeur de BPx et publie la session vivante. Appelé avec l'arbre. */
+/** La porte de Kairos où partent les demandes levées. Posée et retirée avec la session. */
+let porteEntrees: Kairos | null = null;
+
+/** Publie la session vivante ET la porte de Kairos. Appelé avec l'arbre. */
 function brancherAttente(session: Session, k: Kairos | undefined): void {
   if (k === undefined) return;
-  // La porte, telle quelle : `demande` EST la forme qu'attend BPx (`PorteAttente`), y compris son
-  // accusé — un refus doit remonter jusqu'au routeur, qui en fait une erreur d'assemblage bruyante.
-  session.brancherPorteAttente((d) => k.demande(d as Parameters<Kairos['demande']>[0]));
   sessionEntrees = session;
+  porteEntrees = k;
 }
 
 /** Démontage : plus d'arbre joué, plus de cible. Une touche tardive ne lève alors plus rien. */
 export function debrancherAttente(): void {
   sessionEntrees = null;
+  porteEntrees = null;
+}
+
+/**
+ * PORTE LES DEMANDES À LA PORTE DE KAIROS, et fait CRIER tout refus. Rend le nombre porté.
+ *
+ * ⚠️ UN REFUS EST UNE ERREUR D'ASSEMBLAGE, PAS UN NON-ÉVÉNEMENT. Les demandes viennent du routeur,
+ * qui les a résolues sur les points lus DANS L'ARBRE : un refus dit que l'arbre et la porte ne
+ * s'accordent pas sur ce que la scène écrit — jamais un geste de l'utilisateur. L'avaler rendrait
+ * « rien ne se lève » indiscernable de « rien ne visait ».
+ * (`accepté` est ACCENTUÉ — forme exacte de `Accuse`, à recopier telle quelle.)
+ */
+function porterAttentes(demandes: readonly DemandeAttente[]): number {
+  for (const d of demandes) {
+    const accuse = porteEntrees!.demande(d as Parameters<Kairos['demande']>[0]) as
+      | { accepté?: unknown; motif?: unknown }
+      | undefined;
+    if (accuse !== undefined && accuse !== null && accuse.accepté === false) {
+      throw new Error(
+        `[kanopi] la porte d'attente REFUSE la levée de '${d.nom}' : ${String(accuse.motif)}. ` +
+          `Le routeur ne rend que des points lus dans l'arbre — un refus signale un désaccord ` +
+          `entre l'arbre et la porte, pas un événement sans cible.`
+      );
+    }
+  }
+  return demandes.length;
 }
 
 /**
@@ -928,8 +962,14 @@ export function pousserEvenementEntree(
   evenement: { device: string; sourceId: string; signal: unknown },
   associations: readonly { role: string; sourceId: string }[]
 ): number {
-  if (sessionEntrees === null) return 0;
-  return sessionEntrees.evenementEntree(evenement, associations);
+  if (sessionEntrees === null || porteEntrees === null) return 0;
+  // LES PIÈCES DE LA SCÈNE VIENNENT DE BPx, LE ROUTAGE DE runtime-in, LA LEVÉE DE KAIROS. Trois
+  // gestes, trois détenteurs, et aucun n'est le mien : je prends, je remets, je porte.
+  // ⚠️ `contexteEntrees()` CRIE avant toute dérivation — une liste vide rendrait « cette scène
+  // n'attend rien » indiscernable de « rien n'est encore dérivé ».
+  return porterAttentes(
+    routerEvenementEntree(evenement, { ...sessionEntrees.contexteEntrees(), associations })
+  );
 }
 
 // Extracts the `gm_*` soundfont names a strudel backtick's code USES, by regex over its
@@ -2123,13 +2163,10 @@ function makeBpxAdapter(
               } as unknown as Parameters<Kairos['charger']>[2])
             : undefined
         );
-        // [994] LA PORTE D'ATTENTE — l'hôte REMET, il ne route pas. Kairos dépend de BPx et
-        // jamais l'inverse, donc la porte ne peut pas s'importer depuis l'autre côté : c'est la
-        // boîte de branchement qui la tend, une fois, avec l'arbre. Sans ce geste, BPx CRIE au
-        // premier événement (jamais un silence).
-        // ⛔ CE COMMENTAIRE DISAIT « le raccord entrée→attente VIT chez BPx », sur une décision
-        // supprimée le 2026-08-14. L'affirmation tombe : seul Kronos lève un point d'attente, et le
-        // domicile du raccord n'est tranché nulle part. Le geste ci-dessous est inchangé.
+        // [1497] LA SESSION ET LA PORTE — l'hôte BRANCHE, il ne route pas. La session dit les
+        // pièces de la scène, la porte reçoit les demandes ; les deux sont posées ensemble, une
+        // fois, avec l'arbre. Sans ce geste, une touche ne trouve rien (jamais un cri : hors
+        // scène jouée, il n'y a pas d'assemblage à dénoncer).
         brancherAttente(bpx, kairos);
         // Capture pour la MISE À JOUR VIVANTE (re-éval same-file) : arbre + contexte de projection,
         // pour re-charger le Kairos VIVANT au teardown sans reconstruire la scène (bpx/derived ne
@@ -2513,7 +2550,7 @@ function makeBpxAdapter(
                     } as unknown as Parameters<Kairos['charger']>[2])
                   : undefined
               );
-              // [994] LE RE-ROLL CHANGE DE SESSION — donc de porte ET d'arbre. `rbpx` est une
+              // [994] LE RE-ROLL CHANGE DE SESSION — donc d'arbre, donc de pièces. `rbpx` est une
               // session NEUVE : sans ce re-branchement, la touche continuerait de viser l'arbre
               // du cycle précédent, et une scène re-randomisée cesserait de repartir sans qu'un
               // seul message le dise. On rebranche sur la session VIVANTE, celle qui vient de

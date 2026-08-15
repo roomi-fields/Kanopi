@@ -2,11 +2,14 @@ import { test, expect } from '@playwright/test';
 
 // LE POINT D'ATTENTE, DE BOUT EN BOUT — la pièce gèle, une touche la relance.
 //
-// C'est le verrou de la chaîne complète, et il traverse CINQ dépôts : BPScript écrit `<!rôle.adresse`
-// → BPx porte le point jusqu'à l'arbre ET résout quel point une touche lève (`entrees/routeur.ts`)
-// → Kairos tient l'état armé et sa porte → Kronos gèle EXACTEMENT sur le point → et l'hôte tient
-// les deux fils que personne d'autre ne peut tenir : il REMET la porte de Kairos à BPx et POUSSE
-// l'événement du bus vers le routeur (`bpx-adapter.brancherAttente` / `real-core` fil 'input').
+// C'est le verrou de la chaîne complète, et il traverse SIX dépôts : BPScript écrit `<!rôle.adresse`
+// → BPx porte le point jusqu'à l'arbre et dit les pièces de la scène (`contexteEntrees()`)
+// → runtime-in résout quels points une touche lève (`routerEvenementEntree`, son mandat depuis
+// `hub/decisions/2026-08-14-le-routage-d-entree-est-le-mandat-de-runtime-in.md`) → Kairos tient
+// l'état armé et sa porte → Kronos gèle EXACTEMENT sur le point → et l'hôte tient les fils que
+// personne d'autre ne peut tenir : il PREND les pièces, POUSSE l'événement du bus au routeur, et
+// PORTE les demandes à la porte de Kairos (`bpx-adapter.brancherAttente` /
+// `bpx-adapter.pousserEvenementEntree` / `real-core` fil 'input').
 //
 // POURQUOI CE BANC EXISTE, ET CE QU'IL VERROUILLE VRAIMENT. Le raccord d'entrée a vécu une journée
 // entière en pièces séparées, chacune verte chez elle, sans que la pièce s'arrête une seule fois :
@@ -20,7 +23,7 @@ import { test, expect } from '@playwright/test';
 //
 // ⚠️ TENUE, PAS FRAPPÉE — et ce banc a d'abord rougi pour l'avoir confondu. Une touche a un
 // RELÂCHEMENT, donc elle se lit en ÉTAT : l'appui baisse la barrière, le relâchement la REMONTE
-// (`BPx entrees/routeur.ts`, branche `front === 'montant'` / relâchement). Une touche frappée en
+// (`runtime-in`, `lectureSignal` : `front === 'montant'` / `porteUnRelachement`). Une touche frappée en
 // avance baisse donc la barrière puis la relève aussitôt, et la pièce gèle quand même quand elle
 // arrive au point — c'est VOULU : sans ce ré-armement, une barrière ouverte une fois le resterait
 // pour toujours et la pièce ne s'arrêterait plus au tour suivant. Ce qui traverse sans gel, c'est
