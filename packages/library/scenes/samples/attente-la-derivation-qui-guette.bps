@@ -12,14 +12,23 @@
 // Tout ce qui précède se déroule seul, du début à la fin. Le POINT D'ATTENTE ouvre
 // l'autre régime : le flux s'arrête et attend qu'un signal nommé arrive du dehors. Le
 // nom attendu se colle au signe, et rien ne passe tant qu'il n'est pas venu.
-// C'est ce qui permet à une pièce d'être JOUÉE plutôt que déroulée — une entrée de
-// clavier, un top d'une autre voix, une pédale. Sans lui, une grammaire ne peut que
-// produire son temps à elle.
-// Ici l'introduction se déroule, puis la suite guette : elle ne partira qu'au signal.
+// C'est ce qui permet à une pièce d'être JOUÉE plutôt que déroulée. Sans lui, une
+// grammaire ne peut que produire son temps à elle.
+//
+// LE SIGNAL A UN NOM, ET CE NOM SE DÉCLARE. `@var depart in.keyboard` ouvre le RÔLE
+// `depart` sur le clavier : la scène nomme le rôle, l'appareil réel s'y associe au
+// moment de jouer. Déclarer le nom est ce qui distingue « j'attends `depart` » de la
+// coquille qui attendrait un signal que personne n'envoie jamais.
+//
+// Ici, le clavier : la scène se joue sans rien brancher. Le verrou des majuscules
+// donne la main au jeu ; l'introduction se déroule, puis la suite guette — elle ne
+// partira qu'à la touche. Aucune adresse au point d'attente : toute touche la lève.
 
 @core
 @alphabet.western
 @tempo:80
+
+@var depart in.keyboard
 
 S -> Introduction Suite
 
