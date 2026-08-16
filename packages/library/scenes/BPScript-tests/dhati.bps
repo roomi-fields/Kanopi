@@ -87,10 +87,6 @@
 @gate mi5:midi
 @gate mi4:midi
 @gate fa4:midi
-@gate sol4:midi
-@gate la5:midi
-@gate si5:midi
-@gate fa3:midi
 @gate do4:midi
 
 // --- Sous-grammaire 1 @mode:random — structure initiale ---
