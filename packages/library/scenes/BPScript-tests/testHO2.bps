@@ -3,7 +3,6 @@
 // Grammaire minimale : une seule règle produisant 4 symboles de l'alphabet abc
 // (a..z mono-caractère). Aucune note MIDI — production en mode texte.
 @test_alphabets.abc
-@alphabet.abc
 
 @mode:random
 S -> a b c d

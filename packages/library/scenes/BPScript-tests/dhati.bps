@@ -23,7 +23,7 @@
 // NOTE : INIT: Play I46 (BP3 performance init, pas encore en BPscript)
 
 @core
-@alphabet.tabla
+@test_alphabets.dhati
 @sound.tabla_perc
 @tempo:15
 @homomorphism.dhati
