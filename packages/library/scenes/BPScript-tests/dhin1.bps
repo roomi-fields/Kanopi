@@ -68,28 +68,28 @@ A6 A2 -> A4 A4
 #A6 A2 -> A2 #A6
 -----
 @mode:random
-A3 <> dhin--
-A3 <> dha--
+A3 <> dhin --
+A3 <> dha --
 A3 <> dhagena
 A4 <> tirakita
-A3 A3 <> dhagenadhin--
-A3 A3 <> dhagenadha--
-A6 <> dha-dha-dha-
-A6 <> dha-ta-dha-
+A3 A3 <> dhagenadhin --
+A3 A3 <> dhagenadha --
+A6 <> dha - dha - dha -
+A6 <> dha - ta - dha -
 A6 <> dheenedheenedheene
 A6 <> dheenedheenagena
-A6 <> dheenedha-dheene
+A6 <> dheenedha - dheene
 A6 <> tagetirakita
 A6 <> teeneteenakena
 A6 <> dhatigegenaka
 -----
 @mode:random
 F'12 <> dhatigegenakateeneteenakena
-Q24 <> dhin--dhagenadha--dhagenadhatigegenakadheenedheenagena
-F24 <> tagetirakitadhin--dhagenadhatigegenakadheenedheenagena
-F24 <> tagetirakitagena-dhagenadhatigegenakadheenedheenagena
-F'24 <> tagetirakitadhin--dhagenadhatigegenakateeneteenakena
-F'24 <> tagetirakitagena-dhagenadhatigegenakateeneteenakena
-F48 <> dhin--dhagenadha--dhagenadhatigegenakadheenedheenagenatagetirakitadhin--dhagenadhatigegenakateeneteenakena
-F48 <> dhin--dhagenadha--dhagenadhatigegenakadheenedheenagenatagetirakitagena-dhagenadhatigegenakateeneteenakena
+Q24 <> dhin -- dhagenadha -- dhagenadhatigegenakadheenedheenagena
+F24 <> tagetirakitadhin -- dhagenadhatigegenakadheenedheenagena
+F24 <> tagetirakitagena - dhagenadhatigegenakadheenedheenagena
+F'24 <> tagetirakitadhin -- dhagenadhatigegenakateeneteenakena
+F'24 <> tagetirakitagena - dhagenadhatigegenakateeneteenakena
+F48 <> dhin -- dhagenadha -- dhagenadhatigegenakadheenedheenagenatagetirakitadhin -- dhagenadhatigegenakateeneteenakena
+F48 <> dhin -- dhagenadha -- dhagenadhatigegenakadheenedheenagenatagetirakitagena - dhagenadhatigegenakateeneteenakena
 -----

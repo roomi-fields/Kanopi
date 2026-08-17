@@ -240,14 +240,14 @@ AnCycle1 -> An
 // --- Sous-grammaire 12 @mode:sub1 — Notes (simultaneous with 1) ---
 
 @mode:sub1
-Su -> {1,do4-}
-Sm -> {1,mi4-}
-Ol -> {1,sol4-}
-Vi -> {1,do5-}
-Ar -> {1,mi5-}
-An -> {1,sol5-}
+Su -> {1,do4 -}
+Sm -> {1,mi4 -}
+Ol -> {1,sol4 -}
+Vi -> {1,do5 -}
+Ar -> {1,mi5 -}
+An -> {1,sol5 -}
 
-Tik -> {1,do7-}
+Tik -> {1,do7 -}
 
 -----
 
