@@ -6,6 +6,7 @@
 // (GetBols/SEARCHTERMINAL2). La déclaration manquait à la traduction (défaut
 // corrigé 2026-07-03, flip Palier 4 étape B — sortie attendue : `i j`).
 @test_alphabets.abc
+@alphabet.abc
 
 @tempo:60.0000
 @striated

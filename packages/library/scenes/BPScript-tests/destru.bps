@@ -13,6 +13,7 @@
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
 @test_alphabets.abc:midi
+@alphabet.abc
 
 // --- Sous-grammaire 1 @mode:random — génération de structure ---
 

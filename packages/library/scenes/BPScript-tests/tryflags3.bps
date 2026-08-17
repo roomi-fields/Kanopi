@@ -9,6 +9,7 @@
 // à poids infini sont prioritaires ; si plusieurs sont candidates, la première
 // l'emporte. L'original référence l'alphabet abc (a..z mono-caractère).
 @test_alphabets.abc
+@alphabet.abc
 
 @mode:random
 S -> X [pos=1, done=0]

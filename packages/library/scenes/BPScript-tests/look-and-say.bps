@@ -11,6 +11,7 @@
                  // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
                  // certaines grammaires ne rendent jamais la main.
 @test_alphabets.conway
+@alphabet.conway
 
 // --- Sous-grammaire 1 @mode:ord — initialisation ---
 

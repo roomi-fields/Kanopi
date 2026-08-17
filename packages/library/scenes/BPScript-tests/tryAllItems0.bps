@@ -4,6 +4,7 @@
 
 @core
 @test_alphabets.abc
+@alphabet.abc
 @allitems
 @maxitems:500
 
