@@ -24,6 +24,7 @@
 // `lib/homomorphism.json`). Je les avais renommées avec le reste ; kanopi l'a relevé et a raison :
 // une trace qui se renomme ment sur elle-même. Restauré par bpscript, 2026-08-07.
 @homomorphism.dhin
+@test_alphabets.dhin
 // ─────────────────────────────────────────────────────────────────────────────
 // LE TEMPO EST DÉCLARÉ PLUS HAUT — `@tempo:360.0000` retiré d'ici.
 //
