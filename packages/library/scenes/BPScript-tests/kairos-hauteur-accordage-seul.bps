@@ -1,0 +1,9 @@
+// @language: bpscript
+// kairos-hauteur-accordage-seul.bps — sert la garde de l'accordage invoqué SEUL (kairos, [1507]).
+// Un accordage sans alphabet déclaré : la scène prend la convention de notes par défaut et
+// l'accordage s'applique par-dessus. Le slot d'alphabet reste libre, celui d'accordage est rempli.
+
+@core
+@tunings.western_12TET
+
+S -> C4 D4

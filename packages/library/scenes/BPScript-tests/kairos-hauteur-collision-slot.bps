@@ -1,0 +1,12 @@
+// @language: bpscript
+// kairos-hauteur-collision-slot.bps — sert la garde de collision de slot (kairos, [1507]).
+// DEUX SURFACES DISTINCTES remplissent le MÊME slot d'alphabet : @alphabet.sargam:audio, la forme
+// d'AXE qui pré-remplit le slot, et @test_alphabets.abc, une référence de FICHIER qui passe par le
+// canal des invocations. La collision se déclenche sur le slot DÉJÀ OCCUPÉ, jamais sur la graphie
+// de l'adresse — c'est ce que cette scène exerce.
+
+@core
+@alphabet.sargam:audio
+@test_alphabets.abc
+
+S -> sa
