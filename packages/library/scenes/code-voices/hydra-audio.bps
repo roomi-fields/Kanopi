@@ -17,6 +17,7 @@
 @actor drums  eval.strudel(bank:"dirt-samples")
 @actor visuals  eval.hydra
 
+-----
 [section==a] S -> drums_r
 [section==b] S -> { drums_r, visuals_r }
 

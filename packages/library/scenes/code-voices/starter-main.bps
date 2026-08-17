@@ -13,6 +13,7 @@
 
 @var section flag: intro:1, drop:2, break:3
 
+-----
 [section==intro] S -> visuals_r
 [section==drop]  S -> { drums_r, visuals_r, bass_r }
 [section==break] S -> { visuals_r, bass_r }

@@ -12,6 +12,7 @@
 @var b
 @var c
 
+-----
 @mode:ord
 S -> X Y Z
 X -> a X [repeat:K1=3] (weight:1-1)

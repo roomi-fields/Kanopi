@@ -19,6 +19,7 @@
 
 // --- Sous-grammaire 1 @mode:ord — structure ---
 
+-----
 @mode:ord
 S -> script(Wait for do#3 channel 2) A B(vel:0) do#2 (vel:80)
 A -> A1 A2 A3 A4 A5 A6 A7 A8 A1 A2 A3 A4 A5 A6 A7 A'8

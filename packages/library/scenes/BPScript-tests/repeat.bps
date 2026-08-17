@@ -22,6 +22,7 @@
 // --- Sous-grammaire 1 @mode:ord ---
 // ORD : les règles d'effacement ne sont vues qu'après les règles de répétition
 
+-----
 @mode:ord
 S -> X Y Z
 X -> a X [repeat:K1=3] (weight:1-1)

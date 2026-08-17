@@ -12,6 +12,7 @@
 @actor melody  @alphabet.western  out.midi(ch:1)
 @actor bass    @alphabet.western  out.audio
 
+-----
 S -> {Mel, Low}
 
 Mel -> melody.C4 melody.E4 melody.G4 melody.C5 melody.B4 melody.G4 melody.E4 melody.C4

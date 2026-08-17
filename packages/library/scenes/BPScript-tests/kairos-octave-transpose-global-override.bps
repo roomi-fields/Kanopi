@@ -7,4 +7,5 @@
 @alphabet.western:midi
 @transpose:-1200c
 
+-----
 S -> C4(transpose:-2400c) D4

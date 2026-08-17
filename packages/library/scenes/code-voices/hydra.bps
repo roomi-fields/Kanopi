@@ -17,6 +17,7 @@
 
 @actor visuals  eval.hydra
 
+-----
 S -> visuals_r visuals_r
 
 visuals_r -> visuals.`osc(10, 0.1, 0.8).rotate(0.5).out()`

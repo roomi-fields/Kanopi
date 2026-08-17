@@ -64,6 +64,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 @core
 @tempo:60.0000
+-----
 @mode:random(striated,randomize)
 S -> ! (/5) A_r B_r C_r D_r E_r
 A_r -> !(shuffle) {C3 B3 E3 F3 G3}

@@ -15,6 +15,7 @@
 @alphabet.gamelan_slendro:audio
 @tempo:60
 
+-----
 S -> Patet Balungan End
 
 Patet -> nem barang gulu dada lima (wave:triangle, vel:80)

@@ -20,6 +20,7 @@
 // --- Sous-grammaire 1 @mode:random ---
 
 // Règle 1 : crée la séquence initiale + flag
+-----
 @mode:random
 S -> A A2 A3 A1 A A [times=5]
 

@@ -3,7 +3,6 @@
                  // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
                  // certaines grammaires ne rendent jamais la main.
 @core
-@mode:ord
 
 // ── MIGRATION DE FORME, écrite par bpscript le 2026-08-13 — À RELIRE ET COMMITTER PAR VOUS ──
 // La graphie générique `!(value:X n)` / `!(cont:X)` / `!(fixed:X)` est RETIRÉE du langage :
@@ -19,6 +18,8 @@
 @var blurb signal
 @var oops signal
 
+-----
+@mode:ord
 S -> a (weight:0)
 S -> {a, b} c (weight:1)
 S -> b midiobject (weight:0)

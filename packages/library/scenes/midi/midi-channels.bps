@@ -11,6 +11,7 @@
 @core
 @alphabet.western:midi
 
+-----
 S -> Voice1 Voice2 Voice3
 
 Voice1 -> C4(chan:1) E4(chan:1) G4(chan:1) C5(chan:1)

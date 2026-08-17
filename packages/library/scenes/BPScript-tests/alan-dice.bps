@@ -21,7 +21,6 @@
 
 // --- Sous-grammaire 1 @mode:ord — structure ---
 
-@mode:ord
 // ORDRE DES CONTROLES = ORDRE NATIF. Un controle s'applique a ce qui le SUIT : sa POSITION
 // porte sa PORTEE. La conversion avait regroupe les controles de tete dans un !(...) de FIN
 // (alan-dice.gr:8 : « _script(...) _vel(80) _transpose(-12) A B _vel(0) _chan(2) do#4 »), ce qui
@@ -34,6 +33,8 @@
 // do#2 channel 1 » attend une note MIDI entrante — synchronisation d'entree, sans nom dans
 // le langage a ce jour, et on ne l'invente pas. Piste proposee a Romain (docs/reference/
 // TRADUCTION_SCRIPT.md §2) : etendre @map a la note entrante + garde de regle.
+-----
+@mode:ord
 S -> script(wait for do#2 channel 1) !(vel:80) !(chromashift:-12) A B !(vel:0) !(chan:2) do#4
 A -> A1 A2 A3 A4 A5 A6 A7 A8 A1 A2 A3 A4 A5 A6 A7 A'8
 B -> B1 B2 B3 B4 B5 B6 B7 B8 B1 B2 B3 B4 B5 B6 B7 B8

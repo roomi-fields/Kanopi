@@ -16,6 +16,7 @@
 @core
 @alphabet.western:audio
 
+-----
 S -> Soft Loud Soft
 
 Soft -> C4 E4 G4 E4 (vel:40)

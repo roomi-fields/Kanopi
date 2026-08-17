@@ -13,6 +13,7 @@
 @actor drums  eval.strudel
 @actor lead  eval.strudel
 
+-----
 [section==calm] S -> drums_r
 [section==full] S -> { drums_r, lead_r }
 

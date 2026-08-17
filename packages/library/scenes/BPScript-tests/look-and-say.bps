@@ -14,6 +14,7 @@
 
 // --- Sous-grammaire 1 @mode:ord — initialisation ---
 
+-----
 @mode:ord
 S -> d1 [steps=100]
 

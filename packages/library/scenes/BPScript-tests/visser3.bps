@@ -18,6 +18,7 @@
 
 // --- Sous-grammaire 1 @mode:ord — structure ---
 
+-----
 @mode:ord
 S -> M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11
 M1 -> A_r -

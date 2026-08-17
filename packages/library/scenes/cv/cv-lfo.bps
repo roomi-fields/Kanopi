@@ -23,6 +23,7 @@
 // Modulateur descriptif : sweep EST un LFO sinus lent
 @cv sweep mod.lfo(rate:0.4, amplitude:0.9, shape:sine)
 
+-----
 S -> {G2 _ _ _ G2 _ _ _ (vel:60, wave:triangle), Arp Arp}
 
 -----

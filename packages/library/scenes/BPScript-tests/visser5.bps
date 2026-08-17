@@ -12,6 +12,7 @@
 
 // --- Sous-grammaire 1 @mode:ord — structure ---
 
+-----
 @mode:ord
 S -> !(vel:80) !(rndvel:20) {Melos1 Melos2 Melos3}   // ordre natif : visser5.gr gram#1[1] « S --> _vel(80) _rndvel(20) {Melos1 Melos2 Melos3} »
 Melos1 -> {Mel1 Mel2 Mel3}

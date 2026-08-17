@@ -9,6 +9,7 @@
 
 // --- Sous-grammaire 1 @mode:ord ---
 
+-----
 @mode:ord
 S -> Cmaj {C3,E3,G3,C4}:2 !(scale:Cmin_minus 0) {C3,Eb3,G3,C4}:2 Cmaj {C3,E3,G3,C4}:2 - Cmaj {C3,E3,G3,C4}:2 Cmin {C3,Eb3,G3,C4}:2 Cmaj {C3,E3,G3,C4}:2
 S -> Seq1 - - Seq2

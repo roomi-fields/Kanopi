@@ -19,6 +19,7 @@
 @tempo:120
 @actor v  eval.strudel(bank:gm)
 
+-----
 S -> v_r
 
 v_r -> v.`n("0 2 4 <[6,8] [7,9]>").scale("C:minor").sound("gm_piano")`:4

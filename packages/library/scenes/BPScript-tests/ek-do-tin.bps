@@ -24,6 +24,7 @@
 
 // --- Sous-grammaire 1 @mode:ord ---
 
+-----
 @mode:ord
 S -> $Tihai(transpose:-200c) &Tihai(pitchcont, pitchbend:-200, transpose:-200c) &Tihai(pitchbend:200) (pitchrange:200)
 

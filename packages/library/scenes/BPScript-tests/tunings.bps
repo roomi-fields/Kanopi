@@ -10,6 +10,7 @@
 
 // --- Sous-grammaire 1 @mode:ord ---
 
+-----
 @mode:ord
 S -> ! (/2) !(scale:bach_temperament 0) Up_Down
 S -> ! (/2) !(scale:pure_minor-third_meantone 0) Up_Down

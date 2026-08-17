@@ -30,6 +30,7 @@
 @actor basse
   out.midi(ch:2)
 
+-----
 S -> Ensemble Ensemble Separe
 
 -----

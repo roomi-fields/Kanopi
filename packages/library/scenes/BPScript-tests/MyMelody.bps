@@ -16,6 +16,7 @@
                  // FREQUENCE et diverge de son NOM -- elle rend A4 @ 220 Hz. Le choix entre le nom
                  // ecrit et le nom natif est en arbitrage chez Romain, sur dix-neuf grammaires.
 
+-----
 @mode:random
 S -> {! (/1) MyMelody1, Accomp1} (weight:1-1)
 S -> {$MyMelody1, Accomp1} {&MyMelody1, Accomp1} (weight:1-1)

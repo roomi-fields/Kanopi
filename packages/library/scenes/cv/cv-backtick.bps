@@ -26,6 +26,7 @@
 
 @var wobble `js: (t, dur) => { const rate = 2 + 20 * (t/dur) * (t/dur); return Math.sin(t * rate * Math.PI * 2) * 0.5 + 0.5; }`
 
+-----
 S -> Bass Bass Bass Bass
 
 -----

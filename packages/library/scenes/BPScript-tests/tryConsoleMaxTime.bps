@@ -1,4 +1,5 @@
 // @language: bpscript
+-----
 @mode:ord
 S -> X Y
 X -> C4 D4 E4

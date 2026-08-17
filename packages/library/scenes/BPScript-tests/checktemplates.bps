@@ -22,8 +22,9 @@
 
 // --- Sous-grammaire 1 — templates bidirectionnels @mode:random ---
 
-@mode:random
 // Règle 1 : A_r A_r avec scale 1/2 sur le dernier A_r (*1/2 en BP3)
+-----
+@mode:random
 S <> ! (*1/2) A_r A_r A_r
 // Règle 2 : A_r A_r avec tempo doublé sur le dernier A_r
 S <> A_r A_r ! (/2) A_r

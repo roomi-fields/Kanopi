@@ -19,6 +19,7 @@
 @tempo:72
 
 // Normal, then group at frame 2, then at frame 1/2, then per-note durations
+-----
 S -> Normal Fast Slow Notes Final
 
 Normal -> C4 D4 E4 F4

@@ -10,6 +10,7 @@
 // l'emporte. L'original référence l'alphabet abc (a..z mono-caractère).
 @test_alphabets.abc
 
+-----
 @mode:random
 S -> X [pos=1, done=0]
 X -> a X [pos+1, done+1]

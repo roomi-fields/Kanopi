@@ -34,4 +34,5 @@
 @macro close lpf.cutoff: 700     // cv-set — le referme
 @macro glide saw.freq: pitch     // cv-set — re-cible la hauteur du générateur
 
+-----
 S -> lead open lead close lead glide lead close

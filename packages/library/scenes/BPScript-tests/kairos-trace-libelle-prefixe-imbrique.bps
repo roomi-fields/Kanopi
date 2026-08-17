@@ -10,5 +10,6 @@
 @core
 @alphabet.western:midi
 
+-----
 S -> !(vel:120) MOTIF
 MOTIF -> !(chan:3) C4 D4

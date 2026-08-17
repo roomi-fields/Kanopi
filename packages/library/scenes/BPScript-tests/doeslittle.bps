@@ -9,6 +9,7 @@
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
 @alphabet.western:midi
 
+-----
 @mode:random
 S -> C3 . C4 . D4 C4 F#3 . A3 . C4
 S -> G2 C3 _ B2 C3

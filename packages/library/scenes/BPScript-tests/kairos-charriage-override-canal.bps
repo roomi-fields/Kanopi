@@ -11,4 +11,5 @@
 @actor lead  @alphabet.western  out.midi(ch:1)
 @actor bass  @alphabet.western  out.midi(ch:2)
 
+-----
 S -> lead.C4 lead.E4(ch:5) bass.C2

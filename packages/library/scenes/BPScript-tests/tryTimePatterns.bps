@@ -14,6 +14,7 @@
 @timepatterns: t1=1/1, t2=3/2, t3=4/3, t4=1/2
 
 @tempo:120
+-----
 @mode:random
 S -> {10, t1 t2, Part1 Part2}
 Part1 -> {t1 t3 t4, C4 D4 E4 F4 - A4}

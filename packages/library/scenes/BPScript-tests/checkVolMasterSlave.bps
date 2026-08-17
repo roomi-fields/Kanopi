@@ -16,6 +16,7 @@
 @core
 @alphabet.western:midi
 
+-----
 @mode:random
 S -> volumecont $A_r &A_r
 A_r -> !(volume:5) {A4. D5 B5} !(volume:127)

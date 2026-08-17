@@ -1,6 +1,7 @@
 // @language: bpscript
 @core
 @homomorphism.transposition
+-----
 @mode:ord
 S -> ${A1} TR ${A1} TR TR ${A1} TR TR TR ${A1} ${A1}
 A1 -> {Tr0 M1. Tr1 M1 Tr7 M1 Tr0 M1 Tr7 M1}

@@ -22,6 +22,7 @@
 @gate B4:midi
 @gate C5:midi
 
+-----
 S -> {Melody, Bass}
 
 Melody -> C4 E4 G4 C5 B4 G4 E4 C4

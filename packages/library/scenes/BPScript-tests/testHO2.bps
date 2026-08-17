@@ -4,5 +4,6 @@
 // (a..z mono-caractère). Aucune note MIDI — production en mode texte.
 @test_alphabets.abc
 
+-----
 @mode:random
 S -> a b c d

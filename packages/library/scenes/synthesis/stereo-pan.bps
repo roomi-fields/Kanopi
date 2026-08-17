@@ -11,6 +11,7 @@
 @core
 @alphabet.western:audio
 
+-----
 S -> PanL PanC PanR Sweep
 
 PanL -> C4 D4 E4 (pan:10, vel:90)

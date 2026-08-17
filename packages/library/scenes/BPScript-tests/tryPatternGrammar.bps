@@ -9,6 +9,7 @@
 @allitems
 @test_alphabets.abc
 
+-----
 @mode:ord
 S -> Chakkardar
 Chakkardar -> $Tihai $G &Tihai &G &Tihai

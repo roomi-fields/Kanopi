@@ -17,6 +17,7 @@
 
 @actor beat  eval.strudel
 
+-----
 S -> beat_r beat_r beat_r `sc: Synth.new(\ping)`
 
 beat_r -> beat.`s("bd sn hh sn").gain(0.9)`

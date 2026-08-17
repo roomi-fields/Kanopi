@@ -34,6 +34,7 @@
                  // preserve le nom, donc l'ecart tient au NOM seul, quelle que soit la paire.
 
 // --- Sous-grammaire 1 @mode:ord --- structure thematique
+-----
 @mode:ord
 S -> P1 P2 P3 (meter:4+4+4+4+4+4/4)
 P1 -> A8 B"8 C8 B'8

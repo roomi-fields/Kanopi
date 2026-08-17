@@ -19,6 +19,7 @@
 
 // --- Sous-grammaire 1 @mode:ord — structure ---
 
+-----
 @mode:ord
 S -> Shapes !(staccato:50)
 // ORDRE DES CONTROLES = ORDRE NATIF. Le motif etait SYSTEMATIQUE dans tout ce fichier :

@@ -10,4 +10,5 @@
 // la déclaration manquait à la traduction (drop silencieux du porteur, corrigé b309e22).
 @test_alphabets.abc1
 
+-----
 S -> a' a' c' b

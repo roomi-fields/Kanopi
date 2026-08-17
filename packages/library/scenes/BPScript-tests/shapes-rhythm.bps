@@ -64,6 +64,7 @@
 
 // --- Sous-grammaire 1 @mode:ord — Structure principale ---
 
+-----
 @mode:ord
 S -> Route script(Beep) Part1 Gap12 Part2 Gap23 Part3 Gap34 Part4 Gap45 Part5 Gap56 Part6 Gap67 Part7 Gap78 Part8 Gap89 Part9
 

@@ -14,4 +14,5 @@
 
 // En intonation juste, les tierces et quintes sont pures
 // → le MIDI auto-bend compense la différence avec 12-TET
+-----
 S -> C4 E4 G4 C5 G4 E4 C4

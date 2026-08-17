@@ -10,6 +10,7 @@
 @core
 @alphabet.western:midi
 
+-----
 @mode:random
 S -> A_r [numtimes=5]
 A_r -> {E1, A#1 F#1} {D_r}(chromashift:2)

@@ -21,6 +21,7 @@
 
 @var sweep `js: (t, dur) => { return 0.5 + 0.5 * Math.sin(2 * Math.PI * t / dur); }`
 
+-----
 S -> Lead Lead Lead Lead
 
 Lead -> C4(cutoff:sweep) E4 G4(cutoff:sweep) _ (wave:sawtooth, vel:90)

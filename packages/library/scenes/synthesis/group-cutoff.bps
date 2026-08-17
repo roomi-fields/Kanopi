@@ -30,4 +30,5 @@
 @cv env1 mod.adsr(attack:8, decay:750, sustain:0.1, release:300)
 
 // `(cutoff:env1)` sur la RÈGLE = filtre de GROUPE (busRef de règle) sur les 4 notes.
+-----
 S -> C3 E3 G3 E3 (cutoff:env1, wave:sawtooth, vel:110, filterQ:12)

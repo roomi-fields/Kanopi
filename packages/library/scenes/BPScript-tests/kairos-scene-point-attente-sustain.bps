@@ -14,5 +14,6 @@
 @striated
 @var sustain in.midi
 
+-----
 @mode:ord
 S -> C4 <!sustain D4

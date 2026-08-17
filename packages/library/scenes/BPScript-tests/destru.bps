@@ -16,6 +16,7 @@
 
 // --- Sous-grammaire 1 @mode:random — génération de structure ---
 
+-----
 @mode:random
 S -> $ {$X S &X} & {$X S &X} (weight:2-1)
 X -> Y (weight:2-1)

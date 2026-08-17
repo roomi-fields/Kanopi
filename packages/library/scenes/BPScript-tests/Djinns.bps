@@ -27,6 +27,7 @@
 
 // --- Sous-grammaire 1 ORD : la palissade, montée puis descente symétrique ---
 
+-----
 @mode:ord
 S -> A2 A3 A4 A5 A6 A7 A8 A10 A8 A7 A6 A5 A4 A3 A2
 

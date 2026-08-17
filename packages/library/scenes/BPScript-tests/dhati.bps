@@ -94,6 +94,7 @@
 // BP3: S --> 4+4+4+4/4 {16,Qaida}
 // cycle16x4 = non-terminal pour la structure rythmique 4+4+4+4/4
 
+-----
 @mode:random
 S -> {16,Qaida} (weight:0, meter:4+4+4+4/4)
 S -> {16,Lahra,Qaida} (meter:4+4+4+4/4)

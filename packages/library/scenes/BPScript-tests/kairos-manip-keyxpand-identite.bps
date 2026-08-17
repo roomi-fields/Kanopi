@@ -6,4 +6,5 @@
 @core
 @alphabet.western:midi
 
+-----
 S -> E4(keyxpand:C4 1)

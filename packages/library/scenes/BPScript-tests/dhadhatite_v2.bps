@@ -27,8 +27,9 @@
 //   BPscript uses <> for bidirectional (->  is L→R default, <> is bidirectional).
 //   Translation attempt: <-> → <> (best available approximation)
 
-@mode:random
 
+-----
+@mode:random
 S <> S64 (weight:100)
 S64 <> S1F S2F S1V S2F E32 (weight:100)
 S64 <> S1V S2F S1F S2F E32 (weight:100)

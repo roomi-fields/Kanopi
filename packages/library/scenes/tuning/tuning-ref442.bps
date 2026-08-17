@@ -17,4 +17,5 @@
 @diapason:442
 @tempo:90
 
+-----
 S -> A4 _ E4 A4 _ E5 A5 _ _ _ (wave:sine, vel:85)

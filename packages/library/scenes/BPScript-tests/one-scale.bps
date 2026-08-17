@@ -9,6 +9,7 @@
 
 // --- Sous-grammaire 1 @mode:ord ---
 
+-----
 @mode:ord
 S -> C4 A4 G4 (weight:0)
 S -> !(scale:just_intonation C4) C4 A4 G4 (weight:0)

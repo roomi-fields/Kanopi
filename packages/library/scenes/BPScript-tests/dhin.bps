@@ -20,6 +20,7 @@
 
 // --- Sous-grammaire 1 @mode:random — structure ---
 
+-----
 @mode:random
 S <> S96 (weight:0, meter:4+4/6)
 S <> S192 (weight:5, meter:4+4+4+4/6)

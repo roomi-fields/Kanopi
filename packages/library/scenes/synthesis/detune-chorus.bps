@@ -12,6 +12,7 @@
 @alphabet.western:audio
 @tempo:80
 
+-----
 S -> D0_r D15 D30 D50 D100 End
 
 D0_r -> C3 E3 G3 (wave:sawtooth, vel:80, detune:0)

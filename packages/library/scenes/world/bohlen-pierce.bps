@@ -15,6 +15,7 @@
 @alphabet.bohlen_pierce:audio
 @tempo:80
 
+-----
 S -> Montee Retour Tenue
 
 Montee -> C D E F G H J (wave:triangle, vel:80)

@@ -25,6 +25,7 @@
 @tempo:60
 @striated
 
+-----
 @mode:ord
 S -> !(vel:64) Part1 - !(vel:127) Part2 1/2 Part3 Part4 1/2 !(vel:64) retro Part1
 

@@ -6,5 +6,6 @@
 @core
 @alphabet.western:midi
 
+-----
 MOTIF -> C4
 S -> $MOTIF(transpose:-200c) D4

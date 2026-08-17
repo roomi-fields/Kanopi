@@ -18,6 +18,7 @@
 
 // --- Sous-grammaire 1 @mode:ord — structure et imbedding ---
 
+-----
 @mode:ord
 S -> ! (*5/4) Waves
 

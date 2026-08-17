@@ -11,7 +11,6 @@
 
 // --- Sous-grammaire 1 @mode:random — structure ---
 
-@mode:random
 
 // ── MIGRATION DE FORME, écrite par bpscript le 2026-08-13 — À RELIRE ET COMMITTER PAR VOUS ──
 // La graphie générique `!(value:X n)` / `!(cont:X)` / `!(fixed:X)` est RETIRÉE du langage :
@@ -26,6 +25,8 @@
 // nombres, sans convention de lecture » (LANGUAGE.md). C'est la déclaration ajoutée ci-dessous.
 @var slide signal
 
+-----
+@mode:random
 S -> !(scale:just_intonation 0) {Taalam4 Taalam4,Pallavi Pallavi}(volumecont, volume:64) Taalam(volume:0) - !(ins:Vina, volume:40)
 
 Pallavi -> {Maa Yaa Tii . Ta {Sva Ruu Pi}:2 . {Ni}:2 {Nan Nu}:1 . Bro {Va Ve}:2}

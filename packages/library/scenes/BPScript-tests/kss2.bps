@@ -17,6 +17,7 @@
 
 // --- Sous-grammaire 1 @mode:random — transformations structurelles ---
 
+-----
 @mode:random
 S -> !(chromashift:-7) ! (/5) X Y X X Y Y X
 X Y -> Y X (weight:20-4)

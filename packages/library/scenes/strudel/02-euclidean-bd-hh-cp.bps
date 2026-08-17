@@ -19,6 +19,7 @@
 
 @actor v  eval.strudel
 
+-----
 S -> v_r
 
 v_r -> v.`s("bd(3,8), hh cp")`:4

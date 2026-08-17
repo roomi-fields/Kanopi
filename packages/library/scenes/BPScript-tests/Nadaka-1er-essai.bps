@@ -19,6 +19,7 @@
 // sans la convention, la resolution aval devinait 7040 Hz pour un symbole qui n'a pas de hauteur.
 @alphabet.bp3_indian:midi
 @var A8
+-----
 @mode:random
 S -> A32
 A32 -> A8 A8 A8 A8

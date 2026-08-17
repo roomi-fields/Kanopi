@@ -14,6 +14,7 @@
 @alphabet.western:audio
 @tempo:90
 
+-----
 S -> {
   C4 C4 C4 (vel:100),
   E4 E4 E4 E4 (vel:70),

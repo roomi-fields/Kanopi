@@ -9,6 +9,7 @@
 
 @tempo:60.0000
 @striated
+-----
 @mode:random
 S -> a b c d
 -----

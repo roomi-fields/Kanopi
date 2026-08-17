@@ -14,6 +14,7 @@
 @alphabet.gamelan_pelog:audio
 @tempo:55
 
+-----
 S -> Patutan Phrase End
 
 Patutan -> nem barang bem gulu lima enam pitu (wave:square, vel:75)

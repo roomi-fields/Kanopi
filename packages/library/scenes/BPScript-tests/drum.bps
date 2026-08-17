@@ -13,6 +13,7 @@
 
 // Trois voix : kick (C8), snare (C7), hihat (E7)
 // Chaque voix a des durées différentes → polymétrie naturelle
+-----
 S -> {
   !(chan:1, vel:120) !(staccato:96) C8 - - -,
   !(chan:1, vel:120) !(staccato:96) - C7 C7 C7,

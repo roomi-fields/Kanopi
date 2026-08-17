@@ -12,6 +12,7 @@
 @alphabet.solfege:audio
 @tempo:100
 
+-----
 S -> Montee Descente Fin
 
 Montee -> do re mi fa sol la si (wave:sine, vel:85)

@@ -18,6 +18,7 @@
 
 @actor v  eval.strudel
 
+-----
 S -> v_r
 
 v_r -> v.`sound("bd hh sd oh")`:4

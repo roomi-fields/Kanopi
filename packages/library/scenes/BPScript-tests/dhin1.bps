@@ -37,6 +37,7 @@
 // bpscript — 2026-08-10. Écriture chez un autre : elle n'est LIVRÉE que quand Kanopi l'a committée.
 // ─────────────────────────────────────────────────────────────────────────────
 @striated
+-----
 @mode:random
 S <> S48 (meter:4+4/6)
 S <> S96 (meter:4+4+4+4/6)

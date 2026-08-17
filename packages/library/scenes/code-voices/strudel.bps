@@ -19,6 +19,7 @@
 
 @actor bass  eval.strudel
 
+-----
 S -> bass_r bass_r bass_r bass_r
 
 bass_r -> bass.`note("c2 eb2 g2 c3").s("sawtooth")`

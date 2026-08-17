@@ -19,6 +19,7 @@
 
 @actor v  eval.mercury
 
+-----
 S -> v_r
 
 v_r -> v.`set scale minor_pentatonic d

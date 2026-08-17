@@ -1,6 +1,7 @@
 // @language: bpscript
 @core
 @alphabet.shruti23
+-----
 @mode:ord
 S -> !(scale:grama sa_4) {9 Full_scale _ _ _, Drone} - - ! (/3/4) {!(retro) Full_scale} _ _ _ (weight:1)
 Full_scale -> sa_4 r1_4 r2_4 r3_4 r4_4 g1_4 g2_4 g3_4 g4_4 m1_4 m2_4 m3p1_4 m4p2_4 p3_4 p4_4 d1_4 d2_4 d3_4 d4_4 n1_4 n2_4 n3_4 n4_4 sa_5

@@ -17,6 +17,7 @@
 @actor drums  eval.strudel
 @actor lead  eval.strudel
 
+-----
 S -> calm full
 calm -> drums_r
 full -> { drums_r, lead_r }

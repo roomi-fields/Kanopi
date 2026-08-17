@@ -7,6 +7,7 @@
 @core
 @alphabet.western:midi
 @tuning.western_just_c
-@mode:ord
 
+-----
+@mode:ord
 S -> C4 A4 G4 D4 F4 E4

@@ -34,6 +34,7 @@
 // La voix de notes : elle dit par où elle sort, et joue le clavier de la scène.
 @actor melodie  out.audio
 
+-----
 S -> Tague Porte Tague Porte
 
 -----

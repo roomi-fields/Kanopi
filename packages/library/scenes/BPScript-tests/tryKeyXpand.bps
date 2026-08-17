@@ -10,6 +10,7 @@
 @core
 @tempo:60.0000
 @striated
+-----
 @mode:ord
 S -> ! (/6) M Part1 -- Part2 -- Part3 -- Part4
 Part1 -> {!(keyxpand:C4 -1) M} !(keyxpand:C4 1.5) M {!(retro) M}

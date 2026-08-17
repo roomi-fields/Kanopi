@@ -15,6 +15,7 @@
 
 // --- Sous-grammaire 1 @mode:random ---
 
+-----
 @mode:random
 S -> A_r [numtimes=5]
 A_r -> {E1,A#1 F#1} {Tr2 D_r}

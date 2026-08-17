@@ -18,6 +18,7 @@
 @actor drums  eval.strudel(bank:"dirt-samples")
 @actor bass  eval.strudel(bank:"dirt-samples")
 
+-----
 [section==intro] S -> drums_r
 [section==full]  S -> { drums_r, bass_r }
 

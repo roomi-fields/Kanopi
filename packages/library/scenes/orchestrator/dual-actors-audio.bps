@@ -16,6 +16,7 @@
 @actor lead  @alphabet.western  out.audio
 @actor bass  @alphabet.western  out.audio
 
+-----
 S -> {Lead, Low}
 
 Lead -> lead.C5 lead.E5 lead.G5 lead.E5 lead.C5 lead.E5 lead.G5 lead.E5

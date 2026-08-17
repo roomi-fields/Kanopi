@@ -17,6 +17,7 @@
 // Règle 1 : test des gammes avec notes chromatiques
 // Cmaj_c/Cmin_c = gamme majeure/mineure depuis C
 // Cmaj_a/Cmin_a = gamme majeure/mineure depuis A
+-----
 @mode:ord
 S -> Cmaj_c C4 C#4 Db4 C#4 E4 E#4 F4 A4 Cmin_c C4 E4 F4 A4 Cmaj_a C4 E4 F4 A4 Cmin_a C4 E4 F4 A4
 

@@ -20,6 +20,7 @@
 @alphabet.western:audio
 
 // Sub-grammar 1: structure (ORD by default)
+-----
 S -> A_r B_r A_r
 
 -----

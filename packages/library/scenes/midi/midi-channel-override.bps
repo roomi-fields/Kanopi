@@ -36,6 +36,7 @@
 @actor lead  @alphabet.western  out.midi(ch:1)
 @actor bass  @alphabet.western  out.midi(ch:2)
 
+-----
 S -> Lead Low
 
 Lead -> lead.C4 lead.E4(ch:5) lead.G4 lead.C4

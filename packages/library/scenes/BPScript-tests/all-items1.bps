@@ -10,6 +10,7 @@
 @alphabet.western:midi
 @settings.test1
 
+-----
 @mode:random
 S -> X Y [Flag=2] [Choice=3]
 

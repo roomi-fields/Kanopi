@@ -12,6 +12,7 @@
 
 // --- Sous-grammaire 1 @mode:ord ---
 
+-----
 @mode:ord
 S -> {PA,... PB}
 PA -> {2,- PA1,2 PA2} {4,PA3}

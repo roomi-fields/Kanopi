@@ -20,6 +20,7 @@
 
 // --- Sous-grammaire 1 @mode:ord — structure ---
 
+-----
 @mode:ord
 S -> Ajust Bjust
 A -> A1 A2 A3 A4 A5 A6 A7 A8 A1 A2 A3 A4 A5 A6 A7 A'8

@@ -15,6 +15,7 @@
 // donc ce qui MANQUE, pas tout ce qui ressemble a un terminal.
 @var b
 
+-----
 S -> X [Num_total=20]
 [Num_total-1] X -> a X
 -----

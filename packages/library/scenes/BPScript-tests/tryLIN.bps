@@ -13,6 +13,7 @@
 @gate b:midi
 @gate c:midi
 
+-----
 @mode:ord
 S -> X X X X X X X X X X X X X X X X X X
 -----

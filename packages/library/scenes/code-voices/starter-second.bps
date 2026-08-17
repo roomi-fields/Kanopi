@@ -11,6 +11,7 @@
 
 @var section flag: a:1, b:2
 
+-----
 [section==a] S -> melody_r
 [section==b] S -> -
 

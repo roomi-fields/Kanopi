@@ -20,6 +20,7 @@
 @tempo:120
 @actor v  eval.strudel(bank:xen)
 
+-----
 S -> v_r
 
 v_r -> v.`"0 1 2 3 4 5".tune("hexany15").freq().s("sawtooth")`:4

@@ -18,6 +18,7 @@
 @gate c:midi
 @gate d:midi
 
+-----
 @mode:random
 S -> X X X X X X X X
 X -> a

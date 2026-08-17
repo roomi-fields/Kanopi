@@ -25,5 +25,6 @@
 @cv envGroup mod.adsr(attack:600, decay:500, sustain:0.5, release:700)
 @cv envNote mod.adsr(attack:5, decay:110, sustain:0.2, release:160)
 
+-----
 S -> { Phrase }(cutoff:envGroup)
 Phrase -> C2 C3 C2 C3 (*:cutoff:envNote, wave:sawtooth, vel:100, filterQ:8)

@@ -5,4 +5,5 @@
 @core
 @alphabet.western:midi
 
+-----
 S -> {!(legato:20) C4 D4 E4, !(staccato:10) F#5 G3, - G4}

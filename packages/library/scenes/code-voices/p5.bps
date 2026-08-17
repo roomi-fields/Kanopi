@@ -13,6 +13,7 @@
 @core
 @tempo:120
 
+-----
 S -> Sketch Sketch
 
 Sketch -> `p5: background(20); ellipse(width/2, height/2, 80 + 40*sin(millis()/300))`

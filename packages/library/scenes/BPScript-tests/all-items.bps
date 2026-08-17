@@ -9,6 +9,7 @@
 @alphabet.western:midi
 @allitems
 
+-----
 @mode:random
 S -> X Y [Flag=2] [Choice=1]
 

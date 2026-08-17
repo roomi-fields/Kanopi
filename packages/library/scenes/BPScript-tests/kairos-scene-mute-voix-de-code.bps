@@ -7,6 +7,7 @@
 
 @actor drums  eval.strudel
 
+-----
 S -> BATTERIE
 
 BATTERIE -> drums.`note("c3 e3 g3").s("sine")`

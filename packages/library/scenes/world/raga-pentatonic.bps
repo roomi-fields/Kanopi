@@ -12,6 +12,7 @@
 @alphabet.sargam:audio
 @tuning.sargam_22shruti
 
+-----
 S -> Aroha Avaroha Phrase
 
 Aroha -> sa re ga pa dha (wave:sine, vel:85)

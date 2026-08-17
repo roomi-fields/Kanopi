@@ -17,4 +17,5 @@
 @core
 @alphabet.solfege:midi
 
+-----
 S -> !(pitchrange:200) !(pitchbend:-200) pitchcont do4~ _ _ _ {~do4~ _ _ _ _ _ _ _ _ _ _ _ _ _ _, sol4 _ _ _ _ _ _ _ _ _ _ _ _ _ _} ~do4 _ _ _ !(pitchbend:200)

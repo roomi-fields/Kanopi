@@ -7,6 +7,7 @@
 @maxitems:500
 @alphabet.western:midi
 
+-----
 @mode:random
 S -> X Y [Flag=2] [Choice=3]
 

@@ -8,6 +8,7 @@
 @gate b:midi
 @gate c:midi
 
+-----
 @mode:random
 S -> X X X X X X X X X X [make_b=1]
 [make_b-1] X -> b [make_c+1]

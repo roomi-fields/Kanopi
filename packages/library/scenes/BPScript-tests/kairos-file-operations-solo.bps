@@ -10,4 +10,5 @@
 
 @actor bass  @alphabet.western  out.midi(ch:2)
 
+-----
 S -> bass.C2 bass.G2

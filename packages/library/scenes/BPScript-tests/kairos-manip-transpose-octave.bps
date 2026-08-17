@@ -7,4 +7,5 @@
 @core
 @alphabet.western:midi
 
+-----
 S -> C4(transpose:2)

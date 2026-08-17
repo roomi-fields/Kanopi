@@ -14,6 +14,7 @@
 @alphabet.shakuhachi:audio
 @tempo:50
 
+-----
 S -> Phrase1 Phrase2 End
 
 Phrase1 -> ro tsu re chi ri (wave:sine, vel:75, attack:100, release:300)

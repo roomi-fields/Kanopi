@@ -15,6 +15,7 @@
 @core
 @alphabet.western:audio
 
+-----
 S -> Intro SC_Part Outro
 
 Intro -> C4 D4 E4 F4

@@ -10,4 +10,5 @@
 
 @actor lead  @alphabet.western  out.midi(ch:1)
 
+-----
 S -> lead.C4 lead.E4

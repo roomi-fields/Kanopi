@@ -12,6 +12,7 @@
 
 @actor tabla @alphabet.tabla out.audio
 
+-----
 S -> Bols
 
 Bols -> tabla.dhin tabla.ka tabla.ti

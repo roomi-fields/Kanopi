@@ -13,6 +13,7 @@
 // (Alphabet integre en amont le 2026-07-29, bpscript 759474b ; decision Romain du meme jour.)
 @alphabet.bp3_fr:midi
 
+-----
 @mode:lin
 S -> do3 1000 {2, B7_r B8_r} 300 {2, B7_r B8_r}
 -----

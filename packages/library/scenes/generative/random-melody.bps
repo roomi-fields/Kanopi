@@ -10,8 +10,9 @@
 
 @core
 @alphabet.western:audio
-@mode:random
 
+-----
+@mode:random
 S -> A_r B_r A_r B_r
 
 A_r -> C4 D4 E4 F4 (weight:50)

@@ -13,6 +13,7 @@
 @core
 @alphabet.western:audio
 
+-----
 S -> Sine Tri Square Saw
 
 Sine -> C4 E4 G4 C5 (wave:sine, vel:80)

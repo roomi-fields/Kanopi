@@ -21,6 +21,7 @@
 @tempo:120
 @actor v  eval.strudel(bank:gm)
 
+-----
 S -> v_r
 
 v_r -> v.`stack(

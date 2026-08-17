@@ -13,6 +13,7 @@
 
 @actor drums  eval.strudel
 
+-----
 S -> drums_r
 
 drums_r -> drums.`note("c3 e3 g3 c4").s("sine").gain(0.7)`

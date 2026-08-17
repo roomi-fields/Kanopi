@@ -19,6 +19,7 @@
 
 @actor v  eval.mercury
 
+-----
 S -> v_r
 
 v_r -> v.`new synth square note(sine(8 5.512 0 12)) play(euclid(8 5)) time(1/16)`:4

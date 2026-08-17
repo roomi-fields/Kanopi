@@ -21,4 +21,5 @@
 @gate cycle1:midi
 @gate cycle2:midi
 
+-----
 S -> {a h a' b a' b a a a a a, cycle2 cycle1______}

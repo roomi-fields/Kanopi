@@ -34,6 +34,7 @@
 // Crée le symbole de départ I avec les compteurs
 // ============================================================
 
+-----
 @mode:random
 S -> I [Ideas=20, Notes=32, NumR=1]
 

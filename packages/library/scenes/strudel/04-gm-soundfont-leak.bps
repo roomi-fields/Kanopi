@@ -21,6 +21,7 @@
 
 @actor v  eval.strudel
 
+-----
 S -> v_r
 
 v_r -> v.`note("48 67 63 [62, 58]").sound("piano, gm_electric_guitar_muted")`:4

@@ -19,6 +19,7 @@
 @tempo:84
 
 // Le motif est capturé, puis rejoué deux fois — plus doux à chaque retour.
+-----
 S <> $theme &theme (vel:60) &theme (vel:40)
 
 -----

@@ -25,6 +25,7 @@
 // Le programme se pose une fois pour la scène : le timbre de l'appareil est un décor.
 @ins:12
 
+-----
 S -> Sec Anime Sec Anime
 
 -----
