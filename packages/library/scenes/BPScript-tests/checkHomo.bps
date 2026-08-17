@@ -5,6 +5,7 @@
 // TOUT homo PEUPLE la table (décision 2026-07-18) — BPx porte opaque, Kairos résout. Sans, les
 // marqueurs *,TR fuiraient non résolus (sortie fausse). Byte-id BP3 legacy intact (@homomorphism = BPx-only).
 @homomorphism.checkhomo
+@test_alphabets.checkhomo
 
 S -> $X * TR &X Y
 X -> a b

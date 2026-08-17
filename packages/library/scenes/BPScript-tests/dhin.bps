@@ -16,6 +16,7 @@
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
 @sound.tabla_perc
 @homomorphism.dhin
+@test_alphabets.dhin
 
 // --- Sous-grammaire 1 @mode:random — structure ---
 
