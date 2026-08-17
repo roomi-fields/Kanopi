@@ -2,8 +2,15 @@
 // kairos-hauteur-accordage-seul.bps — sert la garde de l'accordage invoqué SEUL (kairos, [1507]).
 // Un accordage sans alphabet déclaré : la scène prend la convention de notes par défaut et
 // l'accordage s'applique par-dessus. Le slot d'alphabet reste libre, celui d'accordage est rempli.
+//
+// ⚠️ L'ACCORDAGE EST `western_just`, ET CE CHOIX EST LE SUJET DE LA SCÈNE. Avec `western_12TET`
+// elle ne mesurait RIEN : c'est aussi ce que la scène prend SANS aucune invocation, donc la garde
+// passait verte sans éprouver que l'adresse ait servi. Mesuré ici — 12TET rend 261,6255653005986
+// et 293,6647679174076, exactement les fréquences obtenues en retirant la ligne ; `western_just`
+// rend 264 et 297. L'écart est franc, donc la garde discrimine. Même famille que la sonde absorbée
+// par l'alphabet qu'elle mesure : ici c'est le DÉFAUT qui absorbait le témoin.
 
 @core
-@tunings.western_12TET
+@tunings.western_just
 
 S -> C4 D4
