@@ -190,10 +190,16 @@ import routingJson from '../../../../library/routing.json';
  * The slice scopes to ONE engine instance + ONE transport per file.
  */
 
-// The 5 shared pitch catalogs (`bpscript/lib`), handed to Kairos as the read-only
-// `ctx.pitchLib` so IT builds the resolver and graves `content.pitch.hz`/`content.sounds`.
-// Kanopi embeds no resolution logic and runs no resolver — it only supplies this DATA.
-// The catalogs carry doc-only `_comment` keys, so cast through `unknown`.
+// Les catalogues de l'amont, remis à Kairos en lecture seule (`ctx.pitchLib`) : LUI bâtit le
+// résolveur et grave `content.pitch.hz` / `content.sounds`. Kanopi ne porte aucune logique de
+// résolution et n'exécute aucun résolveur — il fournit cette DONNÉE.
+// L'AFFECTATION EST DIRECTE, SANS CONVERSION, et c'est une garde en soi : le compilateur compare
+// vraiment la forme du sac amont au type que Kairos publie. Elle l'est devenue le 2026-08-17,
+// quand Kairos a ouvert sa surface sur les trois points qui l'obligeaient — la liste fermée à cinq
+// axes, les clés de documentation, et leur forme TABLEAU. Chacun a été trouvé en retirant la
+// conversion et en lui rendant l'erreur du compilateur, jamais en la contournant.
+// ⛔ NE PAS Y REMETTRE UN `as` : il rendrait le compilateur muet DES DEUX CÔTÉS de la frontière —
+// un catalogue qui disparaît de l'amont ou change de forme ne rougirait plus nulle part.
 // UNE SEULE SOURCE, celle de l'amont. Les conventions du moteur BP3 natif (`bp3_english`,
 // `bp3_fr`, `bp3_indian`) sont des entrées ORDINAIRES de ces catalogues depuis le 2026-07-29 :
 // bp3-frontend les a livrées VERBATIM à BPScript, qui les porte désormais (chaque entrée cite sa
@@ -223,7 +229,7 @@ import routingJson from '../../../../library/routing.json';
 // cherchait : une fois le sac injecté, le cri devient celui de la collision de domaine.
 // L'hôte reste OPAQUE : il ne lit aucune entrée, ne trie rien par domaine, n'en connaît pas les
 // noms. Il transporte ce que l'amont publie ; Kairos résout (loi 26/27, PORTER ≠ RÉSOUDRE).
-const PITCH_LIB = LIBS as unknown as PitchLib;
+const PITCH_LIB: PitchLib = LIBS;
 
 // The provided DIGITAL function library (catalogue `digital` de `bpscript/src/transpiler/libs-data.js`), handed to Kairos as the
 // read-only `ctx.digitalLib` — the exact sibling of `PITCH_LIB`. Kairos applies these deterministic
