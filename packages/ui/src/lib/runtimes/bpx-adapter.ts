@@ -17,14 +17,9 @@ import type { FileRef, SeEngineSettings, ParseBP3Result } from 'bp3-frontend';
 // nom. On dérive donc l'acteur de ce qu'il publie vraiment — l'arbre de `parseBP3`.
 type Bp3Actor = NonNullable<NonNullable<ParseBP3Result['ast']>['actors']>[number];
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
-// bpscript's musical catalogs, imported AS-IS (same path as
-// lib/library/resources.ts). A `.bps` that declares `@alphabet.X` (+ optional
-// `@tuning.Y`) resolves its pitches through these — bohlen-pierce, gamelan, etc.
-const alphabetsJson = LIBS.alphabets;
-const tuningsJson = LIBS.tunings;
-const temperamentsJson = LIBS.temperaments;
-const octavesJson = LIBS.octaves;
-const scalesJson = LIBS.scales;
+// Les catalogues de l'amont sont transportés EN BLOC vers Kairos (`PITCH_LIB` plus bas) : aucune
+// constante par catalogue ici, sinon la liste ferme l'ensemble et le prochain fichier à nom libre
+// reste invisible. Une scène qui déclare `@alphabet.X` ou `@test_alphabets.X` résout à travers eux.
 // CV modulation library (`mod.adsr/lfo/ramp`): the param signatures AND the curve
 // shape live here (declarative segments), consumed AS-IS — Kanopi's transport
 // renders the curve generically, no built-in modulator. See CV.md.
@@ -217,13 +212,18 @@ import routingJson from '../../../../library/routing.json';
 // graine figée, les 14 grammaires `.gr` publiées et les 6 scènes `.bps` qui déclarent un alphabet
 // `bp3_*` gravent EXACTEMENT les mêmes fréquences avec ou sans l'étalement. Le retrait est donc
 // neutre à l'oreille — et il enlève la seule chose qui décidait laquelle des deux formes gagnait.
-const PITCH_LIB: PitchLib = {
-  alphabets: alphabetsJson as unknown as PitchLib['alphabets'],
-  tunings: tuningsJson as unknown as PitchLib['tunings'],
-  temperaments: temperamentsJson as unknown as PitchLib['temperaments'],
-  scales: scalesJson as unknown as PitchLib['scales'],
-  octaves: octavesJson as unknown as PitchLib['octaves']
-};
+// ⛔ LE SAC ENTIER, JAMAIS UNE LISTE — L35 (constitution d'Atlas) : « zéro valeur codée en dur —
+// pas de `'audio'`, pas de `440`, pas de liste `['tunings']` dans le code ; tout défaut est une
+// donnée de lib », et elle nomme Kanopi pour les librairies. Cet objet énumérait CINQ catalogues,
+// ce qui était la faute exacte que L35 interdit : une librairie à NOM LIBRE est adressable, donc
+// une liste fermée ne peut structurellement pas voir la suivante.
+// CE QUE ÇA COÛTAIT, MESURÉ : les scènes déclarant `@test_alphabets.<X>` — un catalogue réel de
+// l'amont, hors des cinq — crevaient à la projection sur « fichier factory 'test_alphabets'
+// introuvable ». Sept scènes du corpus étaient dans cet état, et le défaut MASQUAIT celui qu'on
+// cherchait : une fois le sac injecté, le cri devient celui de la collision de domaine.
+// L'hôte reste OPAQUE : il ne lit aucune entrée, ne trie rien par domaine, n'en connaît pas les
+// noms. Il transporte ce que l'amont publie ; Kairos résout (loi 26/27, PORTER ≠ RÉSOUDRE).
+const PITCH_LIB = LIBS as unknown as PitchLib;
 
 // The provided DIGITAL function library (catalogue `digital` de `bpscript/src/transpiler/libs-data.js`), handed to Kairos as the
 // read-only `ctx.digitalLib` — the exact sibling of `PITCH_LIB`. Kairos applies these deterministic
