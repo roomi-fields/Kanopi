@@ -5,6 +5,6 @@
 // composition résout un alphabet abstrait (symboles sans hauteur) depuis ce fichier.
 
 @core
-@factory.test_alphabets.abc
+@test_alphabets.abc
 
 S -> a b
