@@ -14,6 +14,7 @@ describe('assetsForScene — declared strudel banks + used gm_* instruments (for
       '',
       'actor v  eval.strudel(bank:"gm")',
       '',
+      '-----',
       'S -> v_r',
       '',
       'v_r -> v.`stack(',

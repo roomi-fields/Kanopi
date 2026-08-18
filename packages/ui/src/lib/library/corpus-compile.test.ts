@@ -147,6 +147,42 @@ const ROUGES_DECLAREES: Array<{
     | 'forme-a-venir';
   attend: string;
 }> = [
+  // ══ LE LOT `gate` — ONZE SCÈNES, UNE SEULE CAUSE, ET AUCUNE FORME D'ARRIVÉE ══════════════
+  // Romain a tranché le 2026-08-18 à 15h00 : « gate cv et trigger sont tous les trois sortis du
+  // langage » (hub/decisions/2026-08-15-un-type-se-declare-en-librairie-object-def-var-init.md:76).
+  // bpscript a débranché `gate` dans la foulée — c'était le seul des cinq encore câblé.
+  //
+  // ⛔ CE QUE `gate` FAISAIT ICI, ET QUI EXPLIQUE POURQUOI CES SCÈNES NE SE RÉPARENT PAS SEULES :
+  // il DÉCLARAIT LEURS TERMINAUX. `gate a:midi` disait à la fois « `a` est un terminal » et « il
+  // sort en MIDI ». MESURÉ, scène par scène, en retirant ses lignes : elles ne deviennent pas
+  // vertes, elles tombent un cran plus bas sur « terminal 'a' non déclaré — absent des alphabets
+  // en portée ». Le mot n'était pas un ornement, il était leur alphabet.
+  // La décision retire le mot SANS prescrire de remplacement, comme pour `template`. Ces onze
+  // scènes attendent donc de ROMAIN ce qui déclare un terminal désormais — pas un correctif.
+  //
+  // ⚠️ ET LA MESURE « VERTE SANS SES LIGNES » NE VAUT PAS RÉPARATION quand elle arrive : sur
+  // midi/midi-dual-output.bps, retirer les cinq `gate` rend 16 jetons verts — et supprime le
+  // routage MIDI, c'est-à-dire le SUJET de la scène (« deux sorties à la fois »). Verte et
+  // menteuse. C'est pourquoi elle est ici avec les dix autres et non réécrite.
+  ...[
+    'BPScript-tests/asymmetric.bps',
+    'BPScript-tests/asymmetric1.bps',
+    'BPScript-tests/dhati.bps',
+    'BPScript-tests/ek-do-tin.bps',
+    'BPScript-tests/flags.bps',
+    'BPScript-tests/koto3.bps',
+    'BPScript-tests/repeat.bps',
+    'BPScript-tests/tryLIN.bps',
+    'BPScript-tests/tryObjects.bps',
+    'BPScript-tests/tryflags2.bps',
+    'midi/midi-dual-output.bps'
+  ].map((fichier) => ({
+    fichier,
+    motif: /'gate' n'est déclaré par aucune librairie chargée/,
+    cause: 'arbitrage-attendu' as const,
+    attend:
+      "de Romain : ce qui déclare un terminal maintenant que `gate` est sorti (2026-08-18). Mesuré que retirer ses lignes ne répare pas — la scène tombe sur « terminal non déclaré »."
+  })),
   {
     fichier: 'BPScript-tests/shapes-rhythm.bps',
     motif: /script/,
@@ -209,20 +245,36 @@ const ROUGES_DECLAREES: Array<{
     attend:
       "COMMENT BPScript écrit « un alphabet PLUS une convention de notes » — question chez Romain, 11 conversions concernées, 61 notes à déclarer. La source répond pour le CONTENU (le réglage natif -se.trySrand porte « NoteConvention: 0 » = anglaise, et -ho.tryKeyXpand déclare l'alphabet « a b ») ; ce qui manque est sa GRAPHIE en BPScript. Je n'y touche pas : c'est l'écriture de bpscript et l'arbitrage est chez Romain. ✅ ET SON SAC DE MODE N'EST PLUS UNE EXCEPTION EN ATTENTE — c'est LA FORME JUSTE. Décision Romain du 2026-08-09 : le critère est l'ISO avec le moteur natif, pas une préférence de graphie. BPx a dérivé cette grammaire AU BINAIRE et établi que LE NATIF A LES DEUX PLACES ET QUE LES DEUX AGISSENT — une règle varie à cause de la re-semence posée EN TÊTE, une autre à cause de celle qui la précède DANS UNE RÈGLE. Ce ne sont pas deux graphies pour une fonction, ce sont DEUX PORTÉES d'une même fonction. Le sac ne se ferme donc pas pour `randomize`, et cette scène le garde sans dérogation. ⚠️ CE QUI M'AVAIT FAIT LA DÉFAIRE RESTE VRAI ET N'EST PLUS UN OBSTACLE : j'avais migré, puis mesuré que la scène cessait de refuser sous graine figée — le mot quittait le champ que BPx lit. La mesure était juste ; c'est sa CONCLUSION qui a changé de sens. Ce n'était pas « la migration casse », c'était « les deux places existent, et l'une d'elles porte cette fonction »."
   },
+  // ⛔ KOTO1 ET KOTO2 ONT UNE PILE DE DEUX CAUSES, ET C'EST LA SECONDE QUI EST DEVANT DEPUIS LE
+  // 2026-08-18 : elles portent `gate a:midi` comme les onze du lot ci-dessus, donc elles tombent
+  // à l'ANALYSE avant d'atteindre la dérivation où le défaut moteur les attend. Le motif suit la
+  // cause du DESSUS ; `attend` garde celle du dessous, qui n'est pas levée pour autant. Le jour où
+  // Romain tranche ce qui déclare un terminal, ce garde rougira en réclamant le motif SUB — et ce
+  // sera le signe que la première cause est partie, pas que la scène est réparée.
   {
     fichier: 'BPScript-tests/koto1.bps',
-    motif: /SUB Insert: wildcard substitution misses/,
+    motif: /'gate' n'est déclaré par aucune librairie chargée/,
     cause: 'bug-moteur-route',
     attend:
       "un correctif du moteur de dérivation sur les règles SUB à jokers. MESURÉ que ce n'est PAS ma déclaration de terminaux : les trois variantes qui compilent (4 en @gate, seul `d` en @gate, seul `d` en var) jettent TOUTES la même erreur. Ma migration du 2026-07-29 n'a pas causé ce défaut — elle l'a rendu ATTEIGNABLE (avant, la scène ne compilait pas, la dérivation n'était jamais lancée). Routé à l'architecte."
   },
   {
     fichier: 'BPScript-tests/koto2.bps',
-    motif: /SUB Insert: wildcard substitution misses/,
+    motif: /'gate' n'est déclaré par aucune librairie chargée/,
     cause: 'bug-moteur-route',
     attend:
       "idem koto1 — même erreur, même règle SUB à jokers, même origine amont. ⚠️ C'est elle qui a révélé que ce garde basculait : elle est SORTIE de cette liste puis y est RENTRÉE dans la même heure, parce qu'un tirage d'horloge favorable l'avait fait dériver une fois. Sous la GRAINE FIGÉE ci-dessus, elle jette de façon reproductible."
   },
+  // ⛔ LES CINQ MOTIFS CI-DESSOUS NE NOMMENT PLUS LEUR CAUSE, ET CE N'EST PAS UN RELÂCHEMENT DE MA
+  // PART. Romain a tranché le 2026-08-18 : « toutes mes références doivent être supprimées, seuls
+  // les gardes qui vérifient que ça ne marche pas avec ces mots peuvent être conservés ». bpscript
+  // a donc retiré ses SEPT messages dédiés. Un mot retiré se refuse désormais comme un mot inventé
+  // — sans dire lequel, ni combien de déclarations il portait. Le diagnostic nommé sur lequel ces
+  // entrées s'appuyaient n'existe plus, et il ne reviendra pas.
+  // CE QUI DISCRIMINE À SA PLACE : le NUMÉRO DE LIGNE, propre à chaque scène. C'est plus fragile —
+  // une ligne insérée au-dessus le périme en silence — mais c'est le seul repère que le message du
+  // jour porte encore. Un motif sans numéro (`got INT`) collerait indifféremment à quatre scènes
+  // et excuserait chez l'une ce qui casse chez l'autre.
   // ── Les CINQ scènes cv/macro, décision Romain 2026-08-08 (KAN-40). 'cv' et 'macro' sont
   // supprimés du langage ; BPx refuse de les dériver au lieu de les avaler en silence (sans ce
   // refus, la scène dériverait SANS ERREUR et le dispatch en aval retomberait muet — mesuré sur
@@ -241,21 +293,21 @@ const ROUGES_DECLAREES: Array<{
   // son inscription ici part avec elle — un rouge déclaré sans fichier est un mensonge de registre.
   {
     fichier: 'cv/cv-adsr.bps',
-    motif: /'cv env1' est supprim(é|e) du langage/,
+    motif: /Expected IDENT, got INT \(5\) at line 25/,
     cause: 'forme-a-venir',
     attend:
       'la forme « instance de module avec ses réglages de départ » (attack:5, decay:150, sustain:0.2, release:400 sur env1), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
   },
   {
     fichier: 'cv/cv-lfo.bps',
-    motif: /'cv sweep' est supprim(é|e) du langage/,
+    motif: /Expected IDENT, got FLOAT \(0\.4\) at line 24/,
     cause: 'forme-a-venir',
     attend:
       'la forme « instance de module avec ses réglages de départ » (rate:0.4, amplitude:0.9, shape:sine sur sweep), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
   },
   {
     fichier: 'synthesis/group-cutoff.bps',
-    motif: /'cv env1' est supprim(é|e) du langage/,
+    motif: /Expected IDENT, got INT \(8\) at line 30/,
     cause: 'forme-a-venir',
     attend:
       'la forme « instance de module avec ses réglages de départ » (attack:8, decay:750, sustain:0.1, release:300 sur env1), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
@@ -266,7 +318,7 @@ const ROUGES_DECLAREES: Array<{
     // compilateur nommait le COMPTE des déclarations (« déclare 2 : envGroup, envNote ») ; il ne le
     // fait plus. Ce qui reste discrimine encore cette scène de `group-cutoff` — le nom `envGroup`
     // n'appartient qu'à elle. La perte est remontée à bpscript le 2026-08-18.
-    motif: /'cv envGroup' est supprim(é|e) du langage/,
+    motif: /Expected IDENT, got INT \(600\) at line 25/,
     cause: 'forme-a-venir',
     attend:
       'la forme « instance de module avec ses réglages de départ » (envGroup : attack:600, decay:500, sustain:0.5, release:700 ; envNote : attack:5, decay:110, sustain:0.2, release:160), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
@@ -651,11 +703,30 @@ describe('le brassage AGIT, et seulement devant le bloc', () => {
 // Le second sens du rattrapage, lui, garde son sujet : il ne dépend pas de la scène suspendue
 // ci-dessus. On ne suspend que ce qui a perdu de quoi mordre — le reste continue de verrouiller.
 describe('le rattrapage de graine sait SE TAIRE', () => {
-  it('il n’avale pas un échec de dérivation ORDINAIRE', () => {
-    // koto1 jette sur les règles SUB à jokers, PAS sur la graine — le rattrapage ne doit pas
-    // s'en mêler, et le message doit rester celui de la vraie cause.
+  // ⛔ CE CAS EST SUSPENDU, ET LE VERROU EST RETOURNÉ PLUTÔT QUE RETIRÉ.
+  // Son témoin était `koto1.bps`, la seule scène du corpus qui jetait à la DÉRIVATION (règles SUB
+  // à jokers) : elle prouvait que le rattrapage de graine n'avale pas un échec qui ne le regarde
+  // pas. Depuis que `gate` est sorti du langage (Romain, 2026-08-18), elle tombe à l'ANALYSE, deux
+  // étages plus haut — la dérivation n'est plus atteinte, et le témoin ne témoigne plus de rien.
+  //
+  // ⚠️ CE QU'IL NE FALLAIT SURTOUT PAS FAIRE : rebrancher l'assertion sur le message de `gate`.
+  // Le cas serait redevenu vert en mesurant l'analyse, c'est-à-dire tout SAUF son sujet. Sauver un
+  // témoin en écartant son obstacle vide le banc en le laissant vert.
+  // Le corpus ne porte plus AUCUNE scène qui jette à la dérivation : `koto2`, l'autre, est tombée
+  // pour la même raison. Il n'y a donc pas de témoin de rechange à prendre.
+  //
+  // CE QUI TIENT À LA PLACE : l'assertion inversée ci-dessous. Le jour où Romain tranche ce qui
+  // déclare un terminal, koto1 repassera l'analyse, ce cas ROUGIRA, et il réclamera lui-même la
+  // restauration de l'assertion d'origine — celle qui est écrite en toutes lettres dans son
+  // message d'échec, pour n'avoir rien à redécouvrir.
+  it('SUSPENDU — son témoin est absorbé un étage plus haut, et il le dit', () => {
     const koto1 = Object.entries(BPS).find(([c]) => c.endsWith('BPScript-tests/koto1.bps'))?.[1];
     expect(koto1).toBeDefined();
-    expect(statut(koto1!)).toMatch(/SUB Insert: wildcard substitution misses/);
+    expect(
+      statut(koto1!),
+      "koto1 franchit de nouveau l'analyse : la suspension est levée, restaurer " +
+        "`expect(statut(koto1!)).toMatch(/SUB Insert: wildcard substitution misses/)` et retirer ce " +
+        'commentaire de suspension.'
+    ).toMatch(/'gate' n'est déclaré par aucune librairie chargée/);
   });
 });

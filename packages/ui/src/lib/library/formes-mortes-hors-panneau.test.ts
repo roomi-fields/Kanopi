@@ -15,18 +15,43 @@ import { compileBps } from '../runtimes/compile-cache';
 // cas la question se retranche en amont, elle ne se rattrape pas ici.
 beforeAll(() => initAdapters(createEventBus()));
 
+// ⛔ DEUX CHOSES ONT BOUGÉ EN AMONT LE 2026-08-18, ET AUCUNE N'AFFAIBLIT CE QUE CE BANC TIENT.
+// 1. LE REFUS S'ACCOMPAGNE DÉSORMAIS D'UN ARBRE. Le compilateur signale l'erreur ET rend un
+//    `ast` non nul. Ce banc exigeait `ast` falsy et lisait donc le CONTRAT DE RETOUR là où son
+//    sujet est le REFUS. Ce qui prouve le refus est l'erreur, et c'est elle qu'il vérifie
+//    maintenant. L'application ne dérive rien de cet arbre : l'adaptateur jette dès qu'une erreur
+//    est présente (`bpx-adapter.ts`, `throw new Error(parse error)`), avant toute dérivation.
+// 2. LE MESSAGE NE NOMME PLUS TOUJOURS LE MOT. Romain a tranché le retrait des messages dédiés
+//    (2026-08-18) : `library` rend « Expected IDENT, got STRING (gm) ». `transport` nomme encore
+//    son axe. Chaque cas porte donc l'empreinte du message QU'IL REÇOIT, pas celle qu'on aimerait.
 const SUPPRIMEES = [
-  { mot: 'library', scene: 'library.strudel "gm"\ncore\n-----\nS -> C4 D4\n', jamais: 'gm' },
-  { mot: 'transport', scene: 'transport.midi\ncore\n-----\nS -> C4 D4\n', jamais: 'midi' }
+  {
+    mot: 'library',
+    scene: 'library.strudel "gm"\ncore\n-----\nS -> C4 D4\n',
+    jamais: 'gm',
+    empreinte: /Expected IDENT, got STRING \(gm\)/
+  },
+  {
+    mot: 'transport',
+    scene: 'transport.midi\ncore\n-----\nS -> C4 D4\n',
+    jamais: 'midi',
+    empreinte: /aucune librairie ne sert l'axe 'transport'/
+  }
 ];
 
 describe('les directives SORTIES du langage ne sont plus des ressources', () => {
-  for (const { mot, scene, jamais } of SUPPRIMEES) {
-    it(`${mot} : le compilateur la REFUSE et ne rend aucun arbre`, () => {
+  for (const { mot, scene, jamais, empreinte } of SUPPRIMEES) {
+    it(`${mot} : le compilateur la REFUSE`, () => {
       const c = compileBps(scene) as { errors?: { message?: string }[]; ast?: unknown };
-      expect(c.ast, `${mot} produit encore un arbre — le refus amont a bougé`).toBeFalsy();
       const messages = (c.errors ?? []).map((e) => e.message ?? '').join(' | ');
-      expect(messages).toContain(mot);
+      expect(
+        c.errors ?? [],
+        `${mot} ne produit plus d'erreur — le refus amont a été levé, la question se retranche là-bas`
+      ).not.toHaveLength(0);
+      expect(
+        messages,
+        `${mot} est refusé, mais pas sur « ${empreinte} » — c'est un AUTRE refus, à confronter avant de le croire couvert`
+      ).toMatch(empreinte);
     });
 
     it(`${mot} : le repli-texte ne l'affiche PAS au panneau`, () => {
