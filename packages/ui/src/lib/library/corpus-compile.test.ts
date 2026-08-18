@@ -240,7 +240,7 @@ const ROUGES_DECLAREES: Array<{
     motif: /SUB Insert: wildcard substitution misses/,
     cause: 'bug-moteur-route',
     attend:
-      "un correctif du moteur de dérivation sur les règles SUB à jokers. MESURÉ que ce n'est PAS ma déclaration de terminaux : les trois variantes qui compilent (4 en @gate, seul `d` en @gate, seul `d` en var) jettent TOUTES la même erreur. Ma migration du 2026-07-29 n'a pas causé ce défaut — elle l'a rendu ATTEIGNABLE (avant, la scène ne compilait pas, la dérivation n'était jamais lancée). Routé à l'architecte."
+      "un correctif du moteur de dérivation sur les règles SUB à jokers. MESURÉ que ce n'est PAS ma déclaration de terminaux : les trois variantes qui compilaient alors — quatre terminaux déclarés, un seul, un seul en variable — jettent TOUTES la même erreur (mesure du 2026-07-29, dans la graphie de ce jour-là). Ma migration du 2026-07-29 n'a pas causé ce défaut — elle l'a rendu ATTEIGNABLE (avant, la scène ne compilait pas, la dérivation n'était jamais lancée). Routé à l'architecte."
   },
   {
     fichier: 'BPScript-tests/koto2.bps',
@@ -480,10 +480,7 @@ const SUSPENSION_TEMOIN = {
 describe('le rattrapage de graine mord', () => {
   const source = Object.entries(BPS).find(([c]) => c.endsWith('BPScript-tests/trySrand.bps'))?.[1];
   const avecAlphabet = () =>
-    source!.replace(
-      'controls',
-      'alphabet.bp3_english:midi\n@gate a:midi\n@gate b:midi\ncontrols'
-    );
+    source!.replace('controls', 'alphabet.bp3_english:midi\na:midi\nb:midi\ncontrols');
 
   it('SUSPENDU — le témoin n’analyse pas, et POUR SA RAISON déclarée', () => {
     expect(source, 'trySrand.bps introuvable dans le corpus').toBeDefined();

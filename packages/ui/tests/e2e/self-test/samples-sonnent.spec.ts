@@ -76,9 +76,7 @@ for (const { fichier, source, sorties } of SCENES) {
   const attendAudio = sorties.includes('audio');
   const attendMidi = sorties.includes('midi');
 
-  test(`${fichier} produit (${sorties.join(' + ')})`, async ({
-    page
-  }) => {
+  test(`${fichier} produit (${sorties.join(' + ')})`, async ({ page }) => {
     const audio = attendAudio ? await setupAudioCapture(page) : null;
     const midi = attendMidi ? await setupFakeMidi(page) : null;
     const noErrors = expectNoConsoleErrors(page);
