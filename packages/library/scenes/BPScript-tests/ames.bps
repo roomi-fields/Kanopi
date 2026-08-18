@@ -5,15 +5,15 @@
 // Polymétrie imbriquée avec ratios de durée, voix simultanées,
 // repos indéterminé (...), et liaisons (ties ~ / ~).
 
-@core
-@alphabet.western:midi
-@tempo:60
-@striated
+core
+alphabet.western:midi
+tempo:60
+striated
 
-// --- Sous-grammaire 1 @mode:ord ---
+// --- Sous-grammaire 1 mode:ord ---
 
 -----
-@mode:ord
+mode:ord
 S -> {PA,... PB}
 PA -> {2,- PA1,2 PA2} {4,PA3}
 PA1 -> {2,F#3}

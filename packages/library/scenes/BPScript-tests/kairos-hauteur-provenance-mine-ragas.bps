@@ -1,10 +1,10 @@
 // @language: bpscript
 // kairos-hauteur-provenance-mine-ragas.bps — sert src/projection/provenance-factory-mine.test.ts
-// (kairos, [343]). Invoque un alphabet `sargam` PERSONNEL (@mine.ragas.sargam) qui porte le même nom
+// (kairos, [343]). Invoque un alphabet `sargam` PERSONNEL (mine.ragas.sargam) qui porte le même nom
 // qu'une entrée du catalogue factory : preuve que la provenance distingue les deux (256 Hz vs 240 Hz).
 
-@core
-@mine.ragas.sargam
+core
+mine.ragas.sargam
 
 -----
 S -> sa re

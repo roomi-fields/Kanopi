@@ -8,16 +8,16 @@
 // @outputs: audio
 // @level: intermediate
 // @tags: csound, ab-corpus, fm, oscillator
-// @source: https://csound.com/docs/manual/foscili.html
+// source: https://csound.com/docs/manual/foscili.html
 //
 // A/B — csound — FM (foscili). Original: https://csound.com/docs/manual/foscili.html.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original.
 // Le moteur DOIT booter sur ce backtick en entier (CSD complet).
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.csound
+actor v  eval.csound
 
 -----
 S -> v_r

@@ -6,7 +6,7 @@
 // @level: intermediate
 // @tags: cv, arp
 //
-// ⚠️ EN ATTENTE — ne compile pas aujourd'hui (déclarée rouge, KAN-40). '@cv' est supprimé du
+// ⚠️ EN ATTENTE — ne compile pas aujourd'hui (déclarée rouge, KAN-40). 'cv' est supprimé du
 // langage ; la forme qui préserverait ses réglages de départ (« instance de module avec ses
 // réglages ») n'existe pas encore dans le parseur et sera revue avec FaustX. Ne pas migrer vers
 // la forme sans réglages : ça changerait la musique. Suivi : KAN-40.
@@ -15,20 +15,20 @@
 // Slow sine LFO sweeps the sound left-right
 // Pedal note stays center, arpeggios move in stereo
 
-@mod
-@core
-@alphabet.western:audio
-@tempo:100
+mod
+core
+alphabet.western:audio
+tempo:100
 
 // Modulateur descriptif : sweep EST un LFO sinus lent
-@cv sweep mod.lfo(rate:0.4, amplitude:0.9, shape:sine)
+cv sweep mod.lfo(rate:0.4, amplitude:0.9, shape:sine)
 
 -----
 S -> {G2 _ _ _ G2 _ _ _ (vel:60, wave:triangle), Arp Arp}
 
 -----
 
-@mode:random
+mode:random
 
 // Branchement au point de paramètre : sweep module le panoramique (pan) de l'arpège
 Arp -> G4 B4 D5 G5 (pan:sweep, wave:sine, vel:75, attack:5, release:200) (weight:40)

@@ -1,12 +1,12 @@
 // @language: bpscript
 // kairos-octave-sargam-override-western.bps — sert src/projection/octave-e2e.test.ts (kairos,
-// KAI-10 octave). Sargam noté en registres NUMÉRIQUES (sa5, sa6…) sous `@octaves.western` : l'override
+// KAI-10 octave). Sargam noté en registres NUMÉRIQUES (sa5, sa6…) sous `octaves.western` : l'override
 // bascule la convention d'octave native (saptak) vers la convention western, sa6 doit résoudre une
 // hauteur non nulle, une octave au-dessus de sa5.
 
-@core
-@alphabet.sargam:midi
-@octaves.western
+core
+alphabet.sargam:midi
+octaves.western
 
 -----
 S -> sa5 sa6 re6 ga6

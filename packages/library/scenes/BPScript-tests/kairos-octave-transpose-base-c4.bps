@@ -3,8 +3,8 @@
 // (kairos, verrou containment [446]). Note C4 SANS transposition : référence de base pour comparer
 // aux scènes à suffixe transpose:-200c du même banc.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> C4

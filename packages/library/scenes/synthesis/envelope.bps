@@ -9,9 +9,9 @@
 // Démo : (attack:N) et (release:N) en millisecondes
 // Courte attaque = percussif, longue attaque = pad
 
-@core
-@alphabet.western:audio
-@tempo:40
+core
+alphabet.western:audio
+tempo:40
 
 -----
 S -> Perc Pad Perc Pad

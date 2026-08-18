@@ -9,16 +9,16 @@
 // @outputs: audio
 // @level: didactic
 // @tags: csound, ab-corpus, gen10, wavetable
-// @source: https://csound.com/docs/manual/GEN10.html
+// source: https://csound.com/docs/manual/GEN10.html
 //
 // A/B — csound — Table GEN10. Original: https://csound.com/docs/manual/GEN10.html.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original.
 // Le moteur DOIT booter sur ce backtick en entier (CSD complet).
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.csound
+actor v  eval.csound
 
 -----
 S -> v_r

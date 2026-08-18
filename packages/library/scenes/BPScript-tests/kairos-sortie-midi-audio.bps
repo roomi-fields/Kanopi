@@ -7,10 +7,10 @@
 // intercalés), bass.C2 porte des réglages inline (wave, vel) — non vérifiés par ce banc mais fidèles
 // à la forme d'origine.
 
-@core
+core
 
-@actor melody  @alphabet.western  out.midi(ch:1)
-@actor bass    @alphabet.western  out.audio
+actor melody  alphabet.western  out.midi(ch:1)
+actor bass    alphabet.western  out.audio
 
 -----
 S -> {Mel, Low}

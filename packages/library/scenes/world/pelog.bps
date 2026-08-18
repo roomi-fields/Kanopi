@@ -10,9 +10,9 @@
 // nem barang bem gulu lima enam pitu
 // Non-equal intervals, metallic resonance
 
-@core
-@alphabet.gamelan_pelog:audio
-@tempo:55
+core
+alphabet.gamelan_pelog:audio
+tempo:55
 
 -----
 S -> Patutan Phrase End

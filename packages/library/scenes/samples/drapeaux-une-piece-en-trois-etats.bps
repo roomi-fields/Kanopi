@@ -14,16 +14,16 @@
 // jouable ; la mutation en fin de règle arme la suivante. La forme n'est écrite nulle
 // part — elle émerge de trois règles qui se passent le relais.
 
-@core
-@alphabet.western:audio
-@tempo:88
+core
+alphabet.western:audio
+tempo:88
 
 -----
 S -> Section Section Section
 
 -----
 
-@mode:ord
+mode:ord
 
 // L'exposition n'est jouable qu'au départ, et elle arme le développement.
 [etat==0] Section -> E4 G4 B4 E5 [etat=1] (vel:78, wave:sine, attack:6, release:260)

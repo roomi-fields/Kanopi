@@ -7,8 +7,8 @@
 // avec son propre contrôle préfixé : preuve que le libellé de chaque marqueur se rend indépendamment,
 // nom de règle intermédiaire (MOTIF) choisi pour ne pas collisionner avec un terminal de l'alphabet.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> !(vel:120) MOTIF

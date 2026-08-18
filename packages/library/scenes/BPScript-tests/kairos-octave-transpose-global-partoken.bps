@@ -3,8 +3,8 @@
 // (kairos, TR-NOOP étage 1). Deux notes portant CHACUNE un suffixe `(transpose:-1200c)` per-token :
 // preuve que la valeur cascade en chaîne brute verbatim jusqu'à leaf.controles.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> C4(transpose:-1200c) D4(transpose:-1200c)

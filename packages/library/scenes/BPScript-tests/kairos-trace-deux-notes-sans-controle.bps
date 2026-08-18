@@ -4,8 +4,8 @@
 // les trois preuves de coût quand la trace est ÉTEINTE). Deux notes, zéro contrôle : le cas le plus
 // nu, servant de témoin neutre partout où seule l'ABSENCE de contrôle/trace compte.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> C4 D4

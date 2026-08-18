@@ -14,16 +14,16 @@
 // lieu de se rejouer. Le POINT découpe une durée en fragments égaux.
 // La même mélodie, dite trois fois, avec trois respirations différentes.
 
-@core
-@alphabet.western:audio
-@tempo:76
+core
+alphabet.western:audio
+tempo:76
 
 -----
 S -> Detache Tenu Respire
 
 -----
 
-@mode:ord
+mode:ord
 
 // Détaché : chaque note occupe sa place, rien ne se prolonge.
 Detache -> A3 C4 E4 A4 (vel:80, wave:triangle, attack:4, release:120)

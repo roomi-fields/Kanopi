@@ -2,15 +2,15 @@
 // major-minor.bps — Major vs Minor chords comparison
 // Traduit de bp3-engine/library/examples/major-minor/grammar.gr
 
-@core
-@alphabet.western:midi
-@tempo:60
-@striated
+core
+alphabet.western:midi
+tempo:60
+striated
 
-// --- Sous-grammaire 1 @mode:ord ---
+// --- Sous-grammaire 1 mode:ord ---
 
 -----
-@mode:ord
+mode:ord
 S -> Cmaj {C3,E3,G3,C4}:2 !(scale:Cmin_minus 0) {C3,Eb3,G3,C4}:2 Cmaj {C3,E3,G3,C4}:2 - Cmaj {C3,E3,G3,C4}:2 Cmin {C3,Eb3,G3,C4}:2 Cmaj {C3,E3,G3,C4}:2
 S -> Seq1 - - Seq2
 Seq1 -> {C3,E3,G3,C4}:2 {C3,Eb3,G3,C4}:2 {C3,E3,G3,C4}:2 {C3,Eb3,G3,C4}:2 {C3,E3,G3,C4}:2

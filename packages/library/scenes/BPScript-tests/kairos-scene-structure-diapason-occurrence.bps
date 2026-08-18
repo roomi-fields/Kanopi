@@ -5,8 +5,8 @@
 // preuve que la vue structure porte `params` IDENTIQUE à `content.controls` du plat, et que le
 // diapason consommé (M8) ne fuite PAS dans `params`.
 
-@core
-@tempo:60
+core
+tempo:60
 
 -----
 S -> A4(diapason:428,vel:100) E4

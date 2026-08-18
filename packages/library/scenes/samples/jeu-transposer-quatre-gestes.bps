@@ -20,16 +20,16 @@
 // Le pivot est une NOTE, pas un nombre : on écarte autour de quelque chose qui sonne.
 // Le même motif, joué nu puis par les quatre gestes.
 
-@core
-@alphabet.western
-@tempo:84
+core
+alphabet.western
+tempo:84
 
 -----
 S -> Origine Reelle Chromatique Scalaire Elargi Origine
 
 -----
 
-@mode:ord
+mode:ord
 
 // Le motif de référence, sans rien.
 Origine     -> C4 E4 G4 E4 (vel:82, wave:triangle, attack:4, release:220)

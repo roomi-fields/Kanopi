@@ -8,9 +8,9 @@
 // Simultaneous — accords avec !
 // Démo : ! superpose des événements au même instant
 
-@core
-@alphabet.western:audio
-@tempo:60
+core
+alphabet.western:audio
+tempo:60
 
 -----
 S -> Chord1 Chord2 Chord3 Chord1 _ _

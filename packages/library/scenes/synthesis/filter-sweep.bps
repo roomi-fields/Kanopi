@@ -9,8 +9,8 @@
 // Démo : (filter:N) = fréquence de coupure, (filterQ:N) = résonance
 // Commence sombre (filtre bas) et s'ouvre progressivement
 
-@core
-@alphabet.western:audio
+core
+alphabet.western:audio
 
 -----
 S -> Dark Medium Bright Open

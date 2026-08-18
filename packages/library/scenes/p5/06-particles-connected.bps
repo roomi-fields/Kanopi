@@ -11,15 +11,15 @@
 // @outputs: visual
 // @level: advanced
 // @tags: p5, ab-corpus, particles, classes, interaction
-// @source: https://github.com/processing/p5.js-example/blob/main/examples/13_Classes_And_Objects/02_Connected_Particles/code.js
+// source: https://github.com/processing/p5.js-example/blob/main/examples/13_Classes_And_Objects/02_Connected_Particles/code.js
 //
 // A/B — p5 — Connected Particles. Original: https://p5js.org/examples/Classes-And-Objects-Connected-Particles/.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.p5
+actor v  eval.p5
 
 -----
 S -> v_r

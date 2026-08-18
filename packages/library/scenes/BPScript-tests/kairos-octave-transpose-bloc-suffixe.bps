@@ -3,8 +3,8 @@
 // (kairos, verrou containment [446]). Suffixe `(transpose:-200c)` posé sur un BLOC ({C4}) : doit
 // descendre sur la feuille C4 du bloc.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> {C4}(transpose:-200c)

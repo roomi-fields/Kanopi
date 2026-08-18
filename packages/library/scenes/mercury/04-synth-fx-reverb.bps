@@ -9,16 +9,16 @@
 // @outputs: audio
 // @level: intermediate
 // @tags: mercury, ab-corpus, synth, fx, reverb, shape, no-samples
-// @source: https://github.com/tmhglnd/mercury-lang/blob/main/test/test-synth.txt
+// source: https://github.com/tmhglnd/mercury-lang/blob/main/test/test-synth.txt
 //
 // A/B — mercury — Synth + fx (reverb, shape). Original: https://github.com/tmhglnd/mercury-lang/blob/main/test/test-synth.txt
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original (mercury.timohoogland.com).
 // Test de robustesse : chaîne d'effets (add_fx reverb) + enveloppe (shape) — DOIT sonner sans samples.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.mercury
+actor v  eval.mercury
 
 -----
 S -> v_r

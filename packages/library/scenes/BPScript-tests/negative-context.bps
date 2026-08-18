@@ -23,18 +23,18 @@
 // des deux côtés de la flèche. Les deux propriétés sont indépendantes.
 // Détail : docs/spec/LANGUAGE.md de BPscript, section « #X n'est PAS une garde ».
 
-@core
-@test_alphabets.structural
+core
+test_alphabets.structural
 
 // Tous les symboles ici sont des non-terminaux sauf dans le résultat final.
 // Le résultat "A A A A2 A3 A1" contient des terminaux qui ne sont pas
 // liés à un runtime — c'est un test de grammaire pure, pas de production sonore.
 
-// --- Sous-grammaire 1 @mode:random ---
+// --- Sous-grammaire 1 mode:random ---
 
 // Règle 1 : crée la séquence initiale + flag
 -----
-@mode:random
+mode:random
 S -> A A2 A3 A1 A A [times=5]
 
 // Règle 2 : tant que times > 0, déplace les A devant les marqueurs

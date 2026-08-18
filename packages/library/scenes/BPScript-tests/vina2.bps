@@ -2,15 +2,15 @@
 // vina2.bps — Gitam "Sri Gananaada" (variante avec pitch bend polymétrique)
 // Traduit de bp3-engine/library/tabla/vina2/grammar.gr
 
-@core
-@alphabet.bp3_indian:midi
+core
+alphabet.bp3_indian:midi
 // L'alphabet PORTE l'ancre native (dha4 = A4 = 440 Hz, donc sa4 = C4 = 261.6256) : BP3 RENOMME
-// le clavier occidental, il ne le transpose pas. Cette scene declarait un '@diapason:261.625'
+// le clavier occidental, il ne le transpose pas. Cette scene declarait un 'diapason:261.625'
 // pour compenser a la main l'ancre traditionnelle de 'sargam' (sa = 240 Hz) ; le contournement
 // est retire le 2026-07-19, l'ancre venant desormais du catalogue. Registres NUMERIQUES ('sa3',
 // 'sa4') et non saptak : c'est la convention de registres du moteur natif.
 
-// --- Sous-grammaire 1 @mode:random — structure ---
+// --- Sous-grammaire 1 mode:random — structure ---
 
 
 // ── MIGRATION DE FORME, écrite par bpscript le 2026-08-13 — À RELIRE ET COMMITTER PAR VOUS ──
@@ -22,12 +22,12 @@
 //   !(value:slide 101)  →  !(slide:101)
 //   !(cont:slide)       →  !(slidecont)
 //   !(fixed:slide)      →  !(slidefixed)
-// Le paramètre se DÉCLARE désormais, sinon son nom est refusé : `@var <nom> signal` — « un flux de
+// Le paramètre se DÉCLARE désormais, sinon son nom est refusé : `var <nom> signal` — « un flux de
 // nombres, sans convention de lecture » (LANGUAGE.md). C'est la déclaration ajoutée ci-dessous.
-@var slide signal
+var slide signal
 
 -----
-@mode:random
+mode:random
 S -> Sri Ga Na Naa Da (weight:0)
 S -> {sa4 _ _, - !(pitchbend:500) !(pitchcont, pitchrange:500, pitchbend:0)}
 Sri -> {StartSlide StartPull sa3 _ Pull0 Slide0 _ Pull2 Slide5 _ Pull0 _ Pull2 _ Pull0 Slide5 _ Slide7 _ _ _ _ _ StopSlide StopPull}:2
@@ -38,17 +38,17 @@ Da -> {LightGamaka sa4}:1
 
 -----
 
-// --- Sous-grammaire 2 @mode:sub1 — structures intermédiaires ---
+// --- Sous-grammaire 2 mode:sub1 — structures intermédiaires ---
 
-@mode:sub1
+mode:sub1
 LightGamaka ?1 -> StartPull ?1 _ _ Pull0 _ Pull1 _ Pull0 _ _ _ Pull1 StopPull
 Spurita ?1 -> StartSlide ?1 Slide1 _ _ _ _ _ _ _ Slide1 StopSlide
 
 -----
 
-// --- Sous-grammaire 3 @mode:sub1 — résolution en contrôles ---
+// --- Sous-grammaire 3 mode:sub1 — résolution en contrôles ---
 
-@mode:sub1
+mode:sub1
 Pull0 -> !(pitchbend:0)
 Pull1 -> !(pitchbend:100)
 Pull2 -> !(pitchbend:200)

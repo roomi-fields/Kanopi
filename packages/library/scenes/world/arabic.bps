@@ -11,10 +11,10 @@
 // Noms de degrés arabes (perde) : rast dukah sikah jaharkah nawa husayni awj,
 // avec les intervalles en quarts de ton de l'accordage arabic_24TET.
 
-@core
-@alphabet.arabic:audio
-@tuning.arabic_24TET
-@tempo:70
+core
+alphabet.arabic:audio
+tuning.arabic_24TET
+tempo:70
 
 -----
 S -> Sayr Rujoo Qarar

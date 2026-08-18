@@ -6,26 +6,26 @@
 // Pitch bend continu avec templates (transpositions successives du tihai).
 // Terminaux : bols de tabla (ek, do, tin, char, panch, che, sat, at)
 
-@core
-@tempo:88
-@striated
-@maxitems:0
-@quantization:30
-@qclock:22
+core
+tempo:88
+striated
+maxitems:0
+quantization:30
+qclock:22
 
-@gate ek:midi
-@gate do:midi
-@gate tin:midi
-@gate char:midi
-@gate panch:midi
-@gate che:midi
-@gate sat:midi
-@gate at:midi
+gate ek:midi
+gate do:midi
+gate tin:midi
+gate char:midi
+gate panch:midi
+gate che:midi
+gate sat:midi
+gate at:midi
 
-// --- Sous-grammaire 1 @mode:ord ---
+// --- Sous-grammaire 1 mode:ord ---
 
 -----
-@mode:ord
+mode:ord
 S -> $Tihai(transpose:-200c) &Tihai(pitchcont, pitchbend:-200, transpose:-200c) &Tihai(pitchbend:200) (pitchrange:200)
 
 Tihai -> {Huit}:2 {Six}:2 {Cinq}:2 {Quatre}:2 - {- - ek - - do - - tin - - -}:3

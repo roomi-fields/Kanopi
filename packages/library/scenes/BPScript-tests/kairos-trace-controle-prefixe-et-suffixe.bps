@@ -8,8 +8,8 @@
 // suffixe (`transpose:-1200c`) et le préfixe (`!(vel:90)`), pour prouver que la production ET la RHS
 // de la règle S résolvent identiquement des deux côtés.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> C4(transpose:-1200c) !(vel:90) D4

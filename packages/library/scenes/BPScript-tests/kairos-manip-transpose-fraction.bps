@@ -5,8 +5,8 @@
 // interval-ratio résout exactement hz × 1.5, nom et registre préservés (cadre déplacé, corps
 // frameRatio réel). Sert aussi le cas SANS digitalLib (la résolution branchée crie au chargement).
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> C4(transpose:3/2)

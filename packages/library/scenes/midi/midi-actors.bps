@@ -7,13 +7,13 @@
 // @tags: orchestration, multi-actor, midi
 // @showcase
 //
-// Actors — dual output via @actor
+// Actors — dual output via actor
 // Mélodie sur synthé MIDI (ch1), basse en WebAudio (navigateur)
 
-@core
+core
 
-@actor melody  @alphabet.western  out.midi(ch:1)
-@actor bass    @alphabet.western  out.audio
+actor melody  alphabet.western  out.midi(ch:1)
+actor bass    alphabet.western  out.audio
 
 -----
 S -> {Mel, Low}

@@ -5,12 +5,12 @@
 // Notes C4/A4/G4 = variantes just intonation de C4/A4/G4
 // Poids <0> = jamais sélectionné aléatoirement, <1> = seul candidat
 
-@core
+core
 
-// --- Sous-grammaire 1 @mode:ord ---
+// --- Sous-grammaire 1 mode:ord ---
 
 -----
-@mode:ord
+mode:ord
 S -> C4 A4 G4 (weight:0)
 S -> !(scale:just_intonation C4) C4 A4 G4 (weight:0)
 S -> !(scale:just_intonation A4) C4 A4 G4 (weight:0)

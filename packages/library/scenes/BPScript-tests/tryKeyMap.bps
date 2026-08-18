@@ -13,20 +13,20 @@
 // facteur 2 autour de C4, !(keymap:C3 C5 C5 C3) les inverse (C4 reste le pivot).
 // mapstep applique le mappage par pas, mapcont l'interpole en continu (y compris
 // À L'INTÉRIEUR d'un objet sonore qui accepte le mappage), mapfixed le fige.
-@core
+core
 // DEUX ACTEURS, et c'est structurel, pas cosmétique : cette scène fait sonner DEUX
 // vocabulaires — les notes occidentales (règle M) et les bols abstraits `a`/`b` (Part2/3/4).
-// `@alphabet.western:midi` ne pouvait pas convenir : le `:midi` désigne un ACTEUR IMPLICITE,
-// incompatible avec un `@actor` explicite. On nomme donc les deux voix.
-@test_alphabets.abc
-@actor notes @alphabet.western out.midi
-@actor bols  @alphabet.abc     out.midi
+// `alphabet.western:midi` ne pouvait pas convenir : le `:midi` désigne un ACTEUR IMPLICITE,
+// incompatible avec un `actor` explicite. On nomme donc les deux voix.
+test_alphabets.abc
+actor notes alphabet.western out.midi
+actor bols  alphabet.abc     out.midi
 
-@tempo:60
-@striated
+tempo:60
+striated
 
 -----
-@mode:ord
+mode:ord
 S -> !(vel:64) Part1 - !(vel:127) Part2 1/2 Part3 Part4 1/2 !(vel:64) retro Part1
 
 Part1 -> ! (/8) mapstep !(keymap:C3 C3 C5 C5) M M M M M M !(keymap:C3 C2 C5 C6) M M M M M M !(keymap:C3 C3 C5 C5) M M M M M M M M M M M M !(keymap:C3 C5 C5 C3) mapfixed M M !(keymap:C3 C3 C5 C5) M ! (/1) M

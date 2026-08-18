@@ -13,11 +13,11 @@
 // Sub-grammar 1 builds the structure.
 // Sub-grammar 2 fills in the details.
 //
-// @mode:X sets the derivation type for a sub-grammar block.
+// mode:X sets the derivation type for a sub-grammar block.
 // It persists until overridden.
 
-@core
-@alphabet.western:audio
+core
+alphabet.western:audio
 
 // Sub-grammar 1: structure (ORD by default)
 -----
@@ -26,7 +26,7 @@ S -> A_r B_r A_r
 -----
 
 // Sub-grammar 2: material (random choice for each A_r and B_r)
-@mode:random
+mode:random
 A_r -> C4 D4 E4 F4
 A_r -> E4 F4 G4 A4
 A_r -> G4 A4 B4 C5

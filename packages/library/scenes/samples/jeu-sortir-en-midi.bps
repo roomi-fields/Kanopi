@@ -17,20 +17,20 @@
 // numéro — le point appelle le composant, le deux-points affecte la valeur.
 // Le premier bloc joue sec ; le second envoie les mêmes notes en remuant l'appareil.
 
-@core
-@alphabet.western
-@out.midi
-@tempo:92
+core
+alphabet.western
+out.midi
+tempo:92
 
 // Le programme se pose une fois pour la scène : le timbre de l'appareil est un décor.
-@ins:12
+ins:12
 
 -----
 S -> Sec Anime Sec Anime
 
 -----
 
-@mode:ord
+mode:ord
 
 // Rien que des notes, sur le canal 1 : l'appareil joue son timbre tel quel.
 Sec   -> D3 A3 D4 F4 (vel:88, chan:1)

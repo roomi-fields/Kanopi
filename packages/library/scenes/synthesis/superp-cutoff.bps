@@ -6,7 +6,7 @@
 // @level: advanced
 // @tags: cv, modulation, superposition, test
 //
-// ⚠️ EN ATTENTE — ne compile pas aujourd'hui (déclarée rouge, KAN-40). '@cv' est supprimé du
+// ⚠️ EN ATTENTE — ne compile pas aujourd'hui (déclarée rouge, KAN-40). 'cv' est supprimé du
 // langage ; la forme qui préserverait ses réglages de départ (« instance de module avec ses
 // réglages ») n'existe pas encore dans le parseur et sera revue avec FaustX. Ne pas migrer vers
 // la forme sans réglages : ça changerait la musique. Suivi : KAN-40.
@@ -18,12 +18,12 @@
 // group bus → output. Proof: the two superpose, the group filter's phase varies with
 // the note's position in the group, and a fresh bus is keyed per loop occurrence.
 
-@core
-@alphabet.western:audio
-@tempo:96
+core
+alphabet.western:audio
+tempo:96
 
-@cv envGroup mod.adsr(attack:600, decay:500, sustain:0.5, release:700)
-@cv envNote mod.adsr(attack:5, decay:110, sustain:0.2, release:160)
+cv envGroup mod.adsr(attack:600, decay:500, sustain:0.5, release:700)
+cv envNote mod.adsr(attack:5, decay:110, sustain:0.2, release:160)
 
 -----
 S -> { Phrase }(cutoff:envGroup)

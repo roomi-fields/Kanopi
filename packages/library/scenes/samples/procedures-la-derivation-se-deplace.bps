@@ -16,16 +16,16 @@
 // PARCOURS, pas sur le texte — la boucle n'est pas recopiée, elle est décidée.
 // Ici une cellule répétée trois fois, puis une coda atteinte par saut.
 
-@core
-@alphabet.western
-@tempo:112
+core
+alphabet.western
+tempo:112
 
 -----
 S -> Boucle Coda
 
 -----
 
-@mode:ord
+mode:ord
 
 // La même cellule, refaite trois fois par la procédure — le texte ne la répète pas.
 Boucle -> G3 B3 D4 [repeat:3] (vel:80, wave:triangle, attack:4, release:170)

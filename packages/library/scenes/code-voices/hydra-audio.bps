@@ -12,10 +12,10 @@
 // `a` (batterie seule) et `b` (batterie + visuel). Ouvrir, puis basculer les
 // scènes dans la barre transport (ou Alt+1 / Alt+2). Ctrl+. pour couper.
 // La batterie joue des échantillons (bd/sd/hh) : on lie la banque dirt-samples.
-@var section flag: a:1, b:2
+var section flag: a:1, b:2
 
-@actor drums  eval.strudel(bank:"dirt-samples")
-@actor visuals  eval.hydra
+actor drums  eval.strudel(bank:"dirt-samples")
+actor visuals  eval.hydra
 
 -----
 [section==a] S -> drums_r

@@ -7,9 +7,9 @@
 // @tags: sections, flag, silence
 //
 // second session — démo minimale, 2 sections nommées (a / b silence).
-@actor melody eval.strudel
+actor melody eval.strudel
 
-@var section flag: a:1, b:2
+var section flag: a:1, b:2
 
 -----
 [section==a] S -> melody_r

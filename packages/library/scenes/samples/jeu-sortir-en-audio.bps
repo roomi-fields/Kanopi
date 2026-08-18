@@ -16,16 +16,16 @@
 // Trois fois les mêmes notes, trois sons sans rapport : la hauteur n'est qu'une petite
 // partie de ce qu'on entend.
 
-@core
-@alphabet.western
-@tempo:76
+core
+alphabet.western
+tempo:76
 
 -----
 S -> Nue Riche Feutree
 
 -----
 
-@mode:ord
+mode:ord
 
 // Sinusoïde, attaque nette : rien que la hauteur, aucun grain.
 Nue      -> A3 C4 E4 A4 (vel:80, wave:sine, attack:3, release:200)

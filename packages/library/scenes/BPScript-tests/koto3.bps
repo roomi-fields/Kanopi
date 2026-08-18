@@ -10,29 +10,29 @@
 // système temps réel de synchronisation, et il s'écrit désormais `!(sync:continue)`.
 // Les deux autres messages de la famille sont `!(sync:start)` et `!(sync:stop)`.
 
-@core
-@improvize
-@qclock:20
+core
+improvize
+qclock:20
 
-@gate a:midi
-@gate b:midi
-@gate c:midi
-@gate f:midi
-@gate chik:midi
+gate a:midi
+gate b:midi
+gate c:midi
+gate f:midi
+gate chik:midi
 
-// --- Sous-grammaire 1 @mode:random — séquence initiale ---
+// --- Sous-grammaire 1 mode:random — séquence initiale ---
 
 -----
-@mode:random
+mode:random
 S -> !(vel:127) !(volume:40) X X X X Y X X X X Y X X X X (weight:100)
 X -> a (weight:K9)
 X -> b
 
 -----
 
-// --- Sous-grammaire 2 @mode:sub — automate cellulaire ---
+// --- Sous-grammaire 2 mode:sub — automate cellulaire ---
 
-@mode:sub
+mode:sub
 Y -> Y
 #? ?1 -> #? ?1
 ?1 #? -> ?1 #?
@@ -53,9 +53,9 @@ c a c -> b a b
 
 -----
 
-// --- Sous-grammaire 3 @mode:random — silences et out-time objects ---
+// --- Sous-grammaire 3 mode:random — silences et out-time objects ---
 
-@mode:random
+mode:random
 Y -> !f (weight:40)
 Y -> !chik (weight:50)
 ? #? -> ? Silence !(sync:continue) #? (weight:1-1)

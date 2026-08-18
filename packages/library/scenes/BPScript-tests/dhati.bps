@@ -22,80 +22,80 @@
 //   BPx (cf. recode.ts). La transcription/compilation, elle, est fidèle.
 // NOTE : INIT: Play I46 (BP3 performance init, pas encore en BPscript)
 
-@core
-@test_alphabets.dhati
-@sound.tabla_perc
-@tempo:15
-@homomorphism.dhati
+core
+test_alphabets.dhati
+sound.tabla_perc
+tempo:15
+homomorphism.dhati
 
 // Terminaux — bols de tabla
-@gate plus:midi
-@gate fin:midi
-@gate star:midi
-@gate dha:midi
-@gate trkt:midi
-@gate dheena:midi
-@gate teena:midi
-@gate dhati:midi
-@gate gena:midi
-@gate dhage:midi
-@gate tidha:midi
-@gate na:midi
-@gate ge:midi
-@gate kt:midi
-@gate ke:midi
-@gate ti:midi
-@gate ta:midi
-@gate dhagena:midi
-@gate teenake:midi
-@gate dheenage:midi
-@gate dhatrkt:midi
-@gate trktdha:midi
-@gate teenakena:midi
-@gate dheenagena:midi
-@gate dhagenateena:midi
-@gate dhagenadhati:midi
-@gate dhatrktdhati:midi
-@gate dhatidhatrkt:midi
-@gate dhatidhagena:midi
-@gate dheenagedhatrkt:midi
-@gate genagedhatrkt:midi
-@gate dhagedheenagena:midi
-@gate dhageteenakena:midi
-@gate tidhagedheenage:midi
-@gate teenakegenage:midi
-@gate dhagenagenanagena:midi
-@gate dhatidhagedheenagena:midi
-@gate dhatidhageteenakena:midi
-@gate dhageteena:midi
-@gate dhatidhageteena:midi
-@gate kttidha:midi
-@gate natidha:midi
-@gate getidha:midi
-@gate ktti:midi
-@gate geti:midi
-@gate nati:midi
-@gate tidhagena:midi
-@gate dhagedheena:midi
-@gate tidhatrkt:midi
+gate plus:midi
+gate fin:midi
+gate star:midi
+gate dha:midi
+gate trkt:midi
+gate dheena:midi
+gate teena:midi
+gate dhati:midi
+gate gena:midi
+gate dhage:midi
+gate tidha:midi
+gate na:midi
+gate ge:midi
+gate kt:midi
+gate ke:midi
+gate ti:midi
+gate ta:midi
+gate dhagena:midi
+gate teenake:midi
+gate dheenage:midi
+gate dhatrkt:midi
+gate trktdha:midi
+gate teenakena:midi
+gate dheenagena:midi
+gate dhagenateena:midi
+gate dhagenadhati:midi
+gate dhatrktdhati:midi
+gate dhatidhatrkt:midi
+gate dhatidhagena:midi
+gate dheenagedhatrkt:midi
+gate genagedhatrkt:midi
+gate dhagedheenagena:midi
+gate dhageteenakena:midi
+gate tidhagedheenage:midi
+gate teenakegenage:midi
+gate dhagenagenanagena:midi
+gate dhatidhagedheenagena:midi
+gate dhatidhageteenakena:midi
+gate dhageteena:midi
+gate dhatidhageteena:midi
+gate kttidha:midi
+gate natidha:midi
+gate getidha:midi
+gate ktti:midi
+gate geti:midi
+gate nati:midi
+gate tidhagena:midi
+gate dhagedheena:midi
+gate tidhatrkt:midi
 // Cadences longues : séquences de bols (pas de terminaux atomiques)
 // BP3 les concatène sans espaces, BPscript les sépare
 // Lahra terminals (solfège notes — resolved by note convention, not as compound bols)
-@gate do5:midi
-@gate si4:midi
-@gate la4:midi
-@gate lab4:midi
-@gate mi5:midi
-@gate mi4:midi
-@gate fa4:midi
-@gate do4:midi
+gate do5:midi
+gate si4:midi
+gate la4:midi
+gate lab4:midi
+gate mi5:midi
+gate mi4:midi
+gate fa4:midi
+gate do4:midi
 
-// --- Sous-grammaire 1 @mode:random — structure initiale ---
+// --- Sous-grammaire 1 mode:random — structure initiale ---
 // BP3: S --> 4+4+4+4/4 {16,Qaida}
 // cycle16x4 = non-terminal pour la structure rythmique 4+4+4+4/4
 
 -----
-@mode:random
+mode:random
 S -> {16,Qaida} (weight:0, meter:4+4+4+4/4)
 S -> {16,Lahra,Qaida} (meter:4+4+4+4/4)
 S <- Qaida
@@ -104,9 +104,9 @@ Qaida <> $ {plus S64 fin} (weight:1)
 
 -----
 
-// --- Sous-grammaire 2 @mode:lin — décomposition structurelle ---
+// --- Sous-grammaire 2 mode:lin — décomposition structurelle ---
 
-@mode:lin
+mode:lin
 S64 <> L16 plus S48 (weight:500)
 S64 <> L14 S50 (weight:500)
 S64 <> L12 S52 (weight:100)
@@ -145,12 +145,12 @@ S16 <> {16,plus A16 O16 fin} (weight:5)
 
 -----
 
-// --- Sous-grammaire 3 @mode:random — variations LEFT ---
+// --- Sous-grammaire 3 mode:random — variations LEFT ---
 // Ces règles opèrent dans le scope du template défini en sous-grammaire 1.
 // Les symboles `plus`, `star` correspondent aux `+`, `*` de BP3.
 // Les règles avec `(=+` sur le LHS en BP3 opèrent dans le scope template.
 
-@mode:random
+mode:random
 M16 <> V16 (weight:100, scan:left)
 N18 <> V18 (weight:100, scan:left)
 // BP3: (=+ L16 <-> (=+ A16 — scope template (= omis)
@@ -197,9 +197,9 @@ plus O16 fin <> plus A16 fin (weight:100, scan:left)
 
 -----
 
-// --- Sous-grammaire 4 @mode:lin — expansion V (décomposition rythmique) ---
+// --- Sous-grammaire 4 mode:lin — expansion V (décomposition rythmique) ---
 
-@mode:lin
+mode:lin
 V30 <> V V V28 (weight:100)
 V28 <> V V V26 (weight:100)
 V26 <> V V V24 (weight:100)
@@ -214,9 +214,9 @@ V6 <> V V V V V V (weight:100)
 
 -----
 
-// --- Sous-grammaire 5 @mode:lin — terminaux (bols de tabla) ---
+// --- Sous-grammaire 5 mode:lin — terminaux (bols de tabla) ---
 
-@mode:lin
+mode:lin
 ? V <> ? - (weight:100)
 V <> dha (weight:100)
 V V <> trkt (weight:100)
@@ -265,9 +265,9 @@ V V V V V V V V A'8 <> dhatrktdhatidhatrkt A'8 (weight:100)
 
 -----
 
-// --- Sous-grammaire 6 @mode:ord — encodage des cadences (LEFT) ---
+// --- Sous-grammaire 6 mode:ord — encodage des cadences (LEFT) ---
 
-@mode:ord
+mode:ord
 plus ? ? ? ? ? ? ? ? ? ? A'6-2 <> plus ? ? ? ? ? ? ? ? ? ? dhageteena (scan:left)
 plus ? ? ? ? ? ? ? ? ? ? C6-2 <> plus ? ? ? ? ? ? ? ? ? ? dhagedheena (scan:left)
 plus ? ? ? ? ? ? ? ? ? ? A'6-2 <> plus ? ? ? ? ? ? ? ? ? ? dhageteena (scan:left)
@@ -289,10 +289,10 @@ plus A'16 <> plus dhati dhagena dhatrkt dhati dhage teenakena (scan:left)
 
 -----
 
-// --- Sous-grammaire 7 @mode:lin — Lahra (mélodie) ---
+// --- Sous-grammaire 7 mode:lin — Lahra (mélodie) ---
 // Les sound objects sont des chaînes concaténées (pas de séparateur de bols)
 
-@mode:lin
+mode:lin
 // Objets sonores composés |[ … ] (ratifié Romain 2026-07-18) : chaque cellule = UNE unité
 // d'ordonnancement (nom concaténé do5_do5do5), _ prolonge. Aligné sur le natif -gr.dhati:168-169.
 Lahra -> |[ do5 _ do5 do5 ] |[ do5 _ do5 do5 ] |[ si4 _ si4 do5 ] |[ la4 _ la4 si4 ] |[ lab4 _ lab4 _ ] |[ la4 _ si4 mi5 ] |[ do5 _ si4 do5 ] |[ la4 _ lab4 la4 ]

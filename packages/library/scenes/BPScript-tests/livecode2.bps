@@ -6,8 +6,8 @@
 // ratios fractionnaires complexes (1319/240, 17/1920...),
 // et solfège français (do, re, mi, fa, sol, la, si, reb, sol#, sib)
 
-@core
-@alphabet.solfege:midi
+core
+alphabet.solfege:midi
 
 // Solfège français — une seule règle, 2 voix principales (chan 3 et 4)
 

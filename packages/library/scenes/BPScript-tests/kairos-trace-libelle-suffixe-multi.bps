@@ -4,8 +4,8 @@
 // suffixe à deux paires sur C4 (intervalle en chaîne, vélocité en nombre) : preuve que le rendu est
 // lexical, sans formatage ni coercition, quel que soit le type d'origine de la valeur.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> C4(transpose:-1200c, vel:80) D4

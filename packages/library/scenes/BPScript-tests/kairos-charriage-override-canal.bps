@@ -5,11 +5,11 @@
 // INLINE (ch:5) qui doit être charrié verbatim jusqu'à la feuille (payload.address.ch=5,
 // payload.occurrence=true, payload.actor='lead'). Jetons exacts requis par le banc : C4, E4, C2.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor lead  @alphabet.western  out.midi(ch:1)
-@actor bass  @alphabet.western  out.midi(ch:2)
+actor lead  alphabet.western  out.midi(ch:1)
+actor bass  alphabet.western  out.midi(ch:2)
 
 -----
 S -> lead.C4 lead.E4(ch:5) bass.C2

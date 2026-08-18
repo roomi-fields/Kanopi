@@ -1,13 +1,13 @@
 // @language: bpscript
 // kairos-hauteur-diapason-occurrence-override.bps — sert src/projection/diapason-e2e.test.ts (kairos,
-// mandat [284]). @diapason:442 de scène, mais E4 porte une OCCURRENCE (diapason:428) : preuve que
+// mandat [284]). diapason:442 de scène, mais E4 porte une OCCURRENCE (diapason:428) : preuve que
 // l'occurrence prime sur la valeur de scène/acteur.
 
-@core
-@alphabet.western:audio
-@tuning.western_just
-@diapason:442
-@tempo:60
+core
+alphabet.western:audio
+tuning.western_just
+diapason:442
+tempo:60
 
 -----
 S -> C4 E4(diapason:428)

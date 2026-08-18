@@ -5,10 +5,10 @@
 // Scène minimale, choisie pour la valeur exacte attendue par le banc : 2 notes (C4, E4), sortie
 // out.midi(ch:1) gravée sur chacune.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor lead  @alphabet.western  out.midi(ch:1)
+actor lead  alphabet.western  out.midi(ch:1)
 
 -----
 S -> lead.C4 lead.E4

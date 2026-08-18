@@ -1,6 +1,6 @@
 // @name: Mohanam — faithful MIDI
 // @tagline: Needs a MIDI device. Twin of "Mohanam — browser audio", which sounds without one.
-// @description: The faithful translation of the native grammar: the clock of -se.trial.mohanam (360 BPM), an actor-scoped declaration (@actor flute … out.midi), flute program 3 and chromashift. THIS EXEMPLAR IS THE FIDELITY REFERENCE — it is silent without a MIDI device. Its twin (world/mohanam.bps) routes the same generative structure to the in-browser synth. Two objects, deliberately kept side by side (décision Romain 2026-07-26).
+// @description: The faithful translation of the native grammar: the clock of -se.trial.mohanam (360 BPM), an actor-scoped declaration (actor flute … out.midi), flute program 3 and chromashift. THIS EXEMPLAR IS THE FIDELITY REFERENCE — it is silent without a MIDI device. Its twin (world/mohanam.bps) routes the same generative structure to the in-browser synth. Two objects, deliberately kept side by side (décision Romain 2026-07-26).
 // @language: bpscript
 // @outputs: midi
 // @level: advanced
@@ -15,33 +15,33 @@
 //
 // Utiliser un son de flûte avec un patch sensible à la vélocité
 
-@core
-@tempo:360   // horloge du natif -se.trial.mohanam : periode 167 ms par temps, soit 360 BPM.
+core
+tempo:360   // horloge du natif -se.trial.mohanam : periode 167 ms par temps, soit 360 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
 // Voix unique : svaras sargam notés en octaves numériques (sa6…). La convention
 // d'octave par défaut de sargam est saptak ; `octaves.western` la SURCHARGE
 // (EBNF.md:114,118-119 ; ACTOR.md:37 ; décision clés-acteur-six). Remplace
-// l'ancien `@alphabet.raga` (alphabet absent du catalogue).
-@actor flute @alphabet.sargam octaves.western out.midi
+// l'ancien `alphabet.raga` (alphabet absent du catalogue).
+actor flute alphabet.sargam octaves.western out.midi
 
 // Settings
-@ins:3
-@chromashift:-24
+ins:3
+chromashift:-24
 
 // ============================================================
-// Sous-grammaire 1 — Initialisation @mode:random
+// Sous-grammaire 1 — Initialisation mode:random
 // Crée le symbole de départ I avec les compteurs
 // ============================================================
 
 -----
-@mode:random
+mode:random
 S -> I [Ideas=20, Notes=32, NumR=1]
 
 -----
 
 // ============================================================
-// Sous-grammaire 2 — Génération d'idées @mode:random
+// Sous-grammaire 2 — Génération d'idées mode:random
 // I se dérive en combinaisons de phrases A et B
 // R1/R2 = marqueurs de répétition (traités en sous-grammaire 6)
 // ============================================================
@@ -59,13 +59,13 @@ I -> I [NumR+1] (weight:0)
 -----
 
 // ============================================================
-// Sous-grammaire 3 — Contrôle de récursion @mode:random
+// Sous-grammaire 3 — Contrôle de récursion mode:random
 // A et B peuvent revenir à I (récursion)
 // La dernière règle utilise goto pour relancer la sous-grammaire 2
 // ============================================================
 
 // [flag] = test pur (bare flag = non-zéro), [NumR-1] = test+mutation
-@mode:random
+mode:random
 [Ideas] [NumR-1] A -> I (weight:100)
 [Ideas] [NumR-1] B -> I (weight:100)
 [Ideas] I -> I [goto:2 1] (weight:1)
@@ -73,22 +73,22 @@ I -> I [NumR+1] (weight:0)
 -----
 
 // ============================================================
-// Sous-grammaire 4 — Nettoyage @mode:sub1
+// Sous-grammaire 4 — Nettoyage mode:sub1
 // Supprime les I restants
 // ============================================================
 
-@mode:sub1
+mode:sub1
 I -> lambda
 
 -----
 
 // ============================================================
-// Sous-grammaire 5 — Choix de longueur des phrases @mode:random
+// Sous-grammaire 5 — Choix de longueur des phrases mode:random
 // A et B deviennent des patterns de 4, 3 ou 2 notes
 // Poids décroissants : les patterns longs sont préférés au début
 // ============================================================
 
-@mode:random
+mode:random
 [Notes-4] A -> P4 (weight:50-12)
 [Notes-3] A -> P3 (weight:50-9)
 [Notes-2] A -> P2 (weight:50-10)
@@ -100,11 +100,11 @@ I -> lambda
 -----
 
 // ============================================================
-// Sous-grammaire 6 — Répétitions via captures @mode:random
+// Sous-grammaire 6 — Répétitions via captures mode:random
 // R1...R2 encadre un motif, les captures ?1 ?2... le dupliquent
 // ============================================================
 
-@mode:random
+mode:random
 R1 ?1 R2 -> ?1 ?1
 R1 ?1 ?2 R2 -> ?1 ?2 ?1 ?2
 R1 ?1 ?2 ?3 R2 -> ?1 ?2 ?3 ?1 ?2 ?3
@@ -114,11 +114,11 @@ R1 ?1 ?2 ?3 ?4 ?5 R2 -> ?1 ?2 ?3 ?4 ?5 ?1 ?2 ?3 ?4 ?5
 -----
 
 // ============================================================
-// Sous-grammaire 7 — Variantes de patterns @mode:random
+// Sous-grammaire 7 — Variantes de patterns mode:random
 // P4/P3/P2 et Q4/Q3/Q2 se déclinent en variantes numérotées
 // ============================================================
 
-@mode:random
+mode:random
 P4 -> P41
 P4 -> P42
 P4 -> P43
@@ -147,17 +147,17 @@ Q2 -> Q23
 -----
 
 // ============================================================
-// Sous-grammaire 8 — Nettoyage des marqueurs @mode:random
+// Sous-grammaire 8 — Nettoyage des marqueurs mode:random
 // ============================================================
 
-@mode:random
+mode:random
 R1 -> lambda
 R2 -> lambda
 
 -----
 
 // ============================================================
-// Sous-grammaire 9 — Patterns terminaux + effets @mode:random
+// Sous-grammaire 9 — Patterns terminaux + effets mode:random
 // Str = accent (vélocité augmentée sur une note)
 // Step3Up/Step3Dn = crescendo/decrescendo sur 3 notes
 // Les notes finales sont en sargam avec octave (sa6, re6...)
@@ -165,7 +165,7 @@ R2 -> lambda
 // ============================================================
 
 // Effets via captures — macros d'expression
-@mode:random
+mode:random
 Str ?1 -> ?1(vel:64) (vel:110)
 Step3Up ?1 ?2 ?3 -> ?1(vel:95) ?2(vel:110) ?3(vel:64) (vel:80)
 Step3Dn ?1 ?2 ?3 -> ?1(vel:95) ?2(vel:80) ?3(vel:64) (vel:110)

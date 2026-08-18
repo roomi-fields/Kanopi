@@ -21,25 +21,25 @@
 // Le langage du bloc s'écrit de deux façons — dans le tag, ou porté par l'acteur qui le
 // qualifie. Les deux se suivent ici, et elles font la même chose.
 
-@core
-@alphabet.western
-@tempo:104
+core
+alphabet.western
+tempo:104
 
 // La voix-code : elle porte le langage de ses backticks, et sort en natif.
 // Aucune banque déclarée, et c'est délibéré : le bloc joue une forme d'onde SYNTHÉTISÉE, donc il
 // ne charge aucun échantillon. Une scène qui enseigne ne doit pas dépendre d'un fichier distant
 // pour se faire entendre.
-@actor rythme  eval.strudel
+actor rythme  eval.strudel
 
 // La voix de notes : elle dit par où elle sort, et joue le clavier de la scène.
-@actor melodie  out.audio
+actor melodie  out.audio
 
 -----
 S -> Tague Porte Tague Porte
 
 -----
 
-@mode:ord
+mode:ord
 
 // Le bloc nomme son langage lui-même : l'adresse est dans le texte.
 Tague -> melodie.C4 `strudel: note("c2 c3").sound("square").lpf(500).release(.1)` melodie.E4 melodie.G4 (vel:84, wave:sine, attack:4, release:200)

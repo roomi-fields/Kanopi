@@ -3,12 +3,12 @@
 // Traduit de bp3-engine/test-data/-gr.MyMelody (Bernard, 1996)
 // French solfege notation
 
-@core
-@tempo:180   // horloge du natif -se.765432 : periode 333 ms par temps, soit 180 BPM.
+core
+tempo:180   // horloge du natif -se.765432 : periode 333 ms par temps, soit 180 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
-@alphabet.solfege:midi
-@transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliquent
+alphabet.solfege:midi
+transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliquent
                  // key += (C4key - 60) A L'ENCODAGE, avant que le moindre axe de sortie ne voie la
                  // note -- la colonne transpos du natif vaut zero, ce n'est donc pas une
                  // transposition chez lui. MESURE (bp3-engine, binaire 3.5.1, empreinte 372dd047) :
@@ -17,7 +17,7 @@
                  // ecrit et le nom natif est en arbitrage chez Romain, sur dix-neuf grammaires.
 
 -----
-@mode:random
+mode:random
 S -> {! (/1) MyMelody1, Accomp1} (weight:1-1)
 S -> {$MyMelody1, Accomp1} {&MyMelody1, Accomp1} (weight:1-1)
 S -> {! (/4) MyMelody2, Accomp2} {! (/8) MyMelody2, Accomp2} (weight:1-1)
@@ -28,7 +28,7 @@ MyMelody2 -> mi5 _ _ re5 do5 - {2, re5 mi5 re5 mi5} fa5 _ _ {mi5 re5, do5 si4} s
 
 -----
 
-@mode:random
+mode:random
 DoM -> {do3, mi3, sol3} (weight:20)
 DoM -> {1, do2 - sol2 - do2 - mi3 -} (weight:70)
 Lam -> {la2, do3, mi3} (weight:100)

@@ -7,23 +7,23 @@
 // Les poids <1-1> font que les règles de répétition sont vues une seule fois.
 // Les règles sans RHS (X -->) effacent le non-terminal (production epsilon).
 
-@core
-@maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
+core
+maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
                  // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
                  // certaines grammaires ne rendent jamais la main.
 
 // Terminaux
-@gate a:midi
-@gate b:midi
-@gate c:midi
+gate a:midi
+gate b:midi
+gate c:midi
 
 // Non-terminaux : S, X, Y, Z
 
-// --- Sous-grammaire 1 @mode:ord ---
+// --- Sous-grammaire 1 mode:ord ---
 // ORD : les règles d'effacement ne sont vues qu'après les règles de répétition
 
 -----
-@mode:ord
+mode:ord
 S -> X Y Z
 X -> a X [repeat:K1=3] (weight:1-1)
 Y -> b Y [repeat:K1] (weight:1-1)

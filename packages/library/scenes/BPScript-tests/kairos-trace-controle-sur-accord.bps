@@ -7,8 +7,8 @@
 // devant un accord `{C4, D4}` : preuve que mon libellé résolu s'insère dans la graphie de BPx sans
 // jamais laisser passer le placeholder `_ctrl`.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> !(vel:120) {C4, D4}

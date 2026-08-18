@@ -5,8 +5,8 @@
 // (position 0 = tempo(4/1)), la continuation (position 1) absente de la table plutôt que rendue
 // illisible.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> ! (/4) C4

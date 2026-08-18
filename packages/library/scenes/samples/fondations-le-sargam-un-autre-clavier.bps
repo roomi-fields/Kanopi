@@ -16,14 +16,14 @@
 // Ici la même montée de degrés, jouée d'abord sur douze pas égaux puis sur les vingt-deux
 // shrutis. Les noms ne bougent pas ; les hauteurs, si.
 
-@core
-@alphabet.sargam
-@tempo:52
+core
+alphabet.sargam
+tempo:52
 
-@actor egal
+actor egal
   tuning.sargam_12TET
 
-@actor shruti
+actor shruti
   tuning.sargam_22shruti
 
 -----
@@ -31,7 +31,7 @@ S -> Egal Shruti Egal Shruti
 
 -----
 
-@mode:ord
+mode:ord
 
 // Le tempérament égal, familier et lisse.
 Egal   -> egal.sa egal.re egal.ga egal.ma egal.pa egal.taar_sa (vel:74, wave:sine, attack:14, release:520)

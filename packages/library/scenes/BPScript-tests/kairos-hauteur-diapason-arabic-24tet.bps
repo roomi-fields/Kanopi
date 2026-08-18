@@ -1,13 +1,13 @@
 // @language: bpscript
 // kairos-hauteur-diapason-arabic-24tet.bps — sert src/projection/diapason-e2e.test.ts (kairos, [287]
-// multi-tuning). @diapason:442 sur arabic_24TET (microtonal arabe, ancre husayni4) : preuve que
+// multi-tuning). diapason:442 sur arabic_24TET (microtonal arabe, ancre husayni4) : preuve que
 // l'override s'applique aussi à cet accordage, husayni=442.
 
-@core
-@alphabet.arabic:audio
-@tuning.arabic_24TET
-@diapason:442
-@tempo:60
+core
+alphabet.arabic:audio
+tuning.arabic_24TET
+diapason:442
+tempo:60
 
 -----
 S -> rast husayni

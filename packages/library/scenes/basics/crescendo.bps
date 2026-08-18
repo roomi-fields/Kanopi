@@ -19,8 +19,8 @@
 // l'arbre projeté). Une scène de « basics » qui promet un crescendo et dérive un zigzag trompe
 // l'apprenant deux fois : sur ce qu'il entend, et sur ce qu'il croit avoir compris du langage.
 
-@core
-@alphabet.western:audio
+core
+alphabet.western:audio
 
 -----
 S -> Up Down

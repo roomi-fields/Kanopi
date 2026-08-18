@@ -8,8 +8,8 @@
 // Stereo Pan — panoramique gauche/droite
 // Démo : (pan:N) positionne le son (0=gauche, 64=centre, 127=droite)
 
-@core
-@alphabet.western:audio
+core
+alphabet.western:audio
 
 -----
 S -> PanL PanC PanR Sweep

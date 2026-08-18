@@ -5,10 +5,10 @@
 // au drain après ce rechargement, avec diagnostic ; une op visant `bass` (qui survit) reste drainée
 // normalement (course du mode random, identité nominale d'acteur).
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor bass  @alphabet.western  out.midi(ch:2)
+actor bass  alphabet.western  out.midi(ch:2)
 
 -----
 S -> bass.C2 bass.G2

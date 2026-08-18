@@ -14,11 +14,11 @@
 // committer par kanopi. Arbitrage de Romain : un drapeau ne porte qu un nom de drapeau, et
 // A comme B sont des NOTES de l alphabet en portee. Le compilateur les refuse desormais.
 // Seuls les deux compteurs sont renommes ; Atrans et Btrans ne sont pas des noms de note.
-@core
-@improvize
+core
+improvize
 
-@gate a:midi
-@gate b:midi
+gate a:midi
+gate b:midi
 
 // --- Sous-grammaire 1 — initialisation (pas de mode = default ORD) ---
 
@@ -27,33 +27,33 @@ S -> Head U V [Reverse=0, beats=24, K1]
 
 -----
 
-// --- Sous-grammaire 2 @mode:random — choix du nombre de transformations b (impair) ---
+// --- Sous-grammaire 2 mode:random — choix du nombre de transformations b (impair) ---
 
-@mode:random
+mode:random
 Head -> Head [nbB=3, nbA=3] [goto:3 0] (weight:3)
 Head -> Head [nbB=9, nbA=1] [goto:3 0] (weight:1)
 
 -----
 
-// --- Sous-grammaire 3 @mode:random — choix d'une transformation ---
+// --- Sous-grammaire 3 mode:random — choix d'une transformation ---
 
-@mode:random
+mode:random
 [K1-1] [nbA>0] Head -> Head a [Atrans, nbA-1, K2, K3]
 [K1-1] [nbB>0] Head -> Head b [Btrans, nbB-1, K4]
 
 -----
 
-// --- Sous-grammaire 4 @mode:ord — transformation a ---
+// --- Sous-grammaire 4 mode:ord — transformation a ---
 
-@mode:ord
+mode:ord
 [K2-1] [Atrans] U -> 3 U
 [K3-1] [Atrans-1] V -> 3 V
 
 -----
 
-// --- Sous-grammaire 5 @mode:ord — transformation b ---
+// --- Sous-grammaire 5 mode:ord — transformation b ---
 
-@mode:ord
+mode:ord
 [K4-1] [Btrans-1] [Reverse==1] U -> 2 U [Reverse=0]
 [K4-1] [Btrans-1] [Reverse==0] V -> 2 V [Reverse=1]
 

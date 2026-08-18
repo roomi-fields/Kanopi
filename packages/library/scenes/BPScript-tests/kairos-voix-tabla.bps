@@ -8,9 +8,9 @@
 // perdue quand le nom de règle ne coïncide plus avec le nom d'acteur), et sans acteur la résolution
 // de voix (binding d'alphabet) n'a rien à quoi s'accrocher.
 
-@core
+core
 
-@actor tabla @alphabet.tabla out.audio
+actor tabla alphabet.tabla out.audio
 
 -----
 S -> Bols

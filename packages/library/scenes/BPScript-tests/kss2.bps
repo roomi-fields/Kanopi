@@ -6,19 +6,19 @@
 // Sous-grammaire 1: transformations structurelles (poids décroissants)
 // Sous-grammaire 2: résolution en notes indiennes
 
-@core
-@alphabet.sargam:midi
-// La convention d'octave par défaut de sargam est saptak ; `@octaves.western` la SURCHARGE (comme
+core
+alphabet.sargam:midi
+// La convention d'octave par défaut de sargam est saptak ; `octaves.western` la SURCHARGE (comme
 // mohanam/nadaka, mêmes grammaires sargam Bernard). Sans elle, sa6/re6… résolvent mal l'octave sous
 // saptak (routage kairos [402]/[521] ; pendant du renversement de verrou octave kairos 95cd748).
-@octaves.western
-@tempo:60
-@striated
+octaves.western
+tempo:60
+striated
 
-// --- Sous-grammaire 1 @mode:random — transformations structurelles ---
+// --- Sous-grammaire 1 mode:random — transformations structurelles ---
 
 -----
-@mode:random
+mode:random
 S -> !(chromashift:-7) ! (/5) X Y X X Y Y X
 X Y -> Y X (weight:20-4)
 X Y -> X Y Y X (weight:10-2)
@@ -31,9 +31,9 @@ Y Y -> Y X Y X (weight:3-1)
 
 -----
 
-// --- Sous-grammaire 2 @mode:random — résolution en notes ---
+// --- Sous-grammaire 2 mode:random — résolution en notes ---
 
-@mode:random
+mode:random
 X -> sa6 re6 (weight:8-2)
 X -> re6 ga6 (weight:8-2)
 X Y -> ga6 pa6 dha6 X X (weight:8-1)

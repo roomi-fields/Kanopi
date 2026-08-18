@@ -1,9 +1,9 @@
 // @name: GM Soundfont (gm_*) — targeted leak test
-// @tagline: sound("piano, gm_electric_guitar_muted") — instrument General MIDI via @strudel/soundfonts
+// @tagline: sound("piano, gm_electric_guitar_muted") — instrument General MIDI via strudel/soundfonts
 // @description: Exemple canonique tiré du workshop officiel Strudel « First Notes ». TEST DE FUITE
-// CIBLÉ : le préfixe gm_ adresse un instrument General MIDI fourni par le module @strudel/soundfonts,
-// qui n'est PAS embarqué chez nous — @strudel/web importe ce module en commentaire
-// (`//export * from '@strudel/soundfonts'` et `/* registerSoundfonts() */` dans web.mjs). Attendu :
+// CIBLÉ : le préfixe gm_ adresse un instrument General MIDI fourni par le module strudel/soundfonts,
+// qui n'est PAS embarqué chez nous — strudel/web importe ce module en commentaire
+// (`//export * from 'strudel/soundfonts'` et `/* registerSoundfonts() */` dans web.mjs). Attendu :
 // soit un silence sur la voix gm_electric_guitar_muted (son introuvable, avalé silencieusement par
 // Strudel), soit un log d'erreur "sound not found" — jamais une exception qui casse le composite.
 // À comparer côte à côte avec l'original: https://strudel.cc/workshop/first-notes/.
@@ -11,15 +11,15 @@
 // @outputs: audio
 // @level: intermediate
 // @tags: strudel, ab-corpus, soundfonts, gm, missing-module, samples
-// @source: https://strudel.cc/workshop/first-notes/
+// source: https://strudel.cc/workshop/first-notes/
 //
 // A/B — strudel — GM Soundfont leak test. Original: https://strudel.cc/workshop/first-notes/.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original (où gm_electric_guitar_muted sonne).
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.strudel
+actor v  eval.strudel
 
 -----
 S -> v_r

@@ -13,8 +13,8 @@
 // interpreter at that moment — the code is captured then transported, not
 // rendered opaquely. Here it triggers a kick pattern between two notes.
 
-@core
-@alphabet.western:audio
+core
+alphabet.western:audio
 
 -----
 S -> C4 `strudel: s("bd*4")` E4

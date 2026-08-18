@@ -5,7 +5,7 @@
 // @level: advanced
 // @tags: synthesis, patchbay, macro
 //
-// ⚠️ EN ATTENTE — ne compile pas aujourd'hui (déclarée rouge, KAN-40). '@macro' est supprimé du
+// ⚠️ EN ATTENTE — ne compile pas aujourd'hui (déclarée rouge, KAN-40). 'macro' est supprimé du
 // langage ; la forme qui préserverait ses réglages de départ (« instance de module avec ses
 // réglages ») n'existe pas encore dans le parseur et sera revue avec FaustX. Deux causes de plus,
 // propres à cette scène : le domicile du câblage persistant (lead/open/close/glide) n'a pas de
@@ -20,19 +20,19 @@
 // modules (saw/lpf/audio) sont OPAQUES au langage ; Kairos les CLASSE depuis le
 // catalogue de ports (runtime-codevoices) et grave `content.action` / route
 // l'arm par le module PUITS ; runtime-audio REND le patchbay. Ctrl+. pour couper.
-@core
+core
 
 // Voix PERSISTANTE = câblage multi-étage : jouer `lead` arme le patch. Le filtre
 // est modulé par un LFO câblé en backtick (cv sur le port cutoff).
 // MIGRATION 2026-07-27 par l'agent bpscript : le signe `=` a DISPARU de tout le langage
-// (decision Romain, uniformite declarative — une seule forme partout : `@directive <nom>
+// (decision Romain, uniformite declarative — une seule forme partout : `directive <nom>
 // <valeur>`). Aucune autre modification. Ecriture SIGNEE, a commiter par kanopi.
-@macro lead saw.freq: pitch >> lpf.cutoff: `js: lfo(2)*0.7` >> audio
+macro lead saw.freq: pitch >> lpf.cutoff: `js: lfo(2)*0.7` >> audio
 
 // Actions MONO-ÉTAGE (appel-composant opaque, one-shot) sur le patch armé :
-@macro open lpf.cutoff: 12000   // cv-set — ouvre grand le filtre
-@macro close lpf.cutoff: 700     // cv-set — le referme
-@macro glide saw.freq: pitch     // cv-set — re-cible la hauteur du générateur
+macro open lpf.cutoff: 12000   // cv-set — ouvre grand le filtre
+macro close lpf.cutoff: 700     // cv-set — le referme
+macro glide saw.freq: pitch     // cv-set — re-cible la hauteur du générateur
 
 -----
 S -> lead open lead close lead glide lead close

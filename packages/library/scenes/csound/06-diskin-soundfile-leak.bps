@@ -16,17 +16,17 @@
 // @outputs: audio
 // @level: advanced
 // @tags: csound, ab-corpus, diskin2, soundfile, filesystem, leak
-// @source: https://csound.com/docs/manual/diskin2.html
+// source: https://csound.com/docs/manual/diskin2.html
 //
 // A/B — csound — diskin2 soundfile leak test. Original: https://csound.com/docs/manual/diskin2.html.
 // Coller/évaluer la voix : attendu = erreur d'ouverture de fichier (pas de son), car rien n'a jamais
 // écrit "beats.wav" dans le memfs de l'engine — voir @description pour la source du trou.
 // Le moteur DOIT booter sur ce backtick en entier (CSD complet).
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.csound
+actor v  eval.csound
 
 -----
 S -> v_r

@@ -5,17 +5,17 @@
 // Utilise _scale() avec différents tempéraments (just intonation, piano, meantone1)
 // et des accords en polymétrie avec prolongations
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
-// --- Sous-grammaire 1 @mode:ord ---
+// --- Sous-grammaire 1 mode:ord ---
 
 // NOTE: _scale("just intonation", 69) contient un espace dans le nom.
 // En BPscript on utilise des underscores : [scale: just_intonation 69]
 // Le compilateur traduit en _scale(just intonation,69) pour BP3.
 
 -----
-@mode:ord
+mode:ord
 S -> !(scale:piano C4) F3 !(scale:just_intonation 69) C4 D4 (weight:0)
 
 S -> !(scale:just_intonation 69) C4 D4 E4 {C4,E4,G4,C5} {C4,E4,G4,C5}:2 F4 A4 G4 C5 {C4,F4,D4,C5}:2 {C4,F4,D4,C5}:3 (weight:0)

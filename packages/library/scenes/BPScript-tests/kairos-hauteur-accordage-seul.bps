@@ -10,8 +10,8 @@
 // rend 264 et 297. L'écart est franc, donc la garde discrimine. Même famille que la sonde absorbée
 // par l'alphabet qu'elle mesure : ici c'est le DÉFAUT qui absorbait le témoin.
 
-@core
-@tunings.western_just
+core
+tunings.western_just
 
 -----
 S -> C4 D4

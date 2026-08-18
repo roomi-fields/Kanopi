@@ -11,10 +11,10 @@
 // in-browser synth. The orchestrated kronos path drives notes + CV for each actor;
 // arm/disarm silences one voice while the other plays on (no MIDI hardware needed).
 
-@core
+core
 
-@actor lead  @alphabet.western  out.audio
-@actor bass  @alphabet.western  out.audio
+actor lead  alphabet.western  out.audio
+actor bass  alphabet.western  out.audio
 
 -----
 S -> {Lead, Low}

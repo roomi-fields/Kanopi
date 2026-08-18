@@ -8,8 +8,8 @@
 // MIDI Channels — notes réparties sur plusieurs canaux
 // Utile pour piloter plusieurs synthés ou timbres
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> Voice1 Voice2 Voice3

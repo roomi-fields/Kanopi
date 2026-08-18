@@ -9,17 +9,17 @@
 // Tutorial 1 — Your first note
 //
 // Every BPscript file needs:
-//   @core           — core library
-//   @controls       — control definitions (vel, chan...)
-//   @alphabet.western:audio — which notes to use
+//   core           — core library
+//   controls       — control definitions (vel, chan...)
+//   alphabet.western:audio — which notes to use
 //
 // Then write a rule: S -> followed by notes.
 // S is the start symbol. The engine rewrites S into the notes.
 //
 // Try: click Produce, then Play.
 
-@core
-@alphabet.western:audio
+core
+alphabet.western:audio
 
 -----
 S -> C4

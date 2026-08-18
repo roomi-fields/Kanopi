@@ -4,8 +4,8 @@
 // Une seule note C4 nue, western/midi — sert de RÉFÉRENCE de hauteur non manipulée, comparée aux
 // scènes équivalentes portant un contrôle (scaleshift, transpose).
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> C4

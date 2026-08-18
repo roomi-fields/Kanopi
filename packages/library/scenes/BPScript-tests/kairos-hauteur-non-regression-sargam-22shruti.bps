@@ -1,12 +1,12 @@
 // @language: bpscript
 // kairos-hauteur-non-regression-sargam-22shruti.bps — sert src/projection/diapason-e2e.test.ts
-// (kairos, [287] multi-tuning). Aucun @diapason déclaré, sur sargam_22shruti : non-régression de la
+// (kairos, [287] multi-tuning). Aucun diapason déclaré, sur sargam_22shruti : non-régression de la
 // référence microtonale composant (ni = 240×243/128).
 
-@core
-@alphabet.sargam:audio
-@tuning.sargam_22shruti
-@tempo:60
+core
+alphabet.sargam:audio
+tuning.sargam_22shruti
+tempo:60
 
 -----
 S -> sa ni

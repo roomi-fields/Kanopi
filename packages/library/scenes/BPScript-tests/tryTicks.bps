@@ -1,11 +1,11 @@
 // @language: bpscript
-@tempo:120   // horloge du natif -se.tryTicks : periode 500 ms par temps, soit 120 BPM.
+tempo:120   // horloge du natif -se.tryTicks : periode 500 ms par temps, soit 120 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
 // tryTicks.bps — migré de bp3-engine/test-data/-gr.tryTicks (porter bp3ToScene, 2026-07-17)
 // Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
 
-@transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliquent
+transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliquent
                  // key += (C4key - 60) A L'ENCODAGE, avant que le moindre axe de sortie ne voie la
                  // note -- la colonne transpos du natif vaut zero, ce n'est donc pas une
                  // transposition chez lui. MESURE (bp3-engine, binaire 3.5.1, empreinte 372dd047) :
@@ -17,7 +17,7 @@
 // E...). La scene ecrit C5 D5 E5 F5 G5 : le discriminant vient de la DONNEE, il n'a pas ete choisi.
 // Sans cette ligne, la resolution aval devinait — et devinait juste, mais deviner juste n'est pas
 // savoir. Mesure : scenePitch porte desormais alphabet=western, jetons inchanges.
-@alphabet.western:midi
+alphabet.western:midi
 -----
-@mode:random
+mode:random
 S -> C5 D5 E5 F5 E5 G5 F5 E5 F5 D5 E5 G5 D5 F5 E5 C5 (weight:1)

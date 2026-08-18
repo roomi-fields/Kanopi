@@ -8,11 +8,11 @@
 // Glossaries had not yet been implemented when this grammar was designed.
 // The last subgrammar could be replaced with "-gl.D50"
 
-@core
-@quantization:50
-@qclock:3
-@alphabet.solfege:midi
-@transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliquent
+core
+quantization:50
+qclock:3
+alphabet.solfege:midi
+transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliquent
                  // key += (C4key - 60) A L'ENCODAGE, avant que le moindre axe de sortie ne voie la
                  // note -- la colonne transpos du natif vaut zero, ce n'est donc pas une
                  // transposition chez lui. MESURE (bp3-engine, binaire 3.5.1, empreinte 372dd047) :
@@ -20,19 +20,19 @@
                  // FREQUENCE et diverge de son NOM -- elle rend A4 @ 220 Hz. Le choix entre le nom
                  // ecrit et le nom natif est en arbitrage chez Romain, sur dix-neuf grammaires.
 
-// --- Sous-grammaire 1 @mode:ord ---
+// --- Sous-grammaire 1 mode:ord ---
 
 -----
-@mode:ord
+mode:ord
 S -> Internal C47 Part1 Canon C46(vel:90) Part2
 Part1 -> {Suresh1,... Smriti1,... Olivier1,... Vijayshree1,... Arindam1,... Andreine1}
 Part2 -> {Suresh2,Smriti2 ...,Olivier2 ...,Vijayshree2 ...,Arindam2 ...,Andreine2 ...}
 
 -----
 
-// --- Sous-grammaire 2 @mode:ord ---
+// --- Sous-grammaire 2 mode:ord ---
 
-@mode:ord
+mode:ord
 Suresh1 -> SuMov7x7 SuSil7x7 SuMov6x7 SuSil6x7 SuMov5x7 SuSil5x7 SuMov4x7 SuSil4x7 SuMov3x7 SuSil3x7 SuMov2x7 SuSil2x7 SuMov1x7 SuSil1x7
 Smriti1 -> SmMov6x6 SmSil6x6 SmMov5x6 SmSil5x6 SmMov4x6 SmSil4x6 SmMov3x6 SmSil3x6 SmMov2x6 SmSil2x6 SmMov1x6 SmSil1x6
 Olivier1 -> OlMov5x5 OlSil5x5 OlMov4x5 OlSil4x5 OlMov3x5 OlSil3x5 OlMov2x5 OlSil2x5 OlMov1x5 OlSil1x5
@@ -42,9 +42,9 @@ Andreine1 -> AnMov2x2 AnSil2x2 AnMov1x2 AnSil1x2
 
 -----
 
-// --- Sous-grammaire 3 @mode:ord ---
+// --- Sous-grammaire 3 mode:ord ---
 
-@mode:ord
+mode:ord
 Suresh2 -> SuMov7x7 SuMov6x6 SuMov5x5 SuMov4x4 SuMov3x3 SuMov2x2 SuMov1x1
 Smriti2 -> SmMov6x6 SmMov5x5 SmMov4x4 SmMov3x3 SmMov2x2 SmMov1x1
 Olivier2 -> OlMov5x5 OlMov4x4 OlMov3x3 OlMov2x2 OlMov1x1
@@ -54,9 +54,9 @@ Andreine2 -> AnMov2x2 AnMov1x1
 
 -----
 
-// --- Sous-grammaire 4 @mode:ord — Suresh cycles x7 and descending ---
+// --- Sous-grammaire 4 mode:ord — Suresh cycles x7 and descending ---
 
-@mode:ord
+mode:ord
 SuMov1x7 -> SuCycle7
 SuSil1x7 -> SuMov1x7
 SuMov2x7 -> SuCycle7 SuCycle7
@@ -87,9 +87,9 @@ SuSil6x6 -> SuMov6x6
 
 -----
 
-// --- Sous-grammaire 5 @mode:ord — Smriti cycles ---
+// --- Sous-grammaire 5 mode:ord — Smriti cycles ---
 
-@mode:ord
+mode:ord
 SmMov1x6 -> SmCycle6
 SmSil1x6 -> SmMov1x6
 SmMov2x6 -> SmCycle6 SmCycle6
@@ -116,9 +116,9 @@ SmSil5x5 -> SmMov5x5
 
 -----
 
-// --- Sous-grammaire 6 @mode:ord — Olivier cycles ---
+// --- Sous-grammaire 6 mode:ord — Olivier cycles ---
 
-@mode:ord
+mode:ord
 OlMov1x5 -> OlCycle5
 OlSil1x5 -> OlMov1x5
 OlMov2x5 -> OlCycle5 OlCycle5
@@ -141,9 +141,9 @@ OlSil4x4 -> OlMov4x4
 
 -----
 
-// --- Sous-grammaire 7 @mode:ord — Vijayshree cycles ---
+// --- Sous-grammaire 7 mode:ord — Vijayshree cycles ---
 
-@mode:ord
+mode:ord
 ViMov1x4 -> ViCycle4
 ViSil1x4 -> ViMov1x4
 ViMov2x4 -> ViCycle4 ViCycle4
@@ -162,9 +162,9 @@ ViSil3x3 -> ViMov3x3
 
 -----
 
-// --- Sous-grammaire 8 @mode:ord — Arindam cycles ---
+// --- Sous-grammaire 8 mode:ord — Arindam cycles ---
 
-@mode:ord
+mode:ord
 ArMov1x3 -> ArCycle3
 ArSil1x3 -> ArMov1x3
 ArMov2x3 -> ArCycle3 ArCycle3
@@ -179,9 +179,9 @@ ArSil2x2 -> ArMov2x2
 
 -----
 
-// --- Sous-grammaire 9 @mode:ord — Andreine cycles ---
+// --- Sous-grammaire 9 mode:ord — Andreine cycles ---
 
-@mode:ord
+mode:ord
 AnMov1x2 -> AnCycle2
 AnSil1x2 -> AnMov1x2
 AnMov2x2 -> AnCycle2 AnCycle2
@@ -192,9 +192,9 @@ AnSil1x1 -> AnMov1x1
 
 -----
 
-// --- Sous-grammaire 10 @mode:ord — Canon ---
+// --- Sous-grammaire 10 mode:ord — Canon ---
 
-@mode:ord
+mode:ord
 Canon -> Twist Walk Stretch Bend Jump Turn
 Twist -> Sm Tik Tik Tik Tik Tik Su Tik Tik Tik Tik Ol Tik Tik Tik Ar Tik Tik Vi Tik An
 Walk -> Sm Su Tik Ol Tik Tik Ar Tik Tik Tik Vi Tik Tik Tik Tik An Tik Tik Tik Tik Tik
@@ -205,9 +205,9 @@ Turn -> Walk
 
 -----
 
-// --- Sous-grammaire 11 @mode:sub1 — Cycle definitions ---
+// --- Sous-grammaire 11 mode:sub1 — Cycle definitions ---
 
-@mode:sub1
+mode:sub1
 SuCycle7 -> Su Tik Tik Tik Tik Tik Tik
 SuCycle6 -> Su Tik Tik Tik Tik Tik
 SuCycle5 -> Su Tik Tik Tik Tik
@@ -238,9 +238,9 @@ AnCycle1 -> An
 
 -----
 
-// --- Sous-grammaire 12 @mode:sub1 — Notes (simultaneous with 1) ---
+// --- Sous-grammaire 12 mode:sub1 — Notes (simultaneous with 1) ---
 
-@mode:sub1
+mode:sub1
 Su -> {1,do4 -}
 Sm -> {1,mi4 -}
 Ol -> {1,sol4 -}
@@ -252,9 +252,9 @@ Tik -> {1,do7 -}
 
 -----
 
-// --- Sous-grammaire 13 @mode:ord — D-50 MIDI setup ---
+// --- Sous-grammaire 13 mode:ord — D-50 MIDI setup ---
 
-@mode:ord
+mode:ord
 // script(...) SUPPRIME du langage (GO Romain 2026-07-26) : une fonction generique est une
 // decision non prise. Chaque intention porte desormais son nom. Traductions appliquees ici :
 //   script(MIDI program N)                     -> !(ins:N)              (registre : runtime.midi.ins)

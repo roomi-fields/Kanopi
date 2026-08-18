@@ -1,24 +1,21 @@
 // @language: bpscript
 // simpletemplates.bps — Simple templates test
 // Traduit de bp3-engine/test-data/-gr.simpletemplates (Bernard, 1996)
+// LES GABARITS QUE CETTE SCENE PORTE SONT `$` ET `&` — la capture et le rejeu. La section
+// `template` et ses rangs sont SORTIS du langage (decision Romain, hub/decisions/
+// 2026-08-16-la-convention-de-note-cascade-cinq-mots-sortent.md:28 — « neuf occurrences »), et
+// c est un RETRAIT, pas une conversion : rien ne les remplace, ils ne reviennent pas.
 // NOMS DE REGLES SUFFIXES `_r` : une tete de regle ne peut plus porter le nom d une note de
 // l alphabet actif (decision 2026-07-28, hub). Le natif d origine garde SES noms : les passages
 // de .gr cites dans ce fichier ne suivent donc PAS nos renommages. Production prouvee INCHANGEE :
 // arbre derive compare EN ENTIER avant/apres, a graine fixe.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
-@mode:random
+mode:random
 S <> C4 . C5 . D5 C5 F#4 . A4 . C5
 S <> C4 . C5 . D5 C5 D5 C5 F#4 . A4 . C5
 S <> $A_r &A_r
 A_r <> D5 C5 . D5
-
------
-
-@template
-[1] /1 ???????
-[2] /1 ?????????
-[3] /1 ($0 ???)($1 )

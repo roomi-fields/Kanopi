@@ -8,10 +8,10 @@
 // Supported features are translated below; unsupported ones are commented out
 // with explicit backlog markers.
 
-@core
+core
 
 // Production mode: text (bols are non-pitched syllables, not MIDI notes)
-// No @alphabet.western — bols are literal sound objects
+// No alphabet.western — bols are literal sound objects
 
 // =========================================================================
 // GRAM#1 — RND: top-level structure
@@ -29,7 +29,7 @@
 
 
 -----
-@mode:random
+mode:random
 S <> S64 (weight:100)
 S64 <> S1F S2F S1V S2F E32 (weight:100)
 S64 <> S1V S2F S1F S2F E32 (weight:100)
@@ -45,7 +45,7 @@ S64 <> S1V S2V S1F S2F E32 (weight:100)
 //   BP3 syntax: (= V8 ) creates a "master bracket" in the template
 //               (: V8 ) creates a "slave bracket" that mirrors the master
 //               ++ prefixes tokens as context markers
-//   BPscript has an @template section with ($N ...) bracket syntax, BUT:
+//   BPscript has an template section with ($N ...) bracket syntax, BUT:
 //   - The BP3 (= ...) / (: ...) notation in rule bodies is the old template format
 //   - The ++ and + context markers on tokens have NO BPscript equivalent
 //   NOT YET SUPPORTED in BPscript:
@@ -56,7 +56,7 @@ S64 <> S1V S2V S1F S2F E32 (weight:100)
 // The rules below strip all template/context syntax, keeping only the
 // non-terminal names. This loses all template structure and context disambiguation.
 
-@mode:lin
+mode:lin
 
 // gram#2[1]: S1F S2F S1V S2F E32 <-> S1F +S2F (= V8 ) +S2F * (= S1F ++ S2F ) (: V8 ) S1F
 // Stripped: S1F S2F S1V S2F E32 -> S1F S2F V8 S2F S1F S2F V8 S1F
@@ -97,7 +97,7 @@ S1V S2V S1F S2F E32 -> A1_r V11 B4_r S1F S2F A1_r V11 B4_r S1F S1F (weight:100)
 // This sub-grammar is fully translatable. V2..V15 are non-terminals chained
 // by LIN derivation. Weights <10> and <100> are mapped to (weight:N).
 
-@mode:lin
+mode:lin
 
 V2 -> T2 (weight:100)
 V15 -> T1 V14 (weight:10)
@@ -135,7 +135,7 @@ V2 -> T1 T1 (weight:10)
 // =========================================================================
 // Fully translatable. '-' is the silence symbol (valid in both BP3 and BPscript).
 
-@mode:random
+mode:random
 
 T1 -> dha (weight:100)
 T1 -> - (weight:100)
@@ -174,7 +174,7 @@ T2 -> teena (weight:50)
 // In practice this means: S1F always → dhadhatitedhadhadheena (last rule wins),
 // S2F always → dhadhatitedhadhadheena (both gram#5[7] and gram#5[8] map to S2F).
 
-@mode:ord
+mode:ord
 
 // gram#5[1]: + B2 <-> +teena  (context marker stripped)
 B2_r -> teena (weight:100)
@@ -212,7 +212,7 @@ S2F -> dhadhatitedhadhateena (weight:100)
 // =========================================================================
 // UNSUPPORTED: The TEMPLATES: section in the original uses BP3's old (= ...)
 // bracket notation with '+' context markers and '++' positional markers.
-// The BPscript @template syntax uses ($N ...) and ? wildcards, but the
+// The BPscript template syntax uses ($N ...) and ? wildcards, but the
 // translation from the BP3 format is non-trivial and the context markers
 // cannot be represented.
 //

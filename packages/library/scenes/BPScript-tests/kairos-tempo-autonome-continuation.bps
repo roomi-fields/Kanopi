@@ -4,8 +4,8 @@
 // deux notes : preuve que le 1er slot du marqueur porte le libellé (tempo(4/1)), le slot de
 // CONTINUATION rendant `null` (pas un contrôle illisible, juste l'absence de charge sur ce slot).
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> ! (/4) C4 D4

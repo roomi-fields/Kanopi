@@ -3,13 +3,13 @@
 // Traduit de bp3-engine/test-data/-gr.bells
 // Permutations canoniques de 4 notes avec contextes négatifs de groupe
 
-@core
-@tempo:150   // -se.cloches natif : Pclock=2, Qclock=5 -> periode 2/5 s = 400 ms par temps,
+core
+tempo:150   // -se.cloches natif : Pclock=2, Qclock=5 -> periode 2/5 s = 400 ms par temps,
              // soit 150 BPM. Sans ca BPx tombe sur son defaut 60 BPM (1000 ms) et TOUTES les
              // durees sortent au facteur 2.5. L'horloge du natif DOIT vivre dans la scene :
              // la Voie B est autosuffisante, elle ne depend d'aucun -se BP3.
-@alphabet.solfege
-@transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliquent
+alphabet.solfege
+transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliquent
                  // key += (C4key - 60) A L'ENCODAGE, avant que le moindre axe de sortie ne voie la
                  // note -- la colonne transpos du natif vaut zero, ce n'est donc pas une
                  // transposition chez lui. MESURE (bp3-engine, binaire 3.5.1, empreinte 372dd047) :
@@ -20,7 +20,7 @@
 // --- Sous-grammaire 1 : choix de la permutation initiale ---
 
 -----
-@mode:random
+mode:random
 S -> ! (/4) Tune
 Tune -> Canonic New B A D C X1234 End
 Tune -> Canonic New B A C D X12 End
@@ -30,7 +30,7 @@ Tune -> Canonic New A B D C X34 End
 -----
 
 // --- Sous-grammaire 2 LIN : permutations successives ---
-@mode:lin
+mode:lin
 
 A B C D ?1 End -> A B C D (weight:inf)
 
@@ -46,7 +46,7 @@ A B C D ?1 End -> A B C D (weight:inf)
 -----
 
 // --- Sous-grammaire 3 ORD : nettoyage (LEFT) ---
-@mode:ord
+mode:ord
 
 X12 -> lambda (scan:left)
 X34 -> lambda (scan:left)
@@ -59,7 +59,7 @@ Canonic -> A B C D (scan:left)
 -----
 
 // --- Sous-grammaire 4 ORD : substitution finale en notes ---
-@mode:ord
+mode:ord
 
 A B -> do3 B
 A #B -> do4 #B

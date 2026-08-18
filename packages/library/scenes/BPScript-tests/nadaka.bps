@@ -1,6 +1,6 @@
 // @name: Nadaka — native clock
 // @tagline: Keeps the tempo of the original (360 BPM, -se.hamsad). Twin of "Nadaka — 22-shruti tuning", which declares that tuning instead. MIDI output — select a MIDI device in Hardware to hear it
-// @description: Carnatic improvisation by Nadaka (1997) in sargam notation. THIS EXEMPLAR carries the clock of the native -se.hamsad (@tempo:360) and declares its alphabet at ACTOR scope (@actor lead …); it does NOT declare a tuning. Its twin (world/nadaka.bps) declares @tuning.sargam_22shruti at scene scope and no tempo — each holds something the other does not, which is why both are kept (décision Romain 2026-07-26).
+// @description: Carnatic improvisation by Nadaka (1997) in sargam notation. THIS EXEMPLAR carries the clock of the native -se.hamsad (tempo:360) and declares its alphabet at ACTOR scope (actor lead …); it does NOT declare a tuning. Its twin (world/nadaka.bps) declares tuning.sargam_22shruti at scene scope and no tempo — each holds something the other does not, which is why both are kept (décision Romain 2026-07-26).
 // @language: bpscript
 // @outputs: midi
 // @level: intermediate
@@ -9,7 +9,7 @@
 // nadaka.bps — Improvisation in modern Carnatic style
 // Traduit de bp3-engine/library/tabla/nadaka/grammar.gr
 //
-// Composed by Nadaka (nadaka@auroville.org.in) in July 1997.
+// Composed by Nadaka (nadakaauroville.org.in) in July 1997.
 // First attempt at Carnatic improvisation with octave variables.
 // Notes in abbreviated Indian notation: S, R, G, M, P, N
 // Octave variables Oc3/Oc4/Oc5 resolved in subgrammars 4-5.
@@ -17,32 +17,32 @@
 // Bernard Bel added octave resolution rules (Oc1, Oc2...).
 // This method is obsolete now that octave numbers are handled.
 
-@core
-@tempo:360   // horloge du natif -se.hamsad : periode 167 ms par temps, soit 360 BPM.
+core
+tempo:360   // horloge du natif -se.hamsad : periode 167 ms par temps, soit 360 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
 // Voix unique : svaras sargam notés en octaves numériques (S, R… → registres
 // chiffrés). La convention d'octave par défaut de sargam est saptak ;
 // `octaves.western` la SURCHARGE (EBNF.md:114,118-119 ; ACTOR.md:37 ;
-// décision clés-acteur-six). Remplace l'ancien `@alphabet.raga` (absent du catalogue).
-@actor lead @alphabet.sargam octaves.western out.midi
+// décision clés-acteur-six). Remplace l'ancien `alphabet.raga` (absent du catalogue).
+actor lead alphabet.sargam octaves.western out.midi
 
 // ============================================================
-// Sous-grammaire 1 — Structure @mode:ord
+// Sous-grammaire 1 — Structure mode:ord
 // ============================================================
 
 -----
-@mode:ord
+mode:ord
 S -> !(scale:just_intonation 0) Theme32 Theme32 Bridge32 Theme32 B32 Theme32 V16 V16 V16 V16 Theme32 V16 V16 V16 V16 Theme32 V16 V16 V16 V16 Theme32 V16 V16 V16 V16 Theme16 V16 Theme16 V16 Theme16 V16 Theme16 V16 Theme8 V8 Theme8 V8 Theme8 V8 Theme8 V8 Finale (ins:1) (weight:1)
 Finale -> Theme30 NiSaNiA95 NiSaNiB24 NiSaNiB24 NiSaNiC34 Morai49 Theme32 G _ _ _ _ _ _ _
 
 -----
 
 // ============================================================
-// Sous-grammaire 2 — Variations @mode:random
+// Sous-grammaire 2 — Variations mode:random
 // ============================================================
 
-@mode:random
+mode:random
 V16 -> Oc4 G _ G G _ G R R G _ G G _ P G R
 V16 -> Oc4 G R S Oc3 N P N Oc4 S R G P G R S Oc3 N Oc4 S R
 V16 -> Oc4 G _ _ R S Oc3 N Oc4 S R G _ _ R S Oc3 N Oc4 S R
@@ -58,10 +58,10 @@ V8 -> Oc4 R S Oc4 N P G R S R
 -----
 
 // ============================================================
-// Sous-grammaire 3 — Patterns fixes @mode:ord
+// Sous-grammaire 3 — Patterns fixes mode:ord
 // ============================================================
 
-@mode:ord
+mode:ord
 NiSaNiA95 -> NiSaNiA18 P _ _ _ _ _ _ _ _ _ _ _ _ _ NiSaNiA18 G _ _ _ _ _ _ _ _ _ _ _ _ _ NiSaNiA18 R _ _ _ _ _ _ _ _ _ _ _ _
 Morai49 -> Oc4 P Oc5 S S S Oc4 P G R S Oc3 N Oc4 S R S Oc3 N P G R S S S S R G P Oc4 S S S R G P N P S N _ P G R N P _ G R S P G _ R S R
 NiSaNiA18 -> Oc4 N Oc5 S Oc4 N _ N N _ N N N N _ N N _ N N Oc5 S Oc4
@@ -83,10 +83,10 @@ B32 -> Oc4 G _ P _ N _ Oc5 R _ G _ Oc4 G P N Oc5 R G S Oc4 G P N Oc5 R G S Oc4 G
 -----
 
 // ============================================================
-// Sous-grammaire 4 — Résolution d'octaves @mode:ord
+// Sous-grammaire 4 — Résolution d'octaves mode:ord
 // ============================================================
 
-@mode:ord
+mode:ord
 Oc3 S -> sa3 Oc3
 Oc3 R -> re3 Oc3
 Oc3 N -> ni3 Oc3
@@ -118,11 +118,11 @@ Oc5 Oc3 -> Oc3
 -----
 
 // ============================================================
-// Sous-grammaire 5 — Nettoyage @mode:ord
+// Sous-grammaire 5 — Nettoyage mode:ord
 // Efface les variables d'octave restantes
 // ============================================================
 
-@mode:ord
+mode:ord
 Oc3 -> lambda
 Oc4 -> lambda
 Oc5 -> lambda

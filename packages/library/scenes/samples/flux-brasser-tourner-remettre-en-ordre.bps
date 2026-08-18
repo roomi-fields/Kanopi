@@ -16,16 +16,16 @@
 // Le premier bloc donne l'ordre de référence ; les suivants le déplacent, et la mémoire
 // de l'oreille fait le reste — on reconnaît le matériau et on entend l'écart.
 
-@core
-@alphabet.western
-@tempo:108
+core
+alphabet.western
+tempo:108
 
 -----
 S -> Ecrit Renverse Tourne Brasse Ecrit
 
 -----
 
-@mode:ord
+mode:ord
 
 // L'ordre d'écriture : la référence à laquelle tout le reste se compare.
 Ecrit     -> {C4 E4 G4 B4} (vel:84, wave:triangle, attack:4, release:180)

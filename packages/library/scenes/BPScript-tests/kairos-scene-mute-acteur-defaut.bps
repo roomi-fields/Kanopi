@@ -1,12 +1,12 @@
 // @language: bpscript
 // kairos-scene-mute-acteur-defaut.bps — sert src/rc-gap-opqueue.test.ts (kairos, [330] mute
 // voix-de-code).
-// Une scène SANS `@actor` : BPx pose l'entrée synthétique `default` dans `metadata.actors`. Preuve
+// Une scène SANS `actor` : BPx pose l'entrée synthétique `default` dans `metadata.actors`. Preuve
 // que cette adresse par défaut n'est PAS un acteur muable — le mute la vise en forme valide mais
 // est écarté au drain.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> C4 D4

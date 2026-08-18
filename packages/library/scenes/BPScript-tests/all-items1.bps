@@ -3,20 +3,20 @@
 // Traduit de bp3-engine/test-data/-gr.tryAllItems1 (Bernard)
 // Settings: AllItems=1, MaxItemsProduce=50
 
-@core
-@maxitems:500   // MaxItemsProduce=500 dans le reglage natif : le moteur s'arrete
+core
+maxitems:500   // MaxItemsProduce=500 dans le reglage natif : le moteur s'arrete
                  // apres 500 items. Sans ce plafond l'enumeration part vers 100000 et
                  // certaines grammaires ne rendent jamais la main.
-@alphabet.western:midi
-@settings.test1
+alphabet.western:midi
+settings.test1
 
 -----
-@mode:random
+mode:random
 S -> X Y [Flag=2] [Choice=3]
 
 -----
 
-@mode:random
+mode:random
 [Choice==1] [Flag-1] X -> C1 X
 [Choice==2] X -> C2 X [repeat:1]
 [Choice==3] X -> C3 X (weight:100-50)
@@ -26,7 +26,7 @@ X -> T
 
 -----
 
-// Sous-grammaire 3 — @mode:random explicite, fidèle au natif (RND)
-@mode:random
+// Sous-grammaire 3 — mode:random explicite, fidèle au natif (RND)
+mode:random
 T -> C5 [failed:3 2]
 Y -> D6

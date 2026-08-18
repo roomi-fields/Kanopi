@@ -9,15 +9,15 @@
 // @outputs: audio
 // @level: didactic
 // @tags: strudel, ab-corpus, synth, adsr, lpf, no-samples
-// @source: https://strudel.cc/workshop/first-effects/
+// source: https://strudel.cc/workshop/first-effects/
 //
 // A/B — strudel — Synth ADSR + LPF. Original: https://strudel.cc/workshop/first-effects/.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.strudel
+actor v  eval.strudel
 
 -----
 S -> v_r

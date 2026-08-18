@@ -6,13 +6,13 @@
 // @tags: generative
 //
 // Random Melody — choix aléatoire de motifs
-// Démo : @mode:random, plusieurs règles, poids
+// Démo : mode:random, plusieurs règles, poids
 
-@core
-@alphabet.western:audio
+core
+alphabet.western:audio
 
 -----
-@mode:random
+mode:random
 S -> A_r B_r A_r B_r
 
 A_r -> C4 D4 E4 F4 (weight:50)

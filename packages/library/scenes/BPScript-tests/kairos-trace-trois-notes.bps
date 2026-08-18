@@ -3,8 +3,8 @@
 // l'arbre par charger et se lit résolue par traceCourante()). Trois notes, aucun contrôle : preuve
 // que le dernier pas montre la chaîne pleinement résolue en NOMS et que le numéro de pas s'aligne.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> C4 D4 E4

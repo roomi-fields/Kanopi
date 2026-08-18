@@ -5,19 +5,19 @@
 // _destru déstructure les terminaux composés (abca → a b c a)
 // en fonction de l'alphabet single-char {a, b, c}
 
-@core
-@maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
+core
+maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
                  // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
                  // certaines grammaires ne rendent jamais la main.
-@tempo:120   // horloge du natif -se.tryDESTRU : periode 500 ms par temps, soit 120 BPM.
+tempo:120   // horloge du natif -se.tryDESTRU : periode 500 ms par temps, soit 120 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
-@test_alphabets.abc:midi
+test_alphabets.abc:midi
 
-// --- Sous-grammaire 1 @mode:random — génération de structure ---
+// --- Sous-grammaire 1 mode:random — génération de structure ---
 
 -----
-@mode:random
+mode:random
 S -> $ {$X S &X} & {$X S &X} (weight:2-1)
 X -> Y (weight:2-1)
 X -> Y S Z (weight:2-1)
@@ -25,16 +25,16 @@ X -> Z (weight:2-1)
 
 -----
 
-// --- Sous-grammaire 2 @mode:ord, (scan:left) — effacement de S ---
+// --- Sous-grammaire 2 mode:ord, (scan:left) — effacement de S ---
 
-@mode:ord
+mode:ord
 S -> lambda (scan:left)
 
 -----
 
-// --- Sous-grammaire 3 @mode:lin(destru) — réécriture destructive ---
+// --- Sous-grammaire 3 mode:lin(destru) — réécriture destructive ---
 
-@mode:lin(destru)
+mode:lin(destru)
 X X -> abca
 Z Y -> abc
 Y Z -> cba

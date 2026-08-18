@@ -17,16 +17,16 @@
 // Trois fois la même mélodie, aux mêmes places, avec trois traitements du temps. Aucune
 // note ne change — et pourtant on entend trois interprètes.
 
-@core
-@alphabet.western
-@tempo:88
+core
+alphabet.western
+tempo:88
 
 -----
 S -> Detachee Liee Humaine
 
 -----
 
-@mode:ord
+mode:ord
 
 // Tenue courte : chaque note lâche avant la suivante, la ligne se pointille.
 Detachee -> D4 F4 A4 D5 A4 F4 (vel:86, staccato:60, wave:triangle, attack:2, release:80)

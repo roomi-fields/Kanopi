@@ -15,25 +15,25 @@
 // différents opérateurs temporels. Chaque règle produit le même
 // résultat structurel (A_r A_r ... A_r) mais avec des variations de tempo.
 
-@core
-@maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
+core
+maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
                  // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
                  // certaines grammaires ne rendent jamais la main.
-@alphabet.western:midi
-@allitems
+alphabet.western:midi
+allitems
 
 // Settings
-@tempo:60
-@striated
+tempo:60
+striated
 
 // Non-terminaux : S, A_r
-// Terminal : C4 (gate:midi via @western)
+// Terminal : C4 (gate:midi via western)
 
-// --- Sous-grammaire 1 — templates bidirectionnels @mode:random ---
+// --- Sous-grammaire 1 — templates bidirectionnels mode:random ---
 
 // Règle 1 : A_r A_r avec scale 1/2 sur le dernier A_r (*1/2 en BP3)
 -----
-@mode:random
+mode:random
 S <> ! (*1/2) A_r A_r A_r
 // Règle 2 : A_r A_r avec tempo doublé sur le dernier A_r
 S <> A_r A_r ! (/2) A_r
@@ -52,7 +52,7 @@ S <> A_r . A_r A_r . A_r A_r A_r . A_r
 
 -----
 
-// --- Sous-grammaire 2 — résolution terminale @mode:random ---
+// --- Sous-grammaire 2 — résolution terminale mode:random ---
 
-@mode:random
+mode:random
 A_r <> C4

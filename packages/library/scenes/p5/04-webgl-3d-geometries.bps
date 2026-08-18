@@ -11,15 +11,15 @@
 // @outputs: visual
 // @level: intermediate
 // @tags: p5, ab-corpus, webgl, 3d
-// @source: https://github.com/processing/p5.js-example/blob/main/examples/11_3D/00_Geometries/code.js
+// source: https://github.com/processing/p5.js-example/blob/main/examples/11_3D/00_Geometries/code.js
 //
 // A/B — p5 — 3D Geometries. Original: https://p5js.org/examples/3D-Geometries/.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.p5
+actor v  eval.p5
 
 -----
 S -> v_r

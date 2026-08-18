@@ -1,8 +1,8 @@
 // @language: bpscript
-@maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
+maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
                  // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
                  // certaines grammaires ne rendent jamais la main.
-@core
+core
 
 // ── MIGRATION DE FORME, écrite par bpscript le 2026-08-13 — À RELIRE ET COMMITTER PAR VOUS ──
 // La graphie générique `!(value:X n)` / `!(cont:X)` / `!(fixed:X)` est RETIRÉE du langage :
@@ -13,13 +13,13 @@
 //   !(value:slide 101)  →  !(slide:101)
 //   !(cont:slide)       →  !(slidecont)
 //   !(fixed:slide)      →  !(slidefixed)
-// Le paramètre se DÉCLARE désormais, sinon son nom est refusé : `@var <nom> signal` — « un flux de
+// Le paramètre se DÉCLARE désormais, sinon son nom est refusé : `var <nom> signal` — « un flux de
 // nombres, sans convention de lecture » (LANGUAGE.md). C'est la déclaration ajoutée ci-dessous.
-@var blurb signal
-@var oops signal
+var blurb signal
+var oops signal
 
 -----
-@mode:ord
+mode:ord
 S -> a (weight:0)
 S -> {a, b} c (weight:1)
 S -> b midiobject (weight:0)

@@ -8,15 +8,15 @@
 // @outputs: audio
 // @level: intermediate
 // @tags: strudel, ab-corpus, stack, orbit, delay, samples
-// @source: https://strudel.cc/learn/effects/
+// source: https://strudel.cc/learn/effects/
 //
 // A/B — strudel — Stack + Orbit + Delay. Original: https://strudel.cc/learn/effects/.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.strudel
+actor v  eval.strudel
 
 -----
 S -> v_r

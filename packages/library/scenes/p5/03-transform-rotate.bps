@@ -9,15 +9,15 @@
 // @outputs: visual
 // @level: intermediate
 // @tags: p5, ab-corpus, transform
-// @source: https://github.com/processing/p5.js-example/blob/main/examples/05_Transformation/01_Rotate/code.js
+// source: https://github.com/processing/p5.js-example/blob/main/examples/05_Transformation/01_Rotate/code.js
 //
 // A/B — p5 — Rotate. Original: https://p5js.org/examples/Transformation-Rotate/.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.p5
+actor v  eval.p5
 
 -----
 S -> v_r

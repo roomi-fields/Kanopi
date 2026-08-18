@@ -12,10 +12,10 @@
 // NB : SC exige un backend natif (SuperDirt/scsynth) — cette démo montre la FORME
 // des voix ; en navigateur la ligne sc: ne sonne pas (pas de serveur SC).
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor beat  eval.strudel
+actor beat  eval.strudel
 
 -----
 S -> beat_r beat_r beat_r `sc: Synth.new(\ping)`

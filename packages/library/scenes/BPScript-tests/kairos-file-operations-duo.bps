@@ -5,11 +5,11 @@
 // encore après un rechargement ; une op visant un acteur disparu au swap doit être écartée au drain,
 // diagnostic à l'appui. Sœur de kairos-file-operations-solo.bps (le monde "APRÈS swap", sans `lead`).
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor lead  @alphabet.western  out.midi(ch:1)
-@actor bass  @alphabet.western  out.midi(ch:2)
+actor lead  alphabet.western  out.midi(ch:1)
+actor bass  alphabet.western  out.midi(ch:2)
 
 -----
 S -> lead.C4 bass.C2

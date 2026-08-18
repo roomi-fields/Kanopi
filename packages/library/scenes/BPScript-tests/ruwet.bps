@@ -16,11 +16,11 @@
 // Note: les homomorphismes "m1", "m2", "mineur" ne sont pas appliques
 // (BPscript ne supporte pas encore [sub:]).
 
-@core
-@improvize
-@quantization:50
-@alphabet.solfege:midi
-@transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliquent
+core
+improvize
+quantization:50
+alphabet.solfege:midi
+transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliquent
                  // key += (C4key - 60) A L'ENCODAGE, avant que le moindre axe de sortie ne voie la
                  // note -- la colonne transpos du natif vaut zero, ce n'est donc pas une
                  // transposition chez lui. MESURE (bp3-engine, binaire 3.5.1, empreinte 372dd047) :
@@ -33,9 +33,9 @@
                  // contre fa3 · do4 · la#3 · la3 au natif. La transposition abaisse la frequence et
                  // preserve le nom, donc l'ecart tient au NOM seul, quelle que soit la paire.
 
-// --- Sous-grammaire 1 @mode:ord --- structure thematique
+// --- Sous-grammaire 1 mode:ord --- structure thematique
 -----
-@mode:ord
+mode:ord
 S -> P1 P2 P3 (meter:4+4+4+4+4+4/4)
 P1 -> A8 B"8 C8 B'8
 P2 -> A8 B8 C8 B8
@@ -49,9 +49,9 @@ C'8 -> $ {e4} & {e4}
 
 -----
 
-// --- Sous-grammaire 2 @mode:lin --- decomposition des cellules
+// --- Sous-grammaire 2 mode:lin --- decomposition des cellules
 
-@mode:lin
+mode:lin
 a4 -> x z31
 b4 -> y z5
 c4 -> w z31
@@ -63,9 +63,9 @@ f4 -> o z1
 
 -----
 
-// --- Sous-grammaire 3 @mode:lin --- variantes niveau 1
+// --- Sous-grammaire 3 mode:lin --- variantes niveau 1
 
-@mode:lin
+mode:lin
 x -> fa4 do5 (weight:4)
 x -> x1 (weight:1)
 x -> x2 (weight:1)
@@ -127,9 +127,9 @@ o -> o3 (weight:1)
 
 -----
 
-// --- Sous-grammaire 4 @mode:ord --- variantes niveau 2
+// --- Sous-grammaire 4 mode:ord --- variantes niveau 2
 
-@mode:ord
+mode:ord
 x1 -> {fa4 la4}:1 do5
 x2 -> fa4 {la4 do5}:1
 x3 -> {fa4 sol4 la4 do5}:2
@@ -183,7 +183,7 @@ miny -> $ {y}
 
 -----
 
-// --- Sous-grammaire 5 @mode:ord --- resolution finale
+// --- Sous-grammaire 5 mode:ord --- resolution finale
 
-@mode:ord
+mode:ord
 y -> fa4 la4

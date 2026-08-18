@@ -1,12 +1,12 @@
 // @language: bpscript
 // kairos-hauteur-diapason-occurrence-seule.bps — sert src/projection/diapason-e2e.test.ts (kairos,
-// M8). Aucun @diapason de scène, une seule note porte l'OCCURRENCE (diapason:428) : preuve que
+// M8). Aucun diapason de scène, une seule note porte l'OCCURRENCE (diapason:428) : preuve que
 // l'occurrence consommée est retirée des contrôles exposés (pas de double application).
 
-@core
-@alphabet.western:audio
-@tuning.western_just
-@tempo:60
+core
+alphabet.western:audio
+tuning.western_just
+tempo:60
 
 -----
 S -> E4(diapason:428)

@@ -1,13 +1,13 @@
 // @language: bpscript
 // kairos-hauteur-diapason-sargam-12tet.bps — sert src/projection/diapason-e2e.test.ts (kairos, [287]
-// multi-tuning). @diapason:442 sur sargam_12TET, accordage dont la référence composant N'EST PAS 440
+// multi-tuning). diapason:442 sur sargam_12TET, accordage dont la référence composant N'EST PAS 440
 // (240) : preuve que l'override REMPLACE la référence composant, sa=442.
 
-@core
-@alphabet.sargam:audio
-@tuning.sargam_12TET
-@diapason:442
-@tempo:60
+core
+alphabet.sargam:audio
+tuning.sargam_12TET
+diapason:442
+tempo:60
 
 -----
 S -> sa ni

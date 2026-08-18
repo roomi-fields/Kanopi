@@ -10,8 +10,8 @@
 // Démo : (wave:X) change le timbre de l'oscillateur
 // sine = doux, triangle = moyen, square = creux, sawtooth = riche
 
-@core
-@alphabet.western:audio
+core
+alphabet.western:audio
 
 -----
 S -> Sine Tri Square Saw

@@ -4,8 +4,8 @@
 // keyxpand:C4 2) : preuve que l'ORDRE d'application (rang déclaré en donnée de lib, scaleshift avant
 // keyxpand) est respecté — la scène retombe sur G#4, pas sur E4 (ordre inverse).
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> C4(scaleshift:2, keyxpand:C4 2)

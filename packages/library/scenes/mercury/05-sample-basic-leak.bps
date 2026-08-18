@@ -14,16 +14,16 @@
 // @outputs: audio
 // @level: didactic
 // @tags: mercury, ab-corpus, sample, leak-test, sample-set
-// @source: https://github.com/tmhglnd/mercury-engine/blob/main/README.md#resume-evaluate-and-silence
+// source: https://github.com/tmhglnd/mercury-engine/blob/main/README.md#resume-evaluate-and-silence
 //
 // A/B — mercury — Sample kit (leak test). Original: https://github.com/tmhglnd/mercury-engine/blob/main/README.md
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original (mercury.timohoogland.com).
 // Test de fuite : dépend du jeu de samples distant (raw.githubusercontent.com) — silence si non chargé.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.mercury
+actor v  eval.mercury
 
 -----
 S -> v_r

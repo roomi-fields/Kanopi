@@ -12,11 +12,11 @@
 //   - on a note  : A4:1/2          → eighth note  (A4:1 = quarter, A4:2 = half)
 // ⚠️ the ':' must be GLUED: `{...}:2`, `A4:1/2`. Spaced (`A4 1/2`) = old meaning (rest).
 //
-// TEMPO (the pace, the clock) is a SEPARATE concept: @tempo:72 (global).
+// TEMPO (the pace, the clock) is a SEPARATE concept: tempo:72 (global).
 
-@core
-@alphabet.western:audio
-@tempo:72
+core
+alphabet.western:audio
+tempo:72
 
 // Normal, then group at frame 2, then at frame 1/2, then per-note durations
 -----

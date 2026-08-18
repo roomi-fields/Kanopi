@@ -2,18 +2,18 @@
 // tryAllItems0.bps — Produce all items with _destru
 // Traduit de bp3-engine/test-data/-gr.tryAllItems0
 
-@core
-@test_alphabets.abc
-@allitems
-@maxitems:500
+core
+test_alphabets.abc
+allitems
+maxitems:500
 
 -----
-@mode:random
+mode:random
 S -> $X X &X
 S -> X X
 
 -----
 
-@mode:random(destru)
+mode:random(destru)
 X -> a
 X -> b

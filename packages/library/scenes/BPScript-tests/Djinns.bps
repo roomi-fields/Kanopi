@@ -11,13 +11,13 @@
 // baseline. `-or.Djinns` n'est PAS transcrit : le type MIDI-orchestra est
 // désactivé côté moteur (wMIDIorchestra commenté dans -BP3.h).
 
-@core
-@tempo:38.02   // horloge du natif -se.Djinns : periode 1578 ms par temps, soit 38.02 BPM.
+core
+tempo:38.02   // horloge du natif -se.Djinns : periode 1578 ms par temps, soit 38.02 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
-@quantization:50
-@alphabet.solfege:midi
-@transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliquent
+quantization:50
+alphabet.solfege:midi
+transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliquent
                  // key += (C4key - 60) A L'ENCODAGE, avant que le moindre axe de sortie ne voie la
                  // note -- la colonne transpos du natif vaut zero, ce n'est donc pas une
                  // transposition chez lui. MESURE (bp3-engine, binaire 3.5.1, empreinte 372dd047) :
@@ -28,14 +28,14 @@
 // --- Sous-grammaire 1 ORD : la palissade, montée puis descente symétrique ---
 
 -----
-@mode:ord
+mode:ord
 S -> A2 A3 A4 A5 A6 A7 A8 A10 A8 A7 A6 A5 A4 A3 A2
 
 -----
 
 // --- Sous-grammaire 2 SUB1 : chaque compte superpose la mélodie et son train de tics ---
 
-@mode:sub1
+mode:sub1
 A2 -> {M,T16}
 A3 -> {M,T24}
 A4 -> {M,T32}
@@ -49,7 +49,7 @@ A10 -> {M,T80}
 
 // --- Sous-grammaire 3 ORD : les trains de tics, par décomposition en T8 ---
 
-@mode:ord
+mode:ord
 T16 -> T8 T8
 T24 -> T8 T8 T8
 T32 -> T16 T16
@@ -64,6 +64,6 @@ T8 -> Tik Tik Tik Tik Tik Tik Tik Tik
 
 // --- Sous-grammaire 4 SUB1 : la mélodie tenue, et le tic lui-même ---
 
-@mode:sub1
+mode:sub1
 M -> {1,do2,sib5} do3 do2 do3 do2 do3 do2 do3 do2 do3 do2 do3 do2 do3 do2 do3
 Tik -> do4

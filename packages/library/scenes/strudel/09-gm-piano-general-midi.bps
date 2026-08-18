@@ -1,6 +1,6 @@
 // @name: GM Piano — General MIDI
 // @tagline: sound("gm_piano" / "gm_marimba" / "gm_flute") — instruments General MIDI self-hostés
-// @description: Démo AUDIBLE des instruments General MIDI (préfixe gm_) fournis par @strudel/soundfonts.
+// @description: Démo AUDIBLE des instruments General MIDI (préfixe gm_) fournis par strudel/soundfonts.
 // Contrairement au leak-test 04, cette scène DÉCLARE la bibliothèque via `eval.strudel(bank:gm)` : à
 // l'évaluation, loadGmSoundfonts() pointe setSoundfontUrl vers notre miroir self-hosté (125 soundfonts
 // sur le store) et registerSoundfonts() enregistre les instruments — chacun fetché à la 1re utilisation.
@@ -11,15 +11,15 @@
 // @outputs: audio
 // @level: intermediate
 // @tags: strudel, soundfonts, gm, general-midi, self-hosted
-// @source: https://strudel.cc/workshop/first-notes/
+// source: https://strudel.cc/workshop/first-notes/
 //
 // A/B — strudel — GM Piano (General MIDI audible). Original: https://strudel.cc/workshop/first-notes/.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original (où les instruments GM sonnent).
 // La bibliothèque `gm` est déclarée → les soundfonts se chargent depuis notre store à l'éval.
 
-@core
-@tempo:120
-@actor v  eval.strudel(bank:gm)
+core
+tempo:120
+actor v  eval.strudel(bank:gm)
 
 -----
 S -> v_r

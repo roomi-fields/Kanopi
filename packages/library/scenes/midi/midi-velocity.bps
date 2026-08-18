@@ -7,8 +7,8 @@
 //
 // MIDI Velocity — crescendo / decrescendo via (vel:N)
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> Up Down

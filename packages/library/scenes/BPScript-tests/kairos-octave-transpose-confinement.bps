@@ -3,8 +3,8 @@
 // (kairos, verrou containment [446]). $MOTIF(transpose:-200c) suivi de D4 : C4 (expansion du template)
 // doit être transposée, D4 doit rester VIERGE — le containment ne déborde pas sur la note voisine.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 MOTIF -> C4

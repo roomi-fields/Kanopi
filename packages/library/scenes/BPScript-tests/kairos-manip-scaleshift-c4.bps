@@ -4,8 +4,8 @@
 // C4 avec le contrôle scaleshift:2 (transposition scalaire de 2 degrés d'alphabet, C→D→E) : preuve
 // que la fonction de lib 'scaleshift' résout exactement la hauteur de E4.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> C4(scaleshift:2)

@@ -30,11 +30,11 @@
 // scene proves the per-actor address AND the per-note override travel in the tree,
 // not via any host-side routing map.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor lead  @alphabet.western  out.midi(ch:1)
-@actor bass  @alphabet.western  out.midi(ch:2)
+actor lead  alphabet.western  out.midi(ch:1)
+actor bass  alphabet.western  out.midi(ch:2)
 
 -----
 S -> Lead Low

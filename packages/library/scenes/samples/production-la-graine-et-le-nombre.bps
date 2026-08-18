@@ -19,19 +19,19 @@
 // Retirer la ligne de graine, et chaque écoute devient différente — c'est la seule
 // différence entre une improvisation et une composition écrite au hasard.
 
-@seed:20260810
-@maxitems:12
+seed:20260810
+maxitems:12
 
-@core
-@alphabet.western
-@tempo:96
+core
+alphabet.western
+tempo:96
 
 -----
 S -> Cellule Cellule Cellule Cellule
 
 -----
 
-@mode:random
+mode:random
 
 // Trois cellules candidates, tirées au sort — mais toujours dans le même ordre, parce
 // que la graine fige le tirage.

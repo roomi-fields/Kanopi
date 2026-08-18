@@ -6,8 +6,8 @@
 // expose les contrôles de règle résolus, indexés par position dans rule.rhs). Un `!(vel:90)` préfixé
 // sur la règle S : preuve que `reglesControles` porte bien le libellé résolu côté règle.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> !(vel:90) C4 D4

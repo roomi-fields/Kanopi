@@ -1,8 +1,8 @@
 // @language: bpscript
-@maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
+maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
                  // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
                  // certaines grammaires ne rendent jamais la main.
-@tempo:400   // horloge du natif -se.koto3 : periode 150 ms par temps, soit 400 BPM.
+tempo:400   // horloge du natif -se.koto3 : periode 150 ms par temps, soit 400 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
 
@@ -13,18 +13,18 @@
 // sonnent donc, et koto3.bps — meme alphabet -ho.abc1, deja verte dans ce corpus — declare
 // exactement de cette facon. Sans declaration, seul 'd' etait refuse (a/b/c sont reconnus par
 // leur presence en membre gauche des regles SUB) : la scene sonnait a moitie declaree.
-@gate a:midi
-@gate b:midi
-@gate c:midi
-@gate d:midi
+gate a:midi
+gate b:midi
+gate c:midi
+gate d:midi
 
 -----
-@mode:random
+mode:random
 S -> X X X X X X X X
 X -> a
 X -> b
 -----
-@mode:sub
+mode:sub
 #? ? -> #? ?
 ?1 #? -> ?1 #?
 a -> a (weight:5)
@@ -38,5 +38,5 @@ c a c -> b a b
 ?1 ?1 ?1 -> ?1 (weight:10)
 ?1 ?1 -> ?1 (weight:10)
 -----
-@mode:ord
+mode:ord
 ? #? -> d #? (weight:1-1)

@@ -4,8 +4,8 @@
 // Un silence entre deux notes : preuve qu'une feuille `rest` de la vue structure ne porte JAMAIS
 // `freqHz` ni `params` — même règle que la facette pitch du plat projeté.
 
-@core
-@tempo:60
+core
+tempo:60
 
 -----
 S -> A4 - B4

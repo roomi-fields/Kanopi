@@ -14,16 +14,16 @@
 // cellule, dite en deux puis en trois puis en quatre, fait entendre l'accélération
 // interne d'un rythme là où les notes, elles, ne changent pas.
 
-@core
-@alphabet.western:audio
-@tempo:80
+core
+alphabet.western:audio
+tempo:80
 
 -----
 S -> Deux Trois Quatre Deux
 
 -----
 
-@mode:ord
+mode:ord
 
 Deux   -> {E4 B4}:1          (vel:84, wave:triangle, attack:4, release:150)
 Trois  -> {E4 G4 B4}:1       (vel:84, wave:triangle, attack:4, release:120)

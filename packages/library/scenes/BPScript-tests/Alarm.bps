@@ -11,13 +11,13 @@
 // NATIF. Son registre est donc celui du natif. La destination vient de la meme lecture :
 // l'original charge -in.abc1, un fichier d'interaction MIDI.
 // (Alphabet integre en amont le 2026-07-29, bpscript 759474b ; decision Romain du meme jour.)
-@alphabet.bp3_fr:midi
+alphabet.bp3_fr:midi
 
 -----
-@mode:lin
+mode:lin
 S -> do3 1000 {2, B7_r B8_r} 300 {2, B7_r B8_r}
 -----
-@mode:lin
+mode:lin
 A1_r -> T96 (weight:K1=1)
 A1_r -> T32 (weight:K2=2)
 A1_r -> T69 (weight:K3=3)
@@ -30,7 +30,7 @@ A1_r -> T98 (weight:K9=3)
 A1_r -> T3 (weight:K10=2)
 A1_r -> T54 (weight:K11=1)
 -----
-@mode:lin
+mode:lin
 A2_r -> T22 (weight:K1)
 A2_r -> T6 (weight:K2)
 A2_r -> T95 (weight:K3)
@@ -43,7 +43,7 @@ A2_r -> T142 (weight:K9)
 A2_r -> T87 (weight:K10)
 A2_r -> T130 (weight:K11)
 -----
-@mode:lin
+mode:lin
 A3_r -> T141 (weight:K1)
 A3_r -> T128 (weight:K2)
 A3_r -> T158 (weight:K3)
@@ -56,7 +56,7 @@ A3_r -> T42 (weight:K9)
 A3_r -> T165 (weight:K10)
 A3_r -> T10 (weight:K11)
 -----
-@mode:lin
+mode:lin
 A4_r -> T41 (weight:K1)
 A4_r -> T63 (weight:K2)
 A4_r -> T13 (weight:K3)
@@ -69,7 +69,7 @@ A4_r -> T156 (weight:K9)
 A4_r -> T61 (weight:K10)
 A4_r -> T103 (weight:K11)
 -----
-@mode:lin
+mode:lin
 A5_r -> T105 (weight:K1)
 A5_r -> T146 (weight:K2)
 A5_r -> T153 (weight:K3)
@@ -82,7 +82,7 @@ A5_r -> T75 (weight:K9)
 A5_r -> T135 (weight:K10)
 A5_r -> T28 (weight:K11)
 -----
-@mode:lin
+mode:lin
 A6_r -> T122 (weight:K1)
 A6_r -> T46 (weight:K2)
 A6_r -> T55 (weight:K3)
@@ -95,7 +95,7 @@ A6_r -> T129 (weight:K9)
 A6_r -> T47 (weight:K10)
 A6_r -> T37 (weight:K11)
 -----
-@mode:lin
+mode:lin
 A7_r -> T11 (weight:K1)
 A7_r -> T134 (weight:K2)
 A7_r -> T110 (weight:K3)
@@ -108,11 +108,11 @@ A7_r -> T62 (weight:K9)
 A7_r -> T147 (weight:K10)
 A7_r -> T106 (weight:K11)
 -----
-@mode:lin
+mode:lin
 A8_r -> T5
 A'8 -> T'5
 -----
-@mode:lin
+mode:lin
 B1_r -> T70 (weight:K1)
 B1_r -> T117 (weight:K2)
 B1_r -> T66 (weight:K3)
@@ -125,7 +125,7 @@ B1_r -> T65 (weight:K9)
 B1_r -> T102 (weight:K10)
 B1_r -> T35 (weight:K11)
 -----
-@mode:lin
+mode:lin
 B2_r -> T121 (weight:K1)
 B2_r -> T39 (weight:K2)
 B2_r -> T139 (weight:K3)
@@ -138,7 +138,7 @@ B2_r -> T77 (weight:K9)
 B2_r -> T4 (weight:K10)
 B2_r -> T20 (weight:K11)
 -----
-@mode:lin
+mode:lin
 B3_r -> T26 (weight:K1)
 B3_r -> T126 (weight:K2)
 B3_r -> T15 (weight:K3)
@@ -151,7 +151,7 @@ B3_r -> T19 (weight:K9)
 B3_r -> T31 (weight:K10)
 B3_r -> T108 (weight:K11)
 -----
-@mode:lin
+mode:lin
 B4_r -> T9 (weight:K1)
 B4_r -> T56 (weight:K2)
 B4_r -> T132 (weight:K3)
@@ -164,7 +164,7 @@ B4_r -> T82 (weight:K9)
 B4_r -> T164 (weight:K10)
 B4_r -> T92 (weight:K11)
 -----
-@mode:lin
+mode:lin
 B5_r -> T112 (weight:K1)
 B5_r -> T174 (weight:K2)
 B5_r -> T73 (weight:K3)
@@ -177,7 +177,7 @@ B5_r -> T137 (weight:K9)
 B5_r -> T144 (weight:K10)
 B5_r -> T12 (weight:K11)
 -----
-@mode:lin
+mode:lin
 B6_r -> T49 (weight:K1)
 B6_r -> T18 (weight:K2)
 B6_r -> T58 (weight:K3)
@@ -190,7 +190,7 @@ B6_r -> T38 (weight:K9)
 B6_r -> T59 (weight:K10)
 B6_r -> T124 (weight:K11)
 -----
-@mode:lin
+mode:lin
 B7_r -> T109 (weight:K1)
 B7_r -> T116 (weight:K2)
 B7_r -> T145 (weight:K3)
@@ -203,7 +203,7 @@ B7_r -> T149 (weight:K9)
 B7_r -> T173 (weight:K10)
 B7_r -> T44 (weight:K11)
 -----
-@mode:lin
+mode:lin
 B8_r -> T8 (weight:K1)
 B8_r -> T78 (weight:K2)
 B8_r -> T8 (weight:K3)
@@ -216,7 +216,7 @@ B8_r -> T8 (weight:K9)
 B8_r -> T8 (weight:K10)
 B8_r -> T8 (weight:K11)
 -----
-@mode:sub1
+mode:sub1
 T1 -> {fa3 re3 sol3, fa5 re5 sol5}
 T2 -> {{2, si2, sol3} -, la4 {2, fa#4 sol4 si4 sol5}}
 T3 -> {{2, do3, mi3} -, sol5 do5 mi5}

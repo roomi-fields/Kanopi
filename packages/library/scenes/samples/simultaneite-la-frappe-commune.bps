@@ -15,16 +15,16 @@
 // se rejoignent sur le premier temps, puis se séparent — et c'est la coïncidence
 // qu'on entend, pas les notes.
 
-@core
-@alphabet.western:audio
-@tempo:92
+core
+alphabet.western:audio
+tempo:92
 
 -----
 S -> Ensemble Separe Ensemble Separe
 
 -----
 
-@mode:ord
+mode:ord
 
 // Les deux frappent au même instant : un seul geste, deux hauteurs.
 Ensemble -> C2!C5 - G2 - (vel:104, wave:triangle, attack:2, release:300)

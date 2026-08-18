@@ -1,10 +1,10 @@
 // @language: bpscript
 // kairos-hauteur-provenance-mine-tuning-binding.bps — sert src/projection/provenance-factory-mine.test.ts
-// (kairos, R1 canal neutre). Invoque un ACCORDAGE personnel (@mine.ragas-tunings.sargam_12TET) SANS
+// (kairos, R1 canal neutre). Invoque un ACCORDAGE personnel (mine.ragas-tunings.sargam_12TET) SANS
 // nommer d'alphabet : preuve que l'alphabet est INFÉRÉ de la déclaration `alphabet` du binding.
 
-@core
-@mine.ragas-tunings.sargam_12TET
+core
+mine.ragas-tunings.sargam_12TET
 
 -----
 S -> sa re

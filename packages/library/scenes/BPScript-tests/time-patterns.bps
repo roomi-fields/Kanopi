@@ -8,17 +8,17 @@
 //
 // Essayer cette grammaire en temps strié et en temps lisse.
 
-@core
-@maxitems:0
-@qclock:3
-@alphabet.western:midi
-@tempo:120
+core
+maxitems:0
+qclock:3
+alphabet.western:midi
+tempo:120
 
 // Time patterns — ratios de durée nommés
-@timepatterns: t1=1/1, t2=3/2, t3=4/3, t4=1/2
+timepatterns: t1=1/1, t2=3/2, t3=4/3, t4=1/2
 
 -----
-@mode:random
+mode:random
 S -> {t1 t2,Part1 Part2}:10
 Part1 -> {t1 t3 t4,C4 D4 E4 F4 - A4}
 Part2 -> {t3 t1,B4 C5 _ E5}

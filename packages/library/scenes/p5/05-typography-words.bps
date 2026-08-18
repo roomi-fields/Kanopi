@@ -11,15 +11,15 @@
 // @outputs: visual
 // @level: intermediate
 // @tags: p5, ab-corpus, typography, preload
-// @source: https://github.com/processing/p5.js-example/blob/main/examples/03_Imported_Media/00_Words/code.js
+// source: https://github.com/processing/p5.js-example/blob/main/examples/03_Imported_Media/00_Words/code.js
 //
 // A/B — p5 — Words. Original: https://p5js.org/examples/Imported-Media-Words/.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.p5
+actor v  eval.p5
 
 -----
 S -> v_r

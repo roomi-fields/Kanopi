@@ -17,17 +17,17 @@
 // Le premier bloc les fait frapper ENSEMBLE, sur un même instant d'attaque ; le second les
 // sépare, et on entend alors à quel appareil appartient quelle voix.
 
-@core
-@alphabet.western
-@tempo:96
+core
+alphabet.western
+tempo:96
 
 // Le chant sort par l'audio interne : il fabrique son propre son.
-@actor chant
+actor chant
   out.audio
 
 // La basse pilote un appareil externe sur le canal 2 : elle n'a pas de forme d'onde à
 // donner, c'est l'appareil qui la porte.
-@actor basse
+actor basse
   out.midi(ch:2)
 
 -----
@@ -35,7 +35,7 @@ S -> Ensemble Ensemble Separe
 
 -----
 
-@mode:ord
+mode:ord
 
 // Le point d'exclamation lie les deux voix sur un même instant d'attaque : la basse et le
 // chant frappent ENSEMBLE, chacun partant vers sa propre destination.

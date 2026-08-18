@@ -7,15 +7,15 @@
 // @outputs: visual
 // @level: didactic
 // @tags: p5, ab-corpus, shapes-2d
-// @source: https://github.com/processing/p5.js-example/blob/main/examples/01_Shapes_And_Color/00_Shape_Primitives/code.js
+// source: https://github.com/processing/p5.js-example/blob/main/examples/01_Shapes_And_Color/00_Shape_Primitives/code.js
 //
 // A/B — p5 — Shape Primitives. Original: https://p5js.org/examples/Shapes-And-Color-Shape-Primitives/.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.p5
+actor v  eval.p5
 
 -----
 S -> v_r

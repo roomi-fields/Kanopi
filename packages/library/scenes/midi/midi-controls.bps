@@ -8,8 +8,8 @@
 // MIDI Controls — pan, mod, program change
 // Teste les CC envoyés au synthé
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> PanSweep ModWheel

@@ -1,8 +1,8 @@
 // @language: bpscript
-@maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
+maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
                  // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
                  // certaines grammaires ne rendent jamais la main.
-@tempo:360   // horloge du natif -se.dhin-- : periode 167 ms par temps, soit 360 BPM.
+tempo:360   // horloge du natif -se.dhin-- : periode 167 ms par temps, soit 360 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
 // NOTE BOLSIZE (2026-07-18) : terminaux en noms PLEINS (règle AST-agnostique, [566]). Deux
@@ -10,7 +10,7 @@
 // S5 (.bps→BP3→WASM) crashe « memory access out of bounds » tant que le garde-fou de troncature
 // n'est pas posé côté encodeur (sérialisation BP3 seule). dhin1 est to_be_tested (non gaté S4/S5)
 // et sa dérivation -gr jette (compileTemplates) : non-fonctionnel, l'activation attend ce garde-fou.
-// RÉFÉRENCE MORTE CORRIGÉE (2026-07-27) : la migration écrivait `@transcription.dhinOO`, un nom
+// RÉFÉRENCE MORTE CORRIGÉE (2026-07-27) : la migration écrivait `transcription.dhinOO`, un nom
 // qui n'existe dans AUCUN catalogue — la scène croyait charger un homomorphisme et n'en chargeait
 // aucun, sans un mot, sans erreur. Vérifié des deux côtés avant de corriger : la grammaire
 // d'origine déclare `-ho.dhin--` (BP3-tests/dhin1.gr:5, deux TIRETS) et la librairie nomme cette
@@ -19,30 +19,30 @@
 // même déformation (les tirets rendus par des « O » : `dhinOO`, `dhaOdhaOdhaO`…), et AUCUN d'eux
 // n'est une clé de la table. Question remontée à l'architecte : la corriger heurte la règle des
 // terminaux en noms PLEINS ([566]) — un silence à l'intérieur d'un nom plein le scinderait.
-// ⚠️ LES CITATIONS DATÉES CI-DESSUS GARDENT LEURS MOTS D'ÉPOQUE — `@transcription` (remplacé par
-// `@homomorphism` le 2026-08-07) et `lib/transcription.json` (ses tables ont rejoint
+// ⚠️ LES CITATIONS DATÉES CI-DESSUS GARDENT LEURS MOTS D'ÉPOQUE — `transcription` (remplacé par
+// `homomorphism` le 2026-08-07) et `lib/transcription.json` (ses tables ont rejoint
 // `lib/homomorphism.json`). Je les avais renommées avec le reste ; kanopi l'a relevé et a raison :
 // une trace qui se renomme ment sur elle-même. Restauré par bpscript, 2026-08-07.
-@homomorphism.dhin
-@test_alphabets.dhin
+homomorphism.dhin
+test_alphabets.dhin
 // ─────────────────────────────────────────────────────────────────────────────
-// LE TEMPO EST DÉCLARÉ PLUS HAUT — `@tempo:360.0000` retiré d'ici.
+// LE TEMPO EST DÉCLARÉ PLUS HAUT — `tempo:360.0000` retiré d'ici.
 //
-// Cette scène posait DEUX FOIS le même métronome : `@tempo:360` en tête (ligne 5, avec sa
-// justification) et `@tempo:360.0000` ici, venu du portage natif. Même valeur, deux écritures.
+// Cette scène posait DEUX FOIS le même métronome : `tempo:360` en tête (ligne 5, avec sa
+// justification) et `tempo:360.0000` ici, venu du portage natif. Même valeur, deux écritures.
 // Le moteur natif refuse la grammaire ENTIÈRE dans ce cas (CompileGrammar.c:1535-1541,
 // `return(7)`) : un réglage qui ne se pose qu'une fois ne se pose pas deux. La règle vient
 // d'entrer dans le compilateur BPScript, elle ne faisait que manquer.
 //
 // bpscript — 2026-08-10. Écriture chez un autre : elle n'est LIVRÉE que quand Kanopi l'a committée.
 // ─────────────────────────────────────────────────────────────────────────────
-@striated
+striated
 -----
-@mode:random
+mode:random
 S <> S48 (meter:4+4/6)
 S <> S96 (meter:4+4+4+4/6)
 -----
-@mode:random
+mode:random
 S96 <> $F48 $V24 F'24 * &F48 &V24 F24
 S48 <> $V24 F'24 * &V24 F24
 V24 <> $V12 &V12
@@ -53,7 +53,7 @@ V24 <> B24
 V12 <> $B6 * &B6
 V12 <> B12
 -----
-@mode:lin
+mode:lin
 B6 <> A A A A A A
 B12 <> A A A A A A A A A A A A
 B24 <> A A A A A A A A A A A A A A A A A A A A A A A A
@@ -61,14 +61,14 @@ A A A <> A3
 A A A A <> A4
 A A A A A A <> A6
 -----
-@mode:ord
+mode:ord
 A A -> A2
 A3 A -> A4
 #A3 A -> A #A3
 A6 A2 -> A4 A4
 #A6 A2 -> A2 #A6
 -----
-@mode:random
+mode:random
 A3 <> dhin --
 A3 <> dha --
 A3 <> dhagena
@@ -84,7 +84,7 @@ A6 <> tagetirakita
 A6 <> teeneteenakena
 A6 <> dhatigegenaka
 -----
-@mode:random
+mode:random
 F'12 <> dhatigegenakateeneteenakena
 Q24 <> dhin -- dhagenadha -- dhagenadhatigegenakadheenedheenagena
 F24 <> tagetirakitadhin -- dhagenadhatigegenakadheenedheenagena

@@ -10,13 +10,13 @@
 // et répétition contrôlée par flag numtimes.
 // Tr2/Tr4/Tr6 sont des non-terminaux résolus par SUB1 en _transpose().
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
-// --- Sous-grammaire 1 @mode:random ---
+// --- Sous-grammaire 1 mode:random ---
 
 -----
-@mode:random
+mode:random
 S -> A_r [numtimes=5]
 A_r -> {E1,A#1 F#1} {Tr2 D_r}
 B_r -> {Tr2 A_r}
@@ -25,9 +25,9 @@ C_r -> {Tr4 B_r}
 
 -----
 
-// --- Sous-grammaire 2 @mode:sub1 — résolution transpositions ---
+// --- Sous-grammaire 2 mode:sub1 — résolution transpositions ---
 
-@mode:sub1
+mode:sub1
 Tr2 -> !(chromashift:2)
 Tr4 -> !(chromashift:4)
 Tr6 -> !(chromashift:6)

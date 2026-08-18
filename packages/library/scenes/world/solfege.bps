@@ -8,9 +8,9 @@
 // Solfège — French notation: do re mi fa sol la si
 // Gamme majeure ascendante et descendante
 
-@core
-@alphabet.solfege:audio
-@tempo:100
+core
+alphabet.solfege:audio
+tempo:100
 
 -----
 S -> Montee Descente Fin

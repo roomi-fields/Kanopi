@@ -1,11 +1,11 @@
 // @language: bpscript
 // kairos-octave-transpose-global-override.bps — sert src/projection/transpose-global-trnoop.test.ts
-// (kairos, TR-NOOP étage 1). `@transpose:-1200c` GLOBAL en base + suffixe per-token `-2400c` sur C4 :
+// (kairos, TR-NOOP étage 1). `transpose:-1200c` GLOBAL en base + suffixe per-token `-2400c` sur C4 :
 // C4 doit prendre la surcharge -2400c, D4 hérite du global -1200c.
 
-@core
-@alphabet.western:midi
-@transpose:-1200c
+core
+alphabet.western:midi
+transpose:-1200c
 
 -----
 S -> C4(transpose:-2400c) D4

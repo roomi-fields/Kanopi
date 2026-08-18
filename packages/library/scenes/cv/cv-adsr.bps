@@ -7,7 +7,7 @@
 // @tags: cv, bass, modulation, adsr
 // @showcase
 //
-// ⚠️ EN ATTENTE — ne compile pas aujourd'hui (déclarée rouge, KAN-40). '@cv' est supprimé du
+// ⚠️ EN ATTENTE — ne compile pas aujourd'hui (déclarée rouge, KAN-40). 'cv' est supprimé du
 // langage ; la forme qui préserverait ses réglages de départ (« instance de module avec ses
 // réglages ») n'existe pas encore dans le parseur et sera revue avec FaustX. Ne pas migrer vers
 // la forme sans réglages : ça changerait la musique. Suivi : KAN-40.
@@ -16,20 +16,20 @@
 // TB-303 style: short attack, sharp decay, low sustain
 // The filter opens on each phrase then closes
 
-@mod
-@core
-@alphabet.western:audio
-@tempo:138
+mod
+core
+alphabet.western:audio
+tempo:138
 
 // Modulateur descriptif : env1 EST une enveloppe adsr (sortie 0..1)
-@cv env1 mod.adsr(attack:5, decay:150, sustain:0.2, release:400)
+cv env1 mod.adsr(attack:5, decay:150, sustain:0.2, release:400)
 
 -----
 S -> Bass Bass Bass Bass
 
 -----
 
-@mode:random
+mode:random
 
 // Branchement au point de paramètre : env1 module la coupure (cutoff) de CHAQUE note (sujet *)
 Bass -> C2 C2 C3 C2 - C2 Eb2 C2 (*:cutoff:env1, wave:sawtooth, vel:100, filterQ:8) (weight:50)

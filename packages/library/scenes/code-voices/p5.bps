@@ -10,8 +10,8 @@
 // Forme TAG explicite (`p5: …`) : ici pas d'acteur voix-code déclaré, le tag donne
 // le langage directement. Équivaut à un acteur `eval.p5` par héritage.
 
-@core
-@tempo:120
+core
+tempo:120
 
 -----
 S -> Sketch Sketch

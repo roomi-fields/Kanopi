@@ -7,10 +7,10 @@
 //
 // Raga Alap — slow exploration with random variations
 
-@core
-@alphabet.sargam:audio
-@tuning.sargam_22shruti
-@tempo:40
+core
+alphabet.sargam:audio
+tuning.sargam_22shruti
+tempo:40
 
 -----
 S -> Intro Develop Develop Climax
@@ -18,14 +18,14 @@ S -> Intro Develop Develop Climax
 -----
 
 // Low exploration
-@mode:random
+mode:random
 Intro -> sa _ re _ ga _ re sa _ _ (weight:50)
 Intro -> sa _ _ re ga _ _ _
 
 -----
 
 // Development
-@mode:random
+mode:random
 Develop -> Ascend Descend
 Develop -> Descend Ascend
 

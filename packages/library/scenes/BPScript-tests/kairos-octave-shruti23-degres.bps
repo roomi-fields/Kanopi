@@ -1,10 +1,10 @@
 // @language: bpscript
 // kairos-octave-shruti23-degres.bps — sert src/projection/shruti-e2e.test.ts (kairos, SHRUTI-E2E
-// [423/426]). sa_4 r1_4 g3_4 p3_4 sa_5 sous `@alphabet.shruti23` : clôture tryShruti (22-shruti natif)
+// [423/426]). sa_4 r1_4 g3_4 p3_4 sa_5 sous `alphabet.shruti23` : clôture tryShruti (22-shruti natif)
 // sur la chaîne complète, hz natif -to.tryShruti, ancre tonique sa_4 = 261.625 Hz.
 
-@core
-@alphabet.shruti23:midi
+core
+alphabet.shruti23:midi
 -----
-@mode:ord
+mode:ord
 S -> sa_4 r1_4 g3_4 p3_4 sa_5

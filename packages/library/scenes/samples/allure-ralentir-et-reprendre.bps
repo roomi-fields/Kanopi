@@ -17,16 +17,16 @@
 // s'écrit avec l'opérateur inverse.
 // Une même phrase, jouée trois fois : à l'allure, deux fois plus lente, puis reprise.
 
-@core
-@alphabet.western
-@tempo:120
+core
+alphabet.western
+tempo:120
 
 -----
 S -> Phrase Ralentie Phrase
 
 -----
 
-@mode:ord
+mode:ord
 
 // L'allure de la scène, telle que le métronome la donne.
 Phrase   -> C4 D4 E4 G4 (vel:84, wave:triangle, attack:4, release:180)

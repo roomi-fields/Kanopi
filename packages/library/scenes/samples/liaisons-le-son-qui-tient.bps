@@ -14,16 +14,16 @@
 // hauteur qui se suivent. À l'écrit c'est un signe ; à l'oreille c'est le phrasé entier
 // qui change — legato contre martelé.
 
-@core
-@alphabet.western:audio
-@tempo:66
+core
+alphabet.western:audio
+tempo:66
 
 -----
 S -> Lie Martele Lie Martele
 
 -----
 
-@mode:ord
+mode:ord
 
 // Liées : la hauteur traverse la pulsation sans se réattaquer.
 Lie     -> F4~F4 A4~A4 C5 (vel:72, wave:sine, attack:10, release:340)

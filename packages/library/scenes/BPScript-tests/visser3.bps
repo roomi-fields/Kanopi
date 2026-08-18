@@ -11,15 +11,15 @@
 // 2. Dérivation des motifs avec transpositions et polymétrie
 // 3. Résolution des symboles de transposition en contrôles
 
-@core
-@qclock:2
-@alphabet.western:midi
-@tempo:120
+core
+qclock:2
+alphabet.western:midi
+tempo:120
 
-// --- Sous-grammaire 1 @mode:ord — structure ---
+// --- Sous-grammaire 1 mode:ord — structure ---
 
 -----
-@mode:ord
+mode:ord
 S -> M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11
 M1 -> A_r -
 M2 -> B_r - M1
@@ -35,9 +35,9 @@ M11 -> K
 
 -----
 
-// --- Sous-grammaire 2 @mode:ord — motifs avec transpositions ---
+// --- Sous-grammaire 2 mode:ord — motifs avec transpositions ---
 
-@mode:ord
+mode:ord
 A_r -> C3
 B_r -> {Tr11 A_r}
 C_r -> {Tr5 {A_r,B_r}}
@@ -52,9 +52,9 @@ K -> {Tr-11 B_r C_r D_r}
 
 -----
 
-// --- Sous-grammaire 3 @mode:ord — résolution des transpositions ---
+// --- Sous-grammaire 3 mode:ord — résolution des transpositions ---
 
-@mode:ord
+mode:ord
 Tr11 -> !(chromashift:11) !(vel:90)
 Tr5 -> !(chromashift:5) !(vel:80)
 Tr1 -> !(chromashift:1) !(vel:70)

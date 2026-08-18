@@ -4,8 +4,8 @@
 // Une seule note E4 nue, western/midi — sert de RÉFÉRENCE de hauteur pour comparer contre des
 // scènes manipulées (scaleshift, keyxpand) qui doivent retomber exactement sur elle.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> E4

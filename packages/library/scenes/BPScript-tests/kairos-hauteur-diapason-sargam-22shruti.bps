@@ -1,13 +1,13 @@
 // @language: bpscript
 // kairos-hauteur-diapason-sargam-22shruti.bps — sert src/projection/diapason-e2e.test.ts (kairos,
-// [287] multi-tuning). @diapason:442 sur sargam_22shruti (microtonal, 22 degrés) : preuve que
+// [287] multi-tuning). diapason:442 sur sargam_22shruti (microtonal, 22 degrés) : preuve que
 // changer l'accordage à alphabet+diapason constants change le Hz (axe gamme), ni ≠ ni du 12-TET.
 
-@core
-@alphabet.sargam:audio
-@tuning.sargam_22shruti
-@diapason:442
-@tempo:60
+core
+alphabet.sargam:audio
+tuning.sargam_22shruti
+diapason:442
+tempo:60
 
 -----
 S -> sa ni

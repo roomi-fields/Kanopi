@@ -8,17 +8,17 @@
 // @outputs: audio
 // @level: didactic
 // @tags: csound, ab-corpus, envelope, sine, oscillator
-// @source: https://csound.com/docs/manual/linen.html
+// source: https://csound.com/docs/manual/linen.html
 //
 // A/B — csound — Sine + linen envelope. Original: https://csound.com/docs/manual/linen.html.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original (csound --odac fichier.csd).
 // Le moteur DOIT booter sur ce backtick en entier (CSD complet) — voir contrat de l'adaptateur
 // (compileCSD exige <CsoundSynthesizer> avant tout compileOrc/readScore incrémental).
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.csound
+actor v  eval.csound
 
 -----
 S -> v_r

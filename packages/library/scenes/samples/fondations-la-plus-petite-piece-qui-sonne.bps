@@ -15,12 +15,12 @@
 // Pour le prouver, la seconde voix REDIT explicitement ce que la première tait. Les deux
 // sonnent identiques : c'est la démonstration, pas une coïncidence.
 
-@core
-@alphabet.western
-@tempo:84
+core
+alphabet.western
+tempo:84
 
 // L'acteur nommé écrit noir sur blanc ce que la scène donne déjà à l'acteur implicite.
-@actor explicite
+actor explicite
   alphabet.western
   out.audio
 
@@ -29,7 +29,7 @@ S -> Tait Dit Tait Dit
 
 -----
 
-@mode:ord
+mode:ord
 
 // Rien de déclaré : les notes nues passent par l'acteur implicite de la scène.
 Tait -> C4 E4 G4 C5 (vel:80, wave:triangle, attack:6, release:240)

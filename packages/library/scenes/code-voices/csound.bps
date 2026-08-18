@@ -11,10 +11,10 @@
 // Le tempo absolu éventuel du patch est ÉCRASÉ : Kronos est seul maître (modèle DAW,
 // décision 2026-07-04-modele-timing-voix-de-code.md).
 
-@core
-@tempo:96
+core
+tempo:96
 
-@actor synth  eval.csound
+actor synth  eval.csound
 
 -----
 S -> synth_r synth_r synth_r synth_r

@@ -8,9 +8,9 @@
 // Detune — désaccordage progressif
 // Démo : (detune:N) en cents (100 cents = 1 demi-ton)
 
-@core
-@alphabet.western:audio
-@tempo:80
+core
+alphabet.western:audio
+tempo:80
 
 -----
 S -> D0_r D15 D30 D50 D100 End

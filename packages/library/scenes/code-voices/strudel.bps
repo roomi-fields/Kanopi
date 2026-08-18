@@ -14,10 +14,10 @@
 // Motif SYNTHÉ (sonne sans réseau) ; pour des samples : `eval.strudel(bank:dirt-samples)`
 // puis `s("bd sd hh hh")`. Décision hub 2026-07-04-cv-curve-syntaxe-backtick-type.md + [299].
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor bass  eval.strudel
+actor bass  eval.strudel
 
 -----
 S -> bass_r bass_r bass_r bass_r

@@ -10,7 +10,7 @@
 // Une voix de code JS brut → audio. `audio` est l'AudioContext partagé,
 // injecté par l'adaptateur. Évaluer la voix `tone_r` ; couper avec Ctrl+.
 
-@actor tone  eval.js
+actor tone  eval.js
 
 -----
 S -> tone_r

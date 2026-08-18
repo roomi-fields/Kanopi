@@ -1,5 +1,5 @@
 // @language: bpscript
-@maxitems:25   // MaxItemsProduce=25 dans le reglage natif : le moteur s'arrete
+maxitems:25   // MaxItemsProduce=25 dans le reglage natif : le moteur s'arrete
                  // apres 25 items. Sans ce plafond l'enumeration part vers 100000 et
                  // certaines grammaires ne rendent jamais la main.
 // tryLIN.bps — migré de bp3-engine/test-data/-gr.tryLIN (porter bp3ToScene, 2026-07-17)
@@ -9,15 +9,15 @@
 // source : l'original -gr.tryLIN charge -ho.abc, fichier d'alphabet chargeant -mi.abc — ces
 // symboles sonnent. Sans declaration, 'a' et 'c' etaient refuses ('b' est reconnu par sa
 // presence en membre gauche).
-@gate a:midi
-@gate b:midi
-@gate c:midi
+gate a:midi
+gate b:midi
+gate c:midi
 
 -----
-@mode:ord
+mode:ord
 S -> X X X X X X X X X X X X X X X X X X
 -----
-@mode:lin
+mode:lin
 X -> a
 #b X -> #b b
 X ? -> c Y ?

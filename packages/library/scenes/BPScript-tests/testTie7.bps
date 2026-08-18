@@ -14,8 +14,8 @@
 // le tient jusqu'à 23000 ms. Le sol4 coïncide exactement (4000–19000 ms), et les deux voies
 // rendent deux jetons.
 
-@core
-@alphabet.solfege:midi
+core
+alphabet.solfege:midi
 
 -----
 S -> !(pitchrange:200) !(pitchbend:-200) pitchcont do4~ _ _ _ {~do4~ _ _ _ _ _ _ _ _ _ _ _ _ _ _, sol4 _ _ _ _ _ _ _ _ _ _ _ _ _ _} ~do4 _ _ _ !(pitchbend:200)

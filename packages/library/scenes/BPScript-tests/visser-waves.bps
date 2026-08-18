@@ -11,15 +11,15 @@
 // Pièce pour piano solo — imbedding pattern (braces non appariées)
 // {5, A B {3, A B {2, A B C D} C D} C D}
 
-@core
-@alphabet.western:midi
-@tempo:60
-@striated
+core
+alphabet.western:midi
+tempo:60
+striated
 
-// --- Sous-grammaire 1 @mode:ord — structure et imbedding ---
+// --- Sous-grammaire 1 mode:ord — structure et imbedding ---
 
 -----
-@mode:ord
+mode:ord
 S -> ! (*5/4) Waves
 
 Waves -> Frase1 1 Frase1 Frase2 1/2 {!(retro) Frase1 !(chromashift:12)} {!(rotate:2) Frase2 !(chromashift:1)} {Frase3 !(chromashift:-13)} 1/4 {Frase1 !(chromashift:-1)} Frase4 {!(retro) Frase1 !(chromashift:-1)} {!(rotate:3) Frase4 !(chromashift:-11)} 1 Frase1 {!(keyxpand:C4 -1) Frase1} 1/2 {!(keyxpand:B3 -1) M19 !(vel:40),M24}:2 1/2 {!(keyxpand:A#3 -1) M19 !(vel:40),M24}:2 1/4 Frase5 {!(keyxpand:B3 -1) Frase5 !(chromashift:-1)} {!(keyxpand:C4 -1) Frase1} 1/2 {!(keyxpand:B3 -1) M19 !(vel:40),M24}:2 1/2 {!(keyxpand:A#3 -1) M19 !(vel:40),M24}:2 1 Frase6 1 Frase6 F1 B3 1 {F1 B3 !(vel:50)} 2 {F1 !(vel:40)}:6

@@ -10,15 +10,15 @@
 // @outputs: audio+visual
 // @level: intermediate
 // @tags: p5, sound, oscillator, audible, self-hosted
-// @source: https://github.com/processing/p5.js-sound/blob/main/examples/oscillatorFreq/sketch.js
+// source: https://github.com/processing/p5.js-sound/blob/main/examples/oscillatorFreq/sketch.js
 //
 // A/B — p5 — Oscillator audible (p5.sound). Original: https://p5js.org/reference/#/p5.Oscillator.
 // Coller/évaluer la voix : un LA grave (220 Hz) sonne et la pastille pulse. Ctrl+. pour couper.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.p5
+actor v  eval.p5
 
 -----
 S -> v_r

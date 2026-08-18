@@ -10,9 +10,9 @@
 // 5 notes: ro tsu re chi ri
 // Pentatonic with meri (flat) and kari (sharp) ornaments
 
-@core
-@alphabet.shakuhachi:audio
-@tempo:50
+core
+alphabet.shakuhachi:audio
+tempo:50
 
 -----
 S -> Phrase1 Phrase2 End

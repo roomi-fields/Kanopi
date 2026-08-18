@@ -14,16 +14,16 @@
 // droite. C'est ainsi qu'une règle décrit une TRANSFORMATION plutôt qu'un contenu —
 // elle dit « quoi que ce soit, renvoie-le », et la matière traverse.
 
-@core
-@alphabet.western:audio
-@tempo:100
+core
+alphabet.western:audio
+tempo:100
 
 -----
 S -> Motif
 
 -----
 
-@mode:ord
+mode:ord
 
 Motif -> D4 F4 A4 Echo
 

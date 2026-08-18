@@ -7,7 +7,7 @@
 // @tags: cv, modulation, group, cutoff
 // @showcase
 //
-// ⚠️ EN ATTENTE — ne compile pas aujourd'hui (déclarée rouge, KAN-40). '@cv' est supprimé du
+// ⚠️ EN ATTENTE — ne compile pas aujourd'hui (déclarée rouge, KAN-40). 'cv' est supprimé du
 // langage ; la forme qui préserverait ses réglages de départ (« instance de module avec ses
 // réglages ») n'existe pas encore dans le parseur et sera revue avec FaustX. Ne pas migrer vers
 // la forme sans réglages : ça changerait la musique. Suivi : KAN-40.
@@ -20,14 +20,14 @@
 // suivantes sont au SUSTAIN (cutoff bas → sombres/étouffées).
 //
 // Réglé pour un contraste NET : decay long (le balayage s'entend sur la 1ʳᵉ note), sustain
-// bas (les suivantes bien sombres), notes longues et espacées (@tempo:60 → 1 s/note).
+// bas (les suivantes bien sombres), notes longues et espacées (tempo:60 → 1 s/note).
 // Mesuré sur la sortie : 1ʳᵉ note ~4× plus brillante (centroïde) et ~22× en énergie HF.
 
-@core
-@alphabet.western:audio
-@tempo:60
+core
+alphabet.western:audio
+tempo:60
 
-@cv env1 mod.adsr(attack:8, decay:750, sustain:0.1, release:300)
+cv env1 mod.adsr(attack:8, decay:750, sustain:0.1, release:300)
 
 // `(cutoff:env1)` sur la RÈGLE = filtre de GROUPE (busRef de règle) sur les 4 notes.
 -----

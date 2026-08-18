@@ -5,8 +5,8 @@
 // dans son parent (span ms), et que le conteneur polymétrique est l'enveloppe de ses voix — à mm:60,
 // `{C4, E4, G4} _` occupe [3000,5000] ms, ses voix 2/3 [3000,4000] ms (le `_` prolonge le bloc).
 
-@core
-@tempo:60
+core
+tempo:60
 
 -----
 S -> C4 D4 E4 {C4, E4, G4} _

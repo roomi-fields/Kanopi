@@ -1,12 +1,12 @@
 // @language: bpscript
-@tempo:400   // horloge du natif -se.koto3 : periode 150 ms par temps, soit 400 BPM.
+tempo:400   // horloge du natif -se.koto3 : periode 150 ms par temps, soit 400 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
 // PP.bps — migré de bp3-engine/test-data/-gr.PP (porter bp3ToScene, 2026-07-17)
 // Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
 
 -----
-@mode:random
+mode:random
 S -> X1 X2 X3
 X1 X2 -> a X1 YA
 X1 X2 -> b X1 YB

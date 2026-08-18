@@ -15,16 +15,16 @@
 // @outputs: visual
 // @level: advanced
 // @tags: p5, ab-corpus, sound, leak-test, p5-sound-missing
-// @source: https://github.com/processing/p5.js-sound/blob/main/examples/oscillatorWaveform/sketch.js
+// source: https://github.com/processing/p5.js-sound/blob/main/examples/oscillatorWaveform/sketch.js
 //
 // A/B — p5 — Oscillator Waveform (p5.sound). Original: https://github.com/processing/p5.js-sound/tree/main/examples/oscillatorWaveform.
 // TEST DE FUITE : coller/évaluer la voix — attendu: erreur `p5.SinOsc is not a constructor`
 // (ou équivalent) car p5.sound n'est pas embarqué dans cette voix de code.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.p5
+actor v  eval.p5
 
 -----
 S -> v_r

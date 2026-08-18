@@ -1,11 +1,11 @@
 // @language: bpscript
 // kairos-hauteur-ancre-alphabet-sargam.bps — sert src/projection/diapason-e2e.test.ts (kairos, [293]).
-// @alphabet.sargam SEUL (aucun @tuning, aucun @diapason) : l'ancre {diapason 240, sa, madhya} doit
+// alphabet.sargam SEUL (aucun tuning, aucun diapason) : l'ancre {diapason 240, sa, madhya} doit
 // venir de l'alphabet lui-même (defaultTuning), pas du socle 440.
 
-@core
-@alphabet.sargam:audio
-@tempo:60
+core
+alphabet.sargam:audio
+tempo:60
 
 -----
 S -> sa ni

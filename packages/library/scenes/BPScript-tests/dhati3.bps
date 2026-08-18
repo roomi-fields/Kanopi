@@ -1,24 +1,24 @@
 // @language: bpscript
-@homomorphism.dhati
-@test_alphabets.dhati
+homomorphism.dhati
+test_alphabets.dhati
 
 -----
-@mode:random
+mode:random
 S <> $A16 $V8 $A'8 * &A16 &V8 $A8 (meter:4+4+4+4/4)
 S <> $V16 $A'16 * &V16 $A16 (meter:4+4+4+4/4)
 S <> $V24 $A'8 * &V24 $A8 (meter:4+4+4+4/4)
 -----
-@mode:random
+mode:random
 V8 <> V V V V V V V V
 V16 <> V V V V V V V V V V V V V V V V
 V24 <> V V V V V V V V V V V V V V V V V V V V V V V V
 -----
-@mode:lin
+mode:lin
 V <> V1
 V V <> trkt
 V V V <> V3
 -----
-@mode:lin
+mode:lin
 #dha V1 <> #dha dha
 V3 <> dhagena
 #- V1 <> #- -
@@ -27,7 +27,7 @@ na V1 #tr <> na ti #tr
 - V1 #tr <> - ti #tr
 $ V1 #tr <> $ ti #tr
 -----
-@mode:ord
+mode:ord
 A8 <> dhatidhagedheenagena
 A'8 <> dhatidhageteenakena
 A16 <> dhatidhagenadhatrktdhatidhagedheenagena

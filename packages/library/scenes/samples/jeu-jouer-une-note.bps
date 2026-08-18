@@ -16,16 +16,16 @@
 // La même phrase, deux fois : d'abord uniforme, puis accentuée et répartie. Ce ne sont
 // pas les notes qui changent, c'est la façon dont on les joue.
 
-@core
-@alphabet.western
-@tempo:100
+core
+alphabet.western
+tempo:100
 
 -----
 S -> Plate Modelee Plate Modelee
 
 -----
 
-@mode:ord
+mode:ord
 
 // Une seule force pour toute la règle : tout arrive au même niveau, rien ne ressort.
 Plate    -> C4 E4 G4 E4 C4 (vel:78, pan:64, wave:triangle, attack:5, release:200)

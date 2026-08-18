@@ -5,11 +5,11 @@
 // Gamakas (ornements) de la vina : pulls, slides, spuritam
 // Polymétrie avec taalam (mesure de temps)
 
-@core
-@alphabet.western:midi
-@tempo:60
+core
+alphabet.western:midi
+tempo:60
 
-// --- Sous-grammaire 1 @mode:random — structure ---
+// --- Sous-grammaire 1 mode:random — structure ---
 
 
 // ── MIGRATION DE FORME, écrite par bpscript le 2026-08-13 — À RELIRE ET COMMITTER PAR VOUS ──
@@ -21,12 +21,12 @@
 //   !(value:slide 101)  →  !(slide:101)
 //   !(cont:slide)       →  !(slidecont)
 //   !(fixed:slide)      →  !(slidefixed)
-// Le paramètre se DÉCLARE désormais, sinon son nom est refusé : `@var <nom> signal` — « un flux de
+// Le paramètre se DÉCLARE désormais, sinon son nom est refusé : `var <nom> signal` — « un flux de
 // nombres, sans convention de lecture » (LANGUAGE.md). C'est la déclaration ajoutée ci-dessous.
-@var slide signal
+var slide signal
 
 -----
-@mode:random
+mode:random
 S -> !(scale:just_intonation 0) {Taalam4 Taalam4,Pallavi Pallavi}(volumecont, volume:64) Taalam(volume:0) - !(ins:Vina, volume:40)
 
 Pallavi -> {Maa Yaa Tii . Ta {Sva Ruu Pi}:2 . {Ni}:2 {Nan Nu}:1 . Bro {Va Ve}:2}
@@ -54,34 +54,34 @@ Ve3 -> StartPull B2 Pull1 StopPull
 
 -----
 
-// --- Sous-grammaire 2 @mode:random — taalam ---
+// --- Sous-grammaire 2 mode:random — taalam ---
 
-@mode:random
+mode:random
 Taalam4 -> Taalam Taalam Taalam Taalam
 Taalam -> {C3,G3,C4}:3
 
 -----
 
-// --- Sous-grammaire 3 @mode:sub1 — structures intermédiaires ---
+// --- Sous-grammaire 3 mode:sub1 — structures intermédiaires ---
 
-@mode:sub1
+mode:sub1
 LongSpuritam ?1 ?2 -> {StartSlide ?1 _ Slide0 _ ?2 _}:1
 GamakaOscil ?1 ?2 -> {StartPull ?1 ?2 _ Pull0 _ ?2 _ Pull0 _ ?2 StopPull}
 GamakaHold ?1 ?2 -> {StartPull ?1 ?2 _ _ _ StopPull}:1
 
 -----
 
-// --- Sous-grammaire 4 @mode:sub1 ---
+// --- Sous-grammaire 4 mode:sub1 ---
 
-@mode:sub1
+mode:sub1
 StartSlidePull -> StartSlide StartPull
 StopSlidePull -> StopSlide StopPull
 
 -----
 
-// --- Sous-grammaire 5 @mode:sub1 — contrôles bas niveau ---
+// --- Sous-grammaire 5 mode:sub1 — contrôles bas niveau ---
 
-@mode:sub1
+mode:sub1
 Pull0 -> !(pitchbend:0)
 Pull1 -> !(pitchbend:100)
 Pull2 -> !(pitchbend:200)

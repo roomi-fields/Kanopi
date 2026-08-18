@@ -17,9 +17,9 @@
 //   A, B = phrases
 //   Their rules define the notes.
 
-@core
-@alphabet.western:audio
-@tempo:90
+core
+alphabet.western:audio
+tempo:90
 
 -----
 S -> Phrase1 Phrase2 Phrase1

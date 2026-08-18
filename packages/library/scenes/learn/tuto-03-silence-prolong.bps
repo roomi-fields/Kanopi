@@ -14,8 +14,8 @@
 // C4 _ = C4 held for 2 beats
 // C4 - D4 = C4, 1 beat silence, then D4
 
-@core
-@alphabet.western:audio
+core
+alphabet.western:audio
 
 -----
 S -> C4 _ _ D4 - E4 _ F4 G4 _ _ _

@@ -4,8 +4,8 @@
 // selon la décision transposition réelle — l'ancien régime « 2 pas de grille » n'existe plus) :
 // preuve hz × 2 exact.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> C4(transpose:2)

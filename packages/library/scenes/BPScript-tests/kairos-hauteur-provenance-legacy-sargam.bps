@@ -3,8 +3,8 @@
 // (kairos, [343]). Baseline LEGACY : alphabet sargam du catalogue factory, sans librairie perso —
 // ancre de comparaison pour toutes les preuves de provenance (factory vs mine, même nom).
 
-@core
-@alphabet.sargam:audio
+core
+alphabet.sargam:audio
 
 -----
 S -> sa re

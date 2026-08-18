@@ -8,16 +8,16 @@
 // @outputs: audio
 // @level: intermediate
 // @tags: mercury, ab-corpus, synth, euclid, rhythm, no-samples
-// @source: https://github.com/tmhglnd/mercury-lang/blob/main/test/test-grammar.txt
+// source: https://github.com/tmhglnd/mercury-lang/blob/main/test/test-grammar.txt
 //
 // A/B — mercury — Synth euclidean rhythm. Original: https://github.com/tmhglnd/mercury-lang/blob/main/test/test-grammar.txt
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original (mercury.timohoogland.com).
 // Test de robustesse : rythmique euclidienne (`euclid`/`play`) — DOIT sonner sans samples.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.mercury
+actor v  eval.mercury
 
 -----
 S -> v_r

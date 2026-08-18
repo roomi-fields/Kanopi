@@ -9,10 +9,10 @@
 // Tuning: Just Intonation (western_just, catalogue tunings.json)
 // Compare with equal temperament — thirds and fifths are purer
 
-@core
-@alphabet.western:audio
-@tuning.western_just
-@tempo:60
+core
+alphabet.western:audio
+tuning.western_just
+tempo:60
 
 -----
 S -> Chord1 Chord2 Chord3

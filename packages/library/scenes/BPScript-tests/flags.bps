@@ -2,11 +2,11 @@
 // flags.bps — test du système de flags
 // Traduit de bp3-engine/library/examples/flags/grammar.gr
 
-@core
+core
 
 // Terminaux
-@gate a:midi
-@gate b:midi
+gate a:midi
+gate b:midi
 
 // Non-terminaux : S, X (variables de grammaire, pas déclarés)
 

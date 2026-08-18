@@ -10,9 +10,9 @@
 // Polymetric Rhythm — 3 contre 4 contre 5
 // Démo : polymétrie avec speed, vélocités par voix
 
-@core
-@alphabet.western:audio
-@tempo:90
+core
+alphabet.western:audio
+tempo:90
 
 -----
 S -> {

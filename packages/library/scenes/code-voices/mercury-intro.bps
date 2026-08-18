@@ -10,7 +10,7 @@
 // Une voix de code Mercury → audio. Mercury est un langage déclaratif et
 // lisible (Timo Hoogland), bâti sur Tone.js. Évaluer la voix `patch_r` ; Ctrl+.
 
-@actor patch  eval.mercury
+actor patch  eval.mercury
 
 -----
 S -> patch_r

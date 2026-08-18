@@ -1,12 +1,12 @@
 // @language: bpscript
 // kairos-hauteur-diapason-sans-tuning.bps — sert src/projection/diapason-e2e.test.ts (kairos, [288]
-// verrou). @alphabet.western déclaré SANS @tuning, avec @diapason:230 : chemin cv-adsr — l'alphabet
+// verrou). alphabet.western déclaré SANS tuning, avec diapason:230 : chemin cv-adsr — l'alphabet
 // seul suffit à porter le diapason jusqu'au binding par défaut, sans se perdre en silence.
 
-@core
-@alphabet.western:audio
-@diapason:230
-@tempo:60
+core
+alphabet.western:audio
+diapason:230
+tempo:60
 
 -----
 S -> A4 E4

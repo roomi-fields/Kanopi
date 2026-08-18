@@ -1,12 +1,12 @@
 // @language: bpscript
 // kairos-hauteur-non-regression-sargam-12tet.bps — sert src/projection/diapason-e2e.test.ts (kairos,
-// [287] multi-tuning). Aucun @diapason déclaré, sur sargam_12TET : non-régression de la référence
+// [287] multi-tuning). Aucun diapason déclaré, sur sargam_12TET : non-régression de la référence
 // composant non-440 (sa=240).
 
-@core
-@alphabet.sargam:audio
-@tuning.sargam_12TET
-@tempo:60
+core
+alphabet.sargam:audio
+tuning.sargam_12TET
+tempo:60
 
 -----
 S -> sa ni

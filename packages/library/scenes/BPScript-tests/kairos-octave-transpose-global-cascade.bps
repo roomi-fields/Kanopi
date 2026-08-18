@@ -1,11 +1,11 @@
 // @language: bpscript
 // kairos-octave-transpose-global-cascade.bps — sert src/projection/transpose-global-trnoop.test.ts
-// (kairos, TR-NOOP étage 1). `@transpose:-1200c` GLOBAL de scène : preuve qu'il est semé en base de
+// (kairos, TR-NOOP étage 1). `transpose:-1200c` GLOBAL de scène : preuve qu'il est semé en base de
 // resolveControls et atteint CHAQUE feuille (C4, D4) sans suffixe per-token.
 
-@core
-@alphabet.western:midi
-@transpose:-1200c
+core
+alphabet.western:midi
+transpose:-1200c
 
 -----
 S -> C4 D4

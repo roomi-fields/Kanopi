@@ -7,8 +7,8 @@
 // RÉSULTAT de dérivation). Un `!(vel:120)` préfixé sur la production : preuve que le libellé sort en
 // clair (`[vel(120)]`), jamais un sentinelle anonyme, aussi bien dans la trace que dans la chaîne finale.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> !(vel:120) C4 D4

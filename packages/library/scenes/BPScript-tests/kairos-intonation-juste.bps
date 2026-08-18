@@ -4,10 +4,10 @@
 // parallèle) : les 6 notes rendues dans LA MÊME gamme juste, C-ancrée (tonique C4=261.63). Preuve :
 // intonation juste native (-to.tryOneScale, C-tonique), zéro pitchless.
 
-@core
-@alphabet.western:midi
-@tuning.western_just_c
+core
+alphabet.western:midi
+tuning.western_just_c
 
 -----
-@mode:ord
+mode:ord
 S -> C4 A4 G4 D4 F4 E4

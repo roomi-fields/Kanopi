@@ -2,16 +2,16 @@
 // all-items.bps — Test _goto, _failed, _repeat, K-params
 // Traduit de bp3-engine/test-data/-gr.tryAllItems (Bernard)
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
-@mode:random
+mode:random
 S -> X Y [Flag=2] [Choice=1]
 
 -----
 
-@mode:random
+mode:random
 [Choice==1] [Flag-1] X -> C1 X
 [Choice==2] X -> C2 X [repeat:1]
 [Choice==3] X -> C3 X (weight:100-50)

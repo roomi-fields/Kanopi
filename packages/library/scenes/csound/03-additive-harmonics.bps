@@ -9,16 +9,16 @@
 // @outputs: audio
 // @level: intermediate
 // @tags: csound, ab-corpus, additive, oscillator
-// @source: https://files.csound-tutorial.net/floss_manual/Release01/Cs_FM_01_epub/ch023_a-additive-synthesis.xhtml
+// source: https://files.csound-tutorial.net/floss_manual/Release01/Cs_FM_01_epub/ch023_a-additive-synthesis.xhtml
 //
 // A/B — csound — Additive (8 poscil). Original: FLOSS Manual, chapitre Additive Synthesis.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original.
 // Le moteur DOIT booter sur ce backtick en entier (CSD complet).
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.csound
+actor v  eval.csound
 
 -----
 S -> v_r

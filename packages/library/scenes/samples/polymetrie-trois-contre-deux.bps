@@ -13,16 +13,16 @@
 // contre deux en bas : elles partent ensemble, se croisent, et se retrouvent au bout.
 // C'est le hémiole des musiques d'Afrique de l'Ouest et de Brahms — la même figure.
 
-@core
-@alphabet.western:audio
-@tempo:104
+core
+alphabet.western:audio
+tempo:104
 
 -----
 S -> Croise Croise Croise Repos
 
 -----
 
-@mode:ord
+mode:ord
 
 // Trois contre deux : la voix haute divise en trois ce que la basse divise en deux.
 Croise -> {D5 F5 A5, D3 A3} (vel:82, wave:triangle, attack:4, release:180)

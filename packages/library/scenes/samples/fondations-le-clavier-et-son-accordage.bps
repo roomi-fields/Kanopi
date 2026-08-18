@@ -16,16 +16,16 @@
 // change. La tierce du tempéré bat ; celle de l'accordage juste est immobile. C'est le
 // même texte et ce n'est pas le même son.
 
-@core
-@alphabet.western
-@octaves.western
-@diapason:440
-@tempo:60
+core
+alphabet.western
+octaves.western
+diapason:440
+tempo:60
 
-@actor tempere
+actor tempere
   tuning.western_12TET
 
-@actor juste
+actor juste
   tuning.western_just
 
 -----
@@ -33,7 +33,7 @@ S -> Tempere Juste Tempere Juste
 
 -----
 
-@mode:ord
+mode:ord
 
 // Douze demi-tons égaux : un compromis, et la tierce bat.
 Tempere -> {tempere.C4 tempere.E4 tempere.G4}:3 (vel:76, wave:sine, attack:20, release:900)

@@ -2,22 +2,22 @@
 // tryPatternGrammar.bps — Kathak Chakkardar pattern with _destru
 // Traduit de bp3-engine/test-data/-gr.tryPatternGrammar
 
-@core
-@maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
+core
+maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
                  // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
                  // certaines grammaires ne rendent jamais la main.
-@allitems
-@test_alphabets.abc
+allitems
+test_alphabets.abc
 
 -----
-@mode:ord
+mode:ord
 S -> Chakkardar
 Chakkardar -> $Tihai $G &Tihai &G &Tihai
 Tihai -> $A $B &A &B &A
 
 -----
 
-@mode:random(destru)
+mode:random(destru)
 G -> g
 G ->
 A -> a

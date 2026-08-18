@@ -17,16 +17,16 @@
 // paraît calme ; la seconde en pose quatre et paraît pressée. Rien n'a bougé du tempo :
 // c'est la DENSITÉ qui fait la vitesse qu'on entend.
 
-@core
-@alphabet.western
-@tempo:72
+core
+alphabet.western
+tempo:72
 
 -----
 S -> Large Dense Large Dense
 
 -----
 
-@mode:ord
+mode:ord
 
 // Une note par temps : le battement s'entend tel quel.
 Large -> C4 E4 G4 E4 (vel:78, wave:sine, attack:10, release:420)

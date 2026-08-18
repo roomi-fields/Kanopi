@@ -12,8 +12,8 @@
 // Note : cette scène ne produit pas de son sans bridge actif.
 // Elle montre la syntaxe et la compilation.
 
-@core
-@alphabet.western:audio
+core
+alphabet.western:audio
 
 -----
 S -> Intro SC_Part Outro

@@ -11,15 +11,15 @@
 // L'alphabet abc donne des terminaux d'un seul caractère : `fg` se lit `f g`, `ab` se lit `a b`.
 // Les vitesses `/N` de l'original s'écrivent `! (/N)` dans le flux.
 
-@core
-@test_alphabets.abc
-@maxitems:25
-@quantization:1
-@striated
+core
+test_alphabets.abc
+maxitems:25
+quantization:1
+striated
 
 
 -----
-@mode:random
+mode:random
 S -> ! (/2) a b c d ! (/3) d e f g h i (weight:1)                     // 4/1
 S -> a {- b, a c} (weight:1)                                          // 3
 S -> ! (/2) a b c {! (/3) d e} f g (weight:1)                         // 19/6

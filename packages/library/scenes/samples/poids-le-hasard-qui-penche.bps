@@ -14,16 +14,16 @@
 // et c'est cette RARETÉ qui la rend remarquable quand elle arrive. Sans poids, tout
 // est également probable et rien ne surprend.
 
-@core
-@alphabet.western:audio
-@tempo:120
+core
+alphabet.western:audio
+tempo:120
 
 -----
 S -> Cellule Cellule Cellule Cellule Cellule Cellule
 
 -----
 
-@mode:random
+mode:random
 
 // La figure ordinaire revient souvent : elle installe le climat.
 Cellule -> A3 C4 E4 (vel:74, wave:sine, attack:5, release:180, weight:70)

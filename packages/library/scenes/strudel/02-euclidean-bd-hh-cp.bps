@@ -8,16 +8,16 @@
 // @outputs: audio
 // @level: didactic
 // @tags: strudel, ab-corpus, euclidean, mini-notation, samples
-// @source: https://strudel.cc/learn/mini-notation/
+// source: https://strudel.cc/learn/mini-notation/
 //
 // A/B — strudel — Euclidean Rhythm. Original: https://strudel.cc/learn/mini-notation/.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original.
 // Dépend de la banque d'échantillons par défaut (dirt-samples) pour bd/hh/cp.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.strudel
+actor v  eval.strudel
 
 -----
 S -> v_r

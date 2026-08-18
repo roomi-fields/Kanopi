@@ -14,16 +14,16 @@
 // durer pareil, et une même cellule peut durer deux fois plus. C'est ce qui permet de
 // superposer des phrases qui ne comptent pas le même nombre de notes.
 
-@core
-@alphabet.western:audio
-@tempo:72
+core
+alphabet.western:audio
+tempo:72
 
 -----
 S -> Egales Etiree Egales
 
 -----
 
-@mode:ord
+mode:ord
 
 // Trois notes et cinq notes, même durée : la seconde est plus serrée.
 Egales -> {C4 E4 G4}:2 {C4 D4 E4 F4 G4}:2 (vel:80, wave:triangle, attack:4, release:160)

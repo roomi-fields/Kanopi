@@ -14,16 +14,16 @@
 // indivisible — un ornement, une frappe composée, un motif qui doit rester d'une pièce.
 // À côté, le même contenu en groupe ordinaire reste dérivable et se laisse traverser.
 
-@core
-@alphabet.western:audio
-@tempo:100
+core
+alphabet.western:audio
+tempo:100
 
 -----
 S -> Bloc Ordinaire Bloc Ordinaire
 
 -----
 
-@mode:ord
+mode:ord
 
 // D'un bloc : la cellule est un objet, pas une suite.
 Bloc      -> |[ E4 G4 B4 ] |[ D4 F4 A4 ] (vel:86, wave:sine, attack:3, release:220)

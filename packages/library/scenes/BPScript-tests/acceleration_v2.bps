@@ -7,14 +7,14 @@
 // arbre derive compare EN ENTIER avant/apres, a graine fixe.
 // _chromashift(12) → !(chromashift:12), _vel(N) → !(vel:N), <N> → (weight:N), <-> → <>
 
-@core
-@tempo:80   // horloge du natif -se.Visser2 : periode 750 ms par temps, soit 80 BPM.
+core
+tempo:80   // horloge du natif -se.Visser2 : periode 750 ms par temps, soit 80 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
-@alphabet.western:midi
+alphabet.western:midi
 
 -----
-@mode:ord
+mode:ord
 S <> !(chromashift:12) !(vel:60) A_r B_r !(vel:65) C_r D_r !(vel:70) E_r F_r !(vel:75) G_r !(vel:77) H !(vel:80) I !(vel:85) J !(vel:87) K !(vel:90) L (weight:1)
 
 A_r <> E2 . (weight:12)

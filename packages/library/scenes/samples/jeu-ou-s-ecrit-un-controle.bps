@@ -16,16 +16,16 @@
 // Le plus local gagne toujours. Ici la même clé, la force, est écrite aux quatre places
 // dans une seule phrase — chaque note dit à quelle portée elle obéit.
 
-@core
-@alphabet.western
-@tempo:88
+core
+alphabet.western
+tempo:88
 
 -----
 S -> Cascade Cascade
 
 -----
 
-@mode:ord
+mode:ord
 
 // De gauche à droite : la règle donne 70 ; le terme impose 118 ; le groupe impose 50 ;
 // le flux bascule à 100 et tient jusqu'à la fin.

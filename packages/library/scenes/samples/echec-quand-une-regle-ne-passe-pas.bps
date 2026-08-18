@@ -14,16 +14,16 @@
 // et poursuivre. Ici la deuxième section n'est jouable qu'une fois le seuil atteint —
 // avant, elle passe son tour, et la pièce continue sans trou.
 
-@core
-@alphabet.western:audio
-@tempo:90
+core
+alphabet.western:audio
+tempo:90
 
 -----
 S -> Ouverture Conditionnelle Ouverture Conditionnelle
 
 -----
 
-@mode:ord
+mode:ord
 
 // Chaque passage incrémente le compteur.
 Ouverture -> G3 B3 D4 [compte=1] (vel:76, wave:sine, attack:6, release:200)

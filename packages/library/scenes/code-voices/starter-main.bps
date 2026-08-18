@@ -7,11 +7,11 @@
 // @tags: sections, flag, visuals, bass
 //
 // main session — 3 voix-code, sélectionnables par section (intro/drop/break).
-@actor drums  eval.strudel(bank:"dirt-samples")
-@actor visuals  eval.hydra
-@actor bass  eval.strudel(bank:"dirt-samples")
+actor drums  eval.strudel(bank:"dirt-samples")
+actor visuals  eval.hydra
+actor bass  eval.strudel(bank:"dirt-samples")
 
-@var section flag: intro:1, drop:2, break:3
+var section flag: intro:1, drop:2, break:3
 
 -----
 [section==intro] S -> visuals_r

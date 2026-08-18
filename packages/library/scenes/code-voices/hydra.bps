@@ -12,10 +12,10 @@
 // Une voix de code n'est pas forcément sonore : hydra rend de l'image, routée par
 // son runtime. Le container (début/fin/boucle) reste piloté par Kronos.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor visuals  eval.hydra
+actor visuals  eval.hydra
 
 -----
 S -> visuals_r visuals_r

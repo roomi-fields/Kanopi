@@ -11,9 +11,9 @@
 // Non-octave scale, unique harmonic structure
 // Note: non-terminals avoid A-G letters (BP3 parses them as notes)
 
-@core
-@alphabet.bohlen_pierce:audio
-@tempo:80
+core
+alphabet.bohlen_pierce:audio
+tempo:80
 
 -----
 S -> Montee Retour Tenue

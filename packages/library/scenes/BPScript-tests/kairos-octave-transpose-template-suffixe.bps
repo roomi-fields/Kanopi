@@ -3,8 +3,8 @@
 // (kairos, verrou containment [446]). Suffixe `(transpose:-200c)` posé sur une INVOCATION DE TEMPLATE
 // ($MOTIF) : doit descendre sur la feuille C4 de l'expansion.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 MOTIF -> C4

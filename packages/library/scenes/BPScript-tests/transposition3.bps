@@ -7,11 +7,11 @@
 // de .gr cites dans ce fichier ne suivent donc PAS nos renommages. Production prouvee INCHANGEE :
 // arbre derive compare EN ENTIER avant/apres, a graine fixe.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
-@mode:random
+mode:random
 S -> A_r [numtimes=5]
 A_r -> {E1, A#1 F#1} {D_r}(chromashift:2)
 B_r -> {A_r}(chromashift:2)
@@ -20,5 +20,5 @@ C_r -> {B_r}(chromashift:4)
 
 -----
 
-@mode:sub1
+mode:sub1
 D_r -> lambda

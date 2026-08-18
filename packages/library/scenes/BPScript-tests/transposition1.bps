@@ -1,8 +1,8 @@
 // @language: bpscript
-@core
-@homomorphism.transposition
+core
+homomorphism.transposition
 -----
-@mode:ord
+mode:ord
 S -> ${A1} TR ${A1} TR TR ${A1} TR TR TR ${A1} ${A1}
 A1 -> {Tr0 M1. Tr1 M1 Tr7 M1 Tr0 M1 Tr7 M1}
 M1 -> C3 B3 F4

@@ -13,8 +13,8 @@
 //
 // Try: change the values and listen to the difference.
 
-@core
-@alphabet.western:audio
+core
+alphabet.western:audio
 
 -----
 S -> Soft Loud Soft

@@ -11,7 +11,7 @@
 // @outputs: audio
 // @level: advanced
 // @tags: strudel, ab-corpus, effects, lpf, room, stress-test, samples
-// @source: https://strudel.cc/learn/effects/
+// source: https://strudel.cc/learn/effects/
 //
 // A/B — strudel — Filter Envelope effects chain. Original: https://strudel.cc/learn/effects/.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original.
@@ -26,10 +26,10 @@
 // décalée, aléatoire conditionnel. Ce qu'on entend de moins que l'original est le kick, et rien
 // d'autre. Sans cette ligne, le silence s'attribuerait au patch.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.strudel
+actor v  eval.strudel
 
 -----
 S -> v_r

@@ -8,16 +8,16 @@
 // @outputs: audio
 // @level: didactic
 // @tags: mercury, ab-corpus, synth, no-samples
-// @source: https://github.com/tmhglnd/mercury-engine/blob/main/README.md#resume-evaluate-and-silence
+// source: https://github.com/tmhglnd/mercury-engine/blob/main/README.md#resume-evaluate-and-silence
 //
 // A/B — mercury — Synth saw (basic). Original: https://github.com/tmhglnd/mercury-engine/blob/main/README.md
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original (mercury.timohoogland.com).
 // Test de robustesse : synthèse pure — DOIT sonner même si le jeu de samples n'est pas chargé.
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.mercury
+actor v  eval.mercury
 
 -----
 S -> v_r

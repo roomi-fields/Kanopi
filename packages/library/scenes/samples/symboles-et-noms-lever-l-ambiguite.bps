@@ -18,16 +18,16 @@
 // comme une faute, et se corrige très tard.
 // La levée s'écrit avec le point : il qualifie le terminal par son propriétaire.
 
-@core
-@alphabet.western
-@tempo:100
+core
+alphabet.western
+tempo:100
 
 // Deux acteurs revendiquent le même clavier : chaque nom de note a désormais deux
 // propriétaires possibles.
-@actor proche
+actor proche
   tuning.western_12TET
 
-@actor lointain
+actor lointain
   tuning.western_just
 
 -----
@@ -35,7 +35,7 @@ S -> Qualifie Qualifie
 
 -----
 
-@mode:ord
+mode:ord
 
 // Chaque terme dit à qui il appartient : plus aucune ambiguïté, et les deux accordages
 // se répondent sur les mêmes lettres.

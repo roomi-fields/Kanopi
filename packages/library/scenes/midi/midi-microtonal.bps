@@ -8,9 +8,9 @@
 // MIDI Microtonal — pitch bend automatique via tempérament non-12-TET
 // Le transport MIDI envoie PitchBend avant chaque NoteOn quand nécessaire
 
-@core
-@alphabet.western:midi
-@tuning.western_just
+core
+alphabet.western:midi
+tuning.western_just
 
 // En intonation juste, les tierces et quintes sont pures
 // → le MIDI auto-bend compense la différence avec 12-TET

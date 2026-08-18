@@ -4,8 +4,8 @@
 // que bpscript a livrée pour cette forme (db0b68a), et non par un contournement. Elle exerce donc
 // la limite elle-même — un alphabet ou un tempérament peut se nommer 12TET, 24TET.
 
-@core
-@temperaments.12TET
+core
+temperaments.12TET
 
 -----
 S -> C4

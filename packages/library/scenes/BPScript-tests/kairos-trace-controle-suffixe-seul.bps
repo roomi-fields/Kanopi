@@ -4,8 +4,8 @@
 // suffixé (`transpose:-1200c`) sur la production : sert de terrain à la mutation de `slotIndex` qui
 // prouve que la résolution du libellé est insensible à cette valeur.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 S -> C4(transpose:-1200c) D4

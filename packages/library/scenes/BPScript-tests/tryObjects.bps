@@ -1,8 +1,8 @@
 // @language: bpscript
-@maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
+maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
                  // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
                  // certaines grammaires ne rendent jamais la main.
-@tempo:400   // horloge du natif -se.koto3 : periode 150 ms par temps, soit 400 BPM.
+tempo:400   // horloge du natif -se.koto3 : periode 150 ms par temps, soit 400 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
 // TERMINAUX DECLARES, destination LUE a la source : l'original charge -ho.abc1, dont la ligne
@@ -14,12 +14,12 @@
 // `a'` est un terminal A PART ENTIERE, pas une variante decorative : la ligne d'alphabet de
 // -ho.abc1 le liste a cote de `a` (« a a' b b' c c' d f »), et son homomorphisme le produit
 // (« a --> a' »). La scene l'emploie deux fois dans son unique regle.
-@gate a:midi
-@gate a':midi
-@gate b:midi
-@gate h:midi
-@gate cycle1:midi
-@gate cycle2:midi
+gate a:midi
+gate a':midi
+gate b:midi
+gate h:midi
+gate cycle1:midi
+gate cycle2:midi
 
 -----
 S -> {a h a' b a' b a a a a a, cycle2 cycle1______}

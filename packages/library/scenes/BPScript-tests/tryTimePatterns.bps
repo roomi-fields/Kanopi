@@ -5,17 +5,17 @@
 // LES t1..t4 NE SONT PAS DES TERMINAUX — ce sont des MOTIFS TEMPORELS, et s'y tromper aurait
 // fabriqué un vert menteur de plus. Le fail-loud des groupes (bpscript e249886, 2026-07-29) a
 // révélé qu'ils n'étaient déclarés NULLE PART : employés uniquement dans des groupes, ils
-// passaient sans un mot. Le réflexe aurait été de les déclarer en `@var` (« ne sonne pas ») —
+// passaient sans un mot. Le réflexe aurait été de les déclarer en `var` (« ne sonne pas ») —
 // ç'aurait été FAUX : ils seraient devenus des symboles muets occupant le flux, au lieu de
 // déformer le temps.
 // LES VALEURS SONT LUES DANS L'ORIGINAL, pas choisies : `-ho.tryTimePatterns` porte un bloc
 // « TIMEPATTERNS: t1 = 1/1  t2 = 3/2  t3 = 4/3  t4 = 1/2 ». La surface BPScript existe déjà et
 // une scène voisine l'emploie (Mozartexpression.bps:20).
-@timepatterns: t1=1/1, t2=3/2, t3=4/3, t4=1/2
+timepatterns: t1=1/1, t2=3/2, t3=4/3, t4=1/2
 
-@tempo:120
+tempo:120
 -----
-@mode:random
+mode:random
 S -> {10, t1 t2, Part1 Part2}
 Part1 -> {t1 t3 t4, C4 D4 E4 F4 - A4}
 Part2 -> {t3 t1, B4 C5 _ E5}

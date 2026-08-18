@@ -9,16 +9,16 @@
 // @outputs: audio
 // @level: intermediate
 // @tags: csound, ab-corpus, subtractive, filter
-// @source: https://csound.com/docs/manual/moogladder.html
+// source: https://csound.com/docs/manual/moogladder.html
 //
 // A/B — csound — Subtractive (buzz + moogladder). Original: https://csound.com/docs/manual/moogladder.html.
 // Coller/évaluer la voix, puis comparer au rendu de l'outil original.
 // Le moteur DOIT booter sur ce backtick en entier (CSD complet).
 
-@core
-@tempo:120
+core
+tempo:120
 
-@actor v  eval.csound
+actor v  eval.csound
 
 -----
 S -> v_r

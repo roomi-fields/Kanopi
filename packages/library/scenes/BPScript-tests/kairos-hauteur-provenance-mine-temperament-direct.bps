@@ -1,11 +1,11 @@
 // @language: bpscript
 // kairos-hauteur-provenance-mine-temperament-direct.bps — sert
 // src/projection/provenance-factory-mine.test.ts (kairos, cri L26). Invoque directement un
-// tempérament personnel (@mine.tempers.douze) : un tempérament ne s'invoque JAMAIS seul, il s'invoque
+// tempérament personnel (mine.tempers.douze) : un tempérament ne s'invoque JAMAIS seul, il s'invoque
 // via un accordage — doit crier.
 
-@core
-@mine.tempers.douze
+core
+mine.tempers.douze
 
 -----
 S -> C4

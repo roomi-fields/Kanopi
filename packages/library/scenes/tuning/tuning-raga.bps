@@ -8,9 +8,9 @@
 // Tuning: Raga Mohanam (pentatonic) in sargam notation
 // sa re ga pa dha — ascending and descending
 
-@core
-@alphabet.sargam:audio
-@tempo:80
+core
+alphabet.sargam:audio
+tempo:80
 
 -----
 S -> Aroh Avroh Ending

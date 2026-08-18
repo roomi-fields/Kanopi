@@ -6,24 +6,24 @@
 // En BPscript on utilise d1 d2 d3 (les nombres nus sont des durées).
 // L'ordre des règles SUB est préservé de l'original.
 
-@core
-@maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
+core
+maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
                  // apres 20 items. Sans ce plafond l'enumeration part vers 100000 et
                  // certaines grammaires ne rendent jamais la main.
-@test_alphabets.conway
+test_alphabets.conway
 
-// --- Sous-grammaire 1 @mode:ord — initialisation ---
+// --- Sous-grammaire 1 mode:ord — initialisation ---
 
 -----
-@mode:ord
+mode:ord
 S -> d1 [steps=100]
 
 -----
 
-// --- Sous-grammaire 2 @mode:sub (scan:left) ---
+// --- Sous-grammaire 2 mode:sub (scan:left) ---
 // Ordre identique à l'original (règles courtes d'abord)
 
-@mode:sub
+mode:sub
 [steps-1] d1 -> d1 d1 (scan:left)
 [steps-1] d1 d1 -> d2 d1 (scan:left)
 [steps-1] d1 d1 d1 -> d3 d1 (scan:left)

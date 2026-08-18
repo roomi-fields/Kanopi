@@ -14,16 +14,16 @@
 // d'écriture : le sens de lecture décide de l'ordre où les figures se déploient, donc
 // de la phrase qu'on entend. Le même matériau, lu à l'endroit puis à l'envers.
 
-@core
-@alphabet.western:audio
-@tempo:96
+core
+alphabet.western:audio
+tempo:96
 
 -----
 S -> Endroit Envers Endroit
 
 -----
 
-@mode:ord
+mode:ord
 
 Endroit -> Grave Aigu
 

@@ -3,8 +3,8 @@
 // (kairos, verrou containment [446]). $MOTIF(transpose:-200c) &MOTIF(vel:80) : master transposé,
 // slave porte vel seul — preuve de ZÉRO attribution croisée entre les deux invocations du template.
 
-@core
-@alphabet.western:midi
+core
+alphabet.western:midi
 
 -----
 MOTIF -> C4
