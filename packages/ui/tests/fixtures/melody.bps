@@ -1,7 +1,8 @@
 // melody.bps — minimal BPScript program for the breadth-J2 slice.
 // BPScript compiles to a BP3 grammar; BPx derives it to 8 Western pitches
 // (C4..C5) that Kanopi plays through the same WebAudio chain as a .gr.
-@core
-@alphabet.western:audio
+core
+alphabet.western:audio
+-----
 
 S -> C4 D4 E4 G4 C5 G4 E4 C4

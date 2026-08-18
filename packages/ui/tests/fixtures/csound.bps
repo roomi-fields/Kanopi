@@ -1,5 +1,6 @@
 // csound fixture (migré de csound.kanopi) — voix-code Csound → audio.
-@actor tone  eval.csound
+actor tone  eval.csound
+-----
 
 S -> tone_r
 

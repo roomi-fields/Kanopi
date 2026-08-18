@@ -45,15 +45,23 @@ interface KanopiHatch {
   actors: { list: { name: string; active: boolean }[] };
 }
 
+// ⛔ LA FIXTURE S'ÉCRIT SANS AROBASE DEPUIS LE 2026-08-19, ET CE N'EST PAS COSMÉTIQUE.
+// L'arobase est sortie du langage (Romain, 2026-08-17) : une fixture qui la porte est refusée
+// SUR ELLE, à la première ligne, et le banc mesure alors le retrait de l'arobase au lieu du
+// retrait de `scene`. Le témoin serait vert en verrouillant tout SAUF son sujet.
+// MESURÉ, les deux formes, avant de réécrire :
+//   `@scene calm "…"` → refus sur l'arobase        (le mauvais sujet)
+//   `scene calm "…"`  → « Expected IDENT, got STRING » (le bon : `scene` n'existe plus)
 const AVEC_SCENE = `// Ce que le langage refuse désormais — conservé ICI, dans le banc qui
 // verrouille le refus, et NULLE PART dans le corpus (aucune scène de la
 // bibliothèque ne doit porter une forme supprimée).
-@scene calm "calm.bps"
+scene calm "calm.bps"
 
+-----
 S -> calm
 `;
 
-test('une scène qui déclare @scene est REFUSÉE avec sa raison nommée', async ({ page }) => {
+test('une scène qui déclare `scene` est REFUSÉE', async ({ page }) => {
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
@@ -68,13 +76,18 @@ test('une scène qui déclare @scene est REFUSÉE avec sa raison nommée', async
     await w.__kanopi.openBlocks.produceLoadedProgram(cible.id);
   }, AVEC_SCENE);
 
-  // Le voyant de santé dit ROUGE, et son infobulle NOMME la faute : c'est la garantie que
-  // l'utilisateur lit « @scene est supprimée » et pas un « ligne non reconnue » anonyme.
+  // Le voyant de santé dit ROUGE, et son infobulle porte le refus.
+  // ⚠️ IL N'EXIGE PLUS QUE LE MESSAGE NOMME LA FORME, et c'est une décision amont, pas un
+  // relâchement : Romain a tranché le 2026-08-18 que toutes les références aux mots retirés
+  // sortent des messages. Un mot retiré se refuse désormais COMME UN MOT INVENTÉ — sans dire
+  // lequel. Exiger ici un diagnostic nommé reviendrait à réclamer le contraire de la décision.
+  // Ce qui reste verrouillé, et qui est le sujet : la scène est REFUSÉE, l'utilisateur le VOIT,
+  // et rien ne se charge en silence.
   const voyant = page.locator('.compile-chip').first();
   await expect(voyant).toBeVisible({ timeout: 5_000 });
   await expect(voyant).toHaveClass(/fail/, { timeout: 5_000 });
   await expect(voyant).not.toHaveClass(/ok/);
-  await expect(voyant).toHaveAttribute('title', /@scene/);
+  await expect(voyant).toHaveAttribute('title', /.+/);
 });
 
 test('l’interface n’a plus d’afficheur de scène et la trappe n’expose plus de scènes', async ({

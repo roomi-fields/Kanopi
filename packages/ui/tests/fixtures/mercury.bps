@@ -1,5 +1,6 @@
 // mercury fixture (migré de mercury.kanopi) — voix-code Mercury → audio.
-@actor melody  eval.mercury
+actor melody  eval.mercury
+-----
 
 S -> melody_r
 

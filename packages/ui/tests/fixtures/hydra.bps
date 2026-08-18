@@ -1,5 +1,6 @@
 // hydra fixture (migré de hydra.kanopi) — voix-code Hydra → vidéo.
-@actor viz  eval.hydra
+actor viz  eval.hydra
+-----
 
 S -> viz_r
 
