@@ -333,7 +333,7 @@ type Frontend = (code: string) => {
   // token placed in the derivation maps to `{ interp, code }`. The adapter routes
   // the token → interpreter at the dispatcher-scheduled time.
   backticks?: BacktickTable;
-  // A5 états nommés : la table drapeau→{alias→int} émise pour `@var section flag: calm:1,
+  // A5 états nommés : la table drapeau→{alias→int} émise pour `var section flag: calm:1,
   // full:2`. Présente seulement quand le `.bps` déclare des états nommés ; `.gr` n'en a pas.
   flagStates?: FlagStates;
   // Per-engine sample/sound banks a `.bps` declares (`eval.strudel(bank:"dirt-samples")`
@@ -354,7 +354,7 @@ export type Libraries = Record<string, string[]>;
 // `BT<interp><id>` → foreign code + its interpreter tag (from compileBPS).
 type BacktickTable = Record<string, { interp: string; code: string }>;
 
-// `@var <name> flag: <alias>:<int>, …` → { name → { alias → int } } (from compileBPS).
+// `var <name> flag: <alias>:<int>, …` → { name → { alias → int } } (from compileBPS).
 export type FlagStates = Record<string, Record<string, number>>;
 
 // Un fichier dont TOUTES les règles sont gardées par un drapeau ne dérive rien tant qu'aucun état
@@ -580,7 +580,7 @@ const grFrontend: Frontend = (code) => {
 // Reading these directly off the AST is the single-source-of-truth migration:
 // `flagStates`, `libraries` and `actorTable` no longer come from compileBPS's
 // precomputed sidecar tables.
-// `@var` declarations (`scene.vars`, BPscript `parser.js:1567-1634`): `names` is a
+// `var` declarations (`scene.vars`, BPscript `parser.js:1567-1634`): `names` is a
 // TABLE — one line can declare several vars, each sharing the same `varType`. Only
 // `varType.kind === 'flag'` carries named states; other kinds (`signal`, `pitch`,
 // `phase`, `logic`, `in`, or a module name) are carry-only and irrelevant here.
@@ -618,7 +618,7 @@ interface SceneAstView {
 }
 
 // A5 états nommés lus de l'arbre : chaque `VarDirective` de `ast.vars` dont
-// `varType.kind === 'flag'` (`@var section flag: calm:1, full:2`) → `{ [flag]: { [name]:
+// `varType.kind === 'flag'` (`var section flag: calm:1, full:2`) → `{ [flag]: { [name]:
 // value } }`. `names` est un TABLEAU (une ligne peut déclarer plusieurs drapeaux, qui
 // partagent tous la même table d'états) ; les autres `kind` (`signal`, `pitch`, `phase`,
 // `logic`, `in`, module) sont ignorés. Same shape compileBPS's `flagStates` sidecar had.
@@ -830,7 +830,7 @@ export function interpsForScene(text: string): string[] {
  *  quand la scène n'invoque aucune table, parce qu'il n'existe AUCUNE table par défaut (décision
  *  `2026-07-27-forme-des-entrees-in-mapping-adresse-nue.md`). */
 export interface DeclaredInput {
-  /** Le RÔLE, tel que la scène le nomme (`@var pedale …`) — jamais un nom d'appareil. */
+  /** Le RÔLE, tel que la scène le nomme (`var pedale …`) — jamais un nom d'appareil. */
   readonly name: string;
   /** Le canal d'entrée déclaré : `midi` · `keyboard` · `osc`. Liste FERMÉE tenue en amont. */
   readonly transport: string;
@@ -1143,7 +1143,7 @@ const bpsFrontend: Frontend = (code) => {
   // routes each BT terminal to its interpreter.
   const backticks = backticksFromAst(c.ast);
   // A5 named scenes: read the flag→{alias→int} table from the AST's `ast.vars`
-  // `VarDirective` nodes with `varType.kind === 'flag'` (`@var section flag: calm:1,
+  // `VarDirective` nodes with `varType.kind === 'flag'` (`var section flag: calm:1,
   // full:2`) so the UI can offer one selection button per named state. Re-evaluating
   // with `flags: { section: <int> }` makes the matching guarded rule derive (see
   // `evaluate`).

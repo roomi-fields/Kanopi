@@ -152,7 +152,7 @@ export function installKanopiApi(): void {
       structure() {
         return productionFeed.structure();
       },
-      /** LES RÔLES D'ENTRÉE que la scène active DÉCLARE (`@var <rôle> in.<canal>`), lus sur
+      /** LES RÔLES D'ENTRÉE que la scène active DÉCLARE (`var <rôle> in.<canal>`), lus sur
        *  l'AST amont — la même lecture que le panneau des entrées et que le badge de focus, jamais
        *  une seconde analyse du texte. Liste vide si la scène n'en déclare aucun ou ne compile pas. */
       declaredInputs() {

@@ -107,6 +107,7 @@ test('Alt+chiffre n’a pas disparu : il arme le Nᵉ ACTEUR', async ({ page }) 
   const deuxActeurs = `actor un    eval.strudel
 actor deux  eval.strudel
 
+-----
 S -> un_r deux_r
 
 un_r   -> un.\`note("c2*4").s("sawtooth").gain(0.4)\`

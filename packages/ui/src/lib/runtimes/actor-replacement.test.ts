@@ -49,6 +49,7 @@ beforeEach(() => {
 
 const ORCH = `actor groove eval.strudel
 actor viz eval.hydra
+-----
 S -> { groove_r, viz_r }
 groove_r -> groove.\`stack(note("c2*4"))\`
 viz_r -> viz.\`osc(60).out()\`
@@ -57,19 +58,20 @@ viz_r -> viz.\`osc(60).out()\`
 // A plain non-orchestrated program (no actor) — the kind that must REPLACE the
 // previous orchestrator's voices with nothing.
 //
-// LES TERMINAUX SONT DÉCLARÉS, et le choix de `@var` n'est pas indifférent : depuis la
+// LES TERMINAUX SONT DÉCLARÉS, et le choix de `var` n'est pas indifférent : depuis la
 // décision `hub/decisions/2026-07-29-les-formes-declaratives-de-bpscript.md` §5, un terminal ni
 // déclaré ni présent dans un alphabet en portée est REFUSÉ — le repli implicite sur lequel
 // cette fixture s'appuyait (`c d e f` en lettres nues) n'existe plus.
-// POURQUOI `@var` ET NON un alphabet de notes : ce banc mesure la liste d'acteurs publiée, pas
-// la musique. `@var` déclare un terminal qui « ne sonne pas » (§5) — la scène redevient
+// POURQUOI `var` ET NON un alphabet de notes : ce banc mesure la liste d'acteurs publiée, pas
+// la musique. `var` déclare un terminal qui « ne sonne pas » (§5) — la scène redevient
 // analysable sans rien envoyer à la synthèse. L'essai avec de vraies notes le prouve a
 // contrario : il fait entrer le banc dans le runtime audio, où le faux nœud de gain n'a pas de
 // rampe et casse pour une raison qui n'a aucun rapport avec ce qu'on veut prouver.
-const PLAIN = `@var c
-@var d
-@var e
-@var f
+const PLAIN = `var c
+var d
+var e
+var f
+-----
 S -> tone
 tone -> c d e f
 `;

@@ -63,7 +63,7 @@ describe('assetsForScene — declared strudel banks + used gm_* instruments (for
       "plus aucune banque strudel distante au catalogue : ce banc n'a plus de sujet, le retirer ou le redéfinir"
     ).toBeDefined();
 
-    const code = `core\ntempo:120\n\nactor v  eval.strudel(bank:"${distante!.id}")\n\nS -> v\n\nv -> \`s("bd hh sd")\`:4`;
+    const code = `core\ntempo:120\n\nactor v  eval.strudel(bank:"${distante!.id}")\n\n-----\nS -> v\n\nv -> \`s("bd hh sd")\`:4`;
     const assets = assetsForScene(code);
     expect(assets.strudel?.banks ?? []).not.toContain(distante!.id);
     expect(assets).toEqual({}); // pas de banque hébergée ni d'instrument GM → rien à préfetcher

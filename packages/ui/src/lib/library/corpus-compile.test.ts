@@ -214,7 +214,7 @@ const ROUGES_DECLAREES: Array<{
     motif: /SUB Insert: wildcard substitution misses/,
     cause: 'bug-moteur-route',
     attend:
-      "un correctif du moteur de dérivation sur les règles SUB à jokers. MESURÉ que ce n'est PAS ma déclaration de terminaux : les trois variantes qui compilent (4 en @gate, seul `d` en @gate, seul `d` en @var) jettent TOUTES la même erreur. Ma migration du 2026-07-29 n'a pas causé ce défaut — elle l'a rendu ATTEIGNABLE (avant, la scène ne compilait pas, la dérivation n'était jamais lancée). Routé à l'architecte."
+      "un correctif du moteur de dérivation sur les règles SUB à jokers. MESURÉ que ce n'est PAS ma déclaration de terminaux : les trois variantes qui compilent (4 en @gate, seul `d` en @gate, seul `d` en var) jettent TOUTES la même erreur. Ma migration du 2026-07-29 n'a pas causé ce défaut — elle l'a rendu ATTEIGNABLE (avant, la scène ne compilait pas, la dérivation n'était jamais lancée). Routé à l'architecte."
   },
   {
     fichier: 'BPScript-tests/koto2.bps',

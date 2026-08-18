@@ -40,23 +40,23 @@ describe('resolveStrudelLibrary — consomme guestLibraries (SOURCE DE VÉRITÉ,
 
 describe('resourceResolutionErrors — signal 2 du voyant de santé (décision 2026-07-15)', () => {
   it('une banque strudel inconnue est rapportée', () => {
-    const code = `core\nactor voice  eval.strudel(bank:"zzz-nonexistent")\n\nS -> a\na -> voice.\`note("c2")\``;
+    const code = `core\nactor voice  eval.strudel(bank:"zzz-nonexistent")\n\n-----\nS -> a\na -> voice.\`note("c2")\``;
     const errs = resourceResolutionErrors(code);
     expect(errs).toEqual([{ message: 'banque inconnue: zzz-nonexistent' }]);
   });
 
   it('une banque strudel connue (dirt-samples) ne déclenche aucune erreur', () => {
-    const code = `core\nactor voice  eval.strudel(bank:"dirt-samples")\n\nS -> a\na -> voice.\`note("c2")\``;
+    const code = `core\nactor voice  eval.strudel(bank:"dirt-samples")\n\n-----\nS -> a\na -> voice.\`note("c2")\``;
     expect(resourceResolutionErrors(code)).toEqual([]);
   });
 
   it('aucune banque déclarée → aucune erreur', () => {
-    const code = `core\nalphabet.western:audio\nS -> Bass\nBass -> C2 (wave:sawtooth)`;
+    const code = `core\nalphabet.western:audio\n-----\nS -> Bass\nBass -> C2 (wave:sawtooth)`;
     expect(resourceResolutionErrors(code)).toEqual([]);
   });
 
   it('un engine non-strudel (pas de chargeur) ne compte jamais comme une erreur', () => {
-    const code = `core\nactor voice  eval.csound(bank:"some-bank")\n\nS -> a\na -> voice.\`note("c2")\``;
+    const code = `core\nactor voice  eval.csound(bank:"some-bank")\n\n-----\nS -> a\na -> voice.\`note("c2")\``;
     expect(resourceResolutionErrors(code)).toEqual([]);
   });
 

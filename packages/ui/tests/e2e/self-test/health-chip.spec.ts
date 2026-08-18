@@ -59,6 +59,7 @@ test('an unresolved eval.strudel(bank:…) bank turns the compile chip RED (sign
   // a bank absent from the guestLibraries catalog — the ONLY thing wrong with it.
   const broken = `actor beat  eval.strudel(bank:"zzz-nonexistent")
 
+-----
 S -> beat_r
 
 beat_r -> beat.\`note("c2*4").s("sawtooth").gain(0.5)\`

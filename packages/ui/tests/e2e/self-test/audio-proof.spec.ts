@@ -226,6 +226,7 @@ tempo:120
 
 actor v  eval.strudel
 
+-----
 S -> v_r
 
 v_r -> v.\`sound("nawak_pas_un_son")\`:4
@@ -292,6 +293,7 @@ tempo:120
 
 actor v  eval.strudel
 
+-----
 S -> v_r
 
 v_r -> v.\`nonexistentStrudelFn("x")\`:4

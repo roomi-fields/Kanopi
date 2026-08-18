@@ -62,6 +62,7 @@ beforeEach(() => {
 
 const SRC = `actor groove  eval.strudel
 actor viz  eval.hydra
+-----
 S -> { groove_r, viz_r }
 groove_r -> groove.\`stack(note("c2*4"))\`
 viz_r -> viz.\`osc(60).out()\`
@@ -75,6 +76,7 @@ const BUNDLED = `// 02 — Strudel + Hydra synchronisés sur le transport Kanopi
 actor groove  eval.strudel
 actor viz  eval.hydra
 
+-----
 S -> { groove_r, viz_r }
 
 groove_r -> groove.\`stack(

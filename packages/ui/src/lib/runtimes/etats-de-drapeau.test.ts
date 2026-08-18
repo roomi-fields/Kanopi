@@ -49,16 +49,16 @@ describe('lecture des états nommés d’un drapeau (ast.vars, pas ast.directive
     expect(flagStates.section, 'drapeau `section` absent de la table lue').toBeDefined();
 
     // Assertions nommées sur les trois états déclarés en tête de fichier
-    // (`@var section flag: intro:1, drop:2, break:3`), pas un simple décompte.
+    // (`var section flag: intro:1, drop:2, break:3`), pas un simple décompte.
     expect(flagStates.section.intro, 'état `intro` absent ou mal résolu').toBe(1);
     expect(flagStates.section.drop, 'état `drop` absent ou mal résolu').toBe(2);
     expect(flagStates.section.break, 'état `break` absent ou mal résolu').toBe(3);
   });
 
   it('un `VarDirective` d’un AUTRE type (`signal`) n’apparaît PAS dans la table — le filtre filtre', () => {
-    // `@var lfo signal` : même famille de nœud (`VarDirective`) que le drapeau, type différent.
+    // `var lfo signal` : même famille de nœud (`VarDirective`) que le drapeau, type différent.
     // Si le filtre `varType.kind === 'flag'` ne filtrait rien, ce nom polluerait la table.
-    const source = `actor drums eval.strudel\n@var lfo signal\n@var section flag: intro:1, drop:2\n[section==intro] S -> drums_r\ndrums_r -> drums.\`s("bd")\`\n`;
+    const source = `actor drums eval.strudel\nvar lfo signal\nvar section flag: intro:1, drop:2\n-----\n[section==intro] S -> drums_r\ndrums_r -> drums.\`s("bd")\`\n`;
     const { ast, errors } = compileToBPxAST(source) as {
       ast: unknown;
       errors: { message: string }[];
