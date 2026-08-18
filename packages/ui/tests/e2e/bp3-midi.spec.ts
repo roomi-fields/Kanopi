@@ -9,7 +9,7 @@ import { evalBlockAt, expectNoConsoleErrors, setupFakeMidi } from '../helpers';
 // copy) — to the Web MIDI output port.
 //
 // Chain:
-//   .bps (@actor … out.midi) → derive() → per-actor Kronos events
+//   .bps (actor … out.midi) → derive() → per-actor Kronos events
 //        → runtime-midi MidiTransport.send() → output.send([0x90|ch, note, vel], ts)
 //
 // ⚠️ INSTABLE CONNU, APPARU LE 2026-07-28 — et sa FORME dit où il ne faut PAS chercher.
@@ -30,9 +30,10 @@ const EXPECTED_NOTES = [60, 62, 64, 67, 72];
 // One western actor routed EXPLICITLY to MIDI. Each terminal is actor-qualified so
 // every event carries `payload.actor: 'melody'`, which the per-actor router sends to
 // the MIDI transport.
-const MIDI_SCENE = `@core
-@actor melody  @alphabet.western  out.midi
+const MIDI_SCENE = `core
+actor melody  alphabet.western  out.midi
 
+-----
 S -> melody.C4 melody.D4 melody.E4 melody.G4 melody.C5 melody.G4 melody.E4 melody.C4
 `;
 
@@ -148,11 +149,12 @@ test('an EXPLICIT out.midi actor routes BPx tokens to runtime-midi (NoteOn bytes
 // The override note is PREFIXED (`lead.E4`), not nude — required with two western actors (décision
 // Romain 2026-07-03, note-nue-ch-implique-sortie-midi.md): a nude note's actor is ambiguous, so its
 // output isn't graven and it drops from MIDI; the prefix names the actor and Kairos graves ch:5.
-const TWO_CHANNEL_SCENE = `@core
-@tempo:120
-@actor lead  @alphabet.western  out.midi(ch:1)
-@actor bass  @alphabet.western  out.midi(ch:2)
+const TWO_CHANNEL_SCENE = `core
+tempo:120
+actor lead  alphabet.western  out.midi(ch:1)
+actor bass  alphabet.western  out.midi(ch:2)
 
+-----
 S -> Lead Low
 
 Lead -> lead.C4 lead.E4(ch:5) lead.G4 lead.C4

@@ -32,17 +32,19 @@ import { expectNoConsoleErrors } from '../../helpers';
 //   `.activity-bar button[title="Hardware"]` — le bouton porte le nom accessible « 2 » (badge),
 //   d'où le sélecteur par titre · `.hw .role` — HardwareView.svelte.
 
-const SANS_CLAVIER = `@core
-@alphabet.western:audio
+const SANS_CLAVIER = `core
+alphabet.western:audio
 
+-----
 S -> C4 D4 E4 G4
 `;
 
-const AVEC_CLAVIER = `@core
-@alphabet.western:audio
+const AVEC_CLAVIER = `core
+alphabet.western:audio
 @var touches in.keyboard
 @var pedale in.midi
 
+-----
 S -> C4 D4 E4 G4
 `;
 

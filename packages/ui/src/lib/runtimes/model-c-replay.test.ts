@@ -90,8 +90,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// A plain mono scene (no @actor): four notes, loops by default.
-const SCENE = `@core
+// A plain mono scene (no actor): four notes, loops by default.
+const SCENE = `core
+-----
 S -> C4 E4 G4 C5
 `;
 

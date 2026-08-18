@@ -13,9 +13,9 @@ import {
 // authority `describeVocabulary()` (the same aggregation its compile guard uses),
 // NOT a static catalog. As user libraries register new controls/values/catalog
 // entries, the editor sees them with zero code change. It drives:
-//   - autocompletion: directives (`@…`), control names + their enum VALUES
-//     (`wave:` → sine/triangle/…), catalog axes after `@alphabet.`/`@tuning.`/
-//     `@octaves.`, and the CV / control-point union inside `( … )`;
+//   - autocompletion: invocations, control names + their enum VALUES
+//     (`wave:` → sine/triangle/…), catalog axes after `alphabet.`/`tuning.`/
+//     `octaves.`, and the CV / control-point union inside `( … )`;
 //   - a linter that underlines transpiler errors (unchanged, transpiler-driven);
 //   - hover tooltips (metadata + description) for directives, catalog entries,
 //     controls, values, functions, address keys and modulation inputs.
@@ -58,10 +58,10 @@ function valueInfo(v: VocabValue): string | undefined {
   return parts.length ? parts.join(' · ') : undefined;
 }
 
-// Directive completions: the reserved words, offered `@`-prefixed (the form in
-// which they appear in a scene: `@mode`, `@alphabet.western`, …).
+// Invocation completions: the reserved words, offered BARE — the form in which
+// they appear in a scene (`mode`, `alphabet.western`, …).
 const DIRECTIVE_COMPLETIONS: Completion[] = vocab.keywords.map((name) => ({
-  label: '@' + name,
+  label: name,
   type: 'keyword',
   detail: 'directive'
 }));
@@ -122,7 +122,7 @@ const CONTROL_VALUE_MAP: Record<string, Completion[]> = (() => {
   return map;
 })();
 
-// Enum values per DIRECTIVE (`@mode:` → ord/random/…, `@scan:` → left/right/rnd),
+// Enum values per DIRECTIVE (`mode:` → ord/random/…, `scan:` → left/right/rnd),
 // from the authority's `directiveValues`. Each value carries its own description.
 const DIRECTIVE_VALUE_MAP: Record<string, Completion[]> = (() => {
   const map: Record<string, Completion[]> = {};
@@ -137,7 +137,7 @@ const DIRECTIVE_VALUE_MAP: Record<string, Completion[]> = (() => {
   return map;
 })();
 
-// Catalog entries per axis (`@alphabet.` → western/sargam/…, `@tuning.` → …).
+// Catalog entries per axis (`alphabet.` → western/sargam/…, `tuning.` → …).
 const COMPONENT_MAP: Record<string, Completion[]> = (() => {
   const map: Record<string, Completion[]> = {};
   for (const [axis, entries] of Object.entries(vocab.components)) {
@@ -156,25 +156,29 @@ function insideParen(context: CompletionContext): boolean {
 
 /**
  * CM6 completion source for `.bps`. Modes, in priority order:
- *  - after `@axis.` (`@alphabet.`, `@tuning.`, `@octaves.`) → the axis' catalog;
- *  - after `@directive:` → the directive's enum VALUES (if the authority has any);
+ *  - after `axis.` (`alphabet.`, `tuning.`, `octaves.`) → the axis' catalog;
+ *  - after `directive:` → the directive's enum VALUES (if the authority has any);
  *  - after `control:` (e.g. `wave:tr`) → the control's enum VALUES;
  *  - inside `( … )` → controls ∪ values ∪ functions ∪ addressKeys ∪ modInputs;
  *  - otherwise → directives + control names.
  * Fuzzy-filtered by the word being typed. Attached via `languageData`.
  */
 export function bpscriptCompletion(context: CompletionContext): CompletionResult | null {
-  // Catalog axis: `@alphabet.we` → western/… (the entry, not the axis name).
-  const axisCtx = context.matchBefore(/@(\w+)\.(\w*)/);
+  // Catalog axis: `alphabet.we` → western/… (the entry, not the axis name).
+  // ⛔ SANS PRÉFIXE DEPUIS QUE L'AROBASE EST SORTIE DU LANGAGE (décision Romain 2026-08-17). Ce qui
+  // borne la branche n'est donc plus la graphie mais le CATALOGUE : un mot qui n'est pas un axe
+  // connu rend `COMPONENT_MAP[m[1]]` indéfini et retombe sur la branche suivante. `mod.adsr`,
+  // `out.midi`, `eval.strudel` traversent ici sans rien proposer, et c'est le comportement voulu.
+  const axisCtx = context.matchBefore(/(\w+)\.(\w*)/);
   if (axisCtx) {
-    const m = /^@(\w+)\.(\w*)$/.exec(axisCtx.text);
+    const m = /^(\w+)\.(\w*)$/.exec(axisCtx.text);
     const options = m && COMPONENT_MAP[m[1]];
     if (options) return { from: axisCtx.to - m![2].length, options, validFor: /^\w*$/ };
   }
-  // Directive value: `@mode:ra` → the directive's allowed values (from `directiveValues`).
-  const dirVal = context.matchBefore(/@(\w+):(\w*)/);
+  // Directive value: `mode:ra` → the directive's allowed values (from `directiveValues`).
+  const dirVal = context.matchBefore(/(\w+):(\w*)/);
   if (dirVal) {
-    const m = /^@(\w+):(\w*)$/.exec(dirVal.text);
+    const m = /^(\w+):(\w*)$/.exec(dirVal.text);
     const options = m && DIRECTIVE_VALUE_MAP[m[1]];
     if (options) return { from: dirVal.to - m![2].length, options, validFor: /^\w*$/ };
   }
@@ -192,9 +196,9 @@ export function bpscriptCompletion(context: CompletionContext): CompletionResult
       return { from: word.from, options: PAREN_COMPLETIONS, validFor: /^\w*$/ };
     }
   }
-  const word = context.matchBefore(/@?[\w]*/);
+  const word = context.matchBefore(/[\w]*/);
   if (!word || (word.from === word.to && !context.explicit)) return null;
-  return { from: word.from, options: DEFAULT_COMPLETIONS, validFor: /^@?\w*$/ };
+  return { from: word.from, options: DEFAULT_COMPLETIONS, validFor: /^\w*$/ };
 }
 
 // ---- Linter: transpiler diagnostics (underlines errors) --------------------
@@ -239,7 +243,7 @@ export const bpscriptLinter = linter(
 );
 
 // ---- Hover tooltips (metadata + description from the authority) -------------
-// The first regex match that spans the hovered column wins: an `@directive`
+// The first regex match that spans the hovered column wins: an invocation
 // (with optional `.catalogEntry`) first, then any bare vocabulary word (control,
 // value, function, address key, modulation input) resolved against the authority.
 function findTokenAt(lineText: string, col: number, re: RegExp): RegExpExecArray | null {
@@ -281,19 +285,21 @@ function vocabWordHover(word: string): HoverHit | null {
 }
 
 function hoverHitAt(lineText: string, col: number): HoverHit | null {
-  // Directive: @axis(.entry)? or @directive
-  const dir = findTokenAt(lineText, col, /@(\w+)(?:\.(\w+))?/g);
+  // Invocation: axis(.entry)? or a bare reserved word — no prefix since the arobase left the
+  // language (décision Romain 2026-08-17). The catalog and the reserved-word list are what
+  // qualify the token; a word in neither falls through to the bare-vocabulary lookup below.
+  const dir = findTokenAt(lineText, col, /(\w+)(?:\.(\w+))?/g);
   if (dir) {
     const name = dir[1];
     const sub = dir[2];
     const axis = vocab.components[name];
     if (axis) {
       if (sub && axis.includes(sub)) {
-        return { title: `@${name}.${sub}`, desc: `${name} catalog entry` };
+        return { title: `${name}.${sub}`, desc: `${name} catalog entry` };
       }
-      return { title: '@' + name, desc: `Catalog axis (${axis.length} entries)` };
+      return { title: name, desc: `Catalog axis (${axis.length} entries)` };
     }
-    if (vocab.keywords.includes(name)) return { title: '@' + name, desc: 'Directive' };
+    if (vocab.keywords.includes(name)) return { title: name, desc: 'Invocation' };
   }
   // Syntax operators: -> <- <> (from the authority's `syntaxWords`).
   const op = findTokenAt(lineText, col, /(->|<-|<>)/g);

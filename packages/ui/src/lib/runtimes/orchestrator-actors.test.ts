@@ -60,8 +60,8 @@ beforeEach(() => {
     0;
 });
 
-const SRC = `@actor groove  eval.strudel
-@actor viz  eval.hydra
+const SRC = `actor groove  eval.strudel
+actor viz  eval.hydra
 S -> { groove_r, viz_r }
 groove_r -> groove.\`stack(note("c2*4"))\`
 viz_r -> viz.\`osc(60).out()\`
@@ -72,8 +72,8 @@ viz_r -> viz.\`osc(60).out()\`
 // arm/disarm must work on. Kept inline (multi-line backticks + comments) so the
 // mapping is exercised against the REAL rule shape, not a simplified fixture.
 const BUNDLED = `// 02 — Strudel + Hydra synchronisés sur le transport Kanopi.
-@actor groove  eval.strudel
-@actor viz  eval.hydra
+actor groove  eval.strudel
+actor viz  eval.hydra
 
 S -> { groove_r, viz_r }
 
@@ -124,11 +124,12 @@ describe('orchestrator actor publication', () => {
 // `navigator.requestMIDIAccess`, so `createMidiRuntime(...).init()` resolves to
 // `ready:false, reason:'no-webmidi'` for real — the actual "MIDI unavailable"
 // condition, no mocking of runtime-midi needed.
-const MIDI_PLUS_WEBAUDIO = `@core
+const MIDI_PLUS_WEBAUDIO = `core
 
-@actor melody  @alphabet.western  out.midi(ch:1)
-@actor bass    @alphabet.western  out.audio
+actor melody  alphabet.western  out.midi(ch:1)
+actor bass    alphabet.western  out.audio
 
+-----
 S -> {Mel, Low}
 
 Mel -> melody.C4 melody.E4 melody.G4 melody.C5 melody.B4 melody.G4 melody.E4 melody.C4

@@ -99,13 +99,13 @@ describe('extractBlocks — unknown runtime', () => {
 
 describe('whole-file programs — qualifyBlock', () => {
   it('marks a BPScript program as a whole-file block', () => {
-    const b = extractBlocks('@core\nS -> a b c', 'bpscript');
+    const b = extractBlocks('core\n-----\nS -> a b c', 'bpscript');
     expect(b).toHaveLength(1);
     expect(b[0].wholeFile).toBe(true);
   });
 
   it('qualifies a whole-file program by file name alone (no `.bpscript` suffix)', () => {
-    const b = extractBlocks('@core\nS -> a b c', 'bpscript');
+    const b = extractBlocks('core\n-----\nS -> a b c', 'bpscript');
     // The bug: `arabic.bps` showed a synthetic actor "arabic.bpscript".
     expect(qualifyBlock('arabic.bps', b[0])).toBe('arabic');
   });

@@ -62,29 +62,11 @@ const SCENES: Scene[] = readdirSync(DOSSIER)
 // Ce qui a coupé, à chaque fois, est un point de contrôle où la chose mesurée devait être ABSENTE
 // — un scénario témoin qui devait sonner et se taisait, une scène jouée seule au lieu d'en file.
 
-// LE ROUGE DÉCLARÉ — une seule scène, et c'est LA MÊME que `corpus-compile.test.ts` déclare, avec
-// LA MÊME cause et LA MÊME condition de levée. Une scène qui ne DÉRIVE pas ne peut pas SONNER :
-// l'inscrire ici n'excuse rien, elle constate la conséquence de ce qui est déjà inscrit là-bas.
-//
-// CAUSE : chantier des gabarits, fenêtre annoncée AVANT d'être ouverte. bpscript a frappé le
-// premier (il émet la ligne verbatim), BPx a porté une première marche — l'erreur de type a
-// disparu — et il en reste une seconde (`compileTemplates:`).
-// CONDITION DE LEVÉE : la suite de ce chantier chez BPx. Le jour où elle sonne, ce banc ROUGIT en
-// réclamant le retrait de cette ligne, comme les trois inscriptions qui se sont levées seules le
-// 2026-08-10.
-//
-// ⛔ ET ELLE PORTE MAINTENANT UNE EMPREINTE DE CE QU'ELLE MESURE — c'est le point que l'architecte
-// a tranché ([1288]) et que je n'avais pas vu seul. Un silence n'a PAS de message à comparer :
-// tant que cette ligne n'exigeait QUE l'absence de son, un mutisme venu d'une AUTRE cause y
-// passait sous le vert. Elle ne tenait donc qu'un seul des deux sens du registre.
-// LE CANAL DE L'EMPREINTE, et il n'est pas inventé : le voyant de santé porte déjà la cause en
-// clair dans son infobulle (`health-chip.spec.ts:74` fait exactement cette lecture). On lit donc
-// CE QUE L'UTILISATEUR VOIT — pas un store, pas une seconde analyse du texte.
-// Une scène muette pour une autre raison affiche une autre cause : elle cesse de passer.
-const MUETTE_DECLAREE = 'catalogue-de-gabarits-les-rangs.bps';
-/** L'empreinte : la cause EXACTE de son mutisme, celle que `corpus-compile.test.ts` déclare pour
- *  la même scène. Un mutisme qui n'affiche pas celle-là n'est pas celui qui est excusé ici. */
-const EMPREINTE_MUETTE = /compileTemplates/;
+// AUCUN ROUGE DÉCLARÉ ICI — toute scène de ce dossier doit SONNER, sans exception.
+// La seule qui portait une exemption, `catalogue-de-gabarits-les-rangs.bps`, ne tenait que par la
+// section `template`, sortie du langage le 2026-08-16 : elle est supprimée, et son exemption avec
+// elle. La branche d'attente inversée qui la gardait part dans le même mouvement — une voie
+// d'exemption sans sujet finit par excuser autre chose.
 
 test('le dossier des scènes d’exemple n’est pas vide', () => {
   expect(SCENES.length).toBeGreaterThan(0);
@@ -94,9 +76,7 @@ for (const { fichier, source, sorties } of SCENES) {
   const attendAudio = sorties.includes('audio');
   const attendMidi = sorties.includes('midi');
 
-  const declaree = fichier === MUETTE_DECLAREE;
-
-  test(`${fichier} ${declaree ? '— rouge déclaré : ne dérive pas (chantier gabarits)' : `produit (${sorties.join(' + ')})`}`, async ({
+  test(`${fichier} produit (${sorties.join(' + ')})`, async ({
     page
   }) => {
     const audio = attendAudio ? await setupAudioCapture(page) : null;
@@ -157,26 +137,9 @@ for (const { fichier, source, sorties } of SCENES) {
       //
       // Le sondage rend la mesure indépendante de la charge sans l'affaiblir : il s'arrête au
       // premier son, et une scène réellement muette échoue quand même, au bout du compte.
-      if (declaree) {
-        // SENS 2 — attente INVERSÉE : elle ne dérive pas, donc elle ne peut pas sonner. Le jour
-        // où elle sonne, ce banc rougit et réclame le retrait de sa ligne.
-        const rms = await audio.getMaxRMS(6000);
-        expect(
-          rms,
-          `${fichier} SONNE maintenant — le chantier des gabarits est fini : retirer MUETTE_DECLAREE`
-        ).toBeLessThanOrEqual(0.001);
-        // SENS 1 — L'EMPREINTE : et elle est muette POUR SA RAISON. Sans cette lecture, un
-        // mutisme d'une autre cause serait excusé par cette même ligne, en silence.
-        const cause = await page.locator('.compile-chip').first().getAttribute('title');
-        expect(
-          cause ?? '',
-          `${fichier} est muette, mais pas sur « ${EMPREINTE_MUETTE} » — c'est un AUTRE défaut, non couvert : ${cause}`
-        ).toMatch(EMPREINTE_MUETTE);
-      } else {
-        await expect
-          .poll(async () => audio.getMaxRMS(1500), { timeout: 15_000 })
-          .toBeGreaterThan(0.001);
-      }
+      await expect
+        .poll(async () => audio.getMaxRMS(1500), { timeout: 15_000 })
+        .toBeGreaterThan(0.001);
     }
 
     if (midi) {

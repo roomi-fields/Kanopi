@@ -13,12 +13,12 @@ const tuningsJson = LIBS.tunings;
 const temperamentsJson = LIBS.temperaments;
 const scalesJson = LIBS.scales;
 const octavesJson = LIBS.octaves;
-// BPScript language modules (`@core` + the `mod` CV lib): real library files with
+// BPScript language modules (`core` + the `mod` CV lib): real library files with
 // browsable content (core symbols/settings, CV objects + their declarative curves).
 // Imported AS-IS so opening one shows it.
 //
 // ⚠️ `controls` A DISPARU DE LA LISTE LE 2026-08-10, ET SON FICHIER AVEC : bpscript a fusionné
-// `@controls` dans `@core` et supprimé `lib/controls.json` (leur 647df04, ordre de Romain). Ce
+// `controls` dans `core` et supprimé `lib/controls.json` (leur 647df04, ordre de Romain). Ce
 // n'est pas une entrée retirée de l'affichage — c'est un module qui n'existe plus dans le langage.
 // L'exposer encore montrerait une forme que le langage a retirée, et c'est précisément ce que le
 // backlog KAN-42 reproche à 203 scènes.
@@ -166,7 +166,7 @@ export const RESOURCE_GROUPS: ResourceGroup[] = [
 // RESOURCE_GROUPS above splits each catalog file into one card per NAMED entry
 // inside it (`western`, `sargam`… are entries INSIDE alphabets.json) — kept
 // only because NowView's "Libraries used" panel must open the ONE entry a
-// scene actually references (`@alphabet.western` → just that sub-object).
+// scene actually references (`alphabet.western` → just that sub-object).
 //
 // Factory's "Libraries" browser is a different concern: it lists the real
 // FILES/entries a language ships. Previous cut grouped by "who ships the file"
@@ -261,9 +261,9 @@ function visualFile(v: VisualItem): LibraryFile {
 
 /** One card per REAL library file/entry (Factory › Libraries browser), grouped
  *  by LANGUAGE. `core.json` is EXCLUDED (architecte [726]): it is the LANGUAGE
- *  SCHEMA (@core: base defaults + reserved vocabulary), NOT a browsable
+ *  SCHEMA (core: base defaults + reserved vocabulary), NOT a browsable
  *  library. It stays in RESOURCE_GROUPS below for NowView (a scene that
- *  references @core still surfaces it as "used"). */
+ *  references core still surfaces it as "used"). */
 export const RESOURCE_FILES: LibraryFile[] = [
   // bpscript — language pitch/function catalogs.
   libraryFile('alphabets', alphabetsJson, 'bpscript'),

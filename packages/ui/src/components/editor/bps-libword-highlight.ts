@@ -80,10 +80,10 @@ function decorate(view: EditorView): DecorationSet {
         if (node.node.firstChild) return undefined; // only leaf tokens carry text
         const text = view.state.doc.sliceString(node.from, node.to);
         if (node.name === 'Directive') {
-          // The flat tokenizer lumps `@axis.entry` into ONE keyword token. Colour
+          // The flat tokenizer lumps `axis.entry` into ONE keyword token. Colour
           // ONLY the catalog ENTRY (after the first `.`), so the directive head
-          // stays `keyword` — and a head that doubles as a control (`@sound.`) is
-          // not recoloured. No dot ⇒ nothing to mark (`@tempo`, `@mode:random`).
+          // stays `keyword` — and a head that doubles as a control (`sound.`) is
+          // not recoloured. No dot ⇒ nothing to mark (`tempo`, `mode:random`).
           const dot = text.indexOf('.');
           if (dot >= 0)
             lastFrom = markRuns(text.slice(dot + 1), node.from + dot + 1, builder, lastFrom);

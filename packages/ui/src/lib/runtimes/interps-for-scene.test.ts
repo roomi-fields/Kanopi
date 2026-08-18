@@ -8,7 +8,7 @@ import { interpsForScene } from './bpx-adapter';
 describe('interpsForScene — engines a scene declares (for on-open preload)', () => {
   it('detects a single strudel voice', () => {
     const code =
-      '@core\n@tempo:120\n\n@actor v  eval.strudel\n\nS -> v\n\nv -> `sound("bd hh sd oh")`';
+      'core\ntempo:120\n\nactor v  eval.strudel\n\n-----\nS -> v\n\nv -> `sound("bd hh sd oh")`';
     const interps = interpsForScene(code);
     expect(interps.length).toBeGreaterThan(0);
     expect(interps.some((i) => /strudel/.test(i))).toBe(true);
@@ -16,7 +16,7 @@ describe('interpsForScene — engines a scene declares (for on-open preload)', (
 
   it('detects BOTH engines of a strudel + hydra scene', () => {
     const code =
-      '@actor groove  eval.strudel\n@actor viz  eval.hydra\n\nS -> { groove, viz }\n\ngroove -> `sound("bd")`\n\nviz -> `osc(60).out()`';
+      'actor groove  eval.strudel\nactor viz  eval.hydra\n\n-----\nS -> { groove, viz }\n\ngroove -> `sound("bd")`\n\nviz -> `osc(60).out()`';
     const interps = interpsForScene(code);
     expect(interps.some((i) => /strudel/.test(i))).toBe(true);
     expect(interps.some((i) => /hydra/.test(i))).toBe(true);
@@ -24,7 +24,7 @@ describe('interpsForScene — engines a scene declares (for on-open preload)', (
 
   it('returns empty for a pure-note scene with no code voice', () => {
     const code =
-      '@core\n@alphabet.western:audio\n@tempo:120\nS -> Bass\nBass -> C2 C2 (wave:sawtooth)';
+      'core\nalphabet.western:audio\ntempo:120\n-----\nS -> Bass\nBass -> C2 C2 (wave:sawtooth)';
     expect(interpsForScene(code)).toEqual([]);
   });
 

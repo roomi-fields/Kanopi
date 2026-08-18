@@ -1,5 +1,5 @@
 // Referenced libraries — the resource libraries the ACTIVE program pulls in via
-// its `@` directives. Surfaced read-only in the Files panel (FilesView), updated
+// its invocations. Surfaced read-only in the Files panel (FilesView), updated
 // as the active file changes. NOT the demo catalogue.
 //
 // Source: bpscript / bp3 (`.bps`, `.gr`) — compileToBPxAST(contents) emits
@@ -28,13 +28,13 @@ interface BpsDirective {
   value: unknown;
 }
 
-// Directive `@name` → how to read its referenced resource name + display label.
+// Invocation `name` → how to read its referenced resource name + display label.
 // Universal dot canon (`.` names a component, `:` assigns a value; bpscript
-// f35d069 rejects `:` on every component axis): `@alphabet.<x>` / `@tuning.<x>` /
-// `@scale.<x>` / `@octaves.<x>` / `@sound.<x>` / `out.<device>` put <x> in
+// f35d069 rejects `:` on every component axis): `alphabet.<x>` / `tuning.<x>` /
+// `scale.<x>` / `octaves.<x>` / `sound.<x>` / `out.<device>` put <x> in
 // `subkey`. The `runtime` slot carries a `:value` (an output target like
-// `@alphabet.western:audio` → `audio`), never a resource name.
-// `@devices` (no subkey) means "the whole device library".
+// `alphabet.western:audio` → `audio`), never a resource name.
+// `devices` (no subkey) means "the whole device library".
 const DIRECTIVE_TYPES: Record<string, { type: string; typeLabel: string }> = {
   alphabet: { type: 'alphabet', typeLabel: 'alphabet' },
   tuning: { type: 'tuning', typeLabel: 'tuning' },
@@ -42,12 +42,12 @@ const DIRECTIVE_TYPES: Record<string, { type: string; typeLabel: string }> = {
   scale: { type: 'scale', typeLabel: 'scale' },
   octaves: { type: 'octaves', typeLabel: 'octaves' },
   sound: { type: 'sound', typeLabel: 'sound' },
-  // PAS de `transport` ici : `@transport.<canal>` est SORTIE du langage (décision Romain
+  // PAS de `transport` ici : `transport.<canal>` est SORTIE du langage (décision Romain
   // 2026-08-04, BPscript parser.js:1692) — la direction se déclare sur l'acteur, `out.<canal>`.
   // Une scène qui l'écrit encore ne compile plus : elle tombe donc dans le repli-texte, où
   // cette entrée l'aurait affichée comme un appareil valide au panneau des ressources.
   devices: { type: 'device', typeLabel: 'devices' },
-  // `@core` / `@controls` / `@filter` are bare module directives (no
+  // `core` / `controls` / `filter` are bare module directives (no
   // sub-reference): they pull in a BPScript library — core grammar functions, the
   // control terminals (`vel:`/`wave:`…), the CV filter library (`filter.adsr(…)`).
   // They carry no name in subkey/runtime, so their own directive name IS the
@@ -62,19 +62,19 @@ const DIRECTIVE_TYPES: Record<string, { type: string; typeLabel: string }> = {
 const SELF_NAMED = new Set(['core', 'controls', 'filter']);
 
 function nameOfDirective(d: BpsDirective): string | null {
-  // Prefer subkey (`@alphabet.arabic`, `@tuning.sargam_22shruti`, `@scale.bilaval`,
+  // Prefer subkey (`alphabet.arabic`, `tuning.sargam_22shruti`, `scale.bilaval`,
   // `out.midi`); the runtime fallback is defensive — under the universal dot
   // canon a resource name always lands in subkey, never the value slot.
   if (typeof d.subkey === 'string' && d.subkey.length > 0) return d.subkey;
   if (typeof d.runtime === 'string' && d.runtime.length > 0) return d.runtime;
-  // A bare module directive (`@core`, `@controls`) names itself.
+  // A bare module directive (`core`, `controls`) names itself.
   if (SELF_NAMED.has(d.name)) return d.name;
-  // `@devices` with no name = the whole library.
+  // `devices` with no name = the whole library.
   if (d.name === 'devices') return 'all';
   return null;
 }
 
-// An actor AST node (`@actor <name> eval.<engine>(bank:"<bank>")`) — the bank
+// An actor AST node (`actor <name> eval.<engine>(bank:"<bank>")`) — the bank
 // is now an actor parameter, not a scene directive. Only the fields read here.
 interface BpsActorNode {
   properties?: {
@@ -83,23 +83,31 @@ interface BpsActorNode {
   };
 }
 
-// Parse-independent scan of `@` directives straight from the text. Used as a
+// Parse-independent scan of the invocations straight from the text. Used as a
 // fallback when the compiler can't build an AST at all (a hard syntax error
-// elsewhere in the file, e.g. a malformed rule): the top-of-file `@` lines are
+// elsewhere in the file, e.g. a malformed rule): the top-of-file lines are
 // still perfectly readable and the "Libraries used" list must keep showing them.
+//
+// ⛔ CE QUI DÉLIMITE UNE INVOCATION, DEPUIS QUE L'AROBASE EST SORTIE DU LANGAGE (décision Romain
+// 2026-08-17) : la POSITION, plus un préfixe. Les invocations vivent AVANT le premier `-----`, qui
+// sépare le déclaratif de la production ; après lui, `alphabet` serait un nom de règle ordinaire.
+// Sans cette borne, ce repli lirait une tête de règle comme une invocation — et `DIRECTIVE_TYPES`
+// ne l'arrêterait pas, puisqu'une règle PEUT s'appeler `sound`.
 function directivesFromText(contents: string): ReferencedLib[] {
   const out: ReferencedLib[] = [];
-  for (const raw of contents.split('\n')) {
+  const lignes = contents.split('\n');
+  const fin = lignes.findIndex((l) => /^-{3,}\s*$/.test(l.trim()));
+  for (const raw of fin >= 0 ? lignes.slice(0, fin) : lignes) {
     const line = raw.trim();
-    if (!line.startsWith('@')) continue;
-    // PAS de branche `@library.<moteur> "<banque>"` : la directive est SUPPRIMÉE du langage
+    if (line.length === 0 || line.startsWith('//')) continue;
+    // PAS de branche `library.<moteur> "<banque>"` : la directive est SUPPRIMÉE du langage
     // (décision Romain 2026-08-06, BPscript parser.js:1642) — la banque est un paramètre de
     // l'acteur, lu plus haut sur `entityParams.eval.bank`. Ce repli est précisément la voie
     // qui tourne sur une scène qui ne compile plus : la garder aurait affiché « audio bank »
     // pour une scène qui ne jouera aucun son. Le message du compilateur, lui, nomme déjà la
     // relève au voyant santé (programCompileStatus, phase `parse`).
-    // `@name(.subkey)?(:value)?` — e.g. `@alphabet.western:audio`, `@tuning.sargam_22shruti`.
-    const m = /^@(\w+)(?:\.([\w-]+))?(?::\s*(\S+))?/.exec(line);
+    // `name(.subkey)?(:value)?` — e.g. `alphabet.western:audio`, `tuning.sargam_22shruti`.
+    const m = /^(\w+)(?:\.([\w-]+))?(?::\s*(\S+))?\s*(?:\/\/.*)?$/.exec(line);
     if (!m) continue;
     const meta = DIRECTIVE_TYPES[m[1]];
     if (!meta) continue;
@@ -133,7 +141,7 @@ function fromBps(contents: string): ReferencedLib[] {
   } catch {
     return out;
   }
-  // Read directives even when the program has errors: the `@` directives sit at
+  // Read directives even when the program has errors: the invocations sit at
   // the top of the file and a downstream error (e.g. an invalid control value)
   // doesn't invalidate them. The AST is still produced — only a hard parse throw
   // (caught above) leaves no AST. This keeps "Libraries used" visible while a

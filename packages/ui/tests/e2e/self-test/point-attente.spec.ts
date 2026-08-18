@@ -39,12 +39,13 @@ import { test, expect } from '@playwright/test';
 // `addEventListener('keydown'/'keyup')`, lecture de `ev.code`). Même porte, même chemin, clavier
 // simulé — pas une voie parallèle.
 
-const SCENE = `@core
-@alphabet.western:audio
-@tempo:90
+const SCENE = `core
+alphabet.western:audio
+tempo:90
 
 @var touches in.keyboard
 
+-----
 S -> Montee Repart
 
 Montee -> C4 E4 G4 <!touches.Space

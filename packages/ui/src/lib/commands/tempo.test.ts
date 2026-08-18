@@ -1,7 +1,7 @@
 // [927] VERROU — le geste tempo est UN SEUL point d'entrée, et la façade de pilotage y délègue.
 //
 // Ce que ce test empêche de revenir : `window.kanopi.setTempo` appelait `clock.setBpm` nu, donc
-// il warpait les runtimes SANS reporter la valeur dans la directive `@tempo` de la scène — la
+// il warpait les runtimes SANS reporter la valeur dans la directive `tempo` de la scène — la
 // moitié du geste vivait dans le composant Svelte. Conséquence vicieuse : un banc mené par l'API
 // mesurait une divergence (tempo qui retombe au re-eval) que le vrai champ BPM ne produit pas.
 // L'instrument mentait, et une mesure faite avec lui ne pouvait plus distinguer un défaut produit
@@ -28,9 +28,10 @@ import { initAdapters } from '../runtimes/registry';
 initAdapters(createEventBus());
 
 const SCENE = `// @language: bpscript
-@core
-@tempo:80
+core
+tempo:80
 
+-----
 S -> C4 D4 E4
 `;
 
@@ -47,12 +48,12 @@ describe('[927] commande tempo — point d’entrée unique', () => {
     const applied = setTempo(120);
 
     expect(applied).toBe(120);
-    expect(workspace.fileById(id)?.contents).toContain('@tempo:120');
-    expect(workspace.fileById(id)?.contents).not.toContain('@tempo:80');
+    expect(workspace.fileById(id)?.contents).toContain('tempo:120');
+    expect(workspace.fileById(id)?.contents).not.toContain('tempo:80');
   });
 
   it('PREUVE 1b — n’INJECTE jamais de directive dans une scène qui n’en déclare pas', () => {
-    const sansDirective = '// @language: bpscript\n@core\n\nS -> C4 D4\n';
+    const sansDirective = '// @language: bpscript\ncore\n\n-----\nS -> C4 D4\n';
     const id = workspace.addFile('tempo-cmd-nu.bps', sansDirective);
     workspace.openFile(id);
     workspace.setActive(id);

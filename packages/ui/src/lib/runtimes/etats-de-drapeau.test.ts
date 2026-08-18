@@ -58,7 +58,7 @@ describe('lecture des états nommés d’un drapeau (ast.vars, pas ast.directive
   it('un `VarDirective` d’un AUTRE type (`signal`) n’apparaît PAS dans la table — le filtre filtre', () => {
     // `@var lfo signal` : même famille de nœud (`VarDirective`) que le drapeau, type différent.
     // Si le filtre `varType.kind === 'flag'` ne filtrait rien, ce nom polluerait la table.
-    const source = `@actor drums eval.strudel\n@var lfo signal\n@var section flag: intro:1, drop:2\n[section==intro] S -> drums_r\ndrums_r -> drums.\`s("bd")\`\n`;
+    const source = `actor drums eval.strudel\n@var lfo signal\n@var section flag: intro:1, drop:2\n[section==intro] S -> drums_r\ndrums_r -> drums.\`s("bd")\`\n`;
     const { ast, errors } = compileToBPxAST(source) as {
       ast: unknown;
       errors: { message: string }[];

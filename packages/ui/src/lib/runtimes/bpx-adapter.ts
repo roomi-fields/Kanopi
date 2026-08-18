@@ -19,7 +19,7 @@ type Bp3Actor = NonNullable<NonNullable<ParseBP3Result['ast']>['actors']>[number
 import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 // Les catalogues de l'amont sont transportés EN BLOC vers Kairos (`PITCH_LIB` plus bas) : aucune
 // constante par catalogue ici, sinon la liste ferme l'ensemble et le prochain fichier à nom libre
-// reste invisible. Une scène qui déclare `@alphabet.X` ou `@test_alphabets.X` résout à travers eux.
+// reste invisible. Une scène qui déclare `alphabet.X` ou `test_alphabets.X` résout à travers eux.
 // CV modulation library (`mod.adsr/lfo/ramp`): the param signatures AND the curve
 // shape live here (declarative segments), consumed AS-IS — Kanopi's transport
 // renders the curve generically, no built-in modulator. See CV.md.
@@ -223,7 +223,7 @@ import routingJson from '../../../../library/routing.json';
 // donnée de lib », et elle nomme Kanopi pour les librairies. Cet objet énumérait CINQ catalogues,
 // ce qui était la faute exacte que L35 interdit : une librairie à NOM LIBRE est adressable, donc
 // une liste fermée ne peut structurellement pas voir la suivante.
-// CE QUE ÇA COÛTAIT, MESURÉ : les scènes déclarant `@test_alphabets.<X>` — un catalogue réel de
+// CE QUE ÇA COÛTAIT, MESURÉ : les scènes déclarant `test_alphabets.<X>` — un catalogue réel de
 // l'amont, hors des cinq — crevaient à la projection sur « fichier factory 'test_alphabets'
 // introuvable ». Sept scènes du corpus étaient dans cet état, et le défaut MASQUAIT celui qu'on
 // cherchait : une fois le sac injecté, le cri devient celui de la collision de domaine.
@@ -326,7 +326,7 @@ type Frontend = (code: string) => {
   // derived token sounds if it's a note OR its symbol is in this set; everything
   // else renders as text. Empty for all-note grammars (they sound by default).
   soundingSymbols?: string[];
-  // Multi-voice orchestration (BPScript `@actor`): each actor owns an alphabet
+  // Multi-voice orchestration (BPScript `actor`): each actor owns an alphabet
   // and a transport (midi / audio). Present only for orchestrator `.bps`.
   orchestration?: Orchestration;
   // Standalone backtick voices (lot 4, ADAPTER_SPEC §1bis): each `BT<interp><id>`
@@ -341,10 +341,10 @@ type Frontend = (code: string) => {
   // banks before/at the backtick eval so the code voices find their samples. `.gr`
   // has none.
   libraries?: Libraries;
-  // Declared metronome (`@tempo:70`), the tempo BPx derives durations at. When
+  // Declared metronome (`tempo:70`), the tempo BPx derives durations at. When
   // present the adapter adopts it as the global tempo so the displayed BPM, the
   // derivation, and the STEP beat grid all agree. Absent for `.gr` and `.bps`
-  // without `@mm` (the current tempo is kept).
+  // without `mm` (the current tempo is kept).
   mm?: number;
 };
 
@@ -401,7 +401,7 @@ function withDefaultFlagStates(
 interface OrchestratedActor {
   name: string;
   transportKey: string; // device name referenced by `out.<key>` (free identifier)
-  /** Declared `@actor … alphabet:<key>` (`western` | `solfège` | catalog key, …), or
+  /** Declared `actor … alphabet:<key>` (`western` | `solfège` | catalog key, …), or
    *  `undefined` when the actor declares none. Passed THROUGH to the shared resolver
    *  builder: an absent alphabet makes it SNIFF western/solfège from the tokens, instead
    *  of a host-invented `'western'` lock (KAN-B04 — Kanopi invents no musical default). */
@@ -414,7 +414,7 @@ interface OrchestratedActor {
 interface Orchestration {
   actorTable: Record<string, unknown>;
   actors: OrchestratedActor[];
-  /** True when the scene declares NO `@actor`: the AST carries a single IMPLICIT `default`
+  /** True when the scene declares NO `actor`: the AST carries a single IMPLICIT `default`
    *  actor (audio transport, materialized upstream — bpscript for `.bps`, bp3-frontend for
    *  `.gr`), so a plain grammar travels the SAME path as an orchestrated one. The Actors
    *  panel stays empty for these. Read from the AST actor's `synthetic` flag — never
@@ -567,7 +567,7 @@ function parseWithSound(code: string) {
 // tête de `publishProduction`.
 const grFrontend: Frontend = (code) => {
   const base = parseWithSound(code);
-  // `.gr` (BP3) has no `@actor`, but bp3-frontend materializes one IMPLICIT `default`
+  // `.gr` (BP3) has no `actor`, but bp3-frontend materializes one IMPLICIT `default`
   // actor (audio transport, `synthetic:true`) in the AST — so its events carry
   // `output.runtime='audio'` and it travels the SAME orchestrated path as `.bps`. Read
   // the orchestration straight off that AST; no host-synthesized default.
@@ -606,7 +606,7 @@ interface ActorDirectiveNode {
     entityParams?: Record<string, { bank?: unknown } & Record<string, unknown>>;
   };
   /** True for the IMPLICIT `default` actor the upstream front-end materializes when the
-   *  scene declares no `@actor` (bpscript for `.bps`, bp3-frontend for `.gr`). Read so the
+   *  scene declares no `actor` (bpscript for `.bps`, bp3-frontend for `.gr`). Read so the
    *  Actors panel hides it — never host-fabricated. */
   synthetic?: boolean;
 }
@@ -633,12 +633,12 @@ export function flagStatesFromAst(a: SceneAstView | null): FlagStates {
   return out;
 }
 
-// Declared metronome from the AST directives: `@tempo:70` (v0.8 canon, arbitrage
-// 2026-06-26) OR the legacy `@tempo:70` parse to a `Directive` with `name:'tempo'`/`'mm'`,
+// Declared metronome from the AST directives: `tempo:70` (v0.8 canon, arbitrage
+// 2026-06-26) OR the legacy `tempo:70` parse to a `Directive` with `name:'tempo'`/`'mm'`,
 // `value:70`. This is the tempo the BPx engine derives note durations at, so the central
 // clock + STEP grid (`beatDurSec = 60/bpm`) MUST adopt it or the displayed tempo and the
 // produced timeline diverge (a 70 bpm derivation stepped at 128 bpm yields fractional,
-// phantom beats). Un SEUL nom depuis le 2026-08-09 : `@mm` est SORTI du langage et son refus le
+// phantom beats). Un SEUL nom depuis le 2026-08-09 : `mm` est SORTI du langage et son refus le
 // dit (bpscript fa037e8). La branche jumelle qui le lisait est partie le jour même — code voué au
 // retrait à zéro appelant légitime, donc retiré dans le même mouvement, pas gardé « au cas où ».
 // Absent → undefined (keep the current tempo).
@@ -657,7 +657,7 @@ export function mmFromAst(a: SceneAstView | null): number | undefined {
 }
 
 // Declared audio banks from the AST: the bank is now an ACTOR parameter
-// (`@actor drums eval.strudel(bank:"dirt-samples")`), not a scene directive —
+// (`actor drums eval.strudel(bank:"dirt-samples")`), not a scene directive —
 // each actor's `properties.eval` names the engine, `properties.entityParams.eval.bank`
 // carries the bank. Accumulates by engine → `{ [engine]: [name, …] }`, deduplicated
 // (several actors commonly declare the SAME bank — e.g. `starter-main.bps` declares
@@ -758,7 +758,7 @@ export function btTokenByActor(ast: unknown): Record<string, string> {
 // Orchestrated actors from the AST: each `ActorDirective` → the `{ transport:
 // {key, params}, alphabet, eval }` entry the adapter routes on. Read straight from
 // the AST nodes (single source of truth) — including the IMPLICIT `default` actor the
-// upstream front-end materializes for a no-`@actor` scene (audio transport).
+// upstream front-end materializes for a no-`actor` scene (audio transport).
 type AdapterActorTable = Record<
   string,
   {
@@ -781,7 +781,7 @@ function actorTableFromAst(a: SceneAstView | null): AdapterActorTable {
 }
 
 // Build the orchestration view from the AST actors — shared by BOTH frontends. The AST
-// ALWAYS carries the actors (a no-`@actor` scene gets an implicit `default` audio actor
+// ALWAYS carries the actors (a no-`actor` scene gets an implicit `default` audio actor
 // materialized upstream: bpscript for `.bps`, bp3-frontend for `.gr`). `synthetic` is read
 // from that default actor's own flag, never host-fabricated. No host-invented `'default'`
 // nor a `'western'` alphabet lock (an absent alphabet makes the resolver sniff). Returns
@@ -999,7 +999,7 @@ function gmInstrumentsFromCode(code: string): string[] {
 
 // Which backtick TOKENS carry a given interp (`strudel`, `mercury`, …), for a scene. A tagged
 // backtick (`` `strudel: …` ``) carries its own resolved `interp` already (`backticksFromAst`). An
-// UNTAGGED backtick — the common case, e.g. `v -> \`stack(…)\`` under `@actor v eval.strudel` —
+// UNTAGGED backtick — the common case, e.g. `v -> \`stack(…)\`` under `actor v eval.strudel` —
 // carries no `interp`/`tag` on the AST node itself (verified against the live `compileToBPxAST`
 // output, 2026-07-15): its language comes from the OWNING ACTOR's `eval.<lang>`, paired to the
 // backtick token via `btTokenByActor` — the same actor→token pairing `codeVoiceInterps`'s caller
@@ -1098,7 +1098,7 @@ export function assetsForScene(text: string): {
 // deprecated grammar text nor compileBPS's redundant sidecar tables.
 const bpsFrontend: Frontend = (code) => {
   // FERMER LA PORTE (Romain 2026-07-01) : l'hôte n'injecte PLUS AUCUN tempo dans BPx — ni le
-  // @tempo de scène (BPx le lit), ni la saisie utilisateur. La saisie utilisateur (tempo de
+  // tempo de scène (BPx le lit), ni la saisie utilisateur. La saisie utilisateur (tempo de
   // session) atteint le son par WARP Kronos (retune), jamais par une graine dans l'AST. On ne
   // seed donc plus `userTempo` : une scène sans directive dérive au défaut moteur BPx (60), et
   // on la WARPE au tempo de session à la construction du handle (voir plus bas).
@@ -1124,7 +1124,7 @@ const bpsFrontend: Frontend = (code) => {
   const parsed = {
     ast: c.ast,
     errors: [] as ParseError[],
-    // Tempo: BPx's `loadGrammar` reads the `@mm`/`@tempo` metronome straight from the
+    // Tempo: BPx's `loadGrammar` reads the `mm`/`tempo` metronome straight from the
     // AST (loadGrammar.ts) and poses `tree.metadata.tempo`. PORTE FERMÉE : l'hôte ne passe PLUS
     // de tempo à BPx (champ supprimé, 8741f9f) ; le tempo de session utilisateur warpe via
     // Kronos. The former `c.settings` was
@@ -1134,7 +1134,7 @@ const bpsFrontend: Frontend = (code) => {
     // `-se` engine timing, see `resolveSeSettings`).
     settings: undefined as SeEngineSettings | undefined,
     soundingSymbols: soundAssignments.map((s) => s.subject),
-    // Declared `@mm` metronome so the central clock + STEP grid adopt the tempo
+    // Declared `mm` metronome so the central clock + STEP grid adopt the tempo
     // the engine actually derives at (absent → current tempo kept).
     mm: mmFromAst(a)
   };
@@ -1157,8 +1157,8 @@ const bpsFrontend: Frontend = (code) => {
   const withBt = Object.keys(backticks).length > 0 ? { ...withLibs, backticks } : withLibs;
   const base = withBt;
 
-  // Orchestrator `.bps`: `@actor` declarations are AST `ActorDirective` nodes (each actor
-  // owns an alphabet + a transport device). A no-`@actor` scene carries an implicit
+  // Orchestrator `.bps`: `actor` declarations are AST `ActorDirective` nodes (each actor
+  // owns an alphabet + a transport device). A no-`actor` scene carries an implicit
   // `default` audio actor (bpscript, `synthetic:true`). Read the orchestration off the AST
   // (single source of truth) — the OSC address travels in the tree (`metadata.actors` →
   // `event.output`), not via a host-read `.binding`.
@@ -1172,7 +1172,7 @@ interface BP3Voice {
    *  voices — Hydra/Strudel — each cycle) without depending on the per-actor
    *  handle map. Undefined for legacy entries (treated as "current file"). */
   file?: string;
-  /** True when this voice is an orchestrator (`@actor` voices). Only these
+  /** True when this voice is an orchestrator (`actor` voices). Only these
    *  loop-and-re-fire foreign code; a plain mono grammar is left alone so a
    *  sibling re-eval doesn't cut it. */
   orchestrator?: boolean;
@@ -1360,13 +1360,13 @@ let sceneBeatsPerBar = DEFAULT_BEATS_PER_BAR;
 // input made before/without a live scene). `null` until the user sets one. PORTE FERMÉE
 // (Romain 2026-07-01) : il n'entre JAMAIS dans BPx (le champ d'injection de tempo est SUPPRIMÉ
 // côté BPx, 8741f9f) — il atteint le son par WARP Kronos (retune), appliqué au handle QUAND la
-// scène n'a PAS de directive `@tempo`/`@mm` (une directive de scène gagne, BPx la lit). Le tempo
+// scène n'a PAS de directive `tempo`/`mm` (une directive de scène gagne, BPx la lit). Le tempo
 // EFFECTIF est lu sur `tree.metadata.tempo`. Never a fabricated host default — no « 128 ».
 let userTempo: number | null = null;
 
 // Set `userTempo` from a GENUINE user type/tap only — the clock store calls this from
 // its `setBpm` (user input). The SCENE tempo channel (`setSceneTempo`) never reaches
-// here, so a scene's projected tempo can no longer leak into the next no-`@mm` scene.
+// here, so a scene's projected tempo can no longer leak into the next no-`mm` scene.
 export function setUserTempo(bpm: number): void {
   userTempo = bpm;
 }
@@ -1436,11 +1436,11 @@ function isRandomizeNeedsClock(err: unknown): boolean {
   return msg.includes('reseedOrShuffle') && msg.includes('needs a wall-clock seed');
 }
 
-// Optional hook the core wires so a grammar's declared `@mm` can drive the
+// Optional hook the core wires so a grammar's declared `mm` can drive the
 // CENTRAL clock (and thus the transport display) at eval, keeping the shown BPM,
 // the derivation, and the STEP grid in agreement. The core sets this to
 // `clock.setBpm`; left unset (tests, headless) the adapter still derives at the
-// `@mm` tempo locally via `currentBpm`, only the UI clock isn't told.
+// `mm` tempo locally via `currentBpm`, only the UI clock isn't told.
 let onTempoFromGrammar: ((bpm: number) => void) | undefined;
 export function setTempoSink(fn: (bpm: number) => void): void {
   onTempoFromGrammar = fn;
@@ -1514,7 +1514,7 @@ export interface PublishedActor {
   error?: string;
 }
 
-// Optional hook the core wires so an orchestrator `.bps`'s `@actor` list reaches
+// Optional hook the core wires so an orchestrator `.bps`'s `actor` list reaches
 // the Actors panel (`core.actors.setActors`). Left unset (tests, headless) the
 // adapter still routes/plays every actor; only the panel isn't populated.
 let onActorsFromGrammar: ((actors: PublishedActor[], file: string) => void) | undefined;
@@ -1879,7 +1879,7 @@ function makeBpxAdapter(
         backticks,
         flagStates,
         libraries,
-        // LECTURE (pas injection) : la directive @tempo/@mm déclarée par la scène, pour SAVOIR
+        // LECTURE (pas injection) : la directive tempo/mm déclarée par la scène, pour SAVOIR
         // si le tempo de session (userTempo) doit s'appliquer par warp. Directive présente →
         // la scène joue à SON tempo (BPx le lit) ; absente → on warpe au tempo de session.
         mm: declaredMm
@@ -1933,7 +1933,7 @@ function makeBpxAdapter(
 
       // PORTE FERMÉE (décision Romain 2026-07-01, contrat temps-horloge.md) : l'hôte n'injecte
       // AUCUN tempo dans BPx — le champ d'injection est SUPPRIMÉ côté BPx (8741f9f). BPx lit le
-      // `@tempo`/`@mm` de l'AST et pose `tree.metadata.tempo` (défaut moteur 60 sans directive ;
+      // `tempo`/`mm` de l'AST et pose `tree.metadata.tempo` (défaut moteur 60 sans directive ;
       // BPM = 60·Qclock/Pclock). Le tempo de SESSION utilisateur (`userTempo`, D10) n'entre
       // JAMAIS dans BPx : il atteint le son par WARP Kronos (retune), appliqué au handle plus bas
       // QUAND la scène n'a pas de directive. Le tempo EFFECTIF (dérivé) est lu sur
@@ -2017,7 +2017,7 @@ function makeBpxAdapter(
         // `tempo` a été SUPPRIMÉ de SessionOptions côté BPx — porte fermée 8741f9f — il n'est
         // donc plus jamais passé ici). Proven derivation-identical to the former
         // `createBPx + loadGrammar` by `createsession-parity.test.ts`.
-        // FERMER LA PORTE : AUCUNE injection de tempo. BPx lit le @tempo/@mm de l'AST et pose
+        // FERMER LA PORTE : AUCUNE injection de tempo. BPx lit le tempo/mm de l'AST et pose
         // metadata.tempo (défaut moteur 60 sans directive). La saisie utilisateur (session)
         // atteint le son par WARP Kronos à la construction du handle (plus bas), pas ici.
         const buildSession = (withSeed: boolean): Session =>
@@ -2368,7 +2368,7 @@ function makeBpxAdapter(
             })
           : undefined;
 
-      // Orchestrator `.bps`: each `@actor` owns an alphabet and a transport
+      // Orchestrator `.bps`: each `actor` owns an alphabet and a transport
       // (an @devices appliance). Kronos routes each event by its OWN
       // `output.runtime` (graven by Kairos off the tree); there is no flat
       // symbol→actor map. MIDI is silent-but-safe without hardware.
@@ -2381,7 +2381,7 @@ function makeBpxAdapter(
         // earlier ones already playing.
         // A `.gr` (like any mono scene) plays AUDIO by default: its synthetic `default`
         // actor keeps `out.audio` and MUST be audible. MIDI is an EXPLICIT choice
-        // (`@actor … out.midi`) — never auto-routed off a granted Web MIDI port,
+        // (`actor … out.midi`) — never auto-routed off a granted Web MIDI port,
         // which used to make every `.gr` SILENT on a machine that simply HAS a MIDI port.
         //
         // Only voices that route through ONE OF OUR transports get device-gated: the
@@ -2415,9 +2415,9 @@ function makeBpxAdapter(
         // (gravé par BPx dans `tree.metadata.actors`, la MÊME clé sur laquelle Kronos route
         // — invariant « un sink existe pour la clé routée », contrat hote-runtimes-sortie.md:121,
         // tranché archi [624]). PAS `devices.type` : l'appareil @devices est l'ADRESSE (canal/
-        // port) DANS le runtime, un concern SÉPARÉ (KAI-9, bpscript-bpx.md:32). Un `@actor
+        // port) DANS le runtime, un concern SÉPARÉ (KAI-9, bpscript-bpx.md:32). Un `actor
         // out.midi` grave `runtime='midi'` → même clé, même sink que tout futur
-        // `@alphabet.X:midi` qui convergera vers `runtime='midi'` à la source.
+        // `alphabet.X:midi` qui convergera vers `runtime='midi'` à la source.
         // État UI de branchement par-acteur, reconstruit à CHAQUE éval (donc courant :
         // une ré-éval réussie republie sans erreur → le badge disparaît). Rempli par le
         // gate MIDI ci-dessous, lu dans la boucle de publication (même portée).
@@ -2506,7 +2506,7 @@ function makeBpxAdapter(
         {
           // KAN-orchestration P1 — RE-RANDOM re-derive on the Kairos path. This closure is
           // what Kronos fires at each loop edge (`StructureSource.auBord` → `cb`): it
-          // re-derives the grammar with a FRESH seed (re-rolling `@mode:random` / weighted
+          // re-derives the grammar with a FRESH seed (re-rolling `mode:random` / weighted
           // rules) and `charger`s the new tree → Kairos bumps its generation → Kronos
           // re-pulls + swaps the new flat at that same edge (quantized).
           //
@@ -2521,7 +2521,7 @@ function makeBpxAdapter(
               // Fresh-seed re-derivation — identical opts to the eval path + the dormant
               // `reDeriveTreeEvents`, only the random draw differs.
               const rbpx: Session = createSession(ast as SceneAST, {
-                // FERMER LA PORTE : le re-roll aussi dérive au @tempo de l'AST (BPx le lit),
+                // FERMER LA PORTE : le re-roll aussi dérive au tempo de l'AST (BPx le lit),
                 // sans injection ; le WARP live (retune) persiste côté Kronos à travers le swap.
                 ...(settings !== undefined ? { settings } : {}),
                 ...(effectiveFlags !== undefined ? { initialFlags: effectiveFlags } : {}),
@@ -2691,7 +2691,7 @@ function makeBpxAdapter(
         // on top. Keep this file's own voices (a re-eval of the SAME orchestrator).
         await tearDownOutgoingVoices(src.fileId);
         const published: PublishedActor[] = [];
-        // A synthetic `default` actor (plain scene, no `@actor`) is never shown nor
+        // A synthetic `default` actor (plain scene, no `actor`) is never shown nor
         // armed: publish an empty list (the panel clears, as the old mono path did) and
         // register no per-actor handle. Real orchestrators publish every actor.
         for (const actor of orchestration.synthetic ? [] : orchestration.actors) {

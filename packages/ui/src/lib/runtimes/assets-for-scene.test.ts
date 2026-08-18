@@ -9,10 +9,10 @@ import { assetsForScene } from './bpx-adapter';
 describe('assetsForScene — declared strudel banks + used gm_* instruments (for on-open preload)', () => {
   it('detects the declared bank + the 3 gm_* instruments of the GM piano scene', () => {
     const code = [
-      '@core',
-      '@tempo:120',
+      'core',
+      'tempo:120',
       '',
-      '@actor v  eval.strudel(bank:"gm")',
+      'actor v  eval.strudel(bank:"gm")',
       '',
       'S -> v_r',
       '',
@@ -31,13 +31,13 @@ describe('assetsForScene — declared strudel banks + used gm_* instruments (for
 
   it('returns {} for a scene with no code voice at all', () => {
     const code =
-      '@core\n@alphabet.western:audio\n@tempo:120\nS -> Bass\nBass -> C2 C2 (wave:sawtooth)';
+      'core\nalphabet.western:audio\ntempo:120\n-----\nS -> Bass\nBass -> C2 C2 (wave:sawtooth)';
     expect(assetsForScene(code)).toEqual({});
   });
 
   it('returns {} for a strudel scene that declares no bank and uses no gm_* instrument', () => {
     const code =
-      '@core\n@tempo:120\n\n@actor v  eval.strudel\n\nS -> v_r\n\nv_r -> v.`sound("bd hh sd oh")`';
+      'core\ntempo:120\n\nactor v  eval.strudel\n\n-----\nS -> v_r\n\nv_r -> v.`sound("bd hh sd oh")`';
     expect(assetsForScene(code)).toEqual({});
   });
 
@@ -63,7 +63,7 @@ describe('assetsForScene — declared strudel banks + used gm_* instruments (for
       "plus aucune banque strudel distante au catalogue : ce banc n'a plus de sujet, le retirer ou le redéfinir"
     ).toBeDefined();
 
-    const code = `@core\n@tempo:120\n\n@actor v  eval.strudel(bank:"${distante!.id}")\n\nS -> v\n\nv -> \`s("bd hh sd")\`:4`;
+    const code = `core\ntempo:120\n\nactor v  eval.strudel(bank:"${distante!.id}")\n\nS -> v\n\nv -> \`s("bd hh sd")\`:4`;
     const assets = assetsForScene(code);
     expect(assets.strudel?.banks ?? []).not.toContain(distante!.id);
     expect(assets).toEqual({}); // pas de banque hébergée ni d'instrument GM → rien à préfetcher

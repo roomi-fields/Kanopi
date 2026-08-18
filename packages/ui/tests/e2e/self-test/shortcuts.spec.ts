@@ -32,7 +32,7 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../../hel
 
 // Single Strudel actor, lines 1-3 comments + line 4 the note(...) block — the
 // layout the cursor-position assertions below rely on.
-const SOLO_SESSION = `# 01 - Strudel solo (inline fixture).\n\n@actor drums drums.strudel strudel\n`;
+const SOLO_SESSION = `# 01 - Strudel solo (inline fixture).\n\nactor drums drums.strudel strudel\n`;
 const SOLO_DRUMS = `// Drums - the kick of the whole composition.\n// Put the cursor here, Ctrl+Enter.\n//\nnote("c3 e3 g3 c4").s("sine").gain(0.7)\n`;
 
 test('Ctrl/Cmd+K opens the command palette; Escape closes it', async ({ page }) => {

@@ -47,14 +47,14 @@ beforeEach(() => {
     0;
 });
 
-const ORCH = `@actor groove eval.strudel
-@actor viz eval.hydra
+const ORCH = `actor groove eval.strudel
+actor viz eval.hydra
 S -> { groove_r, viz_r }
 groove_r -> groove.\`stack(note("c2*4"))\`
 viz_r -> viz.\`osc(60).out()\`
 `;
 
-// A plain non-orchestrated program (no @actor) — the kind that must REPLACE the
+// A plain non-orchestrated program (no actor) — the kind that must REPLACE the
 // previous orchestrator's voices with nothing.
 //
 // LES TERMINAUX SONT DÉCLARÉS, et le choix de `@var` n'est pas indifférent : depuis la

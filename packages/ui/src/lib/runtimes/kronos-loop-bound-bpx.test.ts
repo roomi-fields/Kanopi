@@ -119,9 +119,10 @@ describe('KAN-C02/C03 (SUITE) — loop bound projects BPx totalDurationBeats, no
 // We could not produce a divergent bundled scene through the public derivation, so the
 // divergence is injected here (mutating the authority field) to break the circularity.
 
-const SCENE_TRAILING_RESTS = `@core
-@alphabet.western:audio
-@tempo:120
+const SCENE_TRAILING_RESTS = `core
+alphabet.western:audio
+tempo:120
+-----
 S -> Phrase
 Phrase -> C4 D4 E4 _ _ _ _
 `;

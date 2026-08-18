@@ -104,8 +104,8 @@ test('Alt+chiffre n’a pas disparu : il arme le Nᵉ ACTEUR', async ({ page }) 
 
   // Une scène à DEUX acteurs, pour que « le Nᵉ acteur » ait un sens et que la bascule
   // porte sur un acteur précis et pas sur le seul disponible.
-  const deuxActeurs = `@actor un    eval.strudel
-@actor deux  eval.strudel
+  const deuxActeurs = `actor un    eval.strudel
+actor deux  eval.strudel
 
 S -> un_r deux_r
 

@@ -17,7 +17,7 @@ import { evalBlockAt, expectNoConsoleErrors } from '../../helpers';
 //
 // ⚠️ ET IL PASSE PAR L'API PILOTE, jamais par un import de store : un store importé dans la page
 // donne une instance DUPLIQUÉE, et le régime lu ne serait pas celui de l'application.
-const SCENE = '@core\n@alphabet.western\n@tempo:120\n\nS -> C4 D4 E4 F4\n';
+const SCENE = 'core\nalphabet.western\ntempo:120\n\n-----\nS -> C4 D4 E4 F4\n';
 
 async function chargerEtEvaluer(page: import('@playwright/test').Page) {
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });

@@ -137,7 +137,7 @@ test('muting a Strudel actor via the mixer silences it, unmuting brings it back 
 
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
 
-  // Ctrl+Enter on line 5 (`@actor drums ...`) evaluates the whole session — the
+  // Ctrl+Enter on line 5 (`actor drums ...`) evaluates the whole session — the
   // backtick voice is placed in time and fires the Strudel adapter.
   await evalBlockAt(page, 5);
 

@@ -8,7 +8,7 @@ import { __getUserTempo, __getCurrentBpm } from '../lib/runtimes/bpx-adapter';
 // Before the fix, a derivation's projected tempo was fanned to `clock.setBpm`, which
 // (a) clamped it to [20,300] (F07) and (b) re-entered the adapter's `setBpm`, where a
 // fragile re-entrancy guard — defeated by the sink's microtask — let the scene tempo be
-// recorded as `userTempo`, leaking into the NEXT no-`@mm` scene's compile default (F06).
+// recorded as `userTempo`, leaking into the NEXT no-`mm` scene's compile default (F06).
 //
 // The fix routes the scene tempo through `clock.setSceneTempo`: no clamp, no `#tempo`
 // write, and it NEVER records `userTempo`. `userTempo` is set ONLY by `clock.setBpm`
@@ -24,12 +24,12 @@ beforeEach(() => {
 });
 
 describe('F06 — the scene tempo channel never seeds userTempo (no inter-scene leak)', () => {
-  it('playing a @tempo:70 scene projects 70 but leaves userTempo null (no leak to the next scene)', () => {
-    // A scene declaring @tempo:70 derives at 70 and projects it through the SCENE channel.
+  it('playing a tempo:70 scene projects 70 but leaves userTempo null (no leak to the next scene)', () => {
+    // A scene declaring tempo:70 derives at 70 and projects it through the SCENE channel.
     clock.setSceneTempo(70);
     // The projected scene tempo drives the STEP grid (currentBpm)…
     expect(__getCurrentBpm()).toBe(70);
-    // …but it is NOT user input, so userTempo stays null: the NEXT no-`@mm` scene's
+    // …but it is NOT user input, so userTempo stays null: the NEXT no-`mm` scene's
     // compile default (`userTempo != null ? { tempo: userTempo } : undefined`) does NOT
     // inherit 70 — it passes `undefined`, so BPx applies ITS OWN default (60). This is
     // the exact F06 leak the old re-entrancy guard failed to prevent.

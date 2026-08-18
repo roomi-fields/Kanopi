@@ -39,8 +39,8 @@
 // de périmètre. Or `@language` ne dit pas en quel langage la scène est écrite — il dit quel
 // langage de VOIX elle met en scène, et il ne sert qu'au filtre déroulant de la bibliothèque
 // (`stores/library.svelte.ts:103`) ; aucun code d'exécution ne le lit. Une scène `@language: js`
-// ou `@language: strudel` est du BPScript tout autant qu'une autre : elle a ses `@core`, ses
-// `@actor`, ses règles `S -> …`. CE QUE LE FILTRE A COÛTÉ : `cv/cv-backtick.bps` et
+// ou `@language: strudel` est du BPScript tout autant qu'une autre : elle a ses `core`, ses
+// `actor`, ses règles `S -> …`. CE QUE LE FILTRE A COÛTÉ : `cv/cv-backtick.bps` et
 // `code-voices/cv-curve-js.bps` sont tombées avec le cassant du 2026-07-29 (forme déclarative nue
 // supprimée) SANS que ce garde crie — deux scènes de vitrine cassées, invisibles.
 // MESURÉ avant d'élargir, pour ne pas échanger un trou contre un faux rouge : sur les 202 `.bps`,
@@ -118,7 +118,7 @@ const GRAINE = 1;
  *
  *  ✅ RESSERRÉS LE MÊME JOUR, la perte amont ayant été réparée — l'épisode complet est gardé
  *  ci-dessous parce qu'il montre à quoi sert d'écrire un desserrage au lieu de le subir.
- *  Le refus nomme à nouveau l'entité (`'@cv env1' est supprimé du langage…`), donc les cinq
+ *  Le refus nomme à nouveau l'entité (`'cv env1' est supprimé du langage…`), donc les cinq
  *  motifs l'exigent à nouveau et redeviennent discriminants scène par scène.
  *  ✅ ET LA NUANCE A ÉTÉ FERMÉE DANS LA FOULÉE : le refus liste désormais TOUTES les entités de
  *  la scène (« …en déclare 2 : envGroup, envNote »), et reste sobre quand il n'y en a qu'une.
@@ -223,7 +223,7 @@ const ROUGES_DECLAREES: Array<{
     attend:
       "idem koto1 — même erreur, même règle SUB à jokers, même origine amont. ⚠️ C'est elle qui a révélé que ce garde basculait : elle est SORTIE de cette liste puis y est RENTRÉE dans la même heure, parce qu'un tirage d'horloge favorable l'avait fait dériver une fois. Sous la GRAINE FIGÉE ci-dessus, elle jette de façon reproductible."
   },
-  // ── Les CINQ scènes @cv/@macro, décision Romain 2026-08-08 (KAN-40). '@cv' et '@macro' sont
+  // ── Les CINQ scènes cv/macro, décision Romain 2026-08-08 (KAN-40). 'cv' et 'macro' sont
   // supprimés du langage ; BPx refuse de les dériver au lieu de les avaler en silence (sans ce
   // refus, la scène dériverait SANS ERREUR et le dispatch en aval retomberait muet — mesuré sur
   // patchbay : 8 événements avant, 8 après, mais plus aucun armement). On ne migre PAS vers la
@@ -233,49 +233,55 @@ const ROUGES_DECLAREES: Array<{
   // réglages de départ » — existe dans la référence du langage mais pas dans le parseur, et elle
   // sera COMPLÈTEMENT REVUE avec l'arrivée de FaustX : l'écrire maintenant serait écrire une
   // forme qu'on remplacera. Elles RESTENT dans le corpus, déclarées rouges. Suivi : KAN-40.
-  // CHANTIER DES GABARITS — LA FENÊTRE S'EST DÉPLACÉE, ELLE NE S'EST PAS REFERMÉE. `simpletemplates`
-  // dérive de nouveau (l'attente inversée l'a dit en réclamant son retrait, et l'entrée est partie).
-  // `catalogue-de-gabarits` échoue maintenant sur un AUTRE message — `compileTemplates:` au lieu de
-  // `elements is not iterable` : BPx a porté sa moitié, et une seconde marche apparaît derrière la
-  // première. Réinscrite avec le message du jour, pas avec l'ancien.
-  {
-    fichier: 'samples/catalogue-de-gabarits-les-rangs.bps',
-    motif: /compileTemplates:/,
-    cause: 'forme-a-venir',
-    attend:
-      "la suite du chantier des gabarits chez BPx — la première marche est franchie (l'erreur de type a disparu), celle-ci est la seconde."
-  },
+  // CHANTIER DES GABARITS — CLOS, ET PAS PAR OÙ ON L'ATTENDAIT. On guettait la seconde marche chez
+  // BPx ; c'est la SECTION ELLE-MÊME qui est sortie du langage (décision Romain 2026-08-16, retrait
+  // et non conversion). `simpletemplates` garde ses gabarits vivants — `$` et `&` — et a perdu sa
+  // section. `catalogue-de-gabarits-les-rangs` ne tenait QUE par elle : mesuré, aucun `$`, aucun `&`,
+  // et la scène redevient verte en retirant ses trois lignes de catalogue. Elle est SUPPRIMÉE, donc
+  // son inscription ici part avec elle — un rouge déclaré sans fichier est un mensonge de registre.
   {
     fichier: 'cv/cv-adsr.bps',
-    motif: /'@cv env1' est supprim(é|e) du langage/,
+    motif: /'cv env1' est supprim(é|e) du langage/,
     cause: 'forme-a-venir',
     attend:
       'la forme « instance de module avec ses réglages de départ » (attack:5, decay:150, sustain:0.2, release:400 sur env1), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
   },
   {
     fichier: 'cv/cv-lfo.bps',
-    motif: /'@cv sweep' est supprim(é|e) du langage/,
+    motif: /'cv sweep' est supprim(é|e) du langage/,
     cause: 'forme-a-venir',
     attend:
       'la forme « instance de module avec ses réglages de départ » (rate:0.4, amplitude:0.9, shape:sine sur sweep), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
   },
   {
     fichier: 'synthesis/group-cutoff.bps',
-    motif: /'@cv env1' est supprim(é|e) du langage/,
+    motif: /'cv env1' est supprim(é|e) du langage/,
     cause: 'forme-a-venir',
     attend:
       'la forme « instance de module avec ses réglages de départ » (attack:8, decay:750, sustain:0.1, release:300 sur env1), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
   },
   {
     fichier: 'synthesis/superp-cutoff.bps',
-    motif: /'@cv envGroup' est supprim(é|e) du langage.*d(é|e)clare 2 : envGroup, envNote/,
+    // ⚠️ LE MOTIF A MAIGRI PARCE QUE LE MESSAGE A MAIGRI, pas parce que j'ai relâché le garde. Le
+    // compilateur nommait le COMPTE des déclarations (« déclare 2 : envGroup, envNote ») ; il ne le
+    // fait plus. Ce qui reste discrimine encore cette scène de `group-cutoff` — le nom `envGroup`
+    // n'appartient qu'à elle. La perte est remontée à bpscript le 2026-08-18.
+    motif: /'cv envGroup' est supprim(é|e) du langage/,
     cause: 'forme-a-venir',
     attend:
       'la forme « instance de module avec ses réglages de départ » (envGroup : attack:600, decay:500, sustain:0.5, release:700 ; envNote : attack:5, decay:110, sustain:0.2, release:160), pas encore dans le parseur, revue avec FaustX. Suivi : KAN-40.'
   },
   {
     fichier: 'synthesis/patchbay.bps',
-    motif: /'@macro lead' est supprim(é|e) du langage.*d(é|e)clare 4 : lead, open, close, glide/,
+    // ⛔ CETTE SCÈNE A CHANGÉ D'ÉTAGE D'ÉCHEC, ET C'EST UNE PERTE DE DIAGNOSTIC, PAS UN PROGRÈS.
+    // Avec l'arobase, le compilateur nommait le retrait : « '@macro lead' est supprimé du langage ».
+    // Sans elle, `macro` n'est plus reconnu comme mot d'invocation : l'analyse le lit comme une tête
+    // de règle et tombe sur la syntaxe (`Expected IDENT, got GT`), sans jamais dire POURQUOI. Les
+    // quatre scènes `cv` du même lot, elles, sont toujours diagnostiquées nommément sous la forme
+    // nue — donc le trou est propre à `macro`, chez bpscript, et il lui est remonté le 2026-08-18.
+    // Le motif du jour dit ce que le compilateur écrit RÉELLEMENT ; il redeviendra nommé quand le
+    // message le sera, et ce garde rougira alors pour le réclamer.
+    motif: /Expected IDENT, got GT \(>\) at line 30/,
     cause: 'forme-a-venir',
     attend:
       "la forme « instance de module avec ses réglages de départ », pas encore dans le parseur, revue avec FaustX — ET deux causes de plus, propres à cette scène : le domicile du câblage persistant (lead/open/close/glide) n'a pas de forme de remplacement tranchée, et ses modules (saw, lpf) sont absents du catalogue de modules (qui n'en porte que trois : adsr, lfo, ramp). Suivi : KAN-40."
@@ -404,7 +410,7 @@ describe('[932] statut de compilation du corpus BPScript', () => {
 //
 // POURQUOI SUSPENDRE PLUTÔT QUE RÉPARER : sa scène a DEUX causes empilées, mesurées. Sur l'état
 // commité d'hier elle échouait déjà, sur un attribut de brassage que le langage ne connaît plus ;
-// la migration `@controls` → `@core` n'a fait que CHANGER SON MESSAGE. Le rebrancher sur un
+// la migration `controls` → `core` n'a fait que CHANGER SON MESSAGE. Le rebrancher sur un
 // vocabulaire qui passe le viderait de son sujet — il mesure le rattrapage de graine, pas la
 // capacité d'une scène à analyser.
 //
@@ -439,8 +445,8 @@ describe('le rattrapage de graine mord', () => {
   const source = Object.entries(BPS).find(([c]) => c.endsWith('BPScript-tests/trySrand.bps'))?.[1];
   const avecAlphabet = () =>
     source!.replace(
-      '@controls',
-      '@alphabet.bp3_english:midi\n@gate a:midi\n@gate b:midi\n@controls'
+      'controls',
+      'alphabet.bp3_english:midi\n@gate a:midi\n@gate b:midi\ncontrols'
     );
 
   it('SUSPENDU — le témoin n’analyse pas, et POUR SA RAISON déclarée', () => {
@@ -525,19 +531,19 @@ describe('le rattrapage de graine mord', () => {
 // mesurée AVANT/APRÈS sur l'arbre dérivé ENTIER — strictement identique, au temps de dérivation
 // près (le seul champ non déterministe). Un compte de jetons égal n'aurait pas suffi : c'est
 // exactement ce qui a laissé passer une scène inerte le matin même.
-// `@mm` EST SUPPRIMÉ, REMPLACÉ PAR `@tempo` (décision Romain 2026-08-09, migration AVANT la
+// `mm` EST SUPPRIMÉ, REMPLACÉ PAR `tempo` (décision Romain 2026-08-09, migration AVANT la
 // fermeture amont). Ce garde couvre MES scènes ; les scènes `kairos-*` sont les siennes et il les
 // migre de son côté — les exclure serait masquer sa dette, donc elles sont NOMMÉES ici tant
 // qu'elles restent, et ce banc devra les inclure quand il aura poussé.
 // ⚠️ LE GARDE LIT LES COMMENTAIRES, ET C'EST DÉLIBÉRÉ. La seule occurrence qu'il me restait
 // vivait dans le `@tagline` de `learn/tuto-04-tempo.bps` — pas dans le code de la scène, qui
-// écrivait déjà `@tempo`, mais dans la MÉTADONNÉE DE CARTE affichée au rail (`scenes.ts:97`).
+// écrivait déjà `tempo`, mais dans la MÉTADONNÉE DE CARTE affichée au rail (`scenes.ts:97`).
 // Une forme morte dans une vitrine enseigne avant même qu'on ouvre le fichier ; un garde qui
 // sauterait les lignes de commentaire ne l'aurait jamais vue.
 // ⚠️ ET MON PREMIER BALAYAGE L'AVAIT RATÉE : mon motif exigeait un caractère après le mot, elle
 // est en fin de phrase. C'est l'architecte qui l'a trouvée, pas moi. D'où le motif nu ci-dessous.
-// ⛔ SECOND TROU, LE MÊME JOUR : la première version de ce garde cherchait `@mm` — L'AROBASE. Or
-// le mot vit AUSSI dans un sac de mode (`@mode:ord(mm:60)`), où il n'y a pas d'arobase. Il ne
+// ⛔ SECOND TROU, LE MÊME JOUR : la première version de ce garde cherchait `mm` — L'AROBASE. Or
+// le mot vit AUSSI dans un sac de mode (`mode:ord(mm:60)`), où il n'y a pas d'arobase. Il ne
 // voyait donc NI `tryTimePatterns.bps` NI `tryKeyXpand.bps`, les deux seuls fichiers réellement
 // concernés — un garde posé contre une forme, aveugle à sa moitié. Les deux graphies sont
 // couvertes depuis. La leçon vaut au-delà : un mot supprimé se cherche PAR LE MOT, pas par la
@@ -546,12 +552,17 @@ describe('aucune scène à moi n’écrit `mm`, supprimé au profit de `tempo`',
   it('balayage nommé, métadonnées ET sacs de mode compris', () => {
     const fautifs = Object.entries(BPS)
       .filter(([chemin]) => !chemin.includes('/kairos-'))
-      // `@mm` en tête de scène ET `mm:` dans un sac de mode — DEUX graphies, un seul mot mort.
-      .filter(([, src]) => /@mm/.test(src) || /\bmm\s*:/.test(src))
+      // ⛔ LE DEUX-POINTS EST CE QUI TIENT CE GARDE, depuis que l'arobase est sortie du langage :
+      // c'est lui qui sépare l'invocation `mm:70` du digramme `mm` de n'importe quel mot français.
+      // Mesuré : le motif nu `/mm/` a rendu 122 scènes fautives sur 326 — « comment », « somme »,
+      // « programme ». Un garde trop large fait migrer dans le vide aussi sûrement qu'un garde
+      // trop étroit laisse passer. Les deux graphies d'hier — en tête de scène et dans un sac de
+      // mode — ont FUSIONNÉ sous la forme nue : `mm:` les couvre toutes les deux.
+      .filter(([, src]) => /\bmm\s*:/.test(src))
       .map(([chemin]) => chemin.split('/scenes/')[1] ?? chemin);
     expect(
       fautifs,
-      '`@mm` est supprimé du langage : écrire `@tempo`. Vaut aussi dans les commentaires et les ' +
+      '`mm` est supprimé du langage : écrire `tempo`. Vaut aussi dans les commentaires et les ' +
         'métadonnées de carte (`@tagline`), qui enseignent avant que le fichier soit ouvert.'
     ).toEqual([]);
   });
@@ -594,7 +605,9 @@ describe('aucune scène du corpus ne colle un outil sériel à une fermante', ()
 
 describe('le brassage AGIT, et seulement devant le bloc', () => {
   const BLOC = '{C4 D4 E4 F4 G4}';
-  const TETE = '@core\n@alphabet.western:midi\n\nS -> ';
+  // Le délimiteur sépare les invocations de la production : sans arobase pour les marquer, c'est
+  // lui seul qui dit où finit le déclaratif. Une tête qui l'oublie ne s'analyse plus.
+  const TETE = 'core\nalphabet.western:midi\n\n-----\nS -> ';
   const ordre = (regle: string) => {
     const { ast, errors } = compileToBPxAST(TETE + regle + '\n') as {
       ast: unknown;

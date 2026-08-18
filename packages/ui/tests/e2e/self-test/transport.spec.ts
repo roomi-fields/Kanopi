@@ -27,9 +27,10 @@ const POS_LOCATOR = '.sb-item[title^="bar.beat"] .num';
 // `:audio`, NOT `:midi`: this probe tests the TRANSPORT, and since the
 // MIDI fail-loud GATE a `:midi` scene without a device (no setupFakeMidi here)
 // would be BLOCKED at eval — the probe must stay playable without MIDI hardware.
-const PROBE_SCENE = `@core
-@alphabet.western:audio
+const PROBE_SCENE = `core
+alphabet.western:audio
 
+-----
 S -> C4 D4 E4 G4 C5 G4 E4 C4
 `;
 
@@ -134,7 +135,7 @@ test('bar.beat counter advances within 3 seconds after Play at the effective tem
   await page.locator('.tbtn[title="Play"]').click();
   await expect(page.locator('.tbtn.playing')).toBeVisible({ timeout: 3_000 });
 
-  // Whatever the effective tempo is (the scene's `@mm`, else the session tempo
+  // Whatever the effective tempo is (the scene's `mm`, else the session tempo
   // injected into the AST, else BPx's own default), a beat is well under 3s, so
   // the bar.beat string must move from its frozen initial value (DERIVED from
   // transport.beatPosition()). We assert the BEHAVIOUR (the counter advances),
@@ -167,7 +168,7 @@ test.fixme('BPM widget reflects the effective tempo; clicking it and typing a ne
   await page.goto('');
   // No editable BPM widget exists yet — see comment above. When one lands,
   // this test should: assert ".bpm-value" reflects the EFFECTIVE tempo (the
-  // scene's `@mm`, else the session tempo, else BPx's engine default — NOT a
+  // scene's `mm`, else the session tempo, else BPx's engine default — NOT a
   // hardcoded host 128, which was removed), click into it, type "100", press
   // Enter, and assert ".bpm-value" reads "100".
 });

@@ -4,8 +4,8 @@ import { initAdapters } from '../runtimes/registry';
 import { referencedLibraries } from './referenced';
 import { compileBps } from '../runtimes/compile-cache';
 
-// LE VERROU EST RETOURNÉ. Deux directives sont SORTIES du langage — `@library.<moteur>
-// "<banque>"` (Romain 2026-08-06) et `@transport.<canal>` (Romain 2026-08-04). Une scène qui
+// LE VERROU EST RETOURNÉ. Deux directives sont SORTIES du langage — `library.<moteur>
+// "<banque>"` (Romain 2026-08-06) et `transport.<canal>` (Romain 2026-08-04). Une scène qui
 // les écrit encore ne produit plus d'arbre : elle tombe donc dans le REPLI-TEXTE du panneau
 // des ressources, la seule voie qui tourne sur ces scènes-là. Le repli les affichait comme des
 // ressources valides — « audio bank: gm » pour une scène qui ne jouera jamais un son (mesuré
@@ -16,8 +16,8 @@ import { compileBps } from '../runtimes/compile-cache';
 beforeAll(() => initAdapters(createEventBus()));
 
 const SUPPRIMEES = [
-  { mot: '@library', scene: '@library.strudel "gm"\n@core\nS -> C4 D4\n', jamais: 'gm' },
-  { mot: '@transport', scene: '@transport.midi\n@core\nS -> C4 D4\n', jamais: 'midi' }
+  { mot: 'library', scene: 'library.strudel "gm"\ncore\n-----\nS -> C4 D4\n', jamais: 'gm' },
+  { mot: 'transport', scene: 'transport.midi\ncore\n-----\nS -> C4 D4\n', jamais: 'midi' }
 ];
 
 describe('les directives SORTIES du langage ne sont plus des ressources', () => {

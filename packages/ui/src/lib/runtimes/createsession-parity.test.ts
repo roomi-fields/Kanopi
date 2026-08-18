@@ -17,24 +17,26 @@ import type { TimedToken } from 'bpx';
 
 // Two REAL bundled scenes (inlined — the UI tsconfig has no node:fs types):
 //  - dual-actors-audio.bps: a normal multi-actor .bps (notes, controls, rest).
-//  - arabic.bps: a non-English alphabet + maqam tuning + @mm scene (the exact kind
+//  - arabic.bps: a non-English alphabet + maqam tuning + mm scene (the exact kind
 //    of scene whose silence was the "FAIT means proven on REAL scenes" lesson).
-const DUAL_ACTORS = `@core
+const DUAL_ACTORS = `core
 
-@actor lead  @alphabet.western  out.audio
-@actor bass  @alphabet.western  out.audio
+actor lead  alphabet.western  out.audio
+actor bass  alphabet.western  out.audio
 
+-----
 S -> {Lead, Low}
 
 Lead -> lead.C5 lead.E5 lead.G5 lead.E5 lead.C5 lead.E5 lead.G5 lead.E5
 Low  -> bass.C2(wave:sawtooth, vel:90) - bass.G2 - bass.A2 - bass.F2 -
 `;
 
-const ARABIC = `@core
-@alphabet.arabic:audio
-@tuning.maqam_rast
-@tempo:70
+const ARABIC = `core
+alphabet.arabic:audio
+tuning.maqam_rast
+tempo:70
 
+-----
 S -> Sayr Rujoo Qarar
 
 Sayr -> rast dukah sikah jaharkah nawa husayni awj (wave:sine, vel:85)
@@ -45,7 +47,7 @@ Qarar -> rast _ _ _ _ (vel:60)
 // The host's createBPx config (bpx-adapter.ts ~l.1500) → SessionOptions mapping
 // (instance.ts loadGrammar): tempo→tempo, settings→settings, flags→initialFlags,
 // seed→seed. We exercise the config shapes the host actually passes: a seed and an
-// explicit derive tempo (arabic carries @tempo:70, so deriveTempo is undefined there —
+// explicit derive tempo (arabic carries tempo:70, so deriveTempo is undefined there —
 // BPx applies its own default; we mirror that by passing the same to both paths).
 interface HostConfig {
   tempo?: number;
@@ -141,8 +143,8 @@ function deriveViaSession(src: string, cfg: HostConfig): { tree: NodeView; token
 
 const SCENES: Array<{ name: string; src: string; cfg: HostConfig }> = [
   { name: 'dual-actors-audio (normal .bps)', src: DUAL_ACTORS, cfg: { tempo: 120, seed: 1 } },
-  // arabic carries @tempo:70 in the source, so the host passes deriveTempo=undefined
-  // (BPx reads @mm). Mirror that: no tempo override on either path.
+  // arabic carries tempo:70 in the source, so the host passes deriveTempo=undefined
+  // (BPx reads mm). Mirror that: no tempo override on either path.
   { name: 'arabic (maqam, non-English alphabet)', src: ARABIC, cfg: { seed: 1 } }
 ];
 

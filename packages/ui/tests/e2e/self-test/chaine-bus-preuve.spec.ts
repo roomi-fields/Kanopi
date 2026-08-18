@@ -23,7 +23,7 @@ const SONNANTE = fileURLToPath(
 // Le témoin négatif : une scène SANS aucune note — que des silences. Elle traverse exactement la
 // même chaîne (analyse, dérivation, ordonnancement, publication) et ne doit RIEN faire sonner.
 // Ce n'est donc pas « une page vide » : c'est le même chemin, sans matière à rendre.
-const MUETTE = '@core\n@alphabet.western\n@tempo:120\n\nS -> Rien\nRien -> - - - -\n';
+const MUETTE = 'core\nalphabet.western\ntempo:120\n\n-----\nS -> Rien\nRien -> - - - -\n';
 
 async function charger(page: import('@playwright/test').Page, nom: string, contents: string) {
   await page.evaluate(

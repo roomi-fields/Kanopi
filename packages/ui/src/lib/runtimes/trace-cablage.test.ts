@@ -151,9 +151,10 @@ function installFakeAudio() {
     0;
 }
 
-// Scène minimale, plain mono (pas d'@actor) : suffit à atteindre le site d'éval
+// Scène minimale, plain mono (pas d'actor) : suffit à atteindre le site d'éval
 // (bpx-adapter.ts ~L1774) qui construit `createSession(ast, opts)`.
-const SCENE = `@core
+const SCENE = `core
+-----
 S -> C4 E4 G4 C5
 `;
 

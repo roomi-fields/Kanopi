@@ -23,7 +23,7 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../../hel
 // Chargement/éval : même hatch dev `__kanopi.workspace` que strudel.spec.ts / health-chip.spec.ts
 // (API pilote, jamais d'import de store dans la page). Un Ctrl+Enter sur un `.bps` monobloc
 // (evalBlockAt) calcule le même `qualifiedName`/actorId que `openBlocks.blocksForFile` pour un
-// fichier code-voice AUTONOME — mais PAS pour un `.bps` structuré en `@actor … eval.strudel`
+// fichier code-voice AUTONOME — mais PAS pour un `.bps` structuré en `actor … eval.strudel`
 // (voir le fix `runtimeErrorsForFile` dans stores/blocks.svelte.ts, expliqué dans le rapport).
 
 interface KanopiHatch {
@@ -113,7 +113,7 @@ test('strudel/03 sonne : n(...).scale("C:minor").sound("gm_piano") produit un RM
 });
 
 // (d) patchbay sonne [829] — le modèle son LANG-SONS bout-en-bout DANS L'APP : une voix-câblage
-// persistante `@macro lead = saw.freq: pitch >> lpf.cutoff: BT >> audio` arme un patch dont l'ARM
+// persistante `macro lead = saw.freq: pitch >> lpf.cutoff: BT >> audio` arme un patch dont l'ARM
 // (kind:'control') porte `output.runtime='audio'` (gravé par kairos DEPUIS `actionLib.runtimeParModule`
 // = `sinkRuntimeMap()` du catalogue, [414]/[829]) → routé à runtime-audio → patch armé → RMS>0. Verrou
 // anti-régression du bug [414] (l'arm droppé faute d'output → muet). Scène library synthesis/patchbay.bps.
@@ -121,10 +121,10 @@ const librarySynthesisDir = fileURLToPath(
   new URL('../../../../library/scenes/synthesis', import.meta.url)
 );
 // SKIPPÉ (décision Romain 2026-08-08, KAN-40) : joue synthesis/patchbay.bps, déclarée rouge par
-// la garde de statut du corpus. La scène déclare son câblage `@macro` avec des mots supprimés du
+// la garde de statut du corpus. La scène déclare son câblage `macro` avec des mots supprimés du
 // langage ; la forme qui préserverait ses réglages de départ n'existe pas encore dans le parseur
 // et sera revue avec FaustX. Revient avec la scène.
-test.skip('patchbay sonne : un @macro saw>>lpf>>audio armé produit un RMS > 0 mesuré [829]', async ({
+test.skip('patchbay sonne : un macro saw>>lpf>>audio armé produit un RMS > 0 mesuré [829]', async ({
   page
 }) => {
   const audio = await setupAudioCapture(page);
@@ -221,10 +221,10 @@ test("son inexistant (ASYNC) → onStrudelError remonte ET le chip passe ROUGE '
   // Skeleton minimal validé par l'oracle BPScript (0 échec structurel) — un seul acteur
   // eval.strudel (sort en NATIF, sans transport : modèle producteur/canal [809]) qui schedule
   // un pattern jouant un nom de son inexistant. Le seul défaut de la scène est ce son.
-  const broken = `@core
-@tempo:120
+  const broken = `core
+tempo:120
 
-@actor v  eval.strudel
+actor v  eval.strudel
 
 S -> v_r
 
@@ -286,11 +286,11 @@ test('une erreur JS synchrone dans un acteur eval.strudel fait passer le chip ro
   // matchait QUE les clés `qualifyBlock` (fichier SANS extension, un seul bloc `wholeFile` pour
   // un .bps) alors que le dispatcher BPx clé `getSlotErrors()` en `${fileName-AVEC-ext}::${acteur}`
   // (bpx-adapter.ts `slotForActor`) — deux conventions qui ne se recoupaient JAMAIS pour un
-  // `.bps` structuré en `@actor`. Le chip restait vert malgré une voix qui erreure en continu.
-  const syncThrow = `@core
-@tempo:120
+  // `.bps` structuré en `actor`. Le chip restait vert malgré une voix qui erreure en continu.
+  const syncThrow = `core
+tempo:120
 
-@actor v  eval.strudel
+actor v  eval.strudel
 
 S -> v_r
 
