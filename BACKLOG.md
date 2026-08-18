@@ -329,3 +329,39 @@ Chiffres pris ce jour, sur demande de Romain. Ils ne vivaient nulle part ailleur
   cassées, 0 identique sur 312). **Trois ont rendu un chiffre plausible** — et celles-là ne
   déclenchent aucune vérification. Une empreinte doit exclure ce que le geste **déplace
   légitimement**, pas seulement ce qui varie tout seul.
+
+### L'index du dépôt — ce qu'il servait et ce qu'il ignorait
+
+Mesure du 2026-08-18, prise sur la base d'index et sur l'arbre de travail.
+
+- **KAN-57** `ouvert` — **la source déclarée de l'index pointait hors du dépôt.** Elle
+  désignait `/home/romi/dev/music/kanopi` ; le dépôt vit à `/home/romi/dev/bp/kanopi`. La
+  synchronisation ne faisait donc rien depuis le déménagement, et le disait en une ligne
+  (`path missing — skipped`, `nothing to do (no valid source)`) que seule une passe à blanc
+  révèle. Racine corrigée, source morte retirée, synchronisation lancée.
+
+| | avant | après |
+| --- | --- | --- |
+| documents indexés | 787 | 1056 |
+| vivants servis | 150 | 425 |
+| **vivants absents de l'index** | **183 / 321** | **0 / 321** |
+| morts servis | 637 | 631 |
+
+- **Le chiffre brut ment sur le risque — discriminer par nature.** Des 637 morts, **579
+  n'ont jamais été versionnés** : captures d'écran, résultats de test, fichiers temporaires,
+  qui ne trompent personne. **58 sont du document rédigé et du code supprimé** — noms
+  crédibles, sortis en tête de recherche. Le pourcentage à citer est celui-là.
+- **Le défaut coûteux est l'absence, pas le fantôme.** Un mort qui sort est bruyant : on
+  ouvre le fichier et on voit qu'il n'existe plus. Un vivant absent est silencieux — la
+  recherche rend le meilleur résultat qu'elle a, sans dire qu'elle n'a pas le bon, et l'on
+  conclut que la chose n'existe pas. Sur une requête ordinaire, deux modules supprimés
+  sortaient en 2e et 4e position pendant que leurs remplaçants vivants, dans le même
+  dossier, sortaient après eux.
+- **KAN-58** `ouvert` — **631 morts restent servis.** Le retrait s'inscrit dans une file
+  tenue par un service partagé entre vingt projets ; il n'est pas atteint. L'outil porte en
+  outre un coupe-circuit qui refuse d'effacer une grande fraction d'un corpus en une passe.
+  La réparation attend un arbitrage sur la priorité de la tour dans ce service.
+- **La forme du chemin dit l'existence, et seulement sur un index dont la source résout.**
+  Une recherche rend les fichiers vivants en chemin absolu et les morts en relatif — la
+  résolution est refaite à chaque requête. Sur une source morte la résolution échoue
+  toujours : tout sort en relatif, et le signe déclare tout le monde mort.
