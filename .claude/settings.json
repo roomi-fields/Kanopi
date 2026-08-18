@@ -44,7 +44,16 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /home/romi/dev/bp/hub/tools/hooks/index-dabord.sh"
+            "command": "bash ~/dev/bp/hub/tools/hooks/index-dabord.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/dev/bp/hub/tools/hooks/index-dabord.sh"
           }
         ]
       }
