@@ -265,3 +265,67 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 - **KAN-51** `ouvert` [P2] — Ma copie des reglages BP3 diverge de bp3-engine sur 22 des 143 fichiers -se (ancien format positionnel chez moi, zero chez lui depuis sa conversion du 2026-08-14). Exactement ces 22, aucun autre. Consommes VIVANTS par l application (glob eager, bp3-aux.ts). Sans effet sur le tempo (parseSeFile lit l ancien format) mais aucun chemin de resynchronisation derive n existe. Annexe non elucide : ma chaine compte 28 reglages non-JSON la ou le disque en porte 22. REPRENDRE LA CONVERSION APRES 7aafd19, jamais f936475 : la premiere perdait la graine aleatoire et le decoupage des variables (mesure bp3-frontend). ⛔ LA CAUSE, ET ELLE COMMANDE LE GESTE : scripts/garde-correspondance-bp3.mjs verifie que chaque chemin de la table EXISTE, jamais qu il soit A JOUR. Une copie perimee y passe au vert, et elle y est passee des heures, consommee vivante par l application. C est ce qui rendra le PROCHAIN ecart visible ; la synchronisation d aujourd hui ne le fera pas. Volet miroir chez bp3-engine : BPE-30.
 - **KAN-52** `abandonné` [P2] — COPIE PERIMEE de bp3-engine/test-data : test-assets/bp3/commun/ porte 143 fichiers -se dont 22 en ANCIEN FORMAT — exactement les 22 convertis par bp3-engine le 2026-08-14 (prendre apres 7aafd19, pas la premiere conversion qui perdait deux cles). La bibliotheque les consomme VIVANTS par un glob eager. Une copie diverge en silence.  _(abandonné: DOUBLON de KAN-51, qui garde le numero — inscrit par l architecte dans la meme minute, sans voir le sien. Son contenu passe dans KAN-51 : priorite P2, et prendre la conversion APRES 7aafd19 (la premiere perdait deux cles).)_
 - **KAN-53** `ouvert` — Bancs ecran tardifs qui echouent a TOUTES leurs tentatives, cause NON ETABLIE. Portillon du 2026-08-14 : seek-daw.spec.ts:210, shortcuts.spec.ts:38 et :63 echouent tous a 12,3 s exactement sur leurs trois tentatives, numerotes 102 a 106 sur 108. MESURE : 105 bancs PASSENT, donc ce n est PAS un ecran qui ne monte pas -- le denominateur refute cette lecture. ELIMINE : le serveur de developpement detache depuis 35 h n est pas en cause, playwright.config.ts possede son propre serveur sur port dedie avec reuseExistingServer false, collision fermee explicitement. FORME OBSERVEE sur trois campagnes consecutives du meme arbre : a chaque fois un ou plusieurs bancs TARDIFS differents tombent (campagne 1 shortcuts:63, campagne 2 p5:12, campagne 3 les trois ci-dessus), coherent avec un epuisement de fin de campagne. Ce n est PAS une cause etablie et il ne faut pas la fermer dessus. PROCHAINE ACTION : instrumenter la fin de campagne (memoire, contextes audio non liberes) ou scinder la campagne, pour discriminer epuisement contre defaut propre a ces bancs. ⛔ PISTE DATEE, AJOUTEE APRES COUP ET NON ETABLIE : la campagne rouge tournait 20:12-20:24:22, et bpscript a enregistre src/transpiler/libs-{bundle,data}.js a 20:24:21 -- une seconde avant sa fin, au milieu d'une bascule de librairie d'une trentaine de minutes pendant laquelle, DE SON PROPRE AVEU, ces fichiers changeaient a chaque regeneration. Je le consomme par LIEN SYMBOLIQUE : ma source etait donc reecrite SOUS la campagne. La campagne suivante, lancee apres son commit 54e0f67 sur un arbre propre, est VERTE (108 bancs). Correlation sur deux campagnes, pas une cause : le HMR du serveur de portillon est coupe, donc un rechargement est exclu, mais un import tardif lirait le fichier au moment de sa demande. POUR TRANCHER : rejouer une campagne pendant qu'un voisin lie reecrit sa source, et voir si des bancs TARDIFS tombent. ⛔⛔ CONTRE-MESURE, PRISE APRES ET QUI AFFAIBLIT LA PISTE CI-DESSUS : la campagne suivante, sur un arbre de voisin PROPRE, a quand meme vu shortcuts.spec.ts:63 echouer DEUX fois sur trois tentatives (2 instables au total). L'instabilite existe donc SANS reecriture de source. DISTINGUER DEUX CHOSES QUE J'AVAIS CONFONDUES : (a) le banc du silence INSTABLE — present dans presque toutes les campagnes, arbre propre ou non, INDEPENDANT de la piste ; (b) trois bancs tardifs MORTS a toutes leurs tentatives — arrive UNE SEULE FOIS, pendant la reecriture. La piste ne porte que sur (b), et (a) est un sujet distinct qui ne se refermera pas avec elle.
+
+## Mesures du 2026-08-18 — gardes, portillon, canal
+
+Chiffres pris ce jour, sur demande de Romain. Ils ne vivaient nulle part ailleurs.
+
+### Ce que pèsent les gardes
+
+- **120 fichiers de garde** — 79 unitaires, 41 écran, plus 15 scripts. **508 cas** écrits
+  (910 à l'exécution : le corpus engendre ses cas en boucle), **1260 assertions**.
+- **KAN-54** `ouvert` — **la morsure de 112 gardes sur 120 n'est pas établie.** Seuls
+  **3 fichiers** portent une injection prouvée — la seule marque qui atteste. 5 racontent
+  un défaut attrapé. Les 59 qui portent une date et les 36 qui écrivent « mesuré » ne
+  prouvent rien : ils prouvent qu'on a écrit une date. **L'historique ne tranche pas non
+  plus** — un filtre sur les messages de commit rend 118 faux positifs sur 776. Pour
+  savoir, il faudrait que chaque garde porte son injection prouvée, comme les 3.
+
+### Où part le temps du portillon (~727 s)
+
+| maillon | temps | part |
+| --- | --- | --- |
+| e2e (playwright, 121 cas) | 636 s | 96 % |
+| test unitaire (910 cas) | 52 s | 7 % |
+| build | 17 s | |
+| lint | 11 s | |
+| check (svelte-check) | 7 s | |
+| depcruise | 2,6 s | |
+| les 9 gardes maison | 1,0 s | **0,14 %** |
+
+- **Les gardes ne coûtent rien** : les supprimer tous ferait gagner une seconde sur douze
+  minutes.
+- **Et le temps écran n'est pas du gaspillage** : 579 s de durée de cas cumulée sur 636 s
+  de campagne — 9 % d'écart, pas de lancement à vide ni de double compilation. La cause est
+  `playwright.config.ts` : `workers: 1`, parce que les bancs **jouent du son** et que deux
+  en parallèle se marcheraient dessus.
+- Variabilité mesurée le même jour, même crochet : 10,6 · 10,8 · 10,9 · 11,0 · 11,2 ·
+  12,1 min. Un total au chiffre près n'a pas de sens ; l'ordre relatif, oui.
+
+### Le rayon du canal MIDI
+
+- `chan:N` **259** occurrences (11 fichiers) — dans un **marqueur de contrôle** au fil du flux.
+- `ch:N` **14** occurrences (9 fichiers) — dans le **sac de sortie** d'un acteur, ou sur une
+  occurrence.
+- `channel:N` **0** — cette graphie n'existe pas ici.
+- **KAN-55** `ouvert` — **une quatrième forme, en PROSE** : `channel N` sans deux-points,
+  dans une commande de script — 2 occurrences en `.bps`, 8 en `.gr`. Aucun motif cherchant
+  `channel:` ne la trouve. Ce n'est pas du langage : c'est du texte de commande hérité du
+  natif. `alan-dice` et `beatrix-dice` la portent et sont déjà des rouges déclarés, sous un
+  autre sujet.
+- ⛔ `ch:` et `chan:` **ne vivent pas au même endroit**. Avant toute unification, établir si
+  ce sont deux noms d'une chose ou deux choses.
+
+### Défauts d'instrument payés ce jour — cinq, et ce qu'ils enseignent
+
+- **KAN-56** `ouvert` — **inscrire l'injection prouvée dans les gardes qui n'en ont pas.**
+  Cinq de mes propres instruments ont menti dans la même journée : un motif qui espaçait le
+  tiret de la flèche `->` ; un filtre visant un champ inexistant (`deriveMs` au lieu de
+  `derivationTimeMs`), donc mordant sur rien ; une flèche cherchée dans un **commentaire de
+  fin de ligne** ; une empreinte comparant les **numéros de ligne** que le geste déplace ;
+  un total « hors commentaire » **étiqueté** « blocs de code » sans que les 20 lignes soient
+  regardées.
+- **Ce qui les distingue** : deux se sont trahies par un résultat absurde (306 scènes
+  cassées, 0 identique sur 312). **Trois ont rendu un chiffre plausible** — et celles-là ne
+  déclenchent aucune vérification. Une empreinte doit exclure ce que le geste **déplace
+  légitimement**, pas seulement ce qui varie tout seul.
