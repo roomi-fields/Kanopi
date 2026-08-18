@@ -13,7 +13,7 @@ import { expectNoConsoleErrors } from '../../helpers';
 // CE QUE CE BANC PROUVE, dans l'ordre où l'utilisateur le vit :
 //   1. une scène SANS clavier déclaré : le témoin le dit dans son infobulle — la scène n'attend
 //      rien du clavier ;
-//   2. une scène qui déclare `var touches in.keyboard` : le témoin annonce ce rôle ;
+//   2. une scène qui déclare `in.keyboard touches` : le témoin annonce ce rôle ;
 //   3. le panneau des entrées LISTE le rôle déclaré, avec son canal — pas des appareils bruts ;
 //   4. le clic PREND le focus, et une touche arrive alors VRAIMENT sur le bus (charge opaque :
 //      `key <code> down`) — sans commande de développeur, sans lucarne `?events=1` ;
@@ -41,8 +41,8 @@ S -> C4 D4 E4 G4
 
 const AVEC_CLAVIER = `core
 alphabet.western:audio
-var touches in.keyboard
-var pedale in.midi
+in.keyboard touches
+in.midi pedale
 
 -----
 S -> C4 D4 E4 G4

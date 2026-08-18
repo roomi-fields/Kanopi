@@ -8,7 +8,7 @@
 // Wait for Key — la pièce s'arrête, attend une touche, et repart.
 //
 // TROIS LIGNES À LIRE :
-//   `var touches in.keyboard` déclare un RÔLE. La scène nomme ce qu'elle attend
+//   `in.keyboard touches` déclare un RÔLE. La scène nomme ce qu'elle attend
 //   (« des touches »), jamais un appareil : un nom de port vient du système et change de
 //   machine, et une pièce qui le coderait ne s'ouvrirait plus ailleurs. L'appareil réel
 //   s'associe dans le panneau des entrées (barre de gauche, « Hardware »), et cette
@@ -42,7 +42,7 @@ core
 alphabet.western:audio
 tempo:90
 
-var touches in.keyboard
+in.keyboard touches
 
 -----
 S -> Montee Repart

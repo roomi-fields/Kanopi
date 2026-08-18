@@ -9,10 +9,10 @@ tempo:400   // horloge du natif -se.koto3 : periode 150 ms par temps, soit 400 B
 // TERMINAUX DECLARES DANS LA SCENE (decision Romain 2026-07-29 §5). Destination LUE a la
 // source, pas choisie : l'original -gr.koto2 charge -ho.abc1 (alphabet chargeant -mi.abc1,
 // prototypes d'objets sonores) — meme alphabet que koto1 et koto3, qui declarent ainsi.
-gate a:midi
-gate b:midi
-gate c:midi
-gate d:midi
+a:midi
+b:midi
+c:midi
+d:midi
 
 -----
 mode:random

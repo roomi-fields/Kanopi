@@ -5,7 +5,7 @@ import { declaredInputsForScene } from './bpx-adapter';
 
 describe('declaredInputsForScene', () => {
   it('rend les rôles déclarés, dans l’ordre, avec leur canal', () => {
-    const scene = 'var pedale in.midi\nvar touches in.keyboard\n\n-----\nA -> C4 D4\n';
+    const scene = 'in.midi pedale\nin.keyboard touches\n\n-----\nA -> C4 D4\n';
     expect(declaredInputsForScene(scene)).toEqual([
       { name: 'pedale', transport: 'midi', mapping: null },
       { name: 'touches', transport: 'keyboard', mapping: null }
@@ -15,7 +15,7 @@ describe('declaredInputsForScene', () => {
   it('n’invente AUCUNE table : sans invocation, `mapping` reste nul', () => {
     // Il n'existe pas de table par défaut (décision Romain) : poser une identité implicite
     // rendrait indistinguables « je n'ai pas de table » et « ma table ne fait rien ».
-    const [role] = declaredInputsForScene('var pedale in.midi\n-----\nA -> C4\n');
+    const [role] = declaredInputsForScene('in.midi pedale\n-----\nA -> C4\n');
     expect(role.mapping).toBeNull();
   });
 

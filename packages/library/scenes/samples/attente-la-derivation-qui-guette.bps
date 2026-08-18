@@ -15,7 +15,7 @@
 // C'est ce qui permet à une pièce d'être JOUÉE plutôt que déroulée. Sans lui, une
 // grammaire ne peut que produire son temps à elle.
 //
-// LE SIGNAL A UN NOM, ET CE NOM SE DÉCLARE. `var depart in.keyboard` ouvre le RÔLE
+// LE SIGNAL A UN NOM, ET CE NOM SE DÉCLARE. `in.keyboard depart` ouvre le RÔLE
 // `depart` sur le clavier : la scène nomme le rôle, l'appareil réel s'y associe au
 // moment de jouer. Déclarer le nom est ce qui distingue « j'attends `depart` » de la
 // coquille qui attendrait un signal que personne n'envoie jamais.
@@ -28,7 +28,7 @@ core
 alphabet.western
 tempo:80
 
-var depart in.keyboard
+in.keyboard depart
 
 -----
 S -> Introduction Suite

@@ -13,14 +13,14 @@ maxitems:0
 quantization:30
 qclock:22
 
-gate ek:midi
-gate do:midi
-gate tin:midi
-gate char:midi
-gate panch:midi
-gate che:midi
-gate sat:midi
-gate at:midi
+ek:midi
+do:midi
+tin:midi
+char:midi
+panch:midi
+che:midi
+sat:midi
+at:midi
 
 // --- Sous-grammaire 1 mode:ord ---
 

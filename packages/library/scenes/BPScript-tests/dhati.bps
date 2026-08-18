@@ -29,66 +29,66 @@ tempo:15
 homomorphism.dhati
 
 // Terminaux — bols de tabla
-gate plus:midi
-gate fin:midi
-gate star:midi
-gate dha:midi
-gate trkt:midi
-gate dheena:midi
-gate teena:midi
-gate dhati:midi
-gate gena:midi
-gate dhage:midi
-gate tidha:midi
-gate na:midi
-gate ge:midi
-gate kt:midi
-gate ke:midi
-gate ti:midi
-gate ta:midi
-gate dhagena:midi
-gate teenake:midi
-gate dheenage:midi
-gate dhatrkt:midi
-gate trktdha:midi
-gate teenakena:midi
-gate dheenagena:midi
-gate dhagenateena:midi
-gate dhagenadhati:midi
-gate dhatrktdhati:midi
-gate dhatidhatrkt:midi
-gate dhatidhagena:midi
-gate dheenagedhatrkt:midi
-gate genagedhatrkt:midi
-gate dhagedheenagena:midi
-gate dhageteenakena:midi
-gate tidhagedheenage:midi
-gate teenakegenage:midi
-gate dhagenagenanagena:midi
-gate dhatidhagedheenagena:midi
-gate dhatidhageteenakena:midi
-gate dhageteena:midi
-gate dhatidhageteena:midi
-gate kttidha:midi
-gate natidha:midi
-gate getidha:midi
-gate ktti:midi
-gate geti:midi
-gate nati:midi
-gate tidhagena:midi
-gate dhagedheena:midi
-gate tidhatrkt:midi
+plus:midi
+fin:midi
+star:midi
+dha:midi
+trkt:midi
+dheena:midi
+teena:midi
+dhati:midi
+gena:midi
+dhage:midi
+tidha:midi
+na:midi
+ge:midi
+kt:midi
+ke:midi
+ti:midi
+ta:midi
+dhagena:midi
+teenake:midi
+dheenage:midi
+dhatrkt:midi
+trktdha:midi
+teenakena:midi
+dheenagena:midi
+dhagenateena:midi
+dhagenadhati:midi
+dhatrktdhati:midi
+dhatidhatrkt:midi
+dhatidhagena:midi
+dheenagedhatrkt:midi
+genagedhatrkt:midi
+dhagedheenagena:midi
+dhageteenakena:midi
+tidhagedheenage:midi
+teenakegenage:midi
+dhagenagenanagena:midi
+dhatidhagedheenagena:midi
+dhatidhageteenakena:midi
+dhageteena:midi
+dhatidhageteena:midi
+kttidha:midi
+natidha:midi
+getidha:midi
+ktti:midi
+geti:midi
+nati:midi
+tidhagena:midi
+dhagedheena:midi
+tidhatrkt:midi
 // Cadences longues : séquences de bols (pas de terminaux atomiques)
 // BP3 les concatène sans espaces, BPscript les sépare
 // Lahra terminals (solfège notes — resolved by note convention, not as compound bols)
-gate do5:midi
-gate si4:midi
-gate la4:midi
-gate lab4:midi
-gate mi5:midi
-gate mi4:midi
-gate fa4:midi
-gate do4:midi
+do5:midi
+si4:midi
+la4:midi
+lab4:midi
+mi5:midi
+mi4:midi
+fa4:midi
+do4:midi
 
 // --- Sous-grammaire 1 mode:random — structure initiale ---
 // BP3: S --> 4+4+4+4/4 {16,Qaida}

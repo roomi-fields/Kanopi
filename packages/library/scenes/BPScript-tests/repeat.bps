@@ -13,9 +13,9 @@ maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
                  // certaines grammaires ne rendent jamais la main.
 
 // Terminaux
-gate a:midi
-gate b:midi
-gate c:midi
+a:midi
+b:midi
+c:midi
 
 // Non-terminaux : S, X, Y, Z
 

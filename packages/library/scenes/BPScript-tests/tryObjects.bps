@@ -14,12 +14,12 @@ tempo:400   // horloge du natif -se.koto3 : periode 150 ms par temps, soit 400 B
 // `a'` est un terminal A PART ENTIERE, pas une variante decorative : la ligne d'alphabet de
 // -ho.abc1 le liste a cote de `a` (« a a' b b' c c' d f »), et son homomorphisme le produit
 // (« a --> a' »). La scene l'emploie deux fois dans son unique regle.
-gate a:midi
-gate a':midi
-gate b:midi
-gate h:midi
-gate cycle1:midi
-gate cycle2:midi
+a:midi
+a':midi
+b:midi
+h:midi
+cycle1:midi
+cycle2:midi
 
 -----
 S -> {a h a' b a' b a a a a a, cycle2 cycle1______}

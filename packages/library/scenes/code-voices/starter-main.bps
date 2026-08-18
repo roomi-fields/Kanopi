@@ -11,7 +11,7 @@ actor drums  eval.strudel(bank:"dirt-samples")
 actor visuals  eval.hydra
 actor bass  eval.strudel(bank:"dirt-samples")
 
-var section flag: intro:1, drop:2, break:3
+flag section(intro:1, drop:2, break:3)
 
 -----
 [section==intro] S -> visuals_r

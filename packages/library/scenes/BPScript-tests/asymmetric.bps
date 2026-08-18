@@ -15,8 +15,8 @@
 core
 improvize
 
-gate a:midi
-gate b:midi
+a:midi
+b:midi
 
 // --- Sous-grammaire 1 — initialisation (pas de mode = default ORD) ---
 

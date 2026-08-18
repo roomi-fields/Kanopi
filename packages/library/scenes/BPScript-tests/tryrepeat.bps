@@ -8,9 +8,9 @@ core
 // duree ni destination a donner »). Comme tryFlags et contrairement a koto1/tryLIN, l'original
 // -gr.tryrepeat ne charge AUCUN fichier auxiliaire : grammaire de STRUCTURE, qui demontre le
 // mecanisme de repetition. Leur donner une destination serait inventer ce que la source tait.
-var a
-var b
-var c
+symbol a
+symbol b
+symbol c
 
 -----
 mode:ord

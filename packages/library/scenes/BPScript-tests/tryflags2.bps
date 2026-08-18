@@ -4,9 +4,9 @@ maxitems:25   // MaxItemsProduce=25 dans le reglage natif : le moteur s'arrete
                  // certaines grammaires ne rendent jamais la main.
 // TERMINAUX DECLARES DANS LA SCENE (decision Romain 2026-07-29 §5). Destination LUE a la
 // source : l'original -gr.tryflags2 charge -ho.abc, fichier d'alphabet chargeant -mi.abc.
-gate a:midi
-gate b:midi
-gate c:midi
+a:midi
+b:midi
+c:midi
 
 -----
 mode:random

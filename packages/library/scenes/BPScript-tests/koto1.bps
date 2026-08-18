@@ -13,10 +13,10 @@ tempo:400   // horloge du natif -se.koto3 : periode 150 ms par temps, soit 400 B
 // sonnent donc, et koto3.bps — meme alphabet -ho.abc1, deja verte dans ce corpus — declare
 // exactement de cette facon. Sans declaration, seul 'd' etait refuse (a/b/c sont reconnus par
 // leur presence en membre gauche des regles SUB) : la scene sonnait a moitie declaree.
-gate a:midi
-gate b:midi
-gate c:midi
-gate d:midi
+a:midi
+b:midi
+c:midi
+d:midi
 
 -----
 mode:random

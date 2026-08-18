@@ -18,7 +18,7 @@ tempo:360   // horloge du natif -se.hamsad : periode 167 ms par temps, soit 360 
 // 2026-07-27, voie 3). Sans cette declaration, annoter la convention faisait REFUSER la scene ;
 // sans la convention, la resolution aval devinait 7040 Hz pour un symbole qui n'a pas de hauteur.
 alphabet.bp3_indian:midi
-var A8
+symbol A8
 -----
 mode:random
 S -> A32

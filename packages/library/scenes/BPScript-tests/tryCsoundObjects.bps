@@ -13,10 +13,10 @@ core
 //   !(value:slide 101)  →  !(slide:101)
 //   !(cont:slide)       →  !(slidecont)
 //   !(fixed:slide)      →  !(slidefixed)
-// Le paramètre se DÉCLARE désormais, sinon son nom est refusé : `var <nom> signal` — « un flux de
+// Le paramètre se DÉCLARE désormais, sinon son nom est refusé : `signal <nom>` — « un flux de
 // nombres, sans convention de lecture » (LANGUAGE.md). C'est la déclaration ajoutée ci-dessous.
-var blurb signal
-var oops signal
+signal blurb
+signal oops
 
 -----
 mode:ord

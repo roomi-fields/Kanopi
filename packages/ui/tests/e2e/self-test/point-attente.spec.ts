@@ -43,7 +43,7 @@ const SCENE = `core
 alphabet.western:audio
 tempo:90
 
-var touches in.keyboard
+in.keyboard touches
 
 -----
 S -> Montee Repart

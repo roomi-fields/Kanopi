@@ -333,8 +333,8 @@ type Frontend = (code: string) => {
   // token placed in the derivation maps to `{ interp, code }`. The adapter routes
   // the token → interpreter at the dispatcher-scheduled time.
   backticks?: BacktickTable;
-  // A5 états nommés : la table drapeau→{alias→int} émise pour `var section flag: calm:1,
-  // full:2`. Présente seulement quand le `.bps` déclare des états nommés ; `.gr` n'en a pas.
+  // A5 états nommés : la table drapeau→{alias→int} émise pour `flag section(calm:1,
+  // full:2)`. Présente seulement quand le `.bps` déclare des états nommés ; `.gr` n'en a pas.
   flagStates?: FlagStates;
   // Per-engine sample/sound banks a `.bps` declares (`eval.strudel(bank:"dirt-samples")`
   // → `{ strudel: ["dirt-samples"] }`). The adapter loads each engine's declared
@@ -618,7 +618,7 @@ interface SceneAstView {
 }
 
 // A5 états nommés lus de l'arbre : chaque `VarDirective` de `ast.vars` dont
-// `varType.kind === 'flag'` (`var section flag: calm:1, full:2`) → `{ [flag]: { [name]:
+// `varType.kind === 'flag'` (`flag section(calm:1, full:2)`) → `{ [flag]: { [name]:
 // value } }`. `names` est un TABLEAU (une ligne peut déclarer plusieurs drapeaux, qui
 // partagent tous la même table d'états) ; les autres `kind` (`signal`, `pitch`, `phase`,
 // `logic`, `in`, module) sont ignorés. Same shape compileBPS's `flagStates` sidecar had.
@@ -830,7 +830,7 @@ export function interpsForScene(text: string): string[] {
  *  quand la scène n'invoque aucune table, parce qu'il n'existe AUCUNE table par défaut (décision
  *  `2026-07-27-forme-des-entrees-in-mapping-adresse-nue.md`). */
 export interface DeclaredInput {
-  /** Le RÔLE, tel que la scène le nomme (`var pedale …`) — jamais un nom d'appareil. */
+  /** Le RÔLE, tel que la scène le nomme (`in.midi pedale`) — jamais un nom d'appareil. */
   readonly name: string;
   /** Le canal d'entrée déclaré : `midi` · `keyboard` · `osc`. Liste FERMÉE tenue en amont. */
   readonly transport: string;
@@ -1143,8 +1143,8 @@ const bpsFrontend: Frontend = (code) => {
   // routes each BT terminal to its interpreter.
   const backticks = backticksFromAst(c.ast);
   // A5 named scenes: read the flag→{alias→int} table from the AST's `ast.vars`
-  // `VarDirective` nodes with `varType.kind === 'flag'` (`var section flag: calm:1,
-  // full:2`) so the UI can offer one selection button per named state. Re-evaluating
+  // `VarDirective` nodes with `varType.kind === 'flag'` (`flag section(calm:1,
+  // full:2)`) so the UI can offer one selection button per named state. Re-evaluating
   // with `flags: { section: <int> }` makes the matching guarded rule derive (see
   // `evaluate`).
   const flagStates = flagStatesFromAst(a);

@@ -14,11 +14,11 @@ core
 improvize
 qclock:20
 
-gate a:midi
-gate b:midi
-gate c:midi
-gate f:midi
-gate chik:midi
+a:midi
+b:midi
+c:midi
+f:midi
+chik:midi
 
 // --- Sous-grammaire 1 mode:random — séquence initiale ---
 

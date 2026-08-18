@@ -7,7 +7,7 @@ homomorphism.tryhomomorphism
 // mi) ; la scene ecrit do4, mi4, fa4 -- l'alphabet solfege du catalogue les porte.
 // a, b et c ne sont des notes dans AUCUN alphabet : ce sont des VARIABLES DE TRAVAIL.
 alphabet.solfege:midi
-var a, b, c
+symbol a, b, c
 tempo:60.0000
 striated
 -----

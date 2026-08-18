@@ -5,8 +5,8 @@
 core
 
 // Terminaux
-gate a:midi
-gate b:midi
+a:midi
+b:midi
 
 // Non-terminaux : S, X (variables de grammaire, pas déclarés)
 

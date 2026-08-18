@@ -9,9 +9,9 @@ maxitems:25   // MaxItemsProduce=25 dans le reglage natif : le moteur s'arrete
 // source : l'original -gr.tryLIN charge -ho.abc, fichier d'alphabet chargeant -mi.abc — ces
 // symboles sonnent. Sans declaration, 'a' et 'c' etaient refuses ('b' est reconnu par sa
 // presence en membre gauche).
-gate a:midi
-gate b:midi
-gate c:midi
+a:midi
+b:midi
+c:midi
 
 -----
 mode:ord
