@@ -33,53 +33,15 @@ plus:midi
 fin:midi
 star:midi
 dha:midi
-trkt:midi
-dheena:midi
-teena:midi
-dhati:midi
-gena:midi
-dhage:midi
-tidha:midi
 na:midi
 ge:midi
 kt:midi
 ke:midi
 ti:midi
 ta:midi
-dhagena:midi
-teenake:midi
-dheenage:midi
-dhatrkt:midi
-trktdha:midi
-teenakena:midi
-dheenagena:midi
-dhagenateena:midi
-dhagenadhati:midi
-dhatrktdhati:midi
-dhatidhatrkt:midi
-dhatidhagena:midi
-dheenagedhatrkt:midi
-genagedhatrkt:midi
-dhagedheenagena:midi
-dhageteenakena:midi
-tidhagedheenage:midi
-teenakegenage:midi
-dhagenagenanagena:midi
-dhatidhagedheenagena:midi
-dhatidhageteenakena:midi
-dhageteena:midi
-dhatidhageteena:midi
-kttidha:midi
-natidha:midi
-getidha:midi
-ktti:midi
-geti:midi
-nati:midi
-tidhagena:midi
-dhagedheena:midi
-tidhatrkt:midi
-// Cadences longues : séquences de bols (pas de terminaux atomiques)
-// BP3 les concatène sans espaces, BPscript les sépare
+dhee:midi
+tee:midi
+tr:midi
 // Lahra terminals (solfège notes — resolved by note convention, not as compound bols)
 do5:midi
 si4:midi
@@ -94,6 +56,50 @@ do4:midi
 // BP3: S --> 4+4+4+4/4 {16,Qaida}
 // cycle16x4 = non-terminal pour la structure rythmique 4+4+4+4/4
 
+
+// Cadences — des STRUCTURES de bols, pas des terminaux (LANGUAGE.md:331). Le natif ne
+// produit que des bols simples : sa capture rend « dhee na ge dha ge tee na ke na … »,
+// une séquence, jamais une frappe entière. Chaque nom composé se DÉFINIT par sa
+// segmentation, celle du natif — le plus long bol qui apparie à chaque position.
+def trkt tr kt
+def dheena dhee na
+def teena tee na
+def dhati dha ti
+def gena ge na
+def dhage dha ge
+def tidha ti dha
+def dhagena dha ge na
+def teenake tee na ke
+def dheenage dhee na ge
+def dhatrkt dha tr kt
+def trktdha tr kt dha
+def teenakena tee na ke na
+def dheenagena dhee na ge na
+def dhagenateena dha ge na tee na
+def dhagenadhati dha ge na dha ti
+def dhatrktdhati dha tr kt dha ti
+def dhatidhatrkt dha ti dha tr kt
+def dhatidhagena dha ti dha ge na
+def dheenagedhatrkt dhee na ge dha tr kt
+def genagedhatrkt ge na ge dha tr kt
+def dhagedheenagena dha ge dhee na ge na
+def dhageteenakena dha ge tee na ke na
+def tidhagedheenage ti dha ge dhee na ge
+def teenakegenage tee na ke ge na ge
+def dhagenagenanagena dha ge na ge na na ge na
+def dhatidhagedheenagena dha ti dha ge dhee na ge na
+def dhatidhageteenakena dha ti dha ge tee na ke na
+def dhageteena dha ge tee na
+def dhatidhageteena dha ti dha ge tee na
+def kttidha kt ti dha
+def natidha na ti dha
+def getidha ge ti dha
+def ktti kt ti
+def geti ge ti
+def nati na ti
+def tidhagena ti dha ge na
+def dhagedheena dha ge dhee na
+def tidhatrkt ti dha tr kt
 -----
 mode:random
 S -> {16,Qaida} (weight:0, meter:4+4+4+4/4)

@@ -8,18 +8,16 @@
 // @showcase
 //
 // Voix de code — COURBE CV en JS (modulation custom).
-// Forme CV : `var NAME `tag: code`` — l'arobase est OBLIGATOIRE en partie déclarative, et
-// l'ABSENCE de deux-points dit qu'on DÉCLARE un nom neuf. `cv` type le RÔLE (modulation),
-// le tag `js:` type le LANGAGE de la courbe (obligatoire, jamais deviné). La courbe (0..1
-// sur la durée) est déclarée, réutilisable. Branchement AU POINT DE PARAMÈTRE :
-// `C4(cutoff:sweep)`. Décisions hub 2026-07-04-cv-curve-syntaxe-backtick-type.md puis
-// 2026-07-29-les-formes-declaratives-de-bpscript.md §2 et §8.
+// Forme : `def NAME phase `js: code``. Le nom vient d abord, ce qu il vaut ensuite ; `phase`
+// est le type du signal — une courbe 0..1 sur la durée de la note. Le tag `js:` type le
+// LANGAGE de la courbe, jamais deviné. La courbe est déclarée une fois, réutilisable, et se
+// branche AU POINT DE PARAMÈTRE : `C4(cutoff:sweep)`.
 
 core
 alphabet.western:audio
 tempo:100
 
-var sweep `js: (t, dur) => { return 0.5 + 0.5 * Math.sin(2 * Math.PI * t / dur); }`
+def sweep phase `js: (t, dur) => { return 0.5 + 0.5 * Math.sin(2 * Math.PI * t / dur); }`
 
 -----
 S -> Lead Lead Lead Lead

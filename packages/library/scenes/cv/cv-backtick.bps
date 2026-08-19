@@ -9,22 +9,18 @@
 // CV: Wobble Bass — custom JS curve for dubstep-style filter modulation
 // The curve oscillates faster and faster (exponential chirp), 0..1 over the note.
 //
-// SCENE forme CANONIQUE (décision hub 2026-07-04-cv-curve-syntaxe-backtick-type.md, puis
-// 2026-07-29-les-formes-declaratives-de-bpscript.md §2 et §8) :
-//   • `var wobble `js: …`` — l'arobase est OBLIGATOIRE en partie déclarative, et l'ABSENCE
-//     de deux-points dit qu'on DÉCLARE un nom neuf (avec `:` on poserait une propriété sur
-//     un nom existant). `cv` type le RÔLE (modulation) ; le TAG `js:` type le LANGAGE de la
-//     courbe (obligatoire, jamais deviné). La courbe est déclarée, réutilisable.
-//   • Branchement AU POINT DE PARAMÈTRE : `C2(cutoff:wobble)` applique la courbe au
-//     cutoff du filtre. Le transport = celui de l'acteur.
-// (Remplace l'ancienne forme `wobble(Bass, browser) = …` REJETÉE : elle collisionnait
-//  avec la macro et son backtick n'était pas typé.)
+// FORME de la scène :
+//   • `def wobble phase `js: …`` — le nom vient d abord, ce qu il vaut ensuite. `phase` est le
+//     type du signal : une courbe 0..1 sur la durée de la note. Le TAG `js:` type le LANGAGE
+//     de la courbe, jamais deviné. Elle est déclarée une fois, réutilisable.
+//   • Branchement AU POINT DE PARAMÈTRE : `C2(cutoff:wobble)` applique la courbe au cutoff du
+//     filtre. Le transport = celui de l acteur.
 
 core
 alphabet.western:audio
 tempo:70
 
-var wobble `js: (t, dur) => { const rate = 2 + 20 * (t/dur) * (t/dur); return Math.sin(t * rate * Math.PI * 2) * 0.5 + 0.5; }`
+def wobble phase `js: (t, dur) => { const rate = 2 + 20 * (t/dur) * (t/dur); return Math.sin(t * rate * Math.PI * 2) * 0.5 + 0.5; }`
 
 -----
 S -> Bass Bass Bass Bass

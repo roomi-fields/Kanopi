@@ -158,13 +158,6 @@ const ROUGES_DECLAREES: Array<{
   // Il ne s'agit donc pas de choisir entre des types existants : la forme elle-même n'est pas
   // arrêtée. Une graphie inventée ici deviendrait le précédent que la prochaine scène
   // recopierait.
-  ...['code-voices/cv-curve-js.bps', 'cv/cv-backtick.bps'].map((fichier) => ({
-    fichier,
-    motif: /le mot 'var' est SORTI du langage/,
-    cause: 'arbitrage-attendu' as const,
-    attend:
-      "de Romain : la forme d'une variable dont la VALEUR EST DU CODE (``var wobble `js: …` ``) — cas ouvert au registre depuis le 2026-08-16, porté par l'architecte. Les vingt et une autres lignes sont migrées et rendent un arbre IDENTIQUE à l'empreinte d'avant."
-  })),
   {
     fichier: 'BPScript-tests/shapes-rhythm.bps',
     motif: /script/,
@@ -192,13 +185,6 @@ const ROUGES_DECLAREES: Array<{
   // la convention française du moteur natif — a été intégré en amont le matin même, et c'est
   // CE GARDE qui a réclamé le retrait, en échouant sur « COMPILE désormais ». Un rouge
   // d'arbitrage ne se fossilise pas : il sort dès que sa cause est levée.)
-  {
-    fichier: 'BPScript-tests/dhadhatite_v2.bps',
-    motif: /terminal 'dha(dha)?' non déclaré/,
-    cause: 'arbitrage-attendu',
-    attend:
-      "un arbitrage de TRADUCTION, pas de déclaration : la scène emploie des bols COMPOSÉS (dhadha, dhadhatitedhadhadheena) que l'alphabet original -al.dhadhatite ne contient pas — il n'a que les bols simples (dha, ti, te, na, dhee, tr). Les déclarer un par un figerait des composés que la source ne connaît pas. Attend : architecte."
-  },
   {
     fichier: 'BPScript-tests/tryCsoundObjects.bps',
     motif: /terminal '(a|b|c|d|e|f|midiobject)' non déclaré/,

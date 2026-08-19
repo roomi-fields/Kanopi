@@ -10,8 +10,10 @@
 
 core
 
-// Production mode: text (bols are non-pitched syllables, not MIDI notes)
-// No alphabet.western — bols are literal sound objects
+// LES BOLS SONT ATOMIQUES, ET LA SEGMENTATION FAIT LE RESTE. `alphabet.tabla` porte les
+// syllabes qu'aucune autre ne compose ; un nom accolé comme `dhadhatitedhadhadheena` se
+// segmente en bols, comme le natif : sa capture rend 64 bols, cette scène en produit 64.
+alphabet.tabla
 
 // =========================================================================
 // GRAM#1 — RND: top-level structure
