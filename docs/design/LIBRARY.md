@@ -101,7 +101,7 @@ fichiers personnels est la bibliothèque cloud PocketBase, `ESPACE_PERSO_SPEC.md
   - STARTER : crée nouveau workspace ou merge dans courant (prompt)
   - SCENE : ajoute les fichiers + intègre dans session.kanopi
   - SNIPPET : insère dans fichier courant au curseur
-  - DEVICE : ajoute `@actor` dans session + config osc-bridge
+  - DEVICE : ajoute `actor` dans session + config osc-bridge
   - SCALE : ajoute référence dans session
 
 ### Créer & partager

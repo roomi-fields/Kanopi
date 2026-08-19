@@ -310,8 +310,8 @@ Doc osc-bridge détaillée : [README upstream](https://github.com/roomi-fields/o
 
 ## Principes de design
 
-1. **Transport dans la scène, pas dans l'UI.** Le binding `@actor foo transport.xxx` détermine la sortie. L'UI reflète.
-2. **Multi-output = conséquence de la scène.** Deux actors avec deux transports = dual output auto.
+1. **La sortie est dans la scène, pas dans l'UI.** La clé `out.<canal>` d'un acteur détermine sa sortie. L'UI reflète.
+2. **Multi-output = conséquence de la scène.** Deux acteurs avec deux `out.` = dual output auto.
 3. **Crash-isolation.** Un runtime qui plante (Strudel error, SC segfault) ne casse pas Kanopi. Web Workers et try/catch systématiques.
 4. **State observable.** Tout ce qui change (clock, scène, flags, CC) est observable par l'UI via les projections `stores` et le bus `KanopiEvent` (`core.events`) — `MapEngine` a été éliminé [842], cf. §Module `core`.
 5. **Progressive enhancement.** Fonctionne sans bridge, mieux avec.

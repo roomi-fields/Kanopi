@@ -187,7 +187,7 @@ complet.
 | 1 | Adapter `.csd` minimal (ensure + compileCsdText + start + stop) | A    | 1j     | Base               |
 | 2 | CM6 language via `@hlolli/codemirror-lang-csound`     | B    | 30min  | Highlight + opcode autocomplete |
 | 3 | Extension recognition `.csd` + whole-file block extract | A    | 30min  | Ctrl+Enter         |
-| 4 | Session parser allowlist ajoute `csound`              | —    | 15min  | `@actor foo foo.csd csound` valide |
+| 4 | Session parser allowlist ajoute `csound`              | —    | 15min  | `actor foo` + `eval.csound` valide |
 | 5 | Error handling return code + message event bridge     | E    | 1h     | Cohérence UX       |
 | 6 | Starter workspace « csound intro »                    | —    | 1h     | Discoverability    |
 | 7 | 2-3 snippets Library (kunstmusik instruments)         | D    | 1h     | Onboarding         |

@@ -61,7 +61,7 @@ Source : `packages/ui/src/components/editor/cm-theme.ts`.
 
 | Tag                                             | CSS var        | Rôle                                     |
 | ----------------------------------------------- | -------------- | ---------------------------------------- |
-| `t.keyword`                                     | `--amber`      | Mots-clés (if, let, `@actor`)            |
+| `t.keyword`                                     | `--amber`      | Mots-clés (if, let, `actor`)              |
 | `t.comment`                                     | `--text-faint` | Commentaires (italique)                  |
 | `t.string`                                      | `--green`      | Strings                                  |
 | `t.number`                                      | `--cyan`       | Nombres                                  |
