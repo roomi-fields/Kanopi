@@ -1552,13 +1552,13 @@ setExprSource(exprSource as unknown as ExprSource);
 // DEDANS (champ JSON `domain`) : c'est KAIROS qui lit + parse (rôle résolveur, un fichier
 // malformé crie CHEZ LUI). L'hôte ne fait AUCUN `JSON.parse`, aucun bucketing par domaine.
 // Vide par défaut = no-op total : le kairos consommé (231d207, ancien type `PitchLib`) lit
-// `mine[<domaine>]` sur cette map plate → sous-clés absentes → factory INTACT, aucun crash.
+// une entrée absente de cette map plate laisse les catalogues fournis INTACTS, aucun crash.
 let personalPitchLib: Record<string, string> = {};
 
 // Barrière de CHARGEMENT des libs perso (trou timing, archi [729]#1). En session cloud, le
 // composeur (`personal-pitch-lib.svelte.ts`) va CHERCHER le contenu des libs perso de façon
 // ASYNCHRONE (`storage.read`). Un derive déclenché AVANT la fin de ce fetch verrait
-// `personalPitchLib = {}` → Kairos résout `@mine.*` sur une map vide et crie « lib introuvable »
+// `personalPitchLib = {}` → Kairos résout l'adresse sur une map vide et crie « lib introuvable »
 // (constaté : 1er eval après chargement de page échouait, les suivants passaient). L'hôte doit
 // GARANTIR sa projection FOURNIE avant que Kairos la consomme (loi 26/27) — sans rien inventer :
 // il attend juste sa propre donnée. Le composeur SIGNALE le début d'un (re)chargement
@@ -1896,7 +1896,7 @@ function makeBpxAdapter(
       }
 
       // Trou timing (archi [729]#1) : attendre que les libs perso soient FOURNIES avant TOUT
-      // derive de ce bloc — sinon une scène `@mine.*` résout sur une map vide au 1er eval (le
+      // derive de ce bloc — sinon une scène à librairie personnelle résout sur une map vide au 1er eval (le
       // fetch cloud n'est pas fini) et Kairos crie « lib introuvable ». En régime établi (rien à
       // charger), la barrière est déjà résolue → attente négligeable. Une seule attente par
       // `evaluate`, couvre les deux branches de derive (mono + orchestré).

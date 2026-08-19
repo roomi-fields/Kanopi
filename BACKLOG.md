@@ -405,12 +405,25 @@ Chiffres pris ce jour, sur demande de Romain. Ils ne vivaient nulle part ailleur
   porte. **Aucune relance** : un rouge se garde et l'accusation se retire, sinon un défaut
   intermittent disparaît du rapport sans disparaître du produit.
 
-- **KAN-63** `ouvert` — **l'état d'un voisin lu vivant dit s'il a enregistré, jamais s'il est en
+- **KAN-64** `ouvert` — **deux clés de la surface de pilotage n'ont aucun lecteur de banc mesuré.**
+  Mesure du **2026-08-19**, périmètre établi sur les 57 bancs d'écran suivis, avec témoin positif
+  prouvant que la recherche les atteint : `personalPitchLib` et `audioTap` (`packages/ui/src/main.ts`)
+  ne sont nommées par aucun. Le commentaire qui affirmait le contraire pour la première est retiré.
+
+  **Les deux clés restent.** Une clé sans lecteur de banc n'est pas une clé sans usage :
+  `personalPitchLib` porte un canal **dormant** — rempli par les fichiers que l'utilisateur pose dans
+  son espace, donc par un geste qu'aucune mesure de ces dépôts ne peut majorer. `audioTap` demande sa
+  propre mesure avant d'être jugée.
+
+- **KAN-63** `clos par l'architecte le 2026-08-19` — **l'état d'un voisin lu vivant dit s'il a enregistré, jamais s'il est en
   train d'écrire.** `scripts/lib/voisins-lies.mjs` mesure par `git status` : un dépôt dont la
   source est à moitié écrite présente un arbre propre à chaque instant. Mon refus de construction
   et la légende de mes campagnes portent donc une propreté qui vaut pour l'enregistrement seul.
 
-  **Un seuil est refusé, et la question ne se pose que pour la source vive.** Une autorité se lit
+  **Tombé : la question ne se pose pour aucun de mes voisins.** Ce qui arrive par le champ `exports`
+  d'un paquet **est** un paquet, quel que soit son contenu — ouvrir et importer ne sont pas le même
+  geste, et c'est le geste qui classe. Mes onze voisins et les librairies de BPScript passent tous
+  par cette porte. **Un seuil est refusé, et la question ne se posait que pour la source vive.** Une autorité se lit
   au commit publié, qui ne s'écrit pas pendant qu'on le lit : `scripts/garde-copies-miroir.mjs`
   lit désormais ainsi le contrat de l'événement d'entrée, sur la branche que le dépôt **déclare**
   dans `hub/contrats/branches-de-reference.tsv`. Restent onze voisins consommés en source vive,

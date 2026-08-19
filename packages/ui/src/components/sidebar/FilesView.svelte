@@ -140,7 +140,7 @@
   }
 
   /** A library name/path may nest in folders (`ragas/mine`), but no segment
-   * may contain a dot: `@mine.<path>.<entry>` uses `.` as its sole separator
+   * may contain a dot: an address uses `.` as its sole separator between the
    * (decision 2026-07-13-invocation-librairies-factory-mine.md point 1), so a
    * dot inside a segment would be read as an extra path/entry boundary. */
   function libraryNameError(raw: string): string | null {
@@ -149,7 +149,7 @@
     for (const seg of segments) {
       if (!seg) return 'empty path segment';
       if (seg.includes('.'))
-        return 'name cannot contain a dot — "." separates @mine.<path>.<entry> segments';
+        return 'name cannot contain a dot — "." separates the segments of <library>.<entry>';
     }
     return null;
   }

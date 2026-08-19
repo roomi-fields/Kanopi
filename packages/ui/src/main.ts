@@ -106,8 +106,12 @@ if (import.meta.env.DEV) {
     // e2e flips `reRandom` ON before evaluating so the Kairos re-derive arms at load.
     transport,
     // Last-built `pitchLibMine` catalog (personal pitch libraries composed from
-    // `libraries/<domain>/…`), read by the e2e proving population before/after creating
-    // a personal library doc. Function (not a value) so each call reads the CURRENT catalog.
+    // `libraries/<domain>/…`). Function (not a value) so each call reads the CURRENT catalog.
+    // ⚠️ NO ON-SCREEN BENCH READS THIS KEY — measured 2026-08-19 over the 57 tracked e2e specs,
+    // with a positive witness proving the search reaches them. The comment that used to claim
+    // otherwise is gone: a comment describing a path the code no longer takes reads as proof.
+    // The key stays (KAN-64): a key with no bench reader is not a key with no use — this one
+    // carries a dormant user channel, filled only by files the user puts in their own space.
     personalPitchLib: personalPitchLibSnapshot,
     // Generic per-AudioContext RMS tap (see audioTapAnalysers above) — one entry per
     // distinct AudioContext currently connected to a destination (native runtime-audio,
