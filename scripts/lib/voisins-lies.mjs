@@ -192,6 +192,72 @@ export function voisinsLies(racine) {
 }
 
 /**
+ * L'état de chaque voisin lu vivant, une ligne par dépôt — la LÉGENDE d'un résultat : ce sur quoi
+ * il a été obtenu. Un vert mesuré contre l'arbre de travail d'un voisin change de sens si ce voisin
+ * revient en arrière, sans qu'un fichier bouge ici ; la ligne le dit à qui lit le résultat.
+ *
+ * Une seule fabrique pour tous les producteurs de légende (portillon, campagne de bancs) : deux
+ * vocabulaires pour le même état laisseraient l'un dériver pendant que l'autre reste juste.
+ */
+export function legendeDesVoisins(voisins) {
+  return voisins.map((v) => {
+    const nom = v.depot.split("/").pop();
+    if (v.tete === null) return `${nom} : hors git (${v.chemin}) — état non mesurable`;
+    const atteignant = v.modifications.filter((m) => m.atteintLeBuild);
+    if (v.modifications.length === 0) return `${nom} @ ${v.tete} — propre`;
+    if (atteignant.length === 0) {
+      return `${nom} @ ${v.tete} — ${v.modifications.length} non enregistré(s), aucun dans le build`;
+    }
+    return (
+      `${nom} @ ${v.tete} — ⚠ ${atteignant.length} fichier(s) NON COMMITÉ(S) dans le build : ` +
+      atteignant
+        .slice(0, 4)
+        .map((m) => m.fichier)
+        .join(", ") +
+      (atteignant.length > 4 ? `, +${atteignant.length - 4}` : "")
+    );
+  });
+}
+
+/**
+ * La mention que porte une CAMPAGNE DE BANCS en tête de sortie, et son REFUS.
+ *
+ * ⛔ ELLE S'ARRÊTE PLUTÔT QUE DE S'AFFICHER VIDE. Une mention absente se lit comme « rien à
+ * signaler », alors qu'elle signifie « la mesure n'a pas eu lieu » : c'est le pire des deux
+ * silences, parce qu'il rassure. Deux cas la font échouer, et ils sont l'un et l'autre le
+ * symptôme d'un calcul qui n'a pas abouti :
+ *   • AUCUN voisin trouvé — un garde qui a examiné zéro n'a rien examiné (racine fausse, atelier
+ *     déplacé, liens non posés) ;
+ *   • un voisin dont l'ÉTAT n'est pas mesurable (hors git) — la campagne ne pourrait pas dire
+ *     contre quoi elle a mesuré ce dépôt-là.
+ */
+export function mentionDeRegime(racine) {
+  const voisins = voisinsLies(racine);
+  if (voisins.length === 0) {
+    throw new Error(
+      "MENTION DE RÉGIME IMPOSSIBLE — aucun voisin lu vivant n'a été trouvé sous " +
+        `${racine}. Cette campagne consomme ses voisins par lien symbolique : en trouver ZÉRO ` +
+        "veut dire que la mesure a raté, jamais qu'il n'y en a pas. La campagne s'arrête ici " +
+        "plutôt que de rendre un vert dont personne ne pourrait dire sur quel état il porte.",
+    );
+  }
+  const aveugles = voisins.filter((v) => v.tete === null).map((v) => v.chemin);
+  if (aveugles.length > 0) {
+    throw new Error(
+      "MENTION DE RÉGIME INCOMPLÈTE — l'état de ces dépôts liés n'est pas mesurable (hors git) :\n" +
+        aveugles.map((c) => `  • ${c}`).join("\n") +
+        "\nLa campagne s'arrête : elle ne peut pas dire contre quel état elle mesure ceux-là.",
+    );
+  }
+  return (
+    "• voisins lus VIVANTS — l'état sur lequel cette campagne mesure :\n" +
+    legendeDesVoisins(voisins)
+      .map((l) => `    ${l}`)
+      .join("\n")
+  );
+}
+
+/**
  * Le texte que le refus de production affiche : ce qui bloque, et où le régler.
  *
  * NE COMPTE QUE CE QUI ENTRE DANS LE PAQUET. Un backlog en cours, une note, de l'outillage

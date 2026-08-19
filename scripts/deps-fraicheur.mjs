@@ -24,6 +24,7 @@ import { readFileSync, existsSync, lstatSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, join } from "node:path";
 import {
+  legendeDesVoisins,
   voisinsLies,
   raisonDuRefus,
   racinesExposees,
@@ -137,24 +138,7 @@ for (const dep of ["bpscript", ...SOURCE_DEPS]) {
 // l'appel, donc leur état ne figurait dans aucune légende. `voisinsLies` énumère les liens réels,
 // et c'est LA MÊME mesure que le refus de production (`vite.config.ts`) : deux lecteurs, une
 // seule vérité, jamais deux chiffres qui se contredisent à l'écran.
-const etats = voisinsLies(repoRoot).map((v) => {
-  const nom = v.depot.split("/").pop();
-  if (v.tete === null)
-    return `${nom} : hors git (${v.chemin}) — état non mesurable`;
-  const atteignant = v.modifications.filter((m) => m.atteintLeBuild);
-  if (v.modifications.length === 0) return `${nom} @ ${v.tete} — propre`;
-  if (atteignant.length === 0) {
-    return `${nom} @ ${v.tete} — ${v.modifications.length} non enregistré(s), aucun dans le build`;
-  }
-  return (
-    `${nom} @ ${v.tete} — ⚠ ${atteignant.length} fichier(s) NON COMMITÉ(S) dans le build : ` +
-    atteignant
-      .slice(0, 4)
-      .map((m) => m.fichier)
-      .join(", ") +
-    (atteignant.length > 4 ? `, +${atteignant.length - 4}` : "")
-  );
-});
+const etats = legendeDesVoisins(voisinsLies(repoRoot));
 console.log("• état des voisins lus VIVANTS (la légende du vert) :");
 for (const e of etats) console.log(`    ${e}`);
 if (etats.some((e) => e.includes("NON COMMITÉ"))) {

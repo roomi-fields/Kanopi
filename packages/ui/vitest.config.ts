@@ -35,6 +35,10 @@ export default defineConfig({
     dedupe: ['svelte']
   },
   test: {
+    // La LÉGENDE de cette campagne : l'état des voisins lus vivants, imprimé en tête et refusant
+    // de s'afficher vide (voir le fichier). Mise en place GLOBALE, jamais amorce de banc — la
+    // raison est écrite ci-dessous, à `setupFiles`.
+    globalSetup: ['./test/regime-voisins.globalSetup.mjs'],
     environment: 'jsdom',
     globals: true,
     include: ['src/**/*.test.ts'],
