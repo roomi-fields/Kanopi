@@ -31,8 +31,15 @@ const unusedVarsOptions = {
 export default [
   js.configs.recommended,
   {
-    // Build scripts run on Node — give them the node globals.
-    files: ['scripts/**/*.{js,mjs,cjs}', '*.config.{js,ts,mjs}', '**/*.config.{js,ts,mjs}'],
+    // Build scripts run on Node — give them the node globals. `test/**` porte la mise en place
+    // GLOBALE des bancs (`test/regime-voisins.globalSetup.mjs`), qui tourne dans le processus
+    // principal de vitest, en Node : même environnement que les scripts, même déclaration.
+    files: [
+      'scripts/**/*.{js,mjs,cjs}',
+      'test/**/*.{js,mjs,cjs}',
+      '*.config.{js,ts,mjs}',
+      '**/*.config.{js,ts,mjs}'
+    ],
     languageOptions: {
       globals: { ...globals.node }
     }
