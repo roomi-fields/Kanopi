@@ -234,6 +234,23 @@ if (nonAdmis.length > 0) {
   );
 }
 
+// ⛔ UNE EXEMPTION QUI NE DESIGNE PLUS RIEN DOIT FAIRE ECHOUER LE GARDE, jamais dormir.
+// Le symbole exempte finit par etre supprime ou renomme ; son exclusion, elle, survit et devient un
+// trou au nom d un mort — exactement l aveuglement que ce garde existe pour empecher. Il ne suffit
+// pas qu une exemption porte un motif : elle doit encore DESIGNER un symbole que le balayage a vu.
+const admisFantomes = [...ANTI_RETROCOMPAT_ADMIS.keys()].filter(
+  (nom) => !symboles.some((s) => s.nom === nom),
+);
+
+if (admisFantomes.length > 0) {
+  echecs++;
+  console.error(
+    `FAIL anti-rétrocompat — exclusion(s) ANTI_RETROCOMPAT_ADMIS qui ne désignent plus aucun ` +
+      `symbole balayé (supprimé ou renommé — retirez l'exclusion) : ` +
+      admisFantomes.join(", "),
+  );
+}
+
 if (admisSansMotif.length > 0) {
   echecs++;
   console.error(
