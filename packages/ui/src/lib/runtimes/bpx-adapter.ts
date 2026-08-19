@@ -44,9 +44,9 @@ import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 // Les catalogues de l'amont sont transportés EN BLOC vers Kairos (`PITCH_LIB` plus bas) : aucune
 // constante par catalogue ici, sinon la liste ferme l'ensemble et le prochain fichier à nom libre
 // reste invisible. Une scène qui déclare `alphabet.X` ou `test_alphabets.X` résout à travers eux.
-// CV modulation library (`mod.adsr/lfo/ramp`): the param signatures AND the curve
-// shape live here (declarative segments), consumed AS-IS — Kanopi's transport
-// renders the curve generically, no built-in modulator. See CV.md.
+// Bibliothèque de MODULATION (`mod.adsr/lfo/ramp`) : la donnée porte les signatures de
+// paramètres ET la forme de courbe (segments déclaratifs). L'hôte la transporte telle quelle
+// dans le contexte `modulation` de `charger` ; Kairos la lit et compose à l'aplatissement.
 const modLibJson = LIBS.mod;
 // Registre des VOIX (`lib/voices.json`, domaine 'voice' — LANG-SONS-3, résolution voix Kairos
 // 79118df) : jumelle de `pitchLib`/`digitalLib`, donnée read-only fournie par l'hôte (L26).
