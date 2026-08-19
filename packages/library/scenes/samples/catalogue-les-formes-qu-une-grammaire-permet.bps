@@ -1,0 +1,36 @@
+// @name: Templates — The Catalogue
+// @tagline: The engine writes down the shapes its own derivation allows
+// @description: La seconde échelle des gabarits. Le moteur dérive une production, efface ses terminaux, et écrit ce qui reste — un gabarit par ligne, avec son rang et son échelle.
+// @language: bpscript
+// @outputs: audio
+// @level: advanced
+// @tags: language, derivation
+// @order: 28
+//
+// LA PREMIÈRE ÉCHELLE est servie par `gabarits-la-structure-avant-la-matiere.bps` : capturer un
+// motif dans une règle, et le rejouer identique. Celle-ci montre le CATALOGUE — non plus un
+// gabarit employé, mais l'inventaire des formes qu'une grammaire permet.
+//
+// ⛔ LE MOT DE SECTION QUI OUVRE LE CATALOGUE EST VIVANT, et il ne faut pas le confondre avec la
+// directive de tête du même nom, elle retirée et débranchée. Deux places, deux sorts : celui-ci
+// s'écrit en FIN de scène et ouvre l'inventaire (`LANGUAGE.md:666` pour le mot de section,
+// `:1913` pour la forme du catalogue). Mesuré ici avant de poser la scène : elle analyse sans une
+// erreur, dérive huit feuilles — C4 D4 E4 G4 G4 E4 D4 C4 — et l'arbre porte bien ses trois entrées.
+//
+// Chaque ligne du catalogue : son rang entre crochets, son échelle, puis la forme, où `?` tient la
+// place d'un terminal effacé.
+
+core
+alphabet.western
+actor lead alphabet.western out.midi(ch:1)
+tempo:96
+-----
+
+S -> Theme Reponse
+Theme -> C4 D4 E4 G4
+Reponse -> G4 E4 D4 C4
+
+template
+[1] /1 ????
+[2] *3/2 ??.?
+[3] /1 ($0 ??)($1 )
