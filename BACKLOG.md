@@ -334,6 +334,17 @@ Chiffres pris ce jour, sur demande de Romain. Ils ne vivaient nulle part ailleur
 
 Mesure du 2026-08-18, prise sur la base d'index et sur l'arbre de travail.
 
+> ⚠️ **CES CHIFFRES DÉCRIVENT L’ÉTAT D’AVANT.** Le 2026-08-19 au matin, l’auteur de l’outil
+> d’index a corrigé trois causes — un balayage qui passait devant l’ingestion et le retrait, un
+> disjoncteur qui refusait tout lot de retraits dépassant 25 fichiers, et un goulot d’embedding.
+> **Relevé du 2026-08-19 à 10h37 : 423 fichiers indexés, 0 absent du disque**, contrôlé chemin par
+> chemin. Les nombres du tableau ci-dessous ne se citent plus sans cette date.
+>
+> Ce relevé est pris **pendant** la reconstruction qui a suivi le déploiement : il prouve
+> qu’aucun fichier indexé ne manque du disque, **il ne prouve pas** que le retrait fonctionne
+> durablement — un index qui vient de tout réingérer n’a mécaniquement rien d’obsolète.
+> Se redate après la fenêtre.
+
 - **KAN-57** `ouvert` — **la source déclarée de l'index pointait hors du dépôt.** Elle
   désignait `/home/romi/dev/music/kanopi` ; le dépôt vit à `/home/romi/dev/bp/kanopi`. La
   synchronisation ne faisait donc rien depuis le déménagement, et le disait en une ligne
