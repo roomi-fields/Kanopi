@@ -379,6 +379,28 @@ Chiffres pris ce jour, sur demande de Romain. Ils ne vivaient nulle part ailleur
   voisins publient leurs types déclarés, ou que la comparaison porte sur leur source. Deux
   changements de frontière, hors de mon arbitrage.
 
+- **KAN-62** `ouvert` — **une campagne de portillon a analysé 43 fichiers de moins qu'à
+  l'ordinaire, une seule fois, et cette fois-là a rougi.** Mesure du **2026-08-19**, prise sur les
+  sept campagnes de la journée : six annoncent `644 FILES 0 ERRORS`, la septième `601 FILES
+  4 ERRORS`. Les quatre erreurs sont de même nature — un paramètre au type implicite — et trois
+  d'entre elles portent sur le même appel, dont le type générique n'était pas honoré
+  (`bpx-adapter.ts`, `interpsForScene`). La campagne suivante, code inchangé, est revenue à 644
+  fichiers et zéro erreur.
+
+  Une signature absente et un périmètre amputé désignent un ensemble de fichiers hors de portée à
+  cet instant. **La cause n'est pas désignée** : la piste d'un paquet voisin à moitié écrit est
+  écartée par la mesure de son propriétaire — sa construction bascule par renommage et n'expose
+  jamais deux générations. Ce qui reste établi tient en deux faits : le périmètre a varié, et il
+  a varié une seule fois.
+
+- **KAN-63** `ouvert` — **l'état d'un voisin lu vivant dit s'il a enregistré, jamais s'il est en
+  train d'écrire.** `scripts/lib/voisins-lies.mjs` mesure par `git status` : un dépôt dont la
+  source est à moitié écrite présente un arbre propre à chaque instant. Mon refus de construction
+  et la légende de mes campagnes portent donc une propreté qui vaut pour l'enregistrement seul.
+
+  Un critère d'écriture en cours demande une notion de stabilité — deux lectures identiques à
+  intervalle, ou une date d'écriture comparée au présent. Le seuil se décide.
+
 
 ### Ma documentation écrit des formes que le langage a retirées
 
