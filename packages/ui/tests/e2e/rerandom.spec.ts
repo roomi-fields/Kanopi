@@ -7,10 +7,10 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helper
 // KAN-orchestration P1 — RE-RANDOM on the Kairos path (closes the gap where the
 // StructureSource re-projected a FROZEN tree). With re-random ON + looping, Kanopi
 // registers `kairos.setReDerive(cb)`; Kronos fires `cb` at each loop edge → the host
-// re-derives the grammar with a FRESH seed (re-rolling `mode:random` / weighted rules)
+// re-derives the grammar with a FRESH seed (re-rolling `mode:rnd` / weighted rules)
 // and `charger`s the new tree → generation bump → Kronos swaps the new flat at the edge.
 //
-// The proof: `cv-lfo.bps` has a `mode:random` `Arp` rule with FOUR distinct note
+// The proof: `cv-lfo.bps` has a `mode:rnd` `Arp` rule with FOUR distinct note
 // sequences (weighted). Looping with re-random ON, the derived production must show
 // MORE THAN ONE distinct token sequence across consecutive cycles (a re-roll); a frozen
 // tree would replay ONE sequence forever. We compare the symbolic production the adapter
@@ -29,7 +29,7 @@ async function loadCvLfo(page: Page): Promise<string> {
   const bundledDir = fileURLToPath(new URL('../../../library/scenes/cv', import.meta.url));
   const program = readFileSync(join(bundledDir, 'cv-lfo.bps'), 'utf8');
   // Sanity: the fixture must actually carry the random rule we rely on.
-  expect(program).toContain('mode:random');
+  expect(program).toContain('mode:rnd');
 
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });

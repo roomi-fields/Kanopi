@@ -24,7 +24,7 @@ S -> Loop [count=4]
 
 -----
 
-mode:random
+mode:rnd
 [count-1] Loop -> C4 D4 E4 F4 Loop
 [count-1] Loop -> E4 F4 G4 A4 Loop
 [count==0] Loop -> C5 _ _ _

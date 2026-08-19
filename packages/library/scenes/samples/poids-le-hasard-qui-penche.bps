@@ -23,7 +23,7 @@ S -> Cellule Cellule Cellule Cellule Cellule Cellule
 
 -----
 
-mode:random
+mode:rnd
 
 // La figure ordinaire revient souvent : elle installe le climat.
 Cellule -> A3 C4 E4 (vel:74, wave:sine, attack:5, release:180, weight:70)

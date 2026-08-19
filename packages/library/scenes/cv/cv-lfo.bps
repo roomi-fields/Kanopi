@@ -28,7 +28,7 @@ S -> {G2 _ _ _ G2 _ _ _ (vel:60, wave:triangle), Arp Arp}
 
 -----
 
-mode:random
+mode:rnd
 
 // Branchement au point de paramètre : sweep module le panoramique (pan) de l'arpège
 Arp -> G4 B4 D5 G5 (pan:sweep, wave:sine, vel:75, attack:5, release:200) (weight:40)

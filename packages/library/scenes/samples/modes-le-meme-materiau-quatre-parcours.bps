@@ -31,7 +31,7 @@ Suite -> A3 C4 E4 A4 (vel:80, wave:sine, attack:5, release:180)
 
 -----
 
-mode:random
+mode:rnd
 
 // Au hasard : le même stock, mais l'ordre se refait à chaque passage.
 Tirage -> G3 B3 D4 G4 (vel:92, wave:sine, attack:3, release:160)

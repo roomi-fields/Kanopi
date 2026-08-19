@@ -19,7 +19,7 @@ import { setupAudioCapture, evalBlockAt, expectNoConsoleErrors } from '../helper
 //
 // RÉSOLU 2026-06-25 : Kronos 1531b28 (KAI-8, StructureSource.auBord()) N'ÉTAIT PAS la
 // cause — diagnostic écarté par l'architecte (courrier/kanopi.md 2026-06-25T02:31), 1531b28
-// porte le re-roll mode:random, sans rapport avec le rendu CV. La vraie racine était côté
+// porte le re-roll mode:rnd, sans rapport avec le rendu CV. La vraie racine était côté
 // Kairos : composerModulations indexait les bindings par leaf.nodeId (undefined) au lieu de
 // leaf.id, donc content.modulations restait vide — corrigé en 07a1f2e (+ e2f2eb0 pour le
 // PAN-NaN). Le test est vert depuis. Les assertions/seuils ne sont pas assouplis et le test

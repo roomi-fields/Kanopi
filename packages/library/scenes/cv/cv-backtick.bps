@@ -27,7 +27,7 @@ S -> Bass Bass Bass Bass
 
 -----
 
-mode:random
+mode:rnd
 
 Bass -> C2(cutoff:wobble) _ _ C2 _ _ C2 _ (wave:sawtooth, vel:110, filterQ:6) (weight:50)
 Bass -> C2(cutoff:wobble) _ Eb2 _ C2 _ _ - (wave:sawtooth, vel:110, filterQ:6)

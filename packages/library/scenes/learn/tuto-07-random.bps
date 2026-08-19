@@ -8,7 +8,7 @@
 //
 // Tutorial 7 — Random mode
 //
-// mode:random makes the engine pick a rule at random
+// mode:rnd makes the engine pick a rule at random
 // when multiple rules exist for the same symbol.
 //
 // (weight:N) controls the probability (higher = more likely).
@@ -19,7 +19,7 @@ core
 alphabet.western:audio
 
 -----
-mode:random
+mode:rnd
 S -> Motif Motif Motif Motif End
 
 Motif -> C4 E4 G4 E4 (weight:40)

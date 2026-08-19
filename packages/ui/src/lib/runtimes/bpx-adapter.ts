@@ -2506,7 +2506,7 @@ function makeBpxAdapter(
         {
           // KAN-orchestration P1 — RE-RANDOM re-derive on the Kairos path. This closure is
           // what Kronos fires at each loop edge (`StructureSource.auBord` → `cb`): it
-          // re-derives the grammar with a FRESH seed (re-rolling `mode:random` / weighted
+          // re-derives the grammar with a FRESH seed (re-rolling `mode:rnd` / weighted
           // rules) and `charger`s the new tree → Kairos bumps its generation → Kronos
           // re-pulls + swaps the new flat at that same edge (quantized).
           //

@@ -83,7 +83,7 @@ function decorate(view: EditorView): DecorationSet {
           // The flat tokenizer lumps `axis.entry` into ONE keyword token. Colour
           // ONLY the catalog ENTRY (after the first `.`), so the directive head
           // stays `keyword` — and a head that doubles as a control (`sound.`) is
-          // not recoloured. No dot ⇒ nothing to mark (`tempo`, `mode:random`).
+          // not recoloured. No dot ⇒ nothing to mark (`tempo`, `mode:rnd`).
           const dot = text.indexOf('.');
           if (dot >= 0)
             lastFrom = markRuns(text.slice(dot + 1), node.from + dot + 1, builder, lastFrom);

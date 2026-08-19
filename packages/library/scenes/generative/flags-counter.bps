@@ -20,7 +20,7 @@ S -> Phrase [count=4]
 -----
 
 // Chaque passage décrémente le compteur
-mode:random
+mode:rnd
 [count-1] Phrase -> C4 E4 G4 Phrase (weight:50)
 [count-1] Phrase -> D4 F4 A4 Phrase (weight:30)
 [count-1] Phrase -> E4 G4 B4 Phrase

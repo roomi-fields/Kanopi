@@ -31,7 +31,7 @@ S -> Cellule Cellule Cellule Cellule
 
 -----
 
-mode:random
+mode:rnd
 
 // Trois cellules candidates, tirées au sort — mais toujours dans le même ordre, parce
 // que la graine fige le tirage.

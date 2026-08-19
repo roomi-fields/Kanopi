@@ -29,7 +29,7 @@ S -> Bass Bass Bass Bass
 
 -----
 
-mode:random
+mode:rnd
 
 // Branchement au point de paramètre : env1 module la coupure (cutoff) de CHAQUE note (sujet *)
 Bass -> C2 C2 C3 C2 - C2 Eb2 C2 (*:cutoff:env1, wave:sawtooth, vel:100, filterQ:8) (weight:50)

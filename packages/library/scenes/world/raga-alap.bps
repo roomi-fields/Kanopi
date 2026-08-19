@@ -18,14 +18,14 @@ S -> Intro Develop Develop Climax
 -----
 
 // Low exploration
-mode:random
+mode:rnd
 Intro -> sa _ re _ ga _ re sa _ _ (weight:50)
 Intro -> sa _ _ re ga _ _ _
 
 -----
 
 // Development
-mode:random
+mode:rnd
 Develop -> Ascend Descend
 Develop -> Descend Ascend
 
