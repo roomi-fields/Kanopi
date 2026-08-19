@@ -183,7 +183,13 @@ for (const [fichier, lignes] of contenuParFichier) {
 // --- 3. Recherche d'appelant vivant, par régime de portée --------------------------------------
 
 const aUnAppelantVivant = (symbole) => {
-  const RE_NOM = new RegExp(`\\b${symbole.nom.replace(/[$]/g, "\\$")}\\b`);
+  // ⛔ BORNES EXPLICITES, PAS UNE LIMITE DE MOT. Une limite de mot se place entre un caractere
+  // de mot et un autre qui ne l est pas : devant un nom qui COMMENCE par le signe dollar — les
+  // runes de Svelte 5, les anciens stores — il n y a aucune transition, et la limite ne trouve
+  // JAMAIS le nom. Le garde rendait alors « aucun appelant vivant » sur un symbole appele partout,
+  // donc un VERT MENTEUR. Mesure par injection, quatre formes : nom nu, nom a dollar initial, nom
+  // a souligne initial, dollar median — trouvees toutes les quatre ; collages et suffixes rejetes.
+  const RE_NOM = new RegExp(`(?<![\\w$])${symbole.nom.replace(/[$]/g, "\\$")}(?![\\w$])`);
   const fichiersACherche = symbole.topLevel
     ? [...contenuParFichier.keys()]
     : [symbole.fichier];
