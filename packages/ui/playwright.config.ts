@@ -44,6 +44,11 @@ if (crossBrowser) {
 }
 
 export default defineConfig({
+  // MÊME mise en place que la campagne unitaire, MÊME fichier : la légende de l'état des voisins
+  // lus vivants, et son refus de s'afficher vide. Une campagne d'écran mesure contre les mêmes
+  // arbres de travail ; deux moitiés de bancs dont une seule porte sa légende laisseraient un
+  // vert d'écran illisible.
+  globalSetup: './test/regime-voisins.globalSetup.mjs',
   testDir: './tests/e2e',
   fullyParallel: false,
   workers: 1,
