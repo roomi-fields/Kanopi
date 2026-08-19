@@ -49,6 +49,9 @@ export default defineConfig({
   // arbres de travail ; deux moitiés de bancs dont une seule porte sa légende laisseraient un
   // vert d'écran illisible.
   globalSetup: './test/regime-voisins.globalSetup.mjs',
+  // La comparaison de fin est un fichier À PART parce que Playwright ne consomme pas la fonction
+  // que la mise en place retourne — contrairement à vitest. Les deux passent par le même relevé.
+  globalTeardown: './test/regime-voisins.globalTeardown.mjs',
   testDir: './tests/e2e',
   fullyParallel: false,
   workers: 1,

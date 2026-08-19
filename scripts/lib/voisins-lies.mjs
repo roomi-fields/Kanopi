@@ -16,7 +16,14 @@
 // symboliques réels de `node_modules`, y compris à portée (`@kairos/core`), aux deux niveaux où
 // npm les pose (racine hoistée et paquet).
 
-import { readdirSync, lstatSync, realpathSync, existsSync, readFileSync } from "node:fs";
+import {
+  readdirSync,
+  lstatSync,
+  realpathSync,
+  existsSync,
+  readFileSync,
+  statSync,
+} from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 
@@ -199,17 +206,133 @@ export function voisinsLies(racine) {
  * Une seule fabrique pour tous les producteurs de légende (portillon, campagne de bancs) : deux
  * vocabulaires pour le même état laisseraient l'un dériver pendant que l'autre reste juste.
  */
+/**
+ * Les PORTES qu'un voisin déclare, et celles qui répondent.
+ *
+ * Une porte est une cible d'entrée écrite dans son manifeste — `exports` (toutes conditions
+ * confondues), `main`, `module`, `types`, `browser`. Chaque consommateur en emprunte une, et
+ * laquelle dépend de lui : le vérificateur de types passe par `types`, la construction de
+ * production par `default`, le serveur de développement par `development`.
+ *
+ * ⛔ ON COMPTE PAR PORTE, ET C'EST MESURÉ. Un voisin qui bascule son paquet construit par
+ * renommage a, l'instant du renommage, sa porte `types` VIDE pendant que sa porte `development`
+ * répond encore. Un compte global le dirait « partiellement là » ; le consommateur, lui, résout
+ * ZÉRO fichier — c'est arrivé le 2026-08-19, et le rouge a accusé trois de mes fichiers pour une
+ * signature qui n'arrivait pas.
+ *
+ * Les cibles à joker (`./*`) sortent : elles ne désignent pas un fichier.
+ */
+export function portesDuVoisin(v) {
+  let manifeste;
+  try {
+    manifeste = JSON.parse(readFileSync(join(v.chemin, "package.json"), "utf8"));
+  } catch {
+    return { declarees: [], muettes: [], manifesteIllisible: true };
+  }
+  const cibles = [];
+  const recolter = (x) => {
+    if (typeof x === "string") cibles.push(x);
+    else if (x && typeof x === "object") for (const y of Object.values(x)) recolter(y);
+  };
+  recolter(manifeste.exports);
+  for (const champ of ["main", "module", "types", "browser"]) recolter(manifeste[champ]);
+
+  const declarees = [...new Set(cibles)].filter(
+    (c) => c.startsWith(".") && !c.includes("*"),
+  );
+  const muettes = declarees.filter((c) => !existsSync(join(v.chemin, c)));
+  return { declarees, muettes, manifesteIllisible: false };
+}
+
+/**
+ * L'EMPREINTE des portes de chaque voisin, à un instant donné — le relevé qui se prend AVANT.
+ *
+ * ⛔ LE RELEVÉ SE FAIT AVANT, ET C'EST TOUT LE POINT. Un contrôle passé après la panne mesure le
+ * mauvais instant : la fenêtre est refermée, le paquet est de nouveau entier, et il répond que
+ * tout va bien. Prélevée avant et comparée après, l'empreinte dit si le paquet a bougé PENDANT.
+ *
+ * L'INODE, pas la date : une bascule par renommage remplace le fichier sans que sa date de
+ * modification change — `rename` préserve les dates. Le numéro d'inode, lui, désigne le fichier
+ * lui-même : un fichier remplacé en porte un autre, même à contenu et date identiques.
+ */
+export function empreinteDesPortes(racine) {
+  const empreinte = new Map();
+  for (const v of voisinsLies(racine)) {
+    // ⛔ LA CLÉ EST LE SPÉCIFICATEUR QUE JE DÉCLARE, pas le nom du dépôt derrière le lien. Mesuré :
+    // clé par dépôt, un lien redirigé vers un AUTRE dépôt fait disparaître l'ancienne clé et le
+    // constat devient « le voisin n'est plus lié du tout » — faux, il est lié ailleurs. Ce que je
+    // suis, c'est la dépendance ; ce qu'elle désigne peut changer sous elle, et c'est le fait à voir.
+    const nom = v.specificateurs[0];
+    const { declarees } = portesDuVoisin(v);
+    const portes = new Map();
+    for (const cible of declarees) {
+      try {
+        const st = statSync(join(v.chemin, cible));
+        portes.set(cible, `${st.ino}:${st.size}`);
+      } catch {
+        portes.set(cible, "muette");
+      }
+    }
+    empreinte.set(nom, portes);
+  }
+  return empreinte;
+}
+
+/**
+ * Ce qui a BOUGÉ chez un voisin entre le relevé et maintenant, voisin par voisin.
+ *
+ * Rend une liste vide quand rien n'a bougé — et JAMAIS un silence quand le relevé manque : un
+ * relevé absent se distingue d'un relevé sans écart, et se traite comme un échec de mesure.
+ */
+export function cequiABascule(avant, racine) {
+  if (!(avant instanceof Map) || avant.size === 0) {
+    throw new Error(
+      "COMPARAISON IMPOSSIBLE — aucun relevé n'a été pris avant cette campagne. Sans lui, une " +
+        "bascule survenue pendant la mesure serait invisible, et le résultat porterait sur deux " +
+        "états de voisin sans que rien ne le dise.",
+    );
+  }
+  const apres = empreinteDesPortes(racine);
+  const bouges = [];
+  for (const [nom, portesAvant] of avant) {
+    const portesApres = apres.get(nom);
+    if (!portesApres) {
+      bouges.push({ nom, quoi: ["le voisin n'est plus lié du tout"] });
+      continue;
+    }
+    const quoi = [];
+    for (const [cible, marque] of portesAvant) {
+      const maintenant = portesApres.get(cible);
+      if (maintenant === marque) continue;
+      quoi.push(
+        marque === "muette"
+          ? `${cible} était muette, elle répond maintenant`
+          : maintenant === "muette"
+            ? `${cible} répondait, elle est muette maintenant`
+            : `${cible} a été REMPLACÉE (fichier différent)`,
+      );
+    }
+    if (quoi.length) bouges.push({ nom, quoi });
+  }
+  return bouges;
+}
+
 export function legendeDesVoisins(voisins) {
   return voisins.map((v) => {
     const nom = v.depot.split("/").pop();
     if (v.tete === null) return `${nom} : hors git (${v.chemin}) — état non mesurable`;
     const atteignant = v.modifications.filter((m) => m.atteintLeBuild);
-    if (v.modifications.length === 0) return `${nom} @ ${v.tete} — propre`;
+    // Le compte des portes est sur CHAQUE forme, et c'est mesuré : posé d'abord sur la seule
+    // branche « propre », il manquait exactement sur le voisin en travail — celui dont on veut
+    // savoir si son paquet répond encore.
+    const { declarees, muettes } = portesDuVoisin(v);
+    const portes = `${declarees.length - muettes.length}/${declarees.length} porte(s)`;
+    if (v.modifications.length === 0) return `${nom} @ ${v.tete} — propre, ${portes}`;
     if (atteignant.length === 0) {
-      return `${nom} @ ${v.tete} — ${v.modifications.length} non enregistré(s), aucun dans le build`;
+      return `${nom} @ ${v.tete} — ${v.modifications.length} non enregistré(s), aucun dans le build, ${portes}`;
     }
     return (
-      `${nom} @ ${v.tete} — ⚠ ${atteignant.length} fichier(s) NON COMMITÉ(S) dans le build : ` +
+      `${nom} @ ${v.tete} — ⚠ ${atteignant.length} fichier(s) NON COMMITÉ(S) dans le build, ${portes} : ` +
       atteignant
         .slice(0, 4)
         .map((m) => m.fichier)
@@ -249,6 +372,30 @@ export function mentionDeRegime(racine) {
         "\nLa campagne s'arrête : elle ne peut pas dire contre quel état elle mesure ceux-là.",
     );
   }
+  // ⛔ LE REFUS EST À ZÉRO, ET ZÉRO N'EST PAS UN SEUIL — c'est une absence. Il ne se règle pas, il
+  // ne vieillit pas, il ne devient pas faux au prochain fichier ajouté d'un côté ou de l'autre, et
+  // aucun voisin ne peut le franchir en grossissant ou en maigrissant légitimement.
+  // Une porte déclarée dont la cible ne répond pas, c'est ZÉRO fichier résolu par cette porte pour
+  // qui l'emprunte — et le consommateur qui l'emprunte n'a aucun moyen de le voir : il constate une
+  // signature absente, jamais son origine.
+  const muets = voisins
+    .map((v) => ({ v, ...portesDuVoisin(v) }))
+    .filter((x) => x.manifesteIllisible || x.muettes.length > 0);
+  if (muets.length > 0) {
+    throw new Error(
+      "PORTE MUETTE CHEZ UN VOISIN — ces entrées sont déclarées et ne répondent pas :\n" +
+        muets
+          .map((x) =>
+            x.manifesteIllisible
+              ? `  • ${x.v.depot.split("/").pop()} — manifeste illisible, aucune porte qualifiable`
+              : `  • ${x.v.depot.split("/").pop()} — ${x.muettes.join(", ")}`,
+          )
+          .join("\n") +
+        "\nLa campagne s'arrête : ce qui passe par cette porte résoudrait ZÉRO fichier, et le rouge " +
+        "qui s'ensuit accuse les fichiers d'ici pour une cause qui est là-bas.",
+    );
+  }
+
   return (
     "• voisins lus VIVANTS — l'état sur lequel cette campagne mesure :\n" +
     legendeDesVoisins(voisins)

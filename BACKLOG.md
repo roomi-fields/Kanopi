@@ -387,19 +387,36 @@ Chiffres pris ce jour, sur demande de Romain. Ils ne vivaient nulle part ailleur
   (`bpx-adapter.ts`, `interpsForScene`). La campagne suivante, code inchangé, est revenue à 644
   fichiers et zéro erreur.
 
-  Une signature absente et un périmètre amputé désignent un ensemble de fichiers hors de portée à
-  cet instant. **La cause n'est pas désignée** : la piste d'un paquet voisin à moitié écrit est
-  écartée par la mesure de son propriétaire — sa construction bascule par renommage et n'expose
-  jamais deux générations. Ce qui reste établi tient en deux faits : le périmètre a varié, et il
-  a varié une seule fois.
+  **La cause est établie**, par deux mesures indépendantes : 43 fichiers perdus par ma campagne, et
+  43 déclarations atteignables depuis l'entrée de types de BPx. Les 43 accès tracés par Kairos ne
+  font pas une troisième jambe — ce qu'un consommateur atteint et ce que BPx expose sont la même
+  mesure vue des deux bouts. Mon vérificateur a **énuméré ce paquet à l'instant
+  où il n'existait pas**, entre les deux renommages de sa bascule — l'ancien parti, le neuf pas
+  encore arrivé. Il en a résolu **zéro**, le générique de la signature d'émission n'a pas été
+  honoré, et trois de mes fichiers ont été accusés pour une signature qui n'arrivait pas.
+
+  Une bascule par renommage est atomique pour qui **ouvre** un fichier, et pas pour qui **parcourt**
+  l'arbre. La fenêtre vaut la durée d'un renommage, mesurée chez BPx à une disparition sur 881 414
+  lectures. La supprimer demande de basculer un lien symbolique au lieu d'un répertoire : seize
+  dépôts, décision de Romain.
+
+  **Le refus à zéro par porte** (`scripts/lib/voisins-lies.mjs`, `portesDuVoisin`) tient ce cas
+  depuis : une entrée déclarée qui ne répond pas arrête la campagne en nommant le voisin et la
+  porte. **Aucune relance** : un rouge se garde et l'accusation se retire, sinon un défaut
+  intermittent disparaît du rapport sans disparaître du produit.
 
 - **KAN-63** `ouvert` — **l'état d'un voisin lu vivant dit s'il a enregistré, jamais s'il est en
   train d'écrire.** `scripts/lib/voisins-lies.mjs` mesure par `git status` : un dépôt dont la
   source est à moitié écrite présente un arbre propre à chaque instant. Mon refus de construction
   et la légende de mes campagnes portent donc une propreté qui vaut pour l'enregistrement seul.
 
-  Un critère d'écriture en cours demande une notion de stabilité — deux lectures identiques à
-  intervalle, ou une date d'écriture comparée au présent. Le seuil se décide.
+  **Un seuil est refusé, et la question ne se pose que pour la source vive.** Une autorité se lit
+  au commit publié, qui ne s'écrit pas pendant qu'on le lit : `scripts/garde-copies-miroir.mjs`
+  lit désormais ainsi le contrat de l'événement d'entrée, sur la branche que le dépôt **déclare**
+  dans `hub/contrats/branches-de-reference.tsv`. Restent onze voisins consommés en source vive,
+  que le contrat `ce-qu-un-banc-lit-chez-son-voisin.md` exclut explicitement — leur régime de
+  lecture relève de l'architecture. Portés à Romain comme question, avec les deux artefacts
+  construits de KAN-61 et le cas des librairies lues par le produit.
 
 
 ### Ma documentation écrit des formes que le langage a retirées

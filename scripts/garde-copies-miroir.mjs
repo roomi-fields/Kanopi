@@ -24,6 +24,8 @@
 // forme et refuse de la laisser passer en silence. Qui a raison des deux se tranche à l'architecte.
 
 import { readFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -32,10 +34,69 @@ const RACINE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Chaque référence est surchargeable par variable d'environnement : c'est ce qui permet de PROUVER
 // que le garde mord (on lui montre une copie divergente) sans jamais écrire dans le dépôt d'un
 // voisin — écrire chez le voisin serait une guerre d'édition, pas une preuve.
+const HUB = path.resolve(RACINE, '..', 'hub');
+
+/**
+ * La branche de référence d'un dépôt, telle qu'il la DÉCLARE — jamais déduite.
+ *
+ * `origin/HEAD` est une déclaration laissée derrière soi, `@{upstream}` peut désigner le distant
+ * d'un fork, et la branche sortie est un état de l'arbre de travail que personne ne rejoue : les
+ * trois se cassent (contrat `ce-qu-un-banc-lit-chez-son-voisin.md`). La table du hub porte une
+ * ligne par dépôt, et quatre dépôts de la tour publient sur `master` — le nom ne dit pas le rôle.
+ *
+ * ⛔ LA TABLE ELLE-MÊME SE LIT DANS L'ARBRE DE TRAVAIL DU HUB, et c'est assumé : c'est le point
+ * d'amorce. La lire à un commit publié demanderait de connaître d'abord la branche du hub, donc
+ * de savoir ce qu'on cherche à apprendre.
+ *
+ * Un dépôt absent de la table n'est pas lu en silence : le garde le DIT.
+ */
+function brancheDeReference(depot) {
+  const nom = path.basename(depot);
+  let table;
+  try {
+    table = readFileSync(path.join(HUB, 'contrats', 'branches-de-reference.tsv'), 'utf8');
+  } catch {
+    return null;
+  }
+  for (const ligne of table.split('\n')) {
+    if (ligne.startsWith('#') || !ligne.trim()) continue;
+    const [depotDeclare, reference] = ligne.split('\t');
+    if (depotDeclare === nom && reference) return reference.trim();
+  }
+  return null;
+}
+
+/**
+ * Le contenu d'un fichier AU COMMIT PUBLIÉ de son dépôt, jamais dans son arbre de travail.
+ *
+ * Trois états existent chez un voisin et un seul est partagé : l'arbre de travail change entre
+ * deux mesures, le commit local rend un vert que le clone d'à côté ne reproduit pas, et le commit
+ * publié est le seul qu'un tiers puisse cloner. Un commit publié ne s'écrit pas non plus pendant
+ * qu'on le lit — d'où l'absence de toute notion d'attente ici.
+ */
+function auCommitPublie(depot, dansLeDepot) {
+  const branche = brancheDeReference(depot);
+  if (branche === null) {
+    rater(
+      `la branche de référence de « ${path.basename(depot)} » n'est pas déclarée dans ` +
+        `hub/contrats/branches-de-reference.tsv. Sans elle, ce contrat serait lu par déduction, ` +
+        `et une déduction de branche s'est cassée trois fois.`
+    );
+  }
+  return execFileSync('git', ['-C', depot, 'show', `${branche}:${dansLeDepot}`], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore']
+  });
+}
+
 const CHEMINS = {
-  contratEntree:
-    process.env.KANOPI_CONTRAT_ENTREE ??
-    path.resolve(RACINE, '..', 'hub', 'contrats', 'hote-runtime-in.md'),
+  // ⛔ UNE AUTORITÉ SE LIT AU COMMIT PUBLIÉ. Ce contrat du hub tranche : il dit la forme que les
+  // deux bords doivent porter. Le lire dans l'arbre de travail du hub ferait dépendre mon verdict
+  // d'un état que personne d'autre ne possède — et qui peut changer entre deux de mes mesures.
+  contratEntree: process.env.KANOPI_CONTRAT_ENTREE ?? {
+    depot: HUB,
+    dansLeDepot: 'contrats/hote-runtime-in.md'
+  },
   monBus: path.join(RACINE, 'packages', 'ui', 'src', 'lib', 'events', 'types.ts'),
   busCodevoices:
     process.env.KANOPI_BUS_CODEVOICES ??
@@ -72,12 +133,25 @@ function sansCommentaires(texte) {
 }
 
 async function lire(cle) {
+  const source = CHEMINS[cle];
   try {
-    return sansCommentaires(await readFile(CHEMINS[cle], 'utf8'));
+    // Une source est soit un chemin de fichier (mes copies, les paquets construits chez mes
+    // voisins), soit un dépôt et un chemin dedans — et cette seconde forme se lit à son commit
+    // publié. La surcharge par variable d'environnement rend toujours un chemin : c'est ce qui
+    // permet de prouver le mordant sans écrire chez un voisin.
+    const texte =
+      typeof source === 'string'
+        ? await readFile(source, 'utf8')
+        : auCommitPublie(source.depot, source.dansLeDepot);
+    return sansCommentaires(texte);
   } catch {
     // Une référence illisible n'est PAS un laissez-passer : sans elle, aucune concordance ne se
     // vérifie, et un garde qui se tait dans ce cas ne garde rien.
-    rater(`référence illisible (${cle} → ${CHEMINS[cle]}). Sans elle, rien ne se vérifie.`);
+    const ou =
+      typeof CHEMINS[cle] === 'string'
+        ? CHEMINS[cle]
+        : `${path.basename(CHEMINS[cle].depot)} @ ${brancheDeReference(CHEMINS[cle].depot) ?? '?'}:${CHEMINS[cle].dansLeDepot}`;
+    rater(`référence illisible (${cle} → ${ou}). Sans elle, rien ne se vérifie.`);
   }
 }
 
