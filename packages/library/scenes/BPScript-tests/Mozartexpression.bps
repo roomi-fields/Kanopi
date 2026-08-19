@@ -34,12 +34,12 @@ alphabet.bp3_fr:midi
 core
 timepatterns: t1=96/100, t2=100/100, t3=102/100, t4=100/100, t5=100/100, t6=102/100, t7=104/100, t8=106/100, t9=107/100, t10=108/100, t11=107/100, t12=106/100, t13=104/100, t14=102/100, t15=1/1
 -----
-mode:random
+mode:rnd
 S -> !(vel:80) {96, Tp1, A_r B_r}
 A_r -> {12, $Tp2, A1_r A2_r A3_r A4_r} A5_r A6_r A7_r A8_r {12, &Tp2, A1_r A2_r A3_r A4_r} {12, Tp3, A5_r A6_r A7_r A_r'8}
 B_r -> B1_r B2_r B3_r B4_r B5_r B6_r B7_r B8_r B1_r B2_r B3_r B4_r {12, Tp2, B5_r B6_r B7_r B8_r}
 -----
-mode:random
+mode:rnd
 Tp1 -> Tp2 (weight:20)
 Tp1 -> t5 t6 t7 t8 t9 t10 t11 t12 t13 t14 t15 (weight:30)
 Tp2 -> t1 t2 t3 t4

@@ -14,10 +14,10 @@ tempo:120   // horloge du natif -se.tryDESTRU : periode 500 ms par temps, soit 1
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
 test_alphabets.abc:midi
 
-// --- Sous-grammaire 1 mode:random — génération de structure ---
+// --- Sous-grammaire 1 mode:rnd — génération de structure ---
 
 -----
-mode:random
+mode:rnd
 S -> $ {$X S &X} & {$X S &X} (weight:2-1)
 X -> Y (weight:2-1)
 X -> Y S Z (weight:2-1)

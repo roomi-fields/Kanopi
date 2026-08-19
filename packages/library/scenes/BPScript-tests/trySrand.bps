@@ -51,7 +51,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // CHAQUE MOT SE POSE OÙ SA PORTÉE LE MET — `tempo` sort du modificateur de mode.
 //
-// Cette scène portait `mode:random(tempo:60.0000,striated,randomize)`. Le métronome déclare la
+// Cette scène portait `mode:rnd(tempo:60.0000,striated,randomize)`. Le métronome déclare la
 // portée `scene` : il s'écrit en tête, jamais sur une sous-grammaire. Il était là parce que ma voie
 // de portage BP3 mettait toute la ligne de préambule natif au même endroit ; elle route désormais
 // chaque mot par sa portée déclarée, et un modificateur de sous-grammaire hors portée est REFUSÉ
@@ -65,7 +65,7 @@
 core
 tempo:60.0000
 -----
-mode:random(striated,randomize)
+mode:rnd(striated,randomize)
 S -> ! (/5) A_r B_r C_r D_r E_r
 A_r -> !(shuffle) {C3 B3 E3 F3 G3}
 B_r -> ![seed:1] !(shuffle) {C4 B4 E4 F4 G4}

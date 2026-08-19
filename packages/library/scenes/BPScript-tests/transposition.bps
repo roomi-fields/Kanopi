@@ -13,10 +13,10 @@
 core
 alphabet.western:midi
 
-// --- Sous-grammaire 1 mode:random ---
+// --- Sous-grammaire 1 mode:rnd ---
 
 -----
-mode:random
+mode:rnd
 S -> A_r [numtimes=5]
 A_r -> {E1,A#1 F#1} {Tr2 D_r}
 B_r -> {Tr2 A_r}

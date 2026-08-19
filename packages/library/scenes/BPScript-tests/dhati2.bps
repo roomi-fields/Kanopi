@@ -3,22 +3,22 @@ homomorphism.dhati
 test_alphabets.dhati
 
 -----
-mode:random
+mode:rnd
 S <> $A16 $V8 $A'8 * &A16 &V8 $A8 (meter:4+4+4+4/4)
 S <> $V16 $A'16 * &V16 $A16 (meter:4+4+4+4/4)
 S <> $V24 $A'8 * &V24 $A8 (meter:4+4+4+4/4)
 -----
-mode:random
+mode:rnd
 V8 <> M V V V V V V V V
 V16 <> M V V V V V V V V V V V V V V V V
 V24 <> M V V V V V V V V V V V V V V V V V V V V V V V V
 -----
-mode:random
+mode:rnd
 V <> V1 (scan:left)
 V V <> trkt (scan:left)
 V V V <> V3 (scan:left)
 -----
-mode:random
+mode:rnd
 # (M) ? ? M ) <> ? ? )
 M V3 <> dhagena M
 M trkt <> trkt M

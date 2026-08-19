@@ -10,7 +10,7 @@ test_alphabets.abc
 tempo:60.0000
 striated
 -----
-mode:random
+mode:rnd
 S -> a b c d
 -----
 mode:sub1

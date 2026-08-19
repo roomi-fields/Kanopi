@@ -10,7 +10,7 @@ tempo:120   // horloge du natif -se.doeslittle : periode 500 ms par temps, soit 
 alphabet.western:midi
 
 -----
-mode:random
+mode:rnd
 S -> C3 . C4 . D4 C4 F#3 . A3 . C4
 S -> G2 C3 _ B2 C3
 S -> {C4 D4 E4 F4, G4 D4 C5} -

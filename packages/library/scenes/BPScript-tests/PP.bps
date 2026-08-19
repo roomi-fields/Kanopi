@@ -6,7 +6,7 @@ tempo:400   // horloge du natif -se.koto3 : periode 150 ms par temps, soit 400 B
 // Round-trip fidèle (règles = -gr, modulo commentaires/espacement flags) ; AST BPx valide.
 
 -----
-mode:random
+mode:rnd
 S -> X1 X2 X3
 X1 X2 -> a X1 YA
 X1 X2 -> b X1 YB

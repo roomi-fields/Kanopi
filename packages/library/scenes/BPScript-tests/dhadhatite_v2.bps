@@ -31,7 +31,7 @@ alphabet.tabla
 
 
 -----
-mode:random
+mode:rnd
 S <> S64 (weight:100)
 S64 <> S1F S2F S1V S2F E32 (weight:100)
 S64 <> S1V S2F S1F S2F E32 (weight:100)
@@ -137,7 +137,7 @@ V2 -> T1 T1 (weight:10)
 // =========================================================================
 // Fully translatable. '-' is the silence symbol (valid in both BP3 and BPscript).
 
-mode:random
+mode:rnd
 
 T1 -> dha (weight:100)
 T1 -> - (weight:100)

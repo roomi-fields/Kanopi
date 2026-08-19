@@ -352,6 +352,34 @@ Chiffres pris ce jour, sur demande de Romain. Ils ne vivaient nulle part ailleur
   déclenchent aucune vérification. Une empreinte doit exclure ce que le geste **déplace
   légitimement**, pas seulement ce qui varie tout seul.
 
+### Six scènes de provenance retirées avec le mot qui les portait
+
+- **KAN-60** `ouvert` — le **2026-08-19**, six scènes sortent avec le mot de provenance
+  (`hub/decisions/2026-08-17-factory-et-mine-sortent-du-langage.md`, arbitrage Romain du même jour :
+  « il n'existe pas encore, on verra plus tard — si, il sort, maintenant »). Elles éprouvaient la
+  résolution d'un **fichier personnel** : le répertoire, le fichier et son balayage n'existent nulle
+  part, et le remplacement viendra plus tard.
+
+  **Mesuré avant de retirer**, quatre graphies sur la même scène : avec la provenance elle compile
+  et le cri vient de la résolution ; sans elle, refus à l'analyse ; par l'axe standard, elle compile
+  mais change de sujet ; l'entrée nue est refusée. **Le cas ne meurt pas, il change d'étage** — et
+  un banc qui mesurait un cri de résolution passerait au vert en ne mesurant plus rien.
+
+  Leur sujet revient avec le répertoire personnel ; l'historique les rappellera. Leurs empreintes
+  d'avant sont chez Kairos, mesurées par le chemin de production.
+
+- **KAN-61** `ouvert` — **le garde des copies miroir lit deux voisins par un état non
+  reproductible.** `scripts/garde-copies-miroir.mjs:35-45` compare mes copies de contrat aux
+  originaux : le hub par son **arbre de travail**, deux paquets par leur **artefact construit**
+  (`dist-types/`, `dist/`), régénéré à chaque poussée du voisin. Un verdict peut donc changer sans
+  qu'aucun commit ne bouge.
+
+  Pour le hub, la lecture au commit publié s'applique directement. **Pour les deux artefacts, non** :
+  ce qui est comparé n'existe dans aucun dépôt publié — le lire autrement demanderait que ces
+  voisins publient leurs types déclarés, ou que la comparaison porte sur leur source. Deux
+  changements de frontière, hors de mon arbitrage.
+
+
 ### Ma documentation écrit des formes que le langage a retirées
 
 Mesure du 2026-08-19, prise par recherche bornée sur `docs/`, périmé et légitime séparés.

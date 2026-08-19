@@ -11,7 +11,7 @@ maxitems:25   // MaxItemsProduce=25 dans le reglage natif : le moteur s'arrete
 test_alphabets.abc
 
 -----
-mode:random
+mode:rnd
 S -> X [pos=1, done=0]
 X -> a X [pos+1, done+1]
 X -> b X [pos+1]

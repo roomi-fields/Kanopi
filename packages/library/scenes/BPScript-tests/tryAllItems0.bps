@@ -8,12 +8,12 @@ allitems
 maxitems:500
 
 -----
-mode:random
+mode:rnd
 S -> $X X &X
 S -> X X
 
 -----
 
-mode:random(destru)
+mode:rnd(destru)
 X -> a
 X -> b

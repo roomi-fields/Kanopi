@@ -8,12 +8,12 @@ maxitems:500
 alphabet.western:midi
 
 -----
-mode:random
+mode:rnd
 S -> X Y [Flag=2] [Choice=3]
 
 -----
 
-mode:random
+mode:rnd
 [Choice==1] [Flag-1] X -> C1 X
 [Choice==2] X -> C2 X [repeat:1]
 [Choice==3] X -> C3 X (weight:100-50)
@@ -23,7 +23,7 @@ X -> T
 
 -----
 
-// Sous-grammaire 3 — mode:random explicite, fidèle au natif (RND)
-mode:random
+// Sous-grammaire 3 — mode:rnd explicite, fidèle au natif (RND)
+mode:rnd
 T -> C5 [failed:3 2]
 Y -> D6

@@ -15,7 +15,7 @@ c:midi
 d:midi
 
 -----
-mode:random
+mode:rnd
 S -> X X X X X X X X [K1]
 [K2] X -> a [K1]
 [K1] X -> b [K2]

@@ -25,17 +25,17 @@ S -> Head U V [Reverse=0, beats=24, K1]
 
 -----
 
-// --- Sous-grammaire 2 mode:random — choix du nombre de transformations b (impair) ---
+// --- Sous-grammaire 2 mode:rnd — choix du nombre de transformations b (impair) ---
 
-mode:random
+mode:rnd
 Head -> Head [goto:3 0] [nbB=3, nbA=3] (weight:3)
 Head -> Head [goto:3 0] [nbB=9, nbA=1] (weight:1)
 
 -----
 
-// --- Sous-grammaire 3 mode:random — choix d'une transformation ---
+// --- Sous-grammaire 3 mode:rnd — choix d'une transformation ---
 
-mode:random
+mode:rnd
 [K1-1] [nbA>0] Head -> Head a [Atrans, nbA-1, K2, K3]
 [K1-1] [nbB>0] Head -> Head b [Btrans, nbB-1, K4]
 
@@ -57,17 +57,17 @@ mode:ord
 
 -----
 
-// --- Sous-grammaire 6 mode:random — reboucler si transformations restantes ---
+// --- Sous-grammaire 6 mode:rnd — reboucler si transformations restantes ---
 
-mode:random
+mode:rnd
 [nbA>=1] Head -> Head [goto:3 0] [K1]
 [nbB>=1] Head -> Head [goto:3 0] [K1]
 
 -----
 
-// --- Sous-grammaire 7 mode:random — effacement des variables ---
+// --- Sous-grammaire 7 mode:rnd — effacement des variables ---
 
-mode:random
+mode:rnd
 U ->
 V ->
 Head ->

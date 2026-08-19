@@ -20,7 +20,7 @@ transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliqu
 // --- Sous-grammaire 1 : choix de la permutation initiale ---
 
 -----
-mode:random
+mode:rnd
 S -> ! (/4) Tune
 Tune -> Canonic New B A D C X1234 End
 Tune -> Canonic New B A C D X12 End

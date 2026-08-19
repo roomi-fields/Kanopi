@@ -38,11 +38,11 @@ test_alphabets.dhin
 // ─────────────────────────────────────────────────────────────────────────────
 striated
 -----
-mode:random
+mode:rnd
 S <> S48 (meter:4+4/6)
 S <> S96 (meter:4+4+4+4/6)
 -----
-mode:random
+mode:rnd
 S96 <> $F48 $V24 F'24 * &F48 &V24 F24
 S48 <> $V24 F'24 * &V24 F24
 V24 <> $V12 &V12
@@ -68,7 +68,7 @@ A3 A -> A4
 A6 A2 -> A4 A4
 #A6 A2 -> A2 #A6
 -----
-mode:random
+mode:rnd
 A3 <> dhin --
 A3 <> dha --
 A3 <> dhagena
@@ -84,7 +84,7 @@ A6 <> tagetirakita
 A6 <> teeneteenakena
 A6 <> dhatigegenaka
 -----
-mode:random
+mode:rnd
 F'12 <> dhatigegenakateeneteenakena
 Q24 <> dhin -- dhagenadha -- dhagenadhatigegenakadheenedheenagena
 F24 <> tagetirakitadhin -- dhagenadhatigegenakadheenedheenagena

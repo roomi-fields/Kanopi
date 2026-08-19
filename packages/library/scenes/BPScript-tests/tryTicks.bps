@@ -19,5 +19,5 @@ transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliqu
 // savoir. Mesure : scenePitch porte desormais alphabet=western, jetons inchanges.
 alphabet.western:midi
 -----
-mode:random
+mode:rnd
 S -> C5 D5 E5 F5 E5 G5 F5 E5 F5 D5 E5 G5 D5 F5 E5 C5 (weight:1)

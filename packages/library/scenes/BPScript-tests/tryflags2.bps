@@ -9,7 +9,7 @@ b:midi
 c:midi
 
 -----
-mode:random
+mode:rnd
 S -> X X X X X X X X X X [make_b=1]
 [make_b-1] X -> b [make_c+1]
 [make_c-1] X -> c [make_b+1]

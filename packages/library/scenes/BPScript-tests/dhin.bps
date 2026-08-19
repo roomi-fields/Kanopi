@@ -18,20 +18,20 @@ sound.tabla_perc
 homomorphism.dhin
 test_alphabets.dhin
 
-// --- Sous-grammaire 1 mode:random — structure ---
+// --- Sous-grammaire 1 mode:rnd — structure ---
 
 -----
-mode:random
+mode:rnd
 S <> S96 (weight:0, meter:4+4/6)
 S <> S192 (weight:5, meter:4+4+4+4/6)
 
 -----
 
-// --- Sous-grammaire 2 mode:random — sections ---
+// --- Sous-grammaire 2 mode:rnd — sections ---
 // NOTE: *(: X) = homomorphisme. Traduit comme &X (replay sans substitution).
 // L'implémentation de [sub:dhin] appliquera la substitution dha→ta, ge→ke, etc.
 
-mode:random
+mode:rnd
 // BP3 orig gram#2[1]: S192 <-> (= F48 ) (= V24 ) F'24 *(: F48 ) (: V24 ) F24
 S192 <> $ {F48} $ {V24} F'24 star & {F48} & {V24} F24 (weight:5)
 // BP3 orig gram#2[2]: S96 <-> (= V24 ) F'24 *(: V24 ) F24
@@ -94,9 +94,9 @@ B6 <> A3 B3 (weight:2)
 
 -----
 
-// --- Sous-grammaire 4 mode:random — résolution en bols ---
+// --- Sous-grammaire 4 mode:rnd — résolution en bols ---
 
-mode:random
+mode:rnd
 A3 <> dhin - - (weight:4)
 A3 <> dha - - (weight:0)
 A3 <> dhagena (weight:0)
@@ -114,9 +114,9 @@ C6 <> tage tirakita (weight:0)
 
 -----
 
-// --- Sous-grammaire 5 mode:random — phrases longues ---
+// --- Sous-grammaire 5 mode:rnd — phrases longues ---
 
-mode:random
+mode:rnd
 F'12 <> dhati ge gena ka teene teena kena (weight:1)
 Q24 <> dhin - - dhagena dha - - dhagena dhati ge gena ka dheene dheena gena (weight:0)
 F24 <> tage tirakita dhin - - dhagena dhati ge gena ka dheene dheena gena (weight:5)

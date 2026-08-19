@@ -13,6 +13,6 @@ transpose:1/2   // C4key=48 dans le reglage natif : Encode.c:674 et :865 appliqu
                  // ecrit et le nom natif est en arbitrage chez Romain, sur dix-neuf grammaires.
 
 -----
-mode:random
+mode:rnd
 S -> A4 G4 C5 A5 A4 G4 C5 A5 (volume:127) (weight:1-1)
 S -> A4 G4 C5 A5 A4 G4 C5 A5 (volume:64) (weight:1-1)

@@ -20,7 +20,7 @@ tempo:360   // horloge du natif -se.hamsad : periode 167 ms par temps, soit 360 
 alphabet.bp3_indian:midi
 symbol A8
 -----
-mode:random
+mode:rnd
 S -> A32
 A32 -> A8 A8 A8 A8
 A32 -> G _ _ P N S N P N G _ P G R S N P N _ _ R _ _ G _ _ _ _ 4 (weight:0)

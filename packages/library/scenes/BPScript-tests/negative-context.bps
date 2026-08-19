@@ -30,11 +30,11 @@ test_alphabets.structural
 // Le résultat "A A A A2 A3 A1" contient des terminaux qui ne sont pas
 // liés à un runtime — c'est un test de grammaire pure, pas de production sonore.
 
-// --- Sous-grammaire 1 mode:random ---
+// --- Sous-grammaire 1 mode:rnd ---
 
 // Règle 1 : crée la séquence initiale + flag
 -----
-mode:random
+mode:rnd
 S -> A A2 A3 A1 A A [times=5]
 
 // Règle 2 : tant que times > 0, déplace les A devant les marqueurs

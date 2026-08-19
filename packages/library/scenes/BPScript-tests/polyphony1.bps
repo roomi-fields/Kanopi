@@ -19,7 +19,7 @@ striated
 
 
 -----
-mode:random
+mode:rnd
 S -> ! (/2) a b c d ! (/3) d e f g h i (weight:1)                     // 4/1
 S -> a {- b, a c} (weight:1)                                          // 3
 S -> ! (/2) a b c {! (/3) d e} f g (weight:1)                         // 19/6

@@ -18,7 +18,7 @@ core
 alphabet.western:midi
 settings.notreich
 
-// --- Sous-grammaire 1 mode:random(striated, tempo:60) ---
+// --- Sous-grammaire 1 mode:rnd(striated, tempo:60) ---
 
 striated
 tempo:60
@@ -28,14 +28,14 @@ tempo:60
 // porte sa PORTEE. La conversion les avait regroupes en SUFFIXE de la regle, ou ils ne
 // s'appliquaient plus ni a A_r' ni a B_r' ni a C_r'.
 -----
-mode:random
+mode:rnd
 S -> !(chan:1) !(vel:50) volumecont !(volume:80) A_r' B_r' C_r'
 
 -----
 
-// --- Sous-grammaire 2 mode:random ---
+// --- Sous-grammaire 2 mode:rnd ---
 
-mode:random
+mode:rnd
 A_r' -> A_r A_r A_r A_r A_r A_r A_r A_r
 B_r' -> B_r B_r B_r" B_r" C_r C_r D_r D_r D_r D_r E_r E_r E_r E_r
 C_r' -> C_r C_r C_r D_r E_r E_r E_r E_r C_r D_r C_r D_r E_r E_r E_r E_r C_r C_r C_r B_r" B_r" B_r A_r A_r !(volume:80) A_r A_r A_r !(volume:0)

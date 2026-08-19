@@ -5,5 +5,5 @@
 test_alphabets.abc
 
 -----
-mode:random
+mode:rnd
 S -> a b c d

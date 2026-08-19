@@ -14,7 +14,7 @@ core
 alphabet.western:midi
 
 -----
-mode:random
+mode:rnd
 S <> C4 . C5 . D5 C5 F#4 . A4 . C5
 S <> C4 . C5 . D5 C5 D5 C5 F#4 . A4 . C5
 S <> $A_r &A_r

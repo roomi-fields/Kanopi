@@ -20,10 +20,10 @@ c:midi
 f:midi
 chik:midi
 
-// --- Sous-grammaire 1 mode:random — séquence initiale ---
+// --- Sous-grammaire 1 mode:rnd — séquence initiale ---
 
 -----
-mode:random
+mode:rnd
 S -> !(vel:127) !(volume:40) X X X X Y X X X X Y X X X X (weight:100)
 X -> a (weight:K9)
 X -> b
@@ -53,9 +53,9 @@ c a c -> b a b
 
 -----
 
-// --- Sous-grammaire 3 mode:random — silences et out-time objects ---
+// --- Sous-grammaire 3 mode:rnd — silences et out-time objects ---
 
-mode:random
+mode:rnd
 Y -> !f (weight:40)
 Y -> !chik (weight:50)
 ? #? -> ? Silence !(sync:continue) #? (weight:1-1)

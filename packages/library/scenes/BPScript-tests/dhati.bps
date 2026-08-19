@@ -90,12 +90,12 @@ mi4:midi
 fa4:midi
 do4:midi
 
-// --- Sous-grammaire 1 mode:random — structure initiale ---
+// --- Sous-grammaire 1 mode:rnd — structure initiale ---
 // BP3: S --> 4+4+4+4/4 {16,Qaida}
 // cycle16x4 = non-terminal pour la structure rythmique 4+4+4+4/4
 
 -----
-mode:random
+mode:rnd
 S -> {16,Qaida} (weight:0, meter:4+4+4+4/4)
 S -> {16,Lahra,Qaida} (meter:4+4+4+4/4)
 S <- Qaida
@@ -145,12 +145,12 @@ S16 <> {16,plus A16 O16 fin} (weight:5)
 
 -----
 
-// --- Sous-grammaire 3 mode:random — variations LEFT ---
+// --- Sous-grammaire 3 mode:rnd — variations LEFT ---
 // Ces règles opèrent dans le scope du template défini en sous-grammaire 1.
 // Les symboles `plus`, `star` correspondent aux `+`, `*` de BP3.
 // Les règles avec `(=+` sur le LHS en BP3 opèrent dans le scope template.
 
-mode:random
+mode:rnd
 M16 <> V16 (weight:100, scan:left)
 N18 <> V18 (weight:100, scan:left)
 // BP3: (=+ L16 <-> (=+ A16 — scope template (= omis)

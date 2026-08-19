@@ -15,10 +15,10 @@ octaves.western
 tempo:60
 striated
 
-// --- Sous-grammaire 1 mode:random — transformations structurelles ---
+// --- Sous-grammaire 1 mode:rnd — transformations structurelles ---
 
 -----
-mode:random
+mode:rnd
 S -> !(chromashift:-7) ! (/5) X Y X X Y Y X
 X Y -> Y X (weight:20-4)
 X Y -> X Y Y X (weight:10-2)
@@ -31,9 +31,9 @@ Y Y -> Y X Y X (weight:3-1)
 
 -----
 
-// --- Sous-grammaire 2 mode:random — résolution en notes ---
+// --- Sous-grammaire 2 mode:rnd — résolution en notes ---
 
-mode:random
+mode:rnd
 X -> sa6 re6 (weight:8-2)
 X -> re6 ga6 (weight:8-2)
 X Y -> ga6 pa6 dha6 X X (weight:8-1)

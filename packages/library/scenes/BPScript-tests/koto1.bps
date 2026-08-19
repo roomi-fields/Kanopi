@@ -19,7 +19,7 @@ c:midi
 d:midi
 
 -----
-mode:random
+mode:rnd
 S -> X X X X X X X X
 X -> a
 X -> b

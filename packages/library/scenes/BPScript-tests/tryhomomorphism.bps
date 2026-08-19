@@ -11,6 +11,6 @@ symbol a, b, c
 tempo:60.0000
 striated
 -----
-mode:random
+mode:rnd
 S -> a b c $X * &X
 X -> do4 c mi4 fa4
