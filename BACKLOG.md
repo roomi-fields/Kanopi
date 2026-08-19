@@ -330,6 +330,32 @@ Chiffres pris ce jour, sur demande de Romain. Ils ne vivaient nulle part ailleur
   déclenchent aucune vérification. Une empreinte doit exclure ce que le geste **déplace
   légitimement**, pas seulement ce qui varie tout seul.
 
+### Ma documentation écrit des formes que le langage a retirées
+
+Mesure du 2026-08-19, prise par recherche bornée sur `docs/`, périmé et légitime séparés.
+
+- **KAN-59** `ouvert` — **treize documents décrivent la déclaration d'un acteur et sa sortie avec
+  une graphie que le compilateur refuse.** Ils portent l'arobase en tête de directive (retirée le
+  2026-08-16) et le mot du canal de sortie, remplacé par la direction
+  (`hub/decisions/2026-08-04-la-direction-s-ecrit-in-et-out-remplacent-transport.md:8`, registre
+  `hub/decisions/MOTS-SORTIS.md:18`). Répartition : `docs/spec/KANOPI_LANGUAGE.md` (7),
+  `docs/design/DEVICES_SPEC.md` (7), `docs/mockups/kanopi-v1-mockup.html` (5),
+  `docs/design/ARCHITECTURE.md` (4), `docs/reference/HARDWARE_COLLECTION.md` (2),
+  `docs/design/LANGUAGE_SPEC.md` (2), et sept documents à une occurrence.
+
+  **Mon code n'en porte aucune** — vérifié sur `packages/ui/src`, zéro occurrence, instrument
+  contrôlé sur un mot certainement présent. Les scènes `.bps` n'en portent aucune non plus : leurs
+  quatorze mentions sont le mot courant, en commentaire de prose.
+
+  ⚠️ **Ce qui se ressemble et ne se touche pas** : l'API de transport de Kronos — arrêt, lecture,
+  réglage du tempo, neuf occurrences — et le nom du contrat de frontière, cinq. Un balayage sur le
+  mot nu les emporte. La graphie qui porte la décision est le mot **suivi d'un point et d'un canal**,
+  ou **suivi de deux-points**.
+
+  Signalé par runtime-OSC, qui cite la clé à six endroits chez lui, tous en commentaire et aucun
+  exécuté. Le nom est à moi, la réparation aussi, et il suit le nom retenu.
+
+
 ### L'index du dépôt — ce qu'il servait et ce qu'il ignorait
 
 Mesure du 2026-08-18, prise sur la base d'index et sur l'arbre de travail.
