@@ -9,6 +9,28 @@ Items différés (hors périmètre immédiat), tracés pour ne pas les perdre.
 > jamais de drop silencieux). Pour **retirer legacy**, le chemin Kronos doit couvrir le
 > RESTE ci-dessous. `[P]` = primitive Kronos prête → câblage HÔTE ; `[N]` = à concevoir.
 
+## Où je m'arrête — 2026-08-19, 11h35
+
+Neuf commits enregistrés, arbre propre, **non publiés** : le crochet de poussée a refusé six fois
+dans la matinée, chaque fois parce qu'un dépôt lu en source vive portait un fichier non enregistré
+qui entre dans mon paquet (quatre voisins différents). La septième tentative tourne encore au moment
+de l'arrêt général.
+
+**Pour qui reprend** : la poussée est le premier geste, et elle demande que les onze voisins soient
+propres au même instant — ma veille attend cette fenêtre avant de lancer. Les neuf commits vont de
+la famille de tabla aux deux gardes réparés.
+
+**Deux gardes ont été corrigés et prouvés par injection**, ils ne demandent rien de plus.
+
+**Ouvert, inscrit** : KAN-59, treize documents décrivant la déclaration d'un acteur avec une graphie
+que le compilateur refuse.
+
+**Ouvert, non inscrit et qui n'est pas à moi** : six refus de poussée en une matinée, sur quatre
+voisins. Je lis huit dépôts en source vive et ma campagne dure onze minutes ; la fenêtre où les huit
+sont simultanément propres se referme quand seize agents écrivent. Remonté à l'architecte comme une
+mesure, pas comme une demande.
+
+
 ### FAIT (passe par Kronos)
 
 - **KAN-1** `fait` — Flip audio mono (notes), boucle.
