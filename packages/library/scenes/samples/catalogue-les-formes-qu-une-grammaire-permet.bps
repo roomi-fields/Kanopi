@@ -2,7 +2,7 @@
 // @tagline: The engine writes down the shapes its own derivation allows
 // @description: La seconde échelle des gabarits. Le moteur dérive une production, efface ses terminaux, et écrit ce qui reste — un gabarit par ligne, avec son rang et son échelle.
 // @language: bpscript
-// @outputs: audio
+// @outputs: midi
 // @level: advanced
 // @tags: language, derivation
 // @order: 28
