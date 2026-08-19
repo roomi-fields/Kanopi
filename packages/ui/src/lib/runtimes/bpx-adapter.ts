@@ -2,6 +2,30 @@ import { LIBS } from 'bpscript/src/transpiler/libs-data.js';
 import type { RuntimeAdapter, EvalSource, LogPush } from './adapter';
 import type { Runtime } from '../core-mock';
 import { compileBps } from './compile-cache';
+
+/**
+ * L'ARBRE NE SE LIT QU'APRÈS UN SUCCÈS — décision Romain du 2026-08-19,
+ * `hub/decisions/2026-08-19-l-arbre-ne-se-lit-qu-apres-un-succes-du-compilateur.md`.
+ *
+ * ⛔ CE QUI ÉTABLIT LE SUCCÈS EST L'ABSENCE D'ERREUR, JAMAIS LA PRÉSENCE D'UN ARBRE. Un refus de
+ * SENS rend un arbre COMPLET — 18 clés, ses entrées déclarées lisibles — à côté de son erreur.
+ * Mesuré ici même : sur une scène refusée pour une valeur de contrôle hors bornes, l'arbre porte
+ * son entrée `in.midi`, et une porte qui teste `ast` la sert comme si la scène était bonne.
+ *
+ * Rend `null` sur un jet, sur une erreur, ou sur un arbre absent — les trois se traitent pareil
+ * en aval : il n'y a rien à lire.
+ */
+function astSiSucces(text: string): SceneAstView | null {
+  let c: { ast?: unknown; errors?: unknown[] };
+  try {
+    c = compileBps(text) as typeof c;
+  } catch {
+    return null;
+  }
+  if (c.errors?.length) return null;
+  return (c.ast ?? null) as SceneAstView | null;
+}
+
 import { createEventBus } from '../events/bus';
 import type { EventBus } from '../events/types';
 import {
@@ -814,15 +838,9 @@ function buildOrchestration(a: SceneAstView | null): Orchestration | undefined {
  * appeler ceci à chaque changement de fichier actif est bon marché (même compile que la puce d'état).
  */
 export function interpsForScene(text: string): string[] {
-  let c: { ast?: unknown };
-  try {
-    c = compileBps(text) as typeof c;
-  } catch {
-    return [];
-  }
-  const a = (c.ast ?? null) as SceneAstView | null;
+  const a = astSiSucces(text);
   if (!a) return [];
-  return codeVoiceInterps(buildOrchestration(a), backticksFromAst(c.ast));
+  return codeVoiceInterps(buildOrchestration(a), backticksFromAst(a));
 }
 
 /** Une ENTRÉE déclarée par la scène — recopiée VERBATIM du nœud `InDirective` de l'AST amont
@@ -852,13 +870,7 @@ export interface DeclaredInput {
  * en DONNÉE (voir `pousserEvenementEntree` plus bas ; contrat `hub/contrats/hote-runtime-in.md`).
  */
 export function declaredInputsForScene(text: string): readonly DeclaredInput[] {
-  let c: { ast?: unknown };
-  try {
-    c = compileBps(text) as typeof c;
-  } catch {
-    return [];
-  }
-  const inputs = (c.ast as { inputs?: unknown } | null)?.inputs;
+  const inputs = (astSiSucces(text) as { inputs?: unknown } | null)?.inputs;
   if (!Array.isArray(inputs)) return [];
   return inputs
     .filter((d): d is { name: string; transport: string; mapping?: string | null } => {
@@ -1040,13 +1052,7 @@ export function assetsForScene(text: string): {
   strudel?: { banks?: string[]; gmInstruments?: string[] };
   mercury?: { samples?: string[] };
 } {
-  let c: { ast?: unknown };
-  try {
-    c = compileBps(text) as typeof c;
-  } catch {
-    return {};
-  }
-  const a = (c.ast ?? null) as SceneAstView | null;
+  const a = astSiSucces(text);
   if (!a) return {};
   // PRÉFETCH = uniquement les banques AUTO-HÉBERGÉES (VPS, fiables). Une banque DISTANTE (github,
   // `selfHosted:false` comme dirt-samples) déclenche, si son fetch échoue à l'ouverture (réseau/gate),
@@ -1058,8 +1064,8 @@ export function assetsForScene(text: string): {
   const banks = (librariesFromAst(a).strudel ?? []).filter(
     (id) => resolveStrudelLibrary(id)?.selfHosted
   );
-  const backticks = backticksFromAst(c.ast);
-  const strudelTokens = btTokensForInterp(a, c.ast, backticks, 'strudel');
+  const backticks = backticksFromAst(a);
+  const strudelTokens = btTokensForInterp(a, a, backticks, 'strudel');
   const gmInstruments = new Set<string>();
   for (const [token, bt] of Object.entries(backticks)) {
     if (!strudelTokens.has(token)) continue;
@@ -1068,7 +1074,7 @@ export function assetsForScene(text: string): {
   // Mercury : samples RÉFÉRENCÉS (`new sample <nom>`) par les backticks mercury de la scène — best
   // effort (une extraction ratée laisse simplement `mercury` absent → comportement eager d'origine,
   // jamais de crash).
-  const mercuryTokens = btTokensForInterp(a, c.ast, backticks, 'mercury');
+  const mercuryTokens = btTokensForInterp(a, a, backticks, 'mercury');
   const mercurySamples = new Set<string>();
   for (const [token, bt] of Object.entries(backticks)) {
     if (!mercuryTokens.has(token)) continue;
@@ -1777,13 +1783,7 @@ export function resolveStrudelLibrary(bankId: string) {
  * `loadDeclaredLibraries`'s own info-vs-error split.
  */
 export function resourceResolutionErrors(text: string): { message: string }[] {
-  let c: { ast?: unknown };
-  try {
-    c = compileBps(text) as typeof c;
-  } catch {
-    return [];
-  }
-  const a = (c.ast ?? null) as SceneAstView | null;
+  const a = astSiSucces(text);
   if (!a) return [];
   const libs = librariesFromAst(a);
   const out: { message: string }[] = [];
