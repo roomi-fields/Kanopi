@@ -178,6 +178,14 @@ qui écrit. Le préavis nomme ce qui change, ce qu'il **périme chez lui**, et u
 falsifiable. Un voisin qui lit ma **source** est prévenu à la frappe ; celui qui exécute mon **paquet
 publié**, à la publication.
 
+**Et le préavis vaut DANS L'AUTRE SENS : ma campagne se demande.** Une campagne de portillon dure
+quinze minutes, un voisin en chantier enregistre toutes les trois à huit — sans demande, aucun
+verdict n'est attribuable, et rejouer jusqu'à tomber sur un creux est la relance interdite sous un
+autre nom. `scripts/tir-arme.mjs` porte le geste : il attend deux conditions mesurées — aucune
+écriture sous les racines exposées d'aucun voisin, **et** aucun arbre sale qui ferme ma construction
+— demande la fenêtre aux seuls voisins en chantier, laisse un délai de grâce, puis tire. Un préavis
+simultané informe, il ne coordonne pas. Arbitrage de l'architecte, `hub/contrats/ce-qu-un-banc-lit-chez-son-voisin.md`.
+
 **Le courrier se relit au moment de PUBLIER, pas au réveil** : un préavis reçu entre-temps porte
 peut-être sur ce que je m'apprête à écraser.
 
