@@ -9,12 +9,9 @@ maj=$(node -v 2>/dev/null | sed "s/v\([0-9]*\).*/\1/")
 if [ "${maj:-0}" -lt 20 ]; then echo "[gate] ERREUR : Node 20+ requis (actuel $(node -v)). Push bloque."; exit 1; fi
 echo "[gate] node $(node -v) — npm run arch (garde structurelle)…"
 npm run arch --silent
-if node -e "process.exit(require(\"./package.json\").scripts?.typecheck?0:1)" 2>/dev/null; then
-  echo "[gate] npm run typecheck…"; npm run typecheck --silent
-fi
 if node -e "process.exit(require(\"./package.json\").scripts?.verify?0:1)" 2>/dev/null; then
   echo "[gate] npm run verify…"; npm run verify --silent
 elif node -e "process.exit(require(\"./package.json\").scripts?.test?0:1)" 2>/dev/null; then
   echo "[gate] npm test (repli — pas de verify)…"; npm test --silent
 fi
-echo "[gate] vert — push autorise."
+echo "[gate] vert — push autorise (typage : svelte-check, dans verify)."
