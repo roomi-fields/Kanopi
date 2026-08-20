@@ -1,6 +1,6 @@
 {
   "component": "Kanopi",
-  "updated": "2026-08-14",
+  "updated": "2026-08-20",
   "mesure": "chaque chiffre vient d'une commande relancée ce jour, jamais recopié du relevé précédent",
   "sources": {
     "grammaires": "ls packages/library/scenes/BP3-tests/*.gr",
@@ -13,18 +13,20 @@
   },
   "bibliotheque": {
     "grammaires_gr": 113,
-    "scenes_bps": 326,
-    "corpus_compile": "337/337 — analyse ET dérive, rouges déclarés compris"
+    "scenes_bps": 329,
+    "scenes_hors_bibliotheque": 7,
+    "corpus_compile": "332/332 — analyse ET dérive, rouges déclarés compris"
   },
   "bancs": {
-    "declares": 120,
-    "vitest": 79,
+    "declares": 121,
+    "vitest": 80,
     "playwright": 41,
-    "hors_portillon": 0
+    "hors_portillon": 0,
+    "campagne": "906 unitaires · 109 écran, aucun instable (07300dc..7185bc6, 20:01:09)"
   },
   "backlog": {
-    "total": 193,
-    "ouverts": 66,
+    "total": 215,
+    "ouverts": 80,
     "note": "l'architecte clôt, je reporte"
   },
   "gardes": {
@@ -32,12 +34,15 @@
     "hors_portillon": 0,
     "navigation": "0 orphelin",
     "charte": "19/19 contre le gabarit a5a6cd3",
-    "sosie_de_portillon": "aucun"
+    "sosie_de_portillon": "aucun",
+    "typage": "svelte-check, 651 fichiers, dans verify — le crochet le NOMME sans le réclamer depuis 7185bc6"
   },
   "voisins": {
     "lus_en_source": "BPscript, bp3-frontend et les six runtimes — leur écriture m'atteint",
     "deux_regimes": "Kairos, Kronos, BPx — source au portillon, paquet publié en production",
-    "refus_de_production": "actif ; il lit le manifeste du voisin, il ne devine pas ses dossiers"
+    "refus_de_production": "actif ; il lit le manifeste du voisin, il ne devine pas ses dossiers",
+    "legende": "porte les DEUX états : source vive ET paquet exécuté quand ils diffèrent, et dit qu'elle ne sait pas là où le producteur ne grave rien",
+    "fenetre_de_mesure": "ma campagne se DEMANDE — scripts/tir-arme.mjs, deux conditions mesurées + délai de grâce (arbitrage 2026-08-20)"
   },
   "ouvert": [
     "KAN-49 — deux runtimes audio vivants quand jeu et évaluation passent tous deux ; à instruire avant de corriger",
