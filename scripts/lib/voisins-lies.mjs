@@ -56,7 +56,8 @@ export function racinesExposees(depot) {
   const cibles = [];
   const recolter = (v) => {
     if (typeof v === "string") cibles.push(v);
-    else if (v && typeof v === "object") for (const x of Object.values(v)) recolter(x);
+    else if (v && typeof v === "object")
+      for (const x of Object.values(v)) recolter(x);
   };
   recolter(manifeste.exports);
   for (const champ of ["main", "module", "types", "browser", "bin"]) {
@@ -68,7 +69,8 @@ export function racinesExposees(depot) {
   const racines = new Set();
   for (const c of cibles) {
     const segment = c.replace(/^\.?\//, "").split("/")[0];
-    if (segment && segment !== "." && !segment.startsWith("*")) racines.add(segment);
+    if (segment && segment !== "." && !segment.startsWith("*"))
+      racines.add(segment);
   }
   return racines.size > 0 ? racines : null;
 }
@@ -226,17 +228,21 @@ export function voisinsLies(racine) {
 export function portesDuVoisin(v) {
   let manifeste;
   try {
-    manifeste = JSON.parse(readFileSync(join(v.chemin, "package.json"), "utf8"));
+    manifeste = JSON.parse(
+      readFileSync(join(v.chemin, "package.json"), "utf8"),
+    );
   } catch {
     return { declarees: [], muettes: [], manifesteIllisible: true };
   }
   const cibles = [];
   const recolter = (x) => {
     if (typeof x === "string") cibles.push(x);
-    else if (x && typeof x === "object") for (const y of Object.values(x)) recolter(y);
+    else if (x && typeof x === "object")
+      for (const y of Object.values(x)) recolter(y);
   };
   recolter(manifeste.exports);
-  for (const champ of ["main", "module", "types", "browser"]) recolter(manifeste[champ]);
+  for (const champ of ["main", "module", "types", "browser"])
+    recolter(manifeste[champ]);
 
   const declarees = [...new Set(cibles)].filter(
     (c) => c.startsWith(".") && !c.includes("*"),
@@ -358,7 +364,8 @@ export function cequiABascule(avant, racine) {
     // le voisin pendant la campagne était invisible — et une publication qui ajoute un module sans
     // toucher aux autres est précisément une bascule.
     for (const cible of portesApres.keys()) {
-      if (!portesAvant.has(cible)) quoi.push(`${cible} est APPARUE depuis le relevé`);
+      if (!portesAvant.has(cible))
+        quoi.push(`${cible} est APPARUE depuis le relevé`);
     }
     for (const [cible, marque] of portesAvant) {
       const maintenant = portesApres.get(cible);
@@ -376,19 +383,203 @@ export function cequiABascule(avant, racine) {
   return bouges;
 }
 
-export function legendeDesVoisins(voisins) {
+/** D'où ma résolution part : mon code applicatif, jamais la racine de l'atelier. Un spécificateur
+ *  se cherche en remontant depuis le fichier qui l'écrit, et deux points de départ ne trouvent pas
+ *  forcément le même paquet. */
+const PARENT_APPLICATIF = "packages/ui/src";
+
+/** Le témoin d'assiette de la sonde de résolution : un spécificateur dont la résolution est
+ *  certaine. Sans lui, un enfant qui échoue en bloc rendrait « aucun voisin à deux régimes » —
+ *  c'est-à-dire la bonne nouvelle, produite par la panne de l'instrument. */
+const TEMOIN_DE_RESOLUTION = "svelte";
+
+/** Un enfant Node court, lancé sous un jeu de conditions donné, depuis mon code applicatif. Les
+ *  conditions ne se changent pas dans un processus en cours : c'est ce qui impose l'enfant. */
+function sousConditions(racine, conditions, script) {
+  const args = ["--experimental-import-meta-resolve"];
+  for (const c of conditions) args.push(`--conditions=${c}`);
+  args.push("--input-type=module", "-e", script);
+  return JSON.parse(
+    execFileSync(process.execPath, args, {
+      cwd: join(racine, PARENT_APPLICATIF),
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }),
+  );
+}
+
+/**
+ * LES DEUX ÉTATS D'UN VOISIN — sa SOURCE VIVE, et le PAQUET que ma production exécute.
+ *
+ * ⛔ MA LÉGENDE DONNAIT LA TÊTE D'UNE SOURCE PENDANT QUE MA PRODUCTION EXÉCUTAIT UN PAQUET. Les deux
+ * coïncidaient par accident de chaîne ; depuis que publier a cessé d'être un maillon de pousser
+ * (décision 2026-08-20), un paquet peut être en retard sur sa source, légitimement — et rien ne le
+ * disait. Un lecteur prenait donc la tête annoncée pour ce qui tourne.
+ *
+ * LA MESURE SE PREND SUR LE RÉSOLVEUR, JAMAIS SUR LE MANIFESTE. Un manifeste se lit et se déduit,
+ * une résolution se demande. Deux jeux de conditions — celui du développement et celui de la
+ * production — rendent chacun le fichier qu'il ouvre. Deux chemins identiques disent une instance
+ * unique ; deux chemins différents disent deux états à porter.
+ *
+ * ⛔ ET LE TÉMOIN SE LIT PAR LA PORTE, PAS À UN CHEMIN ATTENDU. Mesuré : un premier relevé cherchait
+ * `dist/empreinte.js` chez les trois voisins à deux régimes et déclarait BPx muet. Il grave, mais
+ * ailleurs. La porte, elle, ne se devine pas — et c'est elle que ma production emprunte.
+ *
+ * LE RÉGIME SOURCE N'A BESOIN D'AUCUN TÉMOIN : `git` donne la tête et la propreté de l'arbre, et
+ * la sonde ne peut de toute façon pas l'ouvrir — cette porte-là est en TypeScript, que Node nu ne
+ * lit pas. Le régime PAQUET n'a QUE ce témoin, puisqu'un paquet vit hors du suivi de version.
+ *
+ * La forme lue est celle que les producteurs ont arrêtée : `kairos/docs/forme-empreinte-de-paquet.md`.
+ */
+export function regimesDesVoisins(racine, voisins) {
+  const specs = voisins.map((v) => v.specificateurs[0]);
+  const aResoudre = [TEMOIN_DE_RESOLUTION, ...specs];
+
+  const scriptResolution =
+    `const out = {}; for (const s of ${JSON.stringify(aResoudre)}) {` +
+    ` try { out[s] = import.meta.resolve(s).replace("file://", ""); }` +
+    ` catch (e) { out[s] = null; } } console.log(JSON.stringify(out));`;
+
+  const dev = sousConditions(
+    racine,
+    ["browser", "development"],
+    scriptResolution,
+  );
+  const prod = sousConditions(
+    racine,
+    ["browser", "production"],
+    scriptResolution,
+  );
+
+  if (!dev[TEMOIN_DE_RESOLUTION] || !prod[TEMOIN_DE_RESOLUTION]) {
+    throw new Error(
+      "SONDE DE RÉSOLUTION INVALIDE — le témoin d'assiette " +
+        `\`${TEMOIN_DE_RESOLUTION}\` ne se résout pas depuis ${PARENT_APPLICATIF}. Tout ce que ` +
+        "cette sonde rendrait serait produit par sa propre panne, à commencer par « aucun voisin " +
+        "à deux régimes », qui est la réponse rassurante.",
+    );
+  }
+
+  // Le témoin d'assiette du RELEVÉ lui-même : si personne n'a deux régimes, c'est peut-être vrai,
+  // et la légende le dira voisin par voisin — chaque ligne porte sa mention, aucune ne se tait.
+  const aDeuxRegimes = specs.filter(
+    (s) => dev[s] && prod[s] && dev[s] !== prod[s],
+  );
+
+  let empreintes = {};
+  if (aDeuxRegimes.length > 0) {
+    // ⚠️ CETTE LECTURE EXÉCUTE LE PAQUET DU VOISIN — c'est le prix de la lire par la porte, et
+    // c'est exactement ce que ma production fait. L'enfant l'isole : un paquet qui explose à
+    // l'import rend « témoin illisible », il n'emporte pas le portillon avec lui.
+    const scriptEmpreinte =
+      `const out = {}; for (const s of ${JSON.stringify(aDeuxRegimes)}) {` +
+      ` try { const m = await import(s); out[s] = m.EMPREINTE ?? { absente: true }; }` +
+      ` catch (e) { out[s] = { echec: e.code || String(e.message).split("\\n")[0] }; } }` +
+      ` console.log(JSON.stringify(out));`;
+    empreintes = sousConditions(
+      racine,
+      ["browser", "production"],
+      scriptEmpreinte,
+    );
+  }
+
+  const parDepot = new Map();
+  voisins.forEach((v, i) => {
+    const s = specs[i];
+    parDepot.set(v.depot, {
+      cheminDev: dev[s],
+      cheminProd: prod[s],
+      deuxRegimes: aDeuxRegimes.includes(s),
+      empreinte: empreintes[s] ?? null,
+    });
+  });
+  return parDepot;
+}
+
+/**
+ * DE COMBIEN LE PAQUET EST DERRIÈRE LA SOURCE — et si seulement il est derrière.
+ *
+ * Un paquet en retard sur sa source est LÉGITIME depuis que publier a cessé d'être un maillon de
+ * pousser : le nombre de commits dit l'ampleur, et l'ascendance dit qu'il s'agit bien d'un retard.
+ * Un paquet qui n'est PAS un ancêtre est tout autre chose — une lignée qui n'est pas celle que je
+ * mesure — et les deux ne se rapportent pas de la même façon.
+ */
+function retardDuPaquet(depot, commitDuPaquet, teteDeSource) {
+  try {
+    execFileSync(
+      "git",
+      [
+        "-C",
+        depot,
+        "merge-base",
+        "--is-ancestor",
+        commitDuPaquet,
+        teteDeSource,
+      ],
+      { stdio: "ignore" },
+    );
+  } catch {
+    return "hors de cette lignée — commit inconnu ici, ou branche divergente";
+  }
+  const n = git(depot, [
+    "rev-list",
+    "--count",
+    `${commitDuPaquet}..${teteDeSource}`,
+  ]);
+  return `${n} commit(s) DERRIÈRE cette tête`;
+}
+
+/** Ce que ma production exécute, en une phrase — ou l'aveu qu'elle ne le sait pas. */
+function mentionDuPaquet(regime, teteDeSource, depot) {
+  if (!regime) return " · régime non mesuré";
+  if (!regime.deuxRegimes)
+    return " · instance unique, ma production lit cette source";
+
+  const e = regime.empreinte;
+  if (!e || e.absente || e.echec) {
+    const cause = e?.echec
+      ? `témoin illisible : ${e.echec}`
+      : "il n'exporte aucune empreinte";
+    return (
+      " · ⚠ ma production exécute son PAQUET et JE NE SAIS PAS LEQUEL — " +
+      `${cause}. La tête ci-dessus décrit sa source, pas ce qui tourne.`
+    );
+  }
+  if (e.regime !== "paquet") {
+    return (
+      ` · ⚠ CONTRADICTION — ma production ouvre ${regime.cheminProd} et le témoin qui s'y trouve ` +
+      `annonce le régime « ${e.regime} ». L'un des deux ment ; ni l'un ni l'autre n'est utilisable.`
+    );
+  }
+  const sale = e.propre === false ? ", CONSTRUIT SUR UN ARBRE MODIFIÉ" : "";
+  const detail = `(${e.construitLe}, ${e.fichiers} fichiers${sale})`;
+  const enEcart =
+    e.abrege && teteDeSource && !e.commit?.startsWith(teteDeSource);
+  return enEcart
+    ? ` · ⚠ ma production exécute son PAQUET ${e.abrege} — ` +
+        `${retardDuPaquet(depot, e.commit, teteDeSource)} ${detail}`
+    : ` · ma production exécute son paquet ${e.abrege}, même tête ${detail}`;
+}
+
+export function legendeDesVoisins(voisins, racine) {
+  // ⛔ LA RACINE N'EST PAS FACULTATIVE. Une légende qui saurait se passer d'elle rendrait la
+  // moitié de la mesure — celle de la source vive — sans jamais dire que l'autre manque.
+  const regimes = regimesDesVoisins(racine, voisins);
   return voisins.map((v) => {
     const nom = v.depot.split("/").pop();
-    if (v.tete === null) return `${nom} : hors git (${v.chemin}) — état non mesurable`;
+    if (v.tete === null)
+      return `${nom} : hors git (${v.chemin}) — état non mesurable`;
+    const paquet = mentionDuPaquet(regimes.get(v.depot), v.tete, v.depot);
     const atteignant = v.modifications.filter((m) => m.atteintLeBuild);
     // Le compte des portes est sur CHAQUE forme, et c'est mesuré : posé d'abord sur la seule
     // branche « propre », il manquait exactement sur le voisin en travail — celui dont on veut
     // savoir si son paquet répond encore.
     const { declarees, muettes } = portesDuVoisin(v);
     const portes = `${declarees.length - muettes.length}/${declarees.length} porte(s)`;
-    if (v.modifications.length === 0) return `${nom} @ ${v.tete} — propre, ${portes}`;
+    if (v.modifications.length === 0)
+      return `${nom} @ ${v.tete} — propre, ${portes}${paquet}`;
     if (atteignant.length === 0) {
-      return `${nom} @ ${v.tete} — ${v.modifications.length} non enregistré(s), aucun dans le build, ${portes}`;
+      return `${nom} @ ${v.tete} — ${v.modifications.length} non enregistré(s), aucun dans le build, ${portes}${paquet}`;
     }
     return (
       `${nom} @ ${v.tete} — ⚠ ${atteignant.length} fichier(s) NON COMMITÉ(S) dans le build, ${portes} : ` +
@@ -396,7 +587,8 @@ export function legendeDesVoisins(voisins) {
         .slice(0, 4)
         .map((m) => m.fichier)
         .join(", ") +
-      (atteignant.length > 4 ? `, +${atteignant.length - 4}` : "")
+      (atteignant.length > 4 ? `, +${atteignant.length - 4}` : "") +
+      paquet
     );
   });
 }
@@ -457,7 +649,7 @@ export function mentionDeRegime(racine) {
 
   return (
     "• voisins lus VIVANTS — l'état sur lequel cette campagne mesure :\n" +
-    legendeDesVoisins(voisins)
+    legendeDesVoisins(voisins, racine)
       .map((l) => `    ${l}`)
       .join("\n")
   );
@@ -474,7 +666,10 @@ export function mentionDeRegime(racine) {
  */
 export function raisonDuRefus(voisins) {
   const sales = voisins
-    .map((v) => ({ v, entrantes: v.modifications.filter((m) => m.atteintLeBuild) }))
+    .map((v) => ({
+      v,
+      entrantes: v.modifications.filter((m) => m.atteintLeBuild),
+    }))
     .filter(({ entrantes }) => entrantes.length > 0);
   if (sales.length === 0) return null;
 

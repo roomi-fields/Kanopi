@@ -138,7 +138,7 @@ for (const dep of ["bpscript", ...SOURCE_DEPS]) {
 // l'appel, donc leur état ne figurait dans aucune légende. `voisinsLies` énumère les liens réels,
 // et c'est LA MÊME mesure que le refus de production (`vite.config.ts`) : deux lecteurs, une
 // seule vérité, jamais deux chiffres qui se contredisent à l'écran.
-const etats = legendeDesVoisins(voisinsLies(repoRoot));
+const etats = legendeDesVoisins(voisinsLies(repoRoot), repoRoot);
 console.log("• état des voisins lus VIVANTS (la légende du vert) :");
 for (const e of etats) console.log(`    ${e}`);
 if (etats.some((e) => e.includes("NON COMMITÉ"))) {
@@ -208,7 +208,13 @@ const ECHANTILLONS = [
 ];
 for (const [quoi, modifications, doitRefuser] of ECHANTILLONS) {
   const rendu = raisonDuRefus([
-    { depot: "/tmp/voisin-temoin", chemin: "/tmp/voisin-temoin", tete: "0000000", specificateurs: [], modifications },
+    {
+      depot: "/tmp/voisin-temoin",
+      chemin: "/tmp/voisin-temoin",
+      tete: "0000000",
+      specificateurs: [],
+      modifications,
+    },
   ]);
   if (Boolean(rendu) !== doitRefuser) {
     errors.push(
