@@ -48,10 +48,10 @@ export default defineConfig({
   // lus vivants, et son refus de s'afficher vide. Une campagne d'écran mesure contre les mêmes
   // arbres de travail ; deux moitiés de bancs dont une seule porte sa légende laisseraient un
   // vert d'écran illisible.
+  // La comparaison de fin de campagne est la fonction que cette mise en place RETOURNE — Playwright
+  // la consomme, comme vitest. Mesuré le 2026-08-20 : DEUX entrées quand un `globalTeardown` était
+  // déclaré en plus, UNE sans lui.
   globalSetup: './test/regime-voisins.globalSetup.mjs',
-  // La comparaison de fin est un fichier À PART parce que Playwright ne consomme pas la fonction
-  // que la mise en place retourne — contrairement à vitest. Les deux passent par le même relevé.
-  globalTeardown: './test/regime-voisins.globalTeardown.mjs',
   testDir: './tests/e2e',
   fullyParallel: false,
   workers: 1,

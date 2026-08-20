@@ -29,9 +29,14 @@ const RACINE_ATELIER = new URL('../../..', import.meta.url).pathname;
 
 export default function annoncerLeRegime() {
   console.log(mentionDeRegime(RACINE_ATELIER));
-  // Le relevé voyage par `globalThis` : la comparaison de fin vit dans un autre module, et pour
-  // la campagne d'écran dans un autre fichier encore. Un relevé absent au moment de comparer ne
-  // se tait pas — la librairie le refuse.
+  // Le relevé voyage par `globalThis` : la comparaison de fin tourne dans un autre appel. Un
+  // relevé absent au moment de comparer ne se tait pas — la librairie le refuse.
+  //
+  // ⛔ ET LA CLÔTURE EST CELLE-CI, POUR LES DEUX CAMPAGNES. J'avais posé en plus un fichier
+  // `globalTeardown` séparé, sur l'idée que Playwright n'appelle pas la fonction rendue ici. Il
+  // l'appelle : mesuré le 2026-08-20 en comptant les entrées — DEUX avec le fichier déclaré, UNE
+  // sans. Le refus sortait donc en double, et deux erreurs pour un seul défaut font chercher deux
+  // causes. Une seule voie, celle-ci.
   globalThis.__kanopiRelevePortes = empreinteDuVoisin(RACINE_ATELIER);
   return verifierQueRienNaBascule;
 }
