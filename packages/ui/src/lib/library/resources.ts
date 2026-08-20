@@ -59,19 +59,45 @@ export interface ResourceGroup {
   entries: ResourceEntry[];
 }
 
-// bpscript catalogs are objects keyed by name. They carry META keys that are NOT
-// real entries and must not surface as browsable cards: any `_`-prefixed key
-// (doc-only `_comment`/`_comment_*`, `_anchor_doc`, …) and the catalog's own
-// `domain` self-declaration (same schema as personal libs) — skip them all.
+// bpscript catalogs are objects keyed by name, alongside catalog-LEVEL fields that
+// are not entries and must never surface as browsable cards.
+//
+// ⛔ CE FILTRE NE NOMME PLUS AUCUN CHAMP, ET C'EST LA CORRECTION. Il excluait `domain`,
+// la self-déclaration du catalogue. `domain` a été RENOMMÉ `resolves` chez bpscript le
+// 2026-08-10 : depuis, le filtre écartait un mot que plus personne n'écrit pendant que
+// son remplaçant passait. Mesuré le 2026-08-20 sur les 29 librairies publiées — ZÉRO
+// portait encore `domain`, 12 portaient `resolves` et 21 `resolvedBy`. DIX non-entrées
+// franchissaient donc le filtre, deux dans CHACUN des cinq catalogues énumérés ici
+// (alphabets, tunings, temperaments, scales, octaves). Rien ne rougissait — un filtre
+// qui ne filtre plus rien a la même forme qu'un filtre qui n'a rien à filtrer.
+//
+// ⚠️ CE QU'ELLES NE FAISAIENT PAS, ET JE L'AI D'ABORD ÉCRIT À TORT : elles n'étaient PAS
+// affichées. `RESOURCE_GROUPS` a UN seul consommateur — `NowView.openReferenced`, qui y
+// cherche une entrée PAR SON NOM (NowView.svelte:21) — et n'alimente aucune liste rendue ;
+// les cartes parcourables viennent de `RESOURCE_FILES`, une par fichier. Le défaut était
+// donc LATENT : une scène qui invoque `@resolves` ouvrait la chaîne « scale » comme si
+// c'était un catalogue, au lieu de la note « rien à parcourir ici ». Réel, invisible.
+//
+// LA NATURE REMPLACE LE NOM : une entrée de catalogue est un OBJET, un champ de catalogue
+// est une chaîne. Aucun renommage ne peut casser un filtre qui ne nomme rien.
+//
+// La règle du blanc souligné initial RESTE, et c'est mesuré : trois clés de commentaire
+// sont des OBJETS (`temperaments._comment`, `mod._comment_curve`, `mapping._comment`),
+// dont une dans un catalogue énuméré ici. La nature seule les laisserait remonter.
 function isMetaKey(k: string): boolean {
-  return k === 'domain' || k.startsWith('_');
+  return k.startsWith('_');
 }
 
 type NamedCatalog = Record<string, unknown>;
 
-function entriesFromNamedCatalog(catalog: NamedCatalog): ResourceEntry[] {
+/** Une entrée EST un objet. Ce prédicat est la moitié durable du filtre. */
+export function estUneEntree(valeur: unknown): boolean {
+  return typeof valeur === 'object' && valeur !== null;
+}
+
+export function entriesFromNamedCatalog(catalog: NamedCatalog): ResourceEntry[] {
   return Object.keys(catalog)
-    .filter((k) => !isMetaKey(k))
+    .filter((k) => !isMetaKey(k) && estUneEntree(catalog[k]))
     .map((id) => {
       const v = catalog[id] as { description?: unknown; culture?: unknown } | undefined;
       const desc = v && typeof v === 'object' ? v.description : undefined;
