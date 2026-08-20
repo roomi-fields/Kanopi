@@ -37,7 +37,7 @@ export default function annoncerLeRegime() {
   // l'appelle : mesuré le 2026-08-20 en comptant les entrées — DEUX avec le fichier déclaré, UNE
   // sans. Le refus sortait donc en double, et deux erreurs pour un seul défaut font chercher deux
   // causes. Une seule voie, celle-ci.
-  globalThis.__kanopiRelevePortes = empreinteDuVoisin(RACINE_ATELIER);
+  globalThis.__kanopiReleveDesVoisins = empreinteDuVoisin(RACINE_ATELIER);
   return verifierQueRienNaBascule;
 }
 
@@ -46,7 +46,7 @@ export function verifierQueRienNaBascule() {
   // une PROMESSE dont `.length` vaut `undefined` — le garde échouait donc à TOUS les coups, y
   // compris quand rien n'avait bougé. Un garde qui mord toujours ne garde rien : il se fait
   // désarmer à la première campagne honnête.
-  const bouges = cequiABascule(globalThis.__kanopiRelevePortes, RACINE_ATELIER);
+  const bouges = cequiABascule(globalThis.__kanopiReleveDesVoisins, RACINE_ATELIER);
   if (bouges.length === 0) return;
   throw new Error(
     'UN VOISIN A BASCULÉ PENDANT CETTE CAMPAGNE — le résultat porte sur deux états, donc sur aucun :\n' +

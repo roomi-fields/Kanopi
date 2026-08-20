@@ -286,12 +286,29 @@ function sousArbre(base) {
  *
  * La taille reste, à coût nul : elle sépare deux contenus qu'inode et date verraient identiques.
  *
- * ⛔ ET ON EMPREINT TOUT CE QUE LE VOISIN EXPOSE, PAS SES SEULES PORTES D'ENTRÉE. Une porte dit ce
- * qu'on peut IMPORTER ; elle ne dit pas ce que le code FAIT. Le paquet de Kairos porte 156 fichiers
- * sous sa racine exposée, dont DEUX sont des portes : une reconstruction qui ne réécrit pas les
- * fichiers d'entrée — un compilateur incrémental saute ce qui n'a pas changé — laisserait les deux
- * portes intactes pendant que le comportement change derrière elles. Le garde serait vert et muet.
- * Mesuré le 2026-08-20, sur la publication qui l'a rendu visible.
+ * ⛔ CE QUE CE RELEVÉ SUIT, EXACTEMENT : TOUT CE QUI PEUT ATTEINDRE MA PRODUCTION, LA TRANSITIVITÉ
+ * COMPRISE — chaque fichier sous chaque racine que le manifeste du voisin expose, et non ses seules
+ * portes déclarées. Les portes n'y ont qu'un statut à part : elles peuvent être MUETTES, un état
+ * qu'un fichier ordinaire n'a pas.
+ *
+ * DEUX MESURES IMPOSENT CETTE LARGEUR, et elles sont d'ordres différents.
+ *
+ * Une porte dit ce qu'on peut IMPORTER ; elle ne dit pas ce que le code FAIT. Le paquet de Kairos
+ * porte 156 fichiers sous sa racine exposée, dont DEUX sont des portes : une reconstruction qui ne
+ * réécrit pas les fichiers d'entrée — un compilateur incrémental saute ce qui n'a pas changé —
+ * laisserait les deux portes intactes pendant que le comportement change derrière elles. Le garde
+ * serait vert et muet. Mesuré le 2026-08-20, sur la publication qui l'a rendu visible.
+ *
+ * Et un fichier qui n'est PAS une porte m'atteint quand une porte l'importe. Mesuré le même jour :
+ * `src/transpiler/parser.js` chez BPscript a bougé pendant une campagne de treize minutes. Il ne
+ * figure dans aucune de ses six portes déclarées ; sa porte principale l'importe, donc il entre
+ * dans ce que j'exécute. Ce relevé l'a vu parce qu'il balaie la RACINE, pas la liste des portes.
+ *
+ * ⛔ ET C'EST POURQUOI CETTE DESCRIPTION EST ÉCRITE ICI, AU LONG. J'ai décrit ce garde comme
+ * surveillant « les six portes » du voisin — vrai à la mesure, faux à la citation. Une description
+ * plus étroite que le mécanisme désigne la « correction » qui le casserait : l'aligner sur la
+ * phrase lui ferait cesser de voir exactement ce qu'il venait d'attraper. Arbitrage de l'architecte
+ * le 2026-08-20 : corriger la phrase, jamais le garde.
  */
 export function empreinteDuVoisin(racine) {
   const empreinte = new Map();
@@ -352,9 +369,9 @@ export function cequiABascule(avant, racine) {
   }
   const apres = empreinteDuVoisin(racine);
   const bouges = [];
-  for (const [nom, portesAvant] of avant) {
-    const portesApres = apres.get(nom);
-    if (!portesApres) {
+  for (const [nom, marquesAvant] of avant) {
+    const marquesApres = apres.get(nom);
+    if (!marquesApres) {
       bouges.push({ nom, quoi: ["le voisin n'est plus lié du tout"] });
       continue;
     }
@@ -363,19 +380,25 @@ export function cequiABascule(avant, racine) {
     // autre chose : la comparaison n'itérait que sur le relevé d'AVANT, donc un fichier AJOUTÉ par
     // le voisin pendant la campagne était invisible — et une publication qui ajoute un module sans
     // toucher aux autres est précisément une bascule.
-    for (const cible of portesApres.keys()) {
-      if (!portesAvant.has(cible))
-        quoi.push(`${cible} est APPARUE depuis le relevé`);
+    for (const cible of marquesApres.keys()) {
+      if (!marquesAvant.has(cible))
+        quoi.push(`${cible} : APPARU depuis le relevé`);
     }
-    for (const [cible, marque] of portesAvant) {
-      const maintenant = portesApres.get(cible);
+    for (const [cible, marque] of marquesAvant) {
+      const maintenant = marquesApres.get(cible);
       if (maintenant === marque) continue;
+      // ⛔ UN FICHIER RETIRÉ N'EST PAS UN FICHIER REMPLACÉ, et les confondre envoie chercher un
+      // autre contenu là où il n'y a plus rien. Trouvé par injection le 2026-08-20 : une
+      // suppression sortait « REMPLACÉ » parce que l'absence d'une marque après coup tombait dans
+      // la branche par défaut.
       quoi.push(
-        marque === "muette"
-          ? `${cible} était muette, elle répond maintenant`
-          : maintenant === "muette"
-            ? `${cible} répondait, elle est muette maintenant`
-            : `${cible} a été REMPLACÉE (fichier différent)`,
+        maintenant === undefined
+          ? `${cible} : RETIRÉ depuis le relevé`
+          : marque === "muette"
+            ? `${cible} : porte déclarée muette, elle répond maintenant`
+            : maintenant === "muette"
+              ? `${cible} : porte déclarée qui répondait, muette maintenant`
+              : `${cible} : REMPLACÉ (fichier différent)`,
       );
     }
     if (quoi.length) bouges.push({ nom, quoi });
