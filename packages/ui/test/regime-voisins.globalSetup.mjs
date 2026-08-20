@@ -21,7 +21,7 @@
 // mesure fait un résultat qui porte sur deux états, donc sur aucun.
 import {
   mentionDeRegime,
-  empreinteDesPortes,
+  empreinteDuVoisin,
   cequiABascule
 } from '../../../scripts/lib/voisins-lies.mjs';
 
@@ -32,7 +32,7 @@ export default function annoncerLeRegime() {
   // Le relevé voyage par `globalThis` : la comparaison de fin vit dans un autre module, et pour
   // la campagne d'écran dans un autre fichier encore. Un relevé absent au moment de comparer ne
   // se tait pas — la librairie le refuse.
-  globalThis.__kanopiRelevePortes = empreinteDesPortes(RACINE_ATELIER);
+  globalThis.__kanopiRelevePortes = empreinteDuVoisin(RACINE_ATELIER);
   return verifierQueRienNaBascule;
 }
 

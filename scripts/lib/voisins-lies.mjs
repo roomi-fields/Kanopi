@@ -24,6 +24,7 @@ import {
   readFileSync,
   statSync,
 } from "node:fs";
+import { relative } from "node:path";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 
@@ -244,8 +245,24 @@ export function portesDuVoisin(v) {
   return { declarees, muettes, manifesteIllisible: false };
 }
 
+/** Chaque fichier sous un dossier, en descendant. Un lien symbolique ne se suit pas : il désignerait
+ *  un arbre qui n'appartient pas au voisin, et le relevé compterait deux fois. */
+function sousArbre(base) {
+  const out = [];
+  // Une racine exposée n'est pas forcément un DOSSIER : un manifeste peut lister un fichier seul
+  // (`files: ["package.json"]`). Mesuré sur BPscript, qui expose le sien.
+  if (!statSync(base).isDirectory()) return [base];
+  for (const e of readdirSync(base, { withFileTypes: true })) {
+    const p = join(base, e.name);
+    if (e.isSymbolicLink()) continue;
+    if (e.isDirectory()) out.push(...sousArbre(p));
+    else out.push(p);
+  }
+  return out;
+}
+
 /**
- * L'EMPREINTE des portes de chaque voisin, à un instant donné — le relevé qui se prend AVANT.
+ * L'EMPREINTE de ce que chaque voisin EXPOSE, à un instant donné — le relevé qui se prend AVANT.
  *
  * ⛔ LE RELEVÉ SE FAIT AVANT, ET C'EST TOUT LE POINT. Un contrôle passé après la panne mesure le
  * mauvais instant : la fenêtre est refermée, le paquet est de nouveau entier, et il répond que
@@ -262,8 +279,15 @@ export function portesDuVoisin(v) {
  * quand il en surveille deux.
  *
  * La taille reste, à coût nul : elle sépare deux contenus qu'inode et date verraient identiques.
+ *
+ * ⛔ ET ON EMPREINT TOUT CE QUE LE VOISIN EXPOSE, PAS SES SEULES PORTES D'ENTRÉE. Une porte dit ce
+ * qu'on peut IMPORTER ; elle ne dit pas ce que le code FAIT. Le paquet de Kairos porte 156 fichiers
+ * sous sa racine exposée, dont DEUX sont des portes : une reconstruction qui ne réécrit pas les
+ * fichiers d'entrée — un compilateur incrémental saute ce qui n'a pas changé — laisserait les deux
+ * portes intactes pendant que le comportement change derrière elles. Le garde serait vert et muet.
+ * Mesuré le 2026-08-20, sur la publication qui l'a rendu visible.
  */
-export function empreinteDesPortes(racine) {
+export function empreinteDuVoisin(racine) {
   const empreinte = new Map();
   for (const v of voisinsLies(racine)) {
     // ⛔ LA CLÉ EST LE SPÉCIFICATEUR QUE JE DÉCLARE, pas le nom du dépôt derrière le lien. Mesuré :
@@ -272,16 +296,36 @@ export function empreinteDesPortes(racine) {
     // suis, c'est la dépendance ; ce qu'elle désigne peut changer sous elle, et c'est le fait à voir.
     const nom = v.specificateurs[0];
     const { declarees } = portesDuVoisin(v);
-    const portes = new Map();
+    const marques = new Map();
+
+    // Les portes d'abord, nommées telles quelles : ce sont elles que le refus « porte muette »
+    // désigne, et une entrée déclarée qui ne répond pas doit se distinguer d'un fichier absent.
     for (const cible of declarees) {
       try {
         const st = statSync(join(v.chemin, cible));
-        portes.set(cible, `${st.ino}:${st.mtimeMs}:${st.size}`);
+        marques.set(cible, `${st.ino}:${st.mtimeMs}:${st.size}`);
       } catch {
-        portes.set(cible, "muette");
+        marques.set(cible, "muette");
       }
     }
-    empreinte.set(nom, portes);
+
+    // Puis TOUT ce que le voisin expose, en descendant chaque racine de son manifeste.
+    const racines = racinesExposees(v.depot);
+    for (const racine of racines ?? []) {
+      const base = join(v.chemin, racine);
+      if (!existsSync(base)) continue;
+      for (const fichier of sousArbre(base)) {
+        const cle = relative(v.chemin, fichier);
+        if (marques.has(`./${cle}`)) continue; // déjà pris comme porte
+        try {
+          const st = statSync(fichier);
+          marques.set(cle, `${st.ino}:${st.mtimeMs}:${st.size}`);
+        } catch {
+          marques.set(cle, "disparu");
+        }
+      }
+    }
+    empreinte.set(nom, marques);
   }
   return empreinte;
 }
@@ -300,7 +344,7 @@ export function cequiABascule(avant, racine) {
         "états de voisin sans que rien ne le dise.",
     );
   }
-  const apres = empreinteDesPortes(racine);
+  const apres = empreinteDuVoisin(racine);
   const bouges = [];
   for (const [nom, portesAvant] of avant) {
     const portesApres = apres.get(nom);
