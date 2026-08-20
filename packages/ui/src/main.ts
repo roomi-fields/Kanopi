@@ -15,7 +15,6 @@ import { ui } from './stores/ui.svelte';
 import { production } from './stores/production.svelte';
 import { transport } from './stores/transport.svelte';
 import { installKanopiApi } from './lib/pilot/kanopi-api';
-import { personalPitchLibSnapshot } from './stores/personal-pitch-lib.svelte';
 import { setAssetBaseUrl, onStrudelError } from 'runtime-codevoices';
 import { installPreloadOnOpen } from './lib/runtimes/preload-on-open.svelte';
 import { interpsForScene, assetsForScene } from './lib/runtimes/bpx-adapter';
@@ -105,14 +104,6 @@ if (import.meta.env.DEV) {
     // Loop / re-random session toggles (default loop ON, re-random OFF). The re-random
     // e2e flips `reRandom` ON before evaluating so the Kairos re-derive arms at load.
     transport,
-    // Last-built `pitchLibMine` catalog (personal pitch libraries composed from
-    // `libraries/<domain>/…`). Function (not a value) so each call reads the CURRENT catalog.
-    // ⚠️ NO ON-SCREEN BENCH READS THIS KEY — measured 2026-08-19 over the 57 tracked e2e specs,
-    // with a positive witness proving the search reaches them. The comment that used to claim
-    // otherwise is gone: a comment describing a path the code no longer takes reads as proof.
-    // The key stays (KAN-64): a key with no bench reader is not a key with no use — this one
-    // carries a dormant user channel, filled only by files the user puts in their own space.
-    personalPitchLib: personalPitchLibSnapshot,
     // Generic per-AudioContext RMS tap (see audioTapAnalysers above) — one entry per
     // distinct AudioContext currently connected to a destination (native runtime-audio,
     // Strudel/superdough, Hydra has no audio context, …).

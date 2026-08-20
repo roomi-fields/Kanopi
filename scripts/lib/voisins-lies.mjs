@@ -251,9 +251,17 @@ export function portesDuVoisin(v) {
  * mauvais instant : la fenêtre est refermée, le paquet est de nouveau entier, et il répond que
  * tout va bien. Prélevée avant et comparée après, l'empreinte dit si le paquet a bougé PENDANT.
  *
- * L'INODE, pas la date : une bascule par renommage remplace le fichier sans que sa date de
- * modification change — `rename` préserve les dates. Le numéro d'inode, lui, désigne le fichier
- * lui-même : un fichier remplacé en porte un autre, même à contenu et date identiques.
+ * ⛔ L'INODE **ET** LA DATE, ET IL FAUT LES DEUX — aucune des deux ne suffit seule.
+ *
+ * La date seule ne voit rien : une bascule par renommage remplace le fichier **en préservant sa
+ * date**. L'inode seul peut mentir : celui que la suppression de l'ancien paquet libère est
+ * RÉATTRIBUABLE au chantier suivant, et l'empreinte serait alors identique des deux côtés d'une
+ * vraie bascule — muette exactement quand elle compte. Mesuré chez Kairos : trois cycles, trois
+ * inodes différents, donc ça tient *la plupart du temps* ; « la plupart du temps » n'est pas une
+ * propriété tenue. Le risque croît avec le nombre de voisins surveillés, et j'en surveille onze
+ * quand il en surveille deux.
+ *
+ * La taille reste, à coût nul : elle sépare deux contenus qu'inode et date verraient identiques.
  */
 export function empreinteDesPortes(racine) {
   const empreinte = new Map();
@@ -268,7 +276,7 @@ export function empreinteDesPortes(racine) {
     for (const cible of declarees) {
       try {
         const st = statSync(join(v.chemin, cible));
-        portes.set(cible, `${st.ino}:${st.size}`);
+        portes.set(cible, `${st.ino}:${st.mtimeMs}:${st.size}`);
       } catch {
         portes.set(cible, "muette");
       }

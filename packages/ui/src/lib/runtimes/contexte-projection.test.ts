@@ -37,10 +37,9 @@ const CODE = SOURCE.split('\n')
   .filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*'))
   .join('\n');
 
-/** Les sept clés que porte le contexte de projection, au-delà de ce que BPx construit. */
+/** Les six clés que porte le contexte de projection, au-delà de ce que BPx construit. */
 const CATALOGUES = [
   'pitchLib:',
-  'pitchLibMine:',
   'digitalLib:',
   'voicesLib:',
   'actionLib:',
@@ -65,10 +64,30 @@ describe('le contexte de projection a UNE source, pas trois', () => {
     });
   }
 
+  // ⛔ LE VERROU RETOURNÉ. Ce fichier tenait une SEPTIÈME clé, `pitchLibMine:` — un canal dédié aux
+  // librairies personnelles. Il est sorti le 2026-08-20 : « il ne doit y avoir strictement aucune
+  // particularité relative aux librairies personnelles, et c'est le compilateur qui résout les
+  // fichiers de librairie » (décision Romain 2026-08-19), en lockstep avec Kairos qui l'a retiré de
+  // son type publié au même moment.
+  //
+  // Le cas qui verrouillait sa PRÉSENCE ne se supprime pas, il verrouille son ABSENCE : sinon rien
+  // n'empêcherait un canal de remplacement de repousser sous un nom neutre, et la décision interdit
+  // exactement cela — le compilateur résout, l'aval reçoit ce qu'il a résolu.
+  it('et AUCUN canal ne distingue une librairie personnelle', () => {
+    const suspects = ['pitchLibMine', 'personalPitchLib', 'libMine', 'mineLib'];
+    const poses = suspects.filter((c) => CODE.includes(c));
+    expect(
+      poses,
+      'un canal dédié aux librairies personnelles est reposé dans bpx-adapter.ts. Aucune ' +
+        'particularité ne les distingue : le compilateur résout les fichiers de librairie, ' +
+        "l'hôte reçoit ce qu'il a résolu — et ne monte pas un chemin neuf sous un nom neutre."
+    ).toEqual([]);
+  });
+
   // ⚠️ ET LE SENS INVERSE, sinon ce garde passerait sur une fabrique VIDE : elle doit porter les
-  // sept. Sans ce cas, supprimer une ligne de la fabrique rendrait le compte « 0 » — donc pas
-  // « plusieurs » — et les six autres cas resteraient verts pendant qu'une facette a disparu.
-  it('et la fabrique les porte TOUS LES SEPT', () => {
+  // six. Sans ce cas, supprimer une ligne de la fabrique rendrait le compte « 0 » — donc pas
+  // « plusieurs » — et les cinq autres cas resteraient verts pendant qu'une facette a disparu.
+  it('et la fabrique les porte TOUTES LES SIX', () => {
     const debut = CODE.indexOf('function contexteDeProjection(');
     const corps = CODE.slice(debut, CODE.indexOf('\n}', debut));
     const absents = CATALOGUES.filter((c) => !corps.includes(c));

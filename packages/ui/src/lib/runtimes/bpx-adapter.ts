@@ -312,9 +312,8 @@ const HOMOMORPHISM_LIB = BPSCRIPT_LIBS.homomorphism;
 // d'éval il sert DEUX FOIS (ici et à `resolveName` pour la chaîne d'items) ; le rappeler
 // fabriquerait un SECOND résolveur côté hôte, exactement ce que l'invariant interdit. On reçoit
 // donc le contexte de BPx et on n'y ajoute que les catalogues.
-// ⚠️ `personalPitchLib` et `onExprSource` sont lus AU MOMENT DE L'APPEL, pas figés à la
-// définition : le premier arrive après l'ouverture de session, le second est injecté par le
-// câblage audio. Les figer ici les rendrait vides pour la première scène.
+// ⚠️ `onExprSource` est lu AU MOMENT DE L'APPEL, pas figé à la définition : il est injecté par
+// le câblage audio. Le figer ici le rendrait vide pour la première scène.
 function contexteDeProjection(base: unknown): Parameters<Kairos['charger']>[1] {
   return {
     // Le contexte construit PAR BPx — l'hôte n'assemble AUCUN résolveur (KAI-8).
@@ -322,7 +321,6 @@ function contexteDeProjection(base: unknown): Parameters<Kairos['charger']>[1] {
     // KAI-10 — catalogues de hauteur (données de librairie, lecture seule).
     pitchLib: PITCH_LIB,
     // Librairies personnelles : map PLATE chemin→contenu BRUT, opaque à l'hôte (Kairos la lit).
-    pitchLibMine: personalPitchLib,
     // KAI-B03 — fonctions numériques fournies (transpose &c.).
     digitalLib: DIGITAL_LIB,
     // LANG-SONS-3 — registre des voix (Kairos grave `content.voice`).
@@ -1541,57 +1539,6 @@ export function setExprSource(fn: ExprSource | undefined): void {
 // curves through it (Kanopi still never compiles/renders — it only passes it on).
 setExprSource(exprSource as unknown as ExprSource);
 
-// Librairies HAUTEUR PERSONNELLES de l'utilisateur (`ctx.pitchLibMine`), sur le MÊME patron que
-// `onExprSource`/`setExprSource` : bpx-adapter ne compose/parse rien et n'importe aucun store
-// (garde `npm run arch`, cycle interdit) — un module hôte séparé (le composeur,
-// `stores/personal-pitch-lib.svelte.ts`) lit les fichiers perso du stockage et POUSSE la MAP ici.
-//
-// FORME (décision 2026-07-13, co-signée archi [714] / Kairos [713]) : une MAP PLATE
-// `Record<string, string>` — clé = chemin du fichier sous `libraries/` (extension retirée,
-// `/`→`.`), valeur = CONTENU BRUT du fichier (string, verbatim). Le fichier DÉCLARE son domaine
-// DEDANS (champ JSON `domain`) : c'est KAIROS qui lit + parse (rôle résolveur, un fichier
-// malformé crie CHEZ LUI). L'hôte ne fait AUCUN `JSON.parse`, aucun bucketing par domaine.
-// Vide par défaut = no-op total : le kairos consommé (231d207, ancien type `PitchLib`) lit
-// une entrée absente de cette map plate laisse les catalogues fournis INTACTS, aucun crash.
-let personalPitchLib: Record<string, string> = {};
-
-// Barrière de CHARGEMENT des libs perso (trou timing, archi [729]#1). En session cloud, le
-// composeur (`personal-pitch-lib.svelte.ts`) va CHERCHER le contenu des libs perso de façon
-// ASYNCHRONE (`storage.read`). Un derive déclenché AVANT la fin de ce fetch verrait
-// `personalPitchLib = {}` → Kairos résout l'adresse sur une map vide et crie « lib introuvable »
-// (constaté : 1er eval après chargement de page échouait, les suivants passaient). L'hôte doit
-// GARANTIR sa projection FOURNIE avant que Kairos la consomme (loi 26/27) — sans rien inventer :
-// il attend juste sa propre donnée. Le composeur SIGNALE le début d'un (re)chargement
-// (`markPersonalPitchLibLoading`, synchrone) et sa fin (`setPersonalPitchLib`) ; `evaluate` attend
-// cette barrière AVANT de dériver. Défaut = déjà résolu (rien à charger → aucune attente).
-let personalPitchLibReady: Promise<void> = Promise.resolve();
-let resolvePersonalPitchLibReady: (() => void) | null = null;
-
-export function setPersonalPitchLib(map: Record<string, string>): void {
-  personalPitchLib = map;
-  // Fin de (re)chargement : lève la barrière (seule une reconstruction GAGNANTE appelle ce setter).
-  resolvePersonalPitchLibReady?.();
-  resolvePersonalPitchLibReady = null;
-}
-
-/** Le composeur appelle ceci de façon SYNCHRONE dès qu'une (re)construction de la map perso
- *  démarre — AVANT tout derive possible — pour qu'`evaluate` attende la map à jour au lieu de
- *  dériver sur `{}`. Idempotent : une seule barrière en vol à la fois (les fires d'effet
- *  intermédiaires ne créent pas de nouvelle promesse ; la reconstruction gagnante la résout). */
-export function markPersonalPitchLibLoading(): void {
-  if (!resolvePersonalPitchLibReady) {
-    personalPitchLibReady = new Promise<void>((res) => {
-      resolvePersonalPitchLibReady = res;
-    });
-  }
-}
-
-/** La barrière de chargement des libs perso — `evaluate` l'attend avant de dériver ; exposée
- *  aussi pour le banc/les tests (prouver l'ordre : en vol tant qu'un chargement n'a pas fini). */
-export function whenPersonalPitchLibReady(): Promise<void> {
-  return personalPitchLibReady;
-}
-
 // Live mute + teardown handle for ONE orchestrated actor's voice. Registered per
 // (file, actor) when an orchestrator evaluates.
 interface OrchestratedVoiceHandle {
@@ -1899,8 +1846,6 @@ function makeBpxAdapter(
       // derive de ce bloc — sinon une scène à librairie personnelle résout sur une map vide au 1er eval (le
       // fetch cloud n'est pas fini) et Kairos crie « lib introuvable ». En régime établi (rien à
       // charger), la barrière est déjà résolue → attente négligeable. Une seule attente par
-      // `evaluate`, couvre les deux branches de derive (mono + orchestré).
-      await personalPitchLibReady;
 
       // `eval.<engine>(bank:…)` banks: start loading the declared sample banks now
       // (before derive/dispatch) so a backtick voice that references them finds

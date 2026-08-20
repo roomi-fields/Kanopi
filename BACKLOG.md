@@ -410,10 +410,14 @@ Chiffres pris ce jour, sur demande de Romain. Ils ne vivaient nulle part ailleur
   prouvant que la recherche les atteint : `personalPitchLib` et `audioTap` (`packages/ui/src/main.ts`)
   ne sont nommées par aucun. Le commentaire qui affirmait le contraire pour la première est retiré.
 
-  **Les deux clés restent.** Une clé sans lecteur de banc n'est pas une clé sans usage :
-  `personalPitchLib` porte un canal **dormant** — rempli par les fichiers que l'utilisateur pose dans
-  son espace, donc par un geste qu'aucune mesure de ces dépôts ne peut majorer. `audioTap` demande sa
-  propre mesure avant d'être jugée.
+  **`personalPitchLib` est sortie le 2026-08-20**, avec toute la chaîne qui l'alimentait : « il ne
+  doit y avoir strictement aucune particularité relative aux librairies personnelles, et c'est le
+  compilateur qui résout les fichiers de librairie » (décision Romain du 2026-08-19). La question
+  n'était pas « ce canal porte-t-il quelque chose » — un canal qui distingue une librairie
+  personnelle **est** la particularité.
+
+  **`audioTap` reste** et demande sa propre mesure avant d'être jugée : une clé sans lecteur de banc
+  n'est pas une clé sans usage.
 
 - **KAN-63** `clos par l'architecte le 2026-08-19` — **l'état d'un voisin lu vivant dit s'il a enregistré, jamais s'il est en
   train d'écrire.** `scripts/lib/voisins-lies.mjs` mesure par `git status` : un dépôt dont la
