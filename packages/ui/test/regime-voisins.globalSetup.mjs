@@ -45,7 +45,17 @@ export function verifierQueRienNaBascule() {
   if (bouges.length === 0) return;
   throw new Error(
     'UN VOISIN A BASCULÉ PENDANT CETTE CAMPAGNE — le résultat porte sur deux états, donc sur aucun :\n' +
-      bouges.map((b) => `  • ${b.nom} — ${b.quoi.join(' · ')}`).join('\n') +
+      // ⛔ ON DIT LE COMPTE, ON N'ÉNUMÈRE PAS. Mesuré en conditions réelles le 2026-08-20 : une
+      // republication de Kairos a fait lister 156 fichiers sur UNE ligne, et le refus est devenu
+      // illisible au moment précis où il devait être lu. Un garde qui noie son constat ne le rend
+      // pas — les six premiers nomment ce qui a bougé, le compte dit l'ampleur.
+      bouges
+        .map((b) => {
+          const tete = b.quoi.slice(0, 6).join('\n      ');
+          const reste = b.quoi.length > 6 ? `\n      … et ${b.quoi.length - 6} autres` : '';
+          return `  • ${b.nom} — ${b.quoi.length} entrée(s) ont bougé :\n      ${tete}${reste}`;
+        })
+        .join('\n') +
       "\n⛔ CE QUI PRÉCÈDE RETIRE L'ACCUSATION, PAS LE REFUS : un rouge de cette campagne peut ne pas" +
       " venir du code d'ici. Il ne se relance pas pour autant — une relance fait disparaître un" +
       ' défaut intermittent du rapport, jamais du produit.'

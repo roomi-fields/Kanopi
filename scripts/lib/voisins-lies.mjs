@@ -353,6 +353,13 @@ export function cequiABascule(avant, racine) {
       continue;
     }
     const quoi = [];
+    // ⛔ CE QUI EST APPARU DEPUIS LE RELEVÉ. Trouvé le 2026-08-20, par accident, en éprouvant tout
+    // autre chose : la comparaison n'itérait que sur le relevé d'AVANT, donc un fichier AJOUTÉ par
+    // le voisin pendant la campagne était invisible — et une publication qui ajoute un module sans
+    // toucher aux autres est précisément une bascule.
+    for (const cible of portesApres.keys()) {
+      if (!portesAvant.has(cible)) quoi.push(`${cible} est APPARUE depuis le relevé`);
+    }
     for (const [cible, marque] of portesAvant) {
       const maintenant = portesApres.get(cible);
       if (maintenant === marque) continue;
