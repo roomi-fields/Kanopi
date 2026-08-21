@@ -161,8 +161,16 @@ function demanderLaFenetre(ecritures) {
     return null;
   }
 
-  // ⛔ ON NE LIT PAS LE MESSAGE, ON MESURE L'ÉTAT. La commande rend 0 même quand elle REFUSE — un
-  // refus se lit dans son texte, et un texte se reformule. La fenêtre existe ou n'existe pas.
+  // ⛔ ON NE LIT PAS LE MESSAGE, ON MESURE L'ÉTAT — mais PAS pour la raison que j'avais écrite.
+  //
+  // J'avais noté « la commande rend 0 même quand elle refuse ». C'EST FAUX, et l'architecte l'a
+  // mesuré avant moi. Remesuré ici, sans tube : un refus sort en CODE 1. Ma mesure d'origine lisait
+  // `$?` DERRIÈRE UN TUBE, et `$?` rapporte le code du DERNIER maillon — `head`, jamais `tour`. Le
+  // `execFileSync` ci-dessus lève donc bien sur un refus, et c'est lui qui l'attrape.
+  //
+  // CE CONTRÔLE RESTE PARCE QU'IL RÉPOND À UNE AUTRE QUESTION : « la commande a réussi » et « MA
+  // fenêtre est ouverte » ne sont pas la même chose. Un texte se reformule, un code de sortie change
+  // de convention ; la fenêtre, elle, existe sous mon nom ou n'existe pas.
   const ouvertes = execFileSync(
     "bash",
     ["-c", "BP_AGENT=kanopi ~/dev/bp/hub/tour fenetre"],
