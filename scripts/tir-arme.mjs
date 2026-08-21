@@ -235,8 +235,17 @@ function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush) {
   const pousse = /main -> main/.test(sortiePush)
     ? (sortiePush.match(/[0-9a-f]{7}\.\.[0-9a-f]{7}/) ?? ["poussé"])[0]
     : "rien poussé";
+  // ⛔ LE NOM SORT JUSQU'AU DESTINATAIRE. La première version disait « ⚠ UNE BASCULE A ÉTÉ NOMMÉE »
+  // sans dire chez QUI — runtime-osc l'a relevé dans l'heure : dix dépôts mesurent pour rien pendant
+  // que le onzième ne sait pas que c'est lui. C'est la même forme que le verdict qui ne revenait
+  // jamais, corrigé le matin même : un verdict qui ne permet à personne d'agir s'use aussi vite
+  // qu'un verdict absent. Mon garde CONNAÎT le nom, il l'écrit dans son refus — il n'y avait qu'à
+  // le laisser passer.
+  const nommes = [
+    ...sortiePush.matchAll(/^\s*•\s+(\S+)\s+—\s+(\d+)\s+entrée/gm),
+  ].map((m) => `${m[1]} (${m[2]} entrée(s))`);
   const bascule = /BASCUL/.test(sortiePush)
-    ? " · ⚠ UNE BASCULE A ÉTÉ NOMMÉE"
+    ? `\n    ⚠ BASCULE NOMMÉE CHEZ : ${nommes.join(", ") || "nom non extrait — voir mon journal"}`
     : "";
   const texte =
     `VERDICT DE MA CAMPAGNE — départ ${hh(depart)}, arrivée ${hh(arrivee)}.\n\n` +
