@@ -38,7 +38,7 @@
  * depuis trois jours est du bruit, et le bruit fait qu'on ne lit plus les préavis.
  */
 import { execFileSync } from "node:child_process";
-import { readdirSync, statSync, writeFileSync, unlinkSync } from "node:fs";
+import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import {
   voisinsLies,
@@ -105,6 +105,10 @@ function dernieresEcritures() {
 function ceQuiFerme(ecritures) {
   const seuil = Date.now() - CALME_MS;
   const raisons = [];
+  // ⛔ L'ARBRE SALE RESTE ICI, ET CE N'EST PAS UN DOUBLON DE LA TOUR. Elle refuse d'OUVRIR sur un
+  // état non publié ; moi je refuse de CONSTRUIRE — mon greffon de production s'arrête sur du non
+  // enregistré qui entre dans mon paquet. Les deux se recouvrent aujourd'hui et ne disent pas la
+  // même chose : la sienne protège la mesure, la mienne protège l'artefact.
   if (raisonDuRefus(voisinsLies(RACINE))) {
     raisons.push("un arbre SALE ferme ma construction de production");
   }
@@ -115,51 +119,79 @@ function ceQuiFerme(ecritures) {
   return raisons;
 }
 
-/** La DEMANDE de fenêtre, adressée aux seuls voisins en chantier. */
-function demanderLaFenetre(ecritures, depart, arrivee) {
+/**
+ * LA FENÊTRE SE DEMANDE À LA TOUR, ELLE NE SE BRICOLE PLUS ICI.
+ *
+ * ⛔ CE BLOC ENVOYAIT UN COURRIER ÉCRIT À LA MAIN. La tour porte depuis le 2026-08-20 un mécanisme
+ * qui fait davantage et qui est PARTAGÉ : `tour fenetre ouvrir` prévient chaque dépôt gelé, REFUSE
+ * l'écriture de leur backlog pendant la fenêtre, et expire tout seul. Garder ma version en aurait
+ * fait une voie parallèle — deux mécanismes pour un besoin, qui divergent au premier changement.
+ *
+ * ⛔ ET L'OUTIL PORTE DÉJÀ MA SECONDE CONDITION, ce qui la retire d'ici : il REFUSE d'ouvrir quand un
+ * dépôt gelé porte un état que personne n'a publié, parce que je lis le DISQUE. Mesuré à l'ouverture :
+ * « FENÊTRE REFUSÉE — bpscript, 2 modifié(s) ». Ce que je garde, c'est la condition qu'il n'a pas :
+ * le CALME, c'est-à-dire aucune écriture depuis un délai — un arbre propre ne dit rien de ce qui
+ * s'écrira dans les quinze minutes suivantes.
+ *
+ * Rend la liste des dépôts gelés, ou `null` si la tour a refusé — auquel cas on retourne attendre.
+ */
+function demanderLaFenetre(ecritures) {
   const actifs = [...ecritures]
     .filter(([, { quand }]) => Date.now() - quand < EN_CHANTIER_MS)
     .map(([nom]) => nom.toLowerCase());
   if (actifs.length === 0) return [];
 
-  const fichier = `/tmp/kanopi-demande-fenetre-${depart.getTime()}.txt`;
-  writeFileSync(
-    fichier,
-    `DEMANDE DE FENETRE DE MESURE — ${FENETRE_MIN} MINUTES, de ${hh(depart)} a ${hh(arrivee)}.\n\n` +
-      `Je tire une campagne de portillon. Elle dure 15 a 16 minutes, dont 13 d ecran.\n\n` +
-      `CE QUE JE DEMANDE : aucune ecriture sous tes racines exposees pendant cette fenetre.\n` +
-      `Une seule suffit a invalider le verdict — mon garde compare l empreinte de tes portes au\n` +
-      `depart et a l arrivee, et un resultat qui porte sur deux etats ne porte sur aucun. Ce n est\n` +
-      `pas une accusation : c est quinze minutes de machine qui ne prouvent plus rien.\n\n` +
-      `⛔ CE QUI COMPTE EST L ENREGISTREMENT D UN FICHIER, JAMAIS LA NATURE DU GESTE. Regenerer,\n` +
-      `coder, ou eprouver un garde par injection — trois gestes, un seul effet chez moi. Une\n` +
-      `injection ecrit DEUX fois et rend un arbre propre au premier octet.\n\n` +
-      `Ce message part du code qui tire, pas de ma vigilance. Je te rendrai l heure d arrivee et le\n` +
-      `code de sortie, vert ou rouge.\n`,
-    "utf8",
-  );
-  for (const dest of actifs) {
-    try {
-      execFileSync(
-        "bash",
-        [
-          "-c",
-          `BP_AGENT=kanopi ~/dev/bp/hub/tour note ${dest} --fichier ${fichier}`,
-        ],
-        { encoding: "utf8" },
-      );
-    } catch (e) {
-      console.log(
-        `  demande NON transmise a ${dest} : ${String(e.message).split("\n")[0]}`,
-      );
-    }
-  }
+  const motif =
+    "campagne de portillon — mes bancs lisent vos sources vives ; une écriture sous vos racines " +
+    "exposées pendant cette fenêtre invalide le verdict, pas seulement le mien";
   try {
-    unlinkSync(fichier);
-  } catch {
-    /* le fichier temporaire a déjà disparu — sans effet sur la demande, qui est partie */
+    execFileSync(
+      "bash",
+      [
+        "-c",
+        `BP_AGENT=kanopi ~/dev/bp/hub/tour fenetre ouvrir kanopi --minutes ${FENETRE_MIN} ` +
+          `--depots ${actifs.join(",")} --motif ${JSON.stringify(motif)}`,
+      ],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+    );
+  } catch (e) {
+    console.log(
+      `  la tour a refusé l'ouverture : ${String(e.message).split("\n")[0]}`,
+    );
+    return null;
+  }
+
+  // ⛔ ON NE LIT PAS LE MESSAGE, ON MESURE L'ÉTAT. La commande rend 0 même quand elle REFUSE — un
+  // refus se lit dans son texte, et un texte se reformule. La fenêtre existe ou n'existe pas.
+  const ouvertes = execFileSync(
+    "bash",
+    ["-c", "BP_AGENT=kanopi ~/dev/bp/hub/tour fenetre"],
+    { encoding: "utf8" },
+  );
+  if (!/kanopi/.test(ouvertes)) {
+    console.log("  la tour a REFUSÉ la fenêtre — je retourne attendre :");
+    for (const l of ouvertes.split("\n").slice(0, 4))
+      if (l.trim()) console.log(`    ${l}`);
+    return null;
   }
   return actifs;
+}
+
+/** La fenêtre se referme dès le verdict rendu — elle expire seule, mais la laisser courir gèle des
+ *  voisins pour rien. */
+function fermerLaFenetre() {
+  try {
+    execFileSync(
+      "bash",
+      ["-c", "BP_AGENT=kanopi ~/dev/bp/hub/tour fenetre fermer kanopi"],
+      {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+  } catch {
+    /* la fenêtre a expiré d'elle-même — rien à fermer, et c'est le cas nominal après 20 minutes */
+  }
 }
 
 const debut = Date.now();
@@ -184,10 +216,16 @@ for (;;) {
   } else if (demandeeA === null) {
     const depart = new Date(Date.now() + GRACE_MS);
     const arrivee = new Date(depart.getTime() + FENETRE_MIN * 60_000);
-    const prevenus = demanderLaFenetre(ecritures, depart, arrivee);
+    const prevenus = demanderLaFenetre(ecritures);
+    if (prevenus === null) {
+      // La tour a refusé : on ne tire pas, et on ne réessaie pas en boucle serrée.
+      tours++;
+      execFileSync("sleep", [String(PAS_MS / 1000)]);
+      continue;
+    }
     demandeeA = Date.now();
     console.log(
-      `${hh(new Date())} — FENETRE DEMANDEE a ${prevenus.join(", ") || "personne (aucun voisin en chantier)"}` +
+      `${hh(new Date())} — FENETRE OUVERTE a la tour, gel de ${prevenus.join(", ") || "personne (aucun voisin en chantier)"}` +
         ` : depart ${hh(depart)}, arrivee ${hh(arrivee)}`,
     );
   } else if (Date.now() - demandeeA >= GRACE_MS) {
@@ -202,6 +240,7 @@ for (;;) {
     );
     console.log(r);
     console.log(`ARRIVEE : ${hh(new Date())}`);
+    fermerLaFenetre();
     break;
   }
 
