@@ -500,11 +500,22 @@ describe('le rattrapage de graine mord', () => {
   // écritures. Un vert ici n'a jamais rien dit, et ne dira jamais rien, du brassage lui-même.
   // C'est le banc suivant qui couvre le défaut 2, et son absence est exactement ce qui m'a laissé
   // rendre une scène inerte sans qu'aucun rouge ne se lève.
-  it('sous graine figée, la scène REFUSE — le refus suit la DÉCLARATION de re-semence', () => {
+  // ⛔ SUSPENDU LE 2026-08-21 — ET CE VOLET ÉTAIT VERT GRÂCE AU DÉFAUT QUE LA DÉCISION RETIRE.
+  // Il dérivait l'arbre d'une source REFUSÉE : sa référence était FABRIQUÉE par ce que le
+  // compilateur n'aurait pas dû livrer. BPscript a mesuré la même chose sur quatre de ses volets
+  // en frappant (df09e67, « un compilateur qui refuse ne livre rien en aval », décision Romain du
+  // 2026-08-19) ; celui-ci a exactement cette forme.
+  // Le sujet est devenu INEXERÇABLE ici, et pour une raison qui ne le regarde pas : le témoin est
+  // suspendu pour son propre motif (SUSPENSION_TEMOIN, « terminal non déclaré »). Tant qu'il ne
+  // compile pas, aucun arbre n'arrive, et le rattrapage de graine ne peut pas être éprouvé.
+  // SENS 2 — le jour où le témoin compile, `ast` cesse d'être nul et ce volet ROUGIT en réclamant
+  // la restauration de son vrai verrou. Une suspension ne survit pas à la disparition de sa cause.
+  it('SUSPENDU — le rattrapage ne peut pas être exercé tant que le témoin ne compile pas', () => {
     const { ast } = compileToBPxAST(avecAlphabet()) as { ast: unknown; errors: unknown[] };
-    expect(() =>
-      createSession(ast as Parameters<typeof createSession>[0], { seed: GRAINE }).derive()
-    ).toThrow(/reseedOrShuffle/);
+    expect(
+      ast,
+      `le témoin COMPILE de nouveau : restaurer ici \`expect(() => createSession(ast, { seed: GRAINE }).derive()).toThrow(/reseedOrShuffle/)\`, qui exerce le rattrapage de graine (${SUSPENSION_TEMOIN.levee})`
+    ).toBeNull();
   });
 
   // ⚠️ CE BANC NE PROUVE PLUS RIEN TANT QUE LA RÉGRESSION CI-DESSUS TIENT, et il faut le dire au
