@@ -38,7 +38,7 @@
  * depuis trois jours est du bruit, et le bruit fait qu'on ne lit plus les préavis.
  */
 import { execFileSync } from "node:child_process";
-import { readdirSync, statSync } from "node:fs";
+import { readdirSync, statSync, writeFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import {
   voisinsLies,
@@ -166,9 +166,17 @@ function demanderLaFenetre(ecritures) {
     ),
   ].sort();
 
+  // ⛔ « AUCUNE POUSSÉE », PAS « AUCUNE ÉCRITURE ». Le mot d'avant a été lu de TROIS façons par TROIS
+  // voisins le 2026-08-21, et aucune n'était la mienne : « je pousse un commit déjà fait, je
+  // n'enregistre rien » — et le crochet crée neuf fichiers ; « j'inscris une dette au backlog » — et
+  // la commande écrit ; « j'ai lu n'enregistre pas en pensant ne publie pas, et j'ai continué à
+  // taper ». Trois lectures, un seul mot mal choisi : ce n'était plus de l'inattention, c'était ma
+  // formulation. Le commit, la poussée et la vérification lancée à la main sont TROIS GESTES POUR UN
+  // SEUL EFFET chez moi.
   const motif =
-    "campagne de portillon — mes bancs lisent vos sources vives ; une écriture sous vos racines " +
-    "exposées pendant cette fenêtre invalide le verdict, pas seulement le mien";
+    "campagne de portillon — AUCUNE POUSSÉE pendant cette fenêtre : ni commit, ni push, ni " +
+    "vérification lancée à la main. Mes bancs lisent vos sources vives, et votre crochet écrit " +
+    "peut-être sous vos racines sans que vous l'appeliez une écriture";
   try {
     execFileSync(
       "bash",
@@ -211,6 +219,57 @@ function demanderLaFenetre(ecritures) {
   return actifs;
 }
 
+/**
+ * LE VERDICT REVIENT À CEUX QUI ONT ÉTÉ GELÉS, ET IL PART D'ICI.
+ *
+ * ⛔ JE LE FAISAIS À LA MAIN, DONC MAL, DONC PAS. runtime-osc a tenu trois de mes fenêtres et n'a
+ * jamais reçu un seul code de sortie — il me l'a réclamé le 2026-08-21, à juste titre : « un gel dont
+ * le verdict ne revient jamais s'use ; la fois suivante, on le respecte moins ». Le mécanisme entier
+ * repose sur ce que des voisins acceptent de s'imposer sans que rien ne les y force.
+ *
+ * C'est la même correction que le préavis lui-même : ce qui dépend de ma vigilance se périme au
+ * premier tour où je suis occupé ailleurs.
+ */
+function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush) {
+  if (destinataires.length === 0) return;
+  const pousse = /main -> main/.test(sortiePush)
+    ? (sortiePush.match(/[0-9a-f]{7}\.\.[0-9a-f]{7}/) ?? ["poussé"])[0]
+    : "rien poussé";
+  const bascule = /BASCUL/.test(sortiePush)
+    ? " · ⚠ UNE BASCULE A ÉTÉ NOMMÉE"
+    : "";
+  const texte =
+    `VERDICT DE MA CAMPAGNE — départ ${hh(depart)}, arrivée ${hh(arrivee)}.\n\n` +
+    `    CODE DE SORTIE DU CROCHET : ${sortie}\n` +
+    `    ${pousse}${bascule}\n\n` +
+    `Votre gel a tenu ou non, et c'est ce code qui le dit. Ce message part du code qui tire, pas de ma\n` +
+    `mémoire : un gel dont le verdict ne revient jamais s'use.\n`;
+  const fichier = `/tmp/kanopi-verdict-${depart.getTime()}.txt`;
+  writeFileSync(fichier, texte, "utf8");
+  for (const dest of destinataires) {
+    try {
+      execFileSync(
+        "bash",
+        [
+          "-c",
+          `BP_AGENT=kanopi ~/dev/bp/hub/tour note ${dest} --fichier ${fichier}`,
+        ],
+        { encoding: "utf8" },
+      );
+    } catch (e) {
+      console.log(
+        `  verdict NON transmis a ${dest} : ${String(e.message).split("\n")[0]}`,
+      );
+    }
+  }
+  try {
+    unlinkSync(fichier);
+  } catch {
+    /* déjà disparu — sans effet, le verdict est parti */
+  }
+  console.log(`VERDICT RENDU a ${destinataires.length} depot(s)`);
+}
+
 /** La fenêtre se referme dès le verdict rendu — elle expire seule, mais la laisser courir gèle des
  *  voisins pour rien. */
 function fermerLaFenetre() {
@@ -231,6 +290,8 @@ function fermerLaFenetre() {
 const debut = Date.now();
 let tours = 0;
 let demandeeA = null;
+let geles = [];
+let ouverteA = null;
 
 for (;;) {
   const ecritures = dernieresEcritures();
@@ -263,6 +324,8 @@ for (;;) {
       continue;
     }
     demandeeA = Date.now();
+    geles = prevenus;
+    ouverteA = new Date();
     console.log(
       `${hh(new Date())} — FENETRE OUVERTE a la tour, gel de ${prevenus.join(", ") || "personne (aucun voisin en chantier)"}` +
         ` : depart ${hh(depart)}, arrivee ${hh(arrivee)}`,
@@ -278,7 +341,10 @@ for (;;) {
       },
     );
     console.log(r);
-    console.log(`ARRIVEE : ${hh(new Date())}`);
+    const arrivee = new Date();
+    console.log(`ARRIVEE : ${hh(arrivee)}`);
+    const sortie = (r.match(/SORTIE:(\d+)/) ?? [, "?"])[1];
+    rendreLeVerdict(geles, ouverteA ?? depart, arrivee, sortie, r);
     fermerLaFenetre();
     break;
   }
