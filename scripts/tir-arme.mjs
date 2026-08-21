@@ -150,6 +150,22 @@ function demanderLaFenetre(ecritures) {
   const actifs = [...ecritures].map(([nom]) => nom.toLowerCase());
   if (actifs.length === 0) return [];
 
+  // ⛔ CE QUE JE LIS SE DÉCLARE, IL NE SE DEVINE PAS. Sans `--racines`, la tour refuse d'ouvrir dès
+  // qu'un dépôt gelé porte un fichier non enregistré N'IMPORTE OÙ — un backlog, une charte, un banc.
+  // Mesuré le 2026-08-21 : ma fenêtre est restée fermée trente minutes sur cinq fichiers dont AUCUN
+  // n'entrait sous une racine que mes bancs lisent. Le critère n'était pas faux, il était au mauvais
+  // niveau : « dépôt sale » là où il faut « racine lue sale ».
+  //
+  // LA LISTE EST DÉRIVÉE, comme celle des dépôts : c'est l'UNION des racines que les manifestes de
+  // mes onze voisins exposent. La tour ne peut pas la lire — elle ne sait ni où vit mon manifeste ni
+  // sous quelle forme — donc le DEMANDEUR déclare ce qu'il lit, exactement comme il déclare déjà
+  // disque ou commit publié (arbitrage de l'architecte, 2026-08-21).
+  const racinesLues = [
+    ...new Set(
+      voisinsLies(RACINE).flatMap((v) => [...(racinesExposees(v.depot) ?? [])]),
+    ),
+  ].sort();
+
   const motif =
     "campagne de portillon — mes bancs lisent vos sources vives ; une écriture sous vos racines " +
     "exposées pendant cette fenêtre invalide le verdict, pas seulement le mien";
@@ -159,7 +175,8 @@ function demanderLaFenetre(ecritures) {
       [
         "-c",
         `BP_AGENT=kanopi ~/dev/bp/hub/tour fenetre ouvrir kanopi --minutes ${FENETRE_MIN} ` +
-          `--depots ${actifs.join(",")} --motif ${JSON.stringify(motif)}`,
+          `--lit disque --depots ${actifs.join(",")} --racines ${racinesLues.join(",")} ` +
+          `--motif ${JSON.stringify(motif)}`,
       ],
       { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
     );
