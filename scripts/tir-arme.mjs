@@ -192,8 +192,17 @@ function demanderLaFenetre(ecritures) {
       { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
     );
   } catch (e) {
+    // ⛔ LA RAISON DU REFUS, PAS LA COMMANDE QUI A ÉCHOUÉ. `e.message` commence par « Command
+    // failed: » suivi de la ligne entière — motif compris — et noyait le seul mot qui compte : ce
+    // que la tour a répondu. Mesuré le 2026-08-21 sur cinq refus d'affilée, tous illisibles, et
+    // c'est exactement le grief que j'adresse aux refus des autres. La tour parle sur ses deux
+    // sorties ; on les prend toutes les deux.
+    const dit = [e.stderr, e.stdout]
+      .map((x) => String(x ?? "").trim())
+      .filter(Boolean)
+      .join(" · ");
     console.log(
-      `  la tour a refusé l'ouverture : ${String(e.message).split("\n")[0]}`,
+      `  la tour a refusé l'ouverture — ${dit || `aucune raison rendue (code ${e.status ?? "?"})`}`,
     );
     return null;
   }
