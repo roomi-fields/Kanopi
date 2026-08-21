@@ -215,7 +215,12 @@ for (;;) {
     }
   } else if (demandeeA === null) {
     const depart = new Date(Date.now() + GRACE_MS);
-    const arrivee = new Date(depart.getTime() + FENETRE_MIN * 60_000);
+    // ⛔ LA FIN DE FENÊTRE SE COMPTE DEPUIS L'OUVERTURE, PAS DEPUIS LE DÉPART. Mesuré le 2026-08-21 :
+    // j'annonçais 09:07 pendant que la tour affichait 09:05 pour la même fenêtre — deux heures pour
+    // une seule chose, et la mienne était fausse de la durée de la grâce. Ce n'est pas cosmétique :
+    // le voisin gelé se tient tranquille jusqu'à l'heure que je lui donne, donc je lui faisais
+    // perdre ce que j'ajoutais.
+    const arrivee = new Date(Date.now() + FENETRE_MIN * 60_000);
     const prevenus = demanderLaFenetre(ecritures);
     if (prevenus === null) {
       // La tour a refusé : on ne tire pas, et on ne réessaie pas en boucle serrée.
