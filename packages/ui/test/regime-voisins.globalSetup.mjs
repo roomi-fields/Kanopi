@@ -22,7 +22,9 @@
 import {
   mentionDeRegime,
   empreinteDuVoisin,
-  cequiABascule
+  cequiABascule,
+  racinesLuesParRegime,
+  voisinsLies
 } from '../../../scripts/lib/voisins-lies.mjs';
 
 const RACINE_ATELIER = new URL('../../..', import.meta.url).pathname;
@@ -37,7 +39,20 @@ export default function annoncerLeRegime() {
   // l'appelle : mesuré le 2026-08-20 en comptant les entrées — DEUX avec le fichier déclaré, UNE
   // sans. Le refus sortait donc en double, et deux erreurs pour un seul défaut font chercher deux
   // causes. Une seule voie, celle-ci.
-  globalThis.__kanopiReleveDesVoisins = empreinteDuVoisin(RACINE_ATELIER);
+  //
+  // ⛔ LE PÉRIMÈTRE SE MESURE, IL NE SE DÉDUIT PAS — et il se mesure ICI, une fois, pour que les
+  // deux relevés portent sur les MÊMES racines. Régime « bancs » : cette campagne tourne sur un
+  // serveur de développement (`playwright.config.ts`), et son vérificateur de types lit en plus
+  // les déclarations que le résolveur de Node n'ouvre jamais.
+  globalThis.__kanopiRacinesLues = racinesLuesParRegime(
+    RACINE_ATELIER,
+    voisinsLies(RACINE_ATELIER),
+    'bancs'
+  );
+  globalThis.__kanopiReleveDesVoisins = empreinteDuVoisin(
+    RACINE_ATELIER,
+    globalThis.__kanopiRacinesLues
+  );
   return verifierQueRienNaBascule;
 }
 
@@ -46,7 +61,11 @@ export function verifierQueRienNaBascule() {
   // une PROMESSE dont `.length` vaut `undefined` — le garde échouait donc à TOUS les coups, y
   // compris quand rien n'avait bougé. Un garde qui mord toujours ne garde rien : il se fait
   // désarmer à la première campagne honnête.
-  const bouges = cequiABascule(globalThis.__kanopiReleveDesVoisins, RACINE_ATELIER);
+  const bouges = cequiABascule(
+    globalThis.__kanopiReleveDesVoisins,
+    RACINE_ATELIER,
+    globalThis.__kanopiRacinesLues
+  );
   if (bouges.length === 0) return;
   throw new Error(
     'UN VOISIN A BASCULÉ PENDANT CETTE CAMPAGNE — le résultat porte sur deux états, donc sur aucun :\n' +

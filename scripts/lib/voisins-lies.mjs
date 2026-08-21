@@ -269,6 +269,17 @@ function sousArbre(base) {
 }
 
 /**
+ * UN BANC DU VOISIN N'ATTEINT AUCUNE DE SES PORTES — il vit sous une racine exposée sans que rien
+ * ne l'importe, et le publier ne le charge dans aucun de mes bancs. Le relever fait rougir ma
+ * campagne pour un fichier qu'elle n'ouvrira jamais : mesuré le 2026-08-21, deux `.test.ts` de
+ * Kairos ont invalidé quinze minutes de mesure. Borne posée sur arbitrage de l'architecte le même
+ * jour, avec la borne de régime ci-dessous.
+ */
+function estUnBancDuVoisin(cle) {
+  return /(^|\/)__tests__\//.test(cle) || /\.(test|spec)\.[cm]?[jt]sx?$/.test(cle);
+}
+
+/**
  * L'EMPREINTE de ce que chaque voisin EXPOSE, à un instant donné — le relevé qui se prend AVANT.
  *
  * ⛔ LE RELEVÉ SE FAIT AVANT, ET C'EST TOUT LE POINT. Un contrôle passé après la panne mesure le
@@ -310,8 +321,29 @@ function sousArbre(base) {
  * plus étroite que le mécanisme désigne la « correction » qui le casserait : l'aligner sur la
  * phrase lui ferait cesser de voir exactement ce qu'il venait d'attraper. Arbitrage de l'architecte
  * le 2026-08-20 : corriger la phrase, jamais le garde.
+ *
+ * ⛔ CETTE LARGEUR RESTE ENTIÈRE SOUS CHAQUE RACINE. Ce qui se borne, c'est l'ENSEMBLE DES RACINES,
+ * et il se borne à celles que la campagne LIT dans SON régime — `racinesLuesParRegime`. Un voisin
+ * publie deux instances : mes bancs ouvrent sa source (serveur de développement, la surface de
+ * pilotage `window.kanopi` est absente d'un build de production), ma construction de production
+ * ouvre son paquet. Relever les deux fait refuser une campagne de bancs parce qu'un paquet qu'elle
+ * n'a jamais chargé a été republié : mesuré le 2026-08-21, 245 fichiers de `dist` chez BPx pendant
+ * que mes 121 bancs lisaient son `src` — intact.
+ *
+ * LA DISTINCTION EXISTAIT DÉJÀ, ÉCRITE ET AFFICHÉE PAR MA LÉGENDE, ET ELLE N'ÉTAIT PAS BRANCHÉE.
+ * Ce n'est donc pas une exigence qu'on baisse, c'est un instrument qu'on recalibre sur une cause
+ * établie. Arbitrage de l'architecte du 2026-08-21, avec sa condition : éprouver que le garde mord
+ * encore sur une source vive lue par la campagne.
  */
-export function empreinteDuVoisin(racine) {
+export function empreinteDuVoisin(racine, racinesLues) {
+  if (!(racinesLues instanceof Map) || racinesLues.size === 0) {
+    throw new Error(
+      "RELEVÉ SANS PÉRIMÈTRE — `empreinteDuVoisin` exige les racines que la campagne LIT, rendues " +
+        "par `racinesLuesParRegime`. Sans elles il faudrait deviner un périmètre, et un périmètre " +
+        "deviné se trompe dans les deux sens : trop large il refuse pour ce qu'il ne lira jamais, " +
+        "trop étroit il laisse passer une source vive.",
+    );
+  }
   const empreinte = new Map();
   for (const v of voisinsLies(racine)) {
     // ⛔ LA CLÉ EST LE SPÉCIFICATEUR QUE JE DÉCLARE, pas le nom du dépôt derrière le lien. Mesuré :
@@ -319,12 +351,25 @@ export function empreinteDuVoisin(racine) {
     // constat devient « le voisin n'est plus lié du tout » — faux, il est lié ailleurs. Ce que je
     // suis, c'est la dépendance ; ce qu'elle désigne peut changer sous elle, et c'est le fait à voir.
     const nom = v.specificateurs[0];
+    const racines = racinesLues.get(nom);
+    if (!racines || racines.size === 0) {
+      throw new Error(
+        `PÉRIMÈTRE ABSENT POUR « ${nom} » — ce voisin est lié et la campagne ne sait pas ce ` +
+          "qu'elle lit chez lui. Le relever à vide reviendrait à le déclarer immobile sans " +
+          "l'avoir regardé, et c'est le seul verdict qu'un instrument en panne rend spontanément.",
+      );
+    }
     const { declarees } = portesDuVoisin(v);
     const marques = new Map();
 
     // Les portes d'abord, nommées telles quelles : ce sont elles que le refus « porte muette »
     // désigne, et une entrée déclarée qui ne répond pas doit se distinguer d'un fichier absent.
+    // ⛔ CELLES DE CE RÉGIME SEULEMENT : un manifeste déclare les cibles de TOUTES ses conditions,
+    // donc la porte de production d'un voisin figure dans `declarees` pendant qu'une campagne de
+    // bancs ouvre sa source. La relever ferait refuser une republication que la campagne n'a
+    // jamais lue.
     for (const cible of declarees) {
+      if (!racines.has(cible.replace(/^\.\//, "").split("/")[0])) continue;
       try {
         const st = statSync(join(v.chemin, cible));
         marques.set(cible, `${st.ino}:${st.mtimeMs}:${st.size}`);
@@ -333,14 +378,15 @@ export function empreinteDuVoisin(racine) {
       }
     }
 
-    // Puis TOUT ce que le voisin expose, en descendant chaque racine de son manifeste.
-    const racines = racinesExposees(v.depot);
-    for (const racine of racines ?? []) {
+    // Puis TOUT ce qui vit sous chaque racine LUE, en descendant. La largeur sous une racine reste
+    // entière — c'est elle qui a attrapé `parser.js` — seul l'ensemble des racines se borne.
+    for (const racine of racines) {
       const base = join(v.chemin, racine);
       if (!existsSync(base)) continue;
       for (const fichier of sousArbre(base)) {
         const cle = relative(v.chemin, fichier);
         if (marques.has(`./${cle}`)) continue; // déjà pris comme porte
+        if (estUnBancDuVoisin(cle)) continue;
         try {
           const st = statSync(fichier);
           marques.set(cle, `${st.ino}:${st.mtimeMs}:${st.size}`);
@@ -348,6 +394,12 @@ export function empreinteDuVoisin(racine) {
           marques.set(cle, "disparu");
         }
       }
+    }
+    if (marques.size === 0) {
+      throw new Error(
+        `RELEVÉ VIDE CHEZ « ${nom} » — aucune entrée sous ${[...racines].join(", ")}. Un relevé ` +
+          "qui n'a rien examiné rend le même verdict qu'un voisin parfaitement immobile.",
+      );
     }
     empreinte.set(nom, marques);
   }
@@ -360,7 +412,7 @@ export function empreinteDuVoisin(racine) {
  * Rend une liste vide quand rien n'a bougé — et JAMAIS un silence quand le relevé manque : un
  * relevé absent se distingue d'un relevé sans écart, et se traite comme un échec de mesure.
  */
-export function cequiABascule(avant, racine) {
+export function cequiABascule(avant, racine, racinesLues) {
   if (!(avant instanceof Map) || avant.size === 0) {
     throw new Error(
       "COMPARAISON IMPOSSIBLE — aucun relevé n'a été pris avant cette campagne. Sans lui, une " +
@@ -368,7 +420,9 @@ export function cequiABascule(avant, racine) {
         "états de voisin sans que rien ne le dise.",
     );
   }
-  const apres = empreinteDuVoisin(racine);
+  // ⛔ LE MÊME PÉRIMÈTRE DES DEUX CÔTÉS. Deux relevés pris sur des racines différentes rendraient
+  // « APPARU » et « RETIRÉ » sur des fichiers que personne n'a touchés.
+  const apres = empreinteDuVoisin(racine, racinesLues);
   const bouges = [];
   for (const [nom, marquesAvant] of avant) {
     const marquesApres = apres.get(nom);
@@ -430,6 +484,115 @@ function sousConditions(racine, conditions, script) {
       stdio: ["ignore", "pipe", "ignore"],
     }),
   );
+}
+
+/** Les conditions de résolution de chaque régime — celles que la campagne emploie RÉELLEMENT.
+ *  Les bancs tournent sur un serveur de développement (`playwright.config.ts`, la surface de
+ *  pilotage est absente d'un build de production) ; la construction de production emploie l'autre. */
+const CONDITIONS_DU_REGIME = {
+  bancs: ["browser", "development"],
+  production: ["browser", "production"],
+};
+
+/** Les sous-chemins qu'un voisin DÉCLARE : les CLÉS de son champ `exports`, plus le paquet nu.
+ *  Ce sont des demandes de résolution, pas des cibles — les cibles, elles, mélangent les régimes. */
+function sousCheminsDeclares(v) {
+  let manifeste;
+  try {
+    manifeste = JSON.parse(readFileSync(join(v.chemin, "package.json"), "utf8"));
+  } catch {
+    return ["."];
+  }
+  const exports = manifeste.exports;
+  const cles =
+    exports && typeof exports === "object" && !Array.isArray(exports)
+      ? Object.keys(exports).filter((c) => c.startsWith(".") && !c.includes("*"))
+      : [];
+  return cles.includes(".") ? cles : [".", ...cles];
+}
+
+/**
+ * LES RACINES QUE CETTE CAMPAGNE LIT CHEZ CHAQUE VOISIN — mesurées sur le RÉSOLVEUR, jamais
+ * déduites du manifeste.
+ *
+ * ⛔ UN MANIFESTE DÉCLARE LES CIBLES DE TOUTES SES CONDITIONS À LA FOIS. Lu à plat, il annonce
+ * `src` ET `dist` chez un voisin qui n'en sert qu'un seul à la campagne en cours. Seule la
+ * résolution sous les conditions du régime dit lequel s'ouvre, et c'est la même sonde que celle
+ * qui alimente la légende — un seul mécanisme, deux emplois.
+ *
+ * Chaque sous-chemin déclaré est demandé, pas seulement le paquet nu : un voisin sert des portes
+ * qui vivent sous des racines différentes, et n'en résoudre qu'une rendrait un périmètre partiel
+ * sans le dire.
+ */
+export function racinesLuesParRegime(racine, voisins, regime) {
+  const conditions = CONDITIONS_DU_REGIME[regime];
+  if (!conditions) {
+    throw new Error(
+      `RÉGIME INCONNU « ${regime} » — les régimes mesurés sont ${Object.keys(CONDITIONS_DU_REGIME).join(", ")}. ` +
+        "Un régime inventé rendrait un périmètre vide, et un périmètre vide passe pour un voisin immobile.",
+    );
+  }
+
+  const parSpec = new Map();
+  const aResoudre = [TEMOIN_DE_RESOLUTION];
+  for (const v of voisins) {
+    const spec = v.specificateurs[0];
+    const demandes = sousCheminsDeclares(v).map((c) =>
+      c === "." ? spec : `${spec}/${c.replace(/^\.\//, "")}`,
+    );
+    parSpec.set(spec, { v, demandes });
+    aResoudre.push(...demandes);
+  }
+
+  const resolus = sousConditions(
+    racine,
+    conditions,
+    `const out = {}; for (const s of ${JSON.stringify(aResoudre)}) {` +
+      ` try { out[s] = import.meta.resolve(s).replace("file://", ""); }` +
+      ` catch (e) { out[s] = null; } } console.log(JSON.stringify(out));`,
+  );
+
+  // Le témoin d'assiette : sans lui, une sonde en panne rendrait « aucune racine » partout, et
+  // « aucune racine » est exactement le résultat qui fait taire le garde sans le dire.
+  if (!resolus[TEMOIN_DE_RESOLUTION]) {
+    throw new Error(
+      `SONDE DE PÉRIMÈTRE INVALIDE — le témoin \`${TEMOIN_DE_RESOLUTION}\` ne se résout pas ` +
+        `depuis ${PARENT_APPLICATIF} sous les conditions ${conditions.join(" + ")}. Tout périmètre ` +
+        "rendu ici serait produit par sa propre panne.",
+    );
+  }
+
+  const racines = new Map();
+  for (const [spec, { v, demandes }] of parSpec) {
+    const set = new Set();
+    for (const d of demandes) {
+      const chemin = resolus[d];
+      if (!chemin) continue;
+      const rel = relative(v.chemin, chemin);
+      // Une porte qui sort de l'arbre du voisin ne dit rien de ce qu'il expose.
+      if (!rel || rel.startsWith("..")) continue;
+      set.add(rel.split("/")[0]);
+    }
+    // ⛔ LES DÉCLARATIONS DE TYPES NE SE RÉSOLVENT PAS PAR NODE, ET MA CAMPAGNE LES LIT. Mesuré à
+    // la pose : `runtime-codevoices` expose `dist-types`, que la sonde ne rend jamais — Node
+    // n'ouvre pas un `.d.ts`. Or `svelte-check` tourne DANS ma campagne et le lit. Sans cette
+    // clause, une republication de ses types pendant une campagne resterait invisible au garde
+    // pendant qu'elle change ce que le vérificateur mesure.
+    if (regime === "bancs") {
+      for (const cible of portesDuVoisin(v).declarees) {
+        if (cible.endsWith(".d.ts")) set.add(cible.replace(/^\.\//, "").split("/")[0]);
+      }
+    }
+    if (set.size === 0) {
+      throw new Error(
+        `AUCUNE PORTE RÉSOLUE CHEZ « ${spec} » sous ${conditions.join(" + ")} — ce voisin est lié ` +
+          "et la campagne ne saurait pas quoi surveiller chez lui. Un périmètre vide ne se " +
+          "distingue pas d'un voisin immobile.",
+      );
+    }
+    racines.set(spec, set);
+  }
+  return racines;
 }
 
 /**
