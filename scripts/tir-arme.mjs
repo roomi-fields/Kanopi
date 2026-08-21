@@ -166,17 +166,20 @@ function demanderLaFenetre(ecritures) {
     ),
   ].sort();
 
-  // ⛔ « AUCUNE POUSSÉE », PAS « AUCUNE ÉCRITURE ». Le mot d'avant a été lu de TROIS façons par TROIS
-  // voisins le 2026-08-21, et aucune n'était la mienne : « je pousse un commit déjà fait, je
-  // n'enregistre rien » — et le crochet crée neuf fichiers ; « j'inscris une dette au backlog » — et
-  // la commande écrit ; « j'ai lu n'enregistre pas en pensant ne publie pas, et j'ai continué à
-  // taper ». Trois lectures, un seul mot mal choisi : ce n'était plus de l'inattention, c'était ma
-  // formulation. Le commit, la poussée et la vérification lancée à la main sont TROIS GESTES POUR UN
-  // SEUL EFFET chez moi.
+  // ⛔ LE MOTIF NOMME LE CHEMIN, JAMAIS LE GESTE. Deux mots successifs ont échoué le 2026-08-21 :
+  // « aucune écriture » a été lu de trois façons par trois voisins, puis « ni commit, ni push, ni
+  // vérification » a nommé des gestes dont l'effet DIFFÈRE d'un voisin à l'autre. BPx l'a mesuré
+  // chez lui, dans les deux sens : sa poussée PUBLIE (pre-push → verify → gate:dist →
+  // check-dist-fresh → npm run build, dist basculé par renommage), et son commit ne construit rien.
+  // Un motif qui interdit « le commit » exige donc du vide chez lui, pendant qu'un motif qui
+  // n'interdirait que « la publication » laisserait passer sa poussée. Seul le voisin sait lequel de
+  // ses gestes touche mes chemins ; moi je sais quels chemins je lis. La tour publie les racines
+  // dans l'avis de gel depuis le 2026-08-21 — le gelé voit donc la borne que ce motif invoque.
   const motif =
-    "campagne de portillon — AUCUNE POUSSÉE pendant cette fenêtre : ni commit, ni push, ni " +
-    "vérification lancée à la main. Mes bancs lisent vos sources vives, et votre crochet écrit " +
-    "peut-être sous vos racines sans que vous l'appeliez une écriture";
+    "campagne de portillon — NE FAITES BASCULER AUCUN FICHIER SOUS LES RACINES QUE JE LIS, nommées " +
+    "dans cet avis. Le geste ne compte pas, le chemin compte : chez certains d'entre vous pousser " +
+    "PUBLIE et une vérification lancée à la main CONSTRUIT, chez d'autres le commit ne touche rien. " +
+    "Vous seul savez lequel de vos gestes bascule ces chemins ; le reste de votre arbre est libre";
   try {
     execFileSync(
       "bash",
