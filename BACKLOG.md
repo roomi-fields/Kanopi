@@ -505,3 +505,4 @@ Mesure du 2026-08-18, prise sur la base d'index et sur l'arbre de travail.
   Une recherche rend les fichiers vivants en chemin absolu et les morts en relatif — la
   résolution est refaite à chaque requête. Sur une source morte la résolution échoue
   toujours : tout sort en relatif, et le signe déclare tout le monde mort.
+- **KAN-65** `ouvert` [P3] — (2026-08-21) DEUX BANCS D'ECRAN INSTABLES, mesures sur trois campagnes — p5 (2 sur 3) rend litPixels=-1, le canvas n'existe pas encore : une ABSENCE, pas un pixel faux ; bp3-midi (2 sur 3) ne trouve pas le titre, la page n'avait pas fini de charger. Les deux sentent l'attente trop courte sous charge (7,9 a 12,9 sur 12 coeurs). ⛔ NE PAS ELARGIR L'ATTENTE : ce serait ajuster l'assertion a ce qui sort. La cause se mesure — attendre un ETAT, pas une duree.
