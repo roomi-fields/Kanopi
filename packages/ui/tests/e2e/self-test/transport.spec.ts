@@ -37,7 +37,7 @@ S -> C4 D4 E4 G4 C5 G4 E4 C4
 // Load the probe scene, focus its editor, and PRODUCE it (arm at rest) so the
 // Play button's replay edge re-evaluates it into a live Kronos Transport. bar.beat
 // has no idle metronome any more — it only moves when a real scene plays.
-async function loadAndArm(page: import('@playwright/test').Page) {
+async function loadAndArm(page: import('@playwright/test').Page, scene: string = PROBE_SCENE) {
   await page.evaluate((contents) => {
     const w = window as unknown as {
       __kanopi: {
@@ -53,7 +53,7 @@ async function loadAndArm(page: import('@playwright/test').Page) {
       [{ path: 'transport-probe.bps', contents }],
       'transport-probe.bps'
     );
-  }, PROBE_SCENE);
+  }, scene);
   await page.waitForFunction(() => {
     const w = window as unknown as { __kanopi?: { workspace: { files: { path: string }[] } } };
     return !!w.__kanopi?.workspace.files.find((f) => f.path === 'transport-probe.bps');
@@ -155,22 +155,99 @@ test('bar.beat counter advances within 3 seconds after Play at the effective tem
   noErrors();
 });
 
-// The BPM module in TransportCluster.svelte (lines 37-40) is a pure display:
-// `<div class="bpm-module"><span class="bpm-value">…</span></div>`. There is
-// no onclick handler, no input, no contenteditable affordance — clicking the
-// number does nothing in the current UI. The Inspector panel (right-panel)
-// renders bpm as a <dd> too, also read-only. Until an editable BPM widget
-// exists, this item cannot be automated without modifying app source (which
-// is outside this self-test layer's read-only scope).
-test.fixme('BPM widget reflects the effective tempo; clicking it and typing a new value updates the displayed tempo', async ({
+// ⛔ CE BANC ETAIT DESACTIVE SUR UNE RAISON PERIMEE, et il portait lui-meme les instructions de ce
+// qu'il devait verrouiller. Sa raison disait « no onclick handler, no input, no contenteditable
+// affordance — clicking the number does nothing ». Mesure du 2026-08-21 sur le composant :
+// TransportCluster.svelte:202 porte un `<input class="bpm-input">`, et :216-220 un
+// `<button class="bpm-value-btn" onclick={startEdit}>`. Le widget est editable depuis longtemps ; le
+// `fixme`, lui, est reste. Un banc endormi sur une prémisse qui a cessé d'etre vraie ne rougit
+// jamais et ne se represente jamais a l'esprit — il a la meme forme qu'un banc qui n'a rien a dire.
+//
+// Ce qu'il verrouille maintenant est ce que ses propres instructions demandaient, en deux moities.
+
+// Scene qui DECLARE son tempo. La graphie est `tempo:<n>` dans le bloc `core` — mesuree sur le banc
+// unitaire `tempo-declare.test.ts`, jamais devinee : un premier motif cherchant `@mm`/`@tempo` a rendu
+// ZERO sur les 329 scenes, et ce zero mesurait le motif, pas le corpus.
+const SCENE_A_60 = `core
+alphabet.western:audio
+tempo:60
+
+-----
+S -> C4 D4 E4 G4 C5 G4 E4 C4
+`;
+
+test('le BPM affiche le tempo DECLARE de la scene des le play, pas apres un tour', async ({
   page
 }) => {
+  const noErrors = expectNoConsoleErrors(page);
   await page.goto('');
-  // No editable BPM widget exists yet — see comment above. When one lands,
-  // this test should: assert ".bpm-value" reflects the EFFECTIVE tempo (the
-  // scene's `mm`, else the session tempo, else BPx's engine default — NOT a
-  // hardcoded host 128, which was removed), click into it, type "100", press
-  // Enter, and assert ".bpm-value" reads "100".
+  await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
+
+  // Rien de vivant : le readout n'invente aucun defaut d'hote — il montre un tiret.
+  await expect(page.locator('.bpm-value')).toHaveText('—');
+
+  await loadAndArm(page, SCENE_A_60);
+  await page.locator('.tbtn[title="Play"]').click();
+
+  // ⛔ ON ECHANTILLONNE, ON N'ATTEND PAS — ET C'EST TOUT LE SUJET (backlog TEMPO-START). Le defaut
+  // rapporte est « la scene demarre a 120 puis tombe a 60 apres un tour » : un tempo derive
+  // applique seulement a la couture de boucle. Un `toHaveText` avec delai ATTEND que le texte
+  // devienne 60 — il serait donc VERT sur un affichage qui passe par 120 avant de se corriger,
+  // c'est-a-dire vert exactement sur le defaut qu'il pretend verrouiller. Ecrit ainsi d'abord ici,
+  // et corrige avant d'en tirer la moindre conclusion : la premiere version affirmait dans son
+  // commentaire une precocite que son mecanisme n'avait pas.
+  //
+  // On releve donc TOUTE valeur affichee pendant un tour entier, et on juge sur l'ensemble.
+  const releve = await page.evaluate(async () => {
+    const vu = new Set<string>();
+    let prises = 0;
+    const fin = performance.now() + 2_500;
+    while (performance.now() < fin) {
+      const t = document.querySelector('.bpm-value')?.textContent?.trim();
+      prises++;
+      if (t) vu.add(t);
+      await new Promise((r) => setTimeout(r, 40));
+    }
+    return { vues: [...vu], prises };
+  });
+  const vues = releve.vues;
+
+  // ⛔ ANTI-VACUITE SUR LE NOMBRE DE PRISES, PAS SUR LES VALEURS DISTINCTES. Un ensemble non vide
+  // est satisfait par UN SEUL echantillon, et un seul echantillon ne peut pas voir une valeur
+  // transitoire — c'est-a-dire precisement ce que ce banc cherche. Une sonde compte ce qu'elle a
+  // examine et refuse d'avoir examine une fois.
+  expect(
+    releve.prises,
+    `la sonde n'a pris que ${releve.prises} echantillon(s) sur 2,5 s — trop peu pour voir une ` +
+      `valeur transitoire, donc son vert ne prouve rien`
+  ).toBeGreaterThan(20);
+  expect(vues.length, `aucune valeur relevee — la sonde n'a rien vu, elle ne prouve rien`).toBeGreaterThan(0);
+  const etrangeres = vues.filter((v) => !/^60\b/.test(v));
+  expect(
+    etrangeres,
+    `pendant le premier tour, le BPM a affiche ${JSON.stringify(vues)} — une valeur autre que le ` +
+      `tempo DECLARE (60) veut dire que la derivation n'est appliquee qu'a la couture de boucle`
+  ).toEqual([]);
+
+  await page.locator('.tbtn[title="Stop"]').click();
+  await page.keyboard.press('ControlOrMeta+Period');
+  await page.waitForTimeout(300);
+  noErrors();
+});
+
+test('cliquer le BPM, taper une valeur et valider met a jour l affichage', async ({ page }) => {
+  const noErrors = expectNoConsoleErrors(page);
+  await page.goto('');
+  await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
+
+  await page.locator('.bpm-value-btn').click();
+  const champ = page.locator('.bpm-input');
+  await expect(champ).toBeVisible();
+  await champ.fill('100');
+  await champ.press('Enter');
+
+  await expect(page.locator('.bpm-value')).toHaveText(/^100\b/);
+  noErrors();
 });
 
 test('TAP tempo: derived BPM matches the real click cadence', async ({ page }) => {
