@@ -26,6 +26,7 @@ import {
 } from "node:fs";
 import { relative } from "node:path";
 import { execFileSync } from "node:child_process";
+import { loadavg, cpus } from "node:os";
 import { join } from "node:path";
 
 /**
@@ -628,6 +629,37 @@ export function legendeDesVoisins(voisins, racine) {
  *   • un voisin dont l'ÉTAT n'est pas mesurable (hors git) — la campagne ne pourrait pas dire
  *     contre quoi elle a mesuré ce dépôt-là.
  */
+/**
+ * LA CHARGE DE LA MACHINE, EN TÊTE DE CAMPAGNE — parce qu'un verdict qui ne la porte pas n'est pas
+ * rejouable.
+ *
+ * ⛔ CE QUI L'A FAIT ÉCRIRE, ET C'EST UNE MESURE D'UN VOISIN, PAS UNE INTUITION. runtime-codevoices a
+ * relevé le 2026-08-21, sur ce poste : 15,7 de charge pour 12 cœurs, 25 processus de moteur, 45
+ * sessions d'agent vivantes — et SON portillon passait de 15,1 s au repos à 39 s sous charge, un
+ * FACTEUR QUATRE sur le même travail.
+ *
+ * CE QUE ÇA EXPLIQUE CHEZ MOI : mes bancs d'écran qui rougissent PAR ROTATION — jamais deux fois le
+ * même, jamais deux fois de suite. Un banc qui attend qu'un moteur audio démarre dans une fenêtre
+ * FIXE échoue par tirage quand le poste est à ce régime, et le tirage change à chaque passage. La
+ * rotation ne mesure aucune régression : ELLE MESURE LE POSTE.
+ *
+ * Sa doctrine, reprise telle quelle : c'est la même que le régime de lecture. Un verdict qui ne dit
+ * pas CONTRE QUEL ÉTAT il a été pris ne se rejoue pas ; un verdict qui ne dit pas SOUS QUELLE CHARGE
+ * non plus. La ligne ne corrige aucun instable — elle les rend LISIBLES au lieu de mystérieux.
+ */
+function mentionDeCharge() {
+  const [m1, m5, m15] = loadavg();
+  const coeurs = cpus().length;
+  const tendu =
+    m15 > coeurs
+      ? "  ⚠ POSTE EN SURCHARGE — un instable d'écran ici mesure la machine"
+      : "";
+  return (
+    `• charge du poste : ${m1.toFixed(1)} / ${m5.toFixed(1)} / ${m15.toFixed(1)} ` +
+    `sur ${coeurs} cœurs (1/5/15 min)${tendu}\n`
+  );
+}
+
 export function mentionDeRegime(racine) {
   const voisins = voisinsLies(racine);
   if (voisins.length === 0) {
@@ -671,6 +703,7 @@ export function mentionDeRegime(racine) {
   }
 
   return (
+    mentionDeCharge() +
     "• voisins lus VIVANTS — l'état sur lequel cette campagne mesure :\n" +
     legendeDesVoisins(voisins, racine)
       .map((l) => `    ${l}`)
