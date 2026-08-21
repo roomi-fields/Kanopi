@@ -8,7 +8,7 @@ tempo:400   // horloge du natif -se.koto3 : periode 150 ms par temps, soit 400 B
 // checkBT.bps — Traduit de bp3-engine/test-data/-gr.checkBT (Bernard).
 // L'original référence l'alphabet abc1 (`-ho.abc1`, symboles a..h mono-caractère) :
 // la déclaration manquait à la traduction (drop silencieux du porteur, corrigé b309e22).
-test_alphabets.abc1
+alphabet.abc1
 
 -----
 S -> a' a' c' b

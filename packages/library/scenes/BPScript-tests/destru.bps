@@ -12,7 +12,7 @@ maxitems:20   // MaxItemsProduce=20 dans le reglage natif : le moteur s'arrete
 tempo:120   // horloge du natif -se.tryDESTRU : periode 500 ms par temps, soit 120 BPM.
              // Sans elle BPx tombe sur son defaut 60 BPM et toutes les durees derivent.
              // La Voie B est autosuffisante : l'horloge vit dans la scene, pas dans un -se BP3.
-test_alphabets.abc:midi
+alphabet.abc:midi
 
 // --- Sous-grammaire 1 mode:rnd — génération de structure ---
 

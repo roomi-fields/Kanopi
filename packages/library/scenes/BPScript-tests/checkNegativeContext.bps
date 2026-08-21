@@ -11,7 +11,7 @@
 // groupes de contexte. Pour un seul symbole, #X est suffisant (comme BP3).
 
 core
-test_alphabets.structural
+alphabet.structural
 
 // Tous les symboles ici sont des non-terminaux sauf dans le résultat final.
 // Le résultat "A A A A2 A3 A1" contient des terminaux qui ne sont pas

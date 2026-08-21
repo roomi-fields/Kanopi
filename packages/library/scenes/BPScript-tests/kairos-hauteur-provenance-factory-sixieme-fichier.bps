@@ -5,7 +5,7 @@
 // composition résout un alphabet abstrait (symboles sans hauteur) depuis ce fichier.
 
 core
-test_alphabets.abc
+alphabet.abc
 
 -----
 S -> a b

@@ -3,7 +3,7 @@
 // Traduit de bp3-engine/test-data/-gr.tryAllItems0
 
 core
-test_alphabets.abc
+alphabet.abc
 allitems
 maxitems:500
 

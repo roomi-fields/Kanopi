@@ -11,7 +11,7 @@
 // par l'alphabet qu'elle mesure : ici c'est le DÉFAUT qui absorbait le témoin.
 
 core
-tunings.western_just
+tuning.western_just
 
 -----
 S -> C4 D4

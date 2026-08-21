@@ -12,7 +12,7 @@
 // Les vitesses `/N` de l'original s'écrivent `! (/N)` dans le flux.
 
 core
-test_alphabets.abc
+alphabet.abc
 maxitems:25
 quantization:1
 striated

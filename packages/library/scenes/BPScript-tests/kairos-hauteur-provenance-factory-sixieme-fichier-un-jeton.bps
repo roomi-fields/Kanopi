@@ -5,7 +5,7 @@
 // l'hôte, ou quand il est injecté SANS champ 'domain' déclaré.
 
 core
-test_alphabets.abc
+alphabet.abc
 
 -----
 S -> a

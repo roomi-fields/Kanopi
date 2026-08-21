@@ -5,7 +5,7 @@
 // la limite elle-même — un alphabet ou un tempérament peut se nommer 12TET, 24TET.
 
 core
-temperaments.12TET
+temperament.12TET
 
 -----
 S -> C4

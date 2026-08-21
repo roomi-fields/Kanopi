@@ -24,7 +24,7 @@
 // Détail : docs/spec/LANGUAGE.md de BPscript, section « #X n'est PAS une garde ».
 
 core
-test_alphabets.structural
+alphabet.structural
 
 // Tous les symboles ici sont des non-terminaux sauf dans le résultat final.
 // Le résultat "A A A A2 A3 A1" contient des terminaux qui ne sont pas
