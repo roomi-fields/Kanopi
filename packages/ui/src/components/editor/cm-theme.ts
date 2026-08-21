@@ -159,7 +159,7 @@ export const kanopiGlobalStyles = EditorView.baseTheme({
     margin: '0'
   },
   // `.bps` library-vocabulary words (controls, values, functions, catalog
-  // entries, address keys, modulation inputs), set by the bps-libword overlay.
+  // entries, address keys), set by the bps-libword overlay.
   // `--sc` (blue) is the palette's "callable" colour — library vocabulary is
   // property/function-like — and is otherwise unused in `.bps` (whose flat
   // grammar emits no propertyName/function tags), so it reads distinct from

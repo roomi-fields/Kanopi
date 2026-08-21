@@ -11,10 +11,10 @@ import { describeVocabulary } from 'bpscript/src/transpiler/index.js';
 
 // A DECORATION overlay for `.bps`: it re-colours the words that belong to the
 // language's LIBRARY vocabulary (controls, values, digital functions, catalog
-// entries, address keys, modulation inputs) so they read distinctly from bare
-// note terminals (`C4`, `Sa`, …). BPScript's Lezer grammar is a FLAT tokenizer —
-// every bare identifier lands on the same `Symbol` → `variableName` token — so it
-// cannot tell `cutoff` (a library word) from `C4` (a note). We do NOT touch that
+// entries, address keys) so they read distinctly from bare note terminals (`C4`,
+// `Sa`, …). BPScript's Lezer grammar is a FLAT tokenizer — every bare identifier
+// lands on the same `Symbol` → `variableName` token — so it cannot tell `volume`
+// (a library word) from `C4` (a note). We do NOT touch that
 // upstream grammar; we lay a thin overlay on top of it, driven by the SAME living
 // authority the autocompletion/hover use (`describeVocabulary()`).
 //
@@ -32,7 +32,6 @@ const LIB_WORDS: Set<string> = (() => {
   for (const f of vocab.functions) set.add(f);
   for (const entries of Object.values(vocab.components)) for (const e of entries) set.add(e);
   for (const k of vocab.addressKeys) set.add(k);
-  for (const m of vocab.modulationInputs) set.add(m);
   return set;
 })();
 

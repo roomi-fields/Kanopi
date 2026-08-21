@@ -18,7 +18,7 @@ import {
 //     `octaves.`, and the CV / control-point union inside `( … )`;
 //   - a linter that underlines transpiler errors (unchanged, transpiler-driven);
 //   - hover tooltips (metadata + description) for directives, catalog entries,
-//     controls, values, functions, address keys and modulation inputs.
+//     controls, values, functions and address keys.
 // We don't reinvent the vocabulary — we render the authority's answer.
 
 // Queried ONCE at module load, like the old static import. Covers the COMPLETE
@@ -89,7 +89,7 @@ const DEFAULT_COMPLETIONS: Completion[] = [
 ];
 
 // Inside `( … )` — a control point / CV target — the FULL union: controls,
-// overridable values, digital functions, address keys, modulation inputs.
+// overridable values, digital functions, address keys.
 // Deduped by label (a name may live in two categories).
 const PAREN_COMPLETIONS: Completion[] = (() => {
   const seen = new Set<string>();
@@ -105,8 +105,6 @@ const PAREN_COMPLETIONS: Completion[] = (() => {
     push({ label: v.name, type: 'variable', detail: 'value', info: valueInfo(v) });
   for (const f of vocab.functions) push({ label: f, type: 'function', detail: 'function' });
   for (const k of vocab.addressKeys) push({ label: k, type: 'property', detail: 'address' });
-  for (const m of vocab.modulationInputs)
-    push({ label: m, type: 'variable', detail: 'modulation input' });
   return out;
 })();
 
@@ -245,7 +243,7 @@ export const bpscriptLinter = linter(
 // ---- Hover tooltips (metadata + description from the authority) -------------
 // The first regex match that spans the hovered column wins: an invocation
 // (with optional `.catalogEntry`) first, then any bare vocabulary word (control,
-// value, function, address key, modulation input) resolved against the authority.
+// value, function, address key) resolved against the authority.
 function findTokenAt(lineText: string, col: number, re: RegExp): RegExpExecArray | null {
   re.lastIndex = 0;
   let m: RegExpExecArray | null;
@@ -267,7 +265,6 @@ const CONTROL_BY_NAME = new Map(vocab.controls.map((c) => [c.name, c]));
 const VALUE_BY_NAME = new Map(vocab.values.map((v) => [v.name, v]));
 const FUNCTION_SET = new Set(vocab.functions);
 const ADDRESS_SET = new Set(vocab.addressKeys);
-const MODINPUT_SET = new Set(vocab.modulationInputs);
 
 /** Resolve a bare word against the vocabulary, richest category first. */
 function vocabWordHover(word: string): HoverHit | null {
@@ -280,7 +277,6 @@ function vocabWordHover(word: string): HoverHit | null {
   if (v) return { title: v.name, desc: valueInfo(v) };
   if (FUNCTION_SET.has(word)) return { title: word, desc: 'Digital function' };
   if (ADDRESS_SET.has(word)) return { title: word, desc: 'Address key' };
-  if (MODINPUT_SET.has(word)) return { title: word, desc: 'Modulation input' };
   return null;
 }
 
@@ -307,7 +303,7 @@ function hoverHitAt(lineText: string, col: number): HoverHit | null {
     const s = vocab.syntaxWords[op[1]];
     if (s) return { title: op[1], syntax: s.syntax, desc: s.description };
   }
-  // A bare vocabulary word (control / value / function / address / modulation),
+  // A bare vocabulary word (control / value / function / address),
   // else a fixed syntax keyword (gate / trigger / cv / lambda).
   const w = findTokenAt(lineText, col, /[A-Za-z][\w-]*/g);
   if (w) {

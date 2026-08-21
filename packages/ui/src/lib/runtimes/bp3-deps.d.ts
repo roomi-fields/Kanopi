@@ -202,7 +202,6 @@ export interface Vocabulary {
   /** Catalog entries per axis (`alphabet`, `tuning`, `octaves`). */
   components: Record<string, string[]>;
   addressKeys: string[];
-  modulationInputs: string[];
   /** Allowed values per directive (`mode` → ord/random/…), for `@dir:` completion. */
   directiveValues: Record<
     string,
