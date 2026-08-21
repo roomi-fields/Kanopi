@@ -65,8 +65,42 @@ TS="$(date +%Y%m%d-%H%M%S)"
 # L'artefact public/docs est git-ignoré ; c'est CETTE étape qui le (re)produit à chaque déploiement.
 # prod : OBLIGATOIRE (on ne publie pas sans la doc). local : best-effort (le banc de test
 # n'a pas besoin de la doc ; absente → avertir et continuer).
+# ⚠️ ET ICI AUSSI, PAS SEULEMENT AU PUSH : ce script construit et déploie sans qu'aucun git
+# n'intervienne. Un déploiement lancé à la main pendant la fenêtre d'un voisin lirait ses sources en
+# plein chantier, et le crochet de poussée ne le verrait jamais passer.
+bash ~/dev/bp/hub/tools/garde-fenetre.sh || exit 1
+
 echo ">> [0/6] Build doc utilisateur (MkDocs) → packages/ui/public/docs"
 DOC_SRC="$REPO_ROOT/../atlas/doc-utilisateur"
+
+# ⛔ MKDOCS LIT L'ARBRE DE TRAVAIL D'ATLAS, PAS UN COMMIT. Mesuré par Atlas le 2026-08-21, témoin
+# vivant à l'appui : une page jamais enregistrée (état `??` chez git) ressort dans le site construit,
+# en page ET dans son index de recherche. Aucun git n'intervient — ni son commit, ni sa poussée, ni
+# son portillon. Une page à moitié réécrite partait donc en production sans que rien ne rougisse.
+#
+# ⚠️ ET IL EST INVISIBLE À TOUT LE RESTE DE MON OUTILLAGE : mon relevé de voisins est bâti sur les
+# LIENS SYMBOLIQUES de node_modules, et atlas est consommé par CHEMIN. Il n'est dans aucun des onze,
+# donc ni ma légende, ni mon garde de bascule, ni ma fenêtre de mesure ne le connaissent. Ce refus-ci
+# ne couvre que la publication ; le reste est au backlog.
+#
+# La règle est celle que j'applique déjà aux onze : je ne pars pas en production sur du non-enregistré
+# QUI ENTRE DANS MON PAQUET. Sa doc entre dans mon paquet (`public/docs` → `dist/docs`), donc elle y
+# tombe. Sa charte le dit désormais aussi (atlas f87b2d3).
+if [[ -d "$DOC_SRC" ]]; then
+  DOC_SALE="$(git -C "$DOC_SRC" status --porcelain -- . 2>/dev/null | head -20)"
+  if [[ -n "$DOC_SALE" ]]; then
+    DOC_N="$(git -C "$DOC_SRC" status --porcelain -- . 2>/dev/null | wc -l)"
+    if [[ "$TARGET" == "prod" ]]; then
+      echo "ERREUR : la doc d'atlas porte $DOC_N modification(s) non enregistrée(s) — elles" >&2
+      echo "         PARTIRAIENT en production, et rien ne les signalerait ensuite :" >&2
+      printf '%s\n' "$DOC_SALE" | sed 's/^/           /' >&2
+      echo "         Demande-lui d'enregistrer, ou déploie en local." >&2
+      exit 1
+    fi
+    echo "   (local) la doc d'atlas porte $DOC_N modification(s) non enregistrée(s) — embarquées telles quelles" >&2
+  fi
+fi
+
 if [[ -x "$DOC_SRC/.venv/bin/mkdocs" ]]; then
   ( cd "$DOC_SRC" && ./.venv/bin/mkdocs build -d "$UI_DIR/public/docs" )
 elif [[ "$TARGET" == "prod" ]]; then

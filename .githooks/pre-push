@@ -2,6 +2,11 @@
 # Portillon de conformité (install-gate.sh). Bloque le push si la garde mord.
 set -e
 cd "$(git rev-parse --show-toplevel)"
+# ⛔ LE GEL DE LA TOUR FERME SA PORTE, PAS CELLE DE GIT. Un voisin qui mesure sur ce dépôt n'a rien
+# pour m'arrêter : seule une relecture de courrier mordrait, et c'est précisément ce qu'on saute.
+# Garde partagé, posé par BPx et généralisé par l'architecte le 2026-08-21 — il ne lit que le champ
+# des dépôts (jamais le motif, texte libre) et laisse passer si la tour est injoignable.
+bash ~/dev/bp/hub/tools/garde-fenetre.sh || exit 1
 export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" >/dev/null 2>&1
 maj=$(node -v 2>/dev/null | sed "s/v\([0-9]*\).*/\1/")
 if [ "${maj:-0}" -lt 20 ]; then nvm use 20 >/dev/null 2>&1 || nvm use 22 >/dev/null 2>&1; fi
