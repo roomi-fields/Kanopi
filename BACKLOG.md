@@ -254,6 +254,33 @@ Réf : `kronos/docs/EX4_BRANCHEMENT.md`, `kronos/docs/CHARTER.md`,
 - **AUDIO-PROOF** `fait` [P1] — Garde-fou : test navigateur DANS LE GATE qui mesure du son reel (RMS>0) pour chaque voix de code + rouge sur vraie erreur d exec ; fin des preuves statiques _(fait: RMS>0 gm mesure VERT dans le gate (8dcb63e, audio-proof.spec test #26, seuil 0.001) + chip rouge sync #29)_
 - **XEN-SCENE-FIX** `fait` [P1] — xen muet : scene 07-xen utilise identifiant invalide i(...) ; corps corrige fourni par runtime-codevoices (mini-notation reifiee) ; appliquer + prouver RMS>0 _(fait: xen SONNE, RMS>0 vert gate (a325f50, audio-proof #27) ; corpus rc aligne 6a2542e)_
 - **TEMPO-START** `ouvert` [P1] — Bug tempo (regression) : scene demarre a 120 puis 60 apres un tour ; tempo derive non applique au play, seulement a la couture ; barre rebascule sur tempo effectif
+  _(NON REPRODUIT sur l'AFFICHAGE, mesure du 2026-08-21 — note prise a l'arret d'un item ouvert sur
+  une consigne annulee ; l'architecte clot, pas moi.)_
+  - **Mesure** : scene `core / alphabet.western:audio / tempo:60`, produite puis jouee a l'ecran.
+    Le BPM affiche est ECHANTILLONNE pendant tout le premier tour — 2,5 s, plus de 20 prises. Ensemble
+    des valeurs distinctes vues : `["60.0"]`. Une seule valeur, des le play. Le « 120 puis 60 » du
+    titre ne se produit pas.
+  - **Cause probable, deja reparee** : `tempo-declare.test.ts` porte la mesure du 2026-08-10 —
+    `mmFromAst` rendait TOUJOURS `undefined` du 2026-07-09 au 2026-08-10, et son appelant lisait cette
+    absence comme « la scene ne declare rien, applique le tempo de session ».
+  - **⛔ CE QUE LA MESURE NE COUVRE PAS** : elle porte sur l'AFFICHAGE, pas sur le SON — un affichage
+    juste sur un son au mauvais tempo resterait invisible. Et la troisieme moitie du titre, « barre
+    rebascule sur tempo effectif », n'est pas couverte du tout.
+  - **Ce qui a surpris, et qui valait le detour** : le banc qui aurait verrouille ce sujet DORMAIT,
+    `fixme`, sur une raison PERIMEE — « no onclick handler, no input, no contenteditable affordance ».
+    Le widget est editable depuis longtemps (`TransportCluster.svelte:202` porte un `<input>`, :216-220
+    un bouton `onclick={startEdit}`). Un banc endormi sur une premisse qui a cesse d'etre vraie a
+    exactement la forme d'un banc qui n'a rien a dire. Reveille en 2121047, morsure prouvee.
+  - **Piege d'instrument, a ne pas refaire** : ecrit d'abord avec `toHaveText(/^60/, {timeout:3000})`
+    sous un commentaire disant « la mesure est prise tot ». Un `toHaveText` avec delai ATTEND que le
+    texte devienne 60 — vert sur un affichage qui passe par 120 avant de se corriger, donc vert
+    exactement sur le defaut vise. L'anti-vacuite porte sur le NOMBRE DE PRISES, pas sur les valeurs
+    distinctes : un ensemble non vide est satisfait par UN echantillon, et un echantillon ne peut pas
+    voir une valeur transitoire.
+  - **Graphie** : `tempo:<n>` dans le bloc `core`. Un motif cherchant `@mm`/`@tempo` rend ZERO sur les
+    329 scenes — ce zero mesure le motif, pas le corpus.
+  - **Ou je m'arrete** : le verrou d'affichage est pose et vert. Manque, pour trancher : une mesure
+    SONORE du tempo au premier tour, et le sujet de la barre.
 - **PILL-VOIX** `fait` [P2] — Bandeau 'strudel ready' s affiche pour toutes les voix (StrudelStatusPill cable en dur) — rendre conscient de la voix active  _(fait: Confirme par Kanopi sur sa propre mesure, par symbole (contre-mesure du 2026-08-14))_
 - **KAN-GRAMMAIRES-SCENES** `ouvert` — Exposer les grammaires Bernard actives manquantes comme scènes bp3 : 15/42 couvertes (.gr), ~27 non exposées (trygraphics, dhati2/3, look-and-say, tryshruti, vina/vina2, koto3, visser.waves…). Mécanique de portage connue (~1j + validation son par lots) ; certaines exigent des features (csound objects, graphics) à vérifier une à une. EN ATTENTE GO ROMAIN (décision produit) _(POINT DE REPRISE, mesuré le 2026-08-14 : l'énoncé « 15/42 couvertes, ~27 non exposées » est PÉRIMÉ. Le corpus est couvert — 113 grammaires exposées dans scenes/BP3-tests/, 93 marquées produites dans la table de correspondance. Ce qui reste est la VITRINE : scenes/bp3/ en porte 14, retenues en phase B sur le critère iso-prouvée ET qui joue. PROCHAINE ACTION : décider quelles grammaires au-delà des 14 entrent en vitrine — décision PRODUIT de Romain, pas une mécanique de portage. ELLE ATTEND : ce GO. Aucune dépendance avec le chantier des entrées.)_
 - **KAN-AUD-F1** `ouvert` [P1] — AUDIT-K F1 [P1] : docs cloud — double persistance locale/cloud SANS réconciliation (snapshot embarque workspace.files entier ; openInEditor ouvre la copie locale sans comparer updatedAt ; file d'écriture mémoire-seule → perte au reload ; chip 'enregistré' mensongère). Violation kanopi-storage.md:115-119. RISQUE PERTE DONNÉES UTILISATEUR
