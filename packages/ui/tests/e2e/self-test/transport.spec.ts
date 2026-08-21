@@ -221,7 +221,10 @@ test('le BPM affiche le tempo DECLARE de la scene des le play, pas apres un tour
     `la sonde n'a pris que ${releve.prises} echantillon(s) sur 2,5 s — trop peu pour voir une ` +
       `valeur transitoire, donc son vert ne prouve rien`
   ).toBeGreaterThan(20);
-  expect(vues.length, `aucune valeur relevee — la sonde n'a rien vu, elle ne prouve rien`).toBeGreaterThan(0);
+  expect(
+    vues.length,
+    `aucune valeur relevee — la sonde n'a rien vu, elle ne prouve rien`
+  ).toBeGreaterThan(0);
   const etrangeres = vues.filter((v) => !/^60\b/.test(v));
   expect(
     etrangeres,
