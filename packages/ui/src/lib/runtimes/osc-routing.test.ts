@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 // Browser entry (browser-safe surface), same as `kronos-audio` consumes it —
 // avoids the default barrel's Node-only `DeviceLibrary`/`UdpTransport`.
 import { OscAdapter, OscBridgeProfile } from 'runtime-osc/browser';
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { sceneQuiPasse } from '../library/scene-de-banc';
 import { createSession } from 'bpx';
 import { Kairos } from '@kairos/core';
 import type { TimelineEvent } from '@kronos/core';
@@ -127,7 +127,7 @@ describe('OSC address-in-the-tree (consumed bpscript/bpx copies — stale-dep gu
   const osc = `actor bass out.osc(device:bridge1, ch:5)\n-----\nS -> bass.C4 bass.E4`;
 
   it('the actor→output table carries `{runtime:osc, params:{device, ch}}` (OSC enumeration)', () => {
-    const ast = compileToBPxAST(osc, { tempo: 120 }).ast;
+    const ast = sceneQuiPasse(osc, { tempo: 120 });
     const tree = createSession(ast!, { seed: 1 }).derive().tree as {
       metadata?: { actors?: Record<string, unknown> };
     };
@@ -142,7 +142,7 @@ describe('OSC address-in-the-tree (consumed bpscript/bpx copies — stale-dep gu
   });
 
   it('every OSC event carries `output={runtime:osc, device, channel}` (per-event routing)', () => {
-    const ast = compileToBPxAST(osc, { tempo: 120 }).ast;
+    const ast = sceneQuiPasse(osc, { tempo: 120 });
     const session = createSession(ast!, { seed: 1 });
     const tree = session.derive().tree;
     const kairos = new Kairos();

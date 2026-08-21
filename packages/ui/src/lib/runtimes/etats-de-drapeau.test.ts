@@ -13,7 +13,7 @@
 // rien. Le défaut n'a été trouvé que parce qu'un voisin l'a signalé, trois jours après le
 // changement en amont. Un banc qui exerce ce chemin l'aurait dit le jour même — c'est ce banc.
 import { describe, it, expect } from 'vitest';
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { sceneQuiPasse } from '../library/scene-de-banc';
 import { flagStatesFromAst } from './bpx-adapter';
 
 // Même route que le garde de corpus (`library/corpus-compile.test.ts:60`) : le bundler lit le
@@ -31,12 +31,8 @@ describe('lecture des états nommés d’un drapeau (ast.vars, pas ast.directive
   });
 
   it('le drapeau `section` de starter-main.bps expose ses trois états nommés', () => {
-    const { ast, errors } = compileToBPxAST(STARTER_MAIN) as {
-      ast: unknown;
-      errors: { message: string }[];
-    };
-    expect(errors, `compile en erreur : ${errors.map((e) => e.message).join('; ')}`).toEqual([]);
-    expect(ast, 'AST nul après compilation sans erreur').toBeTruthy();
+    // La porte porte les deux contrôles qui vivaient ici : `errors` vide ET arbre présent.
+    const ast = sceneQuiPasse(STARTER_MAIN);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const flagStates = flagStatesFromAst(ast as any);
@@ -59,11 +55,7 @@ describe('lecture des états nommés d’un drapeau (ast.vars, pas ast.directive
     // `signal lfo` : même famille de nœud (`VarDirective`) que le drapeau, type différent.
     // Si le filtre `varType.kind === 'flag'` ne filtrait rien, ce nom polluerait la table.
     const source = `actor drums eval.strudel\nsignal lfo\nflag section(intro:1, drop:2)\n-----\n[section==intro] S -> drums_r\ndrums_r -> drums.\`s("bd")\`\n`;
-    const { ast, errors } = compileToBPxAST(source) as {
-      ast: unknown;
-      errors: { message: string }[];
-    };
-    expect(errors, `compile en erreur : ${errors.map((e) => e.message).join('; ')}`).toEqual([]);
+    const ast = sceneQuiPasse(source);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const flagStates = flagStatesFromAst(ast as any);

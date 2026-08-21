@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createBPx } from 'bpx';
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { sceneQuiPasse } from '../library/scene-de-banc';
 import { effectiveTempoBpm } from './bpx-adapter';
 
 // KAN-C20 — the host's invented tempo default (the « 128 ») is gone from the
@@ -20,7 +20,7 @@ S -> C4 D4 E4
 `;
 
 function deriveMetaTempo(tempo: number | undefined): number | undefined {
-  const ast = (compileToBPxAST(SCENE_NO_MM) as { ast: unknown; errors: unknown[] }).ast;
+  const ast = sceneQuiPasse(SCENE_NO_MM);
   const bpx = createBPx(tempo === undefined ? {} : { tempo });
   bpx.loadGrammar(ast as never);
   const derived = bpx.derive();
@@ -50,7 +50,7 @@ describe('KAN-C20 — host « 128 » default removed from the derivation seed', 
   });
 
   it('effectiveTempoBpm on a no-mm derivation reads the engine default (60), not 128', () => {
-    const ast = (compileToBPxAST(SCENE_NO_MM) as { ast: unknown }).ast;
+    const ast = sceneQuiPasse(SCENE_NO_MM);
     // Reproduce the adapter's no-mm / no-user-tempo path: createBPx WITHOUT a tempo.
     const bpx = createBPx({});
     bpx.loadGrammar(ast as never);

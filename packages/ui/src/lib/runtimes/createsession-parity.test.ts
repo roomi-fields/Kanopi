@@ -11,7 +11,7 @@
 // divergence. If IDENTICAL, the flip in `bpx-adapter.ts` is proven safe.
 
 import { describe, it, expect } from 'vitest';
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { sceneQuiPasse } from '../library/scene-de-banc';
 import { createBPx, createSession, type SessionOptions } from 'bpx';
 import type { TimedToken } from 'bpx';
 
@@ -116,44 +116,14 @@ function viewTok(t: TimedToken): TokView {
   };
 }
 
-/**
- * L'ARBRE, ET SEULEMENT SI LA COMPILATION A RÉUSSI.
- *
- * ⛔ CE BANC A COMPARÉ DEUX ARBRES ISSUS D'UNE COMPILATION REFUSÉE. Mesuré le 2026-08-20 : sa scène
- * arabe écrivait `tuning.maqam_rast`, or `maqam_rast` est une GAMME — le catalogue des accordages
- * ne l'a jamais porté, et le compilateur répondait « tuning 'maqam_rast' introuvable ». Les deux
- * chemins prenaient `.ast` sans regarder `errors` : ils étaient identiques, donc verts, et le sujet
- * du banc — la parité sur un alphabet NON ANGLAIS avec son accordage — avait disparu.
- *
- * CE QUI ÉTABLIT LE SUCCÈS EST L'ABSENCE D'ERREUR, JAMAIS LA PRÉSENCE D'UN ARBRE (décision de
- * Romain, 2026-08-19). Cette porte tient les deux moitiés : elle refuse sur `errors`, et elle refuse
- * aussi un arbre absent — le compilateur cessera de le rendre quand il refuse, et ce banc doit alors
- * échouer en DISANT POURQUOI plutôt que sur un accès à `null`.
- */
-function arbreDe(src: string, cfg: HostConfig): unknown {
-  const r = compileToBPxAST(src, cfg.tempo != null ? { tempo: cfg.tempo } : undefined) as {
-    ast: unknown;
-    errors?: Array<{ message?: string }>;
-  };
-  const erreurs = r.errors ?? [];
-  if (erreurs.length > 0) {
-    throw new Error(
-      `LA SOURCE DE CE BANC EST REFUSÉE — la parité porterait sur un arbre que le compilateur ` +
-        `rejette : ${erreurs.map((e) => e.message ?? String(e)).join(' | ')}`
-    );
-  }
-  if (r.ast == null) {
-    throw new Error(
-      'COMPILATION SANS ERREUR ET SANS ARBRE — la porte a changé de contrat ; ce banc ne peut ' +
-        'comparer que ce qui existe.'
-    );
-  }
-  return r.ast;
-}
+// ⛔ LA PORTE LOCALE QUI VIVAIT ICI EST PARTIE DANS `lib/library/scene-de-banc.ts`. Elle est née de
+// ce banc le 2026-08-20 — il comparait deux arbres issus d'une compilation REFUSÉE — et l'architecte
+// a tranché le lendemain qu'elle devait être LA porte de tous les bancs, pas une garde locale. Deux
+// exemplaires d'une même règle divergent au premier changement.
 
 // LEGACY path (today's host): createBPx(opts) + loadGrammar(ast) + derive() [sounding].
 function deriveViaInstance(src: string, cfg: HostConfig): { tree: NodeView; tokens: TokView[] } {
-  const ast = arbreDe(src, cfg);
+  const ast = sceneQuiPasse(src, cfg.tempo != null ? { tempo: cfg.tempo } : undefined);
   const bpx = createBPx({
     ...(cfg.tempo !== undefined ? { tempo: cfg.tempo } : {}),
     ...(cfg.settings !== undefined ? { settings: cfg.settings } : {}),
@@ -167,7 +137,7 @@ function deriveViaInstance(src: string, cfg: HostConfig): { tree: NodeView; toke
 
 // NEW path: createSession(ast, opts).derive() [sounding] + emit('timed-tokens').
 function deriveViaSession(src: string, cfg: HostConfig): { tree: NodeView; tokens: TokView[] } {
-  const ast = arbreDe(src, cfg);
+  const ast = sceneQuiPasse(src, cfg.tempo != null ? { tempo: cfg.tempo } : undefined);
   const session = createSession(ast as Parameters<typeof createSession>[0], toSessionOptions(cfg));
   const result = session.derive(); // DEFAULT (sounding).
   // emit auto-injects resolveName/resolveKind from its own symbols (session.ts),

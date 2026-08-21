@@ -54,8 +54,6 @@ const CALME_MS = 150_000;
 const GRACE_MS = 90_000;
 /** La fenêtre annoncée, arbitrage de l'architecte du 2026-08-20. */
 const FENETRE_MIN = 20;
-/** Un voisin qui n'a pas écrit depuis ça ne dort pas : il n'est simplement pas en chantier. */
-const EN_CHANTIER_MS = 2 * 60 * 60_000;
 
 const PAS_MS = 15_000;
 const PLAFOND_MS = 60 * 60_000;
@@ -136,9 +134,20 @@ function ceQuiFerme(ecritures) {
  * Rend la liste des dépôts gelés, ou `null` si la tour a refusé — auquel cas on retourne attendre.
  */
 function demanderLaFenetre(ecritures) {
-  const actifs = [...ecritures]
-    .filter(([, { quand }]) => Date.now() - quand < EN_CHANTIER_MS)
-    .map(([nom]) => nom.toLowerCase());
+  // ⛔ JE GÈLE CE QUE JE LIS, PAS CE QUI BOUGE. Ce filtre ne gardait que les voisins ayant enregistré
+  // dans les deux dernières heures. Mesuré le 2026-08-21 : à 09:09 il n'a gelé QUE bpscript, pendant
+  // que mes bancs lisaient les sources vives des onze — Kairos me l'a rendu, et il avait fait la
+  // faute symétrique une heure plus tôt.
+  //
+  // MA RAISON ÉTAIT JUSTE POUR UN PRÉAVIS ET FAUSSE POUR UN GEL : prévenir un dépôt qui dort est du
+  // bruit, mais le GELER ne lui coûte rien — et un dormeur se réveille au milieu de mes quinze
+  // minutes, ce qui est arrivé la veille à 19:29. J'ai transporté le critère d'un mécanisme sur
+  // l'autre sans relire ce qu'il tranchait.
+  //
+  // LA LISTE EST DÉRIVÉE, PAS RAPPELÉE : `voisinsLies()` énumère les dépôts que je résous par lien
+  // symbolique, et c'est la même liste que ma légende de campagne affiche. Troisième fois en deux
+  // jours qu'une liste écrite à la main survit à ce qu'elle décrit, alors que la bonne existait déjà.
+  const actifs = [...ecritures].map(([nom]) => nom.toLowerCase());
   if (actifs.length === 0) return [];
 
   const motif =

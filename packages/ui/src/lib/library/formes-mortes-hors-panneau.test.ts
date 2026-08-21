@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { createEventBus } from '../events/bus';
 import { initAdapters } from '../runtimes/registry';
 import { referencedLibraries } from './referenced';
-import { compileBps } from '../runtimes/compile-cache';
+import { sceneQuiEchoue } from './scene-de-banc';
 
 // LE VERROU EST RETOURNÉ. Deux directives sont SORTIES du langage — `library.<moteur>
 // "<banque>"` (Romain 2026-08-06) et `transport.<canal>` (Romain 2026-08-04). Une scène qui
@@ -42,7 +42,7 @@ const SUPPRIMEES = [
 describe('les directives SORTIES du langage ne sont plus des ressources', () => {
   for (const { mot, scene, jamais, empreinte } of SUPPRIMEES) {
     it(`${mot} : le compilateur la REFUSE`, () => {
-      const c = compileBps(scene) as { errors?: { message?: string }[]; ast?: unknown };
+      const c = { errors: sceneQuiEchoue(scene).erreurs };
       const messages = (c.errors ?? []).map((e) => e.message ?? '').join(' | ');
       expect(
         c.errors ?? [],

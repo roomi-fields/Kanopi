@@ -17,7 +17,7 @@
 // scène en dur ne passe plus inaperçu).
 
 import { describe, it, expect } from 'vitest';
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { sceneQuiPasse } from '../library/scene-de-banc';
 import { starterFiles } from './fixtures';
 import { createEventBus } from '../events/bus';
 import { initAdapters } from '../runtimes/registry';
@@ -40,9 +40,12 @@ describe('les scènes de démarrage (starterFiles) compilent avec le compilateur
 
   for (const f of starters) {
     it(`${f.path} compile sans erreur`, () => {
-      const { errors } = compileToBPxAST(f.contents);
-      const premiere = errors[0] ? `${errors[0].message} (ligne ${errors[0].line})` : '';
-      expect(errors, `${f.path} — refusée par le compilateur : ${premiere}`).toEqual([]);
+      // La porte porte le refus ; cet enrobage garde le CHEMIN dans le message, que la porte ne
+      // connaît pas — elle ne reçoit qu'une source.
+      expect(
+        () => sceneQuiPasse(f.contents),
+        `${f.path} — refusée par le compilateur`
+      ).not.toThrow();
     });
   }
 });

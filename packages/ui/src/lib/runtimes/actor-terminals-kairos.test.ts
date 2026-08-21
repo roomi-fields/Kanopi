@@ -5,7 +5,7 @@
 // actors (which must stay in the set — one event per occurrence).
 
 import { describe, it, expect } from 'vitest';
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { sceneQuiPasse } from '../library/scene-de-banc';
 import { createSession } from 'bpx';
 import { Kairos } from '@kairos/core';
 import type { Timeline } from '@kronos/core';
@@ -39,7 +39,7 @@ function actorTerminalsFromKairos(tl: Timeline): Set<string> {
 
 describe('actorTerminals sourced from the Kairos timeline', () => {
   it('projects the actor-bound terminals off Kairos, shared terminal preserved', () => {
-    const ast = compileToBPxAST(SHARED_TERMINAL, { tempo: 120 }).ast;
+    const ast = sceneQuiPasse(SHARED_TERMINAL, { tempo: 120 });
     const session = createSession(ast!, { seed: 1 });
     const tree = session.derive().tree;
 

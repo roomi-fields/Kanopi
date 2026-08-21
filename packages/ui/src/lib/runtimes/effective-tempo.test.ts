@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { sceneQuiPasse } from '../library/scene-de-banc';
 import { createBPx } from 'bpx';
 import { effectiveTempoBpm } from './bpx-adapter';
 
@@ -34,7 +34,7 @@ describe('effectiveTempoBpm — single tempo source from the derivation', () => 
   });
 
   it('end-to-end: a tempo:70 scene derives metadata.tempo=70, so BOTH ex-copies become 70', () => {
-    const ast = (compileToBPxAST(SCENE_MM70) as { ast: unknown; errors?: unknown[] }).ast;
+    const ast = sceneQuiPasse(SCENE_MM70);
     // The adapter seeds `createBPx({ tempo: currentBpm })` with the DECLARED mm
     // (70) before deriving; the derivation echoes it on metadata.tempo. We pass a
     // DELIBERATELY divergent fallback (128, the old clock default) to prove the

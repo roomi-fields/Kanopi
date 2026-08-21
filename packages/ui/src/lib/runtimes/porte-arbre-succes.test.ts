@@ -4,7 +4,7 @@
 // une scène refusée comme si elle était bonne. Mesuré avant correction : la scène ci-dessous
 // rendait 1 entrée déclarée.
 import { describe, it, expect } from 'vitest';
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { sceneQuiEchoue } from '../library/scene-de-banc';
 import { declaredInputsForScene, interpsForScene } from './bpx-adapter';
 
 const TETE = 'core\nalphabet.western:audio\nin.midi pedale\n\n-----\n';
@@ -17,10 +17,11 @@ describe("la porte d'entrée teste les erreurs, jamais la présence de l'arbre",
   });
 
   it("le refus de SENS rend un arbre COMPLET — c'est ce qui rendait le défaut invisible", () => {
-    const { ast, errors } = compileToBPxAST(REFUS_DE_SENS) as {
-      ast: { inputs?: unknown[] } | null;
-      errors: unknown[];
-    };
+    // ⛔ LA PORTE VÉRIFIE CE DONT CE BANC A BESOIN : que la source est BIEN refusée. Le jour où elle
+    // cesserait de l'être — un renommage, un cri levé — ce banc verdirait sur un sujet disparu ;
+    // `sceneQuiEchoue` l'en empêche. Ce qu'il inspecte ENSUITE le regarde, et c'est justement l'arbre
+    // que le refus rend encore aujourd'hui.
+    const { ast, erreurs: errors } = sceneQuiEchoue(REFUS_DE_SENS);
     expect(errors.length).toBeGreaterThan(0);
     expect(ast).not.toBeNull();
     // L'arbre porte l'entrée déclarée : une porte qui teste `ast` la sert.

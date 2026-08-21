@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { sceneQuiPasse } from '../library/scene-de-banc';
 import { createEventBus } from '../events/bus';
 import { initAdapters } from './registry';
 import {
@@ -91,7 +91,7 @@ viz_r -> viz.\`osc(60, 0.1, () => 0.5 + 0.5 * Math.sin(beat * Math.PI))
 
 describe('btTokenByActor (actor → backtick token)', () => {
   it('maps every code-voice actor of the bundled orchestrator to its BT token', () => {
-    const ast = (compileToBPxAST(BUNDLED) as { ast: unknown }).ast;
+    const ast = sceneQuiPasse(BUNDLED);
     const map = btTokenByActor(ast);
     // Both actors map to a (distinct) backtick token; the slot routing + the
     // sink's mute guard depend on this being non-empty (the regression: an empty

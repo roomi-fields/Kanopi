@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { sceneQuiPasse } from '../library/scene-de-banc';
 import { createBPx } from 'bpx';
 import { startKronosAudio } from './kronos-audio';
 import { kairosFromEvents, type DispatchEvent } from './kairos-test-helpers';
@@ -129,7 +129,7 @@ Phrase -> C4 D4 E4 _ _ _ _
 
 describe('KAN-C02/C03 (SUITE) — end-to-end: bound is read from the BPx metadata field', () => {
   it('projects totalDurationBeats × (60/tempo) from a REAL derivation', () => {
-    const ast = (compileToBPxAST(SCENE_TRAILING_RESTS) as { ast: unknown }).ast;
+    const ast = sceneQuiPasse(SCENE_TRAILING_RESTS);
     const bpx = createBPx({ tempo: 120 });
     bpx.loadGrammar(ast);
     const derived = bpx.derive();
@@ -152,7 +152,7 @@ describe('KAN-C02/C03 (SUITE) — end-to-end: bound is read from the BPx metadat
   });
 
   it('SPY: mutating totalDurationBeats moves the bound; the events reduce(max) does NOT', () => {
-    const ast = (compileToBPxAST(SCENE_TRAILING_RESTS) as { ast: unknown }).ast;
+    const ast = sceneQuiPasse(SCENE_TRAILING_RESTS);
     const bpx = createBPx({ tempo: 120 });
     bpx.loadGrammar(ast);
     const derived = bpx.derive();

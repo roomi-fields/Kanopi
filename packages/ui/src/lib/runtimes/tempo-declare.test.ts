@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { sceneQuiPasse } from '../library/scene-de-banc';
 import { mmFromAst } from './bpx-adapter';
 
 // UNE SCÈNE QUI DÉCLARE UN TEMPO EST LUE À CE TEMPO — le garde qui manquait.
@@ -24,7 +24,7 @@ import { mmFromAst } from './bpx-adapter';
 // lecteur qui rend toujours la valeur déclarée fait l'inverse. Les deux cas ensemble, ou rien.
 describe('une scène qui déclare un tempo est lue à ce tempo', () => {
   it('DÉCLARÉ — la valeur écrite dans la scène est celle que l’hôte lit', () => {
-    const c = compileToBPxAST('core\ntempo:70\n-----\nS -> C4 D4') as { ast?: unknown };
+    const c = { ast: sceneQuiPasse('core\ntempo:70\n-----\nS -> C4 D4') };
     expect(
       mmFromAst(c.ast as Parameters<typeof mmFromAst>[0]),
       'la scène déclare 70 : un lecteur qui rend autre chose fera dériver au tempo du transport, sans erreur'
@@ -32,12 +32,12 @@ describe('une scène qui déclare un tempo est lue à ce tempo', () => {
   });
 
   it('DÉCLARÉ AUTREMENT — une seconde valeur, pour qu’une constante ne passe pas', () => {
-    const c = compileToBPxAST('core\ntempo:143\n-----\nS -> C4 D4') as { ast?: unknown };
+    const c = { ast: sceneQuiPasse('core\ntempo:143\n-----\nS -> C4 D4') };
     expect(mmFromAst(c.ast as Parameters<typeof mmFromAst>[0])).toBe(143);
   });
 
   it('TÉMOIN NÉGATIF — sans directive, l’hôte ne lit RIEN et laisse le transport décider', () => {
-    const c = compileToBPxAST('core\n-----\nS -> C4 D4') as { ast?: unknown };
+    const c = { ast: sceneQuiPasse('core\n-----\nS -> C4 D4') };
     expect(
       mmFromAst(c.ast as Parameters<typeof mmFromAst>[0]),
       'sans témoin négatif, un lecteur qui rendrait toujours la même valeur passerait pour juste'
