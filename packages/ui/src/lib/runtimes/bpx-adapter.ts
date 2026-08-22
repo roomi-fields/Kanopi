@@ -775,8 +775,12 @@ export function interpsForScene(text: string): string[] {
 export interface DeclaredInput {
   /** Le RÔLE, tel que la scène le nomme (`in.midi pedale`) — jamais un nom d'appareil. */
   readonly name: string;
-  /** Le canal d'entrée déclaré : `midi` · `keyboard` · `osc`. Liste FERMÉE tenue en amont. */
-  readonly transport: string;
+  /** Le canal d'entrée déclaré : `midi` · `keyboard` · `osc` — liste FERMÉE tenue en amont — ou
+   *  `null` quand la scène nomme le rôle SANS son canal (`in pedale`, préavis bpscript du
+   *  2026-08-22, frappe `15ae763`). Un tel rôle est une déclaration LÉGALE, et son emploi dans le
+   *  flux est refusé en amont : il arrive donc jusqu'ici, jamais jusqu'à une dérivation. `null` et
+   *  champ ABSENT restent distincts — c'est l'aval qui décide sur ce champ. */
+  readonly transport: string | null;
   /** La table de correspondance invoquée, ou `null`. */
   readonly mapping: string | null;
 }
@@ -798,9 +802,12 @@ export function declaredInputsForScene(text: string): readonly DeclaredInput[] {
   const inputs = (astSiSucces(text) as { inputs?: unknown } | null)?.inputs;
   if (!Array.isArray(inputs)) return [];
   return inputs
-    .filter((d): d is { name: string; transport: string; mapping?: string | null } => {
+    .filter((d): d is { name: string; transport: string | null; mapping?: string | null } => {
       const n = d as { name?: unknown; transport?: unknown };
-      return typeof n?.name === 'string' && typeof n?.transport === 'string';
+      // `transport` doit EXISTER — `null` est une valeur portée, pas une absence — sinon la forme
+      // n'est pas celle que l'amont publie et l'hôte ne la devine pas.
+      const canal = n !== null && typeof n === 'object' && 'transport' in n;
+      return typeof n?.name === 'string' && canal && (typeof n.transport === 'string' || n.transport === null);
     })
     .map((d) => ({ name: d.name, transport: d.transport, mapping: d.mapping ?? null }));
 }

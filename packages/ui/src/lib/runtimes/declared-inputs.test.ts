@@ -19,6 +19,16 @@ describe('declaredInputsForScene', () => {
     expect(role.mapping).toBeNull();
   });
 
+  it('un rôle nommé SANS canal reste déclaré — son canal vaut `null`, il ne disparaît pas', () => {
+    // `in pedale` est une déclaration légale depuis la frappe bpscript `15ae763` (2026-08-22) : un
+    // nom nu vaut un MODÈLE. L'amont refuse son EMPLOI dans le flux, jamais sa déclaration — elle
+    // arrive donc jusqu'à la vue matériel, qui doit pouvoir la montrer plutôt que la taire.
+    expect(declaredInputsForScene('in pedale\nin.midi expression\n-----\nA -> C4\n')).toEqual([
+      { name: 'pedale', transport: null, mapping: null },
+      { name: 'expression', transport: 'midi', mapping: null }
+    ]);
+  });
+
   it('une scène sans entrée ne déclare rien', () => {
     expect(declaredInputsForScene('A -> C4 D4\n')).toEqual([]);
   });
