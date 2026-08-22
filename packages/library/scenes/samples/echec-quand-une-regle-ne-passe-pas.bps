@@ -17,7 +17,7 @@
 core
 alphabet.western:audio
 tempo:90
-flag compte
+flag compte:0
 
 -----
 S -> Ouverture Conditionnelle Ouverture Conditionnelle

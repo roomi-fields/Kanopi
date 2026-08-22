@@ -7,9 +7,9 @@ core
 // Terminaux
 a:midi
 b:midi
-flag Num_a
-flag Num_b
-flag Num_total
+flag Num_a:0
+flag Num_b:0
+flag Num_total:0
 
 // Non-terminaux : S, X (variables de grammaire, pas déclarés)
 

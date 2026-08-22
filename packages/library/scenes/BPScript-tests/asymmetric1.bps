@@ -19,16 +19,16 @@ improvize
 
 a:midi
 b:midi
-flag Atrans
-flag Btrans
-flag K1
-flag K2
-flag K3
-flag K4
-flag Reverse
-flag beats
-flag nbA
-flag nbB
+flag Atrans:0
+flag Btrans:0
+flag K1:0
+flag K2:0
+flag K3:0
+flag K4:0
+flag Reverse:0
+flag beats:0
+flag nbA:0
+flag nbB:0
 
 // --- Sous-grammaire 1 — initialisation (pas de mode = default ORD) ---
 

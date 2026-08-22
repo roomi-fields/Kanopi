@@ -9,8 +9,8 @@ maxitems:25   // MaxItemsProduce=25 dans le reglage natif : le moteur s'arrete
 // à poids infini sont prioritaires ; si plusieurs sont candidates, la première
 // l'emporte. L'original référence l'alphabet abc (a..z mono-caractère).
 alphabet.abc
-flag done
-flag pos
+flag done:0
+flag pos:0
 
 -----
 mode:rnd

@@ -9,7 +9,7 @@
 
 core
 alphabet.western:midi
-flag numtimes
+flag numtimes:0
 
 -----
 mode:rnd

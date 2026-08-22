@@ -4,8 +4,8 @@
 
 core
 alphabet.western:midi
-flag Choice
-flag Flag
+flag Choice:0
+flag Flag:0
 
 -----
 mode:rnd

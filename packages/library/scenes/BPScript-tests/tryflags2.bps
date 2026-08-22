@@ -7,8 +7,8 @@ maxitems:25   // MaxItemsProduce=25 dans le reglage natif : le moteur s'arrete
 a:midi
 b:midi
 c:midi
-flag make_b
-flag make_c
+flag make_b:0
+flag make_c:0
 
 -----
 mode:rnd

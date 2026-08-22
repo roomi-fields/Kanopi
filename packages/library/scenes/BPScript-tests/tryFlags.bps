@@ -14,9 +14,9 @@
 // cette regle — « la regle 'a' porte un nom deja pris par une variable de travail ». On declare
 // donc ce qui MANQUE, pas tout ce qui ressemble a un terminal.
 symbol b
-flag Num_a
-flag Num_b
-flag Num_total
+flag Num_a:0
+flag Num_b:0
+flag Num_total:0
 
 -----
 S -> X [Num_total=20]

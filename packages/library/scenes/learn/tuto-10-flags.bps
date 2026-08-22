@@ -8,8 +8,9 @@
 //
 // Tutorial 10 — Flags and guards
 //
-// Flags are variables that control which rules can fire. A flag is declared by
-// name in the header — `flag count` — before any rule uses it.
+// Flags are integer variables that control which rules can fire. A flag is
+// declared in the header with its starting value — `flag count:0` — before any
+// rule uses it.
 //   [count=4]   in RHS → set flag "count" to 4
 //   [count-1]   before LHS → decrement count, rule only fires if count > 0
 //   [count==0]  before LHS → rule only fires if count equals 0
@@ -19,7 +20,7 @@
 
 core
 alphabet.western:audio
-flag count
+flag count:0
 
 -----
 S -> Loop [count=4]

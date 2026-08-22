@@ -9,8 +9,8 @@ maxitems:500   // MaxItemsProduce=500 dans le reglage natif : le moteur s'arrete
                  // certaines grammaires ne rendent jamais la main.
 alphabet.western:midi
 settings.test1
-flag Choice
-flag Flag
+flag Choice:0
+flag Flag:0
 
 -----
 mode:rnd

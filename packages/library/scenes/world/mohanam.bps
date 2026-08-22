@@ -37,9 +37,9 @@ tempo:90
 // sa ≈ 60 Hz (240 × 1/4). Interval form is NUE (no quotes): the oracle rejects
 // "1/4", accepts 1/4.
 transpose:1/4
-flag Ideas
-flag Notes
-flag NumR
+flag Ideas:0
+flag Notes:0
+flag NumR:0
 
 // ============================================================
 // Sous-grammaire 1 — Initialisation mode:rnd
