@@ -38,7 +38,16 @@
  * depuis trois jours est du bruit, et le bruit fait qu'on ne lit plus les préavis.
  */
 import { execFileSync } from "node:child_process";
-import { readdirSync, statSync, writeFileSync, unlinkSync } from "node:fs";
+import {
+  readdirSync,
+  statSync,
+  writeFileSync,
+  unlinkSync,
+  readFileSync,
+  mkdirSync,
+  existsSync,
+} from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import {
   voisinsLies,
@@ -52,8 +61,79 @@ const RACINE = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 const CALME_MS = 150_000;
 /** Le délai entre la DEMANDE et le tir — ce qui sépare une coordination d'une information. */
 const GRACE_MS = 90_000;
-/** La fenêtre annoncée, arbitrage de l'architecte du 2026-08-20. */
-const FENETRE_MIN = 20;
+/**
+ * ⛔ LA FENÊTRE ANNONCÉE SE DÉRIVE DE MES CAMPAGNES MESURÉES — arbitrage de l'architecte du
+ * 2026-08-22, qui applique une règle qui existait déjà : aucune valeur en dur quand la donnée
+ * existe. Elle valait 20 en dur pendant que trois campagnes couraient 21 min 02, 23 min 39 et
+ * 22 min 30 ; deux voisins ont écrit sur l'heure annoncée pendant que je mesurais encore, et une
+ * campagne de vingt-trois minutes sur onze dépôts gelés est partie avec.
+ *
+ * LE REGISTRE VIT HORS DU DÉPÔT, ET C'EST VOULU : une durée de campagne est une propriété de la
+ * MACHINE qui l'exécute, pas du code. La versionner salirait en plus l'arbre à chaque tir — donc
+ * fermerait la construction de production que le tir suivant exige.
+ */
+const REGISTRE = join(homedir(), ".local", "state", "kanopi", "campagnes.json");
+
+/** Les durées enregistrées, en minutes décimales, de la plus longue à la plus courte. */
+function dureesEnregistrees() {
+  if (!existsSync(REGISTRE)) return [];
+  try {
+    const brut = JSON.parse(readFileSync(REGISTRE, "utf8"));
+    return (Array.isArray(brut) ? brut : [])
+      .map((c) => Number(c?.minutes))
+      .filter((m) => Number.isFinite(m) && m > 0)
+      .sort((a, b) => b - a);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * La fenêtre à annoncer, dérivée des TROIS PLUS LONGUES campagnes enregistrées :
+ * `max + (max − min de ces trois)` — la marge est l'étendue observée, donc la dispersion que
+ * mes campagnes imposent réellement, jamais un facteur choisi.
+ *
+ * ⛔ LES TROIS PLUS LONGUES, ET PAS LES TROIS DERNIÈRES : une campagne qui échoue tôt (mise en
+ * forme, refus de la tour) dure moins d'une minute et n'apprend RIEN sur la durée d'une mesure
+ * complète. Prise dans la moyenne elle raccourcirait la fenêtre, c'est-à-dire exactement le
+ * défaut qu'on répare.
+ *
+ * ⛔ ET SANS DONNÉES, ON NE TIRE PAS : inventer un nombre ici rendrait la valeur en dur sous un
+ * autre nom, avec la caution d'avoir l'air calculée.
+ */
+function fenetreDeriveeMin() {
+  const hautes = dureesEnregistrees().slice(0, 3);
+  if (hautes.length < 3) {
+    console.log(
+      `⛔ FENÊTRE NON DÉRIVABLE — ${hautes.length} campagne(s) enregistrée(s) dans ${REGISTRE}, il en ` +
+        "faut trois. Une fenêtre inventée fait écrire les gelés pendant que je mesure encore : " +
+        "c'est le défaut du 2026-08-22. Lancer les campagnes qui manquent, ou reporter les durées " +
+        "mesurées dans ce registre.",
+    );
+    process.exit(2);
+  }
+  return Math.ceil(hautes[0] + (hautes[0] - hautes[2]));
+}
+
+/** Ajoute une campagne au registre — c'est ce qui rend la fenêtre suivante juste. */
+function enregistrerLaCampagne(depart, arrivee, sortie) {
+  const minutes = (arrivee.getTime() - depart.getTime()) / 60_000;
+  const brut = existsSync(REGISTRE)
+    ? JSON.parse(readFileSync(REGISTRE, "utf8") || "[]")
+    : [];
+  brut.push({
+    le: arrivee.toISOString(),
+    minutes: Number(minutes.toFixed(2)),
+    sortie,
+  });
+  mkdirSync(join(homedir(), ".local", "state", "kanopi"), { recursive: true });
+  writeFileSync(REGISTRE, JSON.stringify(brut, null, 1));
+  console.log(
+    `campagne enregistree : ${minutes.toFixed(2)} min (sortie ${sortie})`,
+  );
+}
+
+const FENETRE_MIN = fenetreDeriveeMin();
 
 const PAS_MS = 15_000;
 const PLAFOND_MS = 60 * 60_000;
@@ -377,6 +457,9 @@ for (;;) {
     const arrivee = new Date();
     console.log(`ARRIVEE : ${hh(arrivee)}`);
     const sortie = (r.match(/SORTIE:(\d+)/) ?? [, "?"])[1];
+    // ⛔ ENREGISTRER AVANT DE RENDRE LE VERDICT : la durée d'une campagne ne se mesure qu'une
+    // fois, et un verdict qui échoue ne doit pas emporter la mesure avec lui.
+    enregistrerLaCampagne(ouverteA ?? depart, arrivee, sortie);
     rendreLeVerdict(geles, ouverteA ?? depart, arrivee, sortie, r);
     fermerLaFenetre();
     break;
