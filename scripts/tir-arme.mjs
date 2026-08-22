@@ -175,11 +175,23 @@ function demanderLaFenetre(ecritures) {
   // n'interdirait que « la publication » laisserait passer sa poussée. Seul le voisin sait lequel de
   // ses gestes touche mes chemins ; moi je sais quels chemins je lis. La tour publie les racines
   // dans l'avis de gel depuis le 2026-08-21 — le gelé voit donc la borne que ce motif invoque.
+  // ⛔ L'HEURE ANNONCÉE EST UN PLANCHER, ET LE MOTIF DOIT LE DIRE. Mesuré le 2026-08-22 :
+  // `FENETRE_MIN` est une CONSTANTE de vingt minutes pendant que mes deux campagnes du jour ont couru
+  // 21 min 02 s puis 23 min 39 s. bpscript s'est arrêté d'écrire à mon gel, a tout préparé hors dépôt,
+  // puis a posé une attente mécanique sur l'heure ÉCRITE dans mon avis — et a enregistré une minute
+  // avant l'arrivée réelle. Il a respecté l'heure ; l'heure ne couvrait pas la mesure. Vingt et une
+  // minutes de campagne perdues sur onze dépôts gelés, et la casse était invisible chez lui.
+  // CE QUI FERME UNE FENÊTRE EST DONC LE VERDICT, JAMAIS L'HORLOGE — `rendreLeVerdict` l'envoie aux
+  // seuls gelés à l'arrivée. Le dire ici évite à chaque voisin de l'apprendre en se brûlant une fois.
   const motif =
     "campagne de portillon — NE FAITES BASCULER AUCUN FICHIER SOUS LES RACINES QUE JE LIS, nommées " +
     "dans cet avis. Le geste ne compte pas, le chemin compte : chez certains d'entre vous pousser " +
     "PUBLIE et une vérification lancée à la main CONSTRUIT, chez d'autres le commit ne touche rien. " +
-    "Vous seul savez lequel de vos gestes bascule ces chemins ; le reste de votre arbre est libre";
+    "Vous seul savez lequel de vos gestes bascule ces chemins ; le reste de votre arbre est libre. " +
+    "⛔ CE QUI FERME CETTE FENÊTRE EST MON MESSAGE DE FIN, JAMAIS L'HEURE : l'heure annoncée est un " +
+    "PLANCHER calculé sur une constante, et mes campagnes la dépassent déjà de plusieurs minutes. " +
+    "Attendez le verdict que je vous enverrai à l'arrivée ; une attente calée sur l'horloge écrite " +
+    "vous fera écrire pendant que je mesure encore";
   try {
     execFileSync(
       "bash",
