@@ -307,6 +307,40 @@ const ROUGES_DECLAREES: Array<{
     cause: 'forme-a-venir',
     attend:
       "la forme « instance de module avec ses réglages de départ », pas encore dans le parseur, revue avec FaustX — ET deux causes de plus, propres à cette scène : le domicile du câblage persistant (lead/open/close/glide) n'a pas de forme de remplacement tranchée, et ses modules (saw, lpf) sont absents du catalogue de modules (qui n'en porte que trois : adsr, lfo, ramp). Suivi : KAN-40."
+  },
+  // ── LES DEUX SCÈNES À COURBE, entrées le 2026-08-22 à la frappe bpscript a26c9c7 : la librairie
+  // `modulation` s'archive et ses cinq cibles quittent le langage (décision de Romain du jour, FaustX
+  // prend la suite). Le branchement d'une courbe AU POINT DE PARAMÈTRE — `C2(cutoff:wobble)` — n'a
+  // AUCUNE réécriture valide aujourd'hui : le sujet `cv` est sorti du langage le 2026-08-19 et il
+  // revient avec FaustX. Elles RESTENT dans le corpus, comme les cinq du dessus et pour la même raison.
+  //
+  // ELLES NE RELÈVENT PAS DE KAN-40, qui nomme cinq scènes et une AUTRE forme (« instance de module
+  // avec ses réglages de départ »). Leur item propre est demandé à l'architecte ; ces deux entrées le
+  // nommeront quand il existera.
+  //
+  // LE PRÉAVIS ET LA PRÉDICTION ONT TENU DES DEUX CÔTÉS, et c'est ce qui rend la frappe attribuable :
+  // bpscript a nommé les deux fichiers AVANT d'écrire, j'ai prédit « exactement deux rouges neufs,
+  // tous deux sur ce message », et la mesure d'après frappe le confirme — sept rouges déclarés, aucun
+  // autre verdict changé sur le corpus.
+  //
+  // ⚠️ CE MOTIF NE PORTE PAS DE NUMÉRO DE LIGNE là où les cinq du dessus en portent un, et ce n'est pas
+  // un relâchement : le message du compilateur n'en contient pas, et `statut` ne rend que le message.
+  // Les deux entrées portent donc le MÊME motif — sans conséquence, chacune n'étant confrontée qu'au
+  // fichier qu'elle nomme. CE QUE ÇA COÛTE, dit franchement : une scène qui basculerait sur une AUTRE
+  // écriture `(cutoff:…)` passerait sans le dire — même cause, donc l'excuse resterait juste.
+  {
+    fichier: 'cv/cv-backtick.bps',
+    motif: /attribut '\(cutoff:…\)' inconnu/,
+    cause: 'forme-a-venir',
+    attend:
+      "le branchement d'une courbe au point de paramètre (`C2(cutoff:wobble)`, lignes 32 à 34), retiré du langage avec la librairie `modulation` le 2026-08-22 et revu avec FaustX."
+  },
+  {
+    fichier: 'code-voices/cv-curve-js.bps',
+    motif: /attribut '\(cutoff:…\)' inconnu/,
+    cause: 'forme-a-venir',
+    attend:
+      "le branchement d'une courbe au point de paramètre (`C4(cutoff:sweep)` et `G4(cutoff:sweep)`, ligne 25), retiré du langage avec la librairie `modulation` le 2026-08-22 et revu avec FaustX."
   }
 ];
 
