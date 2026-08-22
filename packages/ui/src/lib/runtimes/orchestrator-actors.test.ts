@@ -207,7 +207,7 @@ describe('orchestrator arm/disarm', () => {
     await bpscriptAdapter.stop({ actorId: '__hush__', fileId: 'z.bps' }, () => {});
   });
 
-  it('mute/unmute NEVER call the code-voice adapter directly — the host only carries the intent to Kronos ([673])', async () => {
+  it('l’HÔTE n’appelle jamais l’adaptateur de voix de code sur un mute — il porte l’intention à Kronos, et c’est le RUNTIME qui exécute ([673], [76]/[77])', async () => {
     setActorsSink(() => {});
     await bpscriptAdapter.evaluate(SRC, { actorId: 'y.bps', fileId: 'y.bps' }, () => {});
 
@@ -219,12 +219,36 @@ describe('orchestrator arm/disarm', () => {
     // `disarmOrchestratedActor` used to call `evaluate`/`stop` on the runtime directly.
     // Kronos + runtime-codevoices' own ACTIVE `setActorMuted` now own firing/stopping —
     // the host must never touch the adapter for a mute toggle, running or not.
+    //
+    // ⛔ CE QUE CE BANC ÉNONÇAIT ÉTAIT FAUX, ET SON TITRE L'ENSEIGNAIT AVANT SON CORPS. Il disait
+    // « mute/unmute n'appellent JAMAIS l'adaptateur directement ». La règle réelle est autre :
+    // l'HÔTE ne l'appelle jamais — le RUNTIME, lui, DOIT l'appeler, c'est son rôle. La sourdine
+    // EXÉCUTE chez runtime-codevoices (`code-voices-runtime.ts:743`, arbitrage [76]/[77]) :
+    // `muteActorSlot` appelle `adapter.stop({ actorId: '<fichier>::<acteur>', fileId: '<fichier>' })`
+    // et `unmuteActorSlot` appelle `adapter.evaluate`. L'ancien énoncé interdisait donc ce que
+    // l'architecture PRESCRIT (arbitrage de l'architecte, 2026-08-22).
+    //
+    // ⚠️ ET CE QUE L'ASSERTION MESURE AUJOURD'HUI RESTE PLUS LARGE QUE CE QU'ELLE ÉNONCE. L'espion
+    // est posé sur l'objet adaptateur que l'hôte et le runtime PARTAGENT, et les deux appels sont
+    // indiscernables : même forme d'argument — l'hôte la construit en `bpx-adapter.ts` (`stopCode`),
+    // le runtime en `code-voices-runtime.ts` — et même asynchronie, le chemin de l'hôte passant par
+    // un `import()` dynamique. Ni l'argument ni le moment ne les séparent, donc le discriminant ne
+    // peut pas être une observation : il doit être STRUCTUREL. La couture est PROPOSÉE, pas posée
+    // (elle attend l'arbitrage) ; tant qu'elle manque, ce filet attrape l'exécution légitime du
+    // runtime dès que la voix est devenue vivante chez lui — ce qui demande qu'un jeton ait tiré,
+    // donc dépend de la charge. Rouge une fois en campagne le 2026-08-22, non reproduit en DIX
+    // passages de la suite complète.
+    //
+    // ⛔ NE PAS « RÉPARER » CE BANC EN RÉTRÉCISSANT SA FENÊTRE. Mesuré : recentrer l'assertion sur
+    // un contrôle SYNCHRONE le rend VERT sous la dérivation de 2026-07-11 réinjectée — le garde
+    // devient un décor. Le chemin de l'hôte est asynchrone lui aussi. Toute retouche ici se prouve
+    // par cette injection : remettre `stopCode` dans `setOrchestratedActorMuted` doit faire ROUGIR.
     setOrchestratedActorMuted('groove', true);
     await new Promise((r) => setTimeout(r, 10));
     setOrchestratedActorMuted('groove', false);
     await new Promise((r) => setTimeout(r, 10));
-    expect(stopSpy).not.toHaveBeenCalled();
-    expect(evalSpy).not.toHaveBeenCalled();
+    expect(stopSpy, 'un mute a coupé la voix par l’adaptateur — l’hôte a-t-il court-circuité Kronos ?').not.toHaveBeenCalled();
+    expect(evalSpy, 'un unmute a relancé la voix par l’adaptateur — l’hôte a-t-il court-circuité Kronos ?').not.toHaveBeenCalled();
 
     stopSpy.mockRestore();
     evalSpy.mockRestore();
