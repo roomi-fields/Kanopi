@@ -262,8 +262,14 @@ describe('orchestrator arm/disarm', () => {
     await new Promise((r) => setTimeout(r, 10));
     setOrchestratedActorMuted('groove', false);
     await new Promise((r) => setTimeout(r, 10));
-    expect(stopSpy, 'un mute a coupé la voix par l’adaptateur — l’hôte a-t-il court-circuité Kronos ?').not.toHaveBeenCalled();
-    expect(evalSpy, 'un unmute a relancé la voix par l’adaptateur — l’hôte a-t-il court-circuité Kronos ?').not.toHaveBeenCalled();
+    expect(
+      stopSpy,
+      'un mute a coupé la voix par l’adaptateur — l’hôte a-t-il court-circuité Kronos ?'
+    ).not.toHaveBeenCalled();
+    expect(
+      evalSpy,
+      'un unmute a relancé la voix par l’adaptateur — l’hôte a-t-il court-circuité Kronos ?'
+    ).not.toHaveBeenCalled();
 
     stopSpy.mockRestore();
     evalSpy.mockRestore();

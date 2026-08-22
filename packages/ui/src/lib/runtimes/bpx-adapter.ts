@@ -807,7 +807,11 @@ export function declaredInputsForScene(text: string): readonly DeclaredInput[] {
       // `transport` doit EXISTER — `null` est une valeur portée, pas une absence — sinon la forme
       // n'est pas celle que l'amont publie et l'hôte ne la devine pas.
       const canal = n !== null && typeof n === 'object' && 'transport' in n;
-      return typeof n?.name === 'string' && canal && (typeof n.transport === 'string' || n.transport === null);
+      return (
+        typeof n?.name === 'string' &&
+        canal &&
+        (typeof n.transport === 'string' || n.transport === null)
+      );
     })
     .map((d) => ({ name: d.name, transport: d.transport, mapping: d.mapping ?? null }));
 }
