@@ -355,9 +355,6 @@ type Frontend = (code: string) => {
   // token placed in the derivation maps to `{ interp, code }`. The adapter routes
   // the token → interpreter at the dispatcher-scheduled time.
   backticks?: BacktickTable;
-  // La valeur de départ que chaque drapeau porte dans sa déclaration (`flag section:1`).
-  // Présente seulement quand le `.bps` déclare au moins un drapeau ; `.gr` n'en a pas.
-  initialFlags?: Record<string, number>;
   // Per-engine sample/sound banks a `.bps` declares (`eval.strudel(bank:"dirt-samples")`
   // → `{ strudel: ["dirt-samples"] }`). The adapter loads each engine's declared
   // banks before/at the backtick eval so the code voices find their samples. `.gr`
@@ -375,41 +372,6 @@ export type Libraries = Record<string, string[]>;
 
 // `BT<interp><id>` → foreign code + its interpreter tag (from compileBPS).
 type BacktickTable = Record<string, { interp: string; code: string }>;
-
-// Un fichier dont TOUTES les règles sont gardées par un drapeau ne dérive rien tant qu'aucune
-// valeur n'est posée : il rendrait le symbole de départ non expansé. On pose donc, pour CHAQUE
-// drapeau que l'appelant n'a pas fixé, la valeur que sa DÉCLARATION porte (`flag section:1`).
-// Ce que l'appelant a fixé n'est jamais touché.
-//
-// ⛔ L'HÔTE NE CHOISIT PLUS CETTE VALEUR, IL LA LIT. La forme d'avant — `flag section(calm:1,
-// full:2)` — n'écrivait aucune valeur de départ, et l'hôte posait l'état de plus petit entier :
-// une autorité que rien dans la scène ne disait. Depuis la décision de Romain du 2026-08-22, le
-// drapeau porte sa valeur initiale dans sa déclaration et les états nommés sont sortis du langage.
-//
-// ⛔ ET BPX NE LIT PAS ENCORE CETTE VALEUR SUR L'ARBRE (mesuré 2026-08-22 : deux dérivations de
-// `flag g:0` et `flag g:1`, sans `initialFlags`, rendent le MÊME arbre — la garde `[g==1]` ne
-// s'ouvre pas). Tant que ce trou dure, ce report est ce qui fait sonner les cinq scènes à sections.
-//
-// ⚠️ ZONE AVEUGLE MESURÉE, ET ELLE PORTE EXACTEMENT SUR CE CHEMIN (nommée le 2026-07-30). AUCUN
-// des ~570 bancs unitaires de ce dépôt ne passe par cette fonction : seuls les bancs d'ÉCRAN
-// l'exercent. Ce qu'il faut en tirer avant de toucher une ligne ici : ce dépôt peut être VERT sur
-// toute sa suite unitaire pendant que ses scènes s'ouvrent MUETTES. Ce n'est pas une hypothèse —
-// c'est ce que le renommage décrit juste au-dessus aurait produit s'il avait été appliqué à la
-// lettre : le nom écrit en dur faisait un porteur de plus, invisible à tout inventaire par
-// extension de fichier, et cinq scènes se seraient tues sans qu'un seul banc rougisse.
-// Donc : un changement ici se prouve À L'ÉCRAN. Un vert unitaire ne dit rien de ce chemin.
-function withDeclaredFlags(
-  flags: Record<string, number> | undefined,
-  declares: Record<string, number> | undefined
-): Record<string, number> | undefined {
-  if (!declares) return flags;
-  let out = flags;
-  for (const [nom, valeur] of Object.entries(declares)) {
-    if (out && nom in out) continue;
-    out = { ...(out ?? {}), [nom]: valeur };
-  }
-  return out;
-}
 
 interface OrchestratedActor {
   name: string;
@@ -593,15 +555,6 @@ const grFrontend: Frontend = (code) => {
 // Reading these directly off the AST is the single-source-of-truth migration:
 // `flagStates`, `libraries` and `actorTable` no longer come from compileBPS's
 // precomputed sidecar tables.
-// `var` declarations (`scene.vars`, BPscript `parser.js:1567-1634`): `names` is a
-// TABLE — one line can declare several vars, each sharing the same `varType`. Only
-// `varType.kind === 'flag'` carries a starting value; other kinds (`signal`, `pitch`,
-// `phase`, `logic`, `in`, or a module name) are carry-only and irrelevant here.
-interface VarDirectiveNode {
-  type: 'VarDirective';
-  names: string[];
-  varType?: { kind?: string; initiale?: number } | null;
-}
 interface TransportRefNode {
   key?: string;
   params?: Record<string, unknown>;
@@ -625,24 +578,8 @@ interface ActorDirectiveNode {
 }
 interface SceneAstView {
   directives?: ({ type?: string } & Record<string, unknown>)[];
-  vars?: VarDirectiveNode[];
   actors?: ActorDirectiveNode[];
   soundAssignments?: { subject: string }[] | null;
-}
-
-// La valeur de départ de chaque drapeau, lue de l'arbre : chaque `VarDirective` de `ast.vars`
-// dont `varType.kind === 'flag'` (`flag section:1`) → `{ [flag]: valeur }`. `names` est un
-// TABLEAU (une ligne peut déclarer plusieurs drapeaux, qui partagent alors la même valeur) ;
-// les autres `kind` (`signal`, `pitch`, `phase`, `logic`, `in`, module) sont ignorés.
-export function initialFlagsFromAst(a: SceneAstView | null): Record<string, number> {
-  const out: Record<string, number> = {};
-  for (const v of a?.vars ?? []) {
-    if (v.varType?.kind !== 'flag') continue;
-    const valeur = v.varType.initiale;
-    if (typeof valeur !== 'number') continue;
-    for (const name of v.names) out[name] = valeur;
-  }
-  return out;
 }
 
 // Declared metronome from the AST directives: `tempo:70` (v0.8 canon, arbitrage
@@ -1136,12 +1073,7 @@ const bpsFrontend: Frontend = (code) => {
   // in the timeline (direct lookup, no parsing). Carry it through so the adapter
   // routes each BT terminal to its interpreter.
   const backticks = backticksFromAst(c.ast);
-  // Sections gardées par un drapeau : lire la valeur de départ que chaque `VarDirective` de
-  // `ast.vars` avec `varType.kind === 'flag'` déclare (`flag section:1`). Ré-évaluer avec
-  // `flags: { section: <entier> }` fait dériver l'autre règle gardée (voir `evaluate`).
-  const initialFlags = initialFlagsFromAst(a);
-  const withFlags =
-    Object.keys(initialFlags).length > 0 ? { ...parsed, initialFlags } : parsed;
+  const withFlags = parsed;
   // Declared per-engine banks: read from the AST's actor `entityParams`
   // (`eval.strudel(bank:"dirt-samples")` → `{ strudel: ['dirt-samples'] }`) so the
   // adapter loads each engine's samples before the backtick voices eval.
@@ -1813,7 +1745,6 @@ function makeBpxAdapter(
         settings,
         orchestration,
         backticks,
-        initialFlags,
         libraries,
         // LECTURE (pas injection) : la directive tempo/mm déclarée par la scène, pour SAVOIR
         // si le tempo de session (userTempo) doit s'appliquer par warp. Directive présente →
@@ -1873,11 +1804,18 @@ function makeBpxAdapter(
       // QUAND la scène n'a pas de directive. Le tempo EFFECTIF (dérivé) est lu sur
       // `tree.metadata.tempo` (garanti peuplé, plus bas).
 
-      // Un `.bps` dont TOUTES les règles sont gardées par un drapeau (`[section==1] S -> …`)
-      // n'a aucune règle qui dérive tant qu'aucune valeur n'est posée — `S` resterait un
-      // non-terminal non expansé et fuirait en jeton bidon vers le transport audio. On reporte
-      // donc la valeur DÉCLARÉE de chaque drapeau non fixé : voir `withDeclaredFlags`.
-      const effectiveFlags = withDeclaredFlags(src.flags, initialFlags);
+      // ⛔ L'HÔTE NE POSE AUCUNE VALEUR DE DÉPART. Un `.bps` dont TOUTES les règles sont gardées
+      // par un drapeau (`[section==1] S -> …`) ne dérive rien tant que le drapeau ne vaut aucune
+      // valeur attendue — mais c'est la DÉCLARATION de la scène qui la porte (`flag section:1`),
+      // et BPx la lit sur l'arbre (`BPx/src/load/loadGrammar.ts:1709`, 2026-08-22). Ce qui passe
+      // ici est donc UNIQUEMENT ce que l'appelant a explicitement fixé — changer de section en
+      // ré-évaluant avec `flags: { section: 2 }` — et l'hôte GAGNE sur la scène quand il le fait.
+      //
+      // ⚠️ ZONE AVEUGLE MESURÉE, ET ELLE PORTE SUR CE CHEMIN (nommée le 2026-07-30). AUCUN des
+      // ~570 bancs unitaires de ce dépôt ne l'exerce : seuls les bancs d'ÉCRAN le font. Ce dépôt
+      // peut être VERT sur toute sa suite unitaire pendant que ses scènes s'ouvrent MUETTES.
+      // Donc : un changement ici se prouve À L'ÉCRAN.
+      const effectiveFlags = src.flags;
 
       // GRAINE DE PRODUCTION. Une graine POSÉE fige la dérivation (reproductible) ; ABSENTE,
       // BPx tire frais sur l'horloge (défaut natif, inversion [769]). Le modèle (Romain),
