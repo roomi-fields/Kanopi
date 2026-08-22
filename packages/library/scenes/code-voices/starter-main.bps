@@ -1,22 +1,23 @@
 // @name: Session à trois voix — batterie, basse, visuel
 // @tagline: trois sections gardées par un drapeau, trois voix de code
-// @description: Trois voix de code sur un même transport — batterie (`eval.strudel`), visuel (`eval.hydra`) et basse (`eval.strudel`) — et un drapeau `section` à trois positions qui choisit qui joue : `intro` (visuel seul), `drop` (les trois), `break` (visuel + basse). Bascule les sections dans la barre transport (ou Alt+1/2/3). Ctrl+. pour couper.
+// @description: Trois voix de code sur un même transport — batterie (`eval.strudel`), visuel (`eval.hydra`) et basse (`eval.strudel`) — et un drapeau `section` à trois positions qui choisit qui joue : `1` intro (visuel seul), `2` drop (les trois), `3` break (visuel + basse). Change de section en éditant le chiffre de `flag section:` puis en ré-évaluant. Ctrl+. pour couper.
 // @language: strudel
 // @outputs: audio, visual
 // @level: didactic
 // @tags: sections, flag, visuals, bass
 //
-// main session — 3 voix-code, sélectionnables par section (intro/drop/break).
+// main session — 3 voix-code, sélectionnables par section (1 intro / 2 drop / 3 break).
 actor drums  eval.strudel(bank:"dirt-samples")
 actor visuals  eval.hydra
 actor bass  eval.strudel(bank:"dirt-samples")
 
-flag section(intro:1, drop:2, break:3)
+// section — 1 : intro · 2 : drop · 3 : break
+flag section:1
 
 -----
-[section==intro] S -> visuals_r
-[section==drop]  S -> { drums_r, visuals_r, bass_r }
-[section==break] S -> { visuals_r, bass_r }
+[section==1] S -> visuals_r
+[section==2]  S -> { drums_r, visuals_r, bass_r }
+[section==3] S -> { visuals_r, bass_r }
 
 drums_r -> drums.`stack(s("bd*4").gain(0.9), s("~ cp").room(0.4), s("hh*8").gain(0.5).pan(sine.range(0.2, 0.8).slow(4)))`
 visuals_r -> visuals.`osc(60, 0.1, 1.5).modulate(noise(3)).rotate(() => time/10).out()`

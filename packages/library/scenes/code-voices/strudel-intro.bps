@@ -1,6 +1,6 @@
 // @name: Strudel intro
 // @tagline: drums_r + bass_r, two named scenes
-// @description: One self-contained `.bps`: a Strudel drums_r voice and a Strudel bass_r voice, both inlined as backticks → audio. Two named scenes guarded by a flag — `intro` (drums_r only) and `full` (drums_r + bass_r). Open it and look at the code to see how the flag picks which scene derives. Ctrl+. to hush.
+// @description: One self-contained `.bps`: a Strudel drums_r voice and a Strudel bass_r voice, both inlined as backticks → audio. Two sections guarded by the flag `section` — `1` intro (drums_r only) and `2` full (drums_r + bass_r). Open it and look at the code to see how the flag picks which rule derives. Ctrl+. to hush.
 // @language: strudel
 // @outputs: audio
 // @level: didactic
@@ -8,19 +8,20 @@
 //
 // Strudel intro.
 // Deux voix de code, toutes deux en Strudel (eval.strudel) : batterie et
-// basse, → audio. Deux scènes nommées gardées par un drapeau : `intro`
-// (batterie seule) et `full` (batterie + basse). Ouvrir, puis basculer les
-// scènes dans la barre transport (ou Alt+1 / Alt+2) ; chaque clic réarme la
-// scène choisie. Ctrl+. pour couper.
+// basse, → audio. Deux sections gardées par le drapeau `section` : `1` intro
+// (batterie seule) et `2` full (batterie + basse). Ouvrir, puis changer de
+// section en éditant le chiffre de `flag section:` et en ré-évaluant.
+// Ctrl+. pour couper.
 // La batterie joue des échantillons (bd/cp/hh) : on lie la banque dirt-samples.
-flag section(intro:1, full:2)
+// section — 1 : intro, batterie seule · 2 : full, batterie + basse
+flag section:1
 
 actor drums  eval.strudel(bank:"dirt-samples")
 actor bass  eval.strudel(bank:"dirt-samples")
 
 -----
-[section==intro] S -> drums_r
-[section==full]  S -> { drums_r, bass_r }
+[section==1] S -> drums_r
+[section==2]  S -> { drums_r, bass_r }
 
 drums_r -> drums.`stack(
   s("bd*4").gain(0.9),

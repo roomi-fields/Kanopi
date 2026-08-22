@@ -150,7 +150,7 @@ const ROUGES_DECLAREES: Array<{
   // ══ LES DEUX COURBES DONT LA VALEUR EST DU CODE ══════════════════════════════════════════
   // `var` est sorti du langage : le TYPE vient en tête, le nom ensuite. Vingt et une lignes
   // portaient un type déductible et sont migrées — treize l'écrivaient déjà en QUEUE
-  // (`signal slide`, `in.midi sustain`, `in.keyboard touches`, `flag section(a:1, b:2)`), huit
+  // (`signal slide`, `in.midi sustain`, `in.keyboard touches`, `flag section:1`), huit
   // sont des noms qui existent sans sonner et prennent `symbol` (arbitrage du 2026-08-19).
   //
   // ⛔ CES DEUX-CI DÉCLARENT UNE VARIABLE DONT LA VALEUR EST DU CODE, et ce cas est nommément

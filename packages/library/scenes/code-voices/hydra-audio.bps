@@ -1,6 +1,6 @@
 // @name: Hydra + audio
 // @tagline: reactive visuals_r over a drum loop
-// @description: One self-contained `.bps`: a Strudel drums_r voice → audio and a Hydra visual → video, both inlined as backticks. Two named scenes guarded by a flag — `a` (drums_r only) and `b` (drums_r + visuals_r). Open it and look at the code to see how the flag picks which scene derives. Hydra renders behind the editor. Ctrl+. to hush.
+// @description: One self-contained `.bps`: a Strudel drums_r voice → audio and a Hydra visual → video, both inlined as backticks. Two sections guarded by the flag `section` — `1` (drums_r only) and `2` (drums_r + visuals_r). Open it and look at the code to see how the flag picks which rule derives. Hydra renders behind the editor. Ctrl+. to hush.
 // @language: hydra
 // @outputs: audio, visual
 // @level: didactic
@@ -8,18 +8,20 @@
 //
 // Hydra + audio (migré de hydra-audio.kanopi).
 // Deux voix de code : batterie en Strudel (eval.strudel) → audio, et visuel en
-// Hydra (eval.hydra) → vidéo. Deux scènes nommées gardées par un drapeau :
-// `a` (batterie seule) et `b` (batterie + visuel). Ouvrir, puis basculer les
-// scènes dans la barre transport (ou Alt+1 / Alt+2). Ctrl+. pour couper.
+// Hydra (eval.hydra) → vidéo. Deux sections gardées par le drapeau `section` :
+// `1` (batterie seule) et `2` (batterie + visuel). Ouvrir, puis changer de
+// section en éditant le chiffre de `flag section:` et en ré-évaluant.
+// Ctrl+. pour couper.
 // La batterie joue des échantillons (bd/sd/hh) : on lie la banque dirt-samples.
-flag section(a:1, b:2)
+// section — 1 : batterie seule · 2 : batterie + visuel
+flag section:1
 
 actor drums  eval.strudel(bank:"dirt-samples")
 actor visuals  eval.hydra
 
 -----
-[section==a] S -> drums_r
-[section==b] S -> { drums_r, visuals_r }
+[section==1] S -> drums_r
+[section==2] S -> { drums_r, visuals_r }
 
 drums_r -> drums.`stack(
   s("bd ~ bd ~").gain(0.9),

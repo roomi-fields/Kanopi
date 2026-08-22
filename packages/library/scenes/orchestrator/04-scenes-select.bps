@@ -1,21 +1,22 @@
 // @name: 04 — Scene selector
 // @tagline: named selectable scenes — pick calm or full live
-// @description: One self-contained `.bps` with named scenes guarded by a flag (`flag section(calm:1, full:2)`): `calm` (drums_r only) and `full` (drums_r + lead_r). Open it and look at the code to see how the flag picks which rule derives. Ctrl+. to hush.
+// @description: One self-contained `.bps` with sections guarded by a flag (`flag section:1`): `1` calm (drums_r only) and `2` full (drums_r + lead_r). Open it and look at the code to see how the flag picks which rule derives. Ctrl+. to hush.
 // @language: strudel
 // @outputs: audio
 // @level: intermediate
 // @tags: scenes, select
 // @showcase
 //
-// Sélecteur de scènes A5 — règles gardées par drapeau nommé.
-flag section(calm:1, full:2)
+// Sélecteur de scènes A5 — règles gardées par le drapeau `section`.
+// section — 1 : calm, batterie seule · 2 : full, batterie + lead
+flag section:1
 
 actor drums  eval.strudel
 actor lead  eval.strudel
 
 -----
-[section==calm] S -> drums_r
-[section==full] S -> { drums_r, lead_r }
+[section==1] S -> drums_r
+[section==2] S -> { drums_r, lead_r }
 
 drums_r -> drums.`note("c2*4").s("sine").gain(0.6)`
 lead_r  -> lead.`note("e4 g4 b4 d5").s("triangle").gain(0.5)`

@@ -12,10 +12,10 @@ export type EvalSource = {
    */
   docOffset?: number;
   /**
-   * Initial flag values applied to the BPx engine before `derive()` (A5 named
-   * scenes). For a `.bps` whose rules are guarded by a named flag (`flag section(calm:1,
-   * full:2)` → `[section==calm] …`), selecting a scene = re-evaluating with
-   * `flags: { section: <int> }`, which makes a different guarded rule derive.
+   * Initial flag values applied to the BPx engine before `derive()`. For a `.bps` whose
+   * rules are guarded by a flag (`flag section:1` → `[section==1] …`), picking a section =
+   * re-evaluating with `flags: { section: <int> }`, which makes a different guarded rule
+   * derive. Absent → the value each flag DECLARES is carried through instead.
    * Ignored by adapters that don't carry flags (everything but bp3/bpscript).
    */
   flags?: Record<string, number>;

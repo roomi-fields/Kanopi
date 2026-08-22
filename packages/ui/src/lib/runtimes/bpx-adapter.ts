@@ -355,9 +355,9 @@ type Frontend = (code: string) => {
   // token placed in the derivation maps to `{ interp, code }`. The adapter routes
   // the token → interpreter at the dispatcher-scheduled time.
   backticks?: BacktickTable;
-  // A5 états nommés : la table drapeau→{alias→int} émise pour `flag section(calm:1,
-  // full:2)`. Présente seulement quand le `.bps` déclare des états nommés ; `.gr` n'en a pas.
-  flagStates?: FlagStates;
+  // La valeur de départ que chaque drapeau porte dans sa déclaration (`flag section:1`).
+  // Présente seulement quand le `.bps` déclare au moins un drapeau ; `.gr` n'en a pas.
+  initialFlags?: Record<string, number>;
   // Per-engine sample/sound banks a `.bps` declares (`eval.strudel(bank:"dirt-samples")`
   // → `{ strudel: ["dirt-samples"] }`). The adapter loads each engine's declared
   // banks before/at the backtick eval so the code voices find their samples. `.gr`
@@ -376,25 +376,19 @@ export type Libraries = Record<string, string[]>;
 // `BT<interp><id>` → foreign code + its interpreter tag (from compileBPS).
 type BacktickTable = Record<string, { interp: string; code: string }>;
 
-// `var <name> flag: <alias>:<int>, …` → { name → { alias → int } } (from compileBPS).
-export type FlagStates = Record<string, Record<string, number>>;
-
-// Un fichier dont TOUTES les règles sont gardées par un drapeau ne dérive rien tant qu'aucun état
-// n'est posé : il rendrait le symbole de départ non expansé. On pose donc, pour CHAQUE drapeau
-// déclaré que l'appelant n'a pas fixé, son état de plus PETIT entier — « un état est actif par
-// défaut » (A5). Ce que l'appelant a fixé n'est jamais touché.
+// Un fichier dont TOUTES les règles sont gardées par un drapeau ne dérive rien tant qu'aucune
+// valeur n'est posée : il rendrait le symbole de départ non expansé. On pose donc, pour CHAQUE
+// drapeau que l'appelant n'a pas fixé, la valeur que sa DÉCLARATION porte (`flag section:1`).
+// Ce que l'appelant a fixé n'est jamais touché.
 //
-// ⛔ CE NOM ÉTAIT ÉCRIT EN DUR ICI, ET C'ÉTAIT UNE AUTORITÉ INVENTÉE PAR L'HÔTE (corrigé 2026-07-30) :
-// la fonction ne regardait que `flagStates.scene`, c'est-à-dire qu'un drapeau ne recevait de défaut
-// QUE s'il portait le nom `scene`. L'hôte décidait donc du sens d'un mot du langage — exactement ce
-// que ce dépôt élimine. Deux choses l'ont rendu intenable le même jour : le langage CONFISQUE le mot
-// (décision `2026-07-30-l-acteur-implicite-s-appelle-scene.md` : `scene` devient le nom de l'acteur
-// implicite, un drapeau ne peut plus le porter), et le sous-système qui justifiait la convention —
-// la barre de scènes que mentionnait le commentaire d'origine — est PARTI ce matin avec `@scene`.
-// L'export `defaultSceneName` qui l'accompagnait n'avait plus AUCUN appelant : supprimé, pas gardé.
-// Mesuré avant de généraliser : tout le corpus ne déclare que 3 drapeaux, tous renommés `section`
-// dans le même mouvement — aucune scène ne change de comportement, et une règle NON gardée ne voit
-// aucune différence puisqu'il n'y a rien à garder.
+// ⛔ L'HÔTE NE CHOISIT PLUS CETTE VALEUR, IL LA LIT. La forme d'avant — `flag section(calm:1,
+// full:2)` — n'écrivait aucune valeur de départ, et l'hôte posait l'état de plus petit entier :
+// une autorité que rien dans la scène ne disait. Depuis la décision de Romain du 2026-08-22, le
+// drapeau porte sa valeur initiale dans sa déclaration et les états nommés sont sortis du langage.
+//
+// ⛔ ET BPX NE LIT PAS ENCORE CETTE VALEUR SUR L'ARBRE (mesuré 2026-08-22 : deux dérivations de
+// `flag g:0` et `flag g:1`, sans `initialFlags`, rendent le MÊME arbre — la garde `[g==1]` ne
+// s'ouvre pas). Tant que ce trou dure, ce report est ce qui fait sonner les cinq scènes à sections.
 //
 // ⚠️ ZONE AVEUGLE MESURÉE, ET ELLE PORTE EXACTEMENT SUR CE CHEMIN (nommée le 2026-07-30). AUCUN
 // des ~570 bancs unitaires de ce dépôt ne passe par cette fonction : seuls les bancs d'ÉCRAN
@@ -404,18 +398,15 @@ export type FlagStates = Record<string, Record<string, number>>;
 // lettre : le nom écrit en dur faisait un porteur de plus, invisible à tout inventaire par
 // extension de fichier, et cinq scènes se seraient tues sans qu'un seul banc rougisse.
 // Donc : un changement ici se prouve À L'ÉCRAN. Un vert unitaire ne dit rien de ce chemin.
-function withDefaultFlagStates(
+function withDeclaredFlags(
   flags: Record<string, number> | undefined,
-  flagStates: FlagStates | undefined
+  declares: Record<string, number> | undefined
 ): Record<string, number> | undefined {
-  if (!flagStates) return flags;
+  if (!declares) return flags;
   let out = flags;
-  for (const [nom, table] of Object.entries(flagStates)) {
+  for (const [nom, valeur] of Object.entries(declares)) {
     if (out && nom in out) continue;
-    const entries = Object.entries(table);
-    if (entries.length === 0) continue;
-    const plusBas = entries.reduce((lo, e) => (e[1] < lo[1] ? e : lo));
-    out = { ...(out ?? {}), [nom]: plusBas[1] };
+    out = { ...(out ?? {}), [nom]: valeur };
   }
   return out;
 }
@@ -604,12 +595,12 @@ const grFrontend: Frontend = (code) => {
 // precomputed sidecar tables.
 // `var` declarations (`scene.vars`, BPscript `parser.js:1567-1634`): `names` is a
 // TABLE — one line can declare several vars, each sharing the same `varType`. Only
-// `varType.kind === 'flag'` carries named states; other kinds (`signal`, `pitch`,
+// `varType.kind === 'flag'` carries a starting value; other kinds (`signal`, `pitch`,
 // `phase`, `logic`, `in`, or a module name) are carry-only and irrelevant here.
 interface VarDirectiveNode {
   type: 'VarDirective';
   names: string[];
-  varType?: { kind?: string; states?: { name: string; value: number }[] } | null;
+  varType?: { kind?: string; initiale?: number } | null;
 }
 interface TransportRefNode {
   key?: string;
@@ -639,18 +630,17 @@ interface SceneAstView {
   soundAssignments?: { subject: string }[] | null;
 }
 
-// A5 états nommés lus de l'arbre : chaque `VarDirective` de `ast.vars` dont
-// `varType.kind === 'flag'` (`flag section(calm:1, full:2)`) → `{ [flag]: { [name]:
-// value } }`. `names` est un TABLEAU (une ligne peut déclarer plusieurs drapeaux, qui
-// partagent tous la même table d'états) ; les autres `kind` (`signal`, `pitch`, `phase`,
-// `logic`, `in`, module) sont ignorés. Same shape compileBPS's `flagStates` sidecar had.
-export function flagStatesFromAst(a: SceneAstView | null): FlagStates {
-  const out: FlagStates = {};
+// La valeur de départ de chaque drapeau, lue de l'arbre : chaque `VarDirective` de `ast.vars`
+// dont `varType.kind === 'flag'` (`flag section:1`) → `{ [flag]: valeur }`. `names` est un
+// TABLEAU (une ligne peut déclarer plusieurs drapeaux, qui partagent alors la même valeur) ;
+// les autres `kind` (`signal`, `pitch`, `phase`, `logic`, `in`, module) sont ignorés.
+export function initialFlagsFromAst(a: SceneAstView | null): Record<string, number> {
+  const out: Record<string, number> = {};
   for (const v of a?.vars ?? []) {
     if (v.varType?.kind !== 'flag') continue;
-    const table: Record<string, number> = {};
-    for (const s of v.varType.states ?? []) table[s.name] = s.value;
-    for (const name of v.names) out[name] = table;
+    const valeur = v.varType.initiale;
+    if (typeof valeur !== 'number') continue;
+    for (const name of v.names) out[name] = valeur;
   }
   return out;
 }
@@ -1146,13 +1136,12 @@ const bpsFrontend: Frontend = (code) => {
   // in the timeline (direct lookup, no parsing). Carry it through so the adapter
   // routes each BT terminal to its interpreter.
   const backticks = backticksFromAst(c.ast);
-  // A5 named scenes: read the flag→{alias→int} table from the AST's `ast.vars`
-  // `VarDirective` nodes with `varType.kind === 'flag'` (`flag section(calm:1,
-  // full:2)`) so the UI can offer one selection button per named state. Re-evaluating
-  // with `flags: { section: <int> }` makes the matching guarded rule derive (see
-  // `evaluate`).
-  const flagStates = flagStatesFromAst(a);
-  const withFlags = Object.keys(flagStates).length > 0 ? { ...parsed, flagStates } : parsed;
+  // Sections gardées par un drapeau : lire la valeur de départ que chaque `VarDirective` de
+  // `ast.vars` avec `varType.kind === 'flag'` déclare (`flag section:1`). Ré-évaluer avec
+  // `flags: { section: <entier> }` fait dériver l'autre règle gardée (voir `evaluate`).
+  const initialFlags = initialFlagsFromAst(a);
+  const withFlags =
+    Object.keys(initialFlags).length > 0 ? { ...parsed, initialFlags } : parsed;
   // Declared per-engine banks: read from the AST's actor `entityParams`
   // (`eval.strudel(bank:"dirt-samples")` → `{ strudel: ['dirt-samples'] }`) so the
   // adapter loads each engine's samples before the backtick voices eval.
@@ -1824,7 +1813,7 @@ function makeBpxAdapter(
         settings,
         orchestration,
         backticks,
-        flagStates,
+        initialFlags,
         libraries,
         // LECTURE (pas injection) : la directive tempo/mm déclarée par la scène, pour SAVOIR
         // si le tempo de session (userTempo) doit s'appliquer par warp. Directive présente →
@@ -1884,12 +1873,11 @@ function makeBpxAdapter(
       // QUAND la scène n'a pas de directive. Le tempo EFFECTIF (dérivé) est lu sur
       // `tree.metadata.tempo` (garanti peuplé, plus bas).
 
-      // A5 états nommés : un `.bps` dont TOUTES les règles sont gardées par un drapeau
-      // (`[section==calm] S -> …`) n'a aucune règle qui dérive sans état posé — `S` resterait
-      // un non-terminal non expansé et fuirait en jeton bidon vers le transport audio. On pose
-      // donc l'état de plus petit entier de CHAQUE drapeau non fixé (« un état est actif par
-      // défaut »). Le nom du drapeau n'est plus lu par l'hôte : voir `withDefaultFlagStates`.
-      const effectiveFlags = withDefaultFlagStates(src.flags, flagStates);
+      // Un `.bps` dont TOUTES les règles sont gardées par un drapeau (`[section==1] S -> …`)
+      // n'a aucune règle qui dérive tant qu'aucune valeur n'est posée — `S` resterait un
+      // non-terminal non expansé et fuirait en jeton bidon vers le transport audio. On reporte
+      // donc la valeur DÉCLARÉE de chaque drapeau non fixé : voir `withDeclaredFlags`.
+      const effectiveFlags = withDeclaredFlags(src.flags, initialFlags);
 
       // GRAINE DE PRODUCTION. Une graine POSÉE fige la dérivation (reproductible) ; ABSENTE,
       // BPx tire frais sur l'horloge (défaut natif, inversion [769]). Le modèle (Romain),
