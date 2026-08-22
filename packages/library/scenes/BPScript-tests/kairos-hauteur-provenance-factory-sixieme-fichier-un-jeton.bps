@@ -1,7 +1,7 @@
 // @language: bpscript
 // kairos-hauteur-provenance-factory-sixieme-fichier-un-jeton.bps — sert
 // src/projection/provenance-factory-mine.test.ts (kairos, [487]). Même invocation à un seul jeton
-// (test_alphabets.abc, S -> a) : sert aux cris quand le sixième fichier n'est PAS injecté par
+// (`alphabet.abc`, S -> a) : sert aux cris quand le sixième fichier n'est PAS injecté par
 // l'hôte, ou quand il est injecté SANS champ 'domain' déclaré.
 
 core
