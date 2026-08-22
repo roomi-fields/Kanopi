@@ -12,6 +12,7 @@
 
 core
 alphabet.structural
+flag times
 
 // Tous les symboles ici sont des non-terminaux sauf dans le résultat final.
 // Le résultat "A A A A2 A3 A1" contient des terminaux qui ne sont pas

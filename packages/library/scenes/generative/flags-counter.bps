@@ -12,6 +12,7 @@
 
 core
 alphabet.western:audio
+flag count
 
 // Init : compteur à 4
 -----

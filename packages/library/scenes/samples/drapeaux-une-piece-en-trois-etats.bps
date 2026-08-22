@@ -17,6 +17,7 @@
 core
 alphabet.western:audio
 tempo:88
+flag etat
 
 -----
 S -> Section Section Section

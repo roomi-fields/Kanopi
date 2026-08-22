@@ -28,6 +28,9 @@ actor flute alphabet.sargam octaves.western out.midi
 // Settings
 ins:3
 chromashift:-24
+flag Ideas
+flag Notes
+flag NumR
 
 // ============================================================
 // Sous-grammaire 1 — Initialisation mode:rnd

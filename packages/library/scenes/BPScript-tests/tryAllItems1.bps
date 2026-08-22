@@ -6,6 +6,8 @@ core
 allitems
 maxitems:500
 alphabet.western:midi
+flag Choice
+flag Flag
 
 -----
 mode:rnd

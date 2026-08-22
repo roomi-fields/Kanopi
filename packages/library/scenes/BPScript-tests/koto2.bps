@@ -13,6 +13,8 @@ a:midi
 b:midi
 c:midi
 d:midi
+flag K1
+flag K2
 
 -----
 mode:rnd
