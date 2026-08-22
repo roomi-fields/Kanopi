@@ -26,7 +26,9 @@ export function initAdapters(bus: EventBus): void {
   // fermait un cycle d'évaluation (le registre prend déjà ses adaptateurs natifs là-bas).
   setCodeVoicePredicate((r) => voix().some((a) => a.id === r));
   adapters = new Map<Runtime, RuntimeAdapter>([
-    ...codeVoices.map((a): [Runtime, RuntimeAdapter] => [a.id, a]),
+    // Les voix de code entrent dans la carte par leur PORTE (voir `porteVersLaVoix`) : ce que
+    // l'hôte obtient ici n'est jamais l'instance que le runtime appelle.
+    ...codeVoices.map((a): [Runtime, RuntimeAdapter] => [a.id, porteVersLaVoix(a)]),
     ['bp3', bp3Adapter],
     ['bpscript', bpscriptAdapter]
   ]);
@@ -58,6 +60,61 @@ const PLACEHOLDER_EXTENSIONS: Record<string, Runtime> = {
   '.py': 'python'
 };
 
+// ════════════════════════════════════════════════════════════════════════════════
+// LA PORTE DE L'HÔTE VERS UNE VOIX DE CODE — couture d'observation, arbitrage 2026-08-22
+// ════════════════════════════════════════════════════════════════════════════════
+//
+// `createCodeVoiceAdapters` rend le tableau d'instances INTERNE du paquet lui-même
+// (`runtime-codevoices/src/adapters.ts:48` — `return codeVoiceAdapters`), et c'est CE MÊME objet
+// que le runtime appelle quand une sourdine s'exécute chez lui (`code-voices-runtime.ts:743`,
+// arbitrage [76]/[77]). L'hôte et le runtime tenaient donc le même adaptateur : un espion posé
+// dessus voyait les deux, et rien ne les séparait — ni l'argument (même forme des deux côtés) ni
+// le moment (les deux chemins sont asynchrones). Un banc qui voulait dire « l'hôte n'appelle pas »
+// attrapait l'exécution LÉGITIME du runtime dès qu'un jeton avait tiré, donc au gré de la charge.
+//
+// La façade rend le discriminant STRUCTUREL au lieu d'observationnel : l'hôte n'atteint plus
+// l'instance nue, il passe par cet objet-ci ; le runtime continue d'appeler l'instance. Ce que la
+// porte a vu est donc, par construction, ce que l'HÔTE a fait.
+//
+// LA SURFACE EST DÉRIVÉE, JAMAIS RECOPIÉE : tout ce que l'amont porte traverse, y compris ce qu'il
+// ajoutera demain — une liste de méthodes tenue à la main ici périmerait en silence.
+const portes = new Map<Runtime, RuntimeAdapter>();
+
+/** Les noms portés par l'objet ET par sa chaîne de prototypes : un adaptateur écrit en classe
+ *  porte ses méthodes sur le prototype, où `Object.keys` ne va pas. */
+function clésDeSurface(o: object): string[] {
+  const clés = new Set<string>();
+  for (let n: object | null = o; n && n !== Object.prototype; n = Object.getPrototypeOf(n)) {
+    for (const c of Object.getOwnPropertyNames(n)) if (c !== 'constructor') clés.add(c);
+  }
+  return [...clés];
+}
+
+function porteVersLaVoix(amont: RuntimeAdapter): RuntimeAdapter {
+  const déjà = portes.get(amont.id);
+  // Identité STABLE : un espion posé sur la porte doit survivre à un second `initAdapters`
+  // (les bancs le rappellent), sinon il observerait un objet que plus personne n'appelle.
+  if (déjà) return déjà;
+  const nue = amont as unknown as Record<string, unknown>;
+  const porte: Record<string, unknown> = {};
+  for (const clé of clésDeSurface(amont)) {
+    if (typeof nue[clé] === 'function') {
+      porte[clé] = (...args: unknown[]) =>
+        (nue[clé] as (...a: unknown[]) => unknown).apply(nue, args);
+    } else {
+      // Les champs se LISENT sur l'amont à chaque accès — un `outputType` figé à la construction
+      // mentirait le jour où l'amont le rendrait mutable.
+      Object.defineProperty(porte, clé, { get: () => nue[clé], enumerable: true });
+    }
+  }
+  const faite = porte as unknown as RuntimeAdapter;
+  portes.set(amont.id, faite);
+  return faite;
+}
+
+/** L'UNIQUE chemin de l'hôte vers un adaptateur. Pour une voix de code il rend la PORTE ci-dessus,
+ *  jamais l'instance que le runtime appelle ; pour les natifs bp3/bpscript, l'adaptateur de l'hôte
+ *  lui-même, qu'aucun runtime tiers n'appelle. */
 export function getAdapter(runtime: Runtime): RuntimeAdapter | undefined {
   return carte().get(runtime);
 }

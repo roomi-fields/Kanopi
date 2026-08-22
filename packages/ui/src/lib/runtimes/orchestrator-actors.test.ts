@@ -11,12 +11,25 @@ import {
   type PublishedActor
 } from './bpx-adapter';
 import * as registry from './registry';
+import { createCodeVoiceAdapters } from 'runtime-codevoices';
+import type { RuntimeAdapter } from './adapter';
 
 // LE REGISTRE SE CONSTRUIT AVEC LE BUS — comme le cœur le fait en vrai. Ce banc lit des
 // adaptateurs AVANT de construire son cœur, il les initialise donc lui-même. C'est le cri
 // fail-loud du registre qui l'a révélé ; l'affaiblir pour faire passer le banc aurait rendu au
 // produit un « aucune voix reconnue » silencieux.
-beforeAll(() => initAdapters(createEventBus()));
+const bus = createEventBus();
+beforeAll(() => initAdapters(bus));
+
+// ⛔ DEUX OBJETS, DEUX SUJETS — depuis la couture du 2026-08-22 (`registry.ts`, `porteVersLaVoix`).
+//   • `registry.getAdapter('strudel')` = LA PORTE DE L'HÔTE. Seul l'hôte y passe.
+//   • `voixNue('strudel')` = l'instance que le paquet garde et que le RUNTIME appelle
+//     (`runtime-codevoices/src/adapters.ts:48` rend son tableau interne ; `code-voices-runtime.ts:743`
+//     l'appelle sur une sourdine).
+// Espionner l'une ou l'autre ne mesure donc pas la même chose, et c'est tout l'intérêt : avant la
+// couture il n'y avait qu'un seul objet et les deux appelants étaient indiscernables.
+const voixNue = (id: string): RuntimeAdapter =>
+  createCodeVoiceAdapters(bus).find((a) => a.id === id)! as unknown as RuntimeAdapter;
 
 // Minimal WebAudio + node stubs so the orchestrator eval can build its dispatcher.
 class FakeGain {
@@ -187,7 +200,10 @@ describe('orchestrator arm/disarm', () => {
   // scènes-sondes qui n'analysaient plus. Rien de ce qui avait été supposé n'était juste.)
   it('each code voice fires into its OWN per-actor slot (file::actor)', async () => {
     setActorsSink(() => {});
-    const strudel = registry.getAdapter('strudel')!;
+    // LE SUJET EST LE TIR DU RUNTIME, pas un geste de l'hôte : l'espion se pose donc sur l'instance
+    // NUE. Pose-le sur la porte et ce banc rend une liste VIDE — mesuré le 2026-08-22, et c'est la
+    // preuve directe que ces tirs viennent bien du runtime.
+    const strudel = voixNue('strudel');
     const evalSlots: string[] = [];
     const evalSpy = vi
       .spyOn(strudel, 'evaluate')
@@ -228,16 +244,15 @@ describe('orchestrator arm/disarm', () => {
     // et `unmuteActorSlot` appelle `adapter.evaluate`. L'ancien énoncé interdisait donc ce que
     // l'architecture PRESCRIT (arbitrage de l'architecte, 2026-08-22).
     //
-    // ⚠️ ET CE QUE L'ASSERTION MESURE AUJOURD'HUI RESTE PLUS LARGE QUE CE QU'ELLE ÉNONCE. L'espion
-    // est posé sur l'objet adaptateur que l'hôte et le runtime PARTAGENT, et les deux appels sont
-    // indiscernables : même forme d'argument — l'hôte la construit en `bpx-adapter.ts` (`stopCode`),
-    // le runtime en `code-voices-runtime.ts` — et même asynchronie, le chemin de l'hôte passant par
-    // un `import()` dynamique. Ni l'argument ni le moment ne les séparent, donc le discriminant ne
-    // peut pas être une observation : il doit être STRUCTUREL. La couture est PROPOSÉE, pas posée
-    // (elle attend l'arbitrage) ; tant qu'elle manque, ce filet attrape l'exécution légitime du
-    // runtime dès que la voix est devenue vivante chez lui — ce qui demande qu'un jeton ait tiré,
-    // donc dépend de la charge. Rouge une fois en campagne le 2026-08-22, non reproduit en DIX
-    // passages de la suite complète.
+    // L'ESPION EST SUR LA PORTE DE L'HÔTE, ET C'EST CE QUI REND L'ASSERTION EXACTE. Jusqu'au
+    // 2026-08-22 il était posé sur l'objet que l'hôte et le runtime PARTAGEAIENT, et les deux
+    // appels y étaient indiscernables : même forme d'argument — l'hôte la construit en
+    // `bpx-adapter.ts` (`stopCode`), le runtime en `code-voices-runtime.ts` — et même asynchronie,
+    // le chemin de l'hôte passant par un `import()` dynamique. Ni l'argument ni le moment ne les
+    // séparaient : ce filet attrapait l'exécution LÉGITIME du runtime dès qu'un jeton avait tiré,
+    // donc au gré de la charge (rouge une fois en campagne, non reproduit en dix passages).
+    // Le discriminant est désormais STRUCTUREL : `registry.getAdapter` rend une PORTE que seul
+    // l'hôte traverse (`registry.ts`, `porteVersLaVoix`), et le runtime appelle l'instance nue.
     //
     // ⛔ NE PAS « RÉPARER » CE BANC EN RÉTRÉCISSANT SA FENÊTRE. Mesuré : recentrer l'assertion sur
     // un contrôle SYNCHRONE le rend VERT sous la dérivation de 2026-07-11 réinjectée — le garde
