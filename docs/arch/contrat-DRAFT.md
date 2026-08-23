@@ -374,21 +374,23 @@ interface ContexteProjection {
   transposeToken?:      (token: string, steps: number) => string;      // ⚠️ Kanopi NE le fournit PAS (transpose dans Kairos)
 
   // ── posés PAR L'HÔTE (les facettes-librairies que Kanopi FOURNIT, sans rien exécuter) ──
-  pitchLib?:   PitchLib;                                               // KAI-10 — catalogues de hauteur (5 JSON bpscript/lib)
+  pitchLib?:   PitchLib;                                               // KAI-10 — catalogues de hauteur (5 clés du paquet bpscript)
   digitalLib?: DigitalLib;                                             // KAI-B03 — lib de fonctions digitales (transpose), body-full du bundle bpscript (LIBS.digital)
   modulation?: {                                                       // KRO-24 — contexte CV
-    registry:   Readonly<Record<string, Modulator>>;                   // buildModulators(cvInstances, modLib), construit par l'hôte
     exprSource?: ExprSource;                                           // factory de courbe (runtime-audio)
   };
+  // ⛔ `modulation.registry` N'EST PLUS POSÉ (2026-08-23) : le catalogue `mod` est archivé chez
+  //   bpscript avec les modules et la graphie `module.X` (`885327d`). L'hôte ne fabrique aucun
+  //   registre de modulation et n'en transporte plus la donnée-librairie.
 }
 
 // ── pitchLib : assemblé par l'hôte (bpx-adapter.ts:137-143) ──
 const PITCH_LIB: PitchLib = {                                          // builder.ts:45-51
-  alphabets:    Readonly<Record<string, AlphabetEntry | undefined>>;   // ← bpscript/lib/alphabets.json
-  tunings:      Readonly<Record<string, TuningEntry   | undefined>>;   // ← bpscript/lib/tunings.json
-  temperaments: Readonly<Record<string, unknown>>;                     // ← bpscript/lib/temperaments.json
-  scales:       Readonly<Record<string, unknown>>;                     // ← bpscript/lib/scales.json
-  octaves:      Readonly<Record<string, unknown>>;                     // ← bpscript/lib/octaves.json
+  alphabets:    Readonly<Record<string, AlphabetEntry | undefined>>;   // ← `LIBS.alphabets`
+  tunings:      Readonly<Record<string, TuningEntry   | undefined>>;   // ← `LIBS.tunings`
+  temperaments: Readonly<Record<string, unknown>>;                     // ← `LIBS.temperaments`
+  scales:       Readonly<Record<string, unknown>>;                     // ← `LIBS.scales`
+  octaves:      Readonly<Record<string, unknown>>;                     // ← `LIBS.octaves`
 };
 interface AlphabetEntry {                                              // builder.ts:25-29
   notes?:       readonly string[];
@@ -402,20 +404,10 @@ interface TuningEntry {                                                // builde
   baseHz?:      number; baseNote?: string; baseRegister?: number;
 }
 
-// ── modulation.registry : EXÉCUTÉ par l'hôte (bpx-adapter.ts:1512-1517) ──
-buildModulators(                                                       // @kronos/core, modulator-registry.ts:37
-  instances: readonly CvInstance[],   // ← (ast.cvInstances ?? [])  (facette de l'AST BPx)
-  lib:       ModLib,                  // ← modLibJson (bpscript/lib/mod.json)
-): Record<string, Modulator>;
-interface CvInstance   { name: string; objectType: string;            // modulator-registry.ts:13-19
-                         args?: readonly (number|string)[];
-                         namedArgs?: Readonly<Record<string, number|string|boolean>>;
-                         code?: string | null; }
-interface ModLib       { objects: Readonly<Record<string, ModLibObject>>; }     // :27-29
-interface ModLibObject { parameters: Readonly<Record<string, {default: number|string|boolean}>>;
-                         curve: Curve; }                              // :22-25
-interface Modulator    { objectType: string; params: CurveParams; curve: Curve; } // :31-35
-// Règle de fusion exécutée DANS l'hôte : défauts lib < args positionnels < args nommés.
+// ── modulation.registry : RETIRÉ DE LA FRONTIÈRE (2026-08-23) ──
+// Kairos lit les instances CV SUR l'arbre (`tree.metadata.cvInstances`) et compose les liaisons à
+// l'aplatissement. L'hôte ne construit aucun registre et ne pose plus la donnée-librairie CV : le
+// catalogue `mod` est archivé chez bpscript avec les modules (`885327d`).
 
 // ── modulation.exprSource : passé par l'hôte (bpx-adapter.ts:983-989) ──
 type ExprSource = (req: ExprRequest) => ModulationSource | null;       // compose.ts:88
@@ -438,8 +430,7 @@ les **catalogues** ; c'est exactement le modèle KAI-9 (l'adresse voyage dans la
 
 **Les deux sites d'appel sont identiques sur ces facettes** : eval (`:1531-1557`) et re-dérive au bord
 (`:1799-1808`) étalent tous deux `...bpx.buildProjectionContext()` + `pitchLib: PITCH_LIB` +
-`modulation: { registry: kronosRegistry, exprSource: onExprSource }`. `kronosRegistry` est hissé
-(cycle-invariant) donc construit UNE fois ; seul le littéral `{pitchLib, modulation}` est répété.
+`modulation: { exprSource: onExprSource }`. Seul le littéral `{pitchLib, modulation}` est répété.
 
 #### Frontière KRONOS — signatures
 
@@ -1302,7 +1293,7 @@ transport dans le builder.
 6. 🔶 (proposé) **pas-de-copie-MIDI-dans-core** : `packages/core` ne ré-héberge aucun transport MIDI
    (copie supprimée ; figer pour empêcher la rechute).
 7. 🔶 (proposé) **pas-de-catalogue-de-domaine-importé** : `bpx-adapter.ts` ne doit pas importer les
-   JSON `bpscript/lib/{alphabets,tunings,temperaments,scales,octaves}` ni coder d'alphabet musical
+   catalogues `LIBS.{alphabets,tunings,temperaments,scales,octaves}` ni coder d'alphabet musical
    (`WESTERN_NOTES`) — dépend de la résolution C1.
 
 ---

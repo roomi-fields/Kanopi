@@ -20,7 +20,7 @@ La library est un facteur clé de succès (Ableton Packs, VSCode marketplace, Ar
 | **SCENES** | "4-to-floor kick", "Polymetric 3:5", "Ambient pad drone" | fragment `.kanopi` + fichiers code |
 | **SNIPPETS** | Mini-patterns Tidal, shaders Hydra, synths SC, rythmes BPscript | fichier code (`.tidal`, `.scd`…) |
 | **DEVICES** | Profils hardware (Minilab 3, Sub37, Electra One…) | JSON osc-bridge + preset Kanopi |
-| **SCALES** | Western, Sargam, Pelog, Bohlen-Pierce, microtonal | JSON (hérité de `BPscript/lib/alphabets.json`) |
+| **SCALES** | Western, Sargam, Pelog, Bohlen-Pierce, microtonal | hérité du catalogue `alphabets` de BPscript (`LIBS.alphabets`) |
 
 ## Format d'un item library
 
@@ -125,7 +125,7 @@ Différé n'est pas absent.
 | DEVICES | 5 profils (Minilab 3, Sub37, Launch XL, Electra One, Sub37) |
 | SCALES | 5 gammes (western, sargam, pelog, BP, microtonal) |
 
-Source alphabets/scales : `BPscript/lib/alphabets.json` existant, à migrer.
+Source alphabets/scales : le catalogue `alphabets` de BPscript, porte `LIBS.alphabets`, à migrer.
 Source démos : `BPscript/web/demos/` (38 fichiers .bps), à trier/intégrer.
 
 ## Contenu communautaire attendu

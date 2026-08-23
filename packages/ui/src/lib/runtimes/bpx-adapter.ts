@@ -44,19 +44,23 @@ import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 // Les catalogues de l'amont sont transportés EN BLOC vers Kairos (`PITCH_LIB` plus bas) : aucune
 // constante par catalogue ici, sinon la liste ferme l'ensemble et le prochain fichier à nom libre
 // reste invisible. Une scène qui déclare `alphabet.X` ou `test_alphabets.X` résout à travers eux.
-// Registre des VOIX (`lib/voices.json`, domaine 'voice' — LANG-SONS-3, résolution voix Kairos
+// Registre des VOIX (`LIBS.voices`, domaine 'voice' — LANG-SONS-3, résolution voix Kairos
 // 79118df) : jumelle de `pitchLib`/`digitalLib`, donnée read-only fournie par l'hôte (L26).
 // Kairos RÉSOUT terminal→voix (réf de l'acteur / binding d'alphabet), cascade `for:<device>`,
 // et grave `content.voice`. ABSENT ⇒ pas de facette voix (rétro-compat : oscillateur du runtime).
 // L'hôte TRANSPORTE le registre, il ne l'interprète pas. Le RENDU du backtick de voix (aval,
 // runtime-audio) est tenu jusqu'à l'étude son [828] — ici c'est la plomberie de l'injection.
 const voicesJson = LIBS.voices;
-// Lib de FONCTIONS DIGITALES fournie (KAI-B03) — jumelle de `mod.json` (CV) : Kairos applique
-// ces fonctions TS déterministes (ex. `transpose`) à la projection. Donnée read-only fournie par
-// l'hôte (3 provenances, comme PITCH_LIB) ; sans elle Kairos retombe sur un repli hérité hardcodé.
-// SOURCE : le `body` (code TS de chaque fonction) n'est PAS dans `lib/digital.json` (signature seule) —
-// il est CAPTÉ depuis `lib/digital/<fn>.ts` dans le BUNDLE navigateur `libs-data.js` (libs-bundle.js:52,
-// commentaire de digital.json). On consomme donc `LIBS.digital` (avec body), pas le JSON nu.
+// Lib de FONCTIONS DIGITALES fournie (KAI-B03) : Kairos applique ces fonctions TS déterministes
+// (ex. `transpose`) à la projection. Donnée read-only fournie par l'hôte (3 provenances, comme
+// PITCH_LIB) ; sans elle Kairos retombe sur un repli hérité hardcodé.
+// SOURCE : le `body` (code TS de chaque fonction) vit hors de la DÉCLARATION du catalogue, qui n'en
+// porte que la signature. `captureDigitalBodies` (bpscript, `libs-bundle.js`) le capte depuis
+// `lib/digital/<fn>.ts` et le grave dans le paquet. On consomme donc `LIBS.digital`, avec le body.
+// ⛔ ON NOMME LA PORTE (`LIBS.<clé>`), JAMAIS LE FICHIER SOURCE : bpscript convertit ses catalogues
+//   de `.json` vers `.bpsl` au fil (`alphabets`, `settings`, `digital` le 2026-08-23). Le format
+//   d'une source n'est pas une information utile ici — la donnée est dans le paquet quel qu'il soit.
+//   Sept lecteurs se sont rendus aveugles en énumérant `lib/` par extension, dont le générateur.
 import { LIBS as BPSCRIPT_LIBS } from 'bpscript/src/transpiler/libs-data.js';
 import {
   createSession,
@@ -109,16 +113,12 @@ import { type PitchLib, type DigitalLib } from '@kairos/core';
 // choisir, une seule dérivation et elle PORTE LES CONTRÔLES (décision Romain 2026-08-09). Il n'y
 // aura donc jamais d'option à passer ici — mais l'arbre que je diffuse portera des marqueurs que
 // mes consommateurs n'ont jamais vus, et c'est ma chaîne qui les emmène vers Kronos.
-// Kairos owns CV COMPOSITION (frontier R2 ; `buildModulators`/ModLib/ExprSource MIGRÉS de Kronos
-// vers @kairos/core — point 5, kairos 094abf3). `buildModulators` fuses the scene's `cv … : mod.x(…)`
-// declarations with the `mod` library into the modulator registry. The host builds it once and hands
-// it to Kairos (`charger`'s `modulation:{registry,…}`); Kairos's projection composes the bindings at
-// flatten (KRO-24). Consumed AS-IS. (Ménage point 3 — passer les données BRUTES plutôt qu'appeler
-// buildModulators côté hôte — reste SÉPARÉ, plus tard : il touche la compo CV.)
-// KRO-24 / KAI-9-10 — la COMPOSITION CV appartient à Kairos (il détient l'arbre, lit les cvInstances
-// SUR l'arbre — tree.metadata.cvInstances, BPx ad4dfed — et compose à l'aplatissement). L'hôte ne
-// COMPOSE plus : il n'appelle/importe plus `buildModulators` ; il forwarde l'arbre + la donnée-
-// librairie de contexte (`modLib`, L26, hors arbre) + la fabrique de courbes `exprSource`.
+// KRO-24 / KAI-9-10 — la COMPOSITION CV appartient à Kairos (frontière R2) : il détient l'arbre,
+// lit les cvInstances SUR l'arbre (`tree.metadata.cvInstances`, BPx ad4dfed) et compose les liaisons
+// à l'aplatissement. L'hôte forwarde l'arbre et la fabrique de courbes `exprSource`, rien d'autre.
+// ⛔ IL NE FOURNIT PLUS DE REGISTRE NI DE DONNÉE-LIBRAIRIE CV : le catalogue `mod` est archivé chez
+//   bpscript avec les modules (`885327d`, 2026-08-23), et `charger` ne reçoit plus `modulation.registry`.
+//   Le détail du geste et ce qui reste refusé sont dits au site d'appel.
 import { type ExprSource } from '@kairos/core';
 // Kronos drives the REAL audio (the only engine; legacy removed). The Kronos
 // scheduler produces the timed events; a thin adapter bridges each to the existing
@@ -2010,8 +2010,8 @@ function makeBpxAdapter(
         // drop them here so nothing downstream regresses.
         // CV — la COMPOSITION appartient à Kairos (KRO-24) : il lit les cvInstances SUR l'arbre
         // (`tree.metadata.cvInstances`, BPx ad4dfed) et compose à l'aplatissement. L'hôte ne
-        // construit plus de registre (`buildModulators` retiré) ; il forwarde l'arbre + la
-        // donnée-librairie `modLib` (contexte L26, hors arbre) + la fabrique `exprSource`.
+        // construit plus de registre et ne fournit plus de donnée-librairie CV ; il forwarde
+        // l'arbre et la fabrique `exprSource`.
         // CV is composed by Kronos (Kairos projection) and RENDERED by the runtime-audio
         // AudioRuntime. The legacy `resolveCvControls`
         // (which stamped `{__cv}` descriptors for the now-removed internal WebAudio synth)

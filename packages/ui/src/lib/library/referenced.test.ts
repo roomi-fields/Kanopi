@@ -10,8 +10,8 @@ initAdapters(createEventBus());
 
 describe('referencedLibraries — bpscript directives', () => {
   it('reads alphabet and tuning directives (dot-canon names from the subkey)', () => {
-    // `tuning.sargam_22shruti` is a REAL tuning (lib/tunings.json). The former
-    // fixture named `maqam_rast`, which is a SCALE (lib/scales.json), not a tuning —
+    // `tuning.sargam_22shruti` is a REAL tuning (axis `tuning`, catalogue `LIBS.tunings`).
+    // The former fixture named `maqam_rast` is a SCALE (`LIBS.scales`), not a tuning —
     // a dishonest fixture (architecte [745]). Dot canon: the tuning name is the subkey.
     const code = `core
 alphabet.arabic:audio
