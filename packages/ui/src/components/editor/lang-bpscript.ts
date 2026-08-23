@@ -74,9 +74,12 @@ const CONTROL_COMPLETIONS: Completion[] = vocab.controls.map((c) => ({
   info: controlInfo(c)
 }));
 
-// Fixed SYNTAX keywords (`gate`/`trigger`/`cv`/`lambda`) — bare words the authority
-// exposes via `syntaxWords` (kind `keyword`). Operators (`->`/`<-`/`<>`) are syntax
+// Fixed SYNTAX keywords — the bare words the authority exposes via `syntaxWords` under
+// kind `keyword`. Operators live in the same map under kind `operator`: they are syntax
 // too but not word-completable, so only the `keyword` kind joins the popup.
+// ⛔ ON NE LES ÉNUMÈRE PAS ICI. La liste se dérive à chaque chargement, et l'amont la fait
+//   varier : `lambda` en est sorti le 2026-08-24 quand le mot a quitté le langage. Une
+//   énumération en commentaire ne rougit nulle part le jour où elle devient fausse.
 const SYNTAX_KEYWORD_COMPLETIONS: Completion[] = Object.entries(vocab.syntaxWords)
   .filter(([, d]) => d.kind === 'keyword')
   .map(([name, d]) => ({ label: name, type: 'keyword', detail: 'keyword', info: d.description }));
@@ -304,7 +307,7 @@ function hoverHitAt(lineText: string, col: number): HoverHit | null {
     if (s) return { title: op[1], syntax: s.syntax, desc: s.description };
   }
   // A bare vocabulary word (control / value / function / address),
-  // else a fixed syntax keyword (gate / trigger / cv / lambda).
+  // else a fixed syntax keyword — whatever `syntaxWords` declares under kind `keyword`.
   const w = findTokenAt(lineText, col, /[A-Za-z][\w-]*/g);
   if (w) {
     const hit = vocabWordHover(w[0]);

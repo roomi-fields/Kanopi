@@ -207,7 +207,9 @@ export interface Vocabulary {
     string,
     { description?: string; values: Array<{ name: string; description?: string }> }
   >;
-  /** Fixed syntax words/operators (`gate`/`trigger`/`cv`/`lambda`, `->`, `<-`, `<>`) for hover + keyword completion. */
+  /** Fixed syntax words and operators, for hover + keyword completion. The set is the
+   *  authority's and it varies — `lambda` left it on 2026-08-24 — so it is not enumerated
+   *  here: an enumeration in a comment goes stale without ever turning red. */
   syntaxWords: Record<
     string,
     { kind: 'keyword' | 'operator'; description?: string; syntax?: string }
