@@ -55,7 +55,24 @@ test('a .bps p5 code voice evaluates and paints non-background pixels', async ({
   //   sous la charge d'une campagne complète, une seconde ne suffit pas toujours.
   //   La sonde rendait -1 (pas de toile), -2 (pas de contexte) et un COMPTE sur le même canal :
   //   trois pannes distinctes réduites à un nombre comparable, donc un échec qui ne se nomme pas.
-  await expect(page.locator('.p5 canvas')).toBeVisible({ timeout: 15_000 });
+  // ⛔ KAN-65 — L'ÉCHEC PORTE SA PROPRE PIÈCE. Mesuré : la toile manque environ une fois sur dix,
+  //   EN ISOLATION (1 sur 6 puis 0 sur 8, hors campagne) — donc ni la charge ni une attente trop
+  //   courte. Quinze secondes ne suffisent pas non plus : la toile n'apparaît simplement pas.
+  //   Sans ce relevé, chaque occurrence se solde par « élément introuvable » et n'apprend rien.
+  try {
+    await expect(page.locator('.p5 canvas')).toBeVisible({ timeout: 15_000 });
+  } catch (echec) {
+    const etat = await page.evaluate(() => ({
+      conteneursP5: document.querySelectorAll('.p5').length,
+      toilesTotales: document.querySelectorAll('canvas').length,
+      p5Charge: typeof (window as { p5?: unknown }).p5,
+      htmlDuConteneur:
+        (document.querySelector('.p5') as HTMLElement | null)?.outerHTML?.slice(0, 400) ??
+        '(aucun conteneur .p5)'
+    }));
+    console.log('KAN-65 — état du DOM à l’échec : ' + JSON.stringify(etat));
+    throw echec;
+  }
   // La toile existe ; il reste à laisser `draw` produire sa première image.
   await page.waitForTimeout(500);
 
