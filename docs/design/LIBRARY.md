@@ -122,7 +122,7 @@ Différé n'est pas absent.
 | STARTERS | 5 workspaces démo (tidal-hydra, drone, performance, indian-polyrhythm, polymetric-set) |
 | SCENES | 12 scènes réutilisables |
 | SNIPPETS | 15 mini-patterns (3/runtime × 4 runtimes + 3 BPscript) |
-| DEVICES | 5 profils (Minilab 3, Sub37, Launch XL, Electra One, Sub37) |
+| DEVICES | 5 profils, quatre nommés (Minilab 3, Sub37, Launch XL, Electra One) — le cinquième au fil des acquisitions |
 | SCALES | 5 gammes (western, sargam, pelog, BP, microtonal) |
 
 Source alphabets/scales : le catalogue `alphabets` de BPscript, porte `LIBS.alphabets`, à migrer.
