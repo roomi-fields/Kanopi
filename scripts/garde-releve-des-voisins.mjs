@@ -38,8 +38,23 @@ const clone = (m) => new Map([...m].map(([k, x]) => [k, new Map(x)]));
 // ⛔ LE DÉNOMINATEUR AVANT TOUT LE RESTE. Un garde compte ce qu'il a examiné et refuse d'avoir
 // examiné zéro : sans ce seuil, un relevé en panne rendrait « rien n'a bougé » avec la même forme
 // qu'un atelier parfaitement calme.
+//
+// ⛔ ET IL SE COMPTE PAR VOISIN, PAS SEULEMENT EN SOMME. Mesuré le 2026-08-23 : le total valait 921 et
+// cachait la question que kairos et bp3-frontend ont posée le même quart d'heure — « des chemins que
+// tu gèles n'existent pas chez moi ; si ton banc les lit, il lit du vide ». La réponse était non, et
+// il a fallu la produire À LA MAIN parce que ce garde ne la portait pas. Un seul voisin muet — racine
+// renommée chez lui, manifeste qui cesse de l'exposer — disparaît sous une somme que les dix autres
+// maintiennent au-dessus du seuil.
+//
+// LE SEUIL PAR VOISIN EST ZÉRO, ET IL N'EST PAS CHOISI : un voisin lié expose ses racines par son
+// PROPRE manifeste, donc une racine relevée existe chez lui par construction. Zéro entrée n'est pas
+// « un voisin calme », c'est une racine qui a disparu sous le relevé.
+const voisinsMuets = (releve) =>
+  [...releve].filter(([, m]) => m.size === 0).map(([nom]) => nom);
+
 let entrees = 0;
 for (const m of reel.values()) entrees += m.size;
+const muets = voisinsMuets(reel);
 if (voisins.length < 8 || entrees < 200) {
   console.error(
     `[garde-releve] RELEVÉ TROP MAIGRE POUR PROUVER QUOI QUE CE SOIT — ${voisins.length} voisin(s), ` +
@@ -47,8 +62,19 @@ if (voisins.length < 8 || entrees < 200) {
   );
   process.exit(1);
 }
+if (muets.length) {
+  console.error(
+    `[garde-releve] ${muets.length} VOISIN(S) RELEVÉ(S) À ZÉRO ENTRÉE — ${muets.join(", ")}. ` +
+      `Leur manifeste expose des racines que ce relevé ne trouve pas : sur eux, « rien n'a bougé » et ` +
+      `« rien n'a été lu » rendent le même vert.`,
+  );
+  process.exit(1);
+}
+// LE DÉTAIL PAR VOISIN EST IMPRIMÉ, PAS SEULEMENT VÉRIFIÉ : un chiffre qui s'effondre chez un seul se
+// lit alors dans le journal de la campagne, avant d'atteindre le seuil zéro.
 console.log(
-  `[garde-releve] ${voisins.length} voisins, ${entrees} entrées en régime bancs.`,
+  `[garde-releve] ${voisins.length} voisins, ${entrees} entrées en régime bancs — ` +
+    `${[...reel].map(([n, m]) => `${n}:${m.size}`).join(" ")}`,
 );
 
 // 0. Le vert honnête. Un garde qui mord toujours ne garde rien : il se fait désarmer à la première
@@ -57,6 +83,22 @@ dire(
   cequiABascule(reel, RACINE, racines).length === 0,
   "un relevé intact ne dénonce personne",
 );
+
+// 0 bis. LE DÉNOMINATEUR PAR VOISIN MORD. Le seuil zéro ci-dessus sort avant les épreuves, donc il
+//    ne peut pas s'éprouver sur `reel` : c'est sa FONCTION qu'on injecte, sur un clone, comme le reste.
+{
+  const faux = clone(reel);
+  const cible = [...faux.keys()][0];
+  faux.set(cible, new Map());
+  dire(
+    voisinsMuets(faux).includes(cible),
+    `un voisin relevé à ZÉRO entrée est dénoncé (${cible})`,
+  );
+  dire(
+    voisinsMuets(reel).length === 0,
+    "…et aucun ne l'est aujourd'hui — sinon la morsure ci-dessus ne prouverait rien",
+  );
+}
 
 // 1. Il mord sur une SOURCE VIVE — ce que la campagne charge vraiment.
 for (const cible of ["bpscript", "@kairos/core"]) {
