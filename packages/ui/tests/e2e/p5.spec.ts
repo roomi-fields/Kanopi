@@ -49,14 +49,21 @@ test('a .bps p5 code voice evaluates and paints non-background pixels', async ({
   // Whole-`.bps` eval — the `sketch` backtick fires through the dispatcher sink.
   await evalBlockAt(page, 1);
 
-  // Give p5 time to construct the instance, run setup, and produce a first frame.
-  await page.waitForTimeout(1000);
+  // ⛔ KAN-65 — ON ATTEND LA TOILE, PAS UNE DURÉE. Une attente écrite en dur a produit SEPT
+  //   retries en une journée, tous sur `litPixels === -1` : le sélecteur ne trouvait aucune
+  //   toile après la seconde impartie. Ce n'était pas un rendu pâle, c'était une COURSE — et
+  //   sous la charge d'une campagne complète, une seconde ne suffit pas toujours.
+  //   La sonde rendait -1 (pas de toile), -2 (pas de contexte) et un COMPTE sur le même canal :
+  //   trois pannes distinctes réduites à un nombre comparable, donc un échec qui ne se nomme pas.
+  await expect(page.locator('.p5 canvas')).toBeVisible({ timeout: 15_000 });
+  // La toile existe ; il reste à laisser `draw` produire sa première image.
+  await page.waitForTimeout(500);
 
   const litPixels = await page.evaluate(() => {
     const canvas = document.querySelector('.p5 canvas') as HTMLCanvasElement | null;
-    if (!canvas) return -1;
+    if (!canvas) throw new Error('KAN-65 : toile absente APRÈS attente explicite de visibilité');
     const ctx = canvas.getContext('2d');
-    if (!ctx) return -2;
+    if (!ctx) throw new Error('KAN-65 : toile présente mais sans contexte 2d');
     const w = Math.min(64, canvas.width);
     const h = Math.min(64, canvas.height);
     const x = Math.max(0, Math.floor(canvas.width / 2) - w / 2);
