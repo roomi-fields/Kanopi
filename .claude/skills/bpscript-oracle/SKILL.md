@@ -4,7 +4,7 @@ description: >
   Oracle du langage BPScript — il répond sur la FORME du langage, telle qu'elle est spécifiée, en
   citant `fichier:ligne`. Répondre de mémoire est non fiable : le langage a été refondu, et il bouge
   encore (trois mots restent — `object`, `def`, `init` ; le **type vient en tête**, `flag
-  section(intro:1, drop:2)` · `symbol x` · `in.midi sync1` ; la **position** qualifie la ligne de part
+  section:1` · `symbol x` · `in.midi sync1` ; la **position** qualifie la ligne de part
   et d'autre du délimiteur `-----` ; `transport.` est devenu `out.`/`in.` ; `sub`/`transcription` sont
   devenus `homomorphism` ; la vitesse s'écrit avec l'opérateur seul). Utilise ce skill pour TOUTE
   question de syntaxe ou d'exemple BPScript, même un one-liner « évident » (« c'est `:` ou `.` ? »,
@@ -88,13 +88,17 @@ ne le corriges pas en BPScript. Son autorité est `hub/savoir-bp3.md §⓪`.
 `-----`. L'arobase de tête est sortie le 2026-08-16.
 
 ```bpscript
-flag section(intro:1, drop:2)
+flag section:1
 symbol x
 in.midi sync1
 actor lead alphabet.western out.midi(ch:1)
 -----
-[section==intro] S -> C4 D4
+[section==1] S -> C4 D4
 ```
+
+**Un drapeau porte un nom et un entier**, et sa déclaration est obligatoire (Romain, 2026-08-22) :
+le nom nu est refusé, l'emploi sans déclaration aussi, et les états nommés entre parenthèses sont
+sortis.
 
 `object` est **décidé et non câblé** : `def fort (vel:100)` et `init tempo:120` passent, `object kit`
 rend un message générique.
@@ -106,7 +110,8 @@ mémoire, ils datent d'avant leur retrait.
 
 | ce qui s'écrit aujourd'hui | remplace |
 |---|---|
-| le **type en tête** — `flag section(intro:1, drop:2)`, `symbol x`, `in.midi sync1` | `var`, et les directives `flag`, `in`, `cv` |
+| le **type en tête** — `flag section:1`, `symbol x`, `in.midi sync1` | `var`, et les directives `flag`, `in`, `cv` |
+| `flag <nom>:<entier>`, déclaration obligatoire | les états nommés, `flag section(calm:1, full:2)`, sortis le 2026-08-22 |
 | la **position**, de part et d'autre de `-----` | l'arobase de tête |
 | `def` | `macro`, `alias`, `cc`, `label` |
 | `init` | `wire` |
@@ -122,7 +127,7 @@ mémoire, ils datent d'avant leur retrait.
 | la banque est un paramètre du moteur | `library` |
 | la durée d'une scène suit son contenu | `duration` |
 | une seule portée déclarative, la scène entière | `scene` |
-| FauxtX, chantier à venir | la modulation, et le câblage `>>` |
+| FaustX, chantier à venir | la modulation, et le câblage `>>` |
 
 **Cinq mots sortent sans emporter leur notion**, et les confondre casse la page qui décrit la notion :
 
