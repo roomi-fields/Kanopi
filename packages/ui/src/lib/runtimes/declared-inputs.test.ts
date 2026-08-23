@@ -19,14 +19,23 @@ describe('declaredInputsForScene', () => {
     expect(role.mapping).toBeNull();
   });
 
-  it('un rôle nommé SANS canal reste déclaré — son canal vaut `null`, il ne disparaît pas', () => {
-    // `in pedale` est une déclaration légale depuis la frappe bpscript `15ae763` (2026-08-22) : un
-    // nom nu vaut un MODÈLE. L'amont refuse son EMPLOI dans le flux, jamais sa déclaration — elle
-    // arrive donc jusqu'à la vue matériel, qui doit pouvoir la montrer plutôt que la taire.
-    expect(declaredInputsForScene('in pedale\nin.midi expression\n-----\nA -> C4\n')).toEqual([
-      { name: 'pedale', transport: null, mapping: null },
-      { name: 'expression', transport: 'midi', mapping: null }
-    ]);
+  // ⛔ LE VERROU EST RETOURNÉ, PAS RETIRÉ (bpscript `d0d0be9`, 2026-08-23 — « une entrée déclare
+  // son CANAL : la forme nue sort, le champ cesse d'être nullable »). Ce banc verrouillait
+  // l'inverse : `in pedale` déclarait un rôle au canal `null`, qui remontait jusqu'à la vue
+  // matériel. Effacer le banc laisserait la forme morte revenir sans que rien ne rougisse ; ce qui
+  // suit verrouille donc son ABSENCE, sur les deux faces.
+  it('la forme NUE est refusée en amont — une scène qui la porte ne déclare RIEN', () => {
+    // Le refus porte sur la SCÈNE entière : elle ne rend aucun arbre, donc l'entrée voisine
+    // pourtant bien formée ne remonte pas non plus. C'est le voyant de santé qui le dit.
+    expect(declaredInputsForScene('in pedale\nin.midi expression\n-----\nA -> C4\n')).toEqual([]);
+  });
+
+  it('tout canal rendu est une CHAÎNE de la liste fermée — jamais nul', () => {
+    // Le témoin positif : sans lui, un rendu VIDE passerait ce test sans rien mesurer.
+    const roles = declaredInputsForScene(
+      'in.midi pedale\nin.keyboard touches\nin.osc fader\n-----\nA -> C4\n'
+    );
+    expect(roles.map((r) => r.transport)).toEqual(['midi', 'keyboard', 'osc']);
   });
 
   it('une scène sans entrée ne déclare rien', () => {

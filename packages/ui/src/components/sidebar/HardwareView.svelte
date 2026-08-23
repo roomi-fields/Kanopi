@@ -107,9 +107,7 @@
           <li class="role">
             <div class="role-head">
               <span class="role-name">{r.name}</span>
-              <span class="role-canal" class:sans-canal={r.transport === null}>
-                {r.transport ?? 'canal non déclaré'}
-              </span>
+              <span class="role-canal">{r.transport}</span>
               {#if r.mapping}<span class="role-table">mapping.{r.mapping}</span>{/if}
             </div>
 
@@ -142,14 +140,6 @@
                 Rien à associer : le clavier est déjà là. C'est le <em>focus de jeu</em> (barre
                 d'état, en bas) qui lui donne les touches.
                 {#if playFocus.held}<strong>Pris.</strong>{/if}
-              </p>
-            {:else if r.transport === null}
-              <!-- La scène nomme le rôle et ne dit pas d'où son signal vient (`in pedale`). Rien à
-                   associer : aucun canal ne le porte. L'amont refuse son emploi dans le flux, cette
-                   scène joue donc sans lui. -->
-              <p class="hint">
-                Rien à associer : la scène nomme ce rôle sans son canal.
-                <code>in.midi {r.name}</code> le lui donne.
               </p>
             {:else if r.transport === 'osc'}
               <input
@@ -326,12 +316,6 @@
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text-faint);
-  }
-  .role-canal.sans-canal {
-    color: var(--text-muted);
-    font-style: italic;
-    text-transform: none;
-    letter-spacing: 0;
   }
   .hint code {
     font-family: var(--font-mono);

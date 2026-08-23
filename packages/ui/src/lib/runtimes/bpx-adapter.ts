@@ -44,10 +44,6 @@ import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
 // Les catalogues de l'amont sont transportés EN BLOC vers Kairos (`PITCH_LIB` plus bas) : aucune
 // constante par catalogue ici, sinon la liste ferme l'ensemble et le prochain fichier à nom libre
 // reste invisible. Une scène qui déclare `alphabet.X` ou `test_alphabets.X` résout à travers eux.
-// Bibliothèque de MODULATION (`mod.adsr/lfo/ramp`) : la donnée porte les signatures de
-// paramètres ET la forme de courbe (segments déclaratifs). L'hôte la transporte telle quelle
-// dans le contexte `modulation` de `charger` ; Kairos la lit et compose à l'aplatissement.
-const modLibJson = LIBS.mod;
 // Registre des VOIX (`lib/voices.json`, domaine 'voice' — LANG-SONS-3, résolution voix Kairos
 // 79118df) : jumelle de `pitchLib`/`digitalLib`, donnée read-only fournie par l'hôte (L26).
 // Kairos RÉSOUT terminal→voix (réf de l'acteur / binding d'alphabet), cascade `for:<device>`,
@@ -123,7 +119,7 @@ import { type PitchLib, type DigitalLib } from '@kairos/core';
 // SUR l'arbre — tree.metadata.cvInstances, BPx ad4dfed — et compose à l'aplatissement). L'hôte ne
 // COMPOSE plus : il n'appelle/importe plus `buildModulators` ; il forwarde l'arbre + la donnée-
 // librairie de contexte (`modLib`, L26, hors arbre) + la fabrique de courbes `exprSource`.
-import { type ModLib, type ExprSource } from '@kairos/core';
+import { type ExprSource } from '@kairos/core';
 // Kronos drives the REAL audio (the only engine; legacy removed). The Kronos
 // scheduler produces the timed events; a thin adapter bridges each to the existing
 // WebAudio synth.
@@ -328,8 +324,14 @@ function contexteDeProjection(base: unknown): Parameters<Kairos['charger']>[1] {
     // LANG-SONS §4/§8 — catalogue d'actions + substitution de symboles.
     actionLib: ACTION_LIB,
     homomorphismeLib: HOMOMORPHISM_LIB,
-    // KRO-24 — registre CV + fabrique de courbe : Kairos COMPOSE à l'aplatissement.
-    modulation: { modLib: modLibJson as unknown as ModLib, exprSource: onExprSource }
+    // KRO-24 — fabrique de courbe : Kairos COMPOSE à l'aplatissement.
+    // ⛔ LE REGISTRE `modLib` N'EST PLUS FOURNI : bpscript a archivé le catalogue `mod` avec les
+    // modules (`885327d`, 2026-08-23), `LIBS.mod` n'existe plus, et l'hôte ne fournit pas un
+    // catalogue qu'il n'a pas. Aucune scène du corpus ne déclare plus d'instance de contrôle — les
+    // quatre qui le faisaient sont refusées à la compilation — donc `buildModulators` n'est plus
+    // atteint depuis ici. Ce que Kairos compose sans ce registre est SA porte, pas la mienne : la
+    // mesure lui est rendue, l'arbitrage lui appartient.
+    modulation: { exprSource: onExprSource }
   } as unknown as Parameters<Kairos['charger']>[1];
 }
 
@@ -775,12 +777,12 @@ export function interpsForScene(text: string): string[] {
 export interface DeclaredInput {
   /** Le RÔLE, tel que la scène le nomme (`in.midi pedale`) — jamais un nom d'appareil. */
   readonly name: string;
-  /** Le canal d'entrée déclaré : `midi` · `keyboard` · `osc` — liste FERMÉE tenue en amont — ou
-   *  `null` quand la scène nomme le rôle SANS son canal (`in pedale`, préavis bpscript du
-   *  2026-08-22, frappe `15ae763`). Un tel rôle est une déclaration LÉGALE, et son emploi dans le
-   *  flux est refusé en amont : il arrive donc jusqu'ici, jamais jusqu'à une dérivation. `null` et
-   *  champ ABSENT restent distincts — c'est l'aval qui décide sur ce champ. */
-  readonly transport: string | null;
+  /** Le canal d'entrée déclaré : `midi` · `keyboard` · `osc` — liste FERMÉE tenue en amont, et
+   *  TOUJOURS présente. La forme nue (`in pedale`) est REFUSÉE à la compilation depuis bpscript
+   *  `d0d0be9` (2026-08-23) : une scène qui la porte ne rend aucun arbre, donc aucune entrée
+   *  n'arrive ici sans son canal. Le champ reste EXIGÉ à la lecture ci-dessous — c'est son
+   *  absence, pas sa valeur, qui dirait que la forme amont a changé. */
+  readonly transport: string;
   /** La table de correspondance invoquée, ou `null`. */
   readonly mapping: string | null;
 }
@@ -802,16 +804,11 @@ export function declaredInputsForScene(text: string): readonly DeclaredInput[] {
   const inputs = (astSiSucces(text) as { inputs?: unknown } | null)?.inputs;
   if (!Array.isArray(inputs)) return [];
   return inputs
-    .filter((d): d is { name: string; transport: string | null; mapping?: string | null } => {
+    .filter((d): d is { name: string; transport: string; mapping?: string | null } => {
       const n = d as { name?: unknown; transport?: unknown };
-      // `transport` doit EXISTER — `null` est une valeur portée, pas une absence — sinon la forme
-      // n'est pas celle que l'amont publie et l'hôte ne la devine pas.
-      const canal = n !== null && typeof n === 'object' && 'transport' in n;
-      return (
-        typeof n?.name === 'string' &&
-        canal &&
-        (typeof n.transport === 'string' || n.transport === null)
-      );
+      // `transport` doit être une CHAÎNE : l'amont refuse la forme nue, donc une entrée sans canal
+      // n'est pas une forme que l'hôte devine — c'est le signe que la forme amont a changé.
+      return typeof n?.name === 'string' && typeof n?.transport === 'string';
     })
     .map((d) => ({ name: d.name, transport: d.transport, mapping: d.mapping ?? null }));
 }

@@ -13,19 +13,21 @@ const tuningsJson = LIBS.tunings;
 const temperamentsJson = LIBS.temperaments;
 const scalesJson = LIBS.scales;
 const octavesJson = LIBS.octaves;
-// BPScript language modules (`core` + the `mod` CV lib): real library files with
-// browsable content (core symbols/settings, CV objects + their declarative curves).
-// Imported AS-IS so opening one shows it.
+// BPScript language module `core`: a real library file with browsable content
+// (core symbols/settings). Imported AS-IS so opening one shows it.
 //
-// ⚠️ `controls` A DISPARU DE LA LISTE LE 2026-08-10, ET SON FICHIER AVEC : bpscript a fusionné
-// `controls` dans `core` et supprimé `lib/controls.json` (leur 647df04, ordre de Romain). Ce
-// n'est pas une entrée retirée de l'affichage — c'est un module qui n'existe plus dans le langage.
-// L'exposer encore montrerait une forme que le langage a retirée, et c'est précisément ce que le
-// backlog KAN-42 reproche à 203 scènes.
+// ⚠️ DEUX CATALOGUES ONT DISPARU DE CETTE LISTE, ET LEUR FICHIER AVEC. Ce ne sont pas des
+// entrées retirées de l'affichage — ce sont des formes que le langage ne porte plus, et les
+// exposer encore montrerait ce que le langage a retiré (le reproche que le backlog KAN-42
+// adresse à 203 scènes).
+//   • `controls`, le 2026-08-10 : fusionné dans `core`, `lib/controls.json` supprimé
+//     (bpscript 647df04, ordre de Romain).
+//   • `mod`, le 2026-08-23 : archivé avec les modules et la graphie `module.X`
+//     (bpscript 885327d, décision `2026-08-23-mod-sort-avec-les-modules-et-la-graphie-module-point`).
+//     `LIBS.mod` vaut désormais `undefined` — la carte affichait un catalogue absent.
 const coreJson = LIBS.core;
-const modJson = LIBS.mod;
-// Digital functions library (transpose &c., KAI-B03's twin of mod.json) — a real
-// browsable bpscript library file, same as the others above.
+// Digital functions library (transpose &c.) — a real browsable bpscript library
+// file, same as the ones above.
 const digitalJson = LIBS.digital;
 
 import { LIBS } from 'bpscript/src/transpiler/libs-data.js';
@@ -116,7 +118,7 @@ function soundEntries(): ResourceEntry[] {
   return [];
 }
 
-// A bpscript library module (`core`/`controls`/`filter`) → a browsable entry.
+// A bpscript library module (`core`) → a browsable entry.
 // `description`/`name` is the label when present; the whole JSON is the content.
 function moduleEntry(id: string, json: unknown): ResourceEntry {
   const j = json as { description?: unknown; name?: unknown; type?: unknown } | undefined;
@@ -132,7 +134,7 @@ export const RESOURCE_GROUPS: ResourceGroup[] = [
   {
     type: 'module',
     title: 'Modules (langage)',
-    entries: [moduleEntry('core', coreJson), moduleEntry('mod', modJson)]
+    entries: [moduleEntry('core', coreJson)]
   },
   {
     type: 'alphabet',
@@ -297,7 +299,6 @@ export const RESOURCE_FILES: LibraryFile[] = [
   libraryFile('temperaments', temperamentsJson, 'bpscript'),
   libraryFile('scales', scalesJson, 'bpscript'),
   libraryFile('octaves', octavesJson, 'bpscript'),
-  libraryFile('mod', modJson, 'bpscript'),
   libraryFile('digital', digitalJson, 'bpscript'),
   // bp3 — one card per bundled `-se.<name>` auxiliary settings file.
   ...Object.entries(BUNDLED_SE).map(([name, raw]) => bp3AuxFile(name, raw)),
