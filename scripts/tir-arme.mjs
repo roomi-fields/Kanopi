@@ -263,11 +263,20 @@ function demanderLaFenetre(ecritures) {
   // minutes de campagne perdues sur onze dépôts gelés, et la casse était invisible chez lui.
   // CE QUI FERME UNE FENÊTRE EST DONC LE VERDICT, JAMAIS L'HORLOGE — `rendreLeVerdict` l'envoie aux
   // seuls gelés à l'arrivée. Le dire ici évite à chaque voisin de l'apprendre en se brûlant une fois.
+  // ⛔ LA LISTE EST UNE UNION, ET LE MOTIF DOIT LE DIRE. La tour ne porte QU'UNE liste de racines par
+  // fenêtre (`tour.cjs:1341`, `--racines a,b`) : je ne peux pas nommer à chacun les siennes. Mesuré le
+  // 2026-08-23 — kairos et bp3-frontend ont signalé le même quart d'heure que trois et quatre de ces
+  // six chemins n'existent pas chez eux, et ont craint que mon banc y lise du vide. Mon RELEVÉ vise
+  // juste (il prend chez chacun ce que SON manifeste expose) ; c'était cet AVIS qui visait large, et
+  // qui leur demandait une discipline sur des chemins que je ne lis pas chez eux.
   const motif =
     "campagne de portillon — NE FAITES BASCULER AUCUN FICHIER SOUS LES RACINES QUE JE LIS, nommées " +
     "dans cet avis. Le geste ne compte pas, le chemin compte : chez certains d'entre vous pousser " +
     "PUBLIE et une vérification lancée à la main CONSTRUIT, chez d'autres le commit ne touche rien. " +
     "Vous seul savez lequel de vos gestes bascule ces chemins ; le reste de votre arbre est libre. " +
+    "⚠️ CETTE LISTE EST L'UNION DES RACINES DES DESTINATAIRES, la tour n'en portant qu'une par " +
+    "fenêtre : chez vous je ne relève QUE celles que VOTRE manifeste expose. Une racine de cette " +
+    "liste qui n'existe pas chez vous ne vous concerne pas, et je ne l'y lis pas. " +
     "⛔ CE QUI FERME CETTE FENÊTRE EST MON MESSAGE DE FIN, JAMAIS L'HEURE : l'heure annoncée est un " +
     "PLANCHER calculé sur une constante, et mes campagnes la dépassent déjà de plusieurs minutes. " +
     "Attendez le verdict que je vous enverrai à l'arrivée ; une attente calée sur l'horloge écrite " +
