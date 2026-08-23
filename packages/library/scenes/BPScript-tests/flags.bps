@@ -22,9 +22,9 @@ S -> X [Num_total=20]
 -----
 
 // --- Sous-grammaire 2 : initialiser les compteurs ---
-// X disparaît (lambda = symbole vide), on initialise Num_a et Num_b
+// X disparaît : un membre droit VIDE efface le symbole. On initialise Num_a et Num_b
 
-X -> lambda [Num_a=20, Num_b=0]
+X -> [Num_a=20, Num_b=0]
 
 -----
 

@@ -48,12 +48,12 @@ A B C D ?1 End -> A B C D (weight:inf)
 // --- Sous-grammaire 3 ORD : nettoyage (LEFT) ---
 mode:ord
 
-X12 -> lambda (scan:left)
-X34 -> lambda (scan:left)
-X23 -> lambda (scan:left)
-X1234 -> lambda (scan:left)
-End -> lambda (scan:left)
-New -> lambda (scan:left)
+X12 -> (scan:left)
+X34 -> (scan:left)
+X23 -> (scan:left)
+X1234 -> (scan:left)
+End -> (scan:left)
+New -> (scan:left)
 Canonic -> A B C D (scan:left)
 
 -----

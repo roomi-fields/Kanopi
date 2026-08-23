@@ -22,6 +22,6 @@ flag Num_total:0
 S -> X [Num_total=20]
 [Num_total-1] X -> a X
 -----
-X -> lambda [Num_a=20] [Num_b=0]
+X -> [Num_a=20] [Num_b=0]
 -----
 [Num_a>Num_b] a -> b [Num_b+1] [Num_a-1]

@@ -17,7 +17,7 @@ mode:rnd
 S -> X [pos=1, done=0]
 X -> a X [pos+1, done+1]
 X -> b X [pos+1]
-[pos>8]           X -> lambda        (weight:inf)
+[pos>8]           X -> (weight:inf)
 [pos>=7] [done<2] X -> a X [pos+1, done+1] (weight:inf)
 [pos==4]           X -> c X [pos+1]   (weight:inf)
 [pos==6]           X -> c X [pos+1]   (weight:inf)

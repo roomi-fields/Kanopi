@@ -32,4 +32,4 @@ mode:sub1
 Tr2 -> !(chromashift:2)
 Tr4 -> !(chromashift:4)
 Tr6 -> !(chromashift:6)
-D_r -> lambda
+D_r ->

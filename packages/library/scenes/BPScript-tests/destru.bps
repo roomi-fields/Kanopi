@@ -28,7 +28,7 @@ X -> Z (weight:2-1)
 // --- Sous-grammaire 2 mode:ord, (scan:left) — effacement de S ---
 
 mode:ord
-S -> lambda (scan:left)
+S -> (scan:left)
 
 -----
 
@@ -39,4 +39,4 @@ X X -> abca
 Z Y -> abc
 Y Z -> cba
 Y Y -> cbbc
-Z Z -> lambda
+Z Z ->
