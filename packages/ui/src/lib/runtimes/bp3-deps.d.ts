@@ -24,8 +24,9 @@
 
 // --- bpx -------------------------------------------------------------------
 // SINGLE-SOURCE : l'arbre de scene vient du VRAI type publie par BPx, jamais d'une copie de
-// surface. `bpx/dist/index.js` n'est pas mappe par tsconfig.paths (seul le specificateur NU
-// `bpx` pointe vers ce fichier), donc cet import atteint la surface amont sans boucler.
+// surface. Le specificateur NU `bpx` pointe vers CE fichier ; `bpx/dist/index.js` est mappe vers
+// l'AMONT (`tsconfig.json:18` -> `../../../BPx/dist/index.d.ts`), donc cet import atteint la
+// surface publiee sans boucler sur lui-meme.
 // AVANT [951] ce fichier typait l'arbre `unknown` des DEUX cotes : Kanopi ne voyait donc
 // JAMAIS `SceneAST`, et l'erreur qui en resultait a ete imputee a tort a BPx — dont le type
 // etait publie et correct. Un calque qui efface un type amont est pire qu'un calque absent.
@@ -141,8 +142,9 @@ export function renderChain(
 // publié en amont : le calque effaçait le contrat, exactement le défaut déjà corrigé sur `SceneAST`
 // juste au-dessus. Interdiction de copie de surface (`CLAUDE.md` + décision
 // `hub/decisions/2026-07-19-copies-de-surface-cross-repo-single-source-ou-declaree-outillee.md`) :
-// on importe le VRAI type. `bpx/dist/index.js` n'est pas mappé par `tsconfig.paths` (seul le
-// spécificateur NU `bpx` l'est), donc cet import atteint l'amont sans boucler.
+// on importe le VRAI type. Le spécificateur NU `bpx` pointe vers CE fichier ; `bpx/dist/index.js`
+// est mappé vers l'AMONT (`tsconfig.json:18`), donc cet import atteint la surface publiée sans
+// boucler sur lui-même.
 export type { Session } from 'bpx/dist/index.js';
 export { createSession } from 'bpx/dist/index.js';
 
