@@ -58,18 +58,35 @@ test('a .bps p5 code voice evaluates and paints non-background pixels', async ({
   //   relance abandonnée ». L'observateur horodate chaque ajout et chaque retrait ; le second cas
   //   laisse une trace, le premier n'en laisse aucune.
   // ⚠️ Il observe le DOM, il n'instrumente le code de personne : le banc reste sur sa surface.
+  // ⛔ ET IL NOMME LE CONTENEUR DE CHAQUE TOILE. La première version comptait TOUT
+  //   `HTMLCanvasElement` de la page : runtime-codevoices a refusé ma lecture le 2026-08-24 en
+  //   montrant qu'elle contredisait son code, et il avait raison — mon propre relevé portait
+  //   `toilesTotales: 2`. Une seconde toile vit dans la page, et mes trois mutations mêlaient deux
+  //   origines. Un instrument trop large fait conclure sur un mouvement qui n'est pas le sujet.
   await page.evaluate(() => {
-    const w = window as unknown as { __kan65: { t: number; quoi: string }[] };
+    const w = window as unknown as { __kan65: { t: number; quoi: string; dans: string }[] };
     w.__kan65 = [];
     const t0 = performance.now();
+    const ou = (n: HTMLCanvasElement, cible: Node) => {
+      const parent = n.parentElement ?? (cible as HTMLElement);
+      return parent?.className?.toString().trim() || parent?.tagName || '(sans parent)';
+    };
     new MutationObserver((lots) => {
       for (const lot of lots) {
         for (const n of lot.addedNodes)
           if (n instanceof HTMLCanvasElement)
-            w.__kan65.push({ t: Math.round(performance.now() - t0), quoi: 'toile AJOUTÉE' });
+            w.__kan65.push({
+              t: Math.round(performance.now() - t0),
+              quoi: 'toile AJOUTÉE',
+              dans: ou(n, lot.target)
+            });
         for (const n of lot.removedNodes)
           if (n instanceof HTMLCanvasElement)
-            w.__kan65.push({ t: Math.round(performance.now() - t0), quoi: 'toile RETIRÉE' });
+            w.__kan65.push({
+              t: Math.round(performance.now() - t0),
+              quoi: 'toile RETIRÉE',
+              dans: ou(n, lot.target)
+            });
       }
     }).observe(document.body, { childList: true, subtree: true });
   });
