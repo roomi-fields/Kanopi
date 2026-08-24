@@ -80,6 +80,38 @@ const PLACEHOLDER_EXTENSIONS: Record<string, Runtime> = {
 // ajoutera demain — une liste de méthodes tenue à la main ici périmerait en silence.
 const portes = new Map<Runtime, RuntimeAdapter>();
 
+// ⛔ CE QUE L'HÔTE A APPELÉ, COMPTÉ SUR LA PORTE — et c'est le seul endroit où ce compte est
+// opposable. Le paquet des voix rend son tableau d'instances INTERNE, celui-là même que le runtime
+// appelle quand une sourdine s'exécute chez lui : un espion posé sur l'instance voit les DEUX
+// chemins et ne peut pas les séparer, ni par l'argument (même forme) ni par le moment (les deux
+// sont asynchrones). La porte, elle, n'est empruntée que par l'hôte, par construction.
+//
+// ⇒ POURQUOI CE COMPTEUR EXISTE, ET IL RÉPOND À UNE QUESTION PRÉCISE. KAN-65 : la toile p5 est
+//   montée puis DÉTRUITE, et rien ne la remonte. runtime-codevoices a mesuré chez lui que sa
+//   déduplication d'évaluation n'explique QU'UNE des deux occurrences — 17 ms sous son seuil de
+//   50 ms, puis 60 ms au-dessus. ⇒ Il reste deux lectures, et il m'a rendu celle qui se lit ici :
+//
+//     a. aucune évaluation n'a été TENTÉE après l'arrêt  →  l'hôte ne s'est pas réarmé — chez moi
+//     b. une évaluation a été tentée et a échoué DANS la construction  →  chez lui
+//
+//   « Le chiffre qui tranche a changé de nature : ce n'est plus l'instant d'entrée de chaque
+//   évaluation, c'est *une évaluation a-t-elle seulement été tentée*. » Le compte ci-dessous le dit.
+//
+// ⚠️ IL N'A AUCUN EFFET SUR LE CHEMIN : il incrémente et délègue. Un compteur qui changerait l'ordre
+// des appels mesurerait sa propre présence.
+const appels = new Map<string, number>();
+
+function compter(id: Runtime, méthode: string): void {
+  const clé = `${id}.${méthode}`;
+  appels.set(clé, (appels.get(clé) ?? 0) + 1);
+}
+
+/** Ce que l'HÔTE a appelé sur les voix de code depuis le chargement, par `runtime.méthode`.
+ *  Lecture seule, DEV — exposée par la surface de pilotage (`inspect.appelsDeLHote`). */
+export function appelsDeLHote(): Record<string, number> {
+  return Object.fromEntries(appels);
+}
+
 /** Les noms portés par l'objet ET par sa chaîne de prototypes : un adaptateur écrit en classe
  *  porte ses méthodes sur le prototype, où `Object.keys` ne va pas. */
 function clésDeSurface(o: object): string[] {
@@ -99,8 +131,10 @@ function porteVersLaVoix(amont: RuntimeAdapter): RuntimeAdapter {
   const porte: Record<string, unknown> = {};
   for (const clé of clésDeSurface(amont)) {
     if (typeof nue[clé] === 'function') {
-      porte[clé] = (...args: unknown[]) =>
-        (nue[clé] as (...a: unknown[]) => unknown).apply(nue, args);
+      porte[clé] = (...args: unknown[]) => {
+        compter(amont.id, clé);
+        return (nue[clé] as (...a: unknown[]) => unknown).apply(nue, args);
+      };
     } else {
       // Les champs se LISENT sur l'amont à chaque accès — un `outputType` figé à la construction
       // mentirait le jour où l'amont le rendrait mutable.

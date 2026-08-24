@@ -116,7 +116,19 @@ test('a .bps p5 code voice evaluates and paints non-background pixels', async ({
         '(aucun conteneur .p5)',
       // La séquence, en millisecondes depuis la pose de l'observateur. Vide = aucune toile n'a
       // jamais été montée ; une paire AJOUTÉE/RETIRÉE = la cause candidate de runtime-codevoices.
-      sequenceDeLaToile: (window as unknown as { __kan65: unknown[] }).__kan65
+      sequenceDeLaToile: (window as unknown as { __kan65: unknown[] }).__kan65,
+      // ⛔ LE CHIFFRE QUI TRANCHE, ET IL EST CHEZ MOI. runtime-codevoices a mesuré que sa
+      //   déduplication n'explique QU'UNE des deux occurrences : 17 ms sous son seuil de 50 ms,
+      //   puis 60 ms au-dessus — au-dessus, sa relance PASSERAIT et construirait, or aucun ajout
+      //   n'apparaît. ⇒ « Le chiffre qui tranche a changé de nature : ce n'est plus l'instant
+      //   d'entrée de chaque évaluation, c'est *une évaluation a-t-elle seulement été TENTÉE*. »
+      //   Compté sur la PORTE du registre, donc opposable : le runtime appelle l'instance nue,
+      //   l'hôte passe par la porte. Zéro appel de plus après l'arrêt = l'hôte ne s'est pas
+      //   réarmé, et la cause est chez moi ; un appel de plus = l'échec est dans la construction.
+      appelsDeLHote:
+        (
+          window as unknown as { kanopi?: { inspect?: { appelsDeLHote?: () => unknown } } }
+        ).kanopi?.inspect?.appelsDeLHote?.() ?? '(surface de pilotage absente)'
     }));
     // ⛔ LE RELEVÉ S'ATTACHE AU RAPPORT, IL NE SE CONTENTE PAS DE LA SORTIE. Le 2026-08-24, KAN-65
     //   s'est enfin produit pendant une campagne — la sonde a parlé, et la sortie du tir passait par

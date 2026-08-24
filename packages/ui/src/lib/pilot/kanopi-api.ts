@@ -38,6 +38,9 @@ import { startFrameMonitor, readFrameStats } from './frame-stats';
 import { startInputObserver, readInputs, readVoiceEvents } from './input-observer';
 import { profileMainThread } from './stack-profiler';
 import { core } from '../core';
+// Le compte des appels de l'HÔTE aux voix de code, lu sur la porte du registre — jamais sur
+// l'instance que le runtime appelle aussi.
+import { appelsDeLHote } from '../runtimes/registry';
 
 // v15 — le lot des ENTRÉES : `inspect.declaredInputs()` (les rôles que la scène déclare),
 // `inspect.inputs()` (les événements d'entrée vus sur le bus). Surface ADDITIVE : rien de retiré,
@@ -151,6 +154,19 @@ export function installKanopiApi(): void {
       /** La structure projetée de la production courante (facette Kairos). */
       structure() {
         return productionFeed.structure();
+      },
+      /** ⛔ CE QUE L'HÔTE A APPELÉ SUR LES VOIX DE CODE, par `runtime.méthode`, depuis le
+       *  chargement. Compté sur la PORTE (`registry.ts`), donc opposable : le runtime appelle
+       *  l'instance nue, l'hôte passe par la porte — un espion sur l'instance verrait les deux
+       *  chemins sans pouvoir les séparer.
+       *  ⇒ Ce que ça tranche (KAN-65) : quand une toile p5 est détruite et que rien ne la remonte,
+       *    ce compte dit si l'hôte a seulement TENTÉ une évaluation après l'arrêt. Zéro appel =
+       *    l'hôte ne s'est pas réarmé, et la cause est chez moi ; un appel de plus = il a tenté, et
+       *    l'échec est dans la construction, en aval. La question m'a été rendue par
+       *    runtime-codevoices le 2026-08-24, après que sa propre cause n'ait expliqué qu'une
+       *    occurrence sur deux. */
+      appelsDeLHote() {
+        return appelsDeLHote();
       },
       /** LES RÔLES D'ENTRÉE que la scène active DÉCLARE (`var <rôle> in.<canal>`), lus sur
        *  l'AST amont — la même lecture que le panneau des entrées et que le badge de focus, jamais

@@ -11,7 +11,7 @@
 // moitiés de cette couture : que la porte SÉPARE, et que personne ne puisse la contourner.
 import { describe, it, expect, beforeAll } from 'vitest';
 import { createEventBus } from '../events/bus';
-import { initAdapters, getAdapter } from './registry';
+import { initAdapters, getAdapter, appelsDeLHote } from './registry';
 import { createCodeVoiceAdapters } from 'runtime-codevoices';
 
 const bus = createEventBus();
@@ -115,5 +115,38 @@ describe('garde de structure — le registre est le seul à obtenir une voix', (
         'redeviendraient indiscernables sur cette voix, et le banc de sourdine cesserait de dire ' +
         'ce qu’il énonce'
     ).toEqual([]);
+  });
+});
+
+// ⛔ LE COMPTE DES APPELS DE L'HÔTE — ET IL NE VAUT QUE PARCE QUE LA PORTE SÉPARE.
+//
+// Posé le 2026-08-24 sur une question que runtime-codevoices m'a rendue. KAN-65 : la toile p5 est
+// montée puis DÉTRUITE, et rien ne la remonte — deux fois, même signature. Sa déduplication
+// d'évaluation n'explique QU'UNE des deux occurrences (17 ms sous son seuil de 50 ms, puis 60 ms
+// au-dessus, où sa relance passerait et construirait — or aucun ajout n'apparaît).
+//
+// ⇒ « Le chiffre qui tranche a changé de nature : ce n'est plus l'instant d'entrée de chaque
+//   évaluation, c'est *une évaluation a-t-elle seulement été TENTÉE*. » Et il se lit chez moi.
+//
+// ⛔ CE QUI REND CE COMPTE OPPOSABLE EST LA COUTURE CI-DESSUS, PAS LE COMPTEUR. Sur l'instance nue,
+//   l'hôte et le runtime sont indiscernables ; le compte dirait « quelqu'un a appelé » et ne
+//   trancherait rien. C'est pourquoi le second cas ci-dessous compte autant que le premier.
+describe('ce que l’hôte a appelé, compté sur la porte', () => {
+  it('la porte incrémente, et l’appel nomme la voix ET la méthode', async () => {
+    const porte = getAdapter('strudel')!;
+    const avant = appelsDeLHote()['strudel.stop'] ?? 0;
+    await porte.stop({ actorId: '__epreuve__', fileId: '__epreuve__' }, () => {});
+    expect(appelsDeLHote()['strudel.stop'] ?? 0).toBe(avant + 1);
+  });
+
+  it('⛔ l’instance NUE ne fait PAS monter le compte — sinon il ne trancherait rien', async () => {
+    const nue = instanceNue('strudel');
+    const avant = appelsDeLHote()['strudel.stop'] ?? 0;
+    await nue.stop({ actorId: '__epreuve__', fileId: '__epreuve__' }, () => {});
+    expect(
+      appelsDeLHote()['strudel.stop'] ?? 0,
+      'un appel du RUNTIME a été compté comme un appel de l’hôte : le compte cesse de dire qui a ' +
+        'agi, et la question qu’il sert à trancher redevient indécidable'
+    ).toBe(avant);
   });
 });
