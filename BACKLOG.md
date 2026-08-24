@@ -557,3 +557,15 @@ Mesure du 2026-08-18, prise sur la base d'index et sur l'arbre de travail.
   conditions de production — sont portées à l'architecte.
   **Témoin minimal du garde, quand la voie sera choisie** : `scenes/bp3/bp-acceleration.gr`,
   `BPScript-tests/kairos-hauteur-ancre-alphabet-sargam.bps`, `code-voices/01-strudel-solo.bps`.
+
+- **KAN-67** `ouvert` — (2026-08-24) **DEUX GRAMMAIRES DÉCLARENT UN FICHIER DE RÉGLAGES QUE PERSONNE
+  NE PORTE.** `BP3-tests/checkVolChan.gr` et `BP3-tests/tryConsoleMaxTime.gr` référencent
+  `-se.checkVolChan` et `-se.tryConsoleMaxTime` ; mes 143 fichiers de réglages ne les contiennent
+  pas, et bp3-frontend les a cherchés à trois emplacements chez lui sans les trouver. Les deux
+  grammaires refusent aujourd'hui pour cette raison, parmi d'autres pour `checkVolChan`.
+  **Et ces 113 grammaires n'ont aucun banc** : mon banc de statut de corpus a un périmètre
+  explicitement `.bps`, mes essais d'écran BP3 portent sur la vitrine de `scenes/bp3/`. Ni au vert
+  ni au rouge — le trou est à moi.
+  **Mesuré aussi au passage, et c'est chez bp3-frontend** : mes 22 fichiers de réglages au format
+  positionnel sont le seul endroit où son lecteur positionnel est exercé — son corpus n'en porte
+  aucun. Onze d'entre eux lui rendent un `c4key` impossible. Reporté, à lui.
