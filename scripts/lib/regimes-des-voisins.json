@@ -11,10 +11,6 @@
     "bpx": {
       "le": "2026-08-24",
       "leve-par": "le retrait de sa condition d'export `development`, comme kronos l'a fait le 2026-08-24"
-    },
-    "@kairos/core": {
-      "le": "2026-08-24",
-      "leve-par": "le retrait de sa condition d'export `development`, comme kronos l'a fait le 2026-08-24"
     }
   }
 }

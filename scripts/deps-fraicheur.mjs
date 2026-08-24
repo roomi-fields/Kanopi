@@ -225,13 +225,29 @@ if (RACINES_KAIROS === null) {
     "le manifeste de kairos n'est plus lisible — le qualificatif du refus ne se dérive plus, tout compterait.",
   );
 } else {
+  // ⛔ LES CAS SE DÉRIVENT DU MANIFESTE, ILS NE S'ÉCRIVENT PAS. Ils portaient `src/index.ts` comme
+  // cas VRAI — juste tant que kairos exposait `src`. Le 2026-08-24 il a retiré sa condition de
+  // développement, `src` a quitté ses portes, et ce contrôle a fait rougir mon pré-vol pour un
+  // geste ANNONCÉ, mesuré et attendu. Un contrôle calé sur l'état d'un voisin se casse à chaque
+  // frappe de ce voisin, et il accuse alors le seul innocent de l'affaire.
+  // ⇒ Le cas VRAI se prend sur une porte réellement déclarée ; les cas FAUX sur des dossiers dont
+  //   on vérifie d'abord qu'ils n'en sont pas. L'épreuve reste sur le VOISIN RÉEL — c'est ce qui
+  //   lui a fait connaître `fixtures/` là où une liste inventée l'ignorait.
+  const HORS = [
+    "fixtures/scenes/vina.bps",
+    "docs/note.md",
+    "BACKLOG.md",
+  ].filter((f) => !RACINES_KAIROS.has(f.split("/")[0]));
   const CAS = [
-    ["src/index.ts", true],
-    ["dist/index.js", true],
-    ["fixtures/scenes/vina.bps", false],
-    ["docs/note.md", false],
-    ["BACKLOG.md", false],
+    [`${[...RACINES_KAIROS][0]}/index.js`, true],
+    ...HORS.map((f) => [f, false]),
   ];
+  if (RACINES_KAIROS.size === 0 || HORS.length === 0) {
+    errors.push(
+      "l'épreuve du qualificatif n'a plus de cas des DEUX côtés — un contrôle qui n'exerce qu'un " +
+        "sens ne distingue plus un garde juste d'un garde qui dit toujours la même chose.",
+    );
+  }
   for (const [fichier, attendu] of CAS) {
     if (atteintLePaquet(fichier, RACINES_KAIROS) !== attendu) {
       errors.push(
