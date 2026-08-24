@@ -48,6 +48,32 @@ test('a .bps p5 code voice evaluates and paints non-background pixels', async ({
 
   await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
 
+  // ⛔ KAN-65 — L'OBSERVATEUR DE TOILE, POSÉ AVANT LA PREMIÈRE ÉVALUATION. runtime-codevoices a
+  //   rendu une cause candidate le 2026-08-24 : sa déduplication d'évaluation abandonne un appel
+  //   qui suit le précédent de moins de 50 ms, et son repère de temps n'est remis à zéro par
+  //   AUCUN arrêt. Un arrêt détruit la toile, une relance rapide est abandonnée, et plus rien ne
+  //   la remonte — sans que l'abandon n'écrive quoi que ce soit.
+  // ⇒ CE QUI TRANCHE SA PRÉDICTION EST LA SÉQUENCE, PAS L'ÉTAT FINAL. Un relevé d'échec qui ne dit
+  //   que « aucune toile » ne distingue pas « jamais montée » de « montée puis détruite, et la
+  //   relance abandonnée ». L'observateur horodate chaque ajout et chaque retrait ; le second cas
+  //   laisse une trace, le premier n'en laisse aucune.
+  // ⚠️ Il observe le DOM, il n'instrumente le code de personne : le banc reste sur sa surface.
+  await page.evaluate(() => {
+    const w = window as unknown as { __kan65: { t: number; quoi: string }[] };
+    w.__kan65 = [];
+    const t0 = performance.now();
+    new MutationObserver((lots) => {
+      for (const lot of lots) {
+        for (const n of lot.addedNodes)
+          if (n instanceof HTMLCanvasElement)
+            w.__kan65.push({ t: Math.round(performance.now() - t0), quoi: 'toile AJOUTÉE' });
+        for (const n of lot.removedNodes)
+          if (n instanceof HTMLCanvasElement)
+            w.__kan65.push({ t: Math.round(performance.now() - t0), quoi: 'toile RETIRÉE' });
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+  });
+
   // Whole-`.bps` eval — the `sketch` backtick fires through the dispatcher sink.
   await evalBlockAt(page, 1);
 
@@ -70,7 +96,10 @@ test('a .bps p5 code voice evaluates and paints non-background pixels', async ({
       p5Charge: typeof (window as { p5?: unknown }).p5,
       htmlDuConteneur:
         (document.querySelector('.p5') as HTMLElement | null)?.outerHTML?.slice(0, 400) ??
-        '(aucun conteneur .p5)'
+        '(aucun conteneur .p5)',
+      // La séquence, en millisecondes depuis la pose de l'observateur. Vide = aucune toile n'a
+      // jamais été montée ; une paire AJOUTÉE/RETIRÉE = la cause candidate de runtime-codevoices.
+      sequenceDeLaToile: (window as unknown as { __kan65: unknown[] }).__kan65
     }));
     // ⛔ LE RELEVÉ S'ATTACHE AU RAPPORT, IL NE SE CONTENTE PAS DE LA SORTIE. Le 2026-08-24, KAN-65
     //   s'est enfin produit pendant une campagne — la sonde a parlé, et la sortie du tir passait par
