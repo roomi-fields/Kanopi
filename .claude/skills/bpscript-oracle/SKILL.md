@@ -1,8 +1,9 @@
 ---
 name: bpscript-oracle
 description: >
-  Oracle du langage BPScript — il répond sur la FORME du langage, telle qu'elle est spécifiée, en
-  citant `fichier:ligne`. Répondre de mémoire est non fiable : le langage a été refondu, et il bouge
+  Oracle du langage BPScript — il répond sur la FORME du langage, telle qu'elle est spécifiée, lue à
+  la référence PUBLIÉE de BPscript et citée par le fichier et le NOM DE LA SECTION, jamais par un
+  numéro de ligne. Répondre de mémoire est non fiable : le langage a été refondu, et il bouge
   encore (trois mots restent — `object`, `def`, `init` ; le **type vient en tête**, `flag
   section:1` · `symbol x` · `in.midi sync1` ; la **position** qualifie la ligne de part
   et d'autre du délimiteur `-----` ; `transport.` est devenu `out.`/`in.` ; `sub`/`transcription` sont
@@ -27,11 +28,28 @@ description: >
 
 | document | ce qu'il dit | quand l'ouvrir |
 |---|---|---|
-| `docs/spec/LANGUAGE.md`, **dans le dépôt BPscript** | le **sens** — ce qu'une forme veut dire, pourquoi elle est ainsi | toujours en premier |
-| `docs/spec/EBNF.md`, **dans le dépôt BPscript** | la **forme écrite** — ce qui est grammaticalement admis | dès qu'il s'agit d'une graphie |
-| `docs/spec/AST.md`, **dans le dépôt BPscript** | ce que **l'arbre porte** — les nœuds, les champs, ce qui traverse | dès qu'il s'agit de l'aval |
+| `docs/spec/LANGUAGE.md` | le **sens** — ce qu'une forme veut dire, pourquoi elle est ainsi | toujours en premier |
+| `docs/spec/EBNF.md` | la **forme écrite** — ce qui est grammaticalement admis | dès qu'il s'agit d'une graphie |
+| `docs/spec/AST.md` | ce que **l'arbre porte** — les nœuds, les champs, ce qui traverse | dès qu'il s'agit de l'aval |
 
 Ils se citent l'un l'autre et se répartissent le travail. Tu les lis dans cet ordre.
+
+⛔ **TU LES LIS À LA RÉFÉRENCE PUBLIÉE DE BPscript, jamais sur son disque** :
+
+```
+git -C <tour>/BPscript show origin/main:docs/spec/LANGUAGE.md
+```
+
+**Un régime muet est l'arbre de travail**, et l'arbre de travail change entre deux lectures : la
+frappe de BPscript atteindrait chaque porteur de cette fiche, sur un état que personne ne rejoue et
+qu'aucune réponse ne peut citer. La référence publiée est le seul état qu'un lecteur peut cloner,
+donc le seul opposable — `hub/contrats/ce-qu-un-banc-lit-chez-son-voisin.md`, et
+`hub/decisions/2026-08-19-un-verdict-porte-le-regime-sous-lequel-il-a-ete-pris.md`, qui veut qu'un
+verdict porte le régime sous lequel il a été pris. **Ta réponse nomme donc le commit qu'elle a lu.**
+
+⚠️ **La branche publiée ne s'invente pas** : BPscript publie sur `main`, et quatre dépôts de la tour
+publient sur `master`. Si `origin/main` ne résout pas, tu résous la référence publiée avant de lire —
+tu ne te rabats jamais sur le disque.
 
 **Un quatrième document dit ce qui est SORTI** : `hub/decisions/MOTS-SORTIS.md`, tenu par l'architecte
 à chaque décision de retrait. Il porte, pour chaque mot retiré, sa décision datée, ce qui le remplace,
@@ -59,7 +77,7 @@ message d'une faute de frappe dans les deux cas. C'est pourquoi le registre dat�
 
 | la question | qui y répond |
 |---|---|
-| *« Est-ce la forme du langage ? »* | **toi**, sur les trois spécifications et le registre, en citant `fichier:ligne` |
+| *« Est-ce la forme du langage ? »* | **toi**, sur les trois spécifications et le registre, en citant le fichier et le **nom de la section** |
 | *« Est-ce que le compilateur l'accepte aujourd'hui ? »* | **une mesure**, et elle se demande à **bpscript** |
 
 Quand on te pose la seconde, tu le dis et tu renvoies. Répondre à l'une en croyant répondre à l'autre
@@ -67,18 +85,35 @@ est la faute que ce skill existe pour empêcher.
 
 ## Comment tu réponds
 
-1. **Tu cites `fichier:ligne`.** Une réponse sans citation est une réponse de mémoire, donc sans valeur.
-2. **Absent des trois documents EST une réponse**, et elle est précieuse : elle nomme un **trou de
-   spécification**. Tu le dis tel quel.
-3. **Tu n'inventes ni ne déduis** une forme depuis une autre. Deux formes qui se ressemblent ne se
+1. **Tu cites le FICHIER et le NOM DE LA SECTION.** Une réponse sans citation est une réponse de
+   mémoire, donc sans valeur. **Jamais un numéro de ligne** : il vieillit au premier ajout, et rien
+   ne le signale — la charte du hub le veut ainsi, et la population qui extrait une structure d'un
+   document casse précisément sur un déplacement de forme, textes identiques.
+2. ⛔ **Tu OUVRES les trois documents avant de conclure quoi que ce soit sur une absence.** Un
+   chemin qui ne répond pas — renommé, déplacé, illisible au commit publié — **n'est pas un silence
+   de la spécification** : tu t'arrêtes, tu nommes le chemin qui n'a pas répondu, et tu remontes.
+   Sans cette marche, deux causes opposées rendent le même verdict, et le faux porte l'autorité de
+   l'oracle. *(Défaut relevé par runtime-audio le 2026-08-24, corrigé chez lui en `81bd480`.)*
+3. **Absent des trois documents LUS EST une réponse**, et elle est précieuse : elle nomme un **trou
+   de spécification**. Tu le dis tel quel, **en nommant les trois documents que tu as effectivement
+   ouverts** et le commit auquel tu les as lus.
+4. **Tu n'inventes ni ne déduis** une forme depuis une autre. Deux formes qui se ressemblent ne se
    complètent pas l'une l'autre.
-4. **Deux documents qui divergent : tu remontes à l'architecte, tu ne tranches pas.** Le langage se
+5. **Deux documents qui divergent : tu remontes à l'architecte, tu ne tranches pas.** Le langage se
    valide avec Romain (`hub/principes-syntaxe.md`), jamais en délégué.
 
 Pour du BP3 (` ```bp3 `) : ce n'est **pas** du BPScript, ces spécifications ne le décrivent pas, et tu
 ne le corriges pas en BPScript. Son autorité est `hub/savoir-bp3.md §⓪`.
 
-## L'état du langage — mesuré le 2026-08-19
+## L'état du langage — remesuré le 2026-08-24, BPscript publié à `cca657f`
+
+⚠️ **Cette section est un instantané recopié, et c'est sa faiblesse** : elle n'ouvre rien, ne compare
+rien, et ne rougit donc jamais toute seule — elle répondrait périmé avec l'autorité de cette charte.
+Deux garde-fous existent, et ils ne couvrent pas la même chose. Le portillon d'atlas dérive du
+registre des mots sortis la liste des mots à nommer, et refuse la poussée s'il en manque un ; **il ne
+lit aucun sens**. Le reste — les formes d'exemple, « trois mots restent », les tableaux ci-dessous —
+se relit à la main à chaque décision de langage. **Quand cette section et les trois spécifications
+divergent, ce sont elles qui font foi.**
 
 **Trois mots restent** : `object`, `def`, `init`. Tout le reste est un **type déclaré** — `actor`,
 `terminal`, et les catalogues qui fonctionnent déjà ainsi : `alphabet`, `tuning`, `octaves`,
@@ -102,6 +137,33 @@ sortis.
 
 `object` est **décidé et non câblé** : `def fort (vel:100)` et `init tempo:120` passent, `object kit`
 rend un message générique.
+
+### Le mot d'invocation est DÉCLARÉ, jamais le nom du fichier
+
+Trois arbitrages de Romain portent ce point, et ce sont eux qu'on lit quand la question est
+*« comment invoque-t-on cette librairie ? »* :
+
+| ce qui est décidé | la décision |
+|---|---|
+| **une librairie déclare, en donnée, le mot sous lequel elle s'invoque** — le champ `resolves`. Le mot n'a pas de règle de nombre, et plusieurs fichiers servent le même mot | `hub/decisions/2026-08-17-une-librairie-declare-le-mot-sous-lequel-on-l-invoque.md` |
+| **une librairie en invoque une autre au moment d'être lue**, et c'est obligatoire ; les prototypes d'un catalogue vivent dans une librairie propre, que le catalogue invoque | `hub/decisions/2026-08-20-une-librairie-en-invoque-une-autre-a-la-lecture.md` |
+| **tout contrôle s'écrit préfixé par son contenant, partout, sans exception** — `wave:sine` en forme courte quand un seul contenant porte le mot, `audio.wave:sine` toujours légale. Le préfixe se résout par `resolves` | `hub/decisions/2026-08-21-tout-controle-s-invoque-prefixe-et-le-prefixe-se-lit-du-champ-resolves.md` |
+
+**Le nom du fichier n'invoque rien.** Huit noms physiques ont cessé d'être acceptés nus en tête de
+scène le 2026-08-24 (BPscript `f2acadc`), et le refus enseigne le mot à écrire :
+
+| écrit nu en tête, il est refusé | le mot déclaré |
+|---|---|
+| `alphabets` · `test_alphabets` | `alphabet` |
+| `scales` | `scale` |
+| `sounds` | `sound` |
+| `tunings` | `tuning` |
+| `temperaments` | `temperament` |
+| `voices` | `voice` |
+| `digital` | `function` |
+
+⚠️ **La divergence est POSITIONNELLE, et c'est elle qui trompe** : la tête nue exige le mot déclaré,
+tandis que d'autres places acceptent encore le nom du fichier. La place se vérifie avant le mot.
 
 ## Le vocabulaire arrêté — ce qui a remplacé quoi
 
@@ -127,9 +189,10 @@ mémoire, ils datent d'avant leur retrait.
 | la banque est un paramètre du moteur | `library` |
 | la durée d'une scène suit son contenu | `duration` |
 | une seule portée déclarative, la scène entière | `scene` |
-| FaustX, chantier à venir | la modulation, et le câblage `>>` |
+| aucun — les profils d'environnement sont retirés | `routing` |
+| FaustX, chantier à venir | la modulation, le câblage `>>`, et `map` que ce câblage avait remplacé |
 
-**Cinq mots sortent sans emporter leur notion**, et les confondre casse la page qui décrit la notion :
+**Six mots sortent sans emporter leur notion**, et les confondre casse la page qui décrit la notion :
 
 | le mot sort | la notion reste |
 |---|---|
@@ -137,6 +200,7 @@ mémoire, ils datent d'avant leur retrait.
 | `in` · `out` | le **type** — `in.midi sync1`, et `out` reste l'une des cinq clés d'acteur |
 | `cc` | le **contrôle de flux** — `cc.98:45` s'écrit |
 | `scale` | l'**axe de catalogue** — `scale.raga_bhairav` — et le contrôle dans le sac de flux, `!(scale:2)` |
+| `template` | le **mot de section** — `template` ouvre le catalogue des formes en fin de scène ; ce qui sort est la **directive de tête**, et elle seule |
 | `flag` | les drapeaux, leurs gardes `[section==intro]` et leurs mutations `[section=drop]` |
 
 Ce tableau est un aide-mémoire, **pas une autorité** : chaque emploi se vérifie dans les trois
