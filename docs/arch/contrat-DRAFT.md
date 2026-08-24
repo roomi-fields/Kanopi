@@ -154,7 +154,7 @@ par nom de runtime. Il ne tient ni machine d'état, ni compteur de position, ni 
 Étalons : `hub/contrats/kronos-transport.md` (commandes/état), `kronos/docs/CONTRACT_RUNTIME_ADAPTER.md`
 
 - `kronos/src/runtime/runtime-adapter.ts` (forme cœur `ScheduledEvent`/`OutputRef`/`RuntimeAdapter`),
-  décision `kronos/decisions/2026-06-26-kai9-adresse-dans-arbre.md`.
+  décision `hub/decisions/2026-06-26-kai9-adresse-dans-arbre.md`.
   Code hôte : `packages/ui/src/stores/{transport,playback,clock,kronos-cursor}.svelte.ts` +
   `packages/ui/src/lib/runtimes/kronos-audio.ts` (husk `packages/core/src/dispatcher/dispatcher.js`
   éliminé [842] : `packages/core/src` ne contient plus que `index.js`, vide).
