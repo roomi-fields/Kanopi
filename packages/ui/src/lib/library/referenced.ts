@@ -141,11 +141,17 @@ function fromBps(contents: string): ReferencedLib[] {
   } catch {
     return out;
   }
-  // Read directives even when the program has errors: the invocations sit at
-  // the top of the file and a downstream error (e.g. an invalid control value)
-  // doesn't invalidate them. The AST is still produced — only a hard parse throw
-  // (caught above) leaves no AST. This keeps "Libraries used" visible while a
-  // compile error is being fixed.
+  // ⛔ CE COMMENTAIRE DÉCRIVAIT UN CHEMIN QUE LE CODE N'EMPRUNTE PAS. Il disait « l'arbre est
+  // quand même produit » sur une scène en erreur, et donc que cette boucle tenait le panneau
+  // « Libraries used » vivant pendant qu'on corrige une faute. MESURÉ le 2026-08-24 sur la porte
+  // vive de BPscript : 321 scènes du corpus, dont 12 en erreur, PLUS cinq états de frappe d'une
+  // même scène (entière, coupée en deux, dernière ligne tronquée, mot inconnu ajouté, parenthèse
+  // laissée ouverte) — l'arbre est `null` DANS TOUS LES CAS où des erreurs sortent. Zéro arbre
+  // accompagné de ses erreurs.
+  // ⇒ CE QUI TIENT RÉELLEMENT LE PANNEAU pendant une erreur est le repli textuel plus bas, jamais
+  //   cette boucle. Elle ne sert que la scène qui compile.
+  // La décision de Romain du 2026-08-24 — « on ne produit un arbre que s'il est correct et complet,
+  // sinon on produit une erreur » — fige ce comportement ; elle ne me retire rien.
   const directives = c.ast?.directives ?? [];
   for (const d of directives) {
     const meta = DIRECTIVE_TYPES[d.name];
