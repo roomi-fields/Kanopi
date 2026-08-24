@@ -13,28 +13,27 @@ fait **Kanopi** — c.-à-d. de moins en moins : fournir + transporter, rien cal
 
 ## Rôle 1 — fournir les catalogues (donnée, lecture seule)
 
-Catalogues JSON livrés par la dépendance `bpscript` (`bpscript/lib/*.json`), importés **tels
-quels** et embarqués dans la constante read-only `PITCH_LIB`
-(`packages/ui/src/lib/runtimes/bpx-adapter.ts`) :
+Les catalogues de hauteur viennent du paquet `bpscript` et s'atteignent par leur **porte** —
+`LIBS.<clé>` — jamais par un chemin de fichier : le format d'un catalogue à la source est un détail
+de l'amont, et il varie. Le sac entier est embarqué dans la constante en lecture seule `PITCH_LIB`
+(`packages/ui/src/lib/runtimes/bpx-adapter.ts`).
 
-| Fichier | Rôle |
+| Porte | Rôle |
 |---|---|
-| `alphabets.json` | noms de notes (+ altérations) — purement nominal |
-| `octaves.json` | conventions de registre (préfixe/suffixe/défaut) |
-| `temperaments.json` | grilles mathématiques (12/24/53-TET, pythagore, just_5limit…) |
-| `scales.json` | collections : jins, maqams/makams (`compose`+`junction`), gammes/modes |
-| `tunings.json` | bindings : alphabet + tempérament/gamme + `baseHz`/`baseNote`/`baseRegister` |
+| `LIBS.alphabets` | noms de notes (+ altérations) — purement nominal |
+| `LIBS.octaves` | conventions de registre (préfixe/suffixe/défaut) |
+| `LIBS.temperaments` | grilles mathématiques (12/24/53-TET, pythagore, just_5limit…) |
+| `LIBS.scales` | collections : jins, maqams/makams (`compose`+`junction`), gammes/modes |
+| `LIBS.tunings` | bindings : alphabet + tempérament/gamme + `baseHz`/`baseNote`/`baseRegister` |
 
-Ces catalogues sont remis à Kairos en **champ frère read-only `ctx.pitchLib`** sur le contexte
-de projection au `charger()` (`bpx-adapter.ts`, à côté de `ctx.modulation.registry`) — **pas**
-un import côté Kairos : l'hôte est le **gardien de fraîcheur unique**. Kairos compose alors son
-résolveur **par acteur** (le builder partagé `@kronos/core/pitch`) et grave `content.pitch`.
+Le sac est remis à Kairos en champ frère en lecture seule `ctx.pitchLib`, sur le contexte de
+projection, au `charger()`. Kairos compose son résolveur **par acteur** et grave `content.pitch`.
 
-> Dépendances `file:` = **copies** dans `node_modules`. Après une mise à jour amont : rsync des
-> `lib/*.json` (et de **BPx**, qui écrit `metadata.scenePitch`) depuis les dépôts source, puis
-> `npm run dev -- --force`. **LAN-14** : une copie périmée a déjà rendu une scène `arabic`
-> **muette** (Kairos ne recevait pas l'alphabet → 0 Hz gravé) ; toujours rsync **toutes** les
-> deps amont avant de juger un mutisme. Cf. mémoire « deps file: = copies périmées ».
+> **Ce que l'hôte consomme, et par quelle porte.** Un voisin s'atteint soit par son **paquet
+> publié** — artefact immuable sous `~/dev/bp/.paquets/`, qui porte son empreinte et ne change qu'à
+> la poussée de son producteur — soit par un **lien vers son arbre de travail**, auquel cas sa
+> sauvegarde atteint l'hôte à l'instant où il enregistre. Le relevé de campagne nomme le régime de
+> chaque voisin, ligne par ligne.
 
 ## Rôle 2 — transporter la facette gravée jusqu'aux sorties
 

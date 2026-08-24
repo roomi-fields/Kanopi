@@ -153,10 +153,24 @@ function sousArbre(base, out = []) {
   return out;
 }
 
+/**
+ * Les voisins qu'une fenêtre concerne : ceux dont l'ARBRE DE TRAVAIL m'atteint.
+ *
+ * ⛔ UN VOISIN CONSOMMÉ PAR SON PAQUET PUBLIÉ N'EST PAS DE CEUX-LÀ, et c'est tout l'intérêt de la
+ * bascule (décision Romain 2026-08-24). Son paquet est immuable, son arbre ne m'atteint plus, et
+ * seule sa poussée change ce que je lis. Le geler lui coûterait du temps pour rien.
+ * ⚠️ ET LE GELER ÉTAIT EN PLUS IMPOSSIBLE : le nom dérivé de son chemin est celui du dossier
+ * versionné — `runtime-osc-347a917` — que la tour ne connaît pas. Mesuré le 2026-08-24, à la
+ * première bascule : la demande de fenêtre a été refusée sur « dépôt inconnu ».
+ */
+function voisinsAGeler() {
+  return voisinsLies(RACINE).filter((v) => v.tete !== null);
+}
+
 /** La dernière écriture de chaque voisin sous ce qu'il EXPOSE, et le fichier concerné. */
 function dernieresEcritures() {
   const par = new Map();
-  for (const v of voisinsLies(RACINE)) {
+  for (const v of voisinsAGeler()) {
     let quand = 0;
     let quoi = null;
     for (const r of racinesExposees(v.depot) ?? []) {
@@ -252,7 +266,7 @@ function demanderLaFenetre(ecritures) {
   // disque ou commit publié (arbitrage de l'architecte, 2026-08-21).
   const racinesLues = [
     ...new Set(
-      voisinsLies(RACINE).flatMap((v) => [...(racinesExposees(v.depot) ?? [])]),
+      voisinsAGeler().flatMap((v) => [...(racinesExposees(v.depot) ?? [])]),
     ),
   ].sort();
 
