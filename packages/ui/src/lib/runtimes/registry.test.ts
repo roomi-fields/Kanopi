@@ -36,7 +36,7 @@ describe('runtime registry', () => {
   });
 
   it('codeVoiceReachesMasterBus : FAUX pour hydra — rien à couper, absence assumée en amont', () => {
-    // runtime-codevoices/src/voices/hydra.ts:163 déclare l'absence comme la réponse JUSTE.
+    // runtime-codevoices/src/voices/hydra.ts, l’adaptateur `hydra` (`extensions: ['.hydra']`), déclare l'absence comme la réponse JUSTE.
     expect(codeVoiceReachesMasterBus('hydra')).toBe(false);
   });
 

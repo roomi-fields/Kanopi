@@ -187,7 +187,7 @@ describe('focus de jeu — le contexte décide, jamais une priorité globale', (
 
   // ── LE BRANCHEMENT DU PÉRIPHÉRIQUE ────────────────────────────────────────────────────────
   // « L'hôte l'ouvre quand le jeu a la main et le ferme quand il la perd. C'est tout le protocole
-  // de focus qu'il connaît » (`runtime-in/src/devices/keyboard.js:9-11`).
+  // de focus qu'il connaît » (`runtime-in/src/devices/keyboard.js`, en-tête « CE QU’IL NE DÉCIDE PAS : le focus »).
   it('enclencher le verrou OUVRE le clavier de jeu', () => {
     armerVerrou();
     expect(ouvrirClavierSpy).toHaveBeenCalledTimes(1);

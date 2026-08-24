@@ -184,7 +184,7 @@ Points structurels :
 
 **Correction (2026-07-31)** : cette section posait le span de portée comme une demande ouverte
 ("à formuler à BPx", "dette structurelle à solder"). Le contrat est ratifié depuis le 2026-07-04
-(commit 719f396, `hub/contrats/bpx-kairos-arbre.md:143-146`) et déjà consommé de bout en bout.
+(commit 719f396, `hub/contrats/bpx-kairos-arbre.md, section « 2.2 Nœuds »-146`) et déjà consommé de bout en bout.
 
 `controlScopes` porte, pour chaque contrôle sujet-à-horloge, le **span de sa portée de
 contenance** — `{ kind: 'rule'|'group'|'voice', startMs, endMs }`, posé sur la feuille. Le principe

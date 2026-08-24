@@ -173,7 +173,107 @@ if (morts.length || ressuscites.length) {
   process.exit(1);
 }
 
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// ⛔ SECONDE PASSE — UNE ANCRE VERS UN VOISIN NE SE PORTE PAS PAR UN NUMÉRO DE LIGNE
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+//
+// Le chemin peut vivre pendant que la LIGNE ment, et c'est pire qu'un chemin mort : *un chemin mort
+// rend une alerte ; un numéro de ligne périmé rend une CITATION FAUSSE QUI A L'AIR JUSTE* (kairos,
+// 2026-08-25). Et elles ne meurent pas franchement — *elles n'ont pas vieilli, elles ont GLISSÉ, et
+// un glissement atterrit toujours sur du vocabulaire du même domaine* (BPscript, même nuit).
+//
+// ⛔ MESURÉ CHEZ MOI, ET LE GLISSEMENT AVAIT DÉJÀ COMMENCÉ. Treize ancres lignées vers cinq voisins.
+// Celle que quatre de mes fichiers portaient — `runtime-in/src/devices/keyboard.js:9-11` — vise un
+// texte qui est aujourd'hui en 10-11 : sa ligne 9 porte un chemin de décision. **Elle tombe encore
+// sur le bon paragraphe**, donc aucun instrument des deux côtés ne l'aurait dite fausse.
+//
+// ⇒ LA FORME QUI NE VIEILLIT PAS EST LE NOM DU SYMBOLE OU DE LA SECTION — rendue par
+//   runtime-codevoices : *« mes symboles survivent à mes réécritures ; mes numéros non. »* Et par
+//   kairos, la règle qui survit aux deux graphies d'un même document : *une ancre se COPIE de la
+//   source, jamais ne se retape.*
+//
+// La portée est plus large que la première passe : les ancres vivent dans le CODE et les BANCS, pas
+// seulement dans les documents.
+const PORTEE_ANCRES = ["packages/ui/src", "packages/ui/tests", "scripts", "docs", "CLAUDE.md"];
+// ⛔ `docs/plan/` est HORS DU DÉPÔT PUBLIÉ — `.gitignore:23`, zéro fichier suivi. Ce que j'y écris
+// n'atteint personne et ne se relit par aucun tiers : y refuser une ancre lignée ferait rougir mon
+// portillon sur un texte qui ne sort jamais d'ici.
+const HORS_PORTEE_ANCRES = ["docs/plan"];
+const ANCRE_LIGNEE =
+  /(BPscript|BPx|bpx|bpscript|kairos|kronos|bp3-frontend|bp3-engine|runtime-[a-zA-Z]+|atlas|hub|dedale)\/[A-Za-z0-9_./-]+\.(json|mjs|cjs|bps|md|ts|js|gr|py|sh):[0-9]+/g;
+
+const fichiersAncres = [];
+const explorerAncres = (rel) => {
+  if (HORS_PORTEE_ANCRES.some((h) => rel === h || rel.startsWith(h + "/"))) return;
+  const abs = join(RACINE, rel);
+  let st;
+  try {
+    st = lstatSync(abs);
+    if (st.isSymbolicLink()) return;
+  } catch {
+    return;
+  }
+  if (!st.isDirectory()) {
+    if (/\.(md|ya?ml|ts|js|mjs|cjs|svelte)$/.test(rel)) fichiersAncres.push(rel);
+    return;
+  }
+  for (const e of readdirSync(abs)) explorerAncres(join(rel, e));
+};
+for (const p of PORTEE_ANCRES) explorerAncres(p);
+
+/**
+ * ⛔ UNE ANCRE CITÉE POUR MONTRER LE DÉFAUT N'EST PAS LE DÉFAUT — même règle que les absences
+ * déclarées au-dessus, et même piège : un instrument qui la compte accuse le texte d'un défaut qui
+ * est son propos. Ici, c'est ce garde lui-même qui porte l'exemple mesuré du glissement.
+ * ⇒ L'entrée se retourne comme l'autre : si plus personne ne la cite, elle sort.
+ */
+const ANCRES_ILLUSTRATIVES = new Map([
+  [
+    "runtime-in/src/devices/keyboard.js:9",
+    "l'en-tête de ce garde la cite comme l'EXEMPLE MESURÉ du glissement — le texte annoncé est " +
+      "aujourd'hui en 10-11. C'est la démonstration, pas une adresse à suivre.",
+  ],
+]);
+
+const ancres = [];
+const illustrationsVues = new Set();
+for (const rel of fichiersAncres) {
+  readFileSync(join(RACINE, rel), "utf8")
+    .split("\n")
+    .forEach((ligne, i) => {
+      for (const m of ligne.matchAll(ANCRE_LIGNEE)) {
+        if (ANCRES_ILLUSTRATIVES.has(m[0])) {
+          illustrationsVues.add(m[0]);
+          continue;
+        }
+        ancres.push(`${m[0]}\n      cité par ${rel}:${i + 1}`);
+      }
+    });
+}
+
+for (const [a] of ANCRES_ILLUSTRATIVES)
+  if (!illustrationsVues.has(a))
+    ancres.push(
+      `${a}\n      ⛔ ILLUSTRATION DÉCLARÉE QUI NE DÉSIGNE PLUS RIEN : plus aucun texte ne la cite. ` +
+        `Retire son entrée — une inscription qui survit à sa cause couvre la suivante.`,
+    );
+
+if (ancres.length) {
+  console.error(
+    "✗ chemins-sortants — une ancre vers un voisin porte un NUMÉRO DE LIGNE :",
+  );
+  for (const a of ancres) console.error(`  • ${a}`);
+  console.error(
+    "\n⛔ Un chemin mort rend une alerte ; un numéro de ligne périmé rend une CITATION FAUSSE QUI A\n" +
+      "   L'AIR JUSTE — elle glisse et atterrit sur du vocabulaire du même domaine.\n" +
+      "   ⇒ Ancre par le NOM DU SYMBOLE ou de la SECTION, COPIÉ depuis la source. Le numéro peut\n" +
+      "     accompagner, jamais porter.",
+  );
+  process.exit(1);
+}
+
 console.log(
   `✓ chemins-sortants — ${examines} chemin(s) vers un voisin examiné(s) dans ${fichiers.length} ` +
-    `document(s), tous vivants ; ${ABSENCES_DECLAREES.size} absence(s) déclarée(s).`,
+    `document(s), tous vivants ; ${ABSENCES_DECLAREES.size} absence(s) déclarée(s) ; ` +
+    `${fichiersAncres.length} fichier(s) balayé(s), aucune ancre lignée.`,
 );

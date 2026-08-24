@@ -24,7 +24,7 @@ beforeAll(() => initAdapters(bus));
 // ⛔ DEUX OBJETS, DEUX SUJETS — depuis la couture du 2026-08-22 (`registry.ts`, `porteVersLaVoix`).
 //   • `registry.getAdapter('strudel')` = LA PORTE DE L'HÔTE. Seul l'hôte y passe.
 //   • `voixNue('strudel')` = l'instance que le paquet garde et que le RUNTIME appelle
-//     (`runtime-codevoices/src/adapters.ts:48` rend son tableau interne ; `code-voices-runtime.ts:743`
+//     (`runtime-codevoices/src/adapters.ts`, `createCodeVoiceAdapters` rend son tableau interne ; `code-voices-runtime.ts:743`
 //     l'appelle sur une sourdine).
 // Espionner l'une ou l'autre ne mesure donc pas la même chose, et c'est tout l'intérêt : avant la
 // couture il n'y avait qu'un seul objet et les deux appelants étaient indiscernables.

@@ -205,7 +205,7 @@ export async function setupFakeMidi(page: Page): Promise<{
  *
  * POURQUOI ÇA MARCHE SANS MATÉRIEL : `runtime-in` appelle `navigator.requestMIDIAccess()` dans la
  * chaîne du geste utilisateur, et lit `acces.inputs` puis pose `entree.onmidimessage`
- * (`runtime-in/src/devices/midi.js:105-112`). On remplace donc l'accès, pas le périphérique : le
+ * (`runtime-in/src/devices/midi.js`, `creerPeripheriqueMidi`). On remplace donc l'accès, pas le périphérique : le
  * chemin mesuré est le VRAI (geste → autorisation → ports → écoute → puits → bus), seule la source
  * d'octets est simulée. C'est ce que runtime-in appelle son autorisation injectable.
  *

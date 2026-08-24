@@ -65,7 +65,7 @@ const PLACEHOLDER_EXTENSIONS: Record<string, Runtime> = {
 // ════════════════════════════════════════════════════════════════════════════════
 //
 // `createCodeVoiceAdapters` rend le tableau d'instances INTERNE du paquet lui-même
-// (`runtime-codevoices/src/adapters.ts:48` — `return codeVoiceAdapters`), et c'est CE MÊME objet
+// (`runtime-codevoices/src/adapters.ts`, `createCodeVoiceAdapters` — `return codeVoiceAdapters`), et c'est CE MÊME objet
 // que le runtime appelle quand une sourdine s'exécute chez lui (`code-voices-runtime.ts:743`,
 // arbitrage [76]/[77]). L'hôte et le runtime tenaient donc le même adaptateur : un espion posé
 // dessus voyait les deux, et rien ne les séparait — ni l'argument (même forme des deux côtés) ni
@@ -184,7 +184,7 @@ export function isCodeVoiceRuntime(runtime: Runtime): boolean {
  * À NE PAS CONFONDRE avec `codeVoiceReachesGainBus` (lib/mixer/mixer-gain.ts), qui porte sur
  * le niveau PAR ACTEUR (`setActorGain`) : celui-là reste strudel/csound, pour une raison qui
  * tient (aucun point d'insertion par acteur sans changer l'objet audio que manipule l'auteur —
- * runtime-codevoices/src/voices/js.ts:72-75). Deux niveaux, deux prédicats.
+ * runtime-codevoices/src/voices/js.ts, `setMasterGain`/`setMasterMuted`). Deux niveaux, deux prédicats.
  */
 export function codeVoiceReachesMasterBus(runtime: Runtime): boolean {
   // Lu sur `codeVoiceAdapters` (le tableau AMONT, avec son type amont qui déclare

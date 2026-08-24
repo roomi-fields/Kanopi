@@ -1,6 +1,6 @@
 // LA PORTE DE L'HÔTE VERS UNE VOIX DE CODE — couture d'observation (arbitrage architecte 2026-08-22).
 //
-// Le paquet des voix rend son TABLEAU D'INSTANCES INTERNE (`runtime-codevoices/src/adapters.ts:48` :
+// Le paquet des voix rend son TABLEAU D'INSTANCES INTERNE (`runtime-codevoices/src/adapters.ts`, `createCodeVoiceAdapters` :
 // `return codeVoiceAdapters`), et c'est ce même objet que son runtime appelle sur une sourdine
 // (`code-voices-runtime.ts:743`, arbitrage [76]/[77]). Tant que l'hôte tenait cette instance, un
 // espion posé dessus voyait les DEUX appelants, sans rien pour les séparer : même forme d'argument,

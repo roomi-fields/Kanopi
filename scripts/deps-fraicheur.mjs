@@ -175,7 +175,7 @@ for (const dep of ["bpscript", ...SOURCE_DEPS]) {
 //
 // POURQUOI, ET CE N'EST PAS UNE PRÉCAUTION THÉORIQUE : ces deps sont des SYMLINKS vers les
 // ARBRES DE TRAVAIL des voisins. Une modification non commitée chez eux est donc dans MON build
-// à la seconde où elle est écrite (règle d'atelier 2026-07-29, `hub/AGENT_WELCOME.md:36-46`).
+// à la seconde où elle est écrite (règle d'atelier 2026-07-29, `hub/AGENT_WELCOME.md`, section « Coordination via la tour »).
 // Le 2026-07-30, bpscript m'a demandé si une ancre qu'il n'avait PAS ENCORE POUSSÉE risquait de
 // faire sonner une de mes scènes : mesuré, elle sonnait DÉJÀ (11 hauteurs gravées), et mon
 // portillon vert de l'heure précédente avait tourné AVEC. Un revert chez lui aurait changé le

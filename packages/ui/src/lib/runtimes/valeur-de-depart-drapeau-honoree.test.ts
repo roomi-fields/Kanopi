@@ -13,7 +13,7 @@
 // jour, ce report était nécessaire — le dériveur ignorait la déclaration. Le banc verrouillait
 // cette lecture-là.
 //
-// Aujourd'hui : le dériveur lit la déclaration (`BPx/src/load/loadGrammar.ts:1709`), et le report
+// Aujourd'hui : le dériveur lit la déclaration (`BPx/src/load/loadGrammar.ts`, `collectFlagInitialValues`), et le report
 // de l'hôte est SUPPRIMÉ — deux mains sur une valeur qui a un porteur, c'est une voie parallèle.
 // Le banc ne verrouille donc plus aucune fonction de l'hôte : il verrouille le RÉSULTAT sans
 // aucune injection. Si quelqu'un remet un report côté hôte, ce banc reste vert — c'est voulu, il

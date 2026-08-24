@@ -774,7 +774,7 @@ export function interpsForScene(text: string): string[] {
 }
 
 /** Une ENTRÉE déclarée par la scène — recopiée VERBATIM du nœud `InDirective` de l'AST amont
- *  (`bpscript/src/transpiler/parser.js:1211`). L'hôte ne complète rien : `mapping` reste `null`
+ *  (`bpscript/src/transpiler/parser.js`, `parse`). L'hôte ne complète rien : `mapping` reste `null`
  *  quand la scène n'invoque aucune table, parce qu'il n'existe AUCUNE table par défaut (décision
  *  `2026-07-27-forme-des-entrees-in-mapping-adresse-nue.md`). */
 export interface DeclaredInput {
@@ -1818,7 +1818,7 @@ function makeBpxAdapter(
       // ⛔ L'HÔTE NE POSE AUCUNE VALEUR DE DÉPART. Un `.bps` dont TOUTES les règles sont gardées
       // par un drapeau (`[section==1] S -> …`) ne dérive rien tant que le drapeau ne vaut aucune
       // valeur attendue — mais c'est la DÉCLARATION de la scène qui la porte (`flag section:1`),
-      // et BPx la lit sur l'arbre (`BPx/src/load/loadGrammar.ts:1709`, 2026-08-22). Ce qui passe
+      // et BPx la lit sur l'arbre (`BPx/src/load/loadGrammar.ts`, `collectFlagInitialValues`, 2026-08-22). Ce qui passe
       // ici est donc UNIQUEMENT ce que l'appelant a explicitement fixé — changer de section en
       // ré-évaluant avec `flags: { section: 2 }` — et l'hôte GAGNE sur la scène quand il le fait.
       //

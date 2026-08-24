@@ -267,7 +267,7 @@ flowchart TD
 - **buildOrchestration** — Construit la vue d'orchestration depuis les acteurs de l'AST (table + liste + drapeau synthetic lu de l'AST). Lecture/assemblage de facette, jamais d'acteur 'default' inventé.
 - **actorTableFromAst** — Lit chaque ActorDirective → {transport, alphabet, eval}. Lecture de facette.
 - **flagStatesFromAst** — Lit les FlagStatesDirective (@flag scene: calm:1…) → table nom→int. Lecture de facette.
-- **mmFromAst** — Lit le métronome déclaré @mm depuis les directives. Lecture de facette. ⚠️ `@mm` est une COMPATIBILITÉ D'ENTRÉE BP3, pas la forme BPScript : le compilateur REFUSE `@mm` dans une scène BPScript et renvoie à `@tempo:<N>` (décision Romain 2026-06-26, `BPscript/src/transpiler/parser.js:1819`). Ce lecteur est en retard sur cette forme — REV-F12.
+- **mmFromAst** — Lit le métronome déclaré @mm depuis les directives. Lecture de facette. ⚠️ `@mm` est une COMPATIBILITÉ D'ENTRÉE BP3, pas la forme BPScript : le compilateur REFUSE `@mm` dans une scène BPScript et renvoie à `@tempo:<N>` (décision Romain 2026-06-26, `BPscript/src/transpiler/parser.js, `parse``). Ce lecteur est en retard sur cette forme — REV-F12.
 - **librariesFromAst** — Lit les LibraryDirective (@library.strudel …) → {engine→[ids]}. Lecture de facette.
 - **backticksFromAst** — DFS de l'arbre pour les nœuds BacktickInline → {\_btName→{interp,code}}. Lecture de facette (avec garde anti-cycle).
 - **btTokenByActor** — DFS : pour chaque Rule, apparie le LHS (nom d'acteur) au token BT de son RHS. Lecture de facette pour l'arm/disarm par voix-code.

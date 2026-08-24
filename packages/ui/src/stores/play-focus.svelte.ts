@@ -14,7 +14,7 @@
 // `hub/contrats/hote-runtime-in.md` § « Ce qui reste chez l'hôte ») : il porte un état que le garde
 // des raccourcis consulte, et il OUVRE/FERME le clavier de jeu — « l'hôte l'ouvre quand le jeu a la
 // main et le ferme quand il la perd, c'est tout le protocole de focus qu'il connaît »
-// (`runtime-in/src/devices/keyboard.js:9-11`). Il ne pose AUCUN écouteur de touche de jeu, ne
+// (`runtime-in/src/devices/keyboard.js`, en-tête « CE QU’IL NE DÉCIDE PAS : le focus »). Il ne pose AUCUN écouteur de touche de jeu, ne
 // connaît AUCUNE touche, ne résout AUCUN nom.
 //
 // ⛔ UNE SEULE PORTE, ET ELLE NE SE COMMANDE PAS. Le badge cliquable et la sortie par Échap ont été

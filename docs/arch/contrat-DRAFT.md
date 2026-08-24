@@ -128,8 +128,8 @@ transport.
 >
 > Code réel : `kanopi/packages/ui/src/lib/runtimes/bpx-adapter.ts` (`PITCH_LIB` :137-143, `buildModulators`
 > :1512-1517, `kairos.charger` eval :1531-1557 + re-dérive :1799-1808, `onExprSource`/`setExprSource` :983-989).
-> Bord Kairos : `kairos/src/kairos.ts:47` (`charger`), `kairos/src/projection/projeter.ts:32-60`
-> (`ContexteProjection`), `kairos/src/pitch/builder.ts:45-51` (`PitchLib`), `kronos/src/modulation/*`
+> Bord Kairos : `kairos/src/kairos.ts, `motifDeRefus`` (`charger`), `kairos/src/projection/projeter.ts-60`
+> (`ContexteProjection`), `kairos/src/pitch/builder.ts, `AlphabetEntry`-51` (`PitchLib`), `kronos/src/modulation/*`
 > (`buildModulators`, `Modulator`, `ExprSource`).
 
 | Élément                                                                                                   | Propriétaire de la forme               | Producteur réel de la valeur                                      | Sens                           | Type/forme exact                                                | Invariant                                                                                                      |
@@ -988,7 +988,7 @@ pitchLib, modulation })` — `pitchLib` et `modulation` sont des champs **frère
   ne sont pas vérifiés identiques ; `ContexteProjection` n'est pas importé côté hôte. Le compilateur ne
   garantit donc PAS l'accord de cette frontière — fragilité (régression silencieuse possible).
 
-- **🔶 Dérive doc côté Kairos (E3 du contrat Kairos).** `kairos/src/index.ts:20` parle encore de
+- **🔶 Dérive doc côté Kairos (E3 du contrat Kairos).** `kairos/src/index.ts, ses ré-exports de types` parle encore de
   « `ContexteProjection.pitch` » alors que le champ réel est `pitchLib` — le code Kanopi pose bien
   `pitchLib`, c'est le commentaire Kairos qui est périmé.
 

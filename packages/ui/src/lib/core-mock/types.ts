@@ -103,7 +103,7 @@ export interface CoreApi {
    *  Web MIDI absent ou port introuvable : aucun dégradé muet. */
   enableMidiInput(portId?: string): Promise<readonly PortInfo[]>;
   /** LE GESTE DU FOCUS DE JEU côté périphérique : l'hôte OUVRE le clavier quand le jeu prend la
-   *  main, et le FERME quand il la rend (`runtime-in/src/devices/keyboard.js:9-11`). C'est tout ce
+   *  main, et le FERME quand il la rend (`runtime-in/src/devices/keyboard.js`, en-tête « CE QU’IL NE DÉCIDE PAS : le focus »). C'est tout ce
    *  que le périphérique connaît du focus — l'arbitrage, lui, reste de l'interface.
    *  REJETTE bruyamment si aucun clavier n'est fourni ou si l'ouverture échoue : un focus qui
    *  n'écoute rien doit se relâcher, pas se taire. */

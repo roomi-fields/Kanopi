@@ -439,7 +439,7 @@ class RealCore implements CoreApi {
    *  périphérique TIENT l'autorisation accordée, ses écouteurs et son ancre d'horloge. En fabriquer
    *  un par geste redemanderait l'autorisation et poserait les écouteurs sur un objet que plus
    *  personne ne tient — le périphérique se tairait SANS UNE SEULE ERREUR. Ce n'est pas une
-   *  hypothèse : c'est l'incident [96] du côté SORTIE (`runtime-MIDI/src/transports/midi.js:12`,
+   *  hypothèse : c'est l'incident [96] du côté SORTIE (`runtime-MIDI/src/transports/midi.js`, en-tête « Access Web MIDI SINGLETON de module »,
    *  « root cause du silence : l'hôte créait un MidiRuntime FRAIS »). `periphériques()` gèle ses
    *  instances : deux appels rendent les MÊMES objets. */
   async enableMidiInput(portId?: string): Promise<readonly PortInfo[]> {
@@ -485,7 +485,7 @@ class RealCore implements CoreApi {
    *
    *  C'est TOUT le protocole de focus que le périphérique connaît, et il est écrit de son côté :
    *  « ce périphérique ne consulte aucun focus : l'hôte l'ouvre quand le jeu a la main et le ferme
-   *  quand il la perd » (`runtime-in/src/devices/keyboard.js:9-11`). L'hôte ne pose donc AUCUN
+   *  quand il la perd » (`runtime-in/src/devices/keyboard.js`, en-tête « CE QU’IL NE DÉCIDE PAS : le focus »). L'hôte ne pose donc AUCUN
    *  écouteur clavier de jeu — les écouteurs, le code physique de la touche et la table vivent
    *  entièrement dans `runtime-in` (contrat `hote-runtime-in.md`, garde 4).
    *
