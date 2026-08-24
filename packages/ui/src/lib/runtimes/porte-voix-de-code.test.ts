@@ -125,8 +125,13 @@ describe('garde de structure — le registre est le seul à obtenir une voix', (
 // d'évaluation n'explique QU'UNE des deux occurrences (17 ms sous son seuil de 50 ms, puis 60 ms
 // au-dessus, où sa relance passerait et construirait — or aucun ajout n'apparaît).
 //
-// ⇒ « Le chiffre qui tranche a changé de nature : ce n'est plus l'instant d'entrée de chaque
-//   évaluation, c'est *une évaluation a-t-elle seulement été TENTÉE*. » Et il se lit chez moi.
+// ⛔ ET CE COMPTE NE TRANCHE PAS KAN-65 — mesuré le 2026-08-25, après l'avoir écrit : la sonde a
+//   rendu `{}` sur une troisième occurrence, et ce zéro ne discrimine rien. AUCUNE ÉVALUATION DE
+//   VOIX NE TRAVERSE CETTE PORTE (`real-core.ts:291` route les voix de code vers
+//   `autonomousCodeVoices` ; un backtick orchestré est tiré par Kronos sur l'instance).
+//
+// ⇒ CE QUI RESTE VRAI, et c'est ce que ce banc verrouille : ce compte dit ce que l'hôte a appelé
+//   PAR SA PORTE — ses diffusions de transport — et il le dit de façon OPPOSABLE.
 //
 // ⛔ CE QUI REND CE COMPTE OPPOSABLE EST LA COUTURE CI-DESSUS, PAS LE COMPTEUR. Sur l'instance nue,
 //   l'hôte et le runtime sont indiscernables ; le compte dirait « quelqu'un a appelé » et ne

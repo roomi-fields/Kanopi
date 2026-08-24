@@ -94,8 +94,19 @@ const portes = new Map<Runtime, RuntimeAdapter>();
 //     a. aucune évaluation n'a été TENTÉE après l'arrêt  →  l'hôte ne s'est pas réarmé — chez moi
 //     b. une évaluation a été tentée et a échoué DANS la construction  →  chez lui
 //
-//   « Le chiffre qui tranche a changé de nature : ce n'est plus l'instant d'entrée de chaque
-//   évaluation, c'est *une évaluation a-t-elle seulement été tentée*. » Le compte ci-dessous le dit.
+// ⛔ ET CE COMPTE NE RÉPOND PAS À CETTE QUESTION — MESURÉ, APRÈS L'AVOIR ÉCRIT. Le 2026-08-25, la
+//   sonde a rendu `{}` sur une troisième occurrence de KAN-65, et ce zéro ne discrimine RIEN :
+//   `real-core.ts:291` route une voix de code vers `autonomousCodeVoices(...).evaluate(...)`, et un
+//   backtick orchestré est tiré par Kronos sur l'instance. Le commentaire de ce chemin le dit :
+//   « pas via la registry hôte ». ⇒ AUCUNE ÉVALUATION DE VOIX NE TRAVERSE CETTE PORTE.
+//
+// ⇒ CE QUE CE COMPTE DIT VRAIMENT, et c'est un fait réel mais plus étroit : ce que l'hôte appelle
+//   par sa porte — les `stop` de ses diffusions de transport. Un `{}` dit « l'hôte n'a rien diffusé
+//   à ce moment-là », pas « aucune évaluation n'a été tentée ».
+//
+// ⚠️ Il reste posé parce que ce qu'il mesure est vrai et opposable ; l'affirmation qu'il tranchait
+//   KAN-65 est retirée. Une description plus large que le mécanisme désigne la « correction » qui
+//   le casserait.
 //
 // ⚠️ IL N'A AUCUN EFFET SUR LE CHEMIN : il incrémente et délègue. Un compteur qui changerait l'ordre
 // des appels mesurerait sa propre présence.

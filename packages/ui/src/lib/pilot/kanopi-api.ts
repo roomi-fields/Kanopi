@@ -159,12 +159,10 @@ export function installKanopiApi(): void {
        *  chargement. Compté sur la PORTE (`registry.ts`), donc opposable : le runtime appelle
        *  l'instance nue, l'hôte passe par la porte — un espion sur l'instance verrait les deux
        *  chemins sans pouvoir les séparer.
-       *  ⇒ Ce que ça tranche (KAN-65) : quand une toile p5 est détruite et que rien ne la remonte,
-       *    ce compte dit si l'hôte a seulement TENTÉ une évaluation après l'arrêt. Zéro appel =
-       *    l'hôte ne s'est pas réarmé, et la cause est chez moi ; un appel de plus = il a tenté, et
-       *    l'échec est dans la construction, en aval. La question m'a été rendue par
-       *    runtime-codevoices le 2026-08-24, après que sa propre cause n'ait expliqué qu'une
-       *    occurrence sur deux. */
+       *  ⛔ CE QU'IL NE DIT PAS, mesuré le 2026-08-25 : il ne tranche PAS KAN-65. Aucune évaluation
+       *    de voix ne traverse cette porte — `real-core.ts:291` route une voix de code vers
+       *    `autonomousCodeVoices`, et un backtick orchestré est tiré par Kronos sur l'instance.
+       *    Un `{}` dit « l'hôte n'a rien diffusé », jamais « aucune évaluation n'a été tentée ». */
       appelsDeLHote() {
         return appelsDeLHote();
       },

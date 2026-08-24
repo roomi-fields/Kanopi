@@ -117,14 +117,17 @@ test('a .bps p5 code voice evaluates and paints non-background pixels', async ({
       // La séquence, en millisecondes depuis la pose de l'observateur. Vide = aucune toile n'a
       // jamais été montée ; une paire AJOUTÉE/RETIRÉE = la cause candidate de runtime-codevoices.
       sequenceDeLaToile: (window as unknown as { __kan65: unknown[] }).__kan65,
-      // ⛔ LE CHIFFRE QUI TRANCHE, ET IL EST CHEZ MOI. runtime-codevoices a mesuré que sa
+      // ⛔ CE COMPTE NE TRANCHE PAS KAN-65 — MESURÉ LE 2026-08-25, IL A RENDU `{}` ET CE ZÉRO
+      //   N'EST PAS LISIBLE. runtime-codevoices a mesuré que sa
       //   déduplication n'explique QU'UNE des deux occurrences : 17 ms sous son seuil de 50 ms,
       //   puis 60 ms au-dessus — au-dessus, sa relance PASSERAIT et construirait, or aucun ajout
       //   n'apparaît. ⇒ « Le chiffre qui tranche a changé de nature : ce n'est plus l'instant
       //   d'entrée de chaque évaluation, c'est *une évaluation a-t-elle seulement été TENTÉE*. »
-      //   Compté sur la PORTE du registre, donc opposable : le runtime appelle l'instance nue,
-      //   l'hôte passe par la porte. Zéro appel de plus après l'arrêt = l'hôte ne s'est pas
-      //   réarmé, et la cause est chez moi ; un appel de plus = l'échec est dans la construction.
+      //   Aucune évaluation de voix ne traverse cette porte : `real-core.ts:291` route les voix de code
+      //   vers `autonomousCodeVoices`, et un backtick orchestré est tiré par Kronos sur l'instance.
+      //   ⇒ Ce compte dit ce que l'hôte a DIFFUSÉ (ses `stop` de transport), et il reste au relevé
+      //   à ce titre — mais il ne dit pas si une évaluation a été tentée. Le chemin qui le dirait
+      //   est Kronos → instance, et il n'est pas chez moi.
       appelsDeLHote:
         (
           window as unknown as { kanopi?: { inspect?: { appelsDeLHote?: () => unknown } } }
