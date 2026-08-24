@@ -275,7 +275,7 @@ Mon identité : `BP_AGENT=kanopi`. Elle ne persiste pas entre appels shell, donc
 préfixe : `BP_AGENT=kanopi ~/dev/bp/hub/tour <commande>`.
 
 1. **Au réveil, le courrier d'abord** : `tour inbox`, puis `TABLEAU.md` et mes contrats.
-   `tour inbox --ack` une fois traité.
+   `tour ack` une fois traité — NU, seul sur sa ligne (`--ack` est retiré depuis le 2026-08-24 : afficher et acquitter dans le même appel était le défaut).
 2. **Un livrable poussé se route aussitôt**, dans le même geste que le push : `tour send architecte`.
    Sans cela, personne ne sait qu'il faut le confronter, et le chantier se cale en silence.
 3. **La dernière action avant de rendre la main est un courrier à l'architecte** : fini avec sa
