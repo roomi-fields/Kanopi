@@ -53,6 +53,7 @@ import {
   voisinsLies,
   racinesExposees,
   raisonDuRefus,
+  depotsSales,
 } from "./lib/voisins-lies.mjs";
 
 const RACINE = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
@@ -187,8 +188,17 @@ function ceQuiFerme(ecritures) {
   // état non publié ; moi je refuse de CONSTRUIRE — mon greffon de production s'arrête sur du non
   // enregistré qui entre dans mon paquet. Les deux se recouvrent aujourd'hui et ne disent pas la
   // même chose : la sienne protège la mesure, la mienne protège l'artefact.
-  if (raisonDuRefus(voisinsLies(RACINE))) {
-    raisons.push("un arbre SALE ferme ma construction de production");
+  // ⛔ ET LE NOM SORT. Sans lui, ce relevé disait « un arbre SALE » trois fois d'affilée sans dire
+  // chez qui — impossible d'aller demander l'enregistrement à quiconque. Le prédicat vient de la
+  // même source que le refus lui-même ; il n'est pas réécrit ici.
+  const sales = depotsSales(voisinsLies(RACINE));
+  if (sales.length > 0) {
+    const noms = sales
+      .map(({ v, entrantes }) => `${v.depot.split("/").pop()} (${entrantes.length})`)
+      .join(", ");
+    raisons.push(
+      `un arbre SALE ferme ma construction de production : ${noms}`,
+    );
   }
   for (const [nom, { quand, quoi }] of ecritures) {
     if (quand > seuil)

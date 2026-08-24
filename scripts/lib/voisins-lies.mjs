@@ -883,13 +883,27 @@ export function mentionDeRegime(racine) {
  * Rend `null` quand rien n'entre — c'est un feu vert, jamais un silence : la légende du
  * portillon nomme et chiffre le reste à chaque passage.
  */
-export function raisonDuRefus(voisins) {
-  const sales = voisins
+/**
+ * Les dépôts dont l'arbre de travail entre dans mon paquet et n'est pas enregistré.
+ *
+ * ⛔ EXTRAIT POUR QUE LE NOM SORTE. `tir-arme.mjs` n'affichait que « un arbre SALE ferme ma
+ * construction de production », sans dire CHEZ QUI — mesuré le 2026-08-24 : trois relevés d'affilée
+ * sans un seul nom, donc rien sur quoi agir. C'est la faute que ce dépôt a déjà corrigée une fois
+ * sur le verdict de campagne : un refus qui ne permet à personne d'agir s'use aussi vite qu'un
+ * refus absent. Une seule source pour le prédicat — le recopier chez l'appelant en ferait une
+ * seconde autorité qui dériverait en silence.
+ */
+export function depotsSales(voisins) {
+  return voisins
     .map((v) => ({
       v,
       entrantes: v.modifications.filter((m) => m.atteintLeBuild),
     }))
     .filter(({ entrantes }) => entrantes.length > 0);
+}
+
+export function raisonDuRefus(voisins) {
+  const sales = depotsSales(voisins);
   if (sales.length === 0) return null;
 
   const lignes = sales.map(({ v, entrantes }) => {
