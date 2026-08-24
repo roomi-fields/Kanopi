@@ -194,6 +194,45 @@ function dernieresEcritures() {
   return par;
 }
 
+/**
+ * ⛔ LE PRÉ-VOL — CE QUI SE MESURE SANS GELER PERSONNE SE MESURE AVANT DE GELER QUELQU'UN.
+ *
+ * Le 2026-08-24, trois campagnes consécutives ont rendu 1 en deux minutes chacune, et les trois se
+ * sont arrêtées sur MES gardes ou MON typage — bien avant les treize minutes d'écran, seul étage où
+ * l'état des arbres gelés compte. Onze dépôts ont donc été gelés pour un chemin que la campagne
+ * n'atteignait jamais.
+ *
+ * ⇒ Relevé par runtime-audio en comptant mes avis depuis le DEHORS : « le gel est dépensé sur un
+ *   chemin que la campagne n'atteint pas ». Et par runtime-MIDI, avant même de connaître la cause :
+ *   « ta fenêtre s'ouvre seulement quand les arbres consommés sont propres, donc la cause de ton 1
+ *   est derrière ta porte ». Elle l'était, deux fois sur deux.
+ *
+ * ⚠️ CE PRÉ-VOL NE REMPLACE PAS LE PORTILLON : il n'exécute que la part qui ne dépend d'aucun
+ * voisin en chantier, et son vert n'autorise rien — seul le crochet décide. Il ne fait qu'éviter de
+ * geler onze dépôts pour un rouge qui est le mien.
+ */
+function preVol() {
+  for (const [nom, cmd] of [
+    ["gardes de structure", `cd ${RACINE} && npm run --silent arch`],
+    ["typage", `cd ${RACINE}/packages/ui && npx --no-install svelte-check --output human-verbose`],
+  ]) {
+    try {
+      execFileSync("bash", ["-c", cmd], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    } catch (e) {
+      const sortie = `${e.stdout ?? ""}${e.stderr ?? ""}`;
+      const lignes = sortie
+        .split("\n")
+        .filter((l) => /^\s*(✗|✘|Error|error|ERROR|\s+•)/.test(l))
+        .slice(0, 6);
+      return {
+        etape: nom,
+        cause: lignes.length ? lignes.join("\n") : sortie.split("\n").slice(-8).join("\n"),
+      };
+    }
+  }
+  return null;
+}
+
 /** Ce qui empêche la fenêtre de s'ouvrir, en clair. Vide = elle est ouverte. */
 function ceQuiFerme(ecritures) {
   const seuil = Date.now() - CALME_MS;
@@ -384,9 +423,22 @@ function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush) {
   const bascule = /BASCUL/.test(sortiePush)
     ? `\n    ⚠ BASCULE NOMMÉE CHEZ : ${nommes.join(", ") || "nom non extrait — voir mon journal"}`
     : "";
+  // ⛔ LE VERDICT NOMME SA CAUSE. Relevé par runtime-MIDI le 2026-08-24, après trois rouges en
+  // quinze minutes : « un verdict qui ne nomme pas sa cause ne permet à personne de t'aider — tes
+  // voisins ne peuvent que répondre "pas moi", et je viens de le faire trois fois ».
+  const causes = sortiePush
+    .split("\n")
+    .filter((l) => /^\s*(✗|✘|ERROR|Error:|error |\s+•)/.test(l))
+    .slice(0, 6)
+    .join("\n    ");
+  const pourquoi =
+    sortie === "0"
+      ? ""
+      : `\n    CE QUI A RENDU ${sortie} :\n    ${causes || "(cause non extraite — voir mon journal)"}\n`;
   const texte =
     `VERDICT DE MA CAMPAGNE — départ ${hh(depart)}, arrivée ${hh(arrivee)}.\n\n` +
     `    CODE DE SORTIE DU CROCHET : ${sortie}\n` +
+    pourquoi +
     `    ${pousse}${bascule}\n\n` +
     `⛔ ET CE CODE NE DIT PAS SI VOTRE GEL A TENU — il rend 1 pour TOUTE cause qui me fait rougir :\n` +
     `un banc à moi, un garde à moi, une dépendance. Un voisin qui aurait basculé pendant ma mesure\n` +
@@ -483,6 +535,49 @@ function fermerLaFenetre() {
   }
 }
 
+// ⛔ UN SEUL TIR A LA FOIS. Le 2026-08-24 à 12:07 puis 12:08, DEUX fenêtres ont été ouvertes au nom
+// de kanopi à une minute d'intervalle : deux armes tournaient, la seconde ayant été lancée après
+// que la première eut déjà demandé la sienne. La tour n'en tient qu'une par émetteur, donc la
+// seconde a EFFACÉ la première dans son état — et la première n'aura jamais de fin.
+// ⇒ Relevé par runtime-ui et runtime-codevoices : « l'annulation dépose sa pièce ; le REMPLACEMENT
+//   n'en dépose pas ». On supprime le remplacement plutôt que de lui écrire une pièce : deux armes
+//   simultanées n'ont aucun usage légitime.
+const VERROU = join(homedir(), ".local", "state", "kanopi", "tir.pid");
+{
+  if (existsSync(VERROU)) {
+    const pid = Number(readFileSync(VERROU, "utf8").trim());
+    let vivant = false;
+    try {
+      process.kill(pid, 0);
+      vivant = true;
+    } catch {
+      /* le processus est mort — son verrou est un résidu */
+    }
+    if (vivant) {
+      console.log(
+        `⛔ UNE ARME TOURNE DÉJÀ (pid ${pid}) — je ne démarre pas. Deux armes ouvrent deux fenêtres ` +
+          `au même nom, la tour n'en tient qu'une, et la première n'a jamais de fin.`,
+      );
+      process.exit(3);
+    }
+  }
+  mkdirSync(join(homedir(), ".local", "state", "kanopi"), { recursive: true });
+  writeFileSync(VERROU, String(process.pid));
+  const lacher = () => {
+    try {
+      if (readFileSync(VERROU, "utf8").trim() === String(process.pid)) unlinkSync(VERROU);
+    } catch {
+      /* déjà retiré */
+    }
+  };
+  process.on("exit", lacher);
+  for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"])
+    process.on(sig, () => {
+      lacher();
+      process.exit(130);
+    });
+}
+
 const debut = Date.now();
 let tours = 0;
 let demandeeA = null;
@@ -516,6 +611,15 @@ for (;;) {
     // une seule chose, et la mienne était fausse de la durée de la grâce. Ce n'est pas cosmétique :
     // le voisin gelé se tient tranquille jusqu'à l'heure que je lui donne, donc je lui faisais
     // perdre ce que j'ajoutais.
+    // ⛔ RIEN NE SE GÈLE AVANT QUE CE QUI EST À MOI SOIT VERT.
+    const echec = preVol();
+    if (echec !== null) {
+      console.log(
+        `${hh(new Date())} — ⛔ PRÉ-VOL ROUGE (${echec.etape}) — AUCUNE fenêtre demandée, ` +
+          `personne n'est gelé. La cause est chez moi :\n${echec.cause}`,
+      );
+      process.exit(1);
+    }
     const arrivee = new Date(Date.now() + FENETRE_MIN * 60_000);
     const prevenus = demanderLaFenetre(ecritures);
     if (prevenus === null) {
