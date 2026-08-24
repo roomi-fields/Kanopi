@@ -83,9 +83,15 @@ export interface ResourceGroup {
 // LA NATURE REMPLACE LE NOM : une entrée de catalogue est un OBJET, un champ de catalogue
 // est une chaîne. Aucun renommage ne peut casser un filtre qui ne nomme rien.
 //
-// La règle du blanc souligné initial RESTE, et c'est mesuré : trois clés de commentaire
-// sont des OBJETS (`temperaments._comment`, `mod._comment_curve`, `mapping._comment`),
-// dont une dans un catalogue énuméré ici. La nature seule les laisserait remonter.
+// La règle du blanc souligné initial RESTE, et elle se garde CONTRE un cas qui n'est plus
+// là. Mesuré le 2026-08-24 sur les 26 librairies publiées : UNE seule clé à blanc souligné
+// est encore un OBJET, `mapping._comment` — et son catalogue sort du paquet (décision
+// `2026-08-24-une-place-qui-ne-porte-aucune-donnee-n-a-pas-de-fichier`, 26 → 25). Les deux
+// autres que ce commentaire nommait ont disparu avant : `temperaments._comment` (clé
+// absente) et `mod._comment_curve` (catalogue archivé le 2026-08-23, ce que l'en-tête de ce
+// fichier dit déjà). ⛔ La nature seule — objet contre chaîne — ne suffit donc PAS à tenir
+// le filtre : elle est aujourd'hui vraie par accident, et le blanc souligné est ce qui
+// reste vrai quand un catalogue réécrit sa prose en objet.
 function isMetaKey(k: string): boolean {
   return k.startsWith('_');
 }

@@ -12,5 +12,91 @@
       "le": "2026-08-24",
       "leve-par": "le retrait de sa condition d'export `development`, comme kronos l'a fait le 2026-08-24"
     }
+  },
+  "__etat-pris": [
+    "L'ÉTAT QUE JE PRENDS CHEZ CHAQUE VOISIN, DÉCLARÉ — un par lien, aucun implicite.",
+    "Arbitrage de l'architecte du 2026-08-24 : « UN CONSOMMATEUR DÉCLARE L'ÉTAT QU'IL A PRIS.",
+    "Épingler est une façon de le déclarer — la bonne quand on veut la STABILITÉ. Nommer ce qu'on",
+    "a LU en est une autre — la bonne quand on veut suivre le DERNIER. Ce qui est interdit dans",
+    "les deux cas, c'est de NE RIEN DIRE. »",
+    "",
+    "Quatre régimes, et le quatrième seul est déclaré :",
+    "  1  arbre de travail            rien de fixe ; un tiers ne peut pas rejouer",
+    "  2  commit local                fixe, mais personne d'autre ne l'a",
+    "  3  référence publiée MOUVANTE  clonable par un tiers — MAIS BOUGE SOUS MOI",
+    "  4  état ÉPINGLÉ ou NOMMÉ       fixé ou dit — dans les deux cas, DÉCLARÉ",
+    "",
+    "Trois étages déclarables, et le troisième n'est pas un silence :",
+    "  `épinglé`   mon lien vise un état FIXE, nommé ici. Le garde ÉCHOUE s'il en résout un autre.",
+    "  `nommé`     mon lien suit le dernier, et mon verdict IMPRIME ce qu'il a lu. Le garde ÉCHOUE",
+    "              quand l'état n'est pas NOMMABLE — un état non nommable l'arrête AVANT qu'il lise.",
+    "  `rien-pris` je ne prends rien par cette porte, et je le dis. Deux zéros ne se comptent pas",
+    "              pareil : muet et « rien pris » rendent le même chiffre et n'ont pas le même sens.",
+    "",
+    "Le verrou tient dans les DEUX sens, comme la dette ci-dessus : un voisin lié absent d'ici fait",
+    "échouer, et une entrée dont le voisin n'est plus lié fait échouer aussi.",
+    "",
+    "Le garde : `scripts/garde-etat-pris.mjs`, dans `npm run arch`, donc au portillon.",
+    "La commande qui repointe : `npm run repointer` (l'état déclaré) · `--dernier` (prendre et",
+    "réécrire). Une somme de contrôle ne se retrouve pas ; une commande, si."
+  ],
+  "etat-pris": {
+    "runtime-osc": {
+      "etage": "épinglé",
+      "voie": "paquet",
+      "empreinte": "1ab82e3",
+      "le": "2026-08-24",
+      "pourquoi": "Onze publications le 2026-08-24, dont cinq en vingt-huit minutes, et mon lien visait la référence MOUVANTE `.paquets/runtime-osc` : le CONTENU d'un paquet est immuable, le LIEN qui le désigne ne l'est pas. Une campagne perdue à 14:23 s'est soldée sur une bascule survenue pendant ma fenêtre."
+    },
+    "bpscript": {
+      "etage": "nommé",
+      "voie": "source",
+      "le": "2026-08-24"
+    },
+    "bp3-frontend": {
+      "etage": "nommé",
+      "voie": "source",
+      "le": "2026-08-24"
+    },
+    "bpx": {
+      "etage": "nommé",
+      "voie": "source",
+      "le": "2026-08-24"
+    },
+    "@kairos/core": {
+      "etage": "nommé",
+      "voie": "source",
+      "le": "2026-08-24"
+    },
+    "@kronos/core": {
+      "etage": "nommé",
+      "voie": "source",
+      "le": "2026-08-24"
+    },
+    "runtime-audio": {
+      "etage": "nommé",
+      "voie": "source",
+      "le": "2026-08-24"
+    },
+    "runtime-codevoices": {
+      "etage": "nommé",
+      "voie": "source",
+      "le": "2026-08-24"
+    },
+    "runtime-in": {
+      "etage": "nommé",
+      "voie": "source",
+      "le": "2026-08-24"
+    },
+    "runtime-midi": {
+      "etage": "nommé",
+      "voie": "source",
+      "le": "2026-08-24"
+    },
+    "runtime-ui": {
+      "etage": "nommé",
+      "voie": "source",
+      "le": "2026-08-24"
+    }
   }
 }
