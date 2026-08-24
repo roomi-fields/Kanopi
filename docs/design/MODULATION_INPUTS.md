@@ -1,5 +1,15 @@
 # Entrées de modulation (CV) du runtime webaudio
 
+> ⛔ **LA COUCHE QUE CE DOCUMENT DÉCRIT EST ARCHIVÉE EN AMONT — mesuré le 2026-08-24.**
+> `LIBS` ne porte plus de clé `mod`, un arbre de scène compilé n'a plus de champ
+> `cvInstances`, et `@kronos/core` n'exporte plus `buildModulators` /
+> `composeLeafModulations` / `renderToBreakpoints` / `evaluateCurve` — ni par sa source,
+> ni par son paquet. Le catalogue `mod` a été archivé avec les modules chez BPscript
+> (`885327d`, 2026-08-23) et les scènes qui déclaraient une instance de contrôle sont
+> refusées à la compilation. **Aucune ligne de ce dépôt n'atteint plus la forme décrite
+> ci-dessous** ; ce qui compose une courbe aujourd'hui est Kairos, à l'aplatissement.
+> Le retrait de ce document appartient à l'architecte.
+
 > ⚠️ **PÉRIMÉ (localisation code) — non réécrit dans cette passe.** Le fichier cité
 > ci-dessous (`packages/core/src/dispatcher/transports/webaudio.js`, `MOD_SCALE` +
 > `send()`) n'existe plus : `packages/core/src` ne contient plus que `index.js`, vide
