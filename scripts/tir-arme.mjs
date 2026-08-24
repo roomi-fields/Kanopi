@@ -212,9 +212,17 @@ function dernieresEcritures() {
  * geler onze dépôts pour un rouge qui est le mien.
  */
 function preVol() {
+  // ⛔ LE PRÉ-VOL COUVRE CE QUE LE PORTILLON VÉRIFIE AVANT SES BANCS, ÉTAPE POUR ÉTAPE. Le
+  // 2026-08-24 il portait `arch` et le typage seulement : la campagne est partie, dix dépôts ont
+  // été gelés, et elle est morte à 2,42 min sur un fichier MAL FORMATÉ — un fichier déplacé hors
+  // de `src/` qui entrait pour la première fois dans le périmètre du style. Un pré-vol qui couvre
+  // moins que le portillon ne protège personne de la classe qu'il ne regarde pas ; il faisait une
+  // voie parallèle à `verify`, et elle a dérivé au premier déplacement de fichier.
   for (const [nom, cmd] of [
     ["gardes de structure", `cd ${RACINE} && npm run --silent arch`],
     ["typage", `cd ${RACINE}/packages/ui && npx --no-install svelte-check --output human-verbose`],
+    ["style et lint", `cd ${RACINE}/packages/ui && npm run --silent lint`],
+    ["construction", `cd ${RACINE}/packages/ui && npm run --silent build`],
   ]) {
     try {
       execFileSync("bash", ["-c", cmd], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });

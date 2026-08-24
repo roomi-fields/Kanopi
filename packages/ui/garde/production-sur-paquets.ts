@@ -61,7 +61,9 @@ function projeter(ast: unknown, settings?: unknown): number {
     ...(settings !== undefined ? { settings: settings as never } : {})
   });
   const derive = session.derive() as { tree: unknown };
-  const base = (session as unknown as { buildProjectionContext(): unknown }).buildProjectionContext();
+  const base = (
+    session as unknown as { buildProjectionContext(): unknown }
+  ).buildProjectionContext();
   const kairos = new Kairos();
   kairos.charger(derive.tree as never, contexteDeProjection(base));
   const tl = kairos.arbreCourant();
