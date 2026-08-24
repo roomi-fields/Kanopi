@@ -388,8 +388,14 @@ function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush) {
     `VERDICT DE MA CAMPAGNE — départ ${hh(depart)}, arrivée ${hh(arrivee)}.\n\n` +
     `    CODE DE SORTIE DU CROCHET : ${sortie}\n` +
     `    ${pousse}${bascule}\n\n` +
-    `Votre gel a tenu ou non, et c'est ce code qui le dit. Ce message part du code qui tire, pas de ma\n` +
-    `mémoire : un gel dont le verdict ne revient jamais s'use.\n`;
+    `⛔ ET CE CODE NE DIT PAS SI VOTRE GEL A TENU — il rend 1 pour TOUTE cause qui me fait rougir :\n` +
+    `un banc à moi, un garde à moi, une dépendance. Un voisin qui aurait basculé pendant ma mesure\n` +
+    `produirait ce même 1, et un voisin parfaitement discipliné aussi. Ce code mesure MA porte, pas\n` +
+    `vos gestes ; ce qui dirait vos gestes est l'état de vos arbres à l'instant de ma lecture.\n` +
+    `(Relevé par runtime-MIDI le 2026-08-24 : ma phrase précédente faisait dire à un chiffre juste\n` +
+    `sur son étage quelque chose qui appartient au suivant.)\n\n` +
+    `Ce message part du code qui tire, pas de ma mémoire : un gel dont le verdict ne revient jamais\n` +
+    `s'use.\n`;
   const fichier = `/tmp/kanopi-verdict-${depart.getTime()}.txt`;
   writeFileSync(fichier, texte, "utf8");
   for (const dest of destinataires) {
