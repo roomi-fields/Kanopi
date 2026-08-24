@@ -392,6 +392,50 @@ function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush) {
   console.log(`VERDICT RENDU a ${destinataires.length} depot(s)`);
 }
 
+/** ⛔ UNE ANNULATION REND SA PROPRE PIÈCE, AU MÊME RANG QU'UN VERDICT.
+ *
+ *  Le 2026-08-24, une fenêtre s'est ouverte à 10:33 et s'est refermée à 10:34 sur l'écriture d'un
+ *  voisin : la campagne n'est jamais partie. Onze dépôts sont restés gelés une heure, et deux d'entre
+ *  eux ont compté les dépôts des campagnes précédentes — deux messages à chaque fois, un seul cette
+ *  fois — pour découvrir qu'aucun verdict ne viendrait. Ma règle disait « l'heure est un plancher,
+ *  mon message de fin ferme » et n'avait pas de branche pour la campagne ANNULÉE : celle-là ne rend
+ *  aucun verdict, donc n'envoie jamais ce qui fermerait. Un voisin discipliné attend un signal qui
+ *  n'existe pas.
+ *
+ *  ⇒ Une fin de gel qui arrive SEULE ne doit plus jamais être ambiguë. */
+function rendreLAnnulation(destinataires, ouverte, ferme) {
+  if (destinataires.length === 0) return;
+  const texte =
+    `⛔ CAMPAGNE ANNULÉE — RIEN N'A ÉTÉ MESURÉ, ET VOTRE GEL EST LEVÉ.\n\n` +
+    `    fenêtre ouverte à ${hh(ouverte)}, annulée à ${hh(new Date())}\n` +
+    `    ce qui l'a refermée : ${ferme.join(", ")}\n\n` +
+    `Il n'y a PAS de code de sortie à vous rendre, ni de plage de commits : le crochet n'a jamais\n` +
+    `tourné. N'attendez aucun verdict pour celle-ci — il n'existe pas.\n\n` +
+    `Ce message part du code qui tire : une fin de gel qui arrive seule serait ambiguë, et un gel dont\n` +
+    `le verdict ne revient jamais s'use.\n`;
+  const fichier = `/tmp/kanopi-annulation-${Date.now()}.txt`;
+  writeFileSync(fichier, texte, "utf8");
+  for (const dest of destinataires) {
+    try {
+      execFileSync(
+        "bash",
+        ["-c", `BP_AGENT=kanopi ~/dev/bp/hub/tour note ${dest} --fichier ${fichier}`],
+        { encoding: "utf8" },
+      );
+    } catch (e) {
+      console.log(
+        `  annulation NON transmise a ${dest} : ${String(e.message).split("\n")[0]}`,
+      );
+    }
+  }
+  try {
+    unlinkSync(fichier);
+  } catch {
+    /* déjà disparu — sans effet, l'annulation est partie */
+  }
+  console.log(`ANNULATION RENDUE a ${destinataires.length} depot(s)`);
+}
+
 /** La fenêtre se referme dès le verdict rendu — elle expire seule, mais la laisser courir gèle des
  *  voisins pour rien. */
 function fermerLaFenetre() {
@@ -426,7 +470,12 @@ for (;;) {
       console.log(
         `${hh(new Date())} — demande annulee, la fenetre s est refermee : ${ferme.join(", ")}`,
       );
+      // La pièce part AVANT de tout remettre à zéro : après, on ne sait plus qui était gelé.
+      rendreLAnnulation(geles, ouverteA ?? new Date(), ferme);
+      fermerLaFenetre();
       demandeeA = null;
+      geles = [];
+      ouverteA = null;
     } else if (tours % 8 === 0) {
       console.log(`${hh(new Date())} — j attends : ${ferme.join(", ")}`);
     }
