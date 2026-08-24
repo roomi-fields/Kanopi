@@ -19,6 +19,11 @@
 // ⇒ D'où la voie retenue : ce fichier est CONSTRUIT avec les conditions de production, puis exécuté.
 //   `scripts/garde-production-sur-paquets.mjs` porte les deux gestes.
 //
+// ⛔ ET IL VIT HORS DE `src/`, DÉLIBÉRÉMENT : `src/` est l'application, typée pour le navigateur —
+// `types: ["vite/client","svelte"]`, sans les types de Node. Posé là, ce programme de Node faisait
+// échouer le typage sur `node:fs` et barrait ma poussée. Un programme de Node n'a pas sa place dans
+// le dossier du navigateur.
+//
 // TÉMOIN MINIMAL (règle du dépôt) : une grammaire `.gr`, une scène à alphabet non anglais, une scène
 // audio `.bps`. En dessous, la mesure porte sur un sous-ensemble et ne vaut pas rapport.
 
@@ -32,9 +37,9 @@ import {
   resolveGrAux,
   resolveSeSettings,
   resolveSeText
-} from '../lib/runtimes/bpx-adapter';
-import { BUNDLED_AL, BUNDLED_SOUND } from '../lib/runtimes/bp3-aux';
-import { ROUGES_INSCRITS } from '../lib/runtimes/rouges-de-production';
+} from '../src/lib/runtimes/bpx-adapter';
+import { BUNDLED_AL, BUNDLED_SOUND } from '../src/lib/runtimes/bp3-aux';
+import { ROUGES_INSCRITS } from '../src/lib/runtimes/rouges-de-production';
 
 /** Le témoin minimal, en chemins relatifs à la racine du dépôt. */
 const TEMOINS = [

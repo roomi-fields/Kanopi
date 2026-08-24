@@ -311,7 +311,7 @@ const HOMOMORPHISM_LIB = BPSCRIPT_LIBS.homomorphism;
 // ⚠️ `onExprSource` est lu AU MOMENT DE L'APPEL, pas figé à la définition : il est injecté par
 // le câblage audio. Le figer ici le rendrait vide pour la première scène.
 // ⛔ EXPORTÉ POUR UN SEUL LECTEUR, ET LA RAISON EST CE QUI LE JUSTIFIE : le garde
-// `src/garde/production-sur-paquets.ts` projette par les PAQUETS PUBLIÉS de mes voisins, et il doit
+// `garde/production-sur-paquets.ts` projette par les PAQUETS PUBLIÉS de mes voisins, et il doit
 // brancher LE contexte de production — jamais une copie de son câblage. Une copie resterait verte le
 // jour où ce contexte change ici et pas là-bas. Voie B, arbitrage de l'architecte du 2026-08-24.
 export function contexteDeProjection(base: unknown): Parameters<Kairos['charger']>[1] {

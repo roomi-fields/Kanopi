@@ -3,7 +3,7 @@
  * ⛔ LE GARDE QUI MESURE MA PRODUCTION SUR LES PAQUETS PUBLIÉS DE MES VOISINS.
  *
  * VOIE B, arbitrage de l'architecte du 2026-08-24 : un garde qui juge la production s'exécute dans
- * les CONDITIONS de la production. On construit `src/garde/production-sur-paquets.ts` comme ma
+ * les CONDITIONS de la production. On construit `garde/production-sur-paquets.ts` comme ma
  * production se construit — donc en résolvant `exports['.'].import` chez mes voisins — puis on
  * exécute le résultat en Node nu.
  *
@@ -39,7 +39,7 @@ try {
       'vite',
       'build',
       '--ssr',
-      'src/garde/production-sur-paquets.ts',
+      'garde/production-sur-paquets.ts',
       '--config',
       'vite.garde.config.ts',
       '--outDir',
