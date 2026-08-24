@@ -9,7 +9,9 @@ import { evalBlockAt, expectNoConsoleErrors } from '../helpers';
 // the `sketch` terminal, the dispatcher fires its backtick sink, and the p5
 // adapter mounts its instance-mode <canvas> inside the fixed <div class="p5">.
 // Assertion: non-background pixels painted at the canvas centre.
-test('a .bps p5 code voice evaluates and paints non-background pixels', async ({ page }) => {
+test('a .bps p5 code voice evaluates and paints non-background pixels', async ({
+  page
+}, infoDuTest) => {
   const noErrors = expectNoConsoleErrors(page);
 
   const fixturesDir = fileURLToPath(new URL('../fixtures', import.meta.url));
@@ -70,7 +72,16 @@ test('a .bps p5 code voice evaluates and paints non-background pixels', async ({
         (document.querySelector('.p5') as HTMLElement | null)?.outerHTML?.slice(0, 400) ??
         '(aucun conteneur .p5)'
     }));
-    console.log('KAN-65 — état du DOM à l’échec : ' + JSON.stringify(etat));
+    // ⛔ LE RELEVÉ S'ATTACHE AU RAPPORT, IL NE SE CONTENTE PAS DE LA SORTIE. Le 2026-08-24, KAN-65
+    //   s'est enfin produit pendant une campagne — la sonde a parlé, et la sortie du tir passait par
+    //   un `tail` qui a mangé ses lignes. Une pièce qui ne survit pas à une troncature n'est pas une
+    //   preuve : celle-ci vit désormais dans les artefacts du rapport, à côté de la capture.
+    const releve = JSON.stringify(etat, null, 1);
+    console.log('KAN-65 — état du DOM à l’échec : ' + releve);
+    await infoDuTest.attach('KAN-65-etat-du-dom', {
+      body: releve,
+      contentType: 'application/json'
+    });
     throw echec;
   }
   // La toile existe ; il reste à laisser `draw` produire sa première image.
