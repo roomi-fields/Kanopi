@@ -534,3 +534,18 @@ Mesure du 2026-08-18, prise sur la base d'index et sur l'arbre de travail.
   toujours : tout sort en relatif, et le signe déclare tout le monde mort.
 - **KAN-65** `ouvert` [P3] — (2026-08-21) DEUX BANCS D'ECRAN INSTABLES, mesures sur trois campagnes — p5 (2 sur 3) rend litPixels=-1, le canvas n'existe pas encore : une ABSENCE, pas un pixel faux ; bp3-midi (2 sur 3) ne trouve pas le titre, la page n'avait pas fini de charger. Les deux sentent l'attente trop courte sous charge (7,9 a 12,9 sur 12 coeurs). ⛔ NE PAS ELARGIR L'ATTENTE : ce serait ajuster l'assertion a ce qui sort. La cause se mesure — attendre un ETAT, pas une duree.
 - **KAN-C60** `ouvert` [P2] — **Une conversion de type sur ma frontière avec Kairos rend le vérificateur MUET dans les deux sens.** Mesuré par kanopi le 2026-08-23 : `bpx-adapter.ts:335` sort le contexte de projection par un `as unknown as`. Retirée le temps de la mesure et remplacée par `satisfies`, elle découvre **TROIS écarts de frontière** — `modLib` vu comme obligatoire (`:334`), `HomomorphismLib` avec `type: string` contre `type: "homomorphism"` (`:326`), et `PortType` en `Record<string,string>` contre `Record<string,PortType>`. Deux sont sans rapport avec le sujet du jour et probablement anciens. **Conversion restaurée, rien commité** : ouvrir ces trois élargirait la commande. ⚠️ Ce que la mesure établit au-delà des trois : tant que la conversion est là, **aucun changement de contrat chez Kairos ne peut la faire rougir, ni en bien ni en mal** — sa prédiction « ton typage ne rougira pas » était vraie pour la mauvaise raison.
+
+- **KAN-66** `ouvert` — (2026-08-24) **AUCUN BANC N'EXERCE LE CONTEXTE DE PROJECTION RÉEL, ET LA
+  FACETTE VOIX N'EST TRAVERSÉE QUE PAR L'ÉCRAN.** Mesuré : `voicesLib` et `contexteDeProjection`
+  n'apparaissent que dans `bpx-adapter.ts` et dans `contexte-projection.test.ts`, qui vérifie la
+  FORME du contexte et ne projette aucune scène. Aucun banc unitaire ne fait
+  `charger(arbre, contexteDeProjection(base))` sur une scène réelle.
+  **Ce que le trou a laissé passer le 2026-08-24** : le paquet publié de Kairos refusait le membre
+  `for` posé par la frappe de BPscript sur `voices` — 306 scènes sur 306 refusées à la projection,
+  zéro projetée, pendant que les 111 essais du portillon restaient verts. Le refus a été trouvé par
+  une sonde écrite à la main, pas par un banc.
+  **Ce qui reste à trancher, et ce n'est pas mon geste seul** : un banc qui mesure la porte de
+  PRODUCTION (le paquet construit du voisin) rend mon portillon rouge chaque fois qu'un voisin
+  publie en retard sur sa source — c'est-à-dire pour un état que je ne contrôle pas. Reporté à
+  l'architecte avec la mesure. Le témoin minimal du banc, quand il sera arbitré : une grammaire
+  `.gr`, une scène à alphabet non anglais, une scène audio `.bps`.
