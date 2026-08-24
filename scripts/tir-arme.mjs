@@ -47,6 +47,7 @@ import {
   mkdirSync,
   existsSync,
 } from "node:fs";
+import { causeDuRouge } from "./lib/cause-du-rouge.mjs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import {
@@ -220,12 +221,18 @@ function preVol() {
   // voie parallèle à `verify`, et elle a dérivé au premier déplacement de fichier.
   for (const [nom, cmd] of [
     ["gardes de structure", `cd ${RACINE} && npm run --silent arch`],
-    ["typage", `cd ${RACINE}/packages/ui && npx --no-install svelte-check --output human-verbose`],
+    [
+      "typage",
+      `cd ${RACINE}/packages/ui && npx --no-install svelte-check --output human-verbose`,
+    ],
     ["style et lint", `cd ${RACINE}/packages/ui && npm run --silent lint`],
     ["construction", `cd ${RACINE}/packages/ui && npm run --silent build`],
   ]) {
     try {
-      execFileSync("bash", ["-c", cmd], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+      execFileSync("bash", ["-c", cmd], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      });
     } catch (e) {
       const sortie = `${e.stdout ?? ""}${e.stderr ?? ""}`;
       const lignes = sortie
@@ -234,7 +241,9 @@ function preVol() {
         .slice(0, 6);
       return {
         etape: nom,
-        cause: lignes.length ? lignes.join("\n") : sortie.split("\n").slice(-8).join("\n"),
+        cause: lignes.length
+          ? lignes.join("\n")
+          : sortie.split("\n").slice(-8).join("\n"),
       };
     }
   }
@@ -268,9 +277,7 @@ function ceQuiFerme(ecritures) {
         return `${v.depot.split("/").pop()} (${entrantes.length} : ${cites}${reste})`;
       })
       .join(", ");
-    raisons.push(
-      `un arbre SALE ferme ma construction de production : ${noms}`,
-    );
+    raisons.push(`un arbre SALE ferme ma construction de production : ${noms}`);
   }
   for (const [nom, { quand, quoi }] of ecritures) {
     if (quand > seuil)
@@ -445,15 +452,10 @@ function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush) {
   // ⛔ LE VERDICT NOMME SA CAUSE. Relevé par runtime-MIDI le 2026-08-24, après trois rouges en
   // quinze minutes : « un verdict qui ne nomme pas sa cause ne permet à personne de t'aider — tes
   // voisins ne peuvent que répondre "pas moi", et je viens de le faire trois fois ».
-  const causes = sortiePush
-    .split("\n")
-    .filter((l) => /^\s*(✗|✘|ERROR|Error:|error |\s+•)/.test(l))
-    .slice(0, 6)
-    .join("\n    ");
+  // (le motif et le repli vivent dans `causeDuRouge`, éprouvée sur des sorties réelles)
+  const causes = causeDuRouge(sortiePush).join("\n    ");
   const pourquoi =
-    sortie === "0"
-      ? ""
-      : `\n    CE QUI A RENDU ${sortie} :\n    ${causes || "(cause non extraite — voir mon journal)"}\n`;
+    sortie === "0" ? "" : `\n    CE QUI A RENDU ${sortie} :\n    ${causes}\n`;
   const texte =
     `VERDICT DE MA CAMPAGNE — départ ${hh(depart)}, arrivée ${hh(arrivee)}.\n\n` +
     `    CODE DE SORTIE DU CROCHET : ${sortie}\n` +
@@ -520,7 +522,10 @@ function rendreLAnnulation(destinataires, ouverte, ferme) {
     try {
       execFileSync(
         "bash",
-        ["-c", `BP_AGENT=kanopi ~/dev/bp/hub/tour note ${dest} --fichier ${fichier}`],
+        [
+          "-c",
+          `BP_AGENT=kanopi ~/dev/bp/hub/tour note ${dest} --fichier ${fichier}`,
+        ],
         { encoding: "utf8" },
       );
     } catch (e) {
@@ -584,7 +589,8 @@ const VERROU = join(homedir(), ".local", "state", "kanopi", "tir.pid");
   writeFileSync(VERROU, String(process.pid));
   const lacher = () => {
     try {
-      if (readFileSync(VERROU, "utf8").trim() === String(process.pid)) unlinkSync(VERROU);
+      if (readFileSync(VERROU, "utf8").trim() === String(process.pid))
+        unlinkSync(VERROU);
     } catch {
       /* déjà retiré */
     }
