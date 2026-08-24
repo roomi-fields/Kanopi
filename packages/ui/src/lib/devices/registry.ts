@@ -13,7 +13,7 @@ import { LIBS } from 'bpscript/src/transpiler/libs-data.js';
 import type { VoiceOutputType } from '../runtimes/adapter';
 import bundledDevicesRaw from '../../../../library/devices.json?raw';
 // The channel catalog is bpscript's, imported AS-IS (same pattern as
-// bpx-adapter.ts:22's `alphabets.json`) — directions (`in`/`out`) and default
+// bpx-adapter.ts:22's `LIBS.alphabets`) — directions (`in`/`out`) and default
 // connection `params` are amont data, not a second copy kept here.
 const coreJson = LIBS.core;
 

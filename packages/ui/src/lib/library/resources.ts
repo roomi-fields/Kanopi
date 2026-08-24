@@ -192,7 +192,7 @@ export const RESOURCE_GROUPS: ResourceGroup[] = [
 // --- Real library FILES, grouped BY LANGUAGE (Romain/architecte 2026-07-16) ---
 //
 // RESOURCE_GROUPS above splits each catalog file into one card per NAMED entry
-// inside it (`western`, `sargam`… are entries INSIDE alphabets.json) — kept
+// inside it (`western`, `sargam`… are entries INSIDE `LIBS.alphabets`) — kept
 // only because NowView's "Libraries used" panel must open the ONE entry a
 // scene actually references (`alphabet.western` → just that sub-object).
 //
@@ -288,7 +288,7 @@ function visualFile(v: VisualItem): LibraryFile {
 }
 
 /** One card per REAL library file/entry (Factory › Libraries browser), grouped
- *  by LANGUAGE. `core.json` is EXCLUDED (architecte [726]): it is the LANGUAGE
+ *  by LANGUAGE. `LIBS.core` is EXCLUDED (architecte [726]): it is the LANGUAGE
  *  SCHEMA (core: base defaults + reserved vocabulary), NOT a browsable
  *  library. It stays in RESOURCE_GROUPS below for NowView (a scene that
  *  references core still surfaces it as "used"). */
