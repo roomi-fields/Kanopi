@@ -246,8 +246,19 @@ function ceQuiFerme(ecritures) {
   // même source que le refus lui-même ; il n'est pas réécrit ici.
   const sales = depotsSales(voisinsLies(RACINE));
   if (sales.length > 0) {
+    // ⛔ ET LE FICHIER SORT AVEC LE NOM. Le 2026-08-24 cette ligne a répété « bp3-frontend (2) »
+    // vingt-quatre fois en quarante-huit minutes : le compte seul ne dit pas s'il s'agit d'un
+    // travail en cours — qui s'attend — ou de deux artefacts oubliés — qui se remisent en dix
+    // secondes. C'étaient deux artefacts. Un relevé qui ne nomme pas laisse attendre pour rien.
     const noms = sales
-      .map(({ v, entrantes }) => `${v.depot.split("/").pop()} (${entrantes.length})`)
+      .map(({ v, entrantes }) => {
+        const cites = entrantes
+          .slice(0, 2)
+          .map((m) => m.fichier)
+          .join(" ");
+        const reste = entrantes.length > 2 ? ` +${entrantes.length - 2}` : "";
+        return `${v.depot.split("/").pop()} (${entrantes.length} : ${cites}${reste})`;
+      })
       .join(", ");
     raisons.push(
       `un arbre SALE ferme ma construction de production : ${noms}`,
