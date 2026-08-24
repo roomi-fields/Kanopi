@@ -23,7 +23,13 @@ import {
 
 // Queried ONCE at module load, like the old static import. Covers the COMPLETE
 // registry (built-in + user libs), not just a given scene.
-const vocab = describeVocabulary();
+// ⛔ EXPORTÉ POUR ÊTRE VÉRIFIABLE, ET C'EST CE QUE L'ÉDITEUR A RÉELLEMENT EN MAIN. Un témoin qui
+// rappellerait `describeVocabulary()` de son côté mesurerait la PORTE ; celui-ci mesure ma
+// DÉRIVATION — la même valeur que la complétion, les info-bulles et la coloration consomment. Il
+// n'ajoute par ailleurs aucune lecture de source voisine : la dette ne peut que rétrécir, et un
+// banc qui rouvrirait la porte lui-même en aurait créé une trente-troisième.
+// Vérifié par `vocabulaire-vivant.test.ts` : plancher par axe + témoin nommé, sans figer un compte.
+export const vocab = describeVocabulary();
 
 /** Enum options as a list of words, accepting the authority's two shapes:
  *  a comma string ("sine, triangle, …") OR an array. Numeric-range controls

@@ -47,16 +47,6 @@ const HORS_PORTE_ADMIS = new Map([
       "refuser dessus, et distingue l'étage d'analyse de l'étage de dérivation. La porte lèverait " +
       "là où son travail est de nommer.",
   ],
-  [
-    "packages/ui/src/components/editor/vocabulaire-vivant.test.ts",
-    "il n'ouvre AUCUNE source et n'en écrit aucune : son sujet est `describeVocabulary()`, la porte " +
-      "de VOCABULAIRE, qui ne prend pas de scène en entrée et n'en compile donc pas. Le danger que " +
-      "cette porte-ci ferme — un banc vert parce qu'il mesure sur un arbre que le compilateur " +
-      "rejette — n'a pas de prise ici : il n'y a pas d'arbre. Ce qu'il verrouille est la sortie que " +
-      "mon éditeur met à l'écran (lang-bpscript.ts:26, bps-libword-highlight.ts:28), et que rien " +
-      "ne comparait. ⛔ L'exemption tombe le jour où ce banc compile quoi que ce soit : elle nomme " +
-      "un banc SANS source, et un banc qui en acquiert une n'est plus celui-là.",
-  ],
 ]);
 
 const EXCLUS = new Set(["node_modules", "dist", "build", "test-results"]);

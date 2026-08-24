@@ -32,7 +32,12 @@
 // rouge sur chaque injection et n'aurait rien prouvé.
 
 import { describe, it, expect } from 'vitest';
-import { describeVocabulary } from 'bpscript/src/transpiler/index.js';
+// ⛔ ON LIT LA DÉRIVATION DE L'ÉDITEUR, PAS LA PORTE. Rappeler `describeVocabulary()` ici
+// mesurerait ce que BPscript rend ; ce qui compte est ce que MON éditeur a en main — la même
+// valeur que la complétion, les info-bulles et la coloration consomment. Et c'est aussi ce qui
+// évite d'ouvrir une TRENTE-TROISIÈME lecture de source voisine : cette dette ne peut que
+// rétrécir (décision de Romain, 2026-08-24), et mon pré-vol l'a refusée à juste titre.
+import { vocab } from './lang-bpscript';
 
 type Vocabulaire = Record<string, unknown>;
 
@@ -138,8 +143,8 @@ function vocabulaireConforme(): Vocabulaire {
 }
 
 describe("le vocabulaire VIVANT que mon éditeur met à l'écran", () => {
-  it('la porte de BPscript le tient aujourd’hui', () => {
-    const manques = verifierLeVocabulaire(describeVocabulary() as Vocabulaire);
+  it('la dérivation de mon éditeur le tient aujourd’hui', () => {
+    const manques = verifierLeVocabulaire(vocab as Vocabulaire);
     expect(manques, manques.join('\n')).toEqual([]);
   });
 
