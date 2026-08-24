@@ -1,6 +1,21 @@
 #!/usr/bin/env node
-// Garde « deps-fraîches » (décision 2026-06-30) — filet anti-régression de la
-// consommation EN SOURCE des amonts compilés (BPx, kairos, kronos).
+// ⛔ CE GARDE A ÉTÉ RETOURNÉ LE 2026-08-24, IL N'A PAS ÉTÉ SUPPRIMÉ.
+//
+// Il EXIGEAIT que chaque amont compilé expose `development → ./src/index.ts` — décision du
+// 2026-06-30, dont la raison était juste à l'époque : un `dist` jamais rebâti servait du vieux code
+// en silence, et la parade était de ne pas avoir de `dist` dans la boucle.
+//
+// La décision de Romain du 2026-08-24 — « un dépôt ne consomme que le paquet publié d'un voisin,
+// ni en production, ni dans un banc, ni par une condition de résolution » — dit exactement
+// l'inverse. Le 2026-08-24, kronos a retiré sa condition et CE GARDE L'A FAIT ROUGIR : il
+// réclamait la faute que la nouvelle règle interdit.
+//
+// ⇒ CE QUI EST VERROUILLÉ MAINTENANT EST L'ABSENCE, et le verrou tient dans les DEUX SENS. La
+//   liste des voisins encore consommés en source vit dans `lib/regimes-des-voisins.json` : elle
+//   est une DETTE datée, un voisin qui expose `development` sans y être inscrit fait rougir, et
+//   une entrée qui n'est plus vraie doit sortir — sinon elle couvrirait la réapparition suivante.
+//
+// Garde « deps-fraîches » — filet des amonts compilés (BPx, kairos, kronos).
 //
 // Le problème historique (LAN-14) : ces amonts exposaient leur `dist` compilé
 // (`exports → ./dist/index.js`), jamais rebâti quand leur `src` changeait → le
@@ -40,7 +55,13 @@ const EXPECTED_DEV = "./src/index.ts";
 
 const errors = [];
 
-// 1) Convention d'export `development` sur chaque amont.
+// 1) LE RÉGIME DE CHAQUE AMONT COMPILÉ, CONFRONTÉ À LA DETTE INSCRITE.
+const REGISTRE = JSON.parse(
+  readFileSync(join(__dirname, "lib", "regimes-des-voisins.json"), "utf8"),
+);
+const DETTE = REGISTRE["encore-en-source"] ?? {};
+let examines = 0;
+
 for (const dep of SOURCE_DEPS) {
   const pkgPath = join(repoRoot, "node_modules", dep, "package.json");
   if (!existsSync(pkgPath)) {
@@ -56,20 +77,59 @@ for (const dep of SOURCE_DEPS) {
     errors.push(`${dep} : package.json illisible (${e.message})`);
     continue;
   }
+  examines++;
   const dev = pkg.exports?.["."]?.development;
-  if (dev !== EXPECTED_DEV) {
+  const inscrit = Object.prototype.hasOwnProperty.call(DETTE, dep);
+
+  if (dev !== undefined && !inscrit) {
     errors.push(
-      `${dep} : condition d'export "development" attendue "${EXPECTED_DEV}", trouvée ${
-        dev === undefined ? "ABSENTE" : `"${dev}"`
-      }. Sans elle, le dev retombe sur le dist périmé (deps-fraîches, décision 2026-06-30).`,
+      `${dep} : expose une condition d'export "development" (\"${dev}\") et n'est PAS inscrit à la ` +
+        `dette de lib/regimes-des-voisins.json. Un dépôt ne consomme que le paquet publié d'un ` +
+        `voisin (décision Romain 2026-08-24) : soit ce voisin la retire, soit la dette le nomme ` +
+        `avec sa date et ce qui la lèvera.`,
     );
     continue;
   }
-  // Le fichier source ciblé doit exister (sinon Vite échoue à la résolution).
+  if (dev === undefined && inscrit) {
+    errors.push(
+      `${dep} : n'expose plus de condition "development" — la dette inscrite le ${DETTE[dep].le} ne ` +
+        `décrit plus rien. Retire son entrée de lib/regimes-des-voisins.json : une inscription qui ` +
+        `survit à sa cause couvre la réapparition suivante.`,
+    );
+    continue;
+  }
+  if (dev === undefined) {
+    // Consommé par son paquet : ce qui doit répondre est la porte publiée, pas une source.
+    const publiee = pkg.exports?.["."]?.import;
+    const cible = publiee && join(repoRoot, "node_modules", dep, publiee);
+    if (!publiee || !existsSync(cible)) {
+      errors.push(
+        `${dep} : consommé par son paquet, et sa porte publiée ne répond pas ` +
+          `(exports["."].import = ${publiee ? `"${publiee}"` : "ABSENTE"}). Ce qui passe par cette ` +
+          `porte résoudrait ZÉRO fichier.`,
+      );
+    }
+    continue;
+  }
+  // Dette inscrite : la cible source doit exister, sinon la résolution échoue.
+  if (dev !== EXPECTED_DEV) {
+    errors.push(
+      `${dep} : inscrit à la dette, mais sa condition "development" vaut "${dev}" au lieu de ` +
+        `"${EXPECTED_DEV}" — la dette décrit un régime qui n'est pas celui-là.`,
+    );
+    continue;
+  }
   const srcEntry = join(repoRoot, "node_modules", dep, dev);
   if (!existsSync(srcEntry)) {
     errors.push(`${dep} : la cible "${dev}" n'existe pas (${srcEntry}).`);
   }
+}
+
+// ⛔ UN GARDE COMPTE CE QU'IL A EXAMINÉ ET REFUSE D'AVOIR EXAMINÉ ZÉRO.
+if (examines === 0) {
+  errors.push(
+    "aucun amont compilé n'a été examiné — la mesure a raté, elle n'a pas trouvé zéro dette.",
+  );
 }
 
 // 2) Le Vite intégrateur doit EXCLURE ces deps du pré-bundling (sinon Vite les
@@ -81,7 +141,9 @@ if (!existsSync(viteConfig)) {
   const txt = readFileSync(viteConfig, "utf8");
   const excludeMatch = txt.match(/exclude\s*:\s*\[([^\]]*)\]/);
   const excluded = excludeMatch ? excludeMatch[1] : "";
-  for (const dep of SOURCE_DEPS) {
+  // Seuls les voisins ENCORE consommés en source doivent sortir du pré-bundling : un paquet publié
+  // est immuable, le pré-bundler ne peut pas le périmer.
+  for (const dep of Object.keys(DETTE)) {
     if (!excluded.includes(`'${dep}'`) && !excluded.includes(`"${dep}"`)) {
       errors.push(
         `vite.config.ts : optimizeDeps.exclude doit lister "${dep}" (consommation en source hors pré-bundling).`,
@@ -230,11 +292,14 @@ if (errors.length) {
   );
   for (const e of errors) console.error(`  • ${e}`);
   console.error(
-    "\nRappel : BPx/kairos/kronos se consomment EN SOURCE en dev (zéro dist dans la boucle).",
+    "\nRappel : un dépôt ne consomme que le PAQUET PUBLIÉ d'un voisin (décision Romain " +
+      "2026-08-24). La consommation en source est une DETTE inscrite, datée, et elle ne peut " +
+      "que rétrécir : scripts/lib/regimes-des-voisins.json.",
   );
   process.exit(1);
 }
 
 console.log(
-  `✓ deps-fraîches — ${SOURCE_DEPS.join(", ")} : export "development" + exclude pré-bundling OK.`,
+  `✓ deps-fraîches — ${examines} amont(s) examiné(s) ; dette de consommation en source : ` +
+    `${Object.keys(DETTE).length ? Object.keys(DETTE).join(", ") : "AUCUNE"}.`,
 );

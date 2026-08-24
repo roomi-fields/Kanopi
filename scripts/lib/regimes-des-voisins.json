@@ -1,0 +1,20 @@
+{
+  "_": [
+    "LES VOISINS QUE JE CONSOMME ENCORE PAR LEUR SOURCE, VIA UNE CONDITION D'EXPORT.",
+    "Décision de Romain du 2026-08-24 — « un dépôt ne consomme que le paquet publié d'un voisin » :",
+    "cette liste est une DETTE, et elle ne peut que rétrécir. Le garde `deps-fraicheur.mjs` échoue",
+    "dans les DEUX sens — une entrée qui n'est plus vraie doit sortir, sinon elle couvrirait la",
+    "réapparition suivante ; un voisin qui expose `development` sans être inscrit ici fait rougir.",
+    "Chaque entrée porte la date de sa mesure et ce qui la lèvera."
+  ],
+  "encore-en-source": {
+    "bpx": {
+      "le": "2026-08-24",
+      "leve-par": "le retrait de sa condition d'export `development`, comme kronos l'a fait le 2026-08-24"
+    },
+    "@kairos/core": {
+      "le": "2026-08-24",
+      "leve-par": "le retrait de sa condition d'export `development`, comme kronos l'a fait le 2026-08-24"
+    }
+  }
+}
