@@ -155,17 +155,35 @@ function sousArbre(base, out = []) {
 }
 
 /**
- * Les voisins qu'une fenêtre concerne : ceux dont l'ARBRE DE TRAVAIL m'atteint.
+ * LA LISTE DE GEL SE DÉRIVE DE LA LISTE LUE — c'est la même liste, jamais une seconde.
  *
- * ⛔ UN VOISIN CONSOMMÉ PAR SON PAQUET PUBLIÉ N'EST PAS DE CEUX-LÀ, et c'est tout l'intérêt de la
- * bascule (décision Romain 2026-08-24). Son paquet est immuable, son arbre ne m'atteint plus, et
- * seule sa poussée change ce que je lis. Le geler lui coûterait du temps pour rien.
- * ⚠️ ET LE GELER ÉTAIT EN PLUS IMPOSSIBLE : le nom dérivé de son chemin est celui du dossier
- * versionné — `runtime-osc-347a917` — que la tour ne connaît pas. Mesuré le 2026-08-24, à la
- * première bascule : la demande de fenêtre a été refusée sur « dépôt inconnu ».
+ * ⛔ J'AVAIS ÉCARTÉ LES VOISINS CONSOMMÉS PAR LEUR PAQUET, sur ce raisonnement : « son paquet est
+ * immuable, seule sa poussée change ce que je lis ». Le contenu d'un paquet l'est ; le LIEN qui le
+ * désigne ne l'est pas. Quand runtime-osc publie, `~/dev/bp/.paquets/runtime-osc` bascule sous ma
+ * campagne — et mon propre détecteur l'a compté, 31 entrées, pendant la fenêtre de 14:02.
+ * ⇒ Il était SURVEILLÉ par un instrument et ABSENT de l'autre : deux listes tenues côte à côte, qui
+ *   se recouvraient le jour de leur pose et ont divergé au premier élargissement. Vingt minutes
+ *   perdues, sur un voisin qui n'avait reçu aucun avis et n'avait rien enfreint.
+ * ⇒ L'asymétrie tranche le sens de l'erreur à préférer : un dépôt gelé pour rien coûte quelques
+ *   minutes de discipline ; un dépôt LU mais NON gelé fait porter le verdict sur deux états, donc
+ *   sur aucun. (Relevé par runtime-audio, arbitré par l'architecte le 2026-08-24.)
  */
 function voisinsAGeler() {
-  return voisinsLies(RACINE).filter((v) => v.tete !== null);
+  return voisinsLies(RACINE);
+}
+
+/**
+ * LE NOM SOUS LEQUEL LA TOUR CONNAÎT UN VOISIN.
+ *
+ * ⚠️ Le dossier ne le donne pas pour un paquet publié : il est versionné — `runtime-osc-6ad69f3` —
+ * et la tour refuse « dépôt inconnu ». C'est ce refus, mesuré à la première bascule, qui m'avait
+ * fait exclure ces voisins au lieu de dériver leur nom. Le SPÉCIFICATEUR, lui, est stable à travers
+ * les bascules et c'est exactement le nom de la tour (`runtime-osc`).
+ */
+function nomDeGel(v) {
+  return (v.tete === null ? v.specificateurs[0] : v.depot.split("/").pop())
+    .split("/")
+    .pop();
 }
 
 /** La dernière écriture de chaque voisin sous ce qu'il EXPOSE, et le fichier concerné. */
@@ -190,7 +208,7 @@ function dernieresEcritures() {
         }
       }
     }
-    par.set(v.depot.split("/").pop(), { quand, quoi });
+    par.set(nomDeGel(v), { quand, quoi });
   }
   return par;
 }
