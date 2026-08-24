@@ -61,7 +61,6 @@ const voicesJson = LIBS.voices;
 //   de `.json` vers `.bpsl` au fil (`alphabets`, `settings`, `digital` le 2026-08-23). Le format
 //   d'une source n'est pas une information utile ici — la donnée est dans le paquet quel qu'il soit.
 //   Sept lecteurs se sont rendus aveugles en énumérant `lib/` par extension, dont le générateur.
-import { LIBS as BPSCRIPT_LIBS } from 'bpscript/src/transpiler/libs-data.js';
 import {
   createSession,
   renderChain,
@@ -256,7 +255,7 @@ const PITCH_LIB: PitchLib = LIBS;
 // TS functions (e.g. `transpose`) AT PROJECTION (KAI-B03); the host supplies the DATA and runs no
 // function itself. Without it Kairos falls back to its legacy hardcoded transpose. `_comment` doc
 // keys → cast through `unknown`. Personal/community digital libs overlay here later (3 provenances).
-const DIGITAL_LIB: DigitalLib = BPSCRIPT_LIBS.digital as unknown as DigitalLib;
+const DIGITAL_LIB: DigitalLib = LIBS.digital as unknown as DigitalLib;
 
 // ActionLib (LANG-SONS §4/§8/§9) — deux vues AUTORITAIRES du catalogue runtime-codevoices, injectées
 // pour Kairos (PORTER≠RÉSOUDRE : on transporte, Kairos résout). Source de vérité UNIQUE = les
@@ -286,7 +285,7 @@ const ACTION_LIB = {
 // feuille (ex-`applyImage` retiré, session.ts:1155 / node.ts:495 de BPx e339dec ; bascule PROUVÉE
 // anti-double-substitution par l'e2e ISO HZ 75/75 de kairos 63f38b2). Le `Image()` de TEMPLATE reste
 // un mécanisme BPx séparé et inchangé, non concerné par cette lib.
-const HOMOMORPHISM_LIB = BPSCRIPT_LIBS.homomorphism;
+const HOMOMORPHISM_LIB = LIBS.homomorphism;
 
 // ════════════════════════════════════════════════════════════════════════════════
 // LE CONTEXTE DE PROJECTION — UNE SEULE SOURCE, TROIS APPELS.
