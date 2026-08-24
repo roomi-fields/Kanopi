@@ -464,9 +464,12 @@ function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush) {
     `⛔ ET CE CODE NE DIT PAS SI VOTRE GEL A TENU — il rend 1 pour TOUTE cause qui me fait rougir :\n` +
     `un banc à moi, un garde à moi, une dépendance. Un voisin qui aurait basculé pendant ma mesure\n` +
     `produirait ce même 1, et un voisin parfaitement discipliné aussi. Ce code mesure MA porte, pas\n` +
-    `vos gestes ; ce qui dirait vos gestes est l'état de vos arbres à l'instant de ma lecture.\n` +
+    `vos gestes ; ce qui dirait vos gestes est la ligne de BASCULE ci-dessus, mesurée sur l'état de\n` +
+    `vos arbres à l'instant de ma lecture — et son absence en dit autant : rien n'a bougé sous les\n` +
+    `racines que votre manifeste expose, ce qui est plus étroit que « propre » et donc opposable.\n` +
     `(Relevé par runtime-MIDI le 2026-08-24 : ma phrase précédente faisait dire à un chiffre juste\n` +
-    `sur son étage quelque chose qui appartient au suivant.)\n\n` +
+    `sur son étage quelque chose qui appartient au suivant. Puis par bp3-frontend, le même jour :\n` +
+    `elle déclarait MANQUANT l'instrument qui figure deux lignes plus haut — cadrage périmé.)\n\n` +
     `Ce message part du code qui tire, pas de ma mémoire : un gel dont le verdict ne revient jamais\n` +
     `s'use.\n`;
   const fichier = `/tmp/kanopi-verdict-${depart.getTime()}.txt`;
