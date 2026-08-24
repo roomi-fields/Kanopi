@@ -85,7 +85,11 @@ const noms = (axe: unknown): string[] =>
  * ⛔ ELLE EST SÉPARÉE DE LA PORTE pour une seule raison : un garde qu'on n'a pas vu mordre est une
  * hypothèse, et le seul moyen de le voir mordre ici serait d'appauvrir le vocabulaire d'un voisin.
  */
-export function verifierLeVocabulaire(v: Vocabulaire): string[] {
+export function verifierLeVocabulaire(entree: unknown): string[] {
+  // La conversion vit ICI, au seul endroit où l'ignorance est réelle : cette fonction accepte
+  // aussi bien la dérivation typée de l'éditeur que les vocabulaires injectés de l'épreuve.
+  // La forcer à l'appel masquerait lequel des deux ne correspond pas.
+  const v = (entree ?? {}) as Vocabulaire;
   const manques: string[] = [];
 
   // ⛔ UN GARDE COMPTE CE QU'IL A EXAMINÉ ET REFUSE D'AVOIR EXAMINÉ ZÉRO. Un axe absent rend
@@ -144,7 +148,7 @@ function vocabulaireConforme(): Vocabulaire {
 
 describe("le vocabulaire VIVANT que mon éditeur met à l'écran", () => {
   it('la dérivation de mon éditeur le tient aujourd’hui', () => {
-    const manques = verifierLeVocabulaire(vocab as Vocabulaire);
+    const manques = verifierLeVocabulaire(vocab);
     expect(manques, manques.join('\n')).toEqual([]);
   });
 
