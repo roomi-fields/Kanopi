@@ -25,8 +25,7 @@
 // DÉPÔTS : `bpscript` contre `BPscript`, `bpx` contre `BPx`, `runtime-midi` contre `runtime-MIDI`.
 // Le nom écrit dans un document n'est pas le nom du dossier — ce garde résout les deux.
 
-import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+import { readFileSync, existsSync, readdirSync, lstatSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
@@ -37,9 +36,21 @@ const ATELIER = join(homedir(), "dev", "bp");
 /** Les documents qui peuvent envoyer un agent : ma charte, mes skills, mes documents. */
 const PORTEE = ["CLAUDE.md", ".claude", "docs"];
 
-/** Un chemin sortant : `<depot>/<reste>.<ext>`, tel qu'un agent le lirait. */
+/**
+ * Un chemin sortant : `<depot>/<reste>.<ext>`, tel qu'un agent le lirait.
+ *
+ * ⛔ L'ORDRE DE L'ALTERNANCE FABRIQUE DES FAUX MORTS, ET C'EST MESURÉ. Avec `…|js|mjs|cjs|json…`,
+ * `BPx/package.json` rend `BPx/package.js` : un fichier VIVANT annoncé mort **sous un nom que
+ * personne n'a jamais écrit**. Une alternance essaie ses branches dans l'ordre, et `js` gagne avant
+ * `json` sur la même position. ⇒ Les extensions LONGUES passent d'abord, et une frontière ferme la
+ * fin — sans elle, `…index.tsx` rendrait `…index.ts`.
+ *
+ * Relevé par l'architecte en portant ce garde au hub, le 2026-08-25. Il n'avait pas mordu ici parce
+ * qu'aucun de mes chemins sortants ne portait ces extensions-là ; **un garde qui change de dépôt
+ * rencontre des formes que son auteur n'a jamais vues.**
+ */
 const MOTIF =
-  /(BPscript|BPx|bpx|bpscript|kairos|kronos|bp3-frontend|bp3-engine|runtime-[a-zA-Z]+|atlas|hub|dedale)\/[A-Za-z0-9_./-]+\.(md|ts|js|mjs|cjs|json|gr|bps|py|sh)/g;
+  /(BPscript|BPx|bpx|bpscript|kairos|kronos|bp3-frontend|bp3-engine|runtime-[a-zA-Z]+|atlas|hub|dedale)\/[A-Za-z0-9_./-]+\.(json|mjs|cjs|bps|md|ts|js|gr|py|sh)(?![A-Za-z0-9])/g;
 
 /**
  * ⛔ LES ABSENCES CONSTATÉES NE SONT PAS DES CHEMINS MORTS, ET LES CONFONDRE SUR-COMPTE.
@@ -75,11 +86,17 @@ function depotSurDisque(nom) {
 }
 
 const fichiers = [];
+// ⛔ UN LIEN SYMBOLIQUE NE SE SUIT PAS. Relevé par l'architecte au portage : `.claude/worktrees/`
+// porte chez certains des liens vers des DÉPÔTS ENTIERS — le garde les explorait au complet et ne
+// rendait pas la main. Il ne mordait pas ici faute de tels liens, et c'est exactement la raison de
+// le fermer : un garde qui change de dépôt rencontre des formes de disque que son auteur n'a jamais
+// vues. `lstatSync` regarde le lien, `statSync` regarde sa cible.
 const explorer = (rel) => {
   const abs = join(RACINE, rel);
   let st;
   try {
-    st = statSync(abs);
+    st = lstatSync(abs);
+    if (st.isSymbolicLink()) return;
   } catch {
     return;
   }
