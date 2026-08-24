@@ -100,18 +100,28 @@ dire(
   );
 }
 
-// 1. Il mord sur une SOURCE VIVE — ce que la campagne charge vraiment.
+// 1. Il mord sur CE QUE LA CAMPAGNE CHARGE VRAIMENT chez ce voisin.
+// ⛔ L'INJECTION VISAIT UNE ENTRÉE SOUS `src/`, ET CE N'ÉTAIT PAS LA BONNE QUESTION. Le 2026-08-24,
+//    kairos a fermé sa condition de développement : ses portes ne mènent plus qu'à `dist`, plus
+//    aucune entrée en `src/` n'est relevée, et ce contrôle a rendu « injection impossible » — donc
+//    fait rougir mon pré-vol pour un geste annoncé, mesuré et attendu. C'est la troisième fois du
+//    jour qu'un de mes contrôles est calé sur l'état d'un voisin au lieu de sa forme.
+// ⇒ Ce qui compte n'est pas le dossier d'où vient l'entrée, c'est qu'elle soit RELEVÉE : le relevé
+//   ne contient que ce qui m'atteint, quel que soit le régime du voisin.
 for (const cible of ["bpscript", "@kairos/core"]) {
   const faux = clone(reel);
   const marques = faux.get(cible);
-  const source = [...marques.keys()].find((k) => k.startsWith("src/"));
+  const source = [...marques.keys()][0];
   if (!source) {
-    dire(false, `${cible} : aucune source vive relevée, injection impossible`);
+    dire(false, `${cible} : relevé VIDE, injection impossible`);
     continue;
   }
   marques.set(source, "MARQUE-INJECTEE");
   const vu = cequiABascule(faux, RACINE, racines).find((b) => b.nom === cible);
-  dire(Boolean(vu), `${cible} : une source vive qui bascule est dénoncée (${source})`);
+  dire(
+    Boolean(vu),
+    `${cible} : une entrée lue qui bascule est dénoncée (${source})`,
+  );
 }
 
 // 2. Il mord sur la porte de TYPES. Node ne l'ouvre jamais — `svelte-check`, lui, la lit, et il
@@ -123,8 +133,13 @@ for (const cible of ["bpscript", "@kairos/core"]) {
   const dts = [...marques.keys()].find((k) => k.endsWith(".d.ts"));
   if (dts) {
     marques.set(dts, "MARQUE-INJECTEE");
-    const vu = cequiABascule(faux, RACINE, racines).find((b) => b.nom === "bpx");
-    dire(Boolean(vu), `bpx : une déclaration de types qui bascule est dénoncée (${dts})`);
+    const vu = cequiABascule(faux, RACINE, racines).find(
+      (b) => b.nom === "bpx",
+    );
+    dire(
+      Boolean(vu),
+      `bpx : une déclaration de types qui bascule est dénoncée (${dts})`,
+    );
   } else {
     dire(false, "bpx : aucune déclaration de types relevée");
   }
@@ -162,7 +177,10 @@ for (const cible of ["bpscript", "@kairos/core"]) {
     surDisque > 0,
     `des bancs de voisins vivent bien sous mes racines lues (${surDisque}) — sinon la borne ne prouverait rien`,
   );
-  dire(releves === 0, `aucun banc de voisin n'entre dans le relevé (${releves})`);
+  dire(
+    releves === 0,
+    `aucun banc de voisin n'entre dans le relevé (${releves})`,
+  );
 }
 
 // 4. Les refus d'instrument. Chacun garde une manière de rendre « rien n'a bougé » sans avoir
@@ -177,8 +195,12 @@ const refuse = (quoi, f) => {
 };
 refuse("un relevé sans périmètre", () => empreinteDuVoisin(RACINE, null));
 refuse("un périmètre vide", () => empreinteDuVoisin(RACINE, new Map()));
-refuse("un régime inventé", () => racinesLuesParRegime(RACINE, voisins, "regime-qui-n-existe-pas"));
-refuse("une comparaison sans relevé d'avant", () => cequiABascule(new Map(), RACINE, racines));
+refuse("un régime inventé", () =>
+  racinesLuesParRegime(RACINE, voisins, "regime-qui-n-existe-pas"),
+);
+refuse("une comparaison sans relevé d'avant", () =>
+  cequiABascule(new Map(), RACINE, racines),
+);
 refuse("un périmètre amputé d'un voisin", () => {
   const ampute = new Map(racines);
   ampute.delete([...racines.keys()][0]);
@@ -192,4 +214,6 @@ if (echecs.length) {
   );
   process.exit(1);
 }
-console.log(`[garde-releve] vert — ${echecs.length === 0 ? "morsure et bornes prouvées" : ""}.`);
+console.log(
+  `[garde-releve] vert — ${echecs.length === 0 ? "morsure et bornes prouvées" : ""}.`,
+);
