@@ -59,7 +59,7 @@
     "runtime-codevoices": "file:../../../../bp/runtime-codevoices",
     "runtime-in": "file:../../../runtime-in",
     "runtime-midi": "file:../../../../bp/runtime-MIDI",
-    "runtime-osc": "file:../../../../bp/runtime-OSC",
+    "runtime-osc": "file:../../../../bp/.paquets/runtime-osc",
     "runtime-ui": "file:../../../../bp/runtime-ui"
   },
   "devDependencies": {

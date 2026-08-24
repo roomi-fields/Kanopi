@@ -153,9 +153,18 @@ export function voisinsLies(racine) {
       // Un lien interne à l'atelier (paquet à paquet) n'est pas un voisin.
       if (cible === racine || cible.startsWith(racine + "/")) continue;
 
+      // ⛔ UN VOISIN EST UN DÉPÔT DONT LA CIBLE EST LA RACINE — pas « un dossier qui se trouve dans un
+      // dépôt ». Mesuré le 2026-08-24, à la première bascule vers un paquet publié : runtime-OSC
+      // publie sous `~/dev/bp/.paquets/`, et `~/dev` est lui-même un dépôt git SANS AUCUN COMMIT.
+      // `--show-toplevel` remontait donc jusqu'à lui, et je prenais l'atelier entier pour un voisin :
+      // `rev-parse HEAD` échouait sur une tête qui n'existe pas, et `status --porcelain` m'aurait
+      // rendu les modifications de TOUT l'atelier comme entrant dans mon paquet.
+      // ⇒ Un paquet publié n'a pas d'arbre de travail à juger : il porte son empreinte, et c'est elle
+      //   qui le nomme. Il tombe donc dans la branche « sans dépôt » ci-dessous, comme il doit.
       let depot;
       try {
-        depot = git(cible, ["rev-parse", "--show-toplevel"]);
+        const sommet = git(cible, ["rev-parse", "--show-toplevel"]);
+        depot = realpathSync(sommet) === cible ? sommet : null;
       } catch {
         depot = null;
       }
@@ -618,6 +627,24 @@ export function racinesLuesParRegime(racine, voisins, regime) {
  *
  * La forme lue est celle que les producteurs ont arrêtée : `kairos/docs/forme-empreinte-de-paquet.md`.
  */
+/**
+ * L'empreinte que chaque porte rend, lue PAR LA PORTE et sous les conditions de production.
+ *
+ * ⚠️ CETTE LECTURE EXÉCUTE LE PAQUET DU VOISIN — c'est le prix de la lire par la porte, et c'est
+ * exactement ce que ma production fait. L'enfant l'isole : un paquet qui explose à l'import rend
+ * « témoin illisible », il n'emporte pas le portillon avec lui.
+ * La forme lue est celle que les producteurs ont arrêtée : `kairos/docs/forme-empreinte-de-paquet.md`.
+ */
+export function empreintesParPorte(racine, specificateurs) {
+  if (specificateurs.length === 0) return {};
+  const script =
+    `const out = {}; for (const s of ${JSON.stringify(specificateurs)}) {` +
+    ` try { const m = await import(s); out[s] = m.EMPREINTE ?? { absente: true }; }` +
+    ` catch (e) { out[s] = { echec: e.code || String(e.message).split("\\n")[0] }; } }` +
+    ` console.log(JSON.stringify(out));`;
+  return sousConditions(racine, ["browser", "production"], script);
+}
+
 export function regimesDesVoisins(racine, voisins) {
   const specs = voisins.map((v) => v.specificateurs[0]);
   const aResoudre = [TEMOIN_DE_RESOLUTION, ...specs];
@@ -658,16 +685,7 @@ export function regimesDesVoisins(racine, voisins) {
     // ⚠️ CETTE LECTURE EXÉCUTE LE PAQUET DU VOISIN — c'est le prix de la lire par la porte, et
     // c'est exactement ce que ma production fait. L'enfant l'isole : un paquet qui explose à
     // l'import rend « témoin illisible », il n'emporte pas le portillon avec lui.
-    const scriptEmpreinte =
-      `const out = {}; for (const s of ${JSON.stringify(aDeuxRegimes)}) {` +
-      ` try { const m = await import(s); out[s] = m.EMPREINTE ?? { absente: true }; }` +
-      ` catch (e) { out[s] = { echec: e.code || String(e.message).split("\\n")[0] }; } }` +
-      ` console.log(JSON.stringify(out));`;
-    empreintes = sousConditions(
-      racine,
-      ["browser", "production"],
-      scriptEmpreinte,
-    );
+    empreintes = empreintesParPorte(racine, aDeuxRegimes);
   }
 
   const parDepot = new Map();
@@ -752,10 +770,27 @@ export function legendeDesVoisins(voisins, racine) {
   // ⛔ LA RACINE N'EST PAS FACULTATIVE. Une légende qui saurait se passer d'elle rendrait la
   // moitié de la mesure — celle de la source vive — sans jamais dire que l'autre manque.
   const regimes = regimesDesVoisins(racine, voisins);
+  // ⛔ UN PAQUET PUBLIÉ SE NOMME PAR SON EMPREINTE, pas par « état non mesurable ». Depuis le
+  // 2026-08-24 un voisin peut être consommé par son paquet : il n'a pas d'arbre de travail, et
+  // c'est le but. Le dire « non mesurable » serait un mensonge par omission dans la légende même
+  // qui existe pour dire contre quoi la campagne mesure.
+  const sansDepot = voisins.filter((v) => v.tete === null);
+  const empreintesLiees = empreintesParPorte(
+    racine,
+    sansDepot.map((v) => v.specificateurs[0]),
+  );
   return voisins.map((v) => {
     const nom = v.depot.split("/").pop();
-    if (v.tete === null)
+    if (v.tete === null) {
+      const e = empreintesLiees[v.specificateurs[0]];
+      if (e?.regime === "paquet")
+        return (
+          `${nom} : PAQUET PUBLIÉ ${e.abrege ?? "(sans abrégé)"} — ` +
+          `source ${e.propre ? "propre" : "⚠ MODIFIÉE"}, construit ${e.construitLe ?? "?"}, ` +
+          `${e.fichiers ?? "?"} fichier(s) · aucun arbre de travail ne m'atteint`
+        );
       return `${nom} : hors git (${v.chemin}) — état non mesurable`;
+    }
     const paquet = mentionDuPaquet(regimes.get(v.depot), v.tete, v.depot);
     const atteignant = v.modifications.filter((m) => m.atteintLeBuild);
     // Le compte des portes est sur CHAQUE forme, et c'est mesuré : posé d'abord sur la seule
@@ -833,13 +868,37 @@ export function mentionDeRegime(racine) {
         "plutôt que de rendre un vert dont personne ne pourrait dire sur quel état il porte.",
     );
   }
-  const aveugles = voisins.filter((v) => v.tete === null).map((v) => v.chemin);
-  if (aveugles.length > 0) {
-    throw new Error(
-      "MENTION DE RÉGIME INCOMPLÈTE — l'état de ces dépôts liés n'est pas mesurable (hors git) :\n" +
-        aveugles.map((c) => `  • ${c}`).join("\n") +
-        "\nLa campagne s'arrête : elle ne peut pas dire contre quel état elle mesure ceux-là.",
+  // ⛔ UNE DÉPENDANCE SANS DÉPÔT N'EST PAS FORCÉMENT AVEUGLE — depuis le 2026-08-24, un voisin peut
+  // être consommé par son PAQUET PUBLIÉ, qui n'a pas d'arbre de travail et n'a pas à en avoir. Ce
+  // qui le nomme est son EMPREINTE, lue PAR SA PORTE : `regime: 'paquet'` plus le commit gravé.
+  // ⇒ Le refus garde ses dents et change de critère : est aveugle ce qui n'a NI dépôt NI empreinte
+  //   de paquet. Un lien vers un dossier quelconque reste refusé, comme avant.
+  const sansDepot = voisins.filter((v) => v.tete === null);
+  if (sansDepot.length > 0) {
+    const empreintes = empreintesParPorte(
+      racine,
+      sansDepot.map((v) => v.specificateurs[0]),
     );
+    const aveugles = sansDepot
+      .filter((v) => empreintes[v.specificateurs[0]]?.regime !== "paquet")
+      .map((v) => {
+        const e = empreintes[v.specificateurs[0]];
+        const pourquoi = e?.echec
+          ? `témoin illisible : ${e.echec}`
+          : e?.absente
+            ? "n'exporte aucune empreinte"
+            : `régime « ${e?.regime ?? "non dit"} », attendu « paquet »`;
+        return `  • ${v.chemin} — ${pourquoi}`;
+      });
+    if (aveugles.length > 0) {
+      throw new Error(
+        "MENTION DE RÉGIME INCOMPLÈTE — ces dépendances liées ne disent pas contre quel état je " +
+          "mesure : ni dépôt git, ni empreinte de paquet.\n" +
+          aveugles.join("\n") +
+          "\nLa campagne s'arrête plutôt que de rendre un vert dont personne ne pourrait dire sur " +
+          "quel état il porte.",
+      );
+    }
   }
   // ⛔ LE REFUS EST À ZÉRO, ET ZÉRO N'EST PAS UN SEUIL — c'est une absence. Il ne se règle pas, il
   // ne vieillit pas, il ne devient pas faux au prochain fichier ajouté d'un côté ou de l'autre, et
