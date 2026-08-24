@@ -376,11 +376,26 @@ function demanderLaFenetre(ecritures) {
   // six chemins n'existent pas chez eux, et ont craint que mon banc y lise du vide. Mon RELEVÉ vise
   // juste (il prend chez chacun ce que SON manifeste expose) ; c'était cet AVIS qui visait large, et
   // qui leur demandait une discipline sur des chemins que je ne lis pas chez eux.
+  //
+  // ⛔ ET LA PHRASE « LE RESTE DE VOTRE ARBRE EST LIBRE » A ÉTÉ RETIRÉE LE 2026-08-24 : ELLE MENTAIT.
+  // bp3-frontend l'a signalé deux fois — le 2026-08-23, puis le 2026-08-24 quand mon portillon a refusé
+  // sa poussée d'un commit ne touchant QUE `CLAUDE.md`, hors de mes six racines. Il a attendu, ce qui
+  // est la bonne issue, et il ajoute qu'un refus large est plus sûr qu'un refus fin.
+  // ⇒ ARBITRAGE DE L'ARCHITECTE, LE MÊME JOUR : le garde ne bouge pas, c'est l'avis qui se corrige.
+  //   « Affiner au chemin serait pire : chez certains, pousser republie le paquet ENTIER quel que soit
+  //   le fichier touché, donc un refus par chemin serait muet exactement là où il compte le plus. »
+  // ⇒ Un avis qui promet une liberté que l'outil refuse fait attendre pour une raison que le lecteur
+  //   ne trouve nulle part. Cet avis décrit désormais les DEUX : ce que je lis, et ce que le garde fait.
   const motif =
     "campagne de portillon — NE FAITES BASCULER AUCUN FICHIER SOUS LES RACINES QUE JE LIS, nommées " +
     "dans cet avis. Le geste ne compte pas, le chemin compte : chez certains d'entre vous pousser " +
     "PUBLIE et une vérification lancée à la main CONSTRUIT, chez d'autres le commit ne touche rien. " +
-    "Vous seul savez lequel de vos gestes bascule ces chemins ; le reste de votre arbre est libre. " +
+    "Vous seul savez lequel de vos gestes bascule ces chemins. " +
+    "⛔ MAIS CE QUE JE LIS ET CE QUE LE GARDE REFUSE NE SONT PAS LA MÊME CHOSE : je ne relève que ces " +
+    "racines, et le garde de fenêtre refuse TOUTE poussée de votre dépôt pendant ma fenêtre, y compris " +
+    "d'un fichier que je ne lis pas. C'est délibéré — chez certains d'entre vous pousser republie le " +
+    "paquet ENTIER quel que soit le fichier touché, donc un refus par chemin serait muet là où il " +
+    "compte le plus. " +
     "⚠️ CETTE LISTE EST L'UNION DES RACINES DES DESTINATAIRES, la tour n'en portant qu'une par " +
     "fenêtre : chez vous je ne relève QUE celles que VOTRE manifeste expose. Une racine de cette " +
     "liste qui n'existe pas chez vous ne vous concerne pas, et je ne l'y lis pas. " +
