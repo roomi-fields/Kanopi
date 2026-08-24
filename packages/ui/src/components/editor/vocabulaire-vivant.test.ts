@@ -75,7 +75,9 @@ const noms = (axe: unknown): string[] =>
     ? axe.map((e) =>
         typeof e === 'string'
           ? e
-          : String((e as { name?: string; label?: string }).name ?? (e as { label?: string }).label ?? '')
+          : String(
+              (e as { name?: string; label?: string }).name ?? (e as { label?: string }).label ?? ''
+            )
       )
     : Object.keys((axe ?? {}) as Record<string, unknown>);
 
