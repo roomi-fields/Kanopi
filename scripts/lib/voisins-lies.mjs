@@ -637,10 +637,22 @@ export function racinesLuesParRegime(racine, voisins, regime) {
  */
 export function empreintesParPorte(racine, specificateurs) {
   if (specificateurs.length === 0) return {};
+  // ⛔ LA PORTE DÉDIÉE D'ABORD, ET LE REPLI SE NOMME. Arbitrage de l'architecte du 2026-08-24 :
+  // l'empreinte se lit par une porte secondaire déclarée, `<voisin>/empreinte`, du même nom chez
+  // tous — la ré-exporter depuis les portes métier polluait une surface publique. Les producteurs
+  // y passent l'un après l'autre.
+  // ⇒ Un repli MUET sur la porte métier serait une voie parallèle : il rendrait la migration
+  //   invisible et survivrait à sa fin. Celui-ci pose `parPorteMetier: true`, que la légende
+  //   affiche à chaque ligne concernée — il se voit tant qu'il sert, et il disparaîtra avec elle.
   const script =
     `const out = {}; for (const s of ${JSON.stringify(specificateurs)}) {` +
-    ` try { const m = await import(s); out[s] = m.EMPREINTE ?? { absente: true }; }` +
-    ` catch (e) { out[s] = { echec: e.code || String(e.message).split("\\n")[0] }; } }` +
+    ` let e = null;` +
+    ` try { const d = await import(s + "/empreinte");` +
+    `   if (d.EMPREINTE) e = d.EMPREINTE; } catch {}` +
+    ` if (!e) { try { const m = await import(s);` +
+    `   if (m.EMPREINTE) e = { ...m.EMPREINTE, parPorteMetier: true }; }` +
+    `   catch (err) { e = { echec: err.code || String(err.message).split("\\n")[0] }; } }` +
+    ` out[s] = e ?? { absente: true }; }` +
     ` console.log(JSON.stringify(out));`;
   return sousConditions(racine, ["browser", "production"], script);
 }
@@ -787,7 +799,10 @@ export function legendeDesVoisins(voisins, racine) {
         return (
           `${nom} : PAQUET PUBLIÉ ${e.abrege ?? "(sans abrégé)"} — ` +
           `source ${e.propre ? "propre" : "⚠ MODIFIÉE"}, construit ${e.construitLe ?? "?"}, ` +
-          `${e.fichiers ?? "?"} fichier(s) · aucun arbre de travail ne m'atteint`
+          `${e.fichiers ?? "?"} fichier(s) · aucun arbre de travail ne m'atteint` +
+          (e.parPorteMetier
+            ? " · ⚠ empreinte lue par sa porte MÉTIER, sa porte `/empreinte` ne répond pas encore"
+            : "")
         );
       return `${nom} : hors git (${v.chemin}) — état non mesurable`;
     }
