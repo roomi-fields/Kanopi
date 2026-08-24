@@ -22,11 +22,15 @@ export const MOTIF_CAUSE =
 /**
  * ⛔ LE REFUS DE GIT EST LA CONSÉQUENCE, JAMAIS LA CAUSE — et il est TOUJOURS là.
  *
- * Mesuré le 2026-08-24 sur la campagne de 14:23 : le champ n'était plus vide, il portait
- * `error: impossible de pousser des références` — vrai, présent à chaque rouge, et n'apprenant
- * RIEN. Le repêchage s'arrêtait là et le repli ne se déclenchait pas, alors que les six dernières
- * lignes portaient le banc instable et l'erreur hors test. Une ligne qui accompagne tous les rouges
- * ne discrimine aucun d'eux : elle chasse la vraie cause de la place qui lui revient.
+ * Cette ligne est présente à CHAQUE rouge et n'apprend rien. Tant qu'elle est repêchée, elle
+ * compte comme une cause trouvée — donc le repli ne se déclenche pas, et une sortie qui n'écrit
+ * rien d'autre de reconnaissable rend un champ rempli qui ne discrimine aucun rouge.
+ *
+ * ⚠️ CE N'EST PAS CE QUI S'EST PASSÉ LE 2026-08-24, ET LE COMMENTAIRE D'ORIGINE LE DISAIT. Je
+ * l'avais écrit après avoir lu le journal de la campagne de 14:23 à travers un `tail -40` : sur ce
+ * texte amputé, la ligne de git était seule. Le verdict réel, lui, portait bien le banc et son
+ * erreur — trois voisins me l'ont rendu mot pour mot. La ligne sort quand même du repêchage : le
+ * scénario ci-dessus reste atteignable, mais il n'a pas été observé.
  */
 const CONSEQUENCE =
   /impossible de pousser|failed to push|error: failed to push/;
