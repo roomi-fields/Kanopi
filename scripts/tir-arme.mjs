@@ -39,8 +39,6 @@
  */
 import { execFileSync } from "node:child_process";
 import {
-  readdirSync,
-  statSync,
   writeFileSync,
   unlinkSync,
   readFileSync,
@@ -49,6 +47,10 @@ import {
 } from "node:fs";
 import { causeDuRouge } from "./lib/cause-du-rouge.mjs";
 import { qualifierEcriture } from "./lib/qualifier-ecriture.mjs";
+import {
+  racinesSurveillees,
+  derniereEcriture,
+} from "./lib/releve-des-ecritures.mjs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import {
@@ -143,17 +145,27 @@ const PLAFOND_MS = 60 * 60_000;
 
 const hh = (d) => d.toTimeString().slice(0, 8);
 
-/** Chaque fichier sous un dossier. Un lien symbolique ne se suit pas : il désignerait un arbre qui
- *  n'appartient pas au voisin. Même règle que le relevé d'empreinte. */
-function sousArbre(base, out = []) {
-  for (const e of readdirSync(base, { withFileTypes: true })) {
-    const p = join(base, e.name);
-    if (e.isSymbolicLink()) continue;
-    if (e.isDirectory()) sousArbre(p, out);
-    else out.push(p);
-  }
-  return out;
-}
+/**
+ * ⛔ L'IDENTITÉ DE LA CAMPAGNE, QUI VIVAIT DANS MON PROCESSUS SANS ENTRER DANS LA PHRASE.
+ *
+ * Relevé par kronos le 2026-08-25, après que DEUX de mes armes eurent ouvert deux fenêtres à une
+ * minute d'intervalle : « attends mon message de fin » n'est pas décidable dès qu'il y a deux
+ * fenêtres en vol. Mon premier verdict lui aurait dit « libre » pendant que la seconde mesurait
+ * encore — libéré par une phrase juste, portant sur l'autre fenêtre. Et l'HEURE, que je lui ai
+ * justement interdit d'utiliser, était la seule chose qui les distinguait.
+ *
+ * ⇒ Complété par bpx dans le même quart d'heure : un avis réémis ne dit pas qu'il REMPLACE celui
+ *   d'avant, et la copie mangée reste dans onze boîtes. L'identifiant répond aux deux d'un coup.
+ *
+ * ⇒ IL SE DÉRIVE DE L'HEURE D'OUVERTURE, donc il est opposable et personne ne peut l'inventer. Un
+ *   compteur, lui, se réinitialiserait à chaque relance et rendrait deux campagnes homonymes.
+ *
+ * ⚠️ TROISIÈME FOIS EN UN JOUR pour la même forme : l'heure d'ouverture d'abord, le manifeste
+ * ensuite, l'identité de la campagne maintenant — une donnée qui entre dans le calcul sans entrer
+ * dans le relevé.
+ */
+const identifiantDeCampagne = (ouverte) =>
+  `kanopi-${ouverte.toISOString().replace(/[-:]/g, "").slice(0, 15)}`;
 
 /**
  * LA LISTE DE GEL SE DÉRIVE DE LA LISTE LUE — c'est la même liste, jamais une seconde.
@@ -207,33 +219,26 @@ function nomDeGel(v) {
  * ⚠️ UNE SEULE LISTE, JAMAIS DEUX : ce que je surveille et ce que j'annonce dans l'avis de gel sortent
  * d'ici tous les deux. Deux listes tenues côte à côte se recouvrent le jour de leur pose et divergent
  * au premier élargissement — c'est déjà arrivé sur les dépôts à geler, le 2026-08-24.
+ *
+ * ⛔ LE RELEVÉ LUI-MÊME VIT DANS `lib/releve-des-ecritures.mjs`, ET C'EST LA MOITIÉ DU SUJET. J'avais
+ * écrit, en frappant cette règle : « je n'ai pas pu la faire mordre par injection — injecter voudrait
+ * dire toucher un fichier chez l'un d'eux, ce que ma propre règle interdit ». C'EST FAUX, et kronos
+ * l'a nommé : ma règle interdit d'injecter DANS leurs arbres, elle n'interdit pas d'injecter. Une
+ * injection s'éprouve sur une COPIE — donc l'arbre balayé est un paramètre, et l'épreuve fabrique le
+ * cas discriminant que le réel ne porte jamais (un manifeste plus récent que toutes les racines).
  */
-function racinesSurveillees(depot) {
-  return new Set([...(racinesExposees(depot) ?? []), "package.json"]);
+function racinesDeCeVoisin(depot) {
+  return racinesSurveillees(depot, racinesExposees);
 }
 
 /** La dernière écriture de chaque voisin sous ce que je surveille, et le fichier concerné. */
 function dernieresEcritures() {
   const par = new Map();
   for (const v of voisinsAGeler()) {
-    let quand = 0;
-    let quoi = null;
-    for (const r of racinesSurveillees(v.depot)) {
-      const base = join(v.chemin, r);
-      let fichiers;
-      try {
-        fichiers = statSync(base).isDirectory() ? sousArbre(base) : [base];
-      } catch {
-        continue;
-      }
-      for (const f of fichiers) {
-        const st = statSync(f);
-        if (st.mtimeMs > quand) {
-          quand = st.mtimeMs;
-          quoi = f.replace(v.chemin + "/", "");
-        }
-      }
-    }
+    const { quand, quoi } = derniereEcriture(
+      v.chemin,
+      racinesDeCeVoisin(v.depot),
+    );
     par.set(nomDeGel(v), { quand, quoi });
   }
   return par;
@@ -361,8 +366,15 @@ function ceQuiFerme(ecritures, ouverteA = null) {
  *
  * ⛔ CE BLOC ENVOYAIT UN COURRIER ÉCRIT À LA MAIN. La tour porte depuis le 2026-08-20 un mécanisme
  * qui fait davantage et qui est PARTAGÉ : `tour fenetre ouvrir` prévient chaque dépôt gelé, REFUSE
- * l'écriture de leur backlog pendant la fenêtre, et expire tout seul. Garder ma version en aurait
- * fait une voie parallèle — deux mécanismes pour un besoin, qui divergent au premier changement.
+ * SA PORTE d'écriture de backlog — `tour bl add` — pendant la fenêtre, et expire tout seul. Garder ma
+ * version en aurait fait une voie parallèle : deux mécanismes pour un besoin, qui divergent au premier
+ * changement.
+ *
+ * ⚠️ CETTE PHRASE DISAIT « REFUSE L'ÉCRITURE DE LEUR BACKLOG », ET C'ÉTAIT TROP LARGE. Mesuré par
+ * bpscript le 2026-08-25 : il a édité son `BACKLOG.md` pendant une de mes fenêtres, sans aucun refus.
+ * L'outil ne peut refuser que SA propre commande ; le backlog d'un voisin est un fichier de son dépôt,
+ * qu'il édite avec ses outils. ⇒ Décrire un garde plus large qu'il n'est le fait passer pour une
+ * garantie mécanique là où il n'en donne aucune — et le commentaire se relit comme une preuve.
  *
  * ⛔ ET L'OUTIL PORTE DÉJÀ MA SECONDE CONDITION, ce qui la retire d'ici : il REFUSE d'ouvrir quand un
  * dépôt gelé porte un état que personne n'a publié, parce que je lis le DISQUE. Mesuré à l'ouverture :
@@ -372,7 +384,7 @@ function ceQuiFerme(ecritures, ouverteA = null) {
  *
  * Rend la liste des dépôts gelés, ou `null` si la tour a refusé — auquel cas on retourne attendre.
  */
-function demanderLaFenetre(ecritures) {
+function demanderLaFenetre(ecritures, identifiant) {
   // ⛔ JE GÈLE CE QUE JE LIS, PAS CE QUI BOUGE. Ce filtre ne gardait que les voisins ayant enregistré
   // dans les deux dernières heures. Mesuré le 2026-08-21 : à 09:09 il n'a gelé QUE bpscript, pendant
   // que mes bancs lisaient les sources vives des onze — Kairos me l'a rendu, et il avait fait la
@@ -400,7 +412,7 @@ function demanderLaFenetre(ecritures) {
   // sous quelle forme — donc le DEMANDEUR déclare ce qu'il lit, exactement comme il déclare déjà
   // disque ou commit publié (arbitrage de l'architecte, 2026-08-21).
   const racinesLues = [
-    ...new Set(voisinsAGeler().flatMap((v) => [...racinesSurveillees(v.depot)])),
+    ...new Set(voisinsAGeler().flatMap((v) => [...racinesDeCeVoisin(v.depot)])),
   ].sort();
 
   // ⛔ LE MOTIF NOMME LE CHEMIN, JAMAIS LE GESTE. Deux mots successifs ont échoué le 2026-08-21 :
@@ -437,7 +449,12 @@ function demanderLaFenetre(ecritures) {
   // ⇒ Un avis qui promet une liberté que l'outil refuse fait attendre pour une raison que le lecteur
   //   ne trouve nulle part. Cet avis décrit désormais les DEUX : ce que je lis, et ce que le garde fait.
   const motif =
-    "campagne de portillon — NE FAITES BASCULER AUCUN FICHIER SOUS LES RACINES QUE JE LIS, nommées " +
+    `CAMPAGNE ${identifiant} — cet identifiant est le NOM de cette campagne, et mon verdict le ` +
+    "portera. ⛔ UN AVIS PLUS RÉCENT PORTANT UN AUTRE IDENTIFIANT REMPLACE CELUI-CI : n'attendez "
+    + "alors que le verdict du DERNIER. Le 2026-08-25, deux de mes armes ont ouvert deux fenêtres à "
+    + "une minute d'intervalle et rien ne les distinguait qu'une heure — que je vous interdis "
+    + "justement d'utiliser (relevé par kronos et bpx). "
+    + "campagne de portillon — NE FAITES BASCULER AUCUN FICHIER SOUS LES RACINES QUE JE LIS, nommées " +
     "dans cet avis. Le geste ne compte pas, le chemin compte : chez certains d'entre vous pousser " +
     "PUBLIE et une vérification lancée à la main CONSTRUIT, chez d'autres le commit ne touche rien. " +
     "Vous seul savez lequel de vos gestes bascule ces chemins. " +
@@ -537,7 +554,7 @@ function demanderLaFenetre(ecritures) {
  * C'est la même correction que le préavis lui-même : ce qui dépend de ma vigilance se périme au
  * premier tour où je suis occupé ailleurs.
  */
-function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush) {
+function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush, identifiant) {
   if (destinataires.length === 0) return;
   const pousse = /main -> main/.test(sortiePush)
     ? (sortiePush.match(/[0-9a-f]{7}\.\.[0-9a-f]{7}/) ?? ["poussé"])[0]
@@ -562,7 +579,9 @@ function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush) {
   const pourquoi =
     sortie === "0" ? "" : `\n    CE QUI A RENDU ${sortie} :\n    ${causes}\n`;
   const texte =
-    `VERDICT DE MA CAMPAGNE — départ ${hh(depart)}, arrivée ${hh(arrivee)}.\n\n` +
+    `VERDICT DE LA CAMPAGNE ${identifiant} — départ ${hh(depart)}, arrivée ${hh(arrivee)}.\n\n` +
+    `⛔ CET IDENTIFIANT EST CELUI DE L'AVIS QUE VOUS AVEZ REÇU. S'il ne correspond pas au DERNIER\n` +
+    `avis reçu de moi, ce verdict ne vous libère PAS : une autre campagne mesure encore.\n\n` +
     `    CODE DE SORTIE DU CROCHET : ${sortie}\n` +
     pourquoi +
     `    ${pousse}${bascule}\n\n` +
@@ -624,10 +643,10 @@ function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush) {
  *  voisin qui n'avait rien enfreint s'est reconnu dans un reproche que je ne lui faisais pas.
  *  ⇒ Les raisons arrivent maintenant QUALIFIÉES par `ceQuiFerme`, et le corps du message dit la
  *    règle en clair pour que la qualification ne se relise pas de travers. */
-function rendreLAnnulation(destinataires, ouverte, ferme) {
+function rendreLAnnulation(destinataires, ouverte, ferme, identifiant) {
   if (destinataires.length === 0) return;
   const texte =
-    `⛔ CAMPAGNE ANNULÉE — RIEN N'A ÉTÉ MESURÉ, ET VOTRE GEL EST LEVÉ.\n\n` +
+    `⛔ CAMPAGNE ${identifiant} ANNULÉE — RIEN N'A ÉTÉ MESURÉ, ET VOTRE GEL EST LEVÉ.\n\n` +
     `    fenêtre ouverte à ${hh(ouverte)}, annulée à ${hh(new Date())}\n` +
     `    ce qui l'a refermée :\n      ${ferme.join("\n      ")}\n\n` +
     `⛔ LISEZ LA QUALIFICATION, PAS SEULEMENT LE NOM — les deux cas ci-dessus n'ont rien à voir :\n` +
@@ -732,6 +751,9 @@ let tours = 0;
 let demandeeA = null;
 let geles = [];
 let ouverteA = null;
+/** Le nom de la campagne EN COURS, dérivé de son heure d'ouverture. Il part dans l'avis et
+ *  revient dans le verdict : sans lui, deux fenêtres en vol sont indiscernables pour un gelé. */
+let identifiant = null;
 
 for (;;) {
   const ecritures = dernieresEcritures();
@@ -745,11 +767,12 @@ for (;;) {
         `${hh(new Date())} — demande annulee, la fenetre s est refermee : ${ferme.join(", ")}`,
       );
       // La pièce part AVANT de tout remettre à zéro : après, on ne sait plus qui était gelé.
-      rendreLAnnulation(geles, ouverteA ?? new Date(), ferme);
+      rendreLAnnulation(geles, ouverteA ?? new Date(), ferme, identifiant);
       fermerLaFenetre();
       demandeeA = null;
       geles = [];
       ouverteA = null;
+      identifiant = null;
     } else if (tours % 8 === 0) {
       console.log(`${hh(new Date())} — j attends : ${ferme.join(", ")}`);
     }
@@ -770,16 +793,22 @@ for (;;) {
       process.exit(1);
     }
     const arrivee = new Date(Date.now() + FENETRE_MIN * 60_000);
-    const prevenus = demanderLaFenetre(ecritures);
+    // ⛔ L'OUVERTURE SE DATE AVANT LA DEMANDE, PARCE QUE L'AVIS PORTE SON PROPRE NOM. Datée
+    // après, l'identifiant écrit dans le motif ne serait pas celui de la fenêtre annoncée.
+    const ouverture = new Date();
+    identifiant = identifiantDeCampagne(ouverture);
+    const prevenus = demanderLaFenetre(ecritures, identifiant);
     if (prevenus === null) {
-      // La tour a refusé : on ne tire pas, et on ne réessaie pas en boucle serrée.
+      // La tour a refusé : on ne tire pas, et on ne réessaie pas en boucle serrée. Le nom se
+      // retire avec la demande — une campagne qui n'a pas ouvert n'a pas de nom à opposer.
+      identifiant = null;
       tours++;
       execFileSync("sleep", [String(PAS_MS / 1000)]);
       continue;
     }
     demandeeA = Date.now();
     geles = prevenus;
-    ouverteA = new Date();
+    ouverteA = ouverture;
     console.log(
       `${hh(new Date())} — FENETRE OUVERTE a la tour, gel de ${prevenus.join(", ") || "personne (aucun voisin en chantier)"}` +
         ` : depart ${hh(depart)}, arrivee ${hh(arrivee)}`,
@@ -801,7 +830,7 @@ for (;;) {
     // ⛔ ENREGISTRER AVANT DE RENDRE LE VERDICT : la durée d'une campagne ne se mesure qu'une
     // fois, et un verdict qui échoue ne doit pas emporter la mesure avec lui.
     enregistrerLaCampagne(ouverteA ?? depart, arrivee, sortie);
-    rendreLeVerdict(geles, ouverteA ?? depart, arrivee, sortie, r);
+    rendreLeVerdict(geles, ouverteA ?? depart, arrivee, sortie, r, identifiant);
     fermerLaFenetre();
     break;
   }
