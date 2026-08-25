@@ -48,6 +48,7 @@ import {
   existsSync,
 } from "node:fs";
 import { causeDuRouge } from "./lib/cause-du-rouge.mjs";
+import { qualifierEcriture } from "./lib/qualifier-ecriture.mjs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import {
@@ -268,8 +269,23 @@ function preVol() {
   return null;
 }
 
-/** Ce qui empêche la fenêtre de s'ouvrir, en clair. Vide = elle est ouverte. */
-function ceQuiFerme(ecritures) {
+/**
+ * Ce qui empêche la fenêtre de s'ouvrir, en clair. Vide = elle est ouverte.
+ *
+ * ⛔ UNE ÉCRITURE RÉCENTE A DEUX CAUSES OPPOSÉES, ET CETTE LIGNE LES DISAIT PAREIL. Le 2026-08-25,
+ * deux annulations à une demi-heure d'écart ont porté le même texte : la première sur une écriture
+ * survenue 45 s APRÈS mon ouverture — un gel rompu — la seconde sur une écriture survenue 67 s
+ * AVANT elle, c'est-à-dire un arbre simplement plus frais que `CALME_MS`, où le voisin n'avait rien
+ * à respecter puisque rien n'était encore gelé.
+ * ⇒ kronos a lu la seconde comme un reproche, m'a rendu ses horloges pour se défendre, et s'est
+ *   attribué un coût qui n'était pas le sien. bp3-frontend l'a vu avant lui et avant moi.
+ * ⇒ CE QUI SÉPARE LES DEUX EST L'HEURE D'OUVERTURE, que je connais et que je ne rendais pas. Donc
+ *   elle entre ici, et la qualification voyage jusqu'au destinataire.
+ *
+ * `ouverteA` vaut `null` tant qu'aucune fenêtre n'est ouverte : personne n'est gelé, il n'y a rien
+ * à qualifier, et prétendre le contraire serait l'erreur symétrique.
+ */
+function ceQuiFerme(ecritures, ouverteA = null) {
   const seuil = Date.now() - CALME_MS;
   const raisons = [];
   // ⛔ L'ARBRE SALE RESTE ICI, ET CE N'EST PAS UN DOUBLON DE LA TOUR. Elle refuse d'OUVRIR sur un
@@ -298,8 +314,19 @@ function ceQuiFerme(ecritures) {
     raisons.push(`un arbre SALE ferme ma construction de production : ${noms}`);
   }
   for (const [nom, { quand, quoi }] of ecritures) {
-    if (quand > seuil)
-      raisons.push(`${nom} a écrit à ${hh(new Date(quand))} (${quoi})`);
+    if (quand <= seuil) continue;
+    // La qualification vit dans `lib/qualifier-ecriture.mjs`, seule et éprouvable : ici la boucle
+    // démarre à l'import, donc une copie posée dans ce fichier ne se vérifierait qu'en tirant.
+    raisons.push(
+      qualifierEcriture(
+        nom,
+        quand,
+        quoi,
+        ouverteA === null ? null : ouverteA.getTime(),
+        CALME_MS,
+        hh,
+      ),
+    );
   }
   return raisons;
 }
@@ -541,13 +568,26 @@ function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush) {
  *  aucun verdict, donc n'envoie jamais ce qui fermerait. Un voisin discipliné attend un signal qui
  *  n'existe pas.
  *
- *  ⇒ Une fin de gel qui arrive SEULE ne doit plus jamais être ambiguë. */
+ *  ⇒ Une fin de gel qui arrive SEULE ne doit plus jamais être ambiguë.
+ *
+ *  ⛔ ET ELLE NE DOIT PAS NON PLUS ACCUSER AU HASARD. Jusqu'au 2026-08-25 cette pièce rendait la
+ *  liste brute de ce qui fermait, où « X a écrit à 05:07:21 » désignait indifféremment un gel rompu
+ *  et un arbre plus frais que mon seuil de calme — deux faits opposés sous une phrase unique. Un
+ *  voisin qui n'avait rien enfreint s'est reconnu dans un reproche que je ne lui faisais pas.
+ *  ⇒ Les raisons arrivent maintenant QUALIFIÉES par `ceQuiFerme`, et le corps du message dit la
+ *    règle en clair pour que la qualification ne se relise pas de travers. */
 function rendreLAnnulation(destinataires, ouverte, ferme) {
   if (destinataires.length === 0) return;
   const texte =
     `⛔ CAMPAGNE ANNULÉE — RIEN N'A ÉTÉ MESURÉ, ET VOTRE GEL EST LEVÉ.\n\n` +
     `    fenêtre ouverte à ${hh(ouverte)}, annulée à ${hh(new Date())}\n` +
-    `    ce qui l'a refermée : ${ferme.join(", ")}\n\n` +
+    `    ce qui l'a refermée :\n      ${ferme.join("\n      ")}\n\n` +
+    `⛔ LISEZ LA QUALIFICATION, PAS SEULEMENT LE NOM — les deux cas ci-dessus n'ont rien à voir :\n` +
+    `  • « PENDANT le gel » : l'écriture est postérieure à mon ouverture, donc la borne était posée\n` +
+    `    quand elle est survenue. C'est le seul cas où un geste de votre part est en cause.\n` +
+    `  • « AVANT l'ouverture » : votre écriture PRÉCÈDE ma fenêtre. Elle la ferme parce que j'exige\n` +
+    `    ${CALME_MS / 1000} s de calme avant de partir — un arbre trop frais mesure mal. VOUS N'AVEZ RIEN\n` +
+    `    ENFREINT, et il n'y avait rien à respecter : rien n'était encore gelé. Ce délai est à moi.\n\n` +
     `Il n'y a PAS de code de sortie à vous rendre, ni de plage de commits : le crochet n'a jamais\n` +
     `tourné. N'attendez aucun verdict pour celle-ci — il n'existe pas.\n\n` +
     `Ce message part du code qui tire : une fin de gel qui arrive seule serait ambiguë, et un gel dont\n` +
@@ -647,7 +687,7 @@ let ouverteA = null;
 
 for (;;) {
   const ecritures = dernieresEcritures();
-  const ferme = ceQuiFerme(ecritures);
+  const ferme = ceQuiFerme(ecritures, ouverteA);
 
   if (ferme.length > 0) {
     // ⛔ UNE ECRITURE APRES LA DEMANDE ANNULE LA GRACE. Sans ça, la demande deviendrait une
