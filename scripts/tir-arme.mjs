@@ -545,12 +545,21 @@ function demanderLaFenetre(ecritures, identifiant) {
   //   ne trouve nulle part. Cet avis décrit désormais les DEUX : ce que je lis, et ce que le garde fait.
   const motif =
     `CAMPAGNE ${identifiant}, tirée par ${ARME} — le premier nomme CETTE campagne, le second le ` +
-    "PROCESSUS qui la tire, et mon verdict portera les deux. ⛔ DEUX AVIS DE MÊME ARME ET DE CAMPAGNES "
-    + "DIFFÉRENTES viennent d'une réouverture après refus ou annulation ; deux ARMES différentes "
-    + "veulent dire que deux de mes processus tournent, ce qui est un défaut chez moi et se dit. "
+    "PROCESSUS qui la tire, et mon verdict portera les deux. ⚠️ DEUX ARMES SUCCESSIVES SONT LE "
+    + "FONCTIONNEMENT NORMAL : une arme meurt avec sa campagne, donc deux campagnes d'affilée portent "
+    + "toujours deux noms d'arme. Ne me signalez PAS cela. Deux avis de MÊME arme et de campagnes "
+    + "différentes viennent d'une réouverture après refus ou annulation, et sont normaux aussi. "
+    + "⛔ CE QUE JE VOUS DEMANDE DE ME SIGNALER EST AUTRE : UN SECOND AVIS DE MOI QUI VOUS ARRIVE AVANT "
+    + "LE VERDICT DU PRÉCÉDENT, quelle que soit l'arme. C'est le seul signe observable de chez vous que "
+    + "deux de mes armes tournent — la tour ne tient qu'une fenêtre par émetteur, donc vous ne verrez "
+    + "JAMAIS deux des miennes coexister : vous verrez la seconde remplacer la première sans le savoir, "
+    + "et c'est exactement ce qui vous est arrivé à onze le 2026-08-25 à 11:36. "
     + "(Le nom d'arme entre le 2026-08-25 : sans lui, personne ne pouvait vérifier de l'extérieur que "
     + "mon identifiant nomme la campagne et non le processus — relevé par kronos, expliqué par "
-    + "runtime-codevoices.) " +
+    + "runtime-codevoices. Et ma première rédaction de cette clause désignait le mauvais signe : elle "
+    + "vous ordonnait de me signaler un défaut à chaque cycle normal, et aurait crié onze fois pour "
+    + "rien avant le jour où ça compte — relevé par runtime-ui, qui avait déjà le bon critère sous les "
+    + "yeux et que ma clause faisait regarder ailleurs.) " +
     `Cet identifiant est le NOM de cette campagne, et mon verdict le ` +
     "portera. ⛔ UN AVIS PLUS RÉCENT PORTANT UN AUTRE IDENTIFIANT REMPLACE CELUI-CI : n'attendez "
     + "alors que le verdict du DERNIER. Le 2026-08-25, deux de mes armes ont ouvert deux fenêtres à "
