@@ -621,9 +621,18 @@ function demanderLaFenetre(ecritures, identifiant) {
     "d'un fichier que je ne lis pas. C'est délibéré — chez certains d'entre vous pousser republie le " +
     "paquet ENTIER quel que soit le fichier touché, donc un refus par chemin serait muet là où il " +
     "compte le plus. " +
-    "⚠️ CETTE LISTE EST L'UNION DES RACINES DES DESTINATAIRES, la tour n'en portant qu'une par " +
-    "fenêtre : chez vous je ne relève QUE celles que VOTRE manifeste expose, PLUS ce manifeste " +
-    "lui-même. ⛔ ET IL Y A DEUX RAISONS DE NE PAS RELEVER UNE RACINE, PAS UNE : soit elle n'existe " +
+    "⚠️ CETTE LISTE ARRIVE SOUS DEUX RÉGIMES, ET VOUS SEUL VOYEZ LEQUEL. J'envoie l'UNION des racines " +
+    "des onze ; depuis `74cf383` (architecte, 2026-08-25) la tour la FILTRE à la livraison quand votre " +
+    "manifeste porte un champ `files` — vous recevez alors VOS racines seules, et il n'y a rien à en " +
+    "retrancher. Sans ce champ, elle vous livre l'union entière, et les racines qui ne sont pas les " +
+    "vôtres ne vous concernent pas. Sa mesure : filtre actif chez cinq, repli sur l'union chez neuf. " +
+    "⛔ NE RETRANCHEZ PAS DEUX FOIS : ma phrase précédente annonçait une union sans condition, et depuis " +
+    "ce matin elle faisait écarter comme « appartenant aux autres » des racines qui étaient devenues " +
+    "toutes les vôtres — une discipline EN MOINS, sur des chemins que je relève vraiment (relevé par " +
+    "kronos et runtime-in, à la même minute, tous deux dans les cinq filtrés). " +
+    "⇒ DANS LES DEUX RÉGIMES, LA RÈGLE NE CHANGE PAS : chez vous je ne relève QUE ce que VOTRE " +
+    "manifeste expose, PLUS ce manifeste lui-même. " +
+    "⛔ ET IL Y A DEUX RAISONS DE NE PAS RELEVER UNE RACINE, PAS UNE : soit elle n'existe " +
     "pas chez vous, soit elle existe et votre manifeste ne l'expose pas — dans les deux cas je ne " +
     "l'y lis pas. Ma phrase précédente ne nommait que la première, et kronos s'est imposé une " +
     "discipline sur un fichier que je ne lis pas chez lui, faute de pouvoir trancher son cas. " +
