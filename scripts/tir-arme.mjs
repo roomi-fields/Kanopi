@@ -129,19 +129,66 @@ function fenetreDeriveeMin() {
   return Math.ceil(hautes[0] + (hautes[0] - hautes[2]));
 }
 
-/** Ajoute une campagne au registre — c'est ce qui rend la fenêtre suivante juste. */
-function enregistrerLaCampagne(depart, arrivee, sortie) {
-  const minutes = (arrivee.getTime() - depart.getTime()) / 60_000;
+/**
+ * ⛔ TOUTE OUVERTURE ENTRE AU REGISTRE, PAS SEULEMENT CELLES QUI ABOUTISSENT.
+ *
+ * Mesuré le 2026-08-25 : runtime-in a audité ses 66 avis depuis le 27 juillet et trouvé TROIS
+ * épisodes où un second avis de moi lui est arrivé sans clôture du premier — dont un du 21/08 que je
+ * ne connaissais pas. J'avais écrit « un incident isolé » en comptant sur ma mémoire de session.
+ *
+ * ⇒ CE QUE MON REGISTRE GARDAIT : les campagnes ABOUTIES, et rien d'autre. Une annulée, une écrasée,
+ *   une refusée par la tour ne laissaient AUCUNE trace — et mes journaux de tir ne survivent pas à la
+ *   session. **Mes voisins avaient une meilleure archive de mes campagnes que moi**, et c'est la forme
+ *   exacte que je relève chez les autres depuis ce matin : publier une absence sans avoir le périmètre
+ *   pour la soutenir.
+ *
+ * ⚠️ LE CALCUL DE LA FENÊTRE NE VOIT QUE LES ABOUTIES, et ça ne change pas : `dureesEnregistrees()`
+ * filtre sur `minutes > 0`, et une ouverture sans arrivée n'en porte pas. Une campagne morte à la
+ * première minute n'apprend rien sur la durée d'une mesure complète — c'est déjà écrit là-haut.
+ */
+function inscrireAuRegistre(entree) {
   const brut = existsSync(REGISTRE)
     ? JSON.parse(readFileSync(REGISTRE, "utf8") || "[]")
     : [];
-  brut.push({
+  brut.push(entree);
+  mkdirSync(join(homedir(), ".local", "state", "kanopi"), { recursive: true });
+  writeFileSync(REGISTRE, JSON.stringify(brut, null, 1));
+}
+
+/** Une fenêtre vient de s'ouvrir. Inscrite AVANT toute mesure : c'est ce qui manquait pour qu'une
+ *  campagne qui n'aboutit pas laisse une trace chez moi. */
+function enregistrerLOuverture(identifiant, arme, geles) {
+  inscrireAuRegistre({
+    le: new Date().toISOString(),
+    evenement: "ouverture",
+    campagne: identifiant,
+    arme,
+    geles: geles.length,
+  });
+}
+
+/** Une fenêtre s'est refermée sans mesure. La cause part avec, sinon la trace ne dit que « rien ». */
+function enregistrerLAnnulation(identifiant, arme, ferme) {
+  inscrireAuRegistre({
+    le: new Date().toISOString(),
+    evenement: "annulation",
+    campagne: identifiant,
+    arme,
+    cause: ferme.join(" · "),
+  });
+}
+
+/** Ajoute une campagne ABOUTIE — c'est ce qui rend la fenêtre suivante juste. */
+function enregistrerLaCampagne(depart, arrivee, sortie, identifiant, arme) {
+  const minutes = (arrivee.getTime() - depart.getTime()) / 60_000;
+  inscrireAuRegistre({
     le: arrivee.toISOString(),
+    evenement: "campagne",
+    campagne: identifiant,
+    arme,
     minutes: Number(minutes.toFixed(2)),
     sortie,
   });
-  mkdirSync(join(homedir(), ".local", "state", "kanopi"), { recursive: true });
-  writeFileSync(REGISTRE, JSON.stringify(brut, null, 1));
   console.log(
     `campagne enregistree : ${minutes.toFixed(2)} min (sortie ${sortie})`,
   );
@@ -885,6 +932,7 @@ for (;;) {
         `${hh(new Date())} — demande annulee, la fenetre s est refermee : ${ferme.join(", ")}`,
       );
       // La pièce part AVANT de tout remettre à zéro : après, on ne sait plus qui était gelé.
+      enregistrerLAnnulation(identifiant, ARME, ferme);
       rendreLAnnulation(geles, ouverteA ?? new Date(), ferme, identifiant);
       fermerLaFenetre();
       demandeeA = null;
@@ -924,6 +972,7 @@ for (;;) {
       execFileSync("sleep", [String(PAS_MS / 1000)]);
       continue;
     }
+    enregistrerLOuverture(identifiant, ARME, prevenus);
     demandeeA = Date.now();
     geles = prevenus;
     ouverteA = ouverture;
@@ -977,7 +1026,7 @@ for (;;) {
     const sortie = (r.match(/SORTIE:(\d+)/) ?? [, "?"])[1];
     // ⛔ ENREGISTRER AVANT DE RENDRE LE VERDICT : la durée d'une campagne ne se mesure qu'une
     // fois, et un verdict qui échoue ne doit pas emporter la mesure avec lui.
-    enregistrerLaCampagne(ouverteA ?? depart, arrivee, sortie);
+    enregistrerLaCampagne(ouverteA ?? depart, arrivee, sortie, identifiant, ARME);
     rendreLeVerdict(
       geles,
       ouverteA ?? depart,
