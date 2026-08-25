@@ -41,11 +41,45 @@ const CONSEQUENCE =
  * asymétrie qui rendait la parenthèse vide possible. « Voir mon journal » ne se lit chez personne :
  * un dépôt gelé n'a que ce message.
  */
+/**
+ * ⛔ UNE LIGNE QUI ACCUSE N'EST PAS UNE LIGNE QUI EXPLIQUE — ET JE JETAIS LA SECONDE.
+ *
+ * Mesuré le 2026-08-25, sur un rouge réel : une construction de production a cassé, et le verdict
+ * parti aux onze portait exactement ceci —
+ *
+ *     ✗ Build failed in 19.28s
+ *     error during build:
+ *
+ * …c'est-à-dire DEUX ACCUSATIONS ET AUCUNE CAUSE. La cause vivait juste en dessous, indentée :
+ * « ../../../kairos/dist/empreinte.js (3:9): "dirname" is not exported by "__vite-browser-external" ».
+ * ⇒ J'ai dû rejouer la construction à la main pour l'écrire au voisin concerné.
+ *
+ * ⚠️ C'EST LE SYMÉTRIQUE EXACT DU DÉFAUT QU'UN VOISIN A MESURÉ CHEZ LUI LA MÊME NUIT : ses gardes
+ * EXPLIQUENT APRÈS AVOIR ACCUSÉ, donc une fenêtre de queue montre la prose et pas le verdict. Chez
+ * moi, le repêchage garde l'accusation et jette l'explication — même cause, effet opposé.
+ *
+ * ⇒ Une ligne repêchée emporte donc les lignes qui la DÉTAILLENT : celles qui sont indentées sous
+ *   elle, ou qui ne commencent pas elles-mêmes une nouvelle accusation. Un outil met sa cause en
+ *   dessous ; c'est une convention, pas un hasard.
+ */
+function avecSonDetail(lignes, i) {
+  const bloc = [lignes[i]];
+  for (let j = i + 1; j < lignes.length && bloc.length < 4; j++) {
+    const l = lignes[j];
+    if (l.trim() === "") break;
+    if (MOTIF_CAUSE.test(l)) break; // une nouvelle accusation se repêche pour elle-même
+    bloc.push(l);
+  }
+  return bloc;
+}
+
 export function causeDuRouge(sortie) {
   const lignes = String(sortie).split("\n");
-  const repechees = lignes
-    .filter((l) => MOTIF_CAUSE.test(l) && !CONSEQUENCE.test(l))
-    .slice(0, 6);
+  const repechees = [];
+  for (let i = 0; i < lignes.length && repechees.length < 8; i++) {
+    if (!MOTIF_CAUSE.test(lignes[i]) || CONSEQUENCE.test(lignes[i])) continue;
+    for (const l of avecSonDetail(lignes, i)) if (repechees.length < 8) repechees.push(l);
+  }
   if (repechees.length) return repechees;
   const dernieres = lignes.filter((l) => l.trim() !== "").slice(-6);
   if (dernieres.length) return dernieres;
