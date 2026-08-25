@@ -460,16 +460,31 @@ function demanderLaFenetre(ecritures) {
     "PLANCHER calculé sur une constante, et mes campagnes la dépassent déjà de plusieurs minutes. " +
     "Attendez le verdict que je vous enverrai à l'arrivée ; une attente calée sur l'horloge écrite " +
     "vous fera écrire pendant que je mesure encore";
+  // ⛔ CET APPEL NE PASSE PLUS PAR UN SHELL, ET C'EST LE MOTIF QUI L'EXIGE. Le 2026-08-25 j'ai ajouté
+  // un accent grave dans ce texte — « votre `package.json` est surveillé » — et la tour a répondu
+  // « bash: package.json : commande introuvable ». Un accent grave à l'intérieur des guillemets que
+  // `JSON.stringify` pose est une SUBSTITUTION DE COMMANDE pour bash : il a exécuté le nom du fichier
+  // dont je parlais. La campagne est morte à l'ouverture, sans que personne soit gelé.
+  // ⇒ Retirer l'accent grave aurait été le contournement : le piège resterait armé pour la phrase
+  //   suivante, et ce texte est fait pour être réécrit. Les arguments partent donc en TABLEAU, où
+  //   aucun caractère n'a de sens pour personne. (Les autres appels à la tour n'interpolent que des
+  //   noms de dépôts et des chemins que j'ai fabriqués : eux ne prennent aucun texte libre.)
   try {
     execFileSync(
-      "bash",
+      join(homedir(), "dev", "bp", "hub", "tour"),
       [
-        "-c",
-        `BP_AGENT=kanopi ~/dev/bp/hub/tour fenetre ouvrir kanopi --minutes ${FENETRE_MIN} ` +
-          `--lit disque --depots ${actifs.join(",")} --racines ${racinesLues.join(",")} ` +
-          `--motif ${JSON.stringify(motif)}`,
+        "fenetre", "ouvrir", "kanopi",
+        "--minutes", String(FENETRE_MIN),
+        "--lit", "disque",
+        "--depots", actifs.join(","),
+        "--racines", racinesLues.join(","),
+        "--motif", motif,
       ],
-      { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+      {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        env: { ...process.env, BP_AGENT: "kanopi" },
+      },
     );
   } catch (e) {
     // ⛔ LA RAISON DU REFUS, PAS LA COMMANDE QUI A ÉCHOUÉ. `e.message` commence par « Command

@@ -81,7 +81,10 @@ DOC_SRC="$REPO_ROOT/../atlas/doc-utilisateur"
 # ⚠️ ET IL EST INVISIBLE À TOUT LE RESTE DE MON OUTILLAGE : mon relevé de voisins est bâti sur les
 # LIENS SYMBOLIQUES de node_modules, et atlas est consommé par CHEMIN. Il n'est dans aucun des onze,
 # donc ni ma légende, ni mon garde de bascule, ni ma fenêtre de mesure ne le connaissent. Ce refus-ci
-# ne couvre que la publication ; le reste est au backlog.
+# ne couvre que la publication ; le reste est KAN-68 au backlog.
+# ⚠️ CE RENVOI A ÉTÉ MUET DU 2026-08-21 AU 2026-08-25 : il disait « le reste est au backlog » et aucun
+# item n'y était. Une affirmation du code se relit comme une preuve — celle-ci nomme désormais l'item,
+# donc elle se vérifie.
 #
 # La règle est celle que j'applique déjà aux onze : je ne pars pas en production sur du non-enregistré
 # QUI ENTRE DANS MON PAQUET. Sa doc entre dans mon paquet (`public/docs` → `dist/docs`), donc elle y

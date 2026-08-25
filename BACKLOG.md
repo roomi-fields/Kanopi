@@ -569,3 +569,21 @@ Mesure du 2026-08-18, prise sur la base d'index et sur l'arbre de travail.
   **Mesuré aussi au passage, et c'est chez bp3-frontend** : mes 22 fichiers de réglages au format
   positionnel sont le seul endroit où son lecteur positionnel est exercé — son corpus n'en porte
   aucun. Onze d'entre eux lui rendent un `c4key` impossible. Reporté, à lui.
+
+- **KAN-68** `ouvert` — (2026-08-25) **UN DOUZIÈME DÉPÔT ENTRE DANS MON PAQUET ET N'EXISTE DANS AUCUN
+  DE MES DISPOSITIFS.** `scripts/publish/build-and-deploy.sh:74` construit la documentation
+  utilisateur depuis `../atlas/doc-utilisateur`, **par chemin de disque**. Atlas n'est donc dans aucun
+  manifeste, dans aucun lien symbolique, et par conséquent : absent de mon relevé de voisins (onze),
+  absent de ma pièce consommateur (`etat-pris`), absent de mes gels de campagne, absent de la mesure
+  « neuf vers un arbre de travail, deux vers un paquet » que j'ai confirmée à l'architecte le
+  2026-08-25 — elle porte sur les manifestes, et lui n'y est pas.
+  **Sa doc entre pourtant dans mon paquet** (`public/docs` → `dist/docs`), donc dans ce qui part à
+  l'utilisateur, et mkdocs lit son ARBRE DE TRAVAIL, pas un commit.
+  Le seul filet existant est un refus de publication en production sur arbre sale
+  (`build-and-deploy.sh:89-102`) : il ne couvre ni la fraîcheur, ni l'état pris, ni le gel.
+  ⛔ **Et ce trou se croyait déjà inscrit** : le commentaire de `build-and-deploy.sh:84` dit « le reste
+  est au backlog » depuis le 2026-08-21, et il n'y était pas — une affirmation du code qui se relisait
+  comme une preuve. Item ouvert le jour où j'ai mesuré le renvoi.
+  **Ce qui le referme sans effort de mon côté** : la décision de Romain du 2026-08-25, qui ouvre la
+  publication de la doc publique d'atlas au régime `bp/.paquets/<nom>-<commit>` — je consommerais
+  alors un état figé et déclarable, comme les onze autres.
