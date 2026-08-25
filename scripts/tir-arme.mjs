@@ -1072,6 +1072,36 @@ function fermerLaFenetre() {
         "   Tirer gèle douze dépôts ; un import est une lecture, jamais une intention de tirer.\n" +
         "   Pour tirer : `node scripts/tir-arme.mjs`.",
     );
+  } else if (process.argv.slice(2).join(" ") === "--releve") {
+    // ⛔ CE QUE JE RELÈVE SE DEMANDE, ET LA RÉPONSE VIENT DE L'ARME — PAS D'UN HARNAIS QUI LA COPIE.
+    //
+    // Demandé par bp3-frontend le 2026-08-25 : « ce que ton arme relève RÉELLEMENT chez moi — est-ce
+    // `src` seul, ou davantage ? » Sa lecture était prise à ma référence PUBLIÉE, et atlas venait de
+    // démontrer que mon publié est en retard sur ce qui tourne. Aucun de mes voisins ne pouvait donc
+    // répondre depuis sa surface, et moi je ne pouvais répondre qu'en réécrivant ma logique dans un
+    // script à part — c'est-à-dire par un contrôle qui partagerait le défaut de son sujet.
+    //
+    // ⇒ Il n'appelle NI la tour NI aucun gel : il dérive la même liste par les mêmes fonctions, il
+    //   l'imprime, il sort. C'est le seul drapeau que cette arme accepte, et le garde ci-dessous le
+    //   nomme au lieu de l'exempter.
+    let voisins;
+    try {
+      voisins = voisinsAGeler();
+    } catch (e) {
+      console.error(`⛔ la dérivation a jeté : ${e.message}`);
+      process.exit(1);
+    }
+    console.log(`CE QUE MON ARME RELÈVE — ${voisins.length} dépôt(s), dérivé à l'instant :\n`);
+    for (const v of voisins.sort((a, b) => nomDeGel(a).localeCompare(nomDeGel(b)))) {
+      const racines = [...racinesDeCeVoisin(v)].sort();
+      const { examines } = derniereEcriture(v.chemin, racinesDeCeVoisin(v));
+      console.log(
+        `  ${nomDeGel(v).padEnd(20)} ${racines.join(" · ").padEnd(46)} ${String(examines).padStart(5)} fichier(s) examinés` +
+          (v.sites ? `\n  ${" ".repeat(20)} lu par chemin : ${v.sites.join(" ")}` : ""),
+      );
+    }
+    console.log("\nAucune fenêtre ouverte, aucun dépôt gelé, rien n'a été mesuré.");
+    process.exit(0);
   } else {
     const inconnus = process.argv.slice(2).filter((a) => a.startsWith("-"));
     if (inconnus.length) {
