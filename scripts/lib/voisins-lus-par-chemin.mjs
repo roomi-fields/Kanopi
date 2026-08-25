@@ -105,7 +105,7 @@ export function voisinsLusParChemin(atelier, lireFichiers, lireTexte, depotsDeLA
     const SUR_DISQUE = new Set([
       "/atelier/atlas/doc-utilisateur",
       "/atelier/atlas/carte-autorites",
-      "/atelier/kairos/src",
+      "/atelier/kairos/decisions",
       "/atelier/BPscript/docs",
     ]);
     /** Balaye une chaîne décrite : `{ "chemin/du/fichier": "son texte" }`. */
@@ -155,7 +155,7 @@ export function voisinsLusParChemin(atelier, lireFichiers, lireTexte, depotsDeLA
     // Plusieurs voisins, plusieurs racines chez le même — tout entre, rien n'écrase.
     {
       const r = sur({
-        "scripts/c.mjs": "'../atlas/doc-utilisateur' + '../atlas/carte-autorites' + '../kairos/src'",
+        "scripts/c.mjs": "'../atlas/doc-utilisateur' + '../atlas/carte-autorites' + '../kairos/decisions'",
       });
       juge("deux voisins distincts sont rendus, triés", noms(r), ["atlas", "kairos"]);
       juge("deux racines chez le même voisin s'accumulent", [...r[0].racines].sort(), [
