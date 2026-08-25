@@ -95,9 +95,11 @@
       "le": "2026-08-24"
     },
     "runtime-in": {
-      "etage": "nommé",
-      "voie": "source",
-      "le": "2026-08-24"
+      "etage": "épinglé",
+      "voie": "paquet",
+      "empreinte": "186beb8",
+      "le": "2026-08-25",
+      "pourquoi": "runtime-in a publie un artefact IMMUABLE hors de son arbre le 2026-08-25 et m a demande de repointer. Sa forme proposee visait la reference MOUVANTE `.paquets/runtime-in` ; je l epingle sur `runtime-in-186beb8`, comme runtime-osc — un lien qui vise la reference mouvante bascule a la publication suivante sans qu un fichier bouge ici. Il s engage a ne publier que par un geste NOMME et DATE, hors de son crochet de poussee."
     },
     "runtime-midi": {
       "etage": "nommé",
