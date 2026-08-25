@@ -187,13 +187,38 @@ function nomDeGel(v) {
     .pop();
 }
 
-/** La dernière écriture de chaque voisin sous ce qu'il EXPOSE, et le fichier concerné. */
+/**
+ * ⛔ CE QUE JE SURVEILLE CHEZ UN VOISIN — SES RACINES EXPOSÉES, PLUS LE FICHIER QUI LES DÉFINIT.
+ *
+ * Relevé par kronos le 2026-08-25, et c'est un trou que ma correction de la veille n'atteignait pas :
+ * mon relevé LIT son manifeste pour en DÉRIVER les racines à surveiller, et ne SURVEILLE PAS ce
+ * manifeste. Un voisin qui bascule `exports` ou `files` pendant ma fenêtre fait changer la liste des
+ * racines SOUS ma mesure — et mon témoin reste vert, en attestant l'immobilité d'un périmètre qui a
+ * bougé. Ma phrase de verdict était vraie et ne couvrait pas le cas qui la rend creuse.
+ *
+ * ⇒ Même famille que la qualification d'annulation corrigée le même jour : là, une donnée vivait dans
+ *   le processus sans entrer dans la phrase ; ici, une donnée entre dans le CALCUL sans entrer dans
+ *   le RELEVÉ.
+ *
+ * ⛔ ET LE CALENDRIER LE REND ACTIF, pas théorique : la décision de Romain du 2026-08-25 (régime
+ * `.paquets/<nom>-<commit>`) fera changer le manifeste de plusieurs de mes onze voisins, donc le trou
+ * s'ouvrirait chez plusieurs en même temps — et pendant la seule campagne où ça compte.
+ *
+ * ⚠️ UNE SEULE LISTE, JAMAIS DEUX : ce que je surveille et ce que j'annonce dans l'avis de gel sortent
+ * d'ici tous les deux. Deux listes tenues côte à côte se recouvrent le jour de leur pose et divergent
+ * au premier élargissement — c'est déjà arrivé sur les dépôts à geler, le 2026-08-24.
+ */
+function racinesSurveillees(depot) {
+  return new Set([...(racinesExposees(depot) ?? []), "package.json"]);
+}
+
+/** La dernière écriture de chaque voisin sous ce que je surveille, et le fichier concerné. */
 function dernieresEcritures() {
   const par = new Map();
   for (const v of voisinsAGeler()) {
     let quand = 0;
     let quoi = null;
-    for (const r of racinesExposees(v.depot) ?? []) {
+    for (const r of racinesSurveillees(v.depot)) {
       const base = join(v.chemin, r);
       let fichiers;
       try {
@@ -375,9 +400,7 @@ function demanderLaFenetre(ecritures) {
   // sous quelle forme — donc le DEMANDEUR déclare ce qu'il lit, exactement comme il déclare déjà
   // disque ou commit publié (arbitrage de l'architecte, 2026-08-21).
   const racinesLues = [
-    ...new Set(
-      voisinsAGeler().flatMap((v) => [...(racinesExposees(v.depot) ?? [])]),
-    ),
+    ...new Set(voisinsAGeler().flatMap((v) => [...racinesSurveillees(v.depot)])),
   ].sort();
 
   // ⛔ LE MOTIF NOMME LE CHEMIN, JAMAIS LE GESTE. Deux mots successifs ont échoué le 2026-08-21 :
@@ -424,8 +447,15 @@ function demanderLaFenetre(ecritures) {
     "paquet ENTIER quel que soit le fichier touché, donc un refus par chemin serait muet là où il " +
     "compte le plus. " +
     "⚠️ CETTE LISTE EST L'UNION DES RACINES DES DESTINATAIRES, la tour n'en portant qu'une par " +
-    "fenêtre : chez vous je ne relève QUE celles que VOTRE manifeste expose. Une racine de cette " +
-    "liste qui n'existe pas chez vous ne vous concerne pas, et je ne l'y lis pas. " +
+    "fenêtre : chez vous je ne relève QUE celles que VOTRE manifeste expose, PLUS ce manifeste " +
+    "lui-même. ⛔ ET IL Y A DEUX RAISONS DE NE PAS RELEVER UNE RACINE, PAS UNE : soit elle n'existe " +
+    "pas chez vous, soit elle existe et votre manifeste ne l'expose pas — dans les deux cas je ne " +
+    "l'y lis pas. Ma phrase précédente ne nommait que la première, et kronos s'est imposé une " +
+    "discipline sur un fichier que je ne lis pas chez lui, faute de pouvoir trancher son cas. " +
+    "⛔ VOTRE `package.json` EST SURVEILLÉ CHEZ VOUS TOUS, MÊME S'IL N'EST PAS DANS VOS `files` : " +
+    "c'est lui qui DÉFINIT les racines ci-dessus. Le laisser dehors permettait qu'il bascule sous ma " +
+    "mesure — la liste changeait, et mon témoin restait vert en attestant l'immobilité d'un périmètre " +
+    "qui avait bougé (relevé par kronos, 2026-08-25). " +
     "⛔ CE QUI FERME CETTE FENÊTRE EST MON MESSAGE DE FIN, JAMAIS L'HEURE : l'heure annoncée est un " +
     "PLANCHER calculé sur une constante, et mes campagnes la dépassent déjà de plusieurs minutes. " +
     "Attendez le verdict que je vous enverrai à l'arrivée ; une attente calée sur l'horloge écrite " +
@@ -526,7 +556,10 @@ function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush) {
     `produirait ce même 1, et un voisin parfaitement discipliné aussi. Ce code mesure MA porte, pas\n` +
     `vos gestes ; ce qui dirait vos gestes est la ligne de BASCULE ci-dessus, mesurée sur l'état de\n` +
     `vos arbres à l'instant de ma lecture — et son absence en dit autant : rien n'a bougé sous les\n` +
-    `racines que votre manifeste expose, ce qui est plus étroit que « propre » et donc opposable.\n` +
+    `racines que votre manifeste expose NI DANS CE MANIFESTE, ce qui est plus étroit que « propre »\n` +
+    `et donc opposable. (Le manifeste est entré dans le relevé le 2026-08-25 : il en était exclu alors\n` +
+    `qu'il DÉFINIT le reste, donc une bascule de vos exports faisait changer mon périmètre sous ma\n` +
+    `mesure sans qu'aucune ligne ne le dise. Relevé par kronos.)\n` +
     `(Relevé par runtime-MIDI le 2026-08-24 : ma phrase précédente faisait dire à un chiffre juste\n` +
     `sur son étage quelque chose qui appartient au suivant. Puis par bp3-frontend, le même jour :\n` +
     `elle déclarait MANQUANT l'instrument qui figure deux lignes plus haut — cadrage périmé.)\n\n` +
