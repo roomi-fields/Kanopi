@@ -283,7 +283,15 @@ const ARME = `arme-${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}
  */
 function voisinsAGeler() {
   const lies = voisinsLies(RACINE);
-  const parNom = new Map(lies.map((v) => [nomDeGel(v), v]));
+  // ⛔ LA CLÉ DE FUSION SE NORMALISE, SINON LA CASSE LA CASSE. Mesuré EN SERVICE le 2026-08-25 à
+  // 23:36 : mon avis a gelé « …, bpscript, …, atlas, bpscript » — TREIZE noms pour douze dépôts. Le
+  // lié rend le nom du dossier (`BPscript`), le lu-par-chemin rend le nom résolu en minuscules
+  // (`bpscript`) : deux clés pour un dépôt, et la fusion écrite pour empêcher exactement ce doublon
+  // ne le voyait pas. Kairos, lui, fusionnait — son dossier est déjà en minuscules, et c'est ce qui
+  // m'a fait croire la fusion prouvée.
+  // ⇒ Un cas qui passe pour la mauvaise raison ressemble à un cas qui passe.
+  const cle = (v) => nomDeGel(v).toLowerCase();
+  const parNom = new Map(lies.map((v) => [cle(v), v]));
   // ⛔ UN VOISIN PEUT ÊTRE LES DEUX, ET LE DOUBLON EST SILENCIEUX. Kairos est une dépendance ET une
   // lecture par chemin (`cause-du-rouge.mjs:54` lit son `dist`). Deux entrées sous le même nom : la
   // tour recevrait son nom deux fois, et surtout `dernieresEcritures()` indexe par nom — la seconde
@@ -319,10 +327,17 @@ function voisinsAGeler() {
 function ceQueMaChaineLit() {
   const suivis = execFileSync("git", ["ls-files"], { cwd: RACINE, encoding: "utf-8" })
     .split("\n")
+    // ⛔ UN `tsconfig` PORTE UN CHEMIN DE DISQUE, ET MA PORTÉE NE LE VOYAIT PAS. Trouvé par BPx le
+    // 2026-08-25 : `packages/ui/tsconfig.json:18` mappe `bpx/dist/index.js` vers `../../../BPx/dist/
+    // index.d.ts`. Sa cible était déjà gelée, donc aucun écart — mais ma portée nommait des SCRIPTS et
+    // ratait les fichiers de CONFIGURATION, qui portent exactement le même genre de chemin.
+    // ⚠️ Sa première passe portait la casse exacte `BPx` et aurait raté une graphie minuscule ; c'est en
+    // la reprenant insensible que le `tsconfig` est sorti. Mon motif est déjà insensible à la casse.
     .filter(
       (f) =>
-        /^(scripts\/|packages\/[^/]+\/(scripts\/|vite\.config|playwright\.config)|vite\.config)/.test(f) &&
-        /\.(sh|mjs|cjs|js|ts)$/.test(f),
+        /^(scripts\/|packages\/[^/]+\/(scripts\/|vite\.config|playwright\.config|tsconfig)|vite\.config|tsconfig)/.test(
+          f,
+        ) && /\.(sh|mjs|cjs|js|ts|json)$/.test(f),
     );
   const lireTexte = (f) => {
     try {
@@ -392,15 +407,43 @@ function racinesDeCeVoisin(v) {
   return racinesSurveillees(v.depot, racinesExposees);
 }
 
-/** La dernière écriture de chaque voisin sous ce que je surveille, et le fichier concerné. */
+/**
+ * La dernière écriture de chaque voisin sous ce que je surveille, et le fichier concerné.
+ *
+ * ⛔ IL REFUSE D'AVOIR EXAMINÉ ZÉRO CHEZ UN GELÉ, et cette clause manquait. `derniereEcriture` rend
+ * `examines` exprès — je le jetais. Trouvé le 2026-08-25 par bp3-frontend, qui a lu mon code et rendu
+ * le lien sans le qualifier ; atlas a tranché quelle fonction décidait.
+ *
+ * ⇒ CE QUE ÇA PRODUISAIT : chez un lié SANS manifeste, `racinesExposees` rend `null`, donc
+ *   `racinesSurveillees` rend `{ package.json }` — un fichier qui n'existe pas chez lui. Zéro fichier
+ *   examiné, `quand: 0`, et ma phrase de verdict « AUCUNE BASCULE pendant ma mesure » **aurait attesté
+ *   l'immobilité de rien**.
+ *
+ * ⚠️ Le cas ne se produit pas aujourd'hui : mes onze liés portent tous un manifeste avec au moins un
+ * des six champs. C'est exactement pourquoi il fallait le fermer — un défaut armé qui ne tire pas
+ * encore ne rougit nulle part, et le jour où il tire, c'est un verdict qui ment.
+ *
+ * ⇒ « Examiné zéro » et « écarté zéro » ne sont pas la même chose : refuser le premier protège
+ *   l'instrument, refuser le second serait une hypothèse sur la donnée (architecte, 2026-08-25).
+ */
 function dernieresEcritures() {
   const par = new Map();
+  const vides = [];
   for (const v of voisinsAGeler()) {
-    const { quand, quoi } = derniereEcriture(
+    const { quand, quoi, examines } = derniereEcriture(
       v.chemin,
       racinesDeCeVoisin(v),
     );
+    if (examines === 0) vides.push(`${nomDeGel(v)} (${[...racinesDeCeVoisin(v)].join(", ")})`);
     par.set(nomDeGel(v), { quand, quoi });
+  }
+  if (vides.length) {
+    console.error(
+      `⛔ RELEVÉ VIDE chez ${vides.length} gelé(s) — ZÉRO fichier examiné : ${vides.join(" · ")}\n` +
+        "   Mon verdict attesterait l'immobilité d'un périmètre que je n'ai pas regardé.\n" +
+        "   Cause probable : un voisin sans manifeste, ou dont aucune racine déclarée n'existe.",
+    );
+    process.exit(1);
   }
   return par;
 }
@@ -699,8 +742,19 @@ function demanderLaFenetre(ecritures, identifiant) {
     "ce matin elle faisait écarter comme « appartenant aux autres » des racines qui étaient devenues " +
     "toutes les vôtres — une discipline EN MOINS, sur des chemins que je relève vraiment (relevé par " +
     "kronos et runtime-in, à la même minute, tous deux dans les cinq filtrés). " +
-    "⇒ DANS LES DEUX RÉGIMES, LA RÈGLE NE CHANGE PAS : chez vous je ne relève QUE ce que VOTRE " +
-    "manifeste expose, PLUS ce manifeste lui-même. " +
+    "⇒ DANS LES DEUX RÉGIMES, LA RÈGLE NE CHANGE PAS, ET LA VOICI RÉÉCRITE : je relève LES SIX CHAMPS " +
+    "QUE MON CODE RÉCOLTE — `exports` en profondeur, `main`, `module`, `types`, `browser`, `bin` — " +
+    "PLUS `files` s'il existe, PLUS votre `package.json`. Le premier SEGMENT de chaque cible. " +
+    "⛔ ET SI JE LIS VOTRE ARBRE PAR UN CHEMIN DE DISQUE EN DUR, LA RACINE VIENT DU CHEMIN, PAS DE " +
+    "VOTRE MANIFESTE : un dépôt qui n'en publie pas peut être relevé, et il l'est. " +
+    "⚠️ MA PHRASE PRÉCÉDENTE DISAIT « ce que VOTRE manifeste expose », ET ELLE ÉTAIT FAUSSE DEUX FOIS " +
+    "(2026-08-25) : atlas n'a AUCUN manifeste — par la lettre je ne relevais rien chez lui pendant que " +
+    "mon script lisait son arbre — et « expose » a fait lire à deux d'entre vous la surface d'un " +
+    "empaquetage, qui est un SUR-ENSEMBLE de ce que je récolte. " +
+    "⇒ ⛔ ET LE CRITÈRE QUI COMPTE N'EST PAS « une racine exposée que je ne gèle pas », C'EST « UN " +
+    "FICHIER QUE JE LIS ET QUE JE NE GÈLE PAS ». Geler ce que je ne lis pas vous coûte une discipline " +
+    "inutile ; lire ce que je ne gèle pas fait porter mon verdict sur deux états, et rien ne rougit. " +
+    "SI VOUS EN TROUVEZ UN, C'EST ÇA QU'IL FAUT ME RENDRE — pas une racine de plus dans un paquet. " +
     "⛔ ET IL Y A DEUX RAISONS DE NE PAS RELEVER UNE RACINE, PAS UNE : soit elle n'existe " +
     "pas chez vous, soit elle existe et votre manifeste ne l'expose pas — dans les deux cas je ne " +
     "l'y lis pas. Ma phrase précédente ne nommait que la première, et kronos s'est imposé une " +

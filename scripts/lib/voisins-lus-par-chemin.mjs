@@ -54,6 +54,13 @@ export function voisinsLusParChemin(atelier, lireFichiers, lireTexte, depotsDeLA
     const texte = lireTexte(f);
     if (texte === null) continue;
     for (const [n, ligne] of texte.split("\n").entries()) {
+      // ⛔ UNE LIGNE DE COMMENTAIRE NE CONSTRUIT RIEN. Mes propres en-têtes citent les chemins qu'ils
+      // expliquent : `tir-arme.mjs` nomme le `dist` de BPx dans sa prose, ce fichier-ci nomme celui
+      // d'atlas. Chacun ajoutait un SITE à ma liste de gel, et l'un d'eux y ajoutait un DÉPÔT.
+      // ⇒ Troisième forme de la même faute en une soirée — une racine coupée en fin de ligne, une
+      //   racine décrite dans un cas de test, un chemin cité dans une explication. Les deux premières
+      //   ont été fermées une par une ; celle-ci ferme la classe : ce qui n'est pas exécuté ne lit rien.
+      if (/^\s*(\/\/|\*|#)/.test(ligne)) continue;
       MOTIF.lastIndex = 0;
       let m;
       while ((m = MOTIF.exec(ligne)) !== null) {
@@ -118,12 +125,18 @@ export function voisinsLusParChemin(atelier, lireFichiers, lireTexte, depotsDeLA
         existe,
       );
     const noms = (r) => r.map((v) => v.nom);
+    // ⛔ LES CHEMINS DES CAS S'ASSEMBLENT — un cas DÉCRIT une chaîne, il n'en FABRIQUE pas. Ce fichier
+    // est balayé par la fonction qu'il éprouve : chaque chemin écrit d'un seul tenant entrait dans ma
+    // vraie liste de gel. Mesuré deux fois — atlas m'a rendu `carte-autorites`, et ma propre relance a
+    // rendu `bpscript/docs` juste après.
+    const A = "../" + "atlas/";
+    const K = "../" + "kairos/";
 
     // ⛔ LE CAS RÉEL DU 2026-08-25 — les deux sites qui ont produit la campagne non couverte.
     {
       const r = sur({
-        "packages/ui/scripts/docs-refresh.sh": 'DOC_SRC="$UI_DIR/../../../atlas/doc-utilisateur"',
-        "scripts/publish/build-and-deploy.sh": 'DOC_SRC="$REPO_ROOT/../atlas/doc-utilisateur"',
+        "packages/ui/scripts/docs-refresh.sh": `DOC_SRC="$UI_DIR/../../${A}doc-utilisateur"`,
+        "scripts/publish/build-and-deploy.sh": `DOC_SRC="$REPO_ROOT/${A}doc-utilisateur"`,
       });
       juge("les deux sites réels rendent atlas, une fois", noms(r), ["atlas"]);
       juge("et la racine lue est celle du CHEMIN", [...r[0].racines], ["doc-utilisateur"]);
@@ -148,14 +161,23 @@ export function voisinsLusParChemin(atelier, lireFichiers, lireTexte, depotsDeLA
     // ⚠️ LA CASSE — un script écrit `BPscript`, la tour connaît `bpscript`. Le dossier fait foi.
     juge(
       "la casse du script ne change pas le nom rendu",
-      noms(sur({ "scripts/b.sh": 'SRC="../bpscript/docs/spec"' })),
+      noms(sur({ "scripts/b.sh": `SRC="../${"bpscript/"}docs/spec"` })),
       ["bpscript"],
     );
 
     // Plusieurs voisins, plusieurs racines chez le même — tout entre, rien n'écrase.
+    //
+    // ⛔ LES CHEMINS DE CE CAS SONT ASSEMBLÉS, JAMAIS ÉCRITS D'UN SEUL TENANT — et c'est la troisième
+    // fois que ma propre prose entre dans ma mesure. Ce fichier est balayé par la fonction qu'il
+    // éprouve : écrit en clair, la carte d'autorités d'atlas entrait dans ma VRAIE liste de gel, et
+    // atlas s'est imposé une discipline sur un dossier que rien chez moi ne lit. Il l'a mesuré et me
+    // l'a rendu.
+    // ⇒ Les deux parades précédentes ne pouvaient pas l'attraper : la racine EXISTE chez lui, donc le
+    //   filtre du disque la laisse passer, et elle n'est pas coupée en fin de ligne.
+    // ⇒ Un cas de test décrit une chaîne ; il ne doit pas en fabriquer une.
     {
       const r = sur({
-        "scripts/c.mjs": "'../atlas/doc-utilisateur' + '../atlas/carte-autorites' + '../kairos/decisions'",
+        "scripts/c.mjs": `'${A}doc-utilisateur' + '${A}carte-autorites' + '${K}decisions'`,
       });
       juge("deux voisins distincts sont rendus, triés", noms(r), ["atlas", "kairos"]);
       juge("deux racines chez le même voisin s'accumulent", [...r[0].racines].sort(), [
@@ -168,7 +190,7 @@ export function voisinsLusParChemin(atelier, lireFichiers, lireTexte, depotsDeLA
     // décaler le segment lu comme dépôt.
     juge(
       "un chemin à plusieurs remontées nomme le bon dépôt",
-      noms(sur({ "scripts/d.sh": '"$UI_DIR/../../../atlas/doc-utilisateur"' })),
+      noms(sur({ "scripts/d.sh": `"$UI_DIR/../../${A}doc-utilisateur"` })),
       ["atlas"],
     );
 
@@ -185,7 +207,7 @@ export function voisinsLusParChemin(atelier, lireFichiers, lireTexte, depotsDeLA
     // ne gèlerait plus jamais personne.
     juge(
       "et la racine qui existe, elle, passe",
-      noms(sur({ "scripts/e.sh": '"../atlas/doc-utilisateur"' })),
+      noms(sur({ "scripts/e.sh": `"${A}doc-utilisateur"` })),
       ["atlas"],
     );
 
