@@ -625,7 +625,11 @@ function demanderLaFenetre(ecritures, identifiant) {
     "des onze ; depuis `74cf383` (architecte, 2026-08-25) la tour la FILTRE à la livraison quand votre " +
     "manifeste porte un champ `files` — vous recevez alors VOS racines seules, et il n'y a rien à en " +
     "retrancher. Sans ce champ, elle vous livre l'union entière, et les racines qui ne sont pas les " +
-    "vôtres ne vous concernent pas. Sa mesure : filtre actif chez cinq, repli sur l'union chez neuf. " +
+    "vôtres ne vous concernent pas. ⚠️ JE NE VOUS DIS PAS COMBIEN SONT DANS CHAQUE RÉGIME : ce compte " +
+    "vit chez l'architecte, il a déjà changé une fois le 2026-08-25 (runtime-osc a réfuté son " +
+    "inventaire, qui comptait en minuscules un dossier majuscule), et un chiffre relayé depuis le " +
+    "message d'un tiers se périme sans que rien ne rougisse. Vous seul voyez lequel des deux vous " +
+    "recevez : comparez la liste ci-dessus à votre manifeste. " +
     "⛔ NE RETRANCHEZ PAS DEUX FOIS : ma phrase précédente annonçait une union sans condition, et depuis " +
     "ce matin elle faisait écarter comme « appartenant aux autres » des racines qui étaient devenues " +
     "toutes les vôtres — une discipline EN MOINS, sur des chemins que je relève vraiment (relevé par " +
