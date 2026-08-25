@@ -777,6 +777,13 @@ function rendreLeVerdict(
     `s'use.\n`;
   const fichier = `/tmp/kanopi-verdict-${depart.getTime()}.txt`;
   writeFileSync(fichier, texte, "utf8");
+  // ⛔ UN VERDICT QUI NE PART PAS ÉTAIT INVISIBLE DÈS LA SESSION CLOSE. Cet échec ne vivait que dans
+  // la sortie du tir, qui ne survit pas — donc « un gel dont le verdict ne revient jamais s'use » se
+  // produisait sans que je puisse le savoir. Mesuré par runtime-in puis chiffré par runtime-midi sur
+  // leurs archives : DEUX occurrences (21/08 13:46 et 24/08 12:15), toutes deux après la naissance du
+  // mécanisme. Je ne les ai découvertes que parce qu'ils gardent une meilleure archive de mes
+  // campagnes que moi.
+  const perdus = [];
   for (const dest of destinataires) {
     try {
       execFileSync(TOUR, ["note", dest, "--fichier", fichier], {
@@ -784,9 +791,9 @@ function rendreLeVerdict(
         env: { ...process.env, BP_AGENT: "kanopi" },
       });
     } catch (e) {
-      console.log(
-        `  verdict NON transmis a ${dest} : ${String(e.message).split("\n")[0]}`,
-      );
+      const raison = String(e.message).split("\n")[0];
+      console.log(`  verdict NON transmis a ${dest} : ${raison}`);
+      perdus.push({ dest, raison });
     }
   }
   try {
@@ -794,7 +801,21 @@ function rendreLeVerdict(
   } catch {
     /* déjà disparu — sans effet, le verdict est parti */
   }
-  console.log(`VERDICT RENDU a ${destinataires.length} depot(s)`);
+  // ⛔ ET LE COMPTE EST OPPOSABLE : « rendu à N » ne disait pas si N était le nombre de gelés. Un
+  // verdict perdu chez un seul faisait la même ligne qu'une transmission complète.
+  inscrireAuRegistre({
+    le: new Date().toISOString(),
+    evenement: "verdict",
+    campagne: identifiant,
+    arme: ARME,
+    destinataires: destinataires.length,
+    transmis: destinataires.length - perdus.length,
+    perdus,
+  });
+  console.log(
+    `VERDICT RENDU a ${destinataires.length - perdus.length} depot(s) sur ${destinataires.length}` +
+      (perdus.length ? ` — ⛔ ${perdus.length} PERDU(S) : ${perdus.map((p) => p.dest).join(", ")}` : ""),
+  );
 }
 
 /** ⛔ UNE ANNULATION REND SA PROPRE PIÈCE, AU MÊME RANG QU'UN VERDICT.
@@ -833,6 +854,11 @@ function rendreLAnnulation(destinataires, ouverte, ferme, identifiant) {
     `le verdict ne revient jamais s'use.\n`;
   const fichier = `/tmp/kanopi-annulation-${Date.now()}.txt`;
   writeFileSync(fichier, texte, "utf8");
+  // ⛔ MÊME TROU QUE LE VERDICT, ET IL SE RÉPARE DANS LE MÊME GESTE. Réparer une moitié d'une paire
+  // symétrique laisse l'autre muette — c'est la classe que je relève chez mes voisins depuis ce matin.
+  // Une annulation perdue est PIRE qu'un verdict perdu : le gelé n'attend alors ni l'un ni l'autre, et
+  // rien ne lui dira jamais que sa fenêtre est levée.
+  const perdus = [];
   for (const dest of destinataires) {
     try {
       execFileSync(TOUR, ["note", dest, "--fichier", fichier], {
@@ -840,9 +866,9 @@ function rendreLAnnulation(destinataires, ouverte, ferme, identifiant) {
         env: { ...process.env, BP_AGENT: "kanopi" },
       });
     } catch (e) {
-      console.log(
-        `  annulation NON transmise a ${dest} : ${String(e.message).split("\n")[0]}`,
-      );
+      const raison = String(e.message).split("\n")[0];
+      console.log(`  annulation NON transmise a ${dest} : ${raison}`);
+      perdus.push({ dest, raison });
     }
   }
   try {
@@ -850,7 +876,19 @@ function rendreLAnnulation(destinataires, ouverte, ferme, identifiant) {
   } catch {
     /* déjà disparu — sans effet, l'annulation est partie */
   }
-  console.log(`ANNULATION RENDUE a ${destinataires.length} depot(s)`);
+  inscrireAuRegistre({
+    le: new Date().toISOString(),
+    evenement: "annulation-rendue",
+    campagne: identifiant,
+    arme: ARME,
+    destinataires: destinataires.length,
+    transmis: destinataires.length - perdus.length,
+    perdus,
+  });
+  console.log(
+    `ANNULATION RENDUE a ${destinataires.length - perdus.length} depot(s) sur ${destinataires.length}` +
+      (perdus.length ? ` — ⛔ ${perdus.length} PERDUE(S) : ${perdus.map((p) => p.dest).join(", ")}` : ""),
+  );
 }
 
 /** La fenêtre se referme dès le verdict rendu — elle expire seule, mais la laisser courir gèle des
