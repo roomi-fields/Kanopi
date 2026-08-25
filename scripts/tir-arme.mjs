@@ -47,6 +47,7 @@ import {
 } from "node:fs";
 import { causeDuRouge } from "./lib/cause-du-rouge.mjs";
 import { qualifierEcriture } from "./lib/qualifier-ecriture.mjs";
+import { geleParUnVoisin } from "./lib/gel-recu.mjs";
 import {
   racinesSurveillees,
   derniereEcriture,
@@ -353,6 +354,44 @@ function preVol() {
 }
 
 /**
+ * ⛔ SUIS-JE MOI-MÊME GELÉ PAR UN VOISIN ? — la condition qui manquait, et qui coûte le plus cher.
+ *
+ * Mesuré le 2026-08-25 à 13:11 : runtime-in a ouvert une fenêtre sur `kanopi` jusqu'à 13:21 pendant
+ * que mon arme attendait. Rien dans ce fichier ne regardait les fenêtres où JE suis gelé — mes trois
+ * conditions portaient toutes sur l'état des voisins, jamais sur le mien.
+ *
+ * ⇒ CE QUE ÇA PRODUIT : ma campagne ouvre sa fenêtre, gèle onze dépôts, mesure quinze minutes, et sa
+ *   POUSSÉE est refusée par le garde de la tour — parce qu'un voisin me gèle. Onze dépôts immobilisés
+ *   pour un refus CERTAIN, connu d'avance et lisible en une commande.
+ *
+ * ⇒ C'est la même famille que le pré-vol, qui existe pour la même raison : « rien ne se gèle avant que
+ *   ce qui est à moi soit vert ». Il couvrait mes gardes et mon typage ; il ne couvrait pas le fait
+ *   d'être gelé. Un rouge prévisible n'a pas à coûter un gel à onze dépôts.
+ *
+ * Rend la raison en clair, ou `null` si personne ne me gèle. La tour muette ne bloque rien : un outil
+ * qui ne répond pas ne doit pas m'interdire de tirer — même décision que pour le crochet d'écriture.
+ */
+function quiMeGele() {
+  let brut;
+  try {
+    brut = execFileSync(TOUR, ["fenetre", "--json"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      env: { ...process.env, BP_AGENT: "kanopi" },
+    });
+  } catch {
+    return null; // la tour ne répond pas — on ne se bloque pas là-dessus
+  }
+  try {
+    // La DÉCISION vit dans `lib/gel-recu.mjs`, éprouvée sur des fenêtres fabriquées : je ne peux pas
+    // demander à un voisin d'ouvrir une fenêtre sur moi pour voir ce garde mordre.
+    return geleParUnVoisin(JSON.parse(brut), "kanopi");
+  } catch {
+    return null; // réponse illisible — on ne se bloque pas là-dessus non plus
+  }
+}
+
+/**
  * Ce qui empêche la fenêtre de s'ouvrir, en clair. Vide = elle est ouverte.
  *
  * ⛔ UNE ÉCRITURE RÉCENTE A DEUX CAUSES OPPOSÉES, ET CETTE LIGNE LES DISAIT PAREIL. Le 2026-08-25,
@@ -371,6 +410,9 @@ function preVol() {
 function ceQuiFerme(ecritures, ouverteA = null) {
   const seuil = Date.now() - CALME_MS;
   const raisons = [];
+  // ⛔ MA PROPRE SITUATION D'ABORD : être gelé rend le tir inutile avant même de le tenter.
+  const gele = quiMeGele();
+  if (gele) raisons.push(gele);
   // ⛔ L'ARBRE SALE RESTE ICI, ET CE N'EST PAS UN DOUBLON DE LA TOUR. Elle refuse d'OUVRIR sur un
   // état non publié ; moi je refuse de CONSTRUIRE — mon greffon de production s'arrête sur du non
   // enregistré qui entre dans mon paquet. Les deux se recouvrent aujourd'hui et ne disent pas la
