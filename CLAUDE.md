@@ -259,12 +259,14 @@ forme, ni nom, ni périmètre.
 
 ## Backlog
 
-`BACKLOG.md` à la racine porte ma **dette interne** — défauts, remaniements, limites — avec un
-identifiant court et un statut par entrée.
+`BACKLOG.md` à la racine est **mon registre** : ma dette interne — défauts, remaniements, limites —
+avec un identifiant court et un statut par entrée. Je le lis et je m'y réfère.
 
-- Un item qui touche le **langage** remonte au **backlog central** du hub par `tour`, jamais dans le
-  local.
-- La vue globale se consulte avec `tour backlog`. **Aucun backlog parallèle ailleurs.**
+- ⛔ **Son écriture passe par la tour, donc par l'architecte** : je **reporte** en une ligne, il
+  **inscrit**. Un item qui touche le **langage** va au **backlog central**.
+- La vue globale se consulte avec `tour backlog`.
+- ⛔ **Un registre parallèle est un SECOND ÉTAT du même registre** : un backlog ailleurs, ou mon
+  `BACKLOG.md` édité à la main.
 - **Je reporte, l'architecte clôt** : passer un item à « fait » moi-même n'est pas mon geste.
 - **Un item inscrit au backlog est traité** : le relister comme ouvert rouvre une question déjà
   tranchée.
@@ -287,11 +289,9 @@ préfixe : `BP_AGENT=kanopi ~/dev/bp/hub/tour <commande>`.
      l'architecte a écrit ou relayé.
    - **N'entrent pas** : une mesure qui confirme une règle chez moi, un inventaire sans conséquence,
      un « ta règle passe chez moi » sans geste derrière.
-   - **Une dette qui appelle son inscription au backlog CENTRAL se reporte en une ligne, et l'architecte
-     l'inscrit.** ⚠️ Mon `BACKLOG.md` local reste — « aucun registre parallèle » vise un TROISIÈME
-     registre, jamais le mien (rectifié par l'architecte le 2026-08-25, sur la mesure de
-     runtime-codevoices et runtime-ui : la lecture inverse lui aurait fait remonter exactement ce que la
-     même décision lui demande de ne plus recevoir).
+   - **Une dette se reporte en une ligne, et l'architecte l'inscrit** — au backlog central si elle
+     touche le langage, dans mon `BACKLOG.md` sinon. Mon registre est à moi ; son écriture passe par
+     la tour.
    - ⚠️ **Le préavis de frappe reste dû** : un changement qui casserait chez un voisin est le troisième
      motif, jamais visé par cette économie.
 4. `tour send <dest>` porte une **demande** et réveille le destinataire ; `tour note <dest>` porte
