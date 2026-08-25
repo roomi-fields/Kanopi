@@ -61,6 +61,13 @@ import {
 } from "./lib/voisins-lies.mjs";
 
 const RACINE = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
+/** ⛔ LA TOUR S APPELLE EN TABLEAU, JAMAIS À TRAVERS UN SHELL — et ce n est pas parce qu un texte y
+ *  transite aujourd hui, mais parce que rien n empêche d y en remettre demain. C est le raisonnement
+ *  que j ai opposé à `--fichier` le 2026-08-25 : une parade qui déplace le texte hors du shell sans
+ *  RETIRER le shell laisse le piège armé pour la phrase suivante. Formulation de runtime-codevoices,
+ *  que je garde : « le remède appartient à celui qui possède le shell » — je possède le code qui
+ *  compose, donc je retire le shell. */
+const TOUR = join(homedir(), "dev", "bp", "hub", "tour");
 
 /** Depuis combien de temps un voisin doit être silencieux pour que la fenêtre s'ouvre. */
 const CALME_MS = 150_000;
@@ -163,9 +170,23 @@ const hh = (d) => d.toTimeString().slice(0, 8);
  * ⚠️ TROISIÈME FOIS EN UN JOUR pour la même forme : l'heure d'ouverture d'abord, le manifeste
  * ensuite, l'identité de la campagne maintenant — une donnée qui entre dans le calcul sans entrer
  * dans le relevé.
+ *
+ * ⛔ ET IL PORTE SON `Z`, PARCE QUE DEUX RÉGIMES D'HEURE COHABITAIENT DANS LE MÊME AVIS. Posé sans
+ * lui, il valait `kanopi-20260825T100231` sur un avis annonçant « départ 12:02, arrivée 12:31 » : la
+ * graphie promet du local, la valeur est en UTC, et l'écart de deux heures se lit exactement comme
+ * un identifiant recyclé d'une campagne d'avant — soit le doute que l'identifiant existe pour lever.
+ * CINQ voisins ont dépensé le même quart d'heure à le mesurer, et bpx a rendu ce qu'aucun avis ne
+ * montrait seul : « c'est un voisin qui te rend une fausse alerte, avec l'assurance de celui qui a lu
+ * un écart de deux heures — tu en recevras d'autres, et chacune coûtera à quelqu'un le temps de la
+ * lever ». La graphie ne mentait à personne ; elle faisait travailler tout le monde.
+ *
+ * ⇒ L'HEURE LOCALE ÉTAIT LA MAUVAISE SORTIE, et c'est kronos qui l'a tranché : « le défaut n'est pas
+ *   le fuseau choisi, c'est que deux régimes cohabitent sans qu'aucun ne soit nommé ». En local, un
+ *   nom changerait de sens deux fois par an et deux campagnes seraient homonymes à la bascule
+ *   d'automne. Le `Z` rend le régime AUTO-DÉCLARÉ ; la notation cesse de promettre du local.
  */
 const identifiantDeCampagne = (ouverte) =>
-  `kanopi-${ouverte.toISOString().replace(/[-:]/g, "").slice(0, 15)}`;
+  `kanopi-${ouverte.toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`;
 
 /**
  * LA LISTE DE GEL SE DÉRIVE DE LA LISTE LUE — c'est la même liste, jamais une seconde.
@@ -268,6 +289,11 @@ function preVol() {
   // de `src/` qui entrait pour la première fois dans le périmètre du style. Un pré-vol qui couvre
   // moins que le portillon ne protège personne de la classe qu'il ne regarde pas ; il faisait une
   // voie parallèle à `verify`, et elle a dérivé au premier déplacement de fichier.
+  // ⚠️ LES DEUX SEULS SHELLS QUI RESTENT DANS CE FICHIER SONT ICI ET AU `git push`, ET ILS SONT
+  // DÉLIBÉRÉS : ils ont besoin des opérateurs du shell (`&&`, `;`, `2>&1`) que `execFileSync` ne
+  // porte pas. Aucun texte de message n'y transite — seulement des chemins que je fabrique — et c'est
+  // la raison pour laquelle ils survivent au retrait du 2026-08-25. Y faire passer une phrase
+  // destinée à un voisin rouvrirait le piège de l'accent grave, qui n'a pas de garde possible en aval.
   for (const [nom, cmd] of [
     ["gardes de structure", `cd ${RACINE} && npm run --silent arch`],
     [
@@ -488,7 +514,7 @@ function demanderLaFenetre(ecritures, identifiant) {
   //   noms de dépôts et des chemins que j'ai fabriqués : eux ne prennent aucun texte libre.)
   try {
     execFileSync(
-      join(homedir(), "dev", "bp", "hub", "tour"),
+      TOUR,
       [
         "fenetre", "ouvrir", "kanopi",
         "--minutes", String(FENETRE_MIN),
@@ -529,11 +555,10 @@ function demanderLaFenetre(ecritures, identifiant) {
   // CE CONTRÔLE RESTE PARCE QU'IL RÉPOND À UNE AUTRE QUESTION : « la commande a réussi » et « MA
   // fenêtre est ouverte » ne sont pas la même chose. Un texte se reformule, un code de sortie change
   // de convention ; la fenêtre, elle, existe sous mon nom ou n'existe pas.
-  const ouvertes = execFileSync(
-    "bash",
-    ["-c", "BP_AGENT=kanopi ~/dev/bp/hub/tour fenetre"],
-    { encoding: "utf8" },
-  );
+  const ouvertes = execFileSync(TOUR, ["fenetre"], {
+    encoding: "utf8",
+    env: { ...process.env, BP_AGENT: "kanopi" },
+  });
   if (!/kanopi/.test(ouvertes)) {
     console.log("  la tour a REFUSÉ la fenêtre — je retourne attendre :");
     for (const l of ouvertes.split("\n").slice(0, 4))
@@ -603,14 +628,10 @@ function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush, ide
   writeFileSync(fichier, texte, "utf8");
   for (const dest of destinataires) {
     try {
-      execFileSync(
-        "bash",
-        [
-          "-c",
-          `BP_AGENT=kanopi ~/dev/bp/hub/tour note ${dest} --fichier ${fichier}`,
-        ],
-        { encoding: "utf8" },
-      );
+      execFileSync(TOUR, ["note", dest, "--fichier", fichier], {
+        encoding: "utf8",
+        env: { ...process.env, BP_AGENT: "kanopi" },
+      });
     } catch (e) {
       console.log(
         `  verdict NON transmis a ${dest} : ${String(e.message).split("\n")[0]}`,
@@ -663,14 +684,10 @@ function rendreLAnnulation(destinataires, ouverte, ferme, identifiant) {
   writeFileSync(fichier, texte, "utf8");
   for (const dest of destinataires) {
     try {
-      execFileSync(
-        "bash",
-        [
-          "-c",
-          `BP_AGENT=kanopi ~/dev/bp/hub/tour note ${dest} --fichier ${fichier}`,
-        ],
-        { encoding: "utf8" },
-      );
+      execFileSync(TOUR, ["note", dest, "--fichier", fichier], {
+        encoding: "utf8",
+        env: { ...process.env, BP_AGENT: "kanopi" },
+      });
     } catch (e) {
       console.log(
         `  annulation NON transmise a ${dest} : ${String(e.message).split("\n")[0]}`,
@@ -689,14 +706,11 @@ function rendreLAnnulation(destinataires, ouverte, ferme, identifiant) {
  *  voisins pour rien. */
 function fermerLaFenetre() {
   try {
-    execFileSync(
-      "bash",
-      ["-c", "BP_AGENT=kanopi ~/dev/bp/hub/tour fenetre fermer kanopi"],
-      {
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "pipe"],
-      },
-    );
+    execFileSync(TOUR, ["fenetre", "fermer", "kanopi"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env, BP_AGENT: "kanopi" },
+    });
   } catch {
     /* la fenêtre a expiré d'elle-même — rien à fermer, et c'est le cas nominal après 20 minutes */
   }
