@@ -287,7 +287,11 @@ préfixe : `BP_AGENT=kanopi ~/dev/bp/hub/tour <commande>`.
      l'architecte a écrit ou relayé.
    - **N'entrent pas** : une mesure qui confirme une règle chez moi, un inventaire sans conséquence,
      un « ta règle passe chez moi » sans geste derrière.
-   - **Une dette mesurée se reporte en une ligne, et l'architecte l'inscrit** — aucun registre parallèle.
+   - **Une dette qui appelle son inscription au backlog CENTRAL se reporte en une ligne, et l'architecte
+     l'inscrit.** ⚠️ Mon `BACKLOG.md` local reste — « aucun registre parallèle » vise un TROISIÈME
+     registre, jamais le mien (rectifié par l'architecte le 2026-08-25, sur la mesure de
+     runtime-codevoices et runtime-ui : la lecture inverse lui aurait fait remonter exactement ce que la
+     même décision lui demande de ne plus recevoir).
    - ⚠️ **Le préavis de frappe reste dû** : un changement qui casserait chez un voisin est le troisième
      motif, jamais visé par cette économie.
 4. `tour send <dest>` porte une **demande** et réveille le destinataire ; `tour note <dest>` porte
