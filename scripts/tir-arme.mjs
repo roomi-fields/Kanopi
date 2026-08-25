@@ -754,12 +754,19 @@ function rendreLeVerdict(
     `un banc à moi, un garde à moi, une dépendance. Un voisin qui aurait basculé pendant ma mesure\n` +
     `produirait ce même 1, et un voisin parfaitement discipliné aussi. Ce code mesure MA porte, pas\n` +
     `vos gestes ; ce qui dirait vos gestes est le RELEVÉ D'INTERVALLE ci-dessous.\n\n` +
-    `⛔ CE QUI A BOUGÉ PENDANT QUE JE MESURAIS — comparaison DÉPART contre ARRIVÉE, sous les racines\n` +
-    `que VOTRE manifeste expose et dans ce manifeste :\n` +
+    `⛔ CE QUI A BOUGÉ PENDANT QUE JE MESURAIS — comparaison DÉPART contre ARRIVÉE, chez chacun sous\n` +
+    `les racines que SON manifeste expose et dans ce manifeste. ⚠️ CETTE LISTE EST GLOBALE : elle porte\n` +
+    `les onze, pas vous seul. Cherchez votre nom ; son absence vous concerne autant que sa présence.\n` +
     (pendant.length
-      ? `      ${pendant.join('\n      ')}\n`
-      : `      aucune bascule — et cette absence est désormais opposable POUR L'INTERVALLE, pas\n` +
-        `      seulement pour un instant.\n`) +
+      ? `      ${pendant.join('\n      ')}\n` +
+        `      ⇒ ${pendant.length} bascule(s) sur les ${destinataires.length} dépôts gelés.\n`
+      : `      aucune bascule chez AUCUN des ${destinataires.length} dépôts gelés — et cette absence est\n` +
+        `      opposable POUR L'INTERVALLE, pas seulement pour un instant.\n`) +
+    `(Relevé par kronos le 2026-08-25 : cette phrase promettait « VOTRE manifeste » et rendait la liste\n` +
+    `de tout le monde — fausse dès sa rédaction, deux heures plus tôt, pas héritée d'une forme ancienne.\n` +
+    `Il a nommé le risque que la réparation naïve aurait introduit : filtrer par destinataire SANS rendre\n` +
+    `le total ferait lire à celui qui a bougé un relevé qui ne le nomme pas — « un relevé qui nomme le\n` +
+    `mauvais dépôt disculpe le bon coupable, et il le fait en vert ». D'où la ligne ET le compte.)\n` +
     `\n(Relevé par kairos le 2026-08-25 : ma phrase disait « mesuré sur l'état de vos arbres à\n` +
     `l'instant de ma lecture », et j'appelais ça opposable. Une photo à l'arrivée ne peut pas\n` +
     `attester une immobilité pendant un intervalle : un dépôt qui écrivait puis commitait avant mon\n` +
