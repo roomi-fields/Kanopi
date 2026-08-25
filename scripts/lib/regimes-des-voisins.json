@@ -38,7 +38,15 @@
     "",
     "Le garde : `scripts/garde-etat-pris.mjs`, dans `npm run arch`, donc au portillon.",
     "La commande qui repointe : `npm run repointer` (l'état déclaré) · `--dernier` (prendre et",
-    "réécrire). Une somme de contrôle ne se retrouve pas ; une commande, si."
+    "réécrire). Une somme de contrôle ne se retrouve pas ; une commande, si.",
+    "",
+    "Trois VOIES, dérivées de la résolution réelle et jamais crues sur parole :",
+    "  `source`     je résous son `src/`     — sa SAUVEGARDE me bascule",
+    "  `construit`  je résous son `dist/`    — sa CONSTRUCTION me bascule, dans son arbre, sans",
+    "               publication ni poussée. Case nommée par kronos le 2026-08-25.",
+    "  `paquet`     un dossier immuable hors arbre — sa PUBLICATION me bascule, et elle seule.",
+    "Le garde ÉCHOUE quand la voie déclarée diffère de la voie mesurée : une déclaration que rien ne",
+    "confronte est un ornement, exactement comme l'état qu'on subit."
   ],
   "etat-pris": {
     "runtime-osc": {
@@ -60,18 +68,21 @@
     },
     "bpx": {
       "etage": "nommé",
-      "voie": "source",
-      "le": "2026-08-24"
+      "voie": "construit",
+      "le": "2026-08-25",
+      "pourquoi": "Je résous son `dist/` — une racine CONSTRUITE dans son arbre de travail, ni sa source ni un paquet immuable. Sa frappe sous `src/` ne m'atteint pas ; sa RECONSTRUCTION m'atteint immédiatement, sans publication ni poussée. Case nommée par kronos le 2026-08-25 ; ma déclaration disait « source » et c'était faux."
     },
     "@kairos/core": {
       "etage": "nommé",
-      "voie": "source",
-      "le": "2026-08-24"
+      "voie": "construit",
+      "le": "2026-08-25",
+      "pourquoi": "Je résous son `dist/` — une racine CONSTRUITE dans son arbre de travail, ni sa source ni un paquet immuable. Sa frappe sous `src/` ne m'atteint pas ; sa RECONSTRUCTION m'atteint immédiatement, sans publication ni poussée. Case nommée par kronos le 2026-08-25 ; ma déclaration disait « source » et c'était faux."
     },
     "@kronos/core": {
       "etage": "nommé",
-      "voie": "source",
-      "le": "2026-08-24"
+      "voie": "construit",
+      "le": "2026-08-25",
+      "pourquoi": "Je résous son `dist/` — une racine CONSTRUITE dans son arbre de travail, ni sa source ni un paquet immuable. Sa frappe sous `src/` ne m'atteint pas ; sa RECONSTRUCTION m'atteint immédiatement, sans publication ni poussée. Case nommée par kronos le 2026-08-25 ; ma déclaration disait « source » et c'était faux."
     },
     "runtime-audio": {
       "etage": "nommé",

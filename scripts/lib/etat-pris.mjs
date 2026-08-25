@@ -21,6 +21,7 @@ import {
   readFileSync,
 } from "node:fs";
 import { join, basename, dirname, resolve } from "node:path";
+import { execFileSync } from "node:child_process";
 import { voisinsLies } from "./voisins-lies.mjs";
 
 /** Les bases où npm pose les liens de voisins, du plus général au plus proche. */
@@ -90,9 +91,18 @@ export function etatPrisReel(racine) {
 
     // Une source vive : l'état nommable est sa tête. Un dépôt hors git n'en a pas, et c'est
     // exactement le cas où « déclarer » n'a plus de contenu — il se dit, il ne se contourne pas.
+    //
+    // ⛔ MAIS « DANS SON DÉPÔT » N'EST PAS « SA SOURCE ». Mesuré le 2026-08-25 : trois de mes onze
+    // voisins résolvent vers leur `dist/` — une racine CONSTRUITE, dans leur arbre de travail. Ma
+    // déclaration les disait « source », et c'était faux dans la pièce même qui existe pour que
+    // personne ne subisse son état sans le déclarer.
+    // ⇒ LA CASE A ÉTÉ NOMMÉE PAR KRONOS LA MÊME NUIT — `porte + racine construite, dans l'arbre` :
+    //   la frappe du voisin sous `src/` ne m'atteint pas, sa RECONSTRUCTION m'atteint immédiatement,
+    //   et sa poussée n'a rien à voir avec le moment. Un moment de plus, invisible aux deux autres.
+    // ⇒ LA VOIE SE DÉRIVE DE CE QUI EST RÉSOLU, jamais du dépôt où le lien atterrit.
     out.push({
       nom,
-      voie: "source",
+      voie: voieResolue(racine, nom),
       etat: v.tete,
       nommable: v.tete !== null,
       viseUneReferenceMouvante: false,
@@ -103,6 +113,37 @@ export function etatPrisReel(racine) {
     });
   }
   return out.sort((a, b) => a.nom.localeCompare(b.nom));
+}
+
+/**
+ * ⛔ LA VOIE, DÉRIVÉE DE LA RÉSOLUTION RÉELLE — jamais de la forme du chemin ni du dépôt d'arrivée.
+ *
+ * Trois natures, et la deuxième manquait : `source` (son `src/`), `construit` (son `dist/`, dans son
+ * arbre), `paquet` (un dossier immuable hors arbre). ⇒ Les deux premières vivent dans le MÊME dépôt
+ * et n'ont pas le même moment : ce qui bascule une source est une sauvegarde, ce qui bascule un
+ * `dist` est une CONSTRUCTION.
+ *
+ * La résolution se prend dans les conditions de la PRODUCTION : c'est ce qui part à l'utilisateur.
+ */
+function voieResolue(racine, specificateur) {
+  try {
+    const chemin = execFileSync(
+      process.execPath,
+      [
+        "--conditions", "browser", "--conditions", "production",
+        "--input-type=module",
+        "-e", `process.stdout.write(import.meta.resolve(${JSON.stringify(specificateur)}))`,
+      ],
+      { cwd: join(racine, "packages", "ui"), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+    ).replace("file://", "");
+    if (/\/\.paquets\//.test(chemin)) return "paquet";
+    if (/\/dist(-types)?\//.test(chemin)) return "construit";
+    return "source";
+  } catch {
+    // ⛔ UNE RÉSOLUTION QUI ÉCHOUE NE SE REPLIE PAS SUR « SOURCE » : ce serait rendre la valeur la
+    // plus fréquente sous couvert de mesure, et le garde ne verrait jamais la panne.
+    return null;
+  }
 }
 
 /** La déclaration, lue depuis le registre unique des régimes. */
@@ -165,6 +206,31 @@ export function confronter(declaration, reel) {
       continue;
     }
     examines++;
+
+    // ⛔ LA VOIE DÉCLARÉE SE CONFRONTE À LA VOIE MESURÉE — sans ça, ma déclaration ment sans rougir,
+    // et c'est le défaut exact que cette pièce existe pour fermer. Mesuré le 2026-08-25 : trois de
+    // mes voisins étaient déclarés « source » alors que je résous leur `dist`. Une déclaration qu'on
+    // écrit une fois et que rien ne confronte devient un ornement, comme l'état qu'on subit.
+    if (d.etage !== "rien-pris" && e.voie === null) {
+      echecs.push(
+        `« ${e.nom} » : la RÉSOLUTION a échoué — je ne peux pas dire par quelle voie je l'atteins. ` +
+          `Rien ne se déclare là-dessus : une voie qu'on ne mesure pas se replierait sur la plus ` +
+          `fréquente et le garde ne verrait jamais la panne.`,
+      );
+      continue;
+    }
+    if (d.etage !== "rien-pris" && d.voie !== undefined && d.voie !== e.voie) {
+      echecs.push(
+        `« ${e.nom} » est déclaré sur la voie « ${d.voie} » et je résous « ${e.voie} ». ` +
+          (e.voie === "construit"
+            ? `⇒ Une racine CONSTRUITE dans son arbre n'est ni sa source ni un paquet : sa frappe ` +
+              `sous \`src/\` ne m'atteint pas, sa RECONSTRUCTION m'atteint immédiatement, et sa ` +
+              `poussée n'a rien à voir avec le moment. `
+            : "") +
+          `Corrige la déclaration, ou le lien.`,
+      );
+      continue;
+    }
 
     // ⛔ UN ÉTAT NON NOMMABLE ARRÊTE LE GARDE AVANT QU'IL LISE — pièce de runtime-in, versée au
     // patron le 2026-08-24. Rendre un verdict sur un état qu'aucun tiers ne peut rejouer, c'est
