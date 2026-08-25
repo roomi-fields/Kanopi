@@ -913,6 +913,16 @@ for (;;) {
     // ⚠️ ET CE QUI NE SE RÉPARE PAS : aucune de mes campagnes passées ne peut être requalifiée. C'est
     //   la différence entre fermer une cause et effacer un doute (sa phrase, gardée telle quelle).
     const pendant = basculesEntre(ecritures, dernieresEcritures(), hh);
+    // ⛔ LE RELEVÉ RESTE CHEZ MOI AUSSI, ET PAS SEULEMENT DANS LE COURRIER. Mesuré le 2026-08-25, à la
+    // première campagne qui l'a produit : il partait aux onze et je n'en gardais RIEN — le fichier de
+    // verdict vit dans /tmp et se supprime à l'envoi. Un voisin qui conteste ma ligne de bascule me
+    // trouverait donc sans pièce, alors que c'est moi qui la lui oppose. Une mesure qu'on ne garde pas
+    // ne se rejoue pas, et « opposable » suppose qu'on puisse la reproduire.
+    console.log(
+      pendant.length
+        ? `BASCULE(S) PENDANT MA MESURE : ${pendant.join(" · ")}`
+        : "AUCUNE BASCULE pendant ma mesure — relevé d'intervalle, départ contre arrivée",
+    );
     const sortie = (r.match(/SORTIE:(\d+)/) ?? [, "?"])[1];
     // ⛔ ENREGISTRER AVANT DE RENDRE LE VERDICT : la durée d'une campagne ne se mesure qu'une
     // fois, et un verdict qui échoue ne doit pas emporter la mesure avec lui.
