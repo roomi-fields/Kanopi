@@ -78,6 +78,29 @@ export function derniereEcriture(chemin, racines) {
   return { quand, quoi, examines };
 }
 
+/**
+ * ⛔ CE QUI A BASCULÉ ENTRE DEUX RELEVÉS — la comparaison qui transforme une photo en intervalle.
+ *
+ * Relevé par kairos le 2026-08-25 : « une photo à l arrivée ne peut pas attester une immobilité
+ * pendant un intervalle ». Mes 90 s de grâce étaient surveillées en continu ; mes 18 minutes de mesure
+ * ne l étaient pas. Un dépôt qui écrivait puis commitait avant mon arrivée rendait le MÊME relevé
+ * qu un dépôt immobile.
+ *
+ * ⇒ Elle vit ici, et pas dans la boucle de tir, pour la même raison que le relevé : dans `tir-arme.mjs`
+ *   elle ne se vérifierait qu en tirant, donc en gelant onze dépôts pour éprouver une comparaison.
+ *
+ * `avant` et `apres` sont deux Map nom → { quand, quoi }. Un voisin absent de `avant` ne compte pas :
+ * il n était pas surveillé au départ, et l inventer ici nommerait une bascule qu on n a pas mesurée.
+ */
+export function basculesEntre(avant, apres, hh) {
+  const out = [];
+  for (const [nom, { quand, quoi }] of apres) {
+    const av = avant.get(nom);
+    if (av && quand > av.quand) out.push(`${nom} → ${quoi} à ${hh(new Date(quand))}`);
+  }
+  return out;
+}
+
 // ── L ÉPREUVE, SUR UNE COPIE ────────────────────────────────────────────────────────────────────
 // Un arbre factice sous le dossier temporaire du système : aucun voisin n est touché, et le cas que
 // le réel ne porte jamais — un manifeste plus récent que toutes les racines — y est FABRIQUÉ.
@@ -155,6 +178,34 @@ export function derniereEcriture(chemin, racines) {
       true,
     );
 
+    // ⛔ LE RELEVÉ D INTERVALLE — le cas de kairos, fabriqué : un voisin écrit APRÈS le départ.
+    const M = (nom, quand, quoi) => new Map([[nom, { quand, quoi }]]);
+    const hh2 = (d) => d.toISOString().slice(11, 19);
+    juge(
+      "un voisin qui écrit APRÈS le départ est NOMMÉ",
+      basculesEntre(M("kairos", 1000, "dist/a.js"), M("kairos", 2000, "dist/b.js"), hh2).length,
+      1,
+    );
+    // TÉMOIN INVERSE — sans lui, une comparaison qui nommerait TOUJOURS passerait le cas précédent.
+    juge(
+      "un voisin immobile n est PAS nommé",
+      basculesEntre(M("kairos", 1000, "dist/a.js"), M("kairos", 1000, "dist/a.js"), hh2).length,
+      0,
+    );
+    // ⛔ LE CAS QUE LE RÉEL PRODUIT ET QU UNE PHOTO NE VOIT PAS : il écrit, puis commite, et son arbre
+    // est propre aux deux bouts. Seule la DATE le trahit — c est tout le sujet.
+    juge(
+      "il a écrit puis commité : la photo est identique, l intervalle le nomme",
+      basculesEntre(M("kairos", 1000, "dist/a.js"), M("kairos", 1500, "dist/a.js"), hh2)[0]?.startsWith("kairos"),
+      true,
+    );
+    // Un voisin absent du relevé de DÉPART ne s invente pas à l arrivée.
+    juge(
+      "un voisin absent au départ n est pas nommé à l arrivée",
+      basculesEntre(new Map(), M("kairos", 2000, "dist/b.js"), hh2).length,
+      0,
+    );
+
     rmSync(racine, { recursive: true, force: true });
 
     let echecs = 0;
@@ -165,7 +216,7 @@ export function derniereEcriture(chemin, racines) {
           (c.ok ? "" : `\n    obtenu ${JSON.stringify(c.obtenu)}, attendu ${JSON.stringify(c.attendu)}`),
       );
     }
-    const PLANCHER = 6;
+    const PLANCHER = 10;
     if (cas.length < PLANCHER) {
       console.error(`⛔ ${cas.length} cas éprouvés, ${PLANCHER} attendus — l épreuve ne distingue plus rien.`);
       process.exit(1);

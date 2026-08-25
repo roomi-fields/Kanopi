@@ -50,6 +50,7 @@ import { qualifierEcriture } from "./lib/qualifier-ecriture.mjs";
 import {
   racinesSurveillees,
   derniereEcriture,
+  basculesEntre,
 } from "./lib/releve-des-ecritures.mjs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -187,6 +188,32 @@ const hh = (d) => d.toTimeString().slice(0, 8);
  */
 const identifiantDeCampagne = (ouverte) =>
   `kanopi-${ouverte.toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`;
+
+/**
+ * ⛔ L'IDENTITÉ DE L'ARME — LA QUATRIÈME DONNÉE DE LA MÊME FAMILLE, ET CELLE QUI REND LA TROISIÈME
+ * VÉRIFIABLE DE L'EXTÉRIEUR.
+ *
+ * J'avais annoncé aux voisins que ma campagne suivante PROUVERAIT par occurrence que l'identifiant
+ * nomme la campagne et non le processus. C'était faux, et kronos l'a mesuré : mes deux campagnes
+ * venaient de DEUX processus, donc un tampon pris au démarrage aurait produit exactement la même
+ * observation. Les deux hypothèses prédisaient le même résultat.
+ *
+ * ⇒ runtime-codevoices est allé plus loin : SON épreuve était vide. Une campagne aboutie termine le
+ *   processus, donc la branche « tampon répété » n'avait presque aucun mécanisme pour se produire.
+ *   Sa formule, gardée : « la branche qui réfuterait, quel mécanisme la produirait ? Si aucun,
+ *   l'épreuve est déjà finie. »
+ *
+ * ⇒ ET LA VRAIE LIMITE EST STRUCTURELLE : son épreuve devait être produite par MON code, sur lequel
+ *   il n'avait aucune prise. Une prédiction portant sur le code d'un voisin ne peut pas garantir sa
+ *   propre branche réfutante — elle dépend de lui. Cette ligne lui rend la prise : deux ouvertures
+ *   d'une même arme (après un refus de la tour ou une annulation, `:818` et `:789`) portent le MÊME
+ *   nom d'arme et des noms de campagne DIFFÉRENTS. La question se tranche alors chez eux.
+ *
+ * ⚠️ J'avais moi-même écrit « ma réponse est une lecture de code, pas une observation », puis annoncé
+ * dans la phrase suivante que l'occurrence la lèverait. Annoncer d'avance qu'une observation future
+ * prouvera quelque chose EST DÉJÀ UNE CONCLUSION.
+ */
+const ARME = `arme-${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`;
 
 /**
  * LA LISTE DE GEL SE DÉRIVE DE LA LISTE LUE — c'est la même liste, jamais une seconde.
@@ -475,7 +502,14 @@ function demanderLaFenetre(ecritures, identifiant) {
   // ⇒ Un avis qui promet une liberté que l'outil refuse fait attendre pour une raison que le lecteur
   //   ne trouve nulle part. Cet avis décrit désormais les DEUX : ce que je lis, et ce que le garde fait.
   const motif =
-    `CAMPAGNE ${identifiant} — cet identifiant est le NOM de cette campagne, et mon verdict le ` +
+    `CAMPAGNE ${identifiant}, tirée par ${ARME} — le premier nomme CETTE campagne, le second le ` +
+    "PROCESSUS qui la tire, et mon verdict portera les deux. ⛔ DEUX AVIS DE MÊME ARME ET DE CAMPAGNES "
+    + "DIFFÉRENTES viennent d'une réouverture après refus ou annulation ; deux ARMES différentes "
+    + "veulent dire que deux de mes processus tournent, ce qui est un défaut chez moi et se dit. "
+    + "(Le nom d'arme entre le 2026-08-25 : sans lui, personne ne pouvait vérifier de l'extérieur que "
+    + "mon identifiant nomme la campagne et non le processus — relevé par kronos, expliqué par "
+    + "runtime-codevoices.) " +
+    `Cet identifiant est le NOM de cette campagne, et mon verdict le ` +
     "portera. ⛔ UN AVIS PLUS RÉCENT PORTANT UN AUTRE IDENTIFIANT REMPLACE CELUI-CI : n'attendez "
     + "alors que le verdict du DERNIER. Le 2026-08-25, deux de mes armes ont ouvert deux fenêtres à "
     + "une minute d'intervalle et rien ne les distinguait qu'une heure — que je vous interdis "
@@ -579,7 +613,15 @@ function demanderLaFenetre(ecritures, identifiant) {
  * C'est la même correction que le préavis lui-même : ce qui dépend de ma vigilance se périme au
  * premier tour où je suis occupé ailleurs.
  */
-function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush, identifiant) {
+function rendreLeVerdict(
+  destinataires,
+  depart,
+  arrivee,
+  sortie,
+  sortiePush,
+  identifiant,
+  pendant,
+) {
   if (destinataires.length === 0) return;
   const pousse = /main -> main/.test(sortiePush)
     ? (sortiePush.match(/[0-9a-f]{7}\.\.[0-9a-f]{7}/) ?? ["poussé"])[0]
@@ -604,7 +646,7 @@ function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush, ide
   const pourquoi =
     sortie === "0" ? "" : `\n    CE QUI A RENDU ${sortie} :\n    ${causes}\n`;
   const texte =
-    `VERDICT DE LA CAMPAGNE ${identifiant} — départ ${hh(depart)}, arrivée ${hh(arrivee)}.\n\n` +
+    `VERDICT DE LA CAMPAGNE ${identifiant}, tirée par ${ARME} — départ ${hh(depart)}, arrivée ${hh(arrivee)}.\n\n` +
     `⛔ CET IDENTIFIANT EST CELUI DE L'AVIS QUE VOUS AVEZ REÇU. S'il ne correspond pas au DERNIER\n` +
     `avis reçu de moi, ce verdict ne vous libère PAS : une autre campagne mesure encore.\n\n` +
     `    CODE DE SORTIE DU CROCHET : ${sortie}\n` +
@@ -613,12 +655,23 @@ function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush, ide
     `⛔ ET CE CODE NE DIT PAS SI VOTRE GEL A TENU — il rend 1 pour TOUTE cause qui me fait rougir :\n` +
     `un banc à moi, un garde à moi, une dépendance. Un voisin qui aurait basculé pendant ma mesure\n` +
     `produirait ce même 1, et un voisin parfaitement discipliné aussi. Ce code mesure MA porte, pas\n` +
-    `vos gestes ; ce qui dirait vos gestes est la ligne de BASCULE ci-dessus, mesurée sur l'état de\n` +
-    `vos arbres à l'instant de ma lecture — et son absence en dit autant : rien n'a bougé sous les\n` +
-    `racines que votre manifeste expose NI DANS CE MANIFESTE, ce qui est plus étroit que « propre »\n` +
-    `et donc opposable. (Le manifeste est entré dans le relevé le 2026-08-25 : il en était exclu alors\n` +
-    `qu'il DÉFINIT le reste, donc une bascule de vos exports faisait changer mon périmètre sous ma\n` +
-    `mesure sans qu'aucune ligne ne le dise. Relevé par kronos.)\n` +
+    `vos gestes ; ce qui dirait vos gestes est le RELEVÉ D'INTERVALLE ci-dessous.\n\n` +
+    `⛔ CE QUI A BOUGÉ PENDANT QUE JE MESURAIS — comparaison DÉPART contre ARRIVÉE, sous les racines\n` +
+    `que VOTRE manifeste expose et dans ce manifeste :\n` +
+    (pendant.length
+      ? `      ${pendant.join('\n      ')}\n`
+      : `      aucune bascule — et cette absence est désormais opposable POUR L'INTERVALLE, pas\n` +
+        `      seulement pour un instant.\n`) +
+    `\n(Relevé par kairos le 2026-08-25 : ma phrase disait « mesuré sur l'état de vos arbres à\n` +
+    `l'instant de ma lecture », et j'appelais ça opposable. Une photo à l'arrivée ne peut pas\n` +
+    `attester une immobilité pendant un intervalle : un dépôt qui écrivait puis commitait avant mon\n` +
+    `arrivée me rendait le MÊME relevé qu'un dépôt immobile. Mes 90 s de grâce étaient surveillées en\n` +
+    `continu, mes 18 minutes de mesure ne l'étaient pas. Le mot « opposable » valait pour la grâce et\n` +
+    `pas pour la campagne ; il vaut désormais pour les deux. ⚠️ Et aucune de mes campagnes ANTÉRIEURES\n` +
+    `à ce jour ne peut être requalifiée — fermer une cause n'efface pas un doute.)\n` +
+    `(Le manifeste est entré dans le relevé le même jour : il en était exclu alors qu'il DÉFINIT le\n` +
+    `reste, donc une bascule de vos exports faisait changer mon périmètre sous ma mesure sans qu'aucune\n` +
+    `ligne ne le dise. Relevé par kronos.)\n` +
     `(Relevé par runtime-MIDI le 2026-08-24 : ma phrase précédente faisait dire à un chiffre juste\n` +
     `sur son étage quelque chose qui appartient au suivant. Puis par bp3-frontend, le même jour :\n` +
     `elle déclarait MANQUANT l'instrument qui figure deux lignes plus haut — cadrage périmé.)\n\n` +
@@ -667,7 +720,7 @@ function rendreLeVerdict(destinataires, depart, arrivee, sortie, sortiePush, ide
 function rendreLAnnulation(destinataires, ouverte, ferme, identifiant) {
   if (destinataires.length === 0) return;
   const texte =
-    `⛔ CAMPAGNE ${identifiant} ANNULÉE — RIEN N'A ÉTÉ MESURÉ, ET VOTRE GEL EST LEVÉ.\n\n` +
+    `⛔ CAMPAGNE ${identifiant} (${ARME}) ANNULÉE — RIEN N'A ÉTÉ MESURÉ, ET VOTRE GEL EST LEVÉ.\n\n` +
     `    fenêtre ouverte à ${hh(ouverte)}, annulée à ${hh(new Date())}\n` +
     `    ce qui l'a refermée :\n      ${ferme.join("\n      ")}\n\n` +
     `⛔ LISEZ LA QUALIFICATION, PAS SEULEMENT LE NOM — les deux cas ci-dessus n'ont rien à voir :\n` +
@@ -840,11 +893,39 @@ for (;;) {
     console.log(r);
     const arrivee = new Date();
     console.log(`ARRIVEE : ${hh(arrivee)}`);
+    // ⛔ LE SECOND RELEVÉ, ET C'EST CE QUI TRANSFORME UNE PHOTO EN INTERVALLE MESURÉ.
+    //
+    // Relevé par kairos le 2026-08-25 : « une photo à l'arrivée ne peut pas attester une immobilité
+    // pendant un intervalle ». Mon verdict disait « rien n'a bougé sous vos racines, ce qui est plus
+    // étroit que propre et donc OPPOSABLE » — et c'était faux pour la période qui compte.
+    //
+    //   de l'OUVERTURE au DÉPART (90 s)   la boucle relève toutes les 15 s et ANNULE la fenêtre
+    //                                     si un voisin écrit — surveillance continue, réelle
+    //   du DÉPART à l'ARRIVÉE (18 min)    ⛔ RIEN. La boucle s'est arrêtée pour tirer.
+    //
+    // ⇒ La surveillance couvrait la période où personne ne travaille encore et s'arrêtait pour celle
+    //   qui compte. Un dépôt qui écrivait puis commitait avant mon arrivée me rendait le MÊME relevé
+    //   qu'un dépôt immobile — sa formule : « un dépôt indiscipliné te rend le même relevé qu'un
+    //   dépôt parfait ».
+    // ⇒ La donnée existait déjà : `ecritures` tient le relevé de chacun au départ. Le refaire ici et
+    //   comparer nomme qui a basculé PENDANT que je mesurais, ce qu'aucun de mes deux instruments ne
+    //   faisait — ni ce relevé, ni la ligne de bascule extraite du crochet, qui lit à un instant.
+    // ⚠️ ET CE QUI NE SE RÉPARE PAS : aucune de mes campagnes passées ne peut être requalifiée. C'est
+    //   la différence entre fermer une cause et effacer un doute (sa phrase, gardée telle quelle).
+    const pendant = basculesEntre(ecritures, dernieresEcritures(), hh);
     const sortie = (r.match(/SORTIE:(\d+)/) ?? [, "?"])[1];
     // ⛔ ENREGISTRER AVANT DE RENDRE LE VERDICT : la durée d'une campagne ne se mesure qu'une
     // fois, et un verdict qui échoue ne doit pas emporter la mesure avec lui.
     enregistrerLaCampagne(ouverteA ?? depart, arrivee, sortie);
-    rendreLeVerdict(geles, ouverteA ?? depart, arrivee, sortie, r, identifiant);
+    rendreLeVerdict(
+      geles,
+      ouverteA ?? depart,
+      arrivee,
+      sortie,
+      r,
+      identifiant,
+      pendant,
+    );
     fermerLaFenetre();
     break;
   }
