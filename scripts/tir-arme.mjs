@@ -981,7 +981,6 @@ for (;;) {
       console.log(`${hh(new Date())} — j attends : ${ferme.join(", ")}`);
     }
   } else if (demandeeA === null) {
-    const depart = new Date(Date.now() + GRACE_MS);
     // ⛔ LA FIN DE FENÊTRE SE COMPTE DEPUIS L'OUVERTURE, PAS DEPUIS LE DÉPART. Mesuré le 2026-08-21 :
     // j'annonçais 09:07 pendant que la tour affichait 09:05 pour la même fenêtre — deux heures pour
     // une seule chose, et la mienne était fausse de la durée de la grâce. Ce n'est pas cosmétique :
@@ -1000,6 +999,14 @@ for (;;) {
     // ⛔ L'OUVERTURE SE DATE AVANT LA DEMANDE, PARCE QUE L'AVIS PORTE SON PROPRE NOM. Datée
     // après, l'identifiant écrit dans le motif ne serait pas celui de la fenêtre annoncée.
     const ouverture = new Date();
+    // ⛔ LE DÉPART ANNONCÉ SE COMPTE DEPUIS L'OUVERTURE, PAS DEPUIS L'ENTRÉE DANS LA BRANCHE. Il
+    // était calculé AVANT le pré-vol, qui dure une à deux minutes : l'heure partait donc fausse de
+    // toute cette durée, et le 2026-08-25 à 14:32 elle est passée SOUS l'heure d'ouverture — un avis
+    // annonçant un départ à 14:32:58 pour une fenêtre ouverte à 14:32:59.
+    // ⇒ Même défaut que celui corrigé le 2026-08-21 sur la FIN de fenêtre, à l'autre bout de la
+    //   phrase : j'avais rattaché la fin à l'ouverture et laissé le départ à son ancien point de
+    //   calcul. Réparer une moitié d'une paire laisse l'autre fausse.
+    const depart = new Date(ouverture.getTime() + GRACE_MS);
     identifiant = identifiantDeCampagne(ouverture);
     const prevenus = demanderLaFenetre(ecritures, identifiant);
     if (prevenus === null) {
