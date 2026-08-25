@@ -42,11 +42,25 @@ import { createAudioRuntime } from 'runtime-audio';
 // adapter on the shared clock, hands it the actor→device bindings, and routes
 // OSC actors' ScheduledEvents to it. The profile maps controls → device addresses.
 //
-// Imported from the package's BROWSER entry (`runtime-osc/browser`): the default
-// barrel re-exports `DeviceLibrary` (`node:os`/`node:fs`) and `UdpTransport`
-// (`node:dgram`), Node-only modules that crash in the browser. The `/browser`
-// subpath exposes only the browser-safe surface (OscAdapter/OscBridgeProfile/
-// WebSocketTransport) — deterministic under both Vite and vitest.
+// ⛔ CE COMMENTAIRE DÉSIGNAIT LA MAUVAISE CAUSE — GESTE JUSTE, RAISON FAUSSE.
+//
+// Il disait : « le baril par défaut ré-exporte `DeviceLibrary` et `UdpTransport`, des modules
+// Node-only qui CRASHENT DANS LE NAVIGATEUR ». Mesuré le 2026-08-25, après que runtime-osc me l'a
+// rendu, sur le paquet figé que mon lien suit :
+//
+//     --conditions browser   → src/browser.js  · 16 exports · UdpTransport ABSENT
+//     --conditions node      → src/index.js    · 18 exports · UdpTransport PRÉSENT
+//
+// ⇒ Sous Vite, qui pose la condition `browser`, le baril sert DÉJÀ `browser.js` : il n'y a rien à
+//   crasher. ⇒ CE QUI JUSTIFIE LE SOUS-CHEMIN EST VITEST EN ENVIRONNEMENT NODE — là, `runtime-osc`
+//   nu prend la porte Node et charge `node:dgram`. La dernière ligne d'origine le disait déjà juste
+//   (« deterministic under both ») ; c'est la première moitié qui accusait le mauvais des deux.
+//
+// ⚠️ ET UN COMMENTAIRE SE RELIT COMME UNE PREUVE : celui-là aurait enseigné au prochain lecteur que
+// Vite ne pose pas la condition — et il aurait « corrigé » l'import dans le mauvais sens.
+//
+// Le sous-chemin expose la surface sûre (OscAdapter/OscBridgeProfile/WebSocketTransport) et rend le
+// choix déterministe sous Vite COMME sous vitest, au lieu de dépendre des conditions du lanceur.
 import { createOscRuntime } from 'runtime-osc/browser';
 import type { EventBus, OutputEvent } from '../events/types';
 import type { CodeVoicesRuntime } from 'runtime-codevoices';

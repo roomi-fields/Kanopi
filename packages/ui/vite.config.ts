@@ -216,13 +216,26 @@ export default defineConfig({
       '@codemirror/language',
       '@lezer/highlight'
     ],
-    // DEPS-FRAÎCHES (décision 2026-06-30) : les amonts BPx/kairos/kronos sont des
-    // liens (symlinks) vers leur dépôt source. On les CONSOMME EN SOURCE pour la
-    // boucle de dev — leur package.json expose une condition d'export `development`
-    // → `./src/index.ts`, que Vite choisit en dev. Les EXCLURE du pré-bundling fait
-    // que Vite sert/compile leur `src` à la volée : éditer leur source se reflète sur
-    // 5173 sans rebuild ni rsync (zéro `dist` dans la boucle → impossible de périmer).
-    // Le `dist` ne sert plus QU'À la prod (condition d'export `import`).
+    // ⛔ CE COMMENTAIRE DÉCRIVAIT UN CHEMIN QUE DEUX DE CES TROIS N'EMPRUNTENT PLUS.
+    //
+    // Il disait : « leur package.json expose une condition d'export `development` → `./src/index.ts`,
+    // que Vite choisit en dev ; éditer leur source se reflète sur 5173 sans rebuild ». C'était la
+    // décision du 2026-06-30, et elle a été RENVERSÉE le 2026-08-24 — « un dépôt ne consomme que le
+    // paquet publié d'un voisin », décision de Romain. Mesuré le 2026-08-25 sur leurs manifestes,
+    // après que kronos m'a rendu l'écart :
+    //
+    //     kronos   `development` ABSENTE — fermée le 2026-08-24 (76e15c2)
+    //     kairos   `development` ABSENTE
+    //     bpx      `development` → ./src/index.ts   ⇐ le SEUL qui reste, et c'est une DETTE inscrite
+    //              (scripts/lib/regimes-des-voisins.json, `encore-en-source`)
+    //
+    // ⇒ CE QUE L'EXCLUSION FAIT RÉELLEMENT AUJOURD'HUI : pour bpx, elle tient encore la boucle de
+    //   dev sur sa source. Pour kronos et kairos, elle exclut du pré-bundling un paquet dont je
+    //   résous le `dist` — une racine CONSTRUITE dans leur arbre. Leur RECONSTRUCTION m'atteint
+    //   immédiatement ; leur frappe sous `src/` ne m'atteint plus.
+    //
+    // ⚠️ L'exclusion reste juste pour les trois : un `dist` lu par lien symbolique se réécrit sous
+    // le serveur, et un pré-bundle le figerait. Ce qui était faux est la RAISON, pas le geste.
     exclude: ['@kairos/core', '@kronos/core', 'bpx']
   },
   preview: {
