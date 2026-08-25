@@ -18,6 +18,24 @@
 // les fenêtres, comme le relevé fabrique son arbre factice.
 
 /**
+ * ⛔ L HEURE SE REND EN LOCAL, comme tout le reste de mes messages. Le champ `fin` de la tour est en
+ * UTC : rendu brut, il annonçait « jusqu à 2026-08-25T13:56:19.822Z » sur une fenêtre qui courait
+ * jusqu à 15:56 locales — deux heures d écart, dans une phrase dont tout le reste est local.
+ *
+ * ⚠️ C EST LA FAUTE CORRIGÉE LE MATIN MÊME SUR L IDENTIFIANT DE CAMPAGNE, refaite dans le garde écrit
+ * juste après — et le crochet de gel de la tour l avait déjà payée le 2026-08-22, où il annonçait 12:46
+ * pour une fenêtre courant jusqu à 14:46. Troisième occurrence de « le geste de réparation n hérite pas
+ * des leçons de ce qu il répare » (bp3-frontend, versée par l architecte le 2026-08-25).
+ *
+ * Une heure illisible ne bloque rien : elle se rend telle quelle plutôt que de perdre le refus.
+ */
+function heureLocale(fin) {
+  if (!fin) return "?";
+  const d = new Date(fin);
+  return Number.isNaN(d.getTime()) ? String(fin) : d.toTimeString().slice(0, 8);
+}
+
+/**
  * La raison, en clair, pour laquelle je ne dois pas tirer — ou `null` si personne ne me gèle.
  *
  * `fenetres` est ce que `tour fenetre --json` rend : la même forme que lit le crochet d écriture de la
@@ -37,7 +55,7 @@ export function geleParUnVoisin(fenetres, moi) {
     // passer le cas le plus large pour une absence de gel.
     if (depots.length > 0 && !depots.includes(moi.toLowerCase())) continue;
     return (
-      `${demandeur} me gèle jusqu'à ${f?.fin ?? "?"} — ma poussée serait REFUSÉE, ` +
+      `${demandeur} me gèle jusqu'à ${heureLocale(f?.fin)} — ma poussée serait REFUSÉE, ` +
       `et onze dépôts gelés pour rien`
     );
   }
@@ -87,6 +105,22 @@ export function geleParUnVoisin(fenetres, moi) {
       geleParUnVoisin([F("bpx", [])], "kanopi") !== null,
       true,
     );
+    // ⛔ L HEURE EST RENDUE EN LOCAL, PAS EN UTC BRUT. Le champ de la tour est en UTC ; rendu tel
+    // quel il annonçait deux heures d écart avec le reste de la phrase.
+    juge(
+      "l heure de fin est rendue en LOCAL, pas en UTC brut",
+      /jusqu'à \d\d:\d\d:\d\d /.test(
+        geleParUnVoisin([F("runtime-in", ["kanopi"], "2026-08-25T13:56:19.822Z")], "kanopi") ?? "",
+      ),
+      true,
+    );
+    // TÉMOIN INVERSE — une heure illisible ne doit pas faire perdre le refus.
+    juge(
+      "une heure illisible ne bloque pas le refus",
+      geleParUnVoisin([F("runtime-in", ["kanopi"], "pas-une-date")], "kanopi") !== null,
+      true,
+    );
+
     // Aucune fenêtre : le cas nominal, et il doit laisser passer.
     juge("aucune fenêtre ouverte : je peux tirer", geleParUnVoisin([], "kanopi"), null);
     // Une tour muette rend autre chose qu un tableau — on ne se bloque pas là-dessus.
@@ -104,7 +138,7 @@ export function geleParUnVoisin(fenetres, moi) {
           (c.ok ? "" : `\n    obtenu ${JSON.stringify(c.obtenu)}, attendu ${JSON.stringify(c.attendu)}`),
       );
     }
-    const PLANCHER = 7;
+    const PLANCHER = 9;
     if (cas.length < PLANCHER) {
       console.error(`⛔ ${cas.length} cas éprouvés, ${PLANCHER} attendus — l épreuve ne distingue plus rien.`);
       process.exit(1);

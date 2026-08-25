@@ -276,11 +276,20 @@ préfixe : `BP_AGENT=kanopi ~/dev/bp/hub/tour <commande>`.
 
 1. **Au réveil, le courrier d'abord** : `tour inbox`, puis `TABLEAU.md` et mes contrats.
    `tour ack` une fois traité — NU, seul sur sa ligne (`--ack` est retiré depuis le 2026-08-24 : afficher et acquitter dans le même appel était le défaut).
-2. **Un livrable poussé se route aussitôt**, dans le même geste que le push : `tour send architecte`.
-   Sans cela, personne ne sait qu'il faut le confronter, et le chantier se cale en silence.
-3. **La dernière action avant de rendre la main est un courrier à l'architecte** : fini avec sa
-   preuve, en cours avec le prochain pas, ou bloqué avec ce qu'il me faut. Un commit ne vaut pas
-   rapport.
+2. **Un livrable poussé se route à l'architecte s'il entre dans l'un des quatre motifs**, dans le même
+   geste que le push : `tour send architecte`. Sinon il ne se route pas — le pousser suffit.
+3. **La dernière action avant de rendre la main est un courrier à l'architecte s'il y a matière** :
+   fini avec sa preuve, en cours avec le prochain pas, ou bloqué avec ce qu'il me faut. **Sans matière,
+   je m'arrête sans écrire** — arbre propre et portillon vert sont un état normal, pas un silence à
+   combler. Un commit ne vaut pas rapport.
+   - ⛔ **Les quatre motifs, et rien d'autre ne remonte** : ce qui appelle une **décision** · ce qui me
+     **bloque** · ce qui **casse ou casserait chez un voisin** · un fait qui **réfute** ce que
+     l'architecte a écrit ou relayé.
+   - **N'entrent pas** : une mesure qui confirme une règle chez moi, un inventaire sans conséquence,
+     un « ta règle passe chez moi » sans geste derrière.
+   - **Une dette mesurée se reporte en une ligne, et l'architecte l'inscrit** — aucun registre parallèle.
+   - ⚠️ **Le préavis de frappe reste dû** : un changement qui casserait chez un voisin est le troisième
+     motif, jamais visé par cette économie.
 4. `tour send <dest>` porte une **demande** et réveille le destinataire ; `tour note <dest>` porte
    une **information**, lue à la prochaine levée. Le réveil appartient au démon : je dépose, je ne
    pingue personne.
