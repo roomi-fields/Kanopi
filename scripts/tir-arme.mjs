@@ -42,6 +42,7 @@ import {
   writeFileSync,
   unlinkSync,
   readFileSync,
+  readdirSync,
   mkdirSync,
   existsSync,
 } from "node:fs";
@@ -61,6 +62,7 @@ import {
   raisonDuRefus,
   depotsSales,
 } from "./lib/voisins-lies.mjs";
+import { voisinsLusParChemin } from "./lib/voisins-lus-par-chemin.mjs";
 
 const RACINE = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 /** ⛔ LA TOUR S APPELLE EN TABLEAU, JAMAIS À TRAVERS UN SHELL — et ce n est pas parce qu un texte y
@@ -70,6 +72,8 @@ const RACINE = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
  *  que je garde : « le remède appartient à celui qui possède le shell » — je possède le code qui
  *  compose, donc je retire le shell. */
 const TOUR = join(homedir(), "dev", "bp", "hub", "tour");
+/** L'atelier — le dossier qui porte tous les dépôts, et le seul endroit où un chemin sortant atterrit. */
+const ATELIER = join(homedir(), "dev", "bp");
 
 /** Depuis combien de temps un voisin doit être silencieux pour que la fenêtre s'ouvre. */
 const CALME_MS = 150_000;
@@ -278,7 +282,59 @@ const ARME = `arme-${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}
  *   sur aucun. (Relevé par runtime-audio, arbitré par l'architecte le 2026-08-24.)
  */
 function voisinsAGeler() {
-  return voisinsLies(RACINE);
+  const lies = voisinsLies(RACINE);
+  const parNom = new Map(lies.map((v) => [nomDeGel(v), v]));
+  // ⛔ UN VOISIN PEUT ÊTRE LES DEUX, ET LE DOUBLON EST SILENCIEUX. Kairos est une dépendance ET une
+  // lecture par chemin (`cause-du-rouge.mjs:54` lit son `dist`). Deux entrées sous le même nom : la
+  // tour recevrait son nom deux fois, et surtout `dernieresEcritures()` indexe par nom — la seconde
+  // aurait ÉCRASÉ la première, et son relevé serait tombé de ses racines exposées à `dist` seul.
+  // ⇒ Une régression du relevé, invisible, produite par l'élargissement censé le combler. On FUSIONNE
+  //   les racines au lieu d'empiler les entrées : le voisin garde ce que son manifeste expose ET ce
+  //   que ma chaîne lit chez lui.
+  for (const lu of voisinsLusParChemin(ATELIER, ...ceQueMaChaineLit())) {
+    const deja = parNom.get(lu.nom);
+    if (deja) deja.racines = new Set([...racinesDeCeVoisin(deja), ...lu.racines]);
+    else parNom.set(lu.nom, lu);
+  }
+  return [...parNom.values()];
+}
+
+/**
+ * ⛔ ET UN VOISIN PEUT ÊTRE LU SANS ÊTRE UNE DÉPENDANCE — mesuré EN SERVICE le 2026-08-25.
+ *
+ * Pendant ma campagne `kanopi-20260825T205824Z`, atlas a écrit sous `doc-utilisateur/` à 23:00:22 et
+ * poussé au vert : ma fenêtre ne le nommait pas, donc le garde de la tour ne lui refusait rien. À
+ * 23:03:08 ma propre construction a réécrit 132 de mes 138 fichiers de `packages/ui/public/` depuis
+ * son arbre vif. ⇒ **Deux gardes verts, aucun des deux en défaut** : `public` est une racine relevée,
+ * sa SOURCE vit chez lui, et le lien vit dans un SCRIPT que ni sa surface ni la mienne ne déclare.
+ *
+ * ⇒ Décision de méthode de l'architecte, 2026-08-25 : « qui ouvre une fenêtre sur une racine qu'il
+ *   construit depuis un voisin gèle aussi ce voisin ». Elle ne peut pas vivre dans la tour, qui
+ *   connaît des dépôts et des racines mais jamais la chaîne qui remplit une racine.
+ *
+ * ⚠️ LE BALAYAGE PORTE SUR MA CHAÎNE, PAS SUR MES DOCUMENTS. Un chemin dans une charte envoie un AGENT
+ * lire ailleurs — `garde-chemins-sortants.mjs` tient déjà cette population. Ici c'est un PROGRAMME qui
+ * lit, pendant ma mesure, et le cas discriminant est qu'il écrit ensuite chez moi.
+ */
+function ceQueMaChaineLit() {
+  const suivis = execFileSync("git", ["ls-files"], { cwd: RACINE, encoding: "utf-8" })
+    .split("\n")
+    .filter(
+      (f) =>
+        /^(scripts\/|packages\/[^/]+\/(scripts\/|vite\.config|playwright\.config)|vite\.config)/.test(f) &&
+        /\.(sh|mjs|cjs|js|ts)$/.test(f),
+    );
+  const lireTexte = (f) => {
+    try {
+      return readFileSync(join(RACINE, f), "utf-8");
+    } catch {
+      return null;
+    }
+  };
+  const depots = readdirSync(ATELIER, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name);
+  return [() => suivis, lireTexte, depots, existsSync];
 }
 
 /**
@@ -290,6 +346,9 @@ function voisinsAGeler() {
  * les bascules et c'est exactement le nom de la tour (`runtime-osc`).
  */
 function nomDeGel(v) {
+  // Un voisin LU PAR CHEMIN porte déjà son nom résolu contre le dossier réel de l'atelier : il n'a ni
+  // spécificateur ni manifeste d'où le tirer.
+  if (v.nom !== undefined) return v.nom;
   return (v.tete === null ? v.specificateurs[0] : v.depot.split("/").pop())
     .split("/")
     .pop();
@@ -322,9 +381,15 @@ function nomDeGel(v) {
  * l'a nommé : ma règle interdit d'injecter DANS leurs arbres, elle n'interdit pas d'injecter. Une
  * injection s'éprouve sur une COPIE — donc l'arbre balayé est un paramètre, et l'épreuve fabrique le
  * cas discriminant que le réel ne porte jamais (un manifeste plus récent que toutes les racines).
+ *
+ * ⛔ ET LA RACINE D'UN VOISIN LU PAR CHEMIN VIENT DU CHEMIN, JAMAIS DE SON MANIFESTE. `../atlas/doc-
+ * utilisateur` dit ce que JE lis chez lui ; son `files` dirait ce qu'IL publie — deux ensembles
+ * différents, et c'est le premier qui a bougé sous ma mesure le 2026-08-25. Atlas n'a d'ailleurs pas
+ * de manifeste : dériver du sien aurait rendu un ensemble vide, donc un gel qui ne surveille rien.
  */
-function racinesDeCeVoisin(depot) {
-  return racinesSurveillees(depot, racinesExposees);
+function racinesDeCeVoisin(v) {
+  if (v.racines !== undefined) return v.racines;
+  return racinesSurveillees(v.depot, racinesExposees);
 }
 
 /** La dernière écriture de chaque voisin sous ce que je surveille, et le fichier concerné. */
@@ -333,7 +398,7 @@ function dernieresEcritures() {
   for (const v of voisinsAGeler()) {
     const { quand, quoi } = derniereEcriture(
       v.chemin,
-      racinesDeCeVoisin(v.depot),
+      racinesDeCeVoisin(v),
     );
     par.set(nomDeGel(v), { quand, quoi });
   }
@@ -554,7 +619,7 @@ function demanderLaFenetre(ecritures, identifiant) {
   // sous quelle forme — donc le DEMANDEUR déclare ce qu'il lit, exactement comme il déclare déjà
   // disque ou commit publié (arbitrage de l'architecte, 2026-08-21).
   const racinesLues = [
-    ...new Set(voisinsAGeler().flatMap((v) => [...racinesDeCeVoisin(v.depot)])),
+    ...new Set(voisinsAGeler().flatMap((v) => [...racinesDeCeVoisin(v)])),
   ].sort();
 
   // ⛔ LE MOTIF NOMME LE CHEMIN, JAMAIS LE GESTE. Deux mots successifs ont échoué le 2026-08-21 :
@@ -925,6 +990,49 @@ function fermerLaFenetre() {
   }
 }
 
+// ⛔⛔ TIRER EST UN LANCEMENT, JAMAIS UN CHARGEMENT — et ce garde existe parce que j'ai ouvert DEUX
+// fenêtres par accident le 2026-08-25, les deux en travaillant SUR cette arme.
+//
+//     ~22:20   `node scripts/tir-arme.mjs --aide` — le drapeau n'existe pas, il a été IGNORÉ et
+//              l'arme est partie. Arrêtée avant l'ouverture.
+//     23:23:57 `import('.../tir-arme.mjs')` pour vérifier ma syntaxe après l'avoir modifiée.
+//              ⇒ **L'import EST le lancement** : douze dépôts gelés, deux minutes, aucune mesure.
+//
+// ⇒ Il n'y avait AUCUN moyen de charger ce fichier sans le faire tirer. Une vérification, une lecture
+//   par un outil, un banc qui l'importerait un jour : tous ouvrent une fenêtre sur douze dépôts.
+//
+// ⇒ ⛔ LE REMÈDE RETIRE LE PIÈGE, IL NE DEMANDE PAS D'Y PENSER. La discipline « ne l'importe pas » a
+//   déjà échoué deux fois en trois heures, chez quelqu'un qui la connaissait. Le même motif garde
+//   déjà mes trois modules de `lib/`, où l'épreuve ne doit pas tourner à l'import.
+//
+// ⚠️ ET UN DRAPEAU INCONNU DOIT ÊTRE REFUSÉ, PAS IGNORÉ : c'est la première des deux ouvertures. Une
+// arme qui accepte silencieusement ce qu'elle ne comprend pas fait tirer une commande qui demandait
+// autre chose.
+{
+  const { pathToFileURL } = await import("node:url");
+  const lanceDirectement =
+    process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+  if (!lanceDirectement) {
+    console.error(
+      "⛔ `tir-arme.mjs` a été IMPORTÉ, pas lancé — je ne tire pas.\n" +
+        "   Tirer gèle douze dépôts ; un import est une lecture, jamais une intention de tirer.\n" +
+        "   Pour tirer : `node scripts/tir-arme.mjs`.",
+    );
+  } else {
+    const inconnus = process.argv.slice(2).filter((a) => a.startsWith("-"));
+    if (inconnus.length) {
+      console.error(
+        `⛔ DRAPEAU INCONNU : ${inconnus.join(" ")} — je ne tire pas.\n` +
+          "   Cette arme n'en prend aucun. Les ignorer a déjà fait partir une campagne qui\n" +
+          "   demandait de l'aide (2026-08-25, ~22:20).",
+      );
+      process.exit(2);
+    }
+    await tirer();
+  }
+}
+
+async function tirer() {
 // ⛔ UN SEUL TIR A LA FOIS. Le 2026-08-24 à 12:07 puis 12:08, DEUX fenêtres ont été ouvertes au nom
 // de kanopi à une minute d'intervalle : deux armes tournaient, la seconde ayant été lancée après
 // que la première eut déjà demandé la sienne. La tour n'en tient qu'une par émetteur, donc la
@@ -1113,4 +1221,5 @@ for (;;) {
   }
   tours++;
   execFileSync("sleep", [String(PAS_MS / 1000)]);
+}
 }

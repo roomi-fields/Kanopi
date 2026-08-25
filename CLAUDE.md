@@ -190,11 +190,21 @@ simultané informe, il ne coordonne pas. Arbitrage de l'architecte, `hub/contrat
 peut-être sur ce que je m'apprête à écraser.
 
 **Ma carte, application de cette règle ici** — mesurée sur la résolution réelle, jamais déduite du
-manifeste de paquet : **huit voisins en source, en toute condition** — BPscript, bp3-frontend et les
-six runtimes : leur seule **écriture** m'atteint. **Trois à deux régimes** — Kairos, Kronos, BPx :
-mon serveur de développement et mon portillon lisent leur **source** pendant que ma construction de
-production résout leur **paquet publié**. **Mon portillon peut être vert sur leur source pendant que
-ce qui part à l'utilisateur est bâti sur leur paquet.**
+manifeste de paquet. Sur mes **55 dépendances déclarées**, toutes résolues :
+
+- **Six voisins en source, en toute condition** — BPscript, bp3-frontend, runtime-audio,
+  runtime-codevoices, runtime-MIDI, runtime-ui : leur seule **écriture** m'atteint.
+- **Trois à deux régimes** — Kairos, Kronos, BPx : mon serveur de développement et mon portillon
+  lisent leur **source** pendant que ma construction de production résout leur **paquet publié**.
+  **Mon portillon peut être vert sur leur source pendant que ce qui part à l'utilisateur est bâti
+  sur leur paquet.**
+- ⛔ **Deux par un paquet ÉPINGLÉ** — runtime-in et runtime-OSC : mon manifeste déclare un
+  commutateur (`file:…/.paquets/<nom>`) et mon lien installé désigne un dossier de **version**.
+  Ce qui me protège de leur republication est un **instantané d'installation**, pas une ligne : il
+  disparaît au premier `npm install`, et **mon relevé de campagne ne regarde pas `.paquets`**.
+- **Atlas, par un chemin de disque** — deux de mes scripts lisent son arbre vif pour construire
+  `public/docs/`. Il n'est pas une dépendance ; il entre dans mes gelés par
+  `scripts/lib/voisins-lus-par-chemin.mjs`, qui dérive cette population de ma chaîne.
 
 **En réception** : discriminer un rouge contre le HEAD du voisin (`git archive`) avant de conclure
 « ma régression ».
