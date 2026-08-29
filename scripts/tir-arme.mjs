@@ -499,6 +499,20 @@ function preVol() {
         .slice(0, 6);
       return {
         etape: nom,
+        // ⛔ UN ROUGE DE PRÉ-VOL DONT LA CAUSE EST L'ARBRE D'UN VOISIN N'EST PAS LE MIEN, ET
+        // L'ANNONCER COMME TEL EST UNE ATTRIBUTION FAUSSE. Mesuré le 2026-08-30 à 23:56 : l'étape
+        // `construction` a rendu 1 en NOMMANT sa cause — « BPscript @ e35cbe4 — 1 non enregistré(s)
+        // dans le paquet » — et l'arme a quand même écrit « la cause est chez moi », puis s'est
+        // arrêtée. Or c'est EXACTEMENT la condition que ma boucle d'attente sait attendre : elle
+        // l'avait attendue treize minutes plus tôt, sur le même voisin.
+        //
+        // ⇒ L'en-tête du pré-vol dit qu'il n'exécute « que la part qui ne dépend d'aucun voisin en
+        //   chantier ». La construction en dépend. Le texte était juste, l'étape ne l'était pas.
+        //
+        // ⇒ Le marqueur est la PHRASE QUE MON REFUS ÉCRIT (`voisins-lies.mjs`), pas une déduction
+        //   sur l'étape : un jour la construction rougira pour une raison qui EST la mienne, et ce
+        //   jour-là il faut s'arrêter.
+        duVoisin: sortie.includes("CONSTRUCTION DE PRODUCTION REFUSÉE"),
         cause: lignes.length
           ? lignes.join("\n")
           : sortie.split("\n").slice(-8).join("\n"),
@@ -1200,6 +1214,18 @@ for (;;) {
     // perdre ce que j'ajoutais.
     // ⛔ RIEN NE SE GÈLE AVANT QUE CE QUI EST À MOI SOIT VERT.
     const echec = preVol();
+    if (echec !== null && echec.duVoisin) {
+      // Un voisin a re-sali son arbre entre ma condition d'attente et mon pré-vol. Je RETOURNE
+      // attendre — m'arrêter ici demanderait un relancement manuel pour une condition qui se lève
+      // toute seule, et ferait porter à mon dépôt un rouge qui n'est pas le sien.
+      console.log(
+        `${hh(new Date())} — j attends : la construction refuse sur l'arbre d'un voisin, ` +
+          `pas sur le mien :\n${echec.cause}`,
+      );
+      tours++;
+      execFileSync("sleep", [String(PAS_MS / 1000)]);
+      continue;
+    }
     if (echec !== null) {
       console.log(
         `${hh(new Date())} — ⛔ PRÉ-VOL ROUGE (${echec.etape}) — AUCUNE fenêtre demandée, ` +
