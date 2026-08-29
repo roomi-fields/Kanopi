@@ -186,7 +186,24 @@ export function voisinsLies(racine) {
       }
 
       const racines = racinesExposees(depot);
-      const modifications = git(depot, ["status", "--porcelain"])
+      // ⛔ `status` RAFRAÎCHIT L'INDEX ET PREND `.git/index.lock` DANS LE DÉPÔT DU VOISIN — sa
+      // commande git échoue alors sur « Unable to create '.git/index.lock' », rarement et sans que
+      // rien chez lui ne le nomme. Trouvé par runtime-UI, routé par l'architecte le 2026-08-30 ; la
+      // cause est la décision « un verdict porte le régime sous lequel il a été pris », qui oblige à
+      // nommer l'état d'un voisin.
+      //
+      // ⇒ MESURÉ CHEZ MOI PAR LA TRACE D'EXÉCUTION, APPEL PAR APPEL — un banc prouve ma porte, jamais
+      //   mon branchement. Un seul relevé, `tir-arme.mjs --releve` :
+      //     72 `status --porcelain` vers un voisin  ⇒ 9 verrous pris, chez NEUF dépôts
+      //     64 `rev-parse --show-toplevel`          ⇒ 0
+      //     64 `rev-parse --short HEAD`             ⇒ 0
+      //   ⇒ Le drapeau va donc ICI ET NULLE PART AILLEURS : posé sur les `rev-parse` il ne répare
+      //     rien et devient du bruit qu'un lecteur suivant prendrait pour une règle.
+      //
+      // ⛔ ET 72 APPELS NE FONT QUE 9 VERROUS : git ne réécrit l'index que s'il l'a rafraîchi. Une
+      //   mesure prise alors que les index des voisins sont à jour rend ZÉRO chez un dépôt coupable.
+      //   Le témoin de non-vacuité doit donc porter sur le VERROU, jamais sur le nombre d'accès.
+      const modifications = git(depot, ["--no-optional-locks", "status", "--porcelain"])
         .split("\n")
         .filter(Boolean)
         .map((l) => {
