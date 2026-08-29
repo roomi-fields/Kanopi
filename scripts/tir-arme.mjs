@@ -333,12 +333,27 @@ function ceQueMaChaineLit() {
     // ratait les fichiers de CONFIGURATION, qui portent exactement le même genre de chemin.
     // ⚠️ Sa première passe portait la casse exacte `BPx` et aurait raté une graphie minuscule ; c'est en
     // la reprenant insensible que le `tsconfig` est sorti. Mon motif est déjà insensible à la casse.
+    // ⛔ ET MES BANCS NE FIGURAIENT PAS DANS CETTE PORTÉE — pourtant ce sont EUX qui ouvrent des
+    // fichiers pendant la campagne. Leçon de bp3-frontend, relayée par bpscript le 2026-08-30 :
+    // « je n'ai pas de scène se mesure sur le CHEMIN D'EXÉCUTION, jamais sur les fichiers suivis ».
+    // Lui a répondu zéro en toute bonne foi parce qu'il comptait ses fichiers versionnés, alors que
+    // son exécution lit 177 scènes qui vivent chez moi.
+    //
+    // ⇒ MESURÉ CHEZ MOI LE 2026-08-30, AVANT D'ÉLARGIR : aucun de mes bancs n'ouvre un chemin hors
+    //   de mon dépôt — ni par chemin relatif, ni par balayage, ni par spécificateur nu. La population
+    //   gelée est donc IDENTIQUE avant et après cet élargissement, et aucun voisin ne change d'état.
+    //
+    // ⇒ ⚠️ C'EST EXACTEMENT POURQUOI JE L'ÉLARGIS MAINTENANT : ce zéro tient à ce que mes bancs font
+    //   aujourd'hui, pas à ce que mon instrument sait voir. Un banc écrit demain sur le corpus d'un
+    //   voisin entrerait dans ma mesure sans entrer dans mon gel, et rien ne le dirait.
     .filter(
       (f) =>
-        /^(scripts\/|packages\/[^/]+\/(scripts\/|vite\.config|playwright\.config|tsconfig)|vite\.config|tsconfig)/.test(
+        /^(scripts\/|packages\/[^/]+\/(scripts\/|tests\/|vite\.config|playwright\.config|tsconfig)|vite\.config|tsconfig)/.test(
           f,
-        ) && /\.(sh|mjs|cjs|js|ts|json)$/.test(f),
-    );
+        ) ||
+        /\.(test|spec)\.[cm]?[jt]s$/.test(f),
+    )
+    .filter((f) => /\.(sh|mjs|cjs|js|ts|json)$/.test(f));
   const lireTexte = (f) => {
     try {
       return readFileSync(join(RACINE, f), "utf-8");
