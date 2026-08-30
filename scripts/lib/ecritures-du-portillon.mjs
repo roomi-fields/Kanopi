@@ -71,7 +71,13 @@ export function ecrituresSous(fichierDeTrace, racine) {
     // cécité aux chemins relatifs, y compris sur `unlinkat` et `renameat`, qui ne rendent aucun
     // descripteur. Instrument donné par kronos le 2026-08-30, mesuré chez lui : zéro non résolu sur
     // 112 869 lignes.
-    const courant = arguments_.match(/AT_FDCWD<([^>]*)>/)?.[1] ?? null;
+    // ⛔ ET CE N'EST PAS TOUJOURS `AT_FDCWD` : le premier argument d'un appel « …at » est un
+    // DESCRIPTEUR DE DOSSIER dès que l'appelant en tient un ouvert, et `-y` l'annote de la même
+    // façon — `unlinkat(4</chemin/du/dossier>, "a.txt", 0)`. Ma première version ne lisait que la
+    // graphie `AT_FDCWD` : la campagne du 2026-08-30 à 13:28 a rendu 132 chemins « non résolus »
+    // dont AUCUN sous `.git/`, alors que le traceur les annotait tous. L'instrument déclarait une
+    // cécité qui était la sienne, et il la déclarait à douze dépôts.
+    const courant = arguments_.match(/^(?:AT_FDCWD|\d+)<([^>]*)>/)?.[1] ?? null;
 
     // ⇒ ET LE DESCRIPTEUR RENDU PORTE LE CHEMIN QUE LE NOYAU A RÉSOLU — pour toute ouverture ABOUTIE
     // il n'y a donc rien à résoudre. Une ouverture qui échoue n'en rend pas, et elle n'écrit rien.
@@ -196,6 +202,15 @@ if (process.argv[2] === "--eprouver") {
     "le chemin résolu par le NOYAU est retenu même si l argument cité est relatif et hors racine",
     `9 openat(AT_FDCWD<${R}>, "x.txt", O_WRONLY|O_CREAT, 0666) = 4<${R}/x.txt>\n`,
     (r) => (r.chemins.includes(`${R}/x.txt`) ? true : `obtenu ${JSON.stringify(r.chemins)}`),
+  );
+  cas(
+    "un DESCRIPTEUR DE DOSSIER annoté résout aussi — ce n est pas toujours AT_FDCWD",
+    `9 unlinkat(4<${R}/packages/ui/public/docs>, "actors.html", 0) = 0\n`,
+    (r) =>
+      r.relatifs.length === 0 &&
+      r.chemins.includes(`${R}/packages/ui/public/docs/actors.html`)
+        ? true
+        : `chemins=${JSON.stringify(r.chemins)} relatifs=${JSON.stringify(r.relatifs)}`,
   );
   cas(
     "un répertoire courant HORS de ma racine ne fait entrer personne (témoin inverse)",

@@ -54,12 +54,9 @@ import {
   derniereEcriture,
   basculesEntre,
 } from "./lib/releve-des-ecritures.mjs";
-import { homedir, tmpdir } from "node:os";
+import { homedir } from "node:os";
 import { join } from "node:path";
-import {
-  ecrituresSous,
-  parRacineDeTete,
-} from "./lib/ecritures-du-portillon.mjs";
+import { lireReleve } from "./lib/releve-du-portillon.mjs";
 import {
   voisinsLies,
   racinesExposees,
@@ -1232,57 +1229,49 @@ function fermerLaFenetre() {
 }
 
 /**
- * CE QUE MA CAMPAGNE A ÉCRIT DANS MON PROPRE ARBRE, rendu par racine de tête — la granularité que mes
+ * CE QUE MON PORTILLON ÉCRIT DANS MON PROPRE ARBRE, rendu par racine de tête — la granularité que mes
  * voisins emploient quand ils déclarent ce que leur banc lit chez moi.
  *
  * ⛔ SON EMPLOI EST UN AVEU, PAS UN BULLETIN DE SANTÉ : un voisin qui gèle mon dépôt me demande de ne
  * rien écrire sous ses racines, et cette ligne dit si mon portillon a tenu cette demande à sa place.
  * Elle part donc DANS LE VERDICT, chez les gelés, jamais seulement dans ma console.
  *
- * ⚠️ UNE TRACE ABSENTE SE DIT ABSENTE. Si `strace` manque, la campagne tourne quand même — mais la
- * ligne annonce qu'elle n'a rien mesuré, au lieu de rendre un zéro qui ressemble à une absence
- * d'écriture.
+ * ⛔ ET ELLE PORTE SA DATE, PARCE QU'ELLE N'EST PLUS PRISE PENDANT CETTE CAMPAGNE-CI. Le relevé vient
+ * de `scripts/trace-du-portillon.mjs`, hors fenêtre ; `garde-releve-du-portillon` refuse le portillon
+ * dès que le portillon change sans qu'un nouveau relevé soit pris. ⇒ Un lecteur doit pouvoir voir
+ * QUAND la mesure a été faite, sinon la ligne se lit comme si elle venait de l'instant.
+ *
+ * ⚠️ UN RELEVÉ ABSENT SE DIT ABSENT. Sans lui, la campagne tourne quand même — mais la ligne annonce
+ * qu'elle n'a rien mesuré, au lieu de rendre un zéro qui ressemble à une absence d'écriture.
  */
-function ceQueMonPortillonAEcrit(fichierDeTrace) {
-  if (!existsSync(fichierDeTrace))
-    return "CE QUE MON PORTILLON A ÉCRIT CHEZ MOI : NON MESURÉ — aucune trace produite (traceur absent ?).";
-  let r;
-  try {
-    r = ecrituresSous(fichierDeTrace, RACINE);
-  } catch (e) {
-    return `CE QUE MON PORTILLON A ÉCRIT CHEZ MOI : NON MESURÉ — la trace n'a pas pu être lue (${e.message}).`;
-  }
-  if (r.examinees === 0)
-    return "CE QUE MON PORTILLON A ÉCRIT CHEZ MOI : NON MESURÉ — ZÉRO appel dans la trace, donc l'instrument s'est tu, pas le portillon.";
-  const par = parRacineDeTete(r.chemins, RACINE);
-  const tetes = [...par.entries()]
-    .sort((a, b) => b[1].length - a[1].length)
-    .map(([tete, liste]) => `${tete} (${liste.length})`);
-  // La trace d'une campagne complète pèse une centaine de mégaoctets. Elle a servi ; la garder
-  // ferait un tas qui grossit d'une campagne à l'autre sans que personne ne la relise.
-  try {
-    unlinkSync(fichierDeTrace);
-  } catch {
-    /* rien à retirer, ce n'est pas une faute */
-  }
+function ceQueMonPortillonAEcrit() {
+  const releve = lireReleve();
+  if (!releve)
+    return "CE QUE MON PORTILLON ÉCRIT CHEZ MOI : NON MESURÉ — aucun relevé sur le disque.";
+  if (releve.enCours)
+    return `CE QUE MON PORTILLON ÉCRIT CHEZ MOI : NON MESURÉ — un relevé a démarré le ${releve.quand} et n'a jamais fini.`;
+  const m = releve.mesure;
+  if (!m)
+    return `CE QUE MON PORTILLON ÉCRIT CHEZ MOI : NON MESURÉ le ${releve.quand} — ${releve.pourquoi ?? "sans raison notée"}.`;
+  const tetes = Object.entries(m.parRacineDeTete).map(([tete, n]) => `${tete} (${n})`);
   // ⇒ CE QUI RESTE NON RÉSOLU SE QUALIFIE AU LIEU DE RESTER UNE CÉCITÉ OUVERTE. Mesure donnée par
   // runtime-MIDI le 2026-08-30 : une écriture sous `.git/` ne peut pas faire basculer un fichier
   // d'ARBRE DE TRAVAIL, et c'est l'arbre de travail que mes voisins relèvent. ⇒ Savoir où elles
   // atterrissent devient inutile SI elles sont toutes sous `.git/` — et la question reste entière
   // dès qu'une seule ne l'est pas. C'est un oui/non sur la trace, pas une résolution de chemin.
-  const horsGit = r.relatifs.filter((x) => !/\s\.git\//.test(x));
-  const relatifs = r.relatifs.length
-    ? horsGit.length === 0
-      ? `\n    ✓ ${r.relatifs.length} chemin(s) relatif(s) non résolus, TOUS sous .git/ — ils ne peuvent atteindre aucun fichier d arbre de travail.`
-      : `\n    ⚠️ ${r.relatifs.length} chemin(s) RELATIF(S) non résolus, dont ${horsGit.length} HORS de .git/ — je ne sais pas où ceux-là atterrissent : ${horsGit.slice(0, 5).join(", ")}`
+  const relatifs = m.relatifsNonResolus
+    ? m.relatifsHorsGit === 0
+      ? `\n    ✓ ${m.relatifsNonResolus} chemin(s) relatif(s) non résolus, TOUS sous .git/ — ils ne peuvent atteindre aucun fichier d arbre de travail.`
+      : `\n    ⚠️ ${m.relatifsNonResolus} chemin(s) RELATIF(S) non résolus, dont ${m.relatifsHorsGit} HORS de .git/ : ${(m.echantillonHorsGit ?? []).slice(0, 5).join(", ")}`
     : "";
   return (
-    `CE QUE MON PORTILLON A ÉCRIT CHEZ MOI — trace des ouvertures, ${r.examinees} appel(s) examiné(s), ` +
-    `${r.ecrivantes} écrivant(s) :\n    ` +
-    (tetes.length
-      ? `sous ${tetes.join(" · ")}`
-      : "AUCUNE écriture sous mon arbre") +
-    relatifs
+    `CE QUE MON PORTILLON ÉCRIT CHEZ MOI — relevé du ${releve.quand}, portillon @${releve.empreinte}, ` +
+    `pris HORS FENÊTRE (il sortait en ${releve.sortieDuPortillon}) :\n    ` +
+    `${m.appelsExamines} appel(s) examiné(s), ${m.appelsEcrivants} écrivant(s), ${m.cheminsSousMonArbre} chemin(s) sous mon arbre\n    ` +
+    (tetes.length ? `sous ${tetes.join(" · ")}` : "AUCUNE écriture sous mon arbre") +
+    relatifs +
+    `\n    ⚠️ CE RELEVÉ N'EST PAS DE CETTE CAMPAGNE : il vaut tant que mon portillon ne change pas, et` +
+    `\n    mon garde de structure refuse de pousser dès qu'il change sans qu'un nouveau relevé soit pris.`
   );
 }
 
@@ -1422,38 +1411,25 @@ for (;;) {
   } else if (Date.now() - demandeeA >= GRACE_MS) {
     const depart = new Date();
     console.log(`DEPART ${hh(depart)} — apres ${tours} tour(s) d attente`);
-    // ⛔ LA CAMPAGNE SE TRACE, PARCE QUE MON PORTILLON ÉCRIT DANS L'ARBRE QUE MES VOISINS LISENT.
-    // Consigne de l'architecte du 2026-08-30 : la question « le mien écrit-il ? » se pose chez chacun
-    // PAR LA TRACE, jamais par une lecture de liste — un voisin s'est trompé dans les deux sens en la
-    // lisant. Le geste ne se demande donc pas à part : il est ici, sur la campagne réelle, sinon il
-    // faudrait faire tourner le portillon une seconde fois pour rien et hors de toute fenêtre.
-    const TRACE = join(tmpdir(), `kanopi-trace-portillon-${process.pid}.txt`);
+    // ⛔ LA CAMPAGNE NE TRACE PLUS — LE RELEVÉ EST PRIS À PART, HORS FENÊTRE.
+    // Le 2026-08-30 elle traçait : la réponse était toujours fraîche et elle coûtait +26 %, soit
+    // quatre minutes et demie de gel imposées à douze dépôts À CHAQUE TIR, pour une question qui ne
+    // se repose qu'au changement de portillon. Décision de méthode de l'architecte le jour même :
+    // `scripts/trace-du-portillon.mjs` la prend hors fenêtre, `garde-releve-du-portillon` refuse le
+    // portillon tant qu'elle ne décrit pas le portillon d'aujourd'hui, et le verdict renvoie ici au
+    // dernier relevé DATÉ.
     const r = execFileSync(
       "bash",
-      [
-        "-c",
-        // ⛔ LE TRACEUR NE DOIT JAMAIS EMPÊCHER LA CAMPAGNE : s'il manque, on pousse sans lui et
-        // c'est la ligne de verdict qui dit « non mesuré ». Une campagne qui meurt en 127 parce
-        // qu'un outil de mesure est absent gèle douze dépôts pour rien.
-        `cd ${RACINE} && if command -v strace >/dev/null 2>&1; then ` +
-          // ⇒ `-y` ANNOTE LES DEUX BOUTS : le répertoire courant de l'appelant sur `AT_FDCWD`, et le
-          // chemin absolu que le noyau a résolu sur le descripteur rendu. Sans lui, mon premier
-          // relevé a déclaré 133 chemins relatifs comme une cécité ouverte ; kronos a donné le
-          // drapeau le jour même, mesuré chez lui à zéro non résolu sur 112 869 lignes.
-          `strace -f -y -qq -s 512 --seccomp-bpf -e trace=openat,open,creat,rename,renameat,renameat2,unlink,unlinkat,mkdir,mkdirat,link,linkat,symlink,symlinkat,truncate -o ${TRACE} git push 2>&1; ` +
-          `else git push 2>&1; fi; echo "SORTIE:$?"`,
-      ],
+      ["-c", `cd ${RACINE} && git push 2>&1; echo "SORTIE:$?"`],
       {
         encoding: "utf8",
-        // La trace d'une campagne complète dépasse le tampon par défaut de la sortie ; c'est le
-        // FICHIER qui la porte, mais la sortie de `git push` grossit aussi avec les bancs.
         maxBuffer: 256 * 1024 * 1024,
       },
     );
     console.log(r);
     const arrivee = new Date();
     console.log(`ARRIVEE : ${hh(arrivee)}`);
-    const ecrituresChezMoi = ceQueMonPortillonAEcrit(TRACE);
+    const ecrituresChezMoi = ceQueMonPortillonAEcrit();
     console.log(ecrituresChezMoi);
     // ⛔ LE SECOND RELEVÉ, ET C'EST CE QUI TRANSFORME UNE PHOTO EN INTERVALLE MESURÉ.
     //
