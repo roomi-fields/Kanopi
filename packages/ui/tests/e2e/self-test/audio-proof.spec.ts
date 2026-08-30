@@ -112,42 +112,15 @@ test('strudel/03 sonne : n(...).scale("C:minor").sound("gm_piano") produit un RM
   noErrors();
 });
 
-// (d) patchbay sonne [829] — le modèle son LANG-SONS bout-en-bout DANS L'APP : une voix-câblage
-// persistante `macro lead = saw.freq: pitch >> lpf.cutoff: BT >> audio` arme un patch dont l'ARM
-// (kind:'control') porte `output.runtime='audio'` (gravé par kairos DEPUIS `actionLib.runtimeParModule`
-// = `sinkRuntimeMap()` du catalogue, [414]/[829]) → routé à runtime-audio → patch armé → RMS>0. Verrou
-// anti-régression du bug [414] (l'arm droppé faute d'output → muet). Scène library synthesis/patchbay.bps.
-const librarySynthesisDir = fileURLToPath(
-  new URL('../../../../library/scenes/synthesis', import.meta.url)
-);
-// SKIPPÉ (décision Romain 2026-08-08, KAN-40) : joue synthesis/patchbay.bps, déclarée rouge par
-// la garde de statut du corpus. La scène déclare son câblage `macro` avec des mots supprimés du
-// langage ; la forme qui préserverait ses réglages de départ n'existe pas encore dans le parseur
-// et sera revue avec FaustX. Revient avec la scène.
-test.skip('patchbay sonne : un macro saw>>lpf>>audio armé produit un RMS > 0 mesuré [829]', async ({
-  page
-}) => {
-  const audio = await setupAudioCapture(page);
-  const noErrors = expectNoConsoleErrors(page);
-
-  const program = readFileSync(join(librarySynthesisDir, 'patchbay.bps'), 'utf8');
-
-  await page.goto('');
-  await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
-
-  await loadAndFocus(page, 'patchbay.bps', program);
-  await expect(page.locator('.cm-content').first()).toBeVisible({ timeout: 5_000 });
-
-  await evalBlockAt(page, 1);
-
-  // Le patch persistant (saw→lpf→audio) rend en continu une fois armé — fenêtre large.
-  const rms = await audio.getMaxRMS(2500);
-  expect(rms).toBeGreaterThan(0.001);
-
-  await page.keyboard.press('ControlOrMeta+Period');
-  await page.waitForTimeout(500);
-  noErrors();
-});
+// ⛔ LE BANC DU PATCHBAY EST RETIRÉ, PAS SAUTÉ — le mécanisme qu'il mesurait n'existe plus.
+// Il jouait `synthesis/patchbay.bps` : une voix-câblage persistante `saw >> lpf >> audio` dont l'arm
+// portait `output.runtime` gravé par kairos depuis le catalogue de ports, routé à runtime-audio,
+// patch armé, RMS > 0. Il était sauté depuis le 2026-08-08 (KAN-40), en attendant une forme de
+// langage à venir. ⇒ Romain a tranché le 2026-08-30 — « cv gate trig sont obsoletes a supprimer »,
+// « il n'y a plus de cablage ca n'existe plus » : runtime-audio a retiré le registre de patchs,
+// l'hôte a retiré son catalogue d'actions, et kairos élague la facette. Un banc sauté qui mesure une
+// chose supprimée partout ne peut plus repasser au vert : le garder ferait croire à une dette
+// réversible. La scène, elle, RESTE au corpus, déclarée rouge par intention — elle revient avec FaustX.
 
 // FIXME [787.2a] — NON-MESURABLE en e2e headless, EN ATTENTE d'une confirmation À L'OREILLE (Romain,
 // 5173). PAS un faux vert : le diagnostic est complet (décision archi [807] : stop la chasse e2e,

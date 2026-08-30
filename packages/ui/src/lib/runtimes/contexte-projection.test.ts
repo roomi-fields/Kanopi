@@ -37,15 +37,8 @@ const CODE = SOURCE.split('\n')
   .filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*'))
   .join('\n');
 
-/** Les six clés que porte le contexte de projection, au-delà de ce que BPx construit. */
-const CATALOGUES = [
-  'pitchLib:',
-  'digitalLib:',
-  'voicesLib:',
-  'actionLib:',
-  'homomorphismeLib:',
-  'modulation:'
-];
+/** Les cinq clés que porte le contexte de projection, au-delà de ce que BPx construit. */
+const CATALOGUES = ['pitchLib:', 'digitalLib:', 'voicesLib:', 'homomorphismeLib:', 'modulation:'];
 
 describe('le contexte de projection a UNE source, pas trois', () => {
   it('la fabrique existe (sinon ce garde mesurerait le vide)', () => {

@@ -1,0 +1,16 @@
+{
+  "quand": "2026-08-30T12:26:55.785Z",
+  "empreinte": "3cfefb9a827e445a",
+  "sortieDuPortillon": "0",
+  "mesure": {
+    "appelsExamines": 858566,
+    "appelsEcrivants": 454163,
+    "cheminsSousMonArbre": 12312,
+    "parRacineDeTete": {
+      "packages": 12312
+    },
+    "relatifsNonResolus": 0,
+    "relatifsHorsGit": 0,
+    "echantillonHorsGit": []
+  }
+}

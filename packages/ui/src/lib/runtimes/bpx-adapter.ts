@@ -163,15 +163,7 @@ import {
   loadSampleBank,
   createCodeVoicesRuntime,
   guestLibraries,
-  mercurySamplesInPatch,
-  // Catalogue des modules son (LANG-SONS §8-9) — SOURCE DE VÉRITÉ UNIQUE que l'hôte injecte à Kairos
-  // dans `ActionLib`, via les deux aplatisseurs AUTORITAIRES du catalogue (demandes [155]/[156], pas de
-  // 2e source hôte) : `catalogPortTypes()` = `{module:{port:type}}` (classe les actions) ;
-  // `sinkRuntimeMap()` = `{module PUITS → runtime}` (route l'arm/cut). `moduleCatalog` sert seulement à
-  // l'expansion des ALIAS (saw/sawtooth, tri/triangle). PORTER≠RÉSOUDRE : on transporte, Kairos résout.
-  moduleCatalog,
-  catalogPortTypes,
-  sinkRuntimeMap
+  mercurySamplesInPatch
 } from 'runtime-codevoices';
 // Préchauffage au CHARGEMENT (design ratifié archi [589]) : entrée de PAQUET `preload` (résout les
 // interps + warme les moteurs voix-de-code). Namespace import DÉFENSIF (historique : `preload`
@@ -257,27 +249,6 @@ const PITCH_LIB: PitchLib = LIBS;
 // keys → cast through `unknown`. Personal/community digital libs overlay here later (3 provenances).
 const DIGITAL_LIB: DigitalLib = LIBS.digital as unknown as DigitalLib;
 
-// ActionLib (LANG-SONS §4/§8/§9) — deux vues AUTORITAIRES du catalogue runtime-codevoices, injectées
-// pour Kairos (PORTER≠RÉSOUDRE : on transporte, Kairos résout). Source de vérité UNIQUE = les
-// aplatisseurs du catalogue (demandes [155]/[156]), pas une ré-implémentation hôte :
-//  • `modules` = `catalogPortTypes()` (`{module:{port:type}}`) → Kairos classe l'appel-composant opaque
-//    en `content.action`. On ajoute par-dessus les ALIAS (saw/sawtooth, tri/triangle) en clés-modules
-//    jumelles : Kairos fait un lookup BRUT `modules[module]?.[port]` (aucune résolution d'alias chez
-//    lui) → sans expansion, un `tri.freq` émis crierait à tort (les alias sont dans le catalogue même).
-//  • `runtimeParModule` = `sinkRuntimeMap()` (`{module PUITS → runtime déclaré}`, arbitrage [414]) →
-//    Kairos grave `output.runtime` sur l'arm/cut d'une voix persistante (le module TERMINAL du câblage
-//    `saw>>lpf>>audio` = `audio` décide OÙ router). ZÉRO nom de runtime en dur (ni hôte ni Kairos : le
-//    runtime est DÉCLARÉ par le sink au catalogue, runtime-codevoices f694701) ; module PUITS sans
-//    runtime ⇒ `content.controlError` fail-loud côté Kairos, jamais un drop silencieux (bug [414]).
-const ACTION_LIB = {
-  modules: (() => {
-    const modules: Record<string, Record<string, string>> = catalogPortTypes();
-    for (const m of moduleCatalog) for (const a of m.aliases ?? []) modules[a] = modules[m.name];
-    return modules;
-  })(),
-  runtimeParModule: sinkRuntimeMap()
-};
-
 // HomomorphismLib (`lib/homomorphism`, fonction `substitute`) — jumelle structurelle de `digital` :
 // on consomme `LIBS.homomorphism` (AVEC le `body` TS capté depuis `lib/homomorphism/substitute.ts`
 // par libs-bundle, PAS le JSON nu qui n'a que la description). Kairos APPLIQUE la substitution de
@@ -324,8 +295,11 @@ export function contexteDeProjection(base: unknown): Parameters<Kairos['charger'
     digitalLib: DIGITAL_LIB,
     // LANG-SONS-3 — registre des voix (Kairos grave `content.voice`).
     voicesLib: voicesJson,
-    // LANG-SONS §4/§8 — catalogue d'actions + substitution de symboles.
-    actionLib: ACTION_LIB,
+    // ⛔ LE CATALOGUE D'ACTIONS N'EST PLUS FOURNI : Romain a tranché le 2026-08-30 — « cv gate trig
+    // sont obsoletes a supprimer », « il n'y a plus de cablage ca n'existe plus ». Le patching sort,
+    // et avec lui l'appel-composant que ce catalogue servait à classer. L'hôte ne transporte pas un
+    // catalogue dont plus rien n'est la destination. Même forme que `modLib` ci-dessous, deux causes
+    // différentes : là un catalogue amont archivé, ici un mécanisme du langage supprimé.
     homomorphismeLib: HOMOMORPHISM_LIB,
     // KRO-24 — fabrique de courbe : Kairos COMPOSE à l'aplatissement.
     // ⛔ LE REGISTRE `modLib` N'EST PLUS FOURNI : bpscript a archivé le catalogue `mod` avec les
