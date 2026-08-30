@@ -83,6 +83,8 @@ export function derniereEcriture(chemin, racines) {
   let quand = 0;
   let quoi = null;
   let examines = 0;
+  const lues = [];
+  const nonLues = [];
   for (const r of racines) {
     const base = join(chemin, r);
     let fichiers;
@@ -93,8 +95,29 @@ export function derniereEcriture(chemin, racines) {
       // simple, celui du premier niveau.
       fichiers = statSync(base).isDirectory() ? [...sousArbre(base), base] : [base];
     } catch {
-      continue; // la racine n existe pas chez lui — ce n est pas une erreur, c est un fait
+      // ⛔ CE `continue` ÉTAIT UN ZÉRO SILENCIEUX, ET SON COMMENTAIRE LE JUSTIFIAIT. Il disait « la
+      // racine n existe pas chez lui — ce n est pas une erreur, c est un fait ». VRAI d une racine
+      // déclarée qu un voisin ne porte pas. ⛔ FAUX d une racine qui existe et qui est absente À CET
+      // INSTANT — et rien ici ne distinguait les deux.
+      //
+      // ⇒ LE CAS EST RÉEL, RENDU PAR BPx LE 2026-08-30 : sa bascule de paquet fait
+      //   `rename(dist → dist.precedent)` puis `rename(dist.chantier → dist)`. ENTRE CES DEUX LIGNES,
+      //   `dist` N EXISTE PAS. Quelques millisecondes — mais ma campagne dure dix-huit minutes.
+      //
+      // ⇒ ⛔ CE QUE ÇA PRODUISAIT : la racine sortait du relevé sans un mot, `examines` ne comptait
+      //   rien pour elle, et l anti-vacuité ne l attrapait pas — il refuse d avoir examiné zéro AU
+      //   TOTAL, or les autres racines rendent un total franchement positif. **Un instant plus tard,
+      //   je nommais ce voisin immobile sur un périmètre que je n avais pas lu.**
+      //
+      // ⚠️ ET LE `catch` COUVRE AUSSI LE PARCOURS : si la racine disparaît PENDANT que j y descends,
+      //   la même branche avalait l échec.
+      //
+      // ⇒ Elle se NOMME désormais. Ce qu on en fait appartient à l appelant — ici on refuse de
+      //   perdre le fait, on ne décide pas à sa place.
+      nonLues.push(r);
+      continue;
     }
+    lues.push(r);
     for (const f of fichiers) {
       examines++;
       const st = statSync(f);
@@ -104,7 +127,7 @@ export function derniereEcriture(chemin, racines) {
       }
     }
   }
-  return { quand, quoi, examines };
+  return { quand, quoi, examines, lues, nonLues };
 }
 
 /**
@@ -123,9 +146,22 @@ export function derniereEcriture(chemin, racines) {
  */
 export function basculesEntre(avant, apres, hh) {
   const out = [];
-  for (const [nom, { quand, quoi }] of apres) {
+  for (const [nom, { quand, quoi, lues }] of apres) {
     const av = avant.get(nom);
-    if (av && quand > av.quand) out.push(`${nom} → ${quoi} à ${hh(new Date(quand))}`);
+    if (!av) continue;
+    if (quand > av.quand) out.push(`${nom} → ${quoi} à ${hh(new Date(quand))}`);
+    // ⛔ UNE RACINE QUI CHANGE DE PRÉSENCE EST UNE BASCULE, ET ELLE NE PORTE AUCUN HORODATAGE.
+    // Le cas de BPx : `dist` renommée puis remise en place. Si l un de mes deux relevés tombe dans
+    // l intervalle, cette racine est lue d un côté et pas de l autre — et la comparaison des dates,
+    // elle, ne voit RIEN, puisque la racine manquante ne contribue à aucune date.
+    // ⇒ Le fait à rendre n est donc pas « elle a bougé », c est « je ne l ai pas lue des deux côtés ».
+    const avantLues = new Set(av.lues ?? []);
+    const apresLues = new Set(lues ?? []);
+    const changees = [
+      ...[...avantLues].filter((r) => !apresLues.has(r)).map((r) => `${r} (lue au départ, PAS à l arrivée)`),
+      ...[...apresLues].filter((r) => !avantLues.has(r)).map((r) => `${r} (PAS lue au départ, lue à l arrivée)`),
+    ];
+    if (changees.length) out.push(`${nom} → racine dont la PRÉSENCE a changé : ${changees.join(", ")}`);
   }
   return out;
 }
@@ -218,6 +254,30 @@ export function basculesEntre(avant, apres, hh) {
     // On remet le décor dans l état que les cas suivants décrivent.
     dater("src/index.js", 200);
     dater("src", 200);
+
+    // ⛔ LA RACINE ABSENTE SE NOMME, ELLE NE SE PERD PLUS — le zéro silencieux que BPx a trouvé.
+    // Sans ces deux cas, le `continue` pourrait revenir muet et rien ne rougirait : les autres
+    // racines suffisent à rendre le relevé positif.
+    const avecFantome = derniereEcriture(faux, new Set(["dist", "src", "package.json"]));
+    juge("une racine déclarée et ABSENTE est nommée", avecFantome.nonLues.join(","), "dist");
+    juge("et les racines LUES sont rendues", [...avecFantome.lues].sort().join(","), "package.json,src");
+
+    // ⛔ LE CAS DE BPx, FABRIQUÉ : une racine lue au départ et absente à l arrivée. Elle ne porte
+    // AUCUN horodatage — la comparaison des dates ne voit rien, puisqu une racine manquante ne
+    // contribue à aucune date. C est la comparaison des PRÉSENCES qui le rend.
+    const heure = (d) => d.toISOString().slice(11, 19);
+    const depart = new Map([["voisin", { quand: 100, quoi: "src/index.js", lues: ["src", "package.json"] }]]);
+    const arrivee = new Map([["voisin", { quand: 100, quoi: "package.json", lues: ["package.json"] }]]);
+    juge(
+      "une racine lue au DÉPART et pas à l ARRIVÉE est nommée, sans qu aucune date ne bouge",
+      basculesEntre(depart, arrivee, heure).length,
+      1,
+    );
+    juge(
+      "et deux relevés qui lisent les MÊMES racines ne nomment rien",
+      basculesEntre(depart, depart, heure).length,
+      0,
+    );
 
     // ⛔ ANTI-VACUITÉ : un relevé qui a examiné zéro fichier n a rien relevé. Sans ce cas, un balayage
     // cassé rendrait `quand: 0`, qui se lit exactement comme « rien n a bougé ».

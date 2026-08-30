@@ -445,12 +445,17 @@ function dernieresEcritures() {
   const par = new Map();
   const vides = [];
   for (const v of voisinsAGeler()) {
-    const { quand, quoi, examines } = derniereEcriture(
+    const { quand, quoi, examines, lues, nonLues } = derniereEcriture(
       v.chemin,
       racinesDeCeVoisin(v),
     );
     if (examines === 0) vides.push(`${nomDeGel(v)} (${[...racinesDeCeVoisin(v)].join(", ")})`);
-    par.set(nomDeGel(v), { quand, quoi });
+    // ⛔ UNE RACINE NON LUE SE DIT, ELLE NE SE PERD PLUS. Elle n arrête pas le tir — une racine
+    // déclarée qu un voisin ne porte pas est un fait ordinaire — mais elle entre dans le relevé, et
+    // `basculesEntre` compare les DEUX ensembles : lue au départ et pas à l arrivée est une bascule
+    // qui ne porte aucun horodatage, donc invisible à la comparaison des dates.
+    if (nonLues.length) console.log(`  ⚠️ ${nomDeGel(v)} — racine(s) NON LUE(S) : ${nonLues.join(", ")}`);
+    par.set(nomDeGel(v), { quand, quoi, lues });
   }
   if (vides.length) {
     console.error(
