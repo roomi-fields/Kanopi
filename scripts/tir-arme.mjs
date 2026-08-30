@@ -1318,8 +1318,23 @@ const VERROU = join(homedir(), ".local", "state", "kanopi", "tir.pid");
     }
   };
   process.on("exit", lacher);
+  // ⛔ UNE ARME QUI MEURT LAISSAIT SA FENÊTRE OUVERTE — douze dépôts gelés jusqu'à l'expiration, sans
+  // verdict et sans personne pour la fermer. Mesuré le 2026-08-30 à 22:44 : l'arme a été tuée en
+  // pleine poussée, sa fenêtre courait jusqu'à 23:12, et rien dans la tour ne le disait.
+  //
+  // ⇒ CE FILET NE LÂCHAIT QUE LE VERROU. Le verrou protège MA prochaine arme ; la fenêtre gèle LES
+  //   AUTRES. Ne relâcher que le premier soigne exactement la moitié dont je suis victime.
+  //
+  // ⚠️ ET LE VERDICT NE PART PAS D'ICI : un gestionnaire de signal a le temps de fermer, pas celui de
+  //   composer un rapport. Fermer sans rendre laisse les gelés sans nouvelle — c'est mieux que gelés
+  //   sans nouvelle ET sans fin, et la levée que la tour envoie à la fermeture les prévient.
   for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"])
     process.on(sig, () => {
+      try {
+        fermerLaFenetre();
+      } catch {
+        /* la tour ne répond pas — le verrou se lâche quand même */
+      }
       lacher();
       process.exit(130);
     });
