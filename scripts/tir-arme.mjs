@@ -926,13 +926,29 @@ function rendreLeVerdict(
     (pendant.length
       ? `      ${pendant.join('\n      ')}\n` +
         `      ⇒ ${pendant.length} bascule(s) sur les ${destinataires.length} dépôts gelés.\n`
-      : `      aucune bascule chez AUCUN des ${destinataires.length} dépôts gelés — et cette absence est\n` +
-        `      opposable POUR L'INTERVALLE, pas seulement pour un instant.\n`) +
+      : `      aucune bascule chez AUCUN des ${destinataires.length} dépôts gelés, ET VOICI CE QUE CETTE\n` +
+        `      ABSENCE COUVRE — je nomme ma portée au lieu de déclarer une opposabilité pleine :\n` +
+        `        ✓ les fichiers qui SURVIVENT sous les racines relevées, départ contre arrivée\n` +
+        `        ✓ les DOSSIERS eux-mêmes — donc un fichier créé PUIS RETIRÉ, qui ne laisse aucune date\n` +
+        `        ✓ les racines LUES des deux côtés — une racine absente à l'un de mes deux relevés est\n` +
+        `          nommée, jamais sautée en silence\n` +
+        `        ⛔ PAS une racine qui disparaît ET revient ENTIÈREMENT entre mes deux relevés : mes\n` +
+        `          lectures sont à dix-huit minutes, un renommage dure des millisecondes.\n`) +
     `(Relevé par kronos le 2026-08-25 : cette phrase promettait « VOTRE manifeste » et rendait la liste\n` +
     `de tout le monde — fausse dès sa rédaction, deux heures plus tôt, pas héritée d'une forme ancienne.\n` +
     `Il a nommé le risque que la réparation naïve aurait introduit : filtrer par destinataire SANS rendre\n` +
     `le total ferait lire à celui qui a bougé un relevé qui ne le nomme pas — « un relevé qui nomme le\n` +
     `mauvais dépôt disculpe le bon coupable, et il le fait en vert ». D'où la ligne ET le compte.)\n` +
+    `\n(⛔ POURQUOI CETTE PHRASE NOMME SA PORTÉE AU LIEU DE DÉCLARER « OPPOSABLE ». Le 2026-08-30, deux\n` +
+    `verdicts consécutifs sont partis en promettant une opposabilité pleine que je savais déjà trop\n` +
+    `large : celui de 02:11, une heure après avoir mesuré que le créé-puis-retiré m'échappait ; celui\n` +
+    `de 02:36, PENDANT que BPx me montrait qu'une racine absente sortait de mon relevé en silence.\n` +
+    `Relevé par runtime-UI puis par BPx, chacun en rapprochant deux de mes propres phrases.\n` +
+    `⇒ La cause n'était pas ma lenteur à corriger : une phrase qui AFFIRME une opposabilité pleine\n` +
+    `devient trop large dès qu'une cécité apparaît, et il en est apparu une par heure cette nuit-là.\n` +
+    `J'avais répondu « à partir de ma prochaine campagne, la phrase couvre ce qu'elle dit » — une\n` +
+    `promesse à date de péremption inconnue, démentie à la campagne suivante. ⇒ Une phrase qui dit sa\n` +
+    `portée ne peut plus être débordée par une découverte : elle peut seulement être COMPLÉTÉE.)\n` +
     `\n(Relevé par kairos le 2026-08-25 : ma phrase disait « mesuré sur l'état de vos arbres à\n` +
     `l'instant de ma lecture », et j'appelais ça opposable. Une photo à l'arrivée ne peut pas\n` +
     `attester une immobilité pendant un intervalle : un dépôt qui écrivait puis commitait avant mon\n` +
