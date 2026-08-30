@@ -1,13 +1,13 @@
 {
-  "quand": "2026-08-30T12:26:55.785Z",
-  "empreinte": "3cfefb9a827e445a",
+  "quand": "2026-08-30T19:35:21.433Z",
+  "empreinte": "a53a7b72518d46dd",
   "sortieDuPortillon": "0",
   "mesure": {
-    "appelsExamines": 858566,
-    "appelsEcrivants": 454163,
-    "cheminsSousMonArbre": 12312,
+    "appelsExamines": 806845,
+    "appelsEcrivants": 392227,
+    "cheminsSousMonArbre": 11529,
     "parRacineDeTete": {
-      "packages": 12312
+      "packages": 11529
     },
     "relatifsNonResolus": 0,
     "relatifsHorsGit": 0,
