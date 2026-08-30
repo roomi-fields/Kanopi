@@ -1258,6 +1258,13 @@ function ceQueMonPortillonAEcrit(fichierDeTrace) {
   const tetes = [...par.entries()]
     .sort((a, b) => b[1].length - a[1].length)
     .map(([tete, liste]) => `${tete} (${liste.length})`);
+  // La trace d'une campagne complète pèse une centaine de mégaoctets. Elle a servi ; la garder
+  // ferait un tas qui grossit d'une campagne à l'autre sans que personne ne la relise.
+  try {
+    unlinkSync(fichierDeTrace);
+  } catch {
+    /* rien à retirer, ce n'est pas une faute */
+  }
   const relatifs = r.relatifs.length
     ? `\n    ⚠️ ${r.relatifs.length} chemin(s) RELATIF(S) non résolus — la trace ne suit pas le répertoire courant, je ne sais pas où ils atterrissent.`
     : "";
