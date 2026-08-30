@@ -54,8 +54,12 @@ import {
   derniereEcriture,
   basculesEntre,
 } from "./lib/releve-des-ecritures.mjs";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
+import {
+  ecrituresSous,
+  parRacineDeTete,
+} from "./lib/ecritures-du-portillon.mjs";
 import {
   voisinsLies,
   racinesExposees,
@@ -919,6 +923,7 @@ function rendreLeVerdict(
   sortiePush,
   identifiant,
   pendant,
+  ecrituresChezMoi,
 ) {
   if (destinataires.length === 0) return;
   // ⛔ SI MON SOURCE A BOUGÉ DEPUIS MON LANCEMENT, CE MESSAGE PEUT NE PAS ÊTRE CELUI QUE MON DÉPÔT
@@ -966,6 +971,11 @@ function rendreLeVerdict(
     `un banc à moi, un garde à moi, une dépendance. Un voisin qui aurait basculé pendant ma mesure\n` +
     `produirait ce même 1, et un voisin parfaitement discipliné aussi. Ce code mesure MA porte, pas\n` +
     `vos gestes ; ce qui dirait vos gestes est le RELEVÉ D'INTERVALLE ci-dessous.\n\n` +
+    `⛔ ET MOI, QU'AI-JE ÉCRIT PENDANT QUE JE VOUS GELAIS ? Un gel demande à l'autre de ne pas écrire,\n` +
+    `et rien ne le demande à MON portillon, qui construit et efface sous mon propre arbre. Ceux d'entre\n` +
+    `vous dont le banc lit MA source lisaient donc un arbre qui bougeait. Mesuré à la trace des\n` +
+    `ouvertures de cette campagne même, jamais par lecture de mes scripts :\n\n` +
+    `    ${(ecrituresChezMoi ?? "CE QUE MON PORTILLON A ÉCRIT CHEZ MOI : NON MESURÉ.").replace(/\n/g, "\n    ")}\n\n` +
     `⛔ CE QUI A BOUGÉ PENDANT QUE JE MESURAIS — comparaison DÉPART contre ARRIVÉE, chez chacun sous\n` +
     `les racines que SON manifeste expose et dans ce manifeste. ⚠️ CETTE LISTE EST GLOBALE : elle porte\n` +
     `les onze, pas vous seul. Cherchez votre nom ; son absence vous concerne autant que sa présence.\n` +
@@ -1221,6 +1231,46 @@ function fermerLaFenetre() {
   }
 }
 
+/**
+ * CE QUE MA CAMPAGNE A ÉCRIT DANS MON PROPRE ARBRE, rendu par racine de tête — la granularité que mes
+ * voisins emploient quand ils déclarent ce que leur banc lit chez moi.
+ *
+ * ⛔ SON EMPLOI EST UN AVEU, PAS UN BULLETIN DE SANTÉ : un voisin qui gèle mon dépôt me demande de ne
+ * rien écrire sous ses racines, et cette ligne dit si mon portillon a tenu cette demande à sa place.
+ * Elle part donc DANS LE VERDICT, chez les gelés, jamais seulement dans ma console.
+ *
+ * ⚠️ UNE TRACE ABSENTE SE DIT ABSENTE. Si `strace` manque, la campagne tourne quand même — mais la
+ * ligne annonce qu'elle n'a rien mesuré, au lieu de rendre un zéro qui ressemble à une absence
+ * d'écriture.
+ */
+function ceQueMonPortillonAEcrit(fichierDeTrace) {
+  if (!existsSync(fichierDeTrace))
+    return "CE QUE MON PORTILLON A ÉCRIT CHEZ MOI : NON MESURÉ — aucune trace produite (traceur absent ?).";
+  let r;
+  try {
+    r = ecrituresSous(fichierDeTrace, RACINE);
+  } catch (e) {
+    return `CE QUE MON PORTILLON A ÉCRIT CHEZ MOI : NON MESURÉ — la trace n'a pas pu être lue (${e.message}).`;
+  }
+  if (r.examinees === 0)
+    return "CE QUE MON PORTILLON A ÉCRIT CHEZ MOI : NON MESURÉ — ZÉRO appel dans la trace, donc l'instrument s'est tu, pas le portillon.";
+  const par = parRacineDeTete(r.chemins, RACINE);
+  const tetes = [...par.entries()]
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(([tete, liste]) => `${tete} (${liste.length})`);
+  const relatifs = r.relatifs.length
+    ? `\n    ⚠️ ${r.relatifs.length} chemin(s) RELATIF(S) non résolus — la trace ne suit pas le répertoire courant, je ne sais pas où ils atterrissent.`
+    : "";
+  return (
+    `CE QUE MON PORTILLON A ÉCRIT CHEZ MOI — trace des ouvertures, ${r.examinees} appel(s) examiné(s), ` +
+    `${r.ecrivantes} écrivant(s) :\n    ` +
+    (tetes.length
+      ? `sous ${tetes.join(" · ")}`
+      : "AUCUNE écriture sous mon arbre") +
+    relatifs
+  );
+}
+
 async function tirer() {
 // ⛔ UN SEUL TIR A LA FOIS. Le 2026-08-24 à 12:07 puis 12:08, DEUX fenêtres ont été ouvertes au nom
 // de kanopi à une minute d'intervalle : deux armes tournaient, la seconde ayant été lancée après
@@ -1357,16 +1407,35 @@ for (;;) {
   } else if (Date.now() - demandeeA >= GRACE_MS) {
     const depart = new Date();
     console.log(`DEPART ${hh(depart)} — apres ${tours} tour(s) d attente`);
+    // ⛔ LA CAMPAGNE SE TRACE, PARCE QUE MON PORTILLON ÉCRIT DANS L'ARBRE QUE MES VOISINS LISENT.
+    // Consigne de l'architecte du 2026-08-30 : la question « le mien écrit-il ? » se pose chez chacun
+    // PAR LA TRACE, jamais par une lecture de liste — un voisin s'est trompé dans les deux sens en la
+    // lisant. Le geste ne se demande donc pas à part : il est ici, sur la campagne réelle, sinon il
+    // faudrait faire tourner le portillon une seconde fois pour rien et hors de toute fenêtre.
+    const TRACE = join(tmpdir(), `kanopi-trace-portillon-${process.pid}.txt`);
     const r = execFileSync(
       "bash",
-      ["-c", `cd ${RACINE} && git push 2>&1; echo "SORTIE:$?"`],
+      [
+        "-c",
+        // ⛔ LE TRACEUR NE DOIT JAMAIS EMPÊCHER LA CAMPAGNE : s'il manque, on pousse sans lui et
+        // c'est la ligne de verdict qui dit « non mesuré ». Une campagne qui meurt en 127 parce
+        // qu'un outil de mesure est absent gèle douze dépôts pour rien.
+        `cd ${RACINE} && if command -v strace >/dev/null 2>&1; then ` +
+          `strace -f -qq -s 512 --seccomp-bpf -e trace=openat,open,creat,rename,renameat,renameat2,unlink,unlinkat,mkdir,mkdirat,link,linkat,symlink,symlinkat,truncate -o ${TRACE} git push 2>&1; ` +
+          `else git push 2>&1; fi; echo "SORTIE:$?"`,
+      ],
       {
         encoding: "utf8",
+        // La trace d'une campagne complète dépasse le tampon par défaut de la sortie ; c'est le
+        // FICHIER qui la porte, mais la sortie de `git push` grossit aussi avec les bancs.
+        maxBuffer: 256 * 1024 * 1024,
       },
     );
     console.log(r);
     const arrivee = new Date();
     console.log(`ARRIVEE : ${hh(arrivee)}`);
+    const ecrituresChezMoi = ceQueMonPortillonAEcrit(TRACE);
+    console.log(ecrituresChezMoi);
     // ⛔ LE SECOND RELEVÉ, ET C'EST CE QUI TRANSFORME UNE PHOTO EN INTERVALLE MESURÉ.
     //
     // Relevé par kairos le 2026-08-25 : « une photo à l'arrivée ne peut pas attester une immobilité
@@ -1409,6 +1478,7 @@ for (;;) {
       r,
       identifiant,
       pendant,
+      ecrituresChezMoi,
     );
     fermerLaFenetre();
     break;
