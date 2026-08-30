@@ -19,4 +19,4 @@ alphabet.western:midi
 -----
 mode:rnd
 S -> volumecont $A_r &A_r
-A_r -> !(volume:5) {A4. D5 B5} !(volume:127)
+A_r -> !(volume:5) {A4 . D5 B5} !(volume:127)
