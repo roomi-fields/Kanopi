@@ -65,6 +65,40 @@ import {
 import { voisinsLusParChemin } from "./lib/voisins-lus-par-chemin.mjs";
 
 const RACINE = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
+
+/**
+ * ⛔ MON PROPRE SOURCE, TEL QU'IL ÉTAIT AU LANCEMENT — et pourquoi je le retiens.
+ *
+ * Le 2026-08-30 à 03:01, mon verdict est parti avec une phrase que j'avais CORRIGÉE, ENREGISTRÉE et
+ * que cette campagne-là POUSSAIT au même moment. Un processus charge son source au lancement : éditer
+ * pendant qu'il tourne change le dépôt, jamais le processus. ⇒ « corrigé, enregistré et poussé » ne
+ * veut pas dire « le message qui vient de partir le porte ».
+ *
+ * ⇒ C'était ma troisième sur-déclaration de la nuit et la plus difficile à voir : les deux premières
+ *   venaient d'un correctif que je n'avais pas encore écrit — celle-ci vient d'un correctif ÉCRIT, et
+ *   tout ce que le dépôt pouvait me montrer disait que c'était réparé.
+ *
+ * ⇒ ⚠️ UNE PROMESSE DE CONDUITE NE TIENT PAS — je m'étais déjà interdit d'écrire pendant ma fenêtre,
+ *   et je l'avais dit AU MOMENT DE LE FAIRE. Le garde existe parce que l'avoir dit n'a pas suffi.
+ */
+const MON_SOURCE_AU_LANCEMENT = (() => {
+  try {
+    return readFileSync(new URL(import.meta.url).pathname, "utf-8");
+  } catch {
+    return null;
+  }
+})();
+
+/** Mon source a-t-il changé sur le disque depuis que je l'ai chargé ? Rendu au verdict, jamais tu. */
+function monSourceABouge() {
+  if (MON_SOURCE_AU_LANCEMENT === null) return "empreinte de lancement ILLISIBLE";
+  try {
+    const maintenant = readFileSync(new URL(import.meta.url).pathname, "utf-8");
+    return maintenant === MON_SOURCE_AU_LANCEMENT ? null : "MODIFIÉ depuis mon lancement";
+  } catch {
+    return "source DEVENU ILLISIBLE depuis mon lancement";
+  }
+}
 /** ⛔ LA TOUR S APPELLE EN TABLEAU, JAMAIS À TRAVERS UN SHELL — et ce n est pas parce qu un texte y
  *  transite aujourd hui, mais parce que rien n empêche d y en remettre demain. C est le raisonnement
  *  que j ai opposé à `--fichier` le 2026-08-25 : une parade qui déplace le texte hors du shell sans
@@ -887,6 +921,17 @@ function rendreLeVerdict(
   pendant,
 ) {
   if (destinataires.length === 0) return;
+  // ⛔ SI MON SOURCE A BOUGÉ DEPUIS MON LANCEMENT, CE MESSAGE PEUT NE PAS ÊTRE CELUI QUE MON DÉPÔT
+  // PORTE — et le destinataire n'a aucun moyen de le savoir. Il le dit lui-même, en tête, avant tout
+  // le reste : un message qui peut mentir sur sa propre version doit le déclarer.
+  const derive = monSourceABouge();
+  const avertissementDeVersion = derive
+    ? `⛔ CE VERDICT PEUT NE PAS ÊTRE À JOUR — mon source a été ${derive}. Un processus charge son\n` +
+      `source au LANCEMENT : ce que mon dépôt porte maintenant n'est pas forcément ce qui a écrit ces\n` +
+      `lignes. Le 2026-08-30 à 03:01, un verdict est parti avec une phrase que la campagne elle-même\n` +
+      `poussait corrigée. ⇒ Lire ce message contre le commit poussé ci-dessous, jamais contre mon\n` +
+      `dépôt à l'instant de la lecture.\n\n`
+    : "";
   const pousse = /main -> main/.test(sortiePush)
     ? (sortiePush.match(/[0-9a-f]{7}\.\.[0-9a-f]{7}/) ?? ["poussé"])[0]
     : "rien poussé";
@@ -910,6 +955,7 @@ function rendreLeVerdict(
   const pourquoi =
     sortie === "0" ? "" : `\n    CE QUI A RENDU ${sortie} :\n    ${causes}\n`;
   const texte =
+    avertissementDeVersion +
     `VERDICT DE LA CAMPAGNE ${identifiant}, tirée par ${ARME} — départ ${hh(depart)}, arrivée ${hh(arrivee)}.\n\n` +
     `⛔ CET IDENTIFIANT EST CELUI DE L'AVIS QUE VOUS AVEZ REÇU. S'il ne correspond pas au DERNIER\n` +
     `avis reçu de moi, ce verdict ne vous libère PAS : une autre campagne mesure encore.\n\n` +
@@ -1150,6 +1196,15 @@ function fermerLaFenetre() {
           (v.sites ? `\n  ${" ".repeat(20)} lu par chemin : ${v.sites.join(" ")}` : ""),
       );
     }
+    // ⛔ LE MÊME CONTRÔLE QUE LE VERDICT, RENDU ICI — sinon il ne s'éprouve qu'en gelant douze
+    // dépôts. Le relevé dure assez longtemps pour qu'on modifie ce fichier pendant qu'il tourne :
+    // c'est là que la dérive de version se montre, sans campagne.
+    const deriveIci = monSourceABouge();
+    console.log(
+      deriveIci
+        ? `\n⛔ MON SOURCE A ÉTÉ ${deriveIci} — un verdict parti maintenant ne serait pas celui que mon dépôt porte.`
+        : "\n✓ mon source est celui que j'ai chargé au lancement.",
+    );
     console.log("\nAucune fenêtre ouverte, aucun dépôt gelé, rien n'a été mesuré.");
     process.exit(0);
   } else {
