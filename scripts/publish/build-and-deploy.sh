@@ -89,10 +89,21 @@ DOC_SRC="$REPO_ROOT/../atlas/doc-utilisateur"
 # La règle est celle que j'applique déjà aux onze : je ne pars pas en production sur du non-enregistré
 # QUI ENTRE DANS MON PAQUET. Sa doc entre dans mon paquet (`public/docs` → `dist/docs`), donc elle y
 # tombe. Sa charte le dit désormais aussi (atlas f87b2d3).
+#
+# ⛔ `--no-optional-locks` PARCE QUE `status` RAFRAÎCHIT L'INDEX ET PREND `.git/index.lock` CHEZ LUI.
+# Sa commande git échoue alors sur « Unable to create '.git/index.lock' », rarement et sans que rien
+# dans son dépôt ne le nomme. Ces DEUX appels ont été trouvés par atlas le 2026-08-30, dans le geste
+# où il me signalait le même défaut chez lui.
+#
+# ⇒ ILS ÉTAIENT HORS DES TROIS CHEMINS QUE J'AVAIS TRACÉS — relevé, gardes de structure, construction
+#   — et j'avais écrit cette limite en rendant ma mesure. C'est par elle qu'il est entré : une borne
+#   écrite se fait vérifier par quelqu'un d'autre, tue elle ne l'aurait pas été.
+#
+# ⚠️ ET IL Y EN A DEUX, LÀ OÙ SON CONSTAT EN NOMMAIT UN. Le second recompte ce que le premier a lu.
 if [[ -d "$DOC_SRC" ]]; then
-  DOC_SALE="$(git -C "$DOC_SRC" status --porcelain -- . 2>/dev/null | head -20)"
+  DOC_SALE="$(git -C "$DOC_SRC" --no-optional-locks status --porcelain -- . 2>/dev/null | head -20)"
   if [[ -n "$DOC_SALE" ]]; then
-    DOC_N="$(git -C "$DOC_SRC" status --porcelain -- . 2>/dev/null | wc -l)"
+    DOC_N="$(git -C "$DOC_SRC" --no-optional-locks status --porcelain -- . 2>/dev/null | wc -l)"
     if [[ "$TARGET" == "prod" ]]; then
       echo "ERREUR : la doc d'atlas porte $DOC_N modification(s) non enregistrée(s) — elles" >&2
       echo "         PARTIRAIENT en production, et rien ne les signalerait ensuite :" >&2
