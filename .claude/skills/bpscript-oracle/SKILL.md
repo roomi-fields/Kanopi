@@ -59,9 +59,9 @@ forme peut vivre dans les trois spécifications et être sortie depuis.
 ## ⛔ Cet oracle ne compile pas — et c'est le point
 
 La posture d'avant était : « le compilateur tranche ». **Elle est renversée.** Les trois spécifications
-décrivent le langage **tel qu'il est spécifié** ; le parseur ne le lit pas encore en entier. Le langage
-de patch, les modules, les blocs de terminaux, les réglages entre parenthèses : tout cela est **écrit
-dans la spécification et refusé par le code**.
+décrivent le langage **tel qu'il est spécifié** ; le parseur ne le lit pas encore en entier. Les
+modules, les blocs de terminaux, les réglages entre parenthèses : tout cela est **écrit dans la
+spécification et refusé par le code**.
 
 Un oracle qui compilerait rendrait donc un **faux négatif sur une forme juste**, et enseignerait qu'elle
 n'existe pas. Le mécanisme censé protéger de l'erreur en produirait.
@@ -215,5 +215,8 @@ Quand le langage bouge, ce sont les **trois spécifications** qui bougent — ch
 **registre des mots sortis** — chez le hub. Ce skill suit ces deux mouvements, et sa **posture** ne
 change que sur décision.
 
-Sa source vit dans `atlas/.claude/skills/bpscript-oracle/` ; les autres exemplaires en sont des copies,
-régénérées depuis là (`hub/tools/sync-skills.sh`).
+Sa source vit dans `atlas/.claude/skills/bpscript-oracle/` ; les autres exemplaires en sont des copies.
+`hub/tools/sync-skills.sh` les régénère en deux temps : il remonte la source **à son commit** vers le
+gabarit `hub/skills/`, puis diffuse ce gabarit aux seize dépôts. **C'est l'enregistré qui voyage**, et
+une correction encore sur le disque se rediffuse à l'identique de l'état d'avant. Une rediffusion se
+vérifie donc sur la **graphie corrigée dans une copie**, jamais sur le verdict de l'outil.
