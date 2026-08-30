@@ -192,16 +192,26 @@ mémoire, ils datent d'avant leur retrait.
 | aucun — les profils d'environnement sont retirés | `routing` |
 | FaustX, chantier à venir | la modulation, le câblage `>>`, et `map` que ce câblage avait remplacé |
 
-**Six mots sortent sans emporter leur notion**, et les confondre casse la page qui décrit la notion :
+**Cinq mots sortent sans emporter leur notion**, et les confondre casse la page qui décrit la notion :
 
 | le mot sort | la notion reste |
 |---|---|
-| `trigger` | ce que le point d'attente attend s'appelle un trigger |
 | `in` · `out` | le **type** — `in.midi sync1`, et `out` reste l'une des cinq clés d'acteur |
 | `cc` | le **contrôle de flux** — `cc.98:45` s'écrit |
 | `scale` | l'**axe de catalogue** — `scale.raga_bhairav` — et le contrôle dans le sac de flux, `!(scale:2)` |
 | `template` | le **mot de section** — `template` ouvre le catalogue des formes en fin de scène ; ce qui sort est la **directive de tête**, et elle seule |
 | `flag` | les drapeaux, leurs gardes `[section==intro]` et leurs mutations `[section=drop]` |
+
+**`gate` et `trig` n'emportent aucune notion — ils sortent entiers**, `trigger` compris, sous chacun de
+leurs référents de langage : le type de port, le type temporel du contrat de BPx (`temporalType`), et
+le mot de tête. Ce que le point d'attente attend n'a **pas de nom arrêté**.
+
+⛔ **Hors du langage, `gate` nomme le portillon lui-même** — `[gate] vert`, `install-gate.sh`,
+`gate-registry`, et les tâches d'un portillon, `gate:`. Il vit ainsi dans la majorité des dépôts, et
+dans le nom des gardes eux-mêmes. **Un garde qui cherche ce mot en sous-chaîne rougit sur l'outil qui
+rend le verdict**, et jusque sur le mot français *navigateur*. **La graphie se qualifie ligne à ligne,
+sur son référent — que désigne ce mot ICI — jamais sur un compte.** Le même piège vaut pour `cv`, qui
+nomme la tension de contrôle de la modulation chez runtime-audio, et qui s'y écrit `CV`.
 
 Ce tableau est un aide-mémoire, **pas une autorité** : chaque emploi se vérifie dans les trois
 documents et dans le registre, qui seuls font foi.
@@ -220,3 +230,10 @@ Sa source vit dans `atlas/.claude/skills/bpscript-oracle/` ; les autres exemplai
 gabarit `hub/skills/`, puis diffuse ce gabarit aux seize dépôts. **C'est l'enregistré qui voyage**, et
 une correction encore sur le disque se rediffuse à l'identique de l'état d'avant. Une rediffusion se
 vérifie donc sur la **graphie corrigée dans une copie**, jamais sur le verdict de l'outil.
+
+⛔ **ENREGISTRÉ N'EST PAS PUBLIÉ, ET LE GARDE DES COPIES MESURE CONTRE LE PUBLIÉ.** Diffuser un commit
+qui n'est pas encore poussé livre aux seize dépôts un état qu'aucune référence distante ne porte :
+leurs portillons le comparent au publié du propriétaire, le trouvent divergent, et **refusent la
+poussée de tous**. ⇒ **L'ordre est donc : pousser d'abord, rediffuser ensuite.** Il vaut aussi pour le
+gabarit lui-même, qui vit dans le dépôt partagé — tant qu'il y reste non enregistré, tout portillon
+qui lit le disque rougit pour une cause qui n'appartient pas à celui qui pousse.
