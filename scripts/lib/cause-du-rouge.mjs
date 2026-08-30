@@ -73,6 +73,54 @@ function avecSonDetail(lignes, i) {
   return bloc;
 }
 
+/**
+ * ⛔ À QUI LE ROUGE APPARTIENT — trois attributions, et la troisième manquait.
+ *
+ * Le marqueur est la PHRASE que le refus écrit, jamais une déduction sur l'étape qui a rendu 1.
+ *
+ * ⛔ CE QU'ELLE A COÛTÉ, MESURÉ LE 2026-08-30 : bpx a reconstruit son `dist` pendant ma trace —
+ * 245 entrées remplacées — et mon relevé de fin de campagne a refusé, à raison. Mais mes deux
+ * appelants ne connaissaient que DEUX causes étrangères, alors ils ont écrit « la cause est chez
+ * moi » sous un verdict qui nommait bpx en toutes lettres. ⇒ Un refus juste sous une attribution
+ * fausse envoie chercher un défaut là où il n'y en a pas.
+ *
+ * ⇒ ET ELLE VIT ICI PARCE QU'ELLE VIVAIT EN DEUX EXEMPLAIRES — `tir-arme.mjs` et
+ *   `trace-du-portillon.mjs` portaient chacun sa copie du test. Le troisième cas n'a été ajouté à
+ *   aucune des deux, ce qui est exactement ce qu'une voie parallèle produit.
+ */
+const ATTRIBUTIONS = [
+  {
+    qui: "voisin",
+    marqueur: "UN VOISIN A BASCULÉ PENDANT CETTE CAMPAGNE",
+    phrase:
+      "Un VOISIN a reconstruit pendant la mesure : le résultat porte sur deux états, donc sur " +
+      "aucun. Ce n'est pas un défaut d'ici, et ça ne se relance pas à l'aveugle.",
+  },
+  {
+    qui: "voisin",
+    marqueur: "CONSTRUCTION DE PRODUCTION REFUSÉE",
+    phrase:
+      "La cause est l'arbre de travail d'un VOISIN, pas mon portillon : sa construction est " +
+      "refusée tant qu'il n'enregistre pas.",
+  },
+  {
+    qui: "courrier",
+    marqueur: "message(s) NON LU(S)",
+    phrase: "La cause est mon COURRIER non lu, arrivé pendant la mesure.",
+  },
+];
+
+/**
+ * Rend `{ qui, phrase }` — `qui` vaut `voisin`, `courrier` ou `moi`. `moi` est le DÉFAUT, et c'est
+ * voulu : une attribution qui se replierait sur « un voisin » disculperait par ignorance.
+ */
+export function attributionDuRouge(sortie) {
+  const texte = String(sortie);
+  for (const a of ATTRIBUTIONS)
+    if (texte.includes(a.marqueur)) return { qui: a.qui, phrase: a.phrase };
+  return { qui: "moi", phrase: "La cause est chez moi — elle est écrite ci-dessus." };
+}
+
 export function causeDuRouge(sortie) {
   const lignes = String(sortie).split("\n");
   const repechees = [];
@@ -87,4 +135,108 @@ export function causeDuRouge(sortie) {
   // une autre forme : le lecteur verrait « CE QUI A RENDU 1 : » suivi de rien et ne saurait pas si
   // l'extraction a échoué ou si le crochet s'est tu. Les deux appellent des gestes différents.
   return ["(le crochet n'a rien imprimé avant de rendre son code)"];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// ⛔ L'ÉPREUVE — ce module DISAIT exister pour être éprouvé, et rien ne l'exerçait.
+//
+// Mesuré le 2026-08-30 : un seul appelant (`tir-arme.mjs`), aucun banc, aucun `--eprouver`. Son
+// en-tête décrivait la raison de son extraction comme si elle avait été honorée. Un commentaire se
+// relit comme une preuve.
+//
+// Les cas sont ÉCRITS À LA MAIN, jamais dérivés d'une sortie captée : un juge dérivé de l'accusé
+// confirme ce qu'il devait trouver. Le contrôle POSITIF compte autant que les refus — un
+// extracteur qui rendrait toujours quelque chose serait vert sur chaque cas et n'aurait rien prouvé.
+if (process.argv[2] === "--eprouver") {
+  const cas = [];
+  const verifier = (quoi, obtenu, attendu) =>
+    cas.push({ quoi, ok: JSON.stringify(obtenu) === JSON.stringify(attendu), obtenu, attendu });
+
+  // ── L'ATTRIBUTION, sur les quatre issues et dans les deux sens.
+  const att = (s) => attributionDuRouge(s).qui;
+  verifier(
+    "un voisin qui BASCULE pendant la mesure est attribué au voisin",
+    att("Test Files 83 passed\nError: UN VOISIN A BASCULÉ PENDANT CETTE CAMPAGNE — bpx : 245"),
+    "voisin",
+  );
+  verifier(
+    "un arbre de voisin SALE est attribué au voisin",
+    att("[gate] build…\n⛔ CONSTRUCTION DE PRODUCTION REFUSÉE — kairos : 2 non enregistré(s)"),
+    "voisin",
+  );
+  verifier(
+    "mon courrier non lu est attribué au courrier, jamais à mon code",
+    att("[gate] tour inbox…\n⛔ 3 message(s) NON LU(S) — lis avant de pousser"),
+    "courrier",
+  );
+  verifier(
+    "un rouge SANS marqueur étranger reste à moi — l'attribution ne disculpe pas par ignorance",
+    att("FAIL src/lib/x.test.ts\n  • attendu 3, obtenu 4"),
+    "moi",
+  );
+  verifier(
+    "une sortie VIDE reste à moi",
+    att(""),
+    "moi",
+  );
+  // ⛔ LE TÉMOIN QUI DISCRIMINE LES DEUX MARQUEURS DE VOISIN : ils ne rendent pas la même phrase,
+  // et les confondre effacerait la différence entre « il n'a pas enregistré » et « il a reconstruit
+  // sous moi » — deux gestes différents attendus de lui.
+  verifier(
+    "les deux causes de voisin ne rendent pas la même phrase",
+    attributionDuRouge("UN VOISIN A BASCULÉ PENDANT CETTE CAMPAGNE").phrase ===
+      attributionDuRouge("CONSTRUCTION DE PRODUCTION REFUSÉE").phrase,
+    false,
+  );
+
+  // ── L'EXTRACTION de la cause.
+  // La forme réelle du rouge du 2026-08-25 : l'accusation, sa cause indentée, puis une ligne vide.
+  verifier(
+    "une accusation emporte le détail INDENTÉ sous elle",
+    causeDuRouge("[gate] build…\n✗ Build failed in 19.28s\n    dirname is not exported\n\nsuite"),
+    ["✗ Build failed in 19.28s", "    dirname is not exported"],
+  );
+  // ⛔ ET LA BORNE DANS L'AUTRE SENS, sinon « emporte le détail » ne se distingue pas de « emporte
+  // les trois lignes suivantes » : une LIGNE VIDE arrête le bloc, une NOUVELLE accusation aussi et
+  // se repêche pour elle-même.
+  verifier(
+    "une ligne vide arrête le détail",
+    causeDuRouge("✗ premier\n\nune prose qui suit"),
+    ["✗ premier"],
+  );
+  verifier(
+    "une nouvelle accusation arrête le détail et se repêche seule",
+    causeDuRouge("✗ premier\nFAIL second\n    son détail"),
+    ["✗ premier", "FAIL second", "    son détail"],
+  );
+  verifier(
+    "le refus de git est la CONSÉQUENCE et ne compte pas comme cause",
+    causeDuRouge("error: impossible de pousser\n[warn] Code style issues found"),
+    ["[warn] Code style issues found"],
+  );
+  verifier(
+    "sans aucun motif, les dernières lignes non vides partent quand même",
+    causeDuRouge("une prose\n\nsans motif reconnaissable"),
+    ["une prose", "sans motif reconnaissable"],
+  );
+  verifier(
+    "une sortie muette se DIT, elle ne rend pas une liste vide",
+    causeDuRouge("").length > 0,
+    true,
+  );
+
+  const rates = cas.filter((c) => !c.ok);
+  if (cas.length === 0) {
+    console.error("[cause-du-rouge] AUCUN CAS EXÉCUTÉ — l'épreuve n'a rien prouvé.");
+    process.exit(1);
+  }
+  for (const c of cas) console.log(`  ${c.ok ? "✓" : "✗"} ${c.quoi}`);
+  if (rates.length) {
+    for (const c of rates)
+      console.error(`    attendu ${JSON.stringify(c.attendu)}, obtenu ${JSON.stringify(c.obtenu)}`);
+    process.exit(1);
+  }
+  console.log(
+    `  ✓ ${cas.length} cas — l'attribution rend les trois causes étrangères et retombe sur MOI par défaut.`,
+  );
 }

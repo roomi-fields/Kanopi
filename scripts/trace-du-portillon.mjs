@@ -21,6 +21,7 @@ import { existsSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ecrituresSous, parRacineDeTete } from "./lib/ecritures-du-portillon.mjs";
+import { attributionDuRouge } from "./lib/cause-du-rouge.mjs";
 import {
   empreinteDuPortillon,
   ecrireReleve,
@@ -99,22 +100,20 @@ try {
 }
 
 // ⛔ UN ROUGE QUI N'EST PAS LE MIEN NE DOIT PAS ÉCRASER UNE MESURE VALIDE. Le marqueur est la PHRASE
-// que le refus écrit, jamais une déduction sur l'étape : mon arme tient déjà la même distinction.
+// que le refus écrit, jamais une déduction sur l'étape — et la liste des phrases vit chez
+// `cause-du-rouge.mjs`, éprouvée, partagée avec mon arme. Elle en portait deux jusqu'au 2026-08-30,
+// où bpx a reconstruit son `dist` sous cette trace : 245 entrées, un refus juste, et une attribution
+// « la cause est chez moi » sous un verdict qui le nommait en toutes lettres.
 if (sortie !== "0") {
   const journal = lireTexte(JOURNAL);
-  const duVoisin = journal.includes("CONSTRUCTION DE PRODUCTION REFUSÉE");
-  const courrier = journal.includes("message(s) NON LU(S)");
+  const attribution = attributionDuRouge(journal);
   if (ancien) ecrireReleve(ancien);
   else ecrireReleve({ quand, empreinte, sortieDuPortillon: sortie, mesure: null, pourquoi: "portillon rouge" });
   rmSync(TRACE, { force: true });
   rmSync(JOURNAL, { force: true });
   console.error(
     `⛔ RIEN MESURÉ — le portillon a rendu ${sortie}. ` +
-      (duVoisin
-        ? "La cause est l'arbre de travail d'un VOISIN, pas mon portillon : sa construction est refusée tant qu'il n'enregistre pas."
-        : courrier
-          ? "La cause est mon COURRIER non lu, arrivé pendant la trace."
-          : "La cause est chez moi — elle est écrite ci-dessus.") +
+      attribution.phrase +
       (ancien
         ? "\n   Le relevé précédent est INTACT : une tentative ratée n'écrase pas une mesure valide."
         : "\n   Aucun relevé précédent à garder — le portillon reste refusé jusqu'à une trace complète."),

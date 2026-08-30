@@ -46,7 +46,7 @@ import {
   mkdirSync,
   existsSync,
 } from "node:fs";
-import { causeDuRouge } from "./lib/cause-du-rouge.mjs";
+import { causeDuRouge, attributionDuRouge } from "./lib/cause-du-rouge.mjs";
 import { qualifierEcriture } from "./lib/qualifier-ecriture.mjs";
 import { geleParUnVoisin } from "./lib/gel-recu.mjs";
 import {
@@ -567,7 +567,12 @@ function preVol() {
         // ⇒ Le marqueur est la PHRASE QUE MON REFUS ÉCRIT (`voisins-lies.mjs`), pas une déduction
         //   sur l'étape : un jour la construction rougira pour une raison qui EST la mienne, et ce
         //   jour-là il faut s'arrêter.
-        duVoisin: sortie.includes("CONSTRUCTION DE PRODUCTION REFUSÉE"),
+        //
+        // ⇒ ET LA LISTE DES MARQUEURS VIT CHEZ `cause-du-rouge.mjs`, éprouvée, jamais recopiée ici.
+        //   Elle en portait DEUX quand ce test était écrit à la main ; le troisième — un voisin qui
+        //   RECONSTRUIT sous la mesure — a été mesuré le 2026-08-30 et n'aurait été ajouté qu'à une
+        //   des deux copies.
+        attribution: attributionDuRouge(sortie),
         cause: lignes.length
           ? lignes.join("\n")
           : sortie.split("\n").slice(-8).join("\n"),
@@ -1359,13 +1364,12 @@ for (;;) {
     // perdre ce que j'ajoutais.
     // ⛔ RIEN NE SE GÈLE AVANT QUE CE QUI EST À MOI SOIT VERT.
     const echec = preVol();
-    if (echec !== null && echec.duVoisin) {
+    if (echec !== null && echec.attribution.qui === "voisin") {
       // Un voisin a re-sali son arbre entre ma condition d'attente et mon pré-vol. Je RETOURNE
       // attendre — m'arrêter ici demanderait un relancement manuel pour une condition qui se lève
       // toute seule, et ferait porter à mon dépôt un rouge qui n'est pas le sien.
       console.log(
-        `${hh(new Date())} — j attends : la construction refuse sur l'arbre d'un voisin, ` +
-          `pas sur le mien :\n${echec.cause}`,
+        `${hh(new Date())} — j attends : ${echec.attribution.phrase}\n${echec.cause}`,
       );
       tours++;
       execFileSync("sleep", [String(PAS_MS / 1000)]);
@@ -1374,7 +1378,7 @@ for (;;) {
     if (echec !== null) {
       console.log(
         `${hh(new Date())} — ⛔ PRÉ-VOL ROUGE (${echec.etape}) — AUCUNE fenêtre demandée, ` +
-          `personne n'est gelé. La cause est chez moi :\n${echec.cause}`,
+          `personne n'est gelé. ${echec.attribution.phrase}\n${echec.cause}`,
       );
       process.exit(1);
     }
