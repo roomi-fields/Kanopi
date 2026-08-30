@@ -22,7 +22,7 @@ import {
 } from "node:fs";
 import { join, basename, dirname, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
-import { voisinsLies } from "./voisins-lies.mjs";
+import { voisinsLies, voieDuChemin } from "./voisins-lies.mjs";
 
 /** Les bases où npm pose les liens de voisins, du plus général au plus proche. */
 const BASES = ["node_modules", "packages/ui/node_modules"];
@@ -118,12 +118,10 @@ export function etatPrisReel(racine) {
 /**
  * ⛔ LA VOIE, DÉRIVÉE DE LA RÉSOLUTION RÉELLE — jamais de la forme du chemin ni du dépôt d'arrivée.
  *
- * Trois natures, et la deuxième manquait : `source` (son `src/`), `construit` (son `dist/`, dans son
- * arbre), `paquet` (un dossier immuable hors arbre). ⇒ Les deux premières vivent dans le MÊME dépôt
- * et n'ont pas le même moment : ce qui bascule une source est une sauvegarde, ce qui bascule un
- * `dist` est une CONSTRUCTION.
- *
- * La résolution se prend dans les conditions de la PRODUCTION : c'est ce qui part à l'utilisateur.
+ * La résolution se prend ici, dans les conditions de la PRODUCTION : c'est ce qui part à
+ * l'utilisateur. Le CLASSEMENT du chemin obtenu, lui, vit chez `voisins-lies.mjs` et n'est écrit
+ * qu'une fois : la légende classe le sien avec la même fonction, et deux copies du test
+ * dériveraient jusqu'à rendre deux voies pour le même voisin.
  */
 function voieResolue(racine, specificateur) {
   try {
@@ -136,9 +134,7 @@ function voieResolue(racine, specificateur) {
       ],
       { cwd: join(racine, "packages", "ui"), encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
     ).replace("file://", "");
-    if (/\/\.paquets\//.test(chemin)) return "paquet";
-    if (/\/dist(-types)?\//.test(chemin)) return "construit";
-    return "source";
+    return voieDuChemin(chemin);
   } catch {
     // ⛔ UNE RÉSOLUTION QUI ÉCHOUE NE SE REPLIE PAS SUR « SOURCE » : ce serait rendre la valeur la
     // plus fréquente sous couvert de mesure, et le garde ne verrait jamais la panne.

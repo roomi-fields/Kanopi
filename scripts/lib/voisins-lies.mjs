@@ -763,11 +763,46 @@ function retardDuPaquet(depot, commitDuPaquet, teteDeSource) {
   return `${n} commit(s) DERRIÈRE cette tête`;
 }
 
+/**
+ * ⛔ LA VOIE, CLASSÉE DEPUIS UN CHEMIN DÉJÀ RÉSOLU — trois natures, jamais deux.
+ *
+ * `source` (son `src/`) · `construit` (son `dist/`, DANS son arbre de travail) · `paquet` (un
+ * dossier immuable hors arbre). ⇒ Les deux premières vivent dans le même dépôt et n'ont pas le
+ * même moment : ce qui bascule une source est une sauvegarde, ce qui bascule un `dist` est une
+ * CONSTRUCTION.
+ *
+ * ⛔ ELLE VIT ICI, ET PAS DEUX FOIS. `etat-pris.mjs` prend sa propre résolution et classe avec
+ * cette fonction ; la légende classe le `cheminProd` que la sonde a déjà résolu. Deux copies de ce
+ * test dériveraient et rendraient deux voies pour le même voisin.
+ */
+export function voieDuChemin(chemin) {
+  if (!chemin) return null;
+  if (/\/\.paquets\//.test(chemin)) return "paquet";
+  if (/\/dist(-types)?\//.test(chemin)) return "construit";
+  return "source";
+}
+
 /** Ce que ma production exécute, en une phrase — ou l'aveu qu'elle ne le sait pas. */
 function mentionDuPaquet(regime, teteDeSource, depot) {
   if (!regime) return " · régime non mesuré";
-  if (!regime.deuxRegimes)
+  if (!regime.deuxRegimes) {
+    // ⛔ « INSTANCE UNIQUE » NE VEUT PAS DIRE « SOURCE ». Cette phrase a dit « ma production lit
+    // cette source » jusqu'au 2026-08-30, pour trois voisins dont je résous le `dist` — kronos,
+    // kairos, puis bpx à la fermeture de la dernière condition `development` de la tour. Le fait
+    // mesuré ici est qu'il n'y a QU'UNE instance ; laquelle se lit sur le chemin de production, que
+    // la sonde a déjà résolu sous `browser+production`. Une mesure juste nommait la mauvaise racine.
+    const voie = voieDuChemin(regime.cheminProd);
+    if (voie === "construit")
+      return (
+        " · instance unique, ma production exécute son `dist` — une racine CONSTRUITE dans son " +
+        "arbre : sa RECONSTRUCTION m'atteint sans publication, sa frappe sous `src/` non"
+      );
+    if (voie === "paquet")
+      return " · instance unique, ma production exécute un paquet hors de son arbre";
+    if (voie === null)
+      return " · instance unique, et JE NE SAIS PAS ce que ma production ouvre — la sonde n'a rendu aucun chemin de production";
     return " · instance unique, ma production lit cette source";
+  }
 
   const e = regime.empreinte;
   if (!e || e.absente || e.echec) {

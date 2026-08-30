@@ -143,6 +143,15 @@ if (!existsSync(viteConfig)) {
   const excluded = excludeMatch ? excludeMatch[1] : "";
   // Seuls les voisins ENCORE consommés en source doivent sortir du pré-bundling : un paquet publié
   // est immuable, le pré-bundler ne peut pas le périmer.
+  //
+  // ⛔ ET UN ZÉRO SE DÉCLARE ICI, il ne se traverse pas en silence. Depuis le retrait de la dernière
+  // condition `development` de la tour (bpx, 2026-08-30), cette boucle n'examine RIEN — et une boucle
+  // muette sur un ensemble vide a exactement l'apparence d'une boucle qui a tout vérifié.
+  if (Object.keys(DETTE).length === 0)
+    console.log(
+      "• dette de consommation en source : ZÉRO voisin inscrit — cette vérification n'examine " +
+        "rien, et c'est l'état visé. Elle mord de nouveau dès qu'une entrée réapparaît.",
+    );
   for (const dep of Object.keys(DETTE)) {
     if (!excluded.includes(`'${dep}'`) && !excluded.includes(`"${dep}"`)) {
       errors.push(

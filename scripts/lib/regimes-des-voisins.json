@@ -5,14 +5,13 @@
     "cette liste est une DETTE, et elle ne peut que rétrécir. Le garde `deps-fraicheur.mjs` échoue",
     "dans les DEUX sens — une entrée qui n'est plus vraie doit sortir, sinon elle couvrirait la",
     "réapparition suivante ; un voisin qui expose `development` sans être inscrit ici fait rougir.",
-    "Chaque entrée porte la date de sa mesure et ce qui la lèvera."
+    "Chaque entrée porte la date de sa mesure et ce qui la lèvera.",
+    "",
+    "ÉTAT AU 2026-08-30 : LA DETTE EST À ZÉRO. bpx portait la dernière condition `development` de la",
+    "tour ; il l'a retirée (BPx a7d452a) après préavis, et mon garde a nommé le geste. Un zéro ici se",
+    "DÉCLARE : il ne se lit pas comme une mesure qui n'a rien examiné."
   ],
-  "encore-en-source": {
-    "bpx": {
-      "le": "2026-08-24",
-      "leve-par": "le retrait de sa condition d'export `development`, comme kronos l'a fait le 2026-08-24"
-    }
-  },
+  "encore-en-source": {},
   "__etat-pris": [
     "L'ÉTAT QUE JE PRENDS CHEZ CHAQUE VOISIN, DÉCLARÉ — un par lien, aucun implicite.",
     "Arbitrage de l'architecte du 2026-08-24 : « UN CONSOMMATEUR DÉCLARE L'ÉTAT QU'IL A PRIS.",
