@@ -202,16 +202,30 @@ mémoire, ils datent d'avant leur retrait.
 | `template` | le **mot de section** — `template` ouvre le catalogue des formes en fin de scène ; ce qui sort est la **directive de tête**, et elle seule |
 | `flag` | les drapeaux, leurs gardes `[section==intro]` et leurs mutations `[section=drop]` |
 
-**`gate` et `trig` sortent COMME MOTS DU LANGAGE, et rien d'autre** — `trigger` compris. Trois
-référents de langage partent avec eux : le type de port, le type temporel du contrat de BPx
-(`temporalType`), et le mot de tête. Ce que le point d'attente attend n'a **pas de nom arrêté**.
+⛔ **CE QUI SORT EST UN TYPE DE DONNÉE, JAMAIS UN MOT NI UN CONCEPT** — tranché par Romain le
+2026-08-30 : *« un point d'attente est un point d'attente et le type trigger n'existe plus quel est le
+souci ? c'est pas ne mot ni le concept c'est le type de donnée qui n'existe plus »*
+(`hub/decisions/2026-08-30-ce-qui-sort-est-un-type-de-donnee-jamais-un-mot-ni-un-concept.md`).
+
+| ce qui sort | ce qui reste |
+|---|---|
+| la **valeur** du champ `temporalType: 'gate' \| 'trigger'` du contrat de BPx | le **mot** `trigger`, que la bible emploie **cinq fois** — § *« `<!` — le point d'attente »* : « `<!` attend un **trigger** avant de continuer » |
+| les trois graphies **en tête de déclaration**, refusées par la porte | la **notion** : un point d'attente attend une occurrence entrante nommée |
+| le **type de port** du câblage — sorti à part, avec le patching | le bus d'événements de l'hôte, le nom du portillon, le verbe anglais, la tension de contrôle |
+
+⇒ **Aucun nom de remplacement n'est requis, et il n'y a rien à renommer.** Un terminal d'alphabet se
+reconnaît à la **présence** de sa déclaration — `name` + `runtime` — et la bible le publie déjà ainsi,
+§ *« Ce que porte un terminal »*. ⚠️ **La formule « `gate` et `trig` sortent comme MOTS du langage » a
+vécu ici une journée** : elle enseignait l'inverse de la décision qu'elle citait, et la bible publiée
+la contredisait au même instant. *Une graphie n'est pas un type.*
 
 ⛔ **LE CRITÈRE VAUT POUR TOUT RETRAIT, ET IL SE POSE AVANT LE RELEVÉ.** La question n'est pas *« cette
 graphie est-elle sortie ? »* mais **« que désigne cette graphie ICI — le langage, ou autre chose ? »**.
 Une décision de retrait porte sur un mot du **langage** ; elle n'atteint jamais un homonyme qui nomme
-autre chose. Pour `gate` et `trig`, **sept référents ont été nommés et deux seulement sont du
-langage** : le bus d'événements de l'hôte, le nom du portillon, le verbe anglais, la tension de
-contrôle de la modulation **restent**.
+autre chose. Pour `gate` et `trig`, **sept référents ont été nommés et un seul est le type de donnée
+qui sort** : le point d'attente, le bus d'événements de l'hôte, le nom du portillon dans treize
+dépôts, le verbe anglais, la tension de contrôle de la modulation et les noms de contrat de kairos
+**restent** — relevé par les quatorze dépôts de la tour, chacun sur le sien.
 
 ⛔ **Hors du langage, `gate` nomme le portillon lui-même** — `[gate] vert`, `install-gate.sh`,
 `gate-registry`, et les tâches d'un portillon, `gate:`. Il vit ainsi dans la majorité des dépôts, et
