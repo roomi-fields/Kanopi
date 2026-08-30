@@ -202,16 +202,27 @@ mémoire, ils datent d'avant leur retrait.
 | `template` | le **mot de section** — `template` ouvre le catalogue des formes en fin de scène ; ce qui sort est la **directive de tête**, et elle seule |
 | `flag` | les drapeaux, leurs gardes `[section==intro]` et leurs mutations `[section=drop]` |
 
-**`gate` et `trig` n'emportent aucune notion — ils sortent entiers**, `trigger` compris, sous chacun de
-leurs référents de langage : le type de port, le type temporel du contrat de BPx (`temporalType`), et
-le mot de tête. Ce que le point d'attente attend n'a **pas de nom arrêté**.
+**`gate` et `trig` sortent COMME MOTS DU LANGAGE, et rien d'autre** — `trigger` compris. Trois
+référents de langage partent avec eux : le type de port, le type temporel du contrat de BPx
+(`temporalType`), et le mot de tête. Ce que le point d'attente attend n'a **pas de nom arrêté**.
+
+⛔ **LE CRITÈRE VAUT POUR TOUT RETRAIT, ET IL SE POSE AVANT LE RELEVÉ.** La question n'est pas *« cette
+graphie est-elle sortie ? »* mais **« que désigne cette graphie ICI — le langage, ou autre chose ? »**.
+Une décision de retrait porte sur un mot du **langage** ; elle n'atteint jamais un homonyme qui nomme
+autre chose. Pour `gate` et `trig`, **sept référents ont été nommés et deux seulement sont du
+langage** : le bus d'événements de l'hôte, le nom du portillon, le verbe anglais, la tension de
+contrôle de la modulation **restent**.
 
 ⛔ **Hors du langage, `gate` nomme le portillon lui-même** — `[gate] vert`, `install-gate.sh`,
 `gate-registry`, et les tâches d'un portillon, `gate:`. Il vit ainsi dans la majorité des dépôts, et
 dans le nom des gardes eux-mêmes. **Un garde qui cherche ce mot en sous-chaîne rougit sur l'outil qui
-rend le verdict**, et jusque sur le mot français *navigateur*. **La graphie se qualifie ligne à ligne,
-sur son référent — que désigne ce mot ICI — jamais sur un compte.** Le même piège vaut pour `cv`, qui
-nomme la tension de contrôle de la modulation chez runtime-audio, et qui s'y écrit `CV`.
+rend le verdict**, et jusque sur le mot français *navigateur*. Le même piège vaut pour `cv`, qui nomme
+la tension de contrôle de la modulation chez runtime-audio, et qui s'y écrit `CV`.
+
+**Un corps de code externe est du code externe** : ce qu'un accent grave `js:` porte est du JavaScript,
+évalué par l'interpréteur de l'architecture. Aucune graphie de ce corps n'appartient au langage, et
+aucun garde du langage ne s'y pose. Ce qui s'y refuse est une **spécificité BPScript**, jamais un
+signe.
 
 Ce tableau est un aide-mémoire, **pas une autorité** : chaque emploi se vérifie dans les trois
 documents et dans le registre, qui seuls font foi.
