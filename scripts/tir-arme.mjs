@@ -1265,8 +1265,16 @@ function ceQueMonPortillonAEcrit(fichierDeTrace) {
   } catch {
     /* rien à retirer, ce n'est pas une faute */
   }
+  // ⇒ CE QUI RESTE NON RÉSOLU SE QUALIFIE AU LIEU DE RESTER UNE CÉCITÉ OUVERTE. Mesure donnée par
+  // runtime-MIDI le 2026-08-30 : une écriture sous `.git/` ne peut pas faire basculer un fichier
+  // d'ARBRE DE TRAVAIL, et c'est l'arbre de travail que mes voisins relèvent. ⇒ Savoir où elles
+  // atterrissent devient inutile SI elles sont toutes sous `.git/` — et la question reste entière
+  // dès qu'une seule ne l'est pas. C'est un oui/non sur la trace, pas une résolution de chemin.
+  const horsGit = r.relatifs.filter((x) => !/\s\.git\//.test(x));
   const relatifs = r.relatifs.length
-    ? `\n    ⚠️ ${r.relatifs.length} chemin(s) RELATIF(S) non résolus — la trace ne suit pas le répertoire courant, je ne sais pas où ils atterrissent.`
+    ? horsGit.length === 0
+      ? `\n    ✓ ${r.relatifs.length} chemin(s) relatif(s) non résolus, TOUS sous .git/ — ils ne peuvent atteindre aucun fichier d arbre de travail.`
+      : `\n    ⚠️ ${r.relatifs.length} chemin(s) RELATIF(S) non résolus, dont ${horsGit.length} HORS de .git/ — je ne sais pas où ceux-là atterrissent : ${horsGit.slice(0, 5).join(", ")}`
     : "";
   return (
     `CE QUE MON PORTILLON A ÉCRIT CHEZ MOI — trace des ouvertures, ${r.examinees} appel(s) examiné(s), ` +
@@ -1428,7 +1436,11 @@ for (;;) {
         // c'est la ligne de verdict qui dit « non mesuré ». Une campagne qui meurt en 127 parce
         // qu'un outil de mesure est absent gèle douze dépôts pour rien.
         `cd ${RACINE} && if command -v strace >/dev/null 2>&1; then ` +
-          `strace -f -qq -s 512 --seccomp-bpf -e trace=openat,open,creat,rename,renameat,renameat2,unlink,unlinkat,mkdir,mkdirat,link,linkat,symlink,symlinkat,truncate -o ${TRACE} git push 2>&1; ` +
+          // ⇒ `-y` ANNOTE LES DEUX BOUTS : le répertoire courant de l'appelant sur `AT_FDCWD`, et le
+          // chemin absolu que le noyau a résolu sur le descripteur rendu. Sans lui, mon premier
+          // relevé a déclaré 133 chemins relatifs comme une cécité ouverte ; kronos a donné le
+          // drapeau le jour même, mesuré chez lui à zéro non résolu sur 112 869 lignes.
+          `strace -f -y -qq -s 512 --seccomp-bpf -e trace=openat,open,creat,rename,renameat,renameat2,unlink,unlinkat,mkdir,mkdirat,link,linkat,symlink,symlinkat,truncate -o ${TRACE} git push 2>&1; ` +
           `else git push 2>&1; fi; echo "SORTIE:$?"`,
       ],
       {

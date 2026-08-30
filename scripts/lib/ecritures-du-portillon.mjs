@@ -8,10 +8,15 @@
 // en lisant une LISTE de chemins injectés, alors que la phrase juste au-dessus de la liste disait que
 // l'injection se fait dans une copie HORS du dépôt. Sa trace a dit zéro. La lecture disait le contraire.
 //
-// ⚠️ CE QUE CET INSTRUMENT NE VOIT PAS, ET IL LE DIT AU LIEU DE SE TAIRE : un chemin RELATIF. `strace`
-// journalise l'argument tel que l'appelant l'a passé ; il ne suit pas le répertoire courant de chaque
-// processus. Un `openat(AT_FDCWD, "dist/index.js", …)` est donc une écriture dont je ne sais pas où
-// elle atterrit. Ces lignes sont COMPTÉES et RENDUES à part — un instrument qui les jetterait
+// ⇒ LES CHEMINS RELATIFS SE RÉSOLVENT, ET C'EST LE DRAPEAU `-y` QUI LE PERMET. Sans lui, `strace`
+// journalise l'argument tel que l'appelant l'a passé : `openat(AT_FDCWD, "dist/index.js", …)` était
+// une écriture dont j'ignorais le point de chute, et mon premier relevé en a déclaré 133 comme une
+// cécité ouverte. Avec `-y`, les DEUX bouts sont annotés — `AT_FDCWD<répertoire courant>` pour
+// l'appelant, et le descripteur rendu porte le chemin absolu que le noyau a résolu. Instrument donné
+// par kronos le 2026-08-30, mesuré chez lui : zéro non résolu sur 112 869 lignes.
+//
+// ⚠️ IL RESTE UN CAS, ET IL SE DIT AU LIEU DE SE TAIRE : un appel relatif sans annotation de
+// répertoire courant. Ces lignes sont COMPTÉES et RENDUES à part — un instrument qui les jetterait
 // silencieusement rendrait un zéro qui ressemble à une absence.
 
 import { readFileSync } from "node:fs";
@@ -38,6 +43,9 @@ export function ecrituresSous(fichierDeTrace, racine) {
   let ecrivantes = 0;
   const chemins = new Set();
   const relatifs = new Set();
+  const retenir = (chemin) => {
+    if (chemin === racine || chemin.startsWith(`${racine}/`)) chemins.add(chemin);
+  };
 
   for (const ligne of texte.split("\n")) {
     // `<pid> <appel>(<arguments>) = <retour>` — le pid est absent quand `strace` suit un seul
@@ -59,14 +67,23 @@ export function ecrituresSous(fichierDeTrace, racine) {
     if (/=\s*-1\s/.test(ligne)) continue;
     ecrivantes++;
 
+    // ⇒ LE RÉPERTOIRE COURANT DE L'APPELANT, quand le traceur l'annote (`-y`). C'est lui qui lève la
+    // cécité aux chemins relatifs, y compris sur `unlinkat` et `renameat`, qui ne rendent aucun
+    // descripteur. Instrument donné par kronos le 2026-08-30, mesuré chez lui : zéro non résolu sur
+    // 112 869 lignes.
+    const courant = arguments_.match(/AT_FDCWD<([^>]*)>/)?.[1] ?? null;
+
+    // ⇒ ET LE DESCRIPTEUR RENDU PORTE LE CHEMIN QUE LE NOYAU A RÉSOLU — pour toute ouverture ABOUTIE
+    // il n'y a donc rien à résoudre. Une ouverture qui échoue n'en rend pas, et elle n'écrit rien.
+    const resolu = ligne.match(/=\s*\d+<([^>]*)>/)?.[1];
+    if (resolu) retenir(resolu);
+
     // Tous les chemins cités par l'appel — `rename` en porte DEUX, et c'est la destination qui
     // compte autant que la source.
     for (const [, chemin] of arguments_.matchAll(/"((?:[^"\\]|\\.)*)"/g)) {
-      if (chemin.startsWith("/")) {
-        if (chemin === racine || chemin.startsWith(`${racine}/`)) chemins.add(chemin);
-      } else {
-        relatifs.add(`${appel} ${chemin}`);
-      }
+      if (chemin.startsWith("/")) retenir(chemin);
+      else if (courant) retenir(`${courant.replace(/\/$/, "")}/${chemin}`);
+      else relatifs.add(`${appel} ${chemin}`);
     }
   }
   return {
@@ -151,10 +168,40 @@ if (process.argv[2] === "--eprouver") {
     (r) => (r.chemins.length === 0 ? true : `elle a été comptée : ${r.chemins}`),
   );
   cas(
-    "un chemin RELATIF est rendu à part, jamais jeté en silence",
+    "un chemin RELATIF SANS répertoire annoté est rendu à part, jamais jeté en silence",
     `9 openat(AT_FDCWD, "dist/index.js", O_WRONLY|O_CREAT, 0666) = 4\n`,
     (r) =>
       r.chemins.length === 0 && r.relatifs.length === 1
+        ? true
+        : `chemins=${JSON.stringify(r.chemins)} relatifs=${JSON.stringify(r.relatifs)}`,
+  );
+  cas(
+    "un chemin RELATIF AVEC le répertoire courant annoté se résout sous la racine",
+    `9 openat(AT_FDCWD<${R}/packages/ui>, "dist/index.js", O_WRONLY|O_CREAT, 0666) = 4\n`,
+    (r) =>
+      r.relatifs.length === 0 && r.chemins.includes(`${R}/packages/ui/dist/index.js`)
+        ? true
+        : `chemins=${JSON.stringify(r.chemins)} relatifs=${JSON.stringify(r.relatifs)}`,
+  );
+  cas(
+    "un retrait relatif se résout aussi — il ne rend aucun descripteur (témoin inverse du cas précédent)",
+    `9 unlinkat(AT_FDCWD<${R}/packages/ui/public/docs>, "actors.html", 0) = 0\n`,
+    (r) =>
+      r.relatifs.length === 0 &&
+      r.chemins.includes(`${R}/packages/ui/public/docs/actors.html`)
+        ? true
+        : `chemins=${JSON.stringify(r.chemins)} relatifs=${JSON.stringify(r.relatifs)}`,
+  );
+  cas(
+    "le chemin résolu par le NOYAU est retenu même si l argument cité est relatif et hors racine",
+    `9 openat(AT_FDCWD<${R}>, "x.txt", O_WRONLY|O_CREAT, 0666) = 4<${R}/x.txt>\n`,
+    (r) => (r.chemins.includes(`${R}/x.txt`) ? true : `obtenu ${JSON.stringify(r.chemins)}`),
+  );
+  cas(
+    "un répertoire courant HORS de ma racine ne fait entrer personne (témoin inverse)",
+    `9 openat(AT_FDCWD</tmp/ailleurs>, "dist/index.js", O_WRONLY|O_CREAT, 0666) = 4\n`,
+    (r) =>
+      r.chemins.length === 0 && r.relatifs.length === 0
         ? true
         : `chemins=${JSON.stringify(r.chemins)} relatifs=${JSON.stringify(r.relatifs)}`,
   );
