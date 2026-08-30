@@ -113,14 +113,22 @@ test('strudel/03 sonne : n(...).scale("C:minor").sound("gm_piano") produit un RM
 });
 
 // ⛔ LE BANC DU PATCHBAY EST RETIRÉ, PAS SAUTÉ — le mécanisme qu'il mesurait n'existe plus.
-// Il jouait `synthesis/patchbay.bps` : une voix-câblage persistante `saw >> lpf >> audio` dont l'arm
-// portait `output.runtime` gravé par kairos depuis le catalogue de ports, routé à runtime-audio,
-// patch armé, RMS > 0. Il était sauté depuis le 2026-08-08 (KAN-40), en attendant une forme de
-// langage à venir. ⇒ Romain a tranché le 2026-08-30 — « cv gate trig sont obsoletes a supprimer »,
-// « il n'y a plus de cablage ca n'existe plus » : runtime-audio a retiré le registre de patchs,
-// l'hôte a retiré son catalogue d'actions, et kairos élague la facette. Un banc sauté qui mesure une
-// chose supprimée partout ne peut plus repasser au vert : le garder ferait croire à une dette
-// réversible. La scène, elle, RESTE au corpus, déclarée rouge par intention — elle revient avec FaustX.
+// Il jouait `synthesis/patchbay.bps`, une voix-câblage persistante, armait son patch et mesurait un
+// RMS > 0. Sauté depuis le 2026-08-08 (KAN-40) en attendant une forme de langage à venir. ⇒ Romain a
+// tranché le 2026-08-30 — « cv gate trig sont obsoletes a supprimer », « il n'y a plus de cablage ca
+// n'existe plus » : runtime-audio a retiré le registre de patchs, l'hôte a retiré son catalogue
+// d'actions, kairos élague la facette. Un banc sauté qui mesure une chose supprimée partout ne peut
+// plus repasser au vert : le garder ferait croire à une dette réversible. La scène, elle, RESTE au
+// corpus, déclarée rouge par intention — elle revient avec FaustX.
+//
+// ⚠️ ET CE QUE CE COMMENTAIRE NE DIT PLUS, PARCE QUE C'ÉTAIT FAUX. Sa version précédente écrivait que
+// l'arm portait `output.runtime` « gravé par kairos depuis `actionLib.runtimeParModule` ». Kairos l'a
+// mesuré chez lui le 2026-08-30 : `runtimeParModule` et `controlError` rendent ZÉRO sur ses 383
+// fichiers, témoin positif à l'appui (15 occurrences d'`actionLib` par la même commande). Son calque
+// `output` se lit SUR L'ARBRE, sans crochet d'hôte. ⇒ La moitié « routage du puits » de mon
+// `ACTION_LIB` ne l'a jamais atteint sous ce nom, et ma phrase décrivait un chemin qui n'existait pas.
+// ⛔ C'est ce commentaire-là qui a fait poser à runtime-codevoices une borne sur le mauvais axe : il
+// décrivait une chaîne vivante dans un banc mort. Un commentaire se relit comme une preuve.
 
 // FIXME [787.2a] — NON-MESURABLE en e2e headless, EN ATTENTE d'une confirmation À L'OREILLE (Romain,
 // 5173). PAS un faux vert : le diagnostic est complet (décision archi [807] : stop la chasse e2e,
