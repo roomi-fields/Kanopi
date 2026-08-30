@@ -36,14 +36,39 @@ export function racinesSurveillees(depot, lireRacines) {
   return new Set([...(lireRacines(depot) ?? []), "package.json"]);
 }
 
-/** Chaque fichier sous un dossier. Un lien symbolique ne se suit pas : il désignerait un arbre qui
- *  n appartient pas au voisin. Même règle que le relevé d empreinte. */
+/** Chaque fichier sous un dossier, ET CHAQUE DOSSIER. Un lien symbolique ne se suit pas : il
+ *  désignerait un arbre qui n appartient pas au voisin. Même règle que le relevé d empreinte.
+ *
+ * ⛔ LES DOSSIERS SONT ENTRÉS LE 2026-08-30, ET LEUR ABSENCE RENDAIT MON VERDICT PLUS ÉTROIT QUE SA
+ * PHRASE. Un fichier CRÉÉ PUIS RETIRÉ pendant ma fenêtre ne laisse aucun `mtime` derrière lui : il
+ * disparaît avec le fichier. Seul le `mtime` du DOSSIER qui le portait bouge — et je ne le regardais
+ * pas. Mon « AUCUNE BASCULE pendant ma mesure » attestait donc l immobilité des fichiers QUI
+ * SURVIVENT, jamais celle du répertoire, et il partait tel quel à douze dépôts à chaque campagne.
+ *
+ * ⇒ TROUVÉ EN QUALIFIANT LA MESURE D UN VOISIN, PAS EN RELISANT MON CODE. runtime-UI a rendu le
+ *   relevé tracé de ses passes sous mes fenêtres, en bornant honnêtement celle qu il n avait pas
+ *   instrumentée. J allais répondre « mon relevé d intervalle la couvre » — c est en le vérifiant
+ *   avant de l écrire que le trou est sorti. Son lanceur de bancs crée un fichier d horodatage à sa
+ *   racine et le retire : la forme la plus courante d écriture temporaire, et précisément celle à
+ *   laquelle j étais aveugle.
+ *
+ * ⚠️ Le dossier entre donc dans `examines` au même titre qu un fichier — il EST une chose datée dont
+ *   le changement est un fait, pas un contenant qu on traverse. */
 function sousArbre(base, out = []) {
   for (const e of readdirSync(base, { withFileTypes: true })) {
     const p = join(base, e.name);
     if (e.isSymbolicLink()) continue;
-    if (e.isDirectory()) sousArbre(p, out);
-    else out.push(p);
+    if (e.isDirectory()) {
+      // ⛔ LE DOSSIER PASSE APRÈS SON CONTENU, ET CE N EST PAS UN DÉTAIL D ORDRE. Créer un fichier
+      // date le fichier ET son dossier au MÊME instant ; la comparaison retient le premier vu à
+      // égalité. Placé avant, le dossier gagnait, et mon relevé nommait « src » là où il nommait
+      // « src/index.js » — je perdais QUEL fichier a bougé, qui est tout ce que le message sert à
+      // dire. Mes propres bancs l ont attrapé : trois cas, sur la graphie exacte du nom rendu.
+      // ⇒ Le dossier ne doit l emporter que s il est STRICTEMENT plus récent que tout ce qu il
+      //   contient — c est-à-dire dans le seul cas où il apporte quelque chose : le créé-puis-retiré.
+      sousArbre(p, out);
+      out.push(p);
+    } else out.push(p);
   }
   return out;
 }
@@ -62,7 +87,11 @@ export function derniereEcriture(chemin, racines) {
     const base = join(chemin, r);
     let fichiers;
     try {
-      fichiers = statSync(base).isDirectory() ? sousArbre(base) : [base];
+      // ⛔ LA RACINE ELLE-MÊME EN FAIT PARTIE : un fichier créé puis retiré DIRECTEMENT sous `src/`
+      // ne change que le `mtime` de `src`, que `sousArbre` ne rend pas — il ne rend que ce qu il
+      // trouve DEDANS. Sans cette ligne, la correction ci-dessus laisserait ouvert le cas le plus
+      // simple, celui du premier niveau.
+      fichiers = statSync(base).isDirectory() ? [...sousArbre(base), base] : [base];
     } catch {
       continue; // la racine n existe pas chez lui — ce n est pas une erreur, c est un fait
     }
@@ -131,9 +160,14 @@ export function basculesEntre(avant, apres, hh) {
     const cas = [];
     const juge = (dit, r, attendu) => cas.push({ dit, obtenu: r, ok: r === attendu, attendu });
 
-    // ⛔ LE CAS DISCRIMINANT, celui qui n existe nulle part dans le réel : le manifeste est le plus
-    // récent. Un relevé qui ne le surveille pas rendrait `src/index.js` et se dirait immobile.
+    // ⛔ LE DOSSIER SE DATE COMME UN FICHIER, SINON CE DÉCOR NE DÉCRIT AUCUN ÉTAT RÉEL. Depuis que
+    // les dossiers entrent dans le relevé, laisser `src` à son heure de CRÉATION — l instant présent
+    // — le rend plus récent que tout ce que ce décor antidate, et il gagne partout. Mes trois cas
+    // sont tombés là-dessus, et c est le décor qui était incohérent : sur un vrai disque, le `mtime`
+    // d un dossier ne peut pas être postérieur à la dernière écriture qu il a reçue.
+    // ⚠️ Les attentes ne bougent pas d un caractère : c est le décor qui devient descriptible.
     dater("src/index.js", 100);
+    dater("src", 100);
     dater("package.json", 200);
     juge(
       "manifeste PLUS RÉCENT que la racine → c est lui que le relevé nomme",
@@ -145,6 +179,7 @@ export function basculesEntre(avant, apres, hh) {
     // cas précédent pour la mauvaise raison.
     dater("package.json", 100);
     dater("src/index.js", 200);
+    dater("src", 200);
     juge(
       "racine PLUS RÉCENTE que le manifeste → c est la racine que le relevé nomme",
       derniereEcriture(faux, surveillees).quoi,
@@ -164,6 +199,25 @@ export function basculesEntre(avant, apres, hh) {
       derniereEcriture(faux, new Set(["dist", "src", "package.json"])).quoi,
       "src/index.js",
     );
+
+    // ⛔ LE CAS QUE LES DOSSIERS EXISTENT POUR ATTRAPER : un fichier CRÉÉ PUIS RETIRÉ. Il ne laisse
+    // aucun `mtime` derrière lui — seul celui du dossier bouge. Sans ce cas, la correction du
+    // 2026-08-30 serait entrée sans qu un banc la tienne, et un parcours revenu aux seuls fichiers
+    // repasserait au vert.
+    const avantTemporaire = derniereEcriture(faux, surveillees).quand;
+    writeFileSync(join(faux, "src", "horodatage-du-lanceur.mjs"), "1\n");
+    rmSync(join(faux, "src", "horodatage-du-lanceur.mjs"));
+    const apresTemporaire = derniereEcriture(faux, surveillees);
+    juge(
+      "un fichier CRÉÉ PUIS RETIRÉ fait bouger le relevé — c est le dossier qui le porte",
+      apresTemporaire.quand > avantTemporaire,
+      true,
+    );
+    juge("et le relevé nomme le DOSSIER, seul témoin qui reste", apresTemporaire.quoi, "src");
+
+    // On remet le décor dans l état que les cas suivants décrivent.
+    dater("src/index.js", 200);
+    dater("src", 200);
 
     // ⛔ ANTI-VACUITÉ : un relevé qui a examiné zéro fichier n a rien relevé. Sans ce cas, un balayage
     // cassé rendrait `quand: 0`, qui se lit exactement comme « rien n a bougé ».
