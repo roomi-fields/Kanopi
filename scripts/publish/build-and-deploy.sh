@@ -100,6 +100,17 @@ DOC_SRC="$REPO_ROOT/../atlas/doc-utilisateur"
 #   écrite se fait vérifier par quelqu'un d'autre, tue elle ne l'aurait pas été.
 #
 # ⚠️ ET IL Y EN A DEUX, LÀ OÙ SON CONSTAT EN NOMMAIT UN. Le second recompte ce que le premier a lu.
+#
+# ⛔ ATLAS LIT CETTE LIGNE, À MON COMMIT PUBLIÉ, À CHAQUE PASSAGE DE SON PORTILLON. C'est le seul garde
+# qui protège sa publication contre sa propre doc non enregistrée, et il vit ICI — donc il le mesure au
+# lieu de le supposer. ⇒ CHANGER LA GRAPHIE DE CET APPEL SE PRÉAVISE : quand j'ai inséré
+# `--no-optional-locks` le 2026-08-30, son motif cherchait la chaîne contiguë `git -C "$DOC_SRC" status
+# --porcelain` et le drapeau l'a brisée EN SON MILIEU. Son verdict a alors annoncé « AUCUN garde côté
+# kanopi » pendant que ce garde était là et refusait toujours.
+#
+# ⚠️ ET LE FAUX EST PARTI SOUS UN VERT : sa garde était VERTE, seule sa mention de régime avait basculé,
+# à l'intérieur d'un verdict de succès — un lecteur qui lit « VERTE » ne relit pas la ligne de régime.
+# ⇒ Il a réancré son motif depuis ; le préavis reste dû au prochain changement de forme.
 if [[ -d "$DOC_SRC" ]]; then
   DOC_SALE="$(git -C "$DOC_SRC" --no-optional-locks status --porcelain -- . 2>/dev/null | head -20)"
   if [[ -n "$DOC_SALE" ]]; then
