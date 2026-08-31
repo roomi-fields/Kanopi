@@ -185,6 +185,15 @@ try {
     TOUR,
     [
       "fenetre", "ouvrir", "kanopi",
+      // ⛔ JE DONNE MON IDENTIFIANT À LA TOUR — sinon elle en FABRIQUE un, et il ment par ressemblance.
+      // Relevé par runtime-ui le 2026-08-31 : sans `--id`, elle en compose un depuis l'heure
+      // d'OUVERTURE, donc UNE SECONDE après le mien, avec le même préfixe et le même format. Rien ne
+      // dit qu'il est fabriqué. ⇒ Mes voisins recevaient deux noms pour un objet, et ma clause de
+      // sûreté — qui fait de l'écart d'identifiant un signal d'alarme — se déclenchait à chaque cycle.
+      // ⇒ ⛔ CE QUE ÇA COÛTAIT, dans ses mots : « qui applique ta règle à la lettre reste gelé sur un
+      //   verdict qui le libérait — ou, pire, APPREND À IGNORER L'ÉCART avant le jour où il est réel. »
+      // ⇒ Documenter les deux noms était le pansement ; le donner est la correction.
+      "--id", CE_RELEVE,
       "--minutes", String(DUREE_DECLAREE_MIN),
       "--lit", "disque",
       "--depots", depotsGeles.join(","),

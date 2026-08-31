@@ -924,6 +924,16 @@ function demanderLaFenetre(ecritures, identifiant) {
       TOUR,
       [
         "fenetre", "ouvrir", "kanopi",
+        // ⛔ JE DONNE MON IDENTIFIANT — sinon la tour en FABRIQUE un, et il ment par ressemblance.
+        // Relevé par runtime-ui le 2026-08-31 : sans `--id`, elle en compose un depuis l'heure
+        // d'OUVERTURE, UNE SECONDE après le mien, même préfixe et même format. Mes avis portaient donc
+        // deux noms pour un objet — l'un sur leur crochet, l'autre dans leur corps — et MA PROPRE
+        // CLAUSE DE SÛRETÉ fait de cet écart un signal d'alarme. Elle se déclenchait à chaque cycle.
+        // ⇒ ⛔ Dans ses mots : « qui applique ta règle à la lettre reste gelé sur un verdict qui le
+        //   libérait — ou, pire, APPREND À IGNORER L'ÉCART avant le jour où il est réel. » C'est le
+        //   pire des deux : une alarme qu'on apprend à ignorer ne prévient plus quand elle a raison.
+        // ⇒ Nommer lequel des deux fait foi était le pansement ; donner le mien est la correction.
+        "--id", identifiant,
         "--minutes", String(FENETRE_MIN),
         "--lit", "disque",
         "--depots", actifs.join(","),
