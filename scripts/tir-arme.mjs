@@ -872,19 +872,19 @@ function demanderLaFenetre(ecritures, identifiant) {
     "d'un fichier que je ne lis pas. C'est délibéré — chez certains d'entre vous pousser republie le " +
     "paquet ENTIER quel que soit le fichier touché, donc un refus par chemin serait muet là où il " +
     "compte le plus. " +
-    "⚠️ CETTE LISTE ARRIVE SOUS DEUX RÉGIMES, ET VOUS SEUL VOYEZ LEQUEL. J'envoie l'UNION des racines " +
-    "des onze ; depuis `74cf383` (architecte, 2026-08-25) la tour la FILTRE à la livraison quand votre " +
-    "manifeste porte un champ `files` — vous recevez alors VOS racines seules, et il n'y a rien à en " +
-    "retrancher. Sans ce champ, elle vous livre l'union entière, et les racines qui ne sont pas les " +
-    "vôtres ne vous concernent pas. ⚠️ JE NE VOUS DIS PAS COMBIEN SONT DANS CHAQUE RÉGIME : ce compte " +
-    "vit chez l'architecte, il a déjà changé une fois le 2026-08-25 (runtime-osc a réfuté son " +
-    "inventaire, qui comptait en minuscules un dossier majuscule), et un chiffre relayé depuis le " +
-    "message d'un tiers se périme sans que rien ne rougisse. Vous seul voyez lequel des deux vous " +
-    "recevez : comparez la liste ci-dessus à votre manifeste. " +
-    "⛔ NE RETRANCHEZ PAS DEUX FOIS : ma phrase précédente annonçait une union sans condition, et depuis " +
-    "ce matin elle faisait écarter comme « appartenant aux autres » des racines qui étaient devenues " +
-    "toutes les vôtres — une discipline EN MOINS, sur des chemins que je relève vraiment (relevé par " +
-    "kronos et runtime-in, à la même minute, tous deux dans les cinq filtrés). " +
+    "⛔ CETTE LISTE EST L'UNION, POUR TOUT LE MONDE, SANS EXCEPTION — RETRANCHEZ UNE FOIS. Les racines " +
+    "qui ne portent pas votre nom ne vous concernent pas : ne gelez que les vôtres. " +
+    "⚠️ MA PHRASE PRÉCÉDENTE ANNONÇAIT DEUX RÉGIMES DE LIVRAISON, ET ELLE ÉTAIT FAUSSE. Elle disait que " +
+    "la tour filtre la liste quand votre manifeste porte un champ `files`, et qu'il n'y avait alors " +
+    "rien à retrancher. QUATRE d'entre vous l'ont mesurée le 2026-08-31 — bpx, kairos, kronos, " +
+    "runtime-osc — tous porteurs de `files`, tous destinataires de l'union entière, sur les deux " +
+    "canaux. Personne n'est filtré. " +
+    "⇒ LA CAUSE, LUE À SA DÉFINITION PAR KAIROS ET CONFIRMÉE PAR RUNTIME-OSC : le commit que je citais " +
+    "restreint ce que le CROCHET D'ÉCRITURE REFUSE, jamais ce que l'AVIS LIVRE. Deux étages, un seul " +
+    "corrigé, et ma phrase les fondait en un. J'avais cité un commit par son effet supposé au lieu de " +
+    "le lire à sa définition. " +
+    "⇒ IL Y A DONC UN RÉGIME DE LIVRAISON — l'union, pour tous — ET UN RÉGIME DE REFUS — vos racines, " +
+    "chez vous. Le second existe bien ; c'est le premier que j'avais inventé. " +
     "⇒ DANS LES DEUX RÉGIMES, LA RÈGLE NE CHANGE PAS, ET LA VOICI RÉÉCRITE : je relève LES SIX CHAMPS " +
     "QUE MON CODE RÉCOLTE — `exports` en profondeur, `main`, `module`, `types`, `browser`, `bin` — " +
     "PLUS `files` s'il existe, PLUS votre `package.json`. Le premier SEGMENT de chaque cible. " +
@@ -1487,9 +1487,19 @@ for (;;) {
       continue;
     }
     if (echec !== null) {
+      // ⛔ UN REFUS QUI PROMET SA CAUSE ET NE LA DONNE PAS ENVOIE CHERCHER AILLEURS. Mesuré le
+      // 2026-08-31 : un pré-vol rouge sur le typage a écrit « la cause est chez moi — elle est écrite
+      // ci-dessus » avec RIEN au-dessus. Le journal entier tenait sur cette ligne. C'est le grief que
+      // j'adresse aux refus des autres, commis ici. ⇒ Quand l'étape n'a rien rendu, on le DIT et on
+      // nomme la commande qui le rejoue, au lieu de renvoyer à un vide.
+      const cause = String(echec.cause ?? "").trim();
       console.log(
         `${hh(new Date())} — ⛔ PRÉ-VOL ROUGE (${echec.etape}) — AUCUNE fenêtre demandée, ` +
-          `personne n'est gelé. ${echec.attribution.phrase}\n${echec.cause}`,
+          `personne n'est gelé. ${echec.attribution.phrase}\n` +
+          (cause ||
+            `   ⚠️ ET L'ÉTAPE « ${echec.etape} » N'A RIEN RENDU : je n'ai pas sa sortie, donc je ne ` +
+              `peux pas te dire ce qu'elle reproche.\n   Rejoue-la à la main pour la voir : ` +
+              `\`cd packages/ui && npm run verify\`.`),
       );
       process.exit(1);
     }

@@ -47,7 +47,7 @@
 //       pousse d'abord.
 
 import { execFileSync } from "node:child_process";
-import { existsSync, rmSync, readFileSync } from "node:fs";
+import { existsSync, rmSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ecrituresSous, parRacineDeTete } from "./lib/ecritures-du-portillon.mjs";
@@ -173,7 +173,10 @@ const MOTIF =
   "portillon a changé — donc il vise TOUS ceux que je lis, y compris ceux qui se taisent depuis " +
   "une heure. Si vous ne me construisez rien, il ne vous coûte qu'une poussée retardée. Si ça vous " +
   "gêne, dites-le-moi et j'attendrai. " +
-  `⌁ identifiant de cette ouverture : ${CE_RELEVE}`;
+  `⌁ IDENTIFIANT DE CETTE OUVERTURE : ${CE_RELEVE}. ⚠️ La tour la nomme de son côté ` +
+  "`kanopi-<horodatage>`, à une seconde près du mien : DEUX NOMS POUR UN SEUL OBJET, et c'est " +
+  "mon identifiant qui vaut. Relevé par runtime-osc, qui l'a posé comme observation plutôt que " +
+  "comme alarme — il avait raison des deux côtés.";
 
 // ⛔ L'OUVERTURE EST UNE CONDITION, PAS UNE FORMALITÉ : si la tour refuse, je NE TRACE PAS. Tracer
 // quand même serait exactement le geste sans protection que ce bloc existe pour retirer.
@@ -237,6 +240,40 @@ for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"])
     fermerMaFenetre();
     process.exit(130);
   });
+
+/**
+ * ⛔ LE VERDICT EST DÛ À TOUS LES GELÉS, JAMAIS AUX SEULS DEMANDEURS — et je l'ai appris en le ratant.
+ *
+ * Le 2026-08-31, j'ai envoyé le verdict de mon premier relevé aux SEPT qui m'avaient demandé un mot,
+ * pas aux DOUZE que j'avais gelés. ⇒ kronos, runtime-osc et bp3-frontend ont vu ma campagne suivante
+ * arriver sur un silence, et deux d'entre eux ont dû me signaler le trou sans pouvoir le trancher :
+ * de leur poste, « verdict perdu » et « campagne morte » prédisent la même observation.
+ * ⇒ ⛔ Un gelé qui n'a pas demandé n'a pas renoncé à savoir : il subit la fenêtre comme les autres.
+ *
+ * Mon arme rend déjà le sien aux douze. Ce geste-ci le rendait à la main, donc il le ratait.
+ * Une levée sans verdict ne dit PAS « tout va bien » : elle dit que la fenêtre est fermée.
+ */
+function rendreLeVerdict(texte) {
+  if (rendreLeVerdict.faite) return;
+  rendreLeVerdict.faite = true;
+  const fichier = join(tmpdir(), `kanopi-verdict-${CE_RELEVE}.md`);
+  writeFileSync(fichier, texte);
+  let rendus = 0;
+  for (const depot of depotsGeles) {
+    try {
+      execFileSync(TOUR, ["note", depot, "--fichier", fichier], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        env: { ...process.env, BP_AGENT: "kanopi" },
+      });
+      rendus++;
+    } catch {
+      /* un destinataire injoignable ne doit pas retenir les onze autres */
+    }
+  }
+  rmSync(fichier, { force: true });
+  console.log(`  ⟨verdict⟩ rendu à ${rendus} dépôt(s) sur ${depotsGeles.length}.`);
+}
 
 /** Ferme la fenêtre de CE relevé. Idempotente : une fenêtre déjà levée n'est pas une erreur. */
 function fermerMaFenetre() {
@@ -318,6 +355,13 @@ if (sortie !== "0") {
             "\n   trace tuée en route. La mesure d'avant était déjà perdue quand celle-ci a commencé."
           : "\n   Aucun relevé précédent à garder — le portillon reste refusé jusqu'à une trace complète."),
   );
+  rendreLeVerdict(
+    `⛔ **RELEVÉ ${CE_RELEVE} — RIEN MESURÉ.** Le portillon a rendu ${sortie}.\n\n` +
+      `⇒ ${attribution.phrase}\n\n` +
+      "⇒ ✅ **Ma fenêtre est levée, vous êtes libres.** ⇒ ⛔ **Et ce verdict dit que la mesure a " +
+      "ÉCHOUÉ, jamais « tout va bien »** : une levée ferme la fenêtre, elle ne conclut rien.\n\n" +
+      "⌁ Je recommencerai. Je vous préviendrai avant.\n\n— kanopi",
+  );
   process.exit(1);
 }
 
@@ -330,6 +374,12 @@ if (!existsSync(TRACE)) {
     pourquoi: "aucune trace produite — traceur absent",
   });
   console.log("⚠️ NON MESURÉ — aucune trace produite (traceur absent ?). Relevé écrit tel quel.");
+  rendreLeVerdict(
+    `⚠️ **RELEVÉ ${CE_RELEVE} — NON MESURÉ.** Le portillon est sorti en ${sortie}, mais mon traceur ` +
+      "n'a produit aucune trace : je n'ai donc pas la réponse que ce relevé devait rendre.\n\n" +
+      "⇒ ✅ **Ma fenêtre est levée, vous êtes libres.** ⇒ ⛔ **Ce n'est pas un vert** : le portillon " +
+      "est passé, la MESURE n'a pas eu lieu.\n\n⌁ Je recommencerai. Je vous préviendrai avant.\n\n— kanopi",
+  );
   process.exit(0);
 }
 
@@ -366,6 +416,23 @@ console.log(
       .map(([k, v]) => `${k} (${v.length})`)
       .join(" · ") +
     `\n  ${r.relatifs.length} relatif(s) non résolus, dont ${horsGit.length} hors de .git/`,
+);
+
+rendreLeVerdict(
+  `✅ **RELEVÉ ${CE_RELEVE} — MESURÉ, PORTILLON VERT. Ma fenêtre est levée, vous êtes libres.**\n\n` +
+    "    la mesure        **" +
+    `${r.examinees} appels examinés**, ${r.ecrivantes} écrivants\n` +
+    `    ce que j'écris   **${r.chemins.length} chemins sous mon arbre** : ` +
+    [...par.entries()]
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([k, v]) => `${k} (${v.length})`)
+      .join(" · ") +
+    `\n    résidus          ${r.relatifs.length} chemin(s) relatif(s) non résolus, ` +
+    `dont ${horsGit.length} hors de \`.git/\`\n\n` +
+    "⇒ ✅ **C'est la réponse que ce relevé devait rendre**, et elle vaut jusqu'à ma prochaine frappe " +
+    "de portillon : mes campagnes n'auront plus à la tracer, ce qui coûtait un quart de gel en plus " +
+    "à chacun, à chaque tir.\n\n" +
+    "⌁ **Merci d'avoir tenu la fenêtre.**\n\n— kanopi",
 );
 
 /** Le journal du portillon, ou une chaîne vide — une lecture qui jette ne doit pas masquer le rouge. */
