@@ -54,7 +54,7 @@ import {
   derniereEcriture,
   basculesEntre,
 } from "./lib/releve-des-ecritures.mjs";
-import { homedir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { lireReleve } from "./lib/releve-du-portillon.mjs";
 import {
@@ -581,6 +581,18 @@ function preVol() {
       });
     } catch (e) {
       const sortie = `${e.stdout ?? ""}${e.stderr ?? ""}`;
+      // ⛔ LA SORTIE ENTIÈRE SE GARDE SUR LE DISQUE, ET LE REFUS EN DONNE LE CHEMIN. Mon relevé applique
+      // déjà cette règle à sa propre trace ; mon pré-vol, lui, JETAIT tout et n'en gardait que six
+      // lignes filtrées. Mesuré le 2026-09-01 : deux rouges de suite dont le motif n'a rien reconnu, et
+      // aucun moyen de savoir ce qu'ils reprochaient — l'étape était verte à chaque rejeu, donc la
+      // preuve n'existait plus nulle part. ⇒ Un refus TRANSITOIRE dont on jette la sortie est un refus
+      // qu'on ne peut pas diagnostiquer, jamais.
+      const journal = join(tmpdir(), `kanopi-prevol-${nom.replace(/\W+/g, "-")}-${process.pid}.log`);
+      try {
+        writeFileSync(journal, sortie);
+      } catch {
+        /* un journal qu'on ne peut pas écrire ne doit pas masquer le refus lui-même */
+      }
       const lignes = sortie
         .split("\n")
         .filter((l) => /^\s*(✗|✘|Error|error|ERROR|\s+•)/.test(l))
@@ -616,8 +628,9 @@ function preVol() {
         cause: lignes.length
           ? lignes.join("\n")
           : "    ⚠️ AUCUNE LIGNE D'ÉCHEC RECONNUE dans la sortie de cette étape — ce qui suit est la " +
-            "QUEUE du journal,\n       pas la cause. Rejoue l'étape à la main pour la voir.\n" +
+            `QUEUE du journal,\n       pas la cause. LA SORTIE ENTIÈRE EST GARDÉE : ${journal}\n` +
             sortie.split("\n").slice(-8).join("\n"),
+        journal,
       };
     }
   }
