@@ -458,6 +458,23 @@ function racinesDeCeVoisin(v) {
 }
 
 /**
+ * ⛔ LES RACINES QUE MA CHAÎNE LIT CHEZ SES VOISINS — L'UNION, DÉRIVÉE, ET ELLE A DEUX LECTEURS.
+ *
+ * Ma campagne la déclare à la tour en ouvrant sa fenêtre. ⇒ ET `trace-du-portillon.mjs` en a besoin
+ * pour EXACTEMENT la même raison : sans elle, la tour refuse d'ouvrir dès qu'un dépôt gelé porte un
+ * fichier non enregistré n'importe où. Mesuré le 2026-08-31 : onze dépôts refusés, dont dix pour la
+ * même fiche de skill diffusée par atlas — pas une seule sous une racine que je lis.
+ *
+ * ⇒ Elle vit ici, en UN endroit, parce que la recopier chez le relevé ferait une seconde liste qui
+ *   dériverait de la première. Le relevé la demande à l'arme par `--releve-racines`, comme
+ *   bp3-frontend demande son périmètre par `--releve` : la réponse vient de l'arme, jamais d'un
+ *   harnais qui la copie.
+ */
+function racinesQueJeLis() {
+  return [...new Set(voisinsAGeler().flatMap((v) => [...racinesDeCeVoisin(v)]))].sort();
+}
+
+/**
  * La dernière écriture de chaque voisin sous ce que je surveille, et le fichier concerné.
  *
  * ⛔ IL REFUSE D'AVOIR EXAMINÉ ZÉRO CHEZ UN GELÉ, et cette clause manquait. `derniereEcriture` rend
@@ -735,9 +752,7 @@ function demanderLaFenetre(ecritures, identifiant) {
   // mes onze voisins exposent. La tour ne peut pas la lire — elle ne sait ni où vit mon manifeste ni
   // sous quelle forme — donc le DEMANDEUR déclare ce qu'il lit, exactement comme il déclare déjà
   // disque ou commit publié (arbitrage de l'architecte, 2026-08-21).
-  const racinesLues = [
-    ...new Set(voisinsAGeler().flatMap((v) => [...racinesDeCeVoisin(v)])),
-  ].sort();
+  const racinesLues = racinesQueJeLis();
 
   // ⛔ LE MOTIF NOMME LE CHEMIN, JAMAIS LE GESTE. Deux mots successifs ont échoué le 2026-08-21 :
   // « aucune écriture » a été lu de trois façons par trois voisins, puis « ni commit, ni push, ni
@@ -1180,6 +1195,33 @@ function fermerLaFenetre() {
         "   Tirer gèle douze dépôts ; un import est une lecture, jamais une intention de tirer.\n" +
         "   Pour tirer : `node scripts/tir-arme.mjs`.",
     );
+  } else if (process.argv.slice(2).join(" ") === "--releve-depots") {
+    // ⛔ TOUS LES VOISINS QUE JE LIS, PAS SEULEMENT LES ACTIFS — et la différence est le sujet.
+    //
+    // Ma campagne ne gèle que les voisins EN CHANTIER : elle dure vingt minutes et se retarde, donc
+    // geler qui se tait coûte une discipline pour rien. ⇒ `trace-du-portillon.mjs` ne se retarde
+    // pas — il se prend quand le portillon a changé — et il dure plus longtemps. Un voisin muet
+    // depuis une heure peut reconstruire à la minute suivante : c'est exactement ce qui a coupé
+    // deux relevés le 2026-08-31.
+    // ⇒ Deux gestes, deux populations, la MÊME dérivation en dessous. Le relevé la demande ici.
+    try {
+      for (const v of voisinsAGeler()) console.log(nomDeGel(v).toLowerCase());
+    } catch (e) {
+      console.error(`⛔ la dérivation a jeté : ${e.message}`);
+      process.exit(1);
+    }
+  } else if (process.argv.slice(2).join(" ") === "--releve-racines") {
+    // ⛔ LA MÊME RÉPONSE QUE `--releve`, RENDUE POUR UNE MACHINE. `trace-du-portillon.mjs` doit
+    // déclarer à la tour les racines qu'il lit, sous peine de refus sur un fichier sale hors sujet ;
+    // il les demande ICI plutôt que de les recopier. Une racine par ligne, rien d'autre : un format
+    // qu'on parse est un format qui doit rester nu.
+    // ⇒ Comme `--releve`, il n'appelle NI la tour NI aucun gel : il dérive, il imprime, il sort.
+    try {
+      for (const r of racinesQueJeLis()) console.log(r);
+    } catch (e) {
+      console.error(`⛔ la dérivation a jeté : ${e.message}`);
+      process.exit(1);
+    }
   } else if (process.argv.slice(2).join(" ") === "--releve") {
     // ⛔ CE QUE JE RELÈVE SE DEMANDE, ET LA RÉPONSE VIENT DE L'ARME — PAS D'UN HARNAIS QUI LA COPIE.
     //
