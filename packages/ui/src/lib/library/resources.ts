@@ -92,15 +92,28 @@ export interface ResourceGroup {
 // fichier dit déjà). ⛔ La nature seule — objet contre chaîne — ne suffit donc PAS à tenir
 // le filtre : elle est aujourd'hui vraie par accident, et le blanc souligné est ce qui
 // reste vrai quand un catalogue réécrit sa prose en objet.
+//
+// ⛔⛔ L'ACCIDENT A CESSÉ LE 2026-08-31, ET IL A COÛTÉ UNE FICHE FANTÔME. Un catalogue porte
+// désormais un champ de SOMMET dont la valeur est un TABLEAU DE CHAÎNES — `apporte: ["types"]`,
+// et `core.apporte` en liste neuf. ⛔ EN JAVASCRIPT UN TABLEAU EST UN OBJET : `typeof [] vaut
+// 'object'`, donc l'ancienne forme du prédicat rendait `true` et `apporte` devenait une carte
+// parcourable au milieu des gammes. Mesuré au paquet publié : `scales` rendait 186 fiches dont
+// une était `apporte` — l'arithmétique le disait déjà (186 entrées, 185 portant `_derive`) sans
+// que personne la lise. ⇒ UNE ENTRÉE EST UN OBJET SIMPLE. Le tableau sort par sa nature, comme
+// la chaîne, et aucun renommage de champ de sommet ne peut rouvrir ce trou.
 function isMetaKey(k: string): boolean {
   return k.startsWith('_');
 }
 
 type NamedCatalog = Record<string, unknown>;
 
-/** Une entrée EST un objet. Ce prédicat est la moitié durable du filtre. */
+/** Une entrée EST un objet SIMPLE. Ce prédicat est la moitié durable du filtre : il classe par
+ *  la NATURE de la valeur, jamais par le nom du champ — un nom se périme sans rougir.
+ *  ⛔ Le tableau est exclu explicitement : il est un objet pour le langage, et un champ de
+ *  catalogue pour l'amont. Sans cette ligne, tout champ de sommet à valeur de liste devient
+ *  une fiche. */
 export function estUneEntree(valeur: unknown): boolean {
-  return typeof valeur === 'object' && valeur !== null;
+  return typeof valeur === 'object' && valeur !== null && !Array.isArray(valeur);
 }
 
 export function entriesFromNamedCatalog(catalog: NamedCatalog): ResourceEntry[] {
