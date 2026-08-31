@@ -192,6 +192,13 @@ mémoire, ils datent d'avant leur retrait.
 | aucun — les profils d'environnement sont retirés | `routing` |
 | FaustX, chantier à venir | la modulation, le câblage `>>`, et `map` que ce câblage avait remplacé |
 
+⛔ **`câblage` PORTE DEUX SENS, ET AUCUN MOTIF NE LES DISTINGUE** — mesuré le 2026-08-31. Le sens du
+**langage** est mort avec la graphie `>>` et le patching ; le **branchement des composants** vit, et
+Romain le laisse vivre : *« oui on garde le sens y'a pas de soucis avec ça »*. Un balayage par graphie
+a levé **25 sites, dont 24 étaient justes** — il classait par ligne, quand ce qui décide est ce que la
+phrase désigne. **On ne pose donc aucune règle de lint sur ce mot.** Autorité : la carte du langage
+d'atlas, rang « LE CÂBLAGE SORT EN ENTIER, LE POINT D'ATTENTE RESTE ».
+
 **Cinq mots sortent sans emporter leur notion**, et les confondre casse la page qui décrit la notion :
 
 | le mot sort | la notion reste |
