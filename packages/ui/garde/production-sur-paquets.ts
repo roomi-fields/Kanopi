@@ -29,7 +29,7 @@
 
 import { readFileSync } from 'node:fs';
 import { parseBP3 } from 'bp3-frontend';
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { compileToBPxAST } from 'bpscript';
 import { createSession } from 'bpx';
 import { Kairos } from '@kairos/core';
 import {

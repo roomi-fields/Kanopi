@@ -52,7 +52,7 @@ import { describe, it, expect } from 'vitest';
 // MÊME spécificateur que l'adaptateur (`bpx-adapter.ts:20`) — c'est lui que `tsconfig.paths`
 // résout vers la surface typée du dépôt amont. Pas de second chemin d'import, pas de `declare
 // module` recopié : le garde analyse par la porte que l'application emprunte.
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { compileToBPxAST } from 'bpscript';
 // MÊME porte de dérivation que l'application (`bpx-adapter.ts:52,1847`) : le garde mesure par
 // où l'app passe, pas par un chemin de test à lui.
 // ⚠️ CONTRE QUELLE SURFACE CE GARDE EST-IL VERT ? MESURÉ le 2026-08-09 : la SOURCE de BPx

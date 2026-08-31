@@ -7,7 +7,7 @@ import {
   type ViewUpdate
 } from '@codemirror/view';
 import { syntaxTree } from '@codemirror/language';
-import { describeVocabulary } from 'bpscript/src/transpiler/index.js';
+import { describeVocabulary } from 'bpscript';
 
 // A DECORATION overlay for `.bps`: it re-colours the words that belong to the
 // language's LIBRARY vocabulary (controls, values, digital functions, catalog

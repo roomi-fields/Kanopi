@@ -1,4 +1,4 @@
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { compileToBPxAST } from 'bpscript';
 import { parseBP3 } from 'bp3-frontend';
 
 // Memoized BPScript compile. Several reactive consumers compile the SAME active

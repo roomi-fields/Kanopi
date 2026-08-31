@@ -8,7 +8,7 @@
       "bp3-frontend": [
         "packages/ui/src/lib/runtimes/bp3-deps.d.ts"
       ],
-      "bpscript/src/transpiler/index.js": [
+      "bpscript": [
         "packages/ui/src/lib/runtimes/bp3-deps.d.ts"
       ]
     },

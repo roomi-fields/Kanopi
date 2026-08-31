@@ -37,7 +37,7 @@ function refusDuNonEnregistre() {
   };
 }
 
-// Same class of glue for the BPScript EDITOR MODE (`bpscript/public/editor/bpscript-lang.js`,
+// Same class of glue for the BPScript EDITOR MODE (`bpscript/editor-lang`,
 // consumed AS-IS): it imports @codemirror/language + @lezer/highlight as bare specifiers, but
 // the BPscript repo ships no node_modules — dev resolution falls back to Kanopi's copy while
 // Rollup (vite build) resolves from the file's REAL path and FAILS. Alias both to Kanopi's
@@ -206,7 +206,7 @@ export default defineConfig({
       '@strudel/soundfonts',
       'p5.sound',
       '@csound/browser',
-      // The BPScript editor mode (`bpscript/public/editor/bpscript-lang.js`, a symlinked
+      // The BPScript editor mode (`bpscript/editor-lang`, a symlinked
       // source dep consumed AS-IS) imports these CM6/Lezer packages, but the BPscript repo
       // ships no node_modules: dev resolution falls back to Kanopi's copy, while Rollup
       // (vite build) resolves from the file's REAL path and fails ("Rollup failed to

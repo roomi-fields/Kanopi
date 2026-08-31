@@ -159,7 +159,7 @@ API reference auto-générée prévue post-2.4 (cf `PROGRESS.md §2.7`).
 | Primitive              | Kind           | Source                                 | Rôle                                          |
 | ---------------------- | -------------- | -------------------------------------- | --------------------------------------------- |
 | `languageFor(runtime)` | fn             | `components/editor/lang-resolver.ts:7` | Résout `Runtime → Extension` CM6              |
-| `bpscriptLanguage`     | Extension      | paquet `bpscript/public/editor/bpscript-lang.js` | Lezer upstream pour `.bps` — remplace `kanopiLanguage`/`lang-kanopi.ts`, retirés |
+| `bpscriptLanguage`     | Extension      | paquet `bpscript/editor-lang` | Lezer upstream pour `.bps` — remplace `kanopiLanguage`/`lang-kanopi.ts`, retirés |
 | `bpsLibwordHighlight`  | Extension      | `components/editor/bps-libword-highlight.ts` | Recolore le vocabulaire de bibliothèque distinctement des terminaux note |
 | `kanopiHighlight`      | HighlightStyle | `components/editor/cm-theme.ts:13`     | Palette Kanopi unique (12 tags → CSS vars)    |
 | `kanopiTheme`          | Extension      | `components/editor/cm-theme.ts:29`     | Theme CM6 (couleurs panel/gutter/selection)   |

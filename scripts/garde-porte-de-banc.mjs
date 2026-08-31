@@ -30,7 +30,7 @@ const PORTE = "packages/ui/src/lib/library/scene-de-banc.ts";
 
 /** Ce qu'un banc ne doit plus importer : le compilateur amont, et mon mémo qui l'enveloppe. */
 const INTERDITS = [
-  "bpscript/src/transpiler/index.js",
+  "bpscript",
   "compile-cache",
 ];
 

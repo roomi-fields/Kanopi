@@ -7,7 +7,7 @@ import {
   describeVocabulary,
   type VocabControl,
   type VocabValue
-} from 'bpscript/src/transpiler/index.js';
+} from 'bpscript';
 
 // BPScript editor intelligence, ALL sourced from BPScript's LIVING vocabulary
 // authority `describeVocabulary()` (the same aggregation its compile guard uses),

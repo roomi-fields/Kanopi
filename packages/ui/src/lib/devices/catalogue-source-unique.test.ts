@@ -3,7 +3,7 @@
 // `midi`) et une table de compatibilité `Record<DeviceType, …>` EXHAUSTIVE — le
 // type garantissait, à la compilation, une entrée pour chaque type de device.
 //
-// La bascule vers le catalogue amont (le catalogue `core` du paquet `bpscript/src/transpiler/libs-data.js`, schema.channels)
+// La bascule vers le catalogue amont (le catalogue `core` du paquet `bpscript/libs-data`, schema.channels)
 // comme SOURCE UNIQUE des directions (`in`/`out`) et des valeurs par défaut a
 // supprimé les deux : `DEFAULT_MIDI` (une 2e autorité locale, interdite) et
 // l'exhaustivité du type (`DeviceType` s'étend maintenant à TOUT le catalogue,
@@ -16,7 +16,7 @@
 // des appareils rendue à l'UI est exactement les canaux `out === true` du
 // catalogue (ni plus, ni moins — `text` dedans, `keyboard` dehors).
 
-import { LIBS } from 'bpscript/src/transpiler/libs-data.js';
+import { LIBS } from 'bpscript/libs-data';
 import { describe, it, expect } from 'vitest';
 const coreJson = LIBS.core;
 import { acceptedOutputTypes, listDevices, type DeviceType } from './registry';

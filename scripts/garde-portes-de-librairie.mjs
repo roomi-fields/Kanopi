@@ -42,7 +42,7 @@ const injecter = process.argv.includes('--injecter');
 let CLES;
 try {
   const depuis = createRequire(join(RACINE, 'packages/ui/package.json'));
-  const mod = await import(pathToFileURL(depuis.resolve('bpscript/src/transpiler/libs-data.js')).href);
+  const mod = await import(pathToFileURL(depuis.resolve('bpscript/libs-data')).href);
   CLES = Object.keys(mod.LIBS ?? {});
 } catch (e) {
   console.error(`[garde-portes] IMPOSSIBLE DE LIRE LE PAQUET DE BPSCRIPT — ${e.message}`);

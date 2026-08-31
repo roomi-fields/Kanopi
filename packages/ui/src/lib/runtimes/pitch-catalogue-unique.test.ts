@@ -25,7 +25,7 @@
 // possède) ou à Kairos (qui le lit). Le fait qui l'a montré : quand le champ d'accordage a été
 // renommé en amont le 2026-08-08, le SEUL code cassé chez nous était ce verrou — nous avons été
 // mis en rouge par un champ que l'application ne lit jamais.
-import { LIBS } from 'bpscript/src/transpiler/libs-data.js';
+import { LIBS } from 'bpscript/libs-data';
 import { describe, it, expect } from 'vitest';
 const alphabetsJson = LIBS.alphabets;
 

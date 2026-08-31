@@ -14,7 +14,8 @@ tempo:360   // horloge du natif -se.dhin-- : periode 167 ms par temps, soit 360 
 // qui n'existe dans AUCUN catalogue — la scène croyait charger un homomorphisme et n'en chargeait
 // aucun, sans un mot, sans erreur. Vérifié des deux côtés avant de corriger : la grammaire
 // d'origine déclare `-ho.dhin--` (BP3-tests/dhin1.gr:5, deux TIRETS) et la librairie nomme cette
-// entrée `dhin` (`bpscript/lib/transcription.json:68`, description « fidèle à -ho.dhin-- »).
+// entrée `dhin` (source de BPscript, `lib/transcription.json:68` — hors paquet publié ;
+// description « fidèle à -ho.dhin-- »).
 // ATTENTION — ceci ne suffit PAS à faire jouer la scène ce qu'elle dit : ses TERMINAUX portent la
 // même déformation (les tirets rendus par des « O » : `dhinOO`, `dhaOdhaOdhaO`…), et AUCUN d'eux
 // n'est une clé de la table. Question remontée à l'architecte : la corriger heurte la règle des

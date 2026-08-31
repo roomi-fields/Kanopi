@@ -32,7 +32,7 @@ Compile, derive, assert on the tree. Run from `packages/ui/` so the neighbour sp
 
 ```js
 import { readFileSync } from 'node:fs';
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { compileToBPxAST } from 'bpscript';
 import { createBPx, collectLeaves } from 'bpx';
 
 const r = compileToBPxAST(readFileSync(scene, 'utf8'));   // { ast, errors }

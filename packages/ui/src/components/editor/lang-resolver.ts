@@ -6,7 +6,7 @@ import type { Runtime } from '../../lib/core-mock';
 // BPScript's own CodeMirror 6 language modes (Lezer parser + highlighting),
 // consumed AS-IS from the dep — the same modes its web editor uses. `.bps` also
 // gets autocompletion sourced from BPScript's `reference.json` (see lang-bpscript).
-import { bpscriptLanguage, bp3Language } from 'bpscript/public/editor/bpscript-lang.js';
+import { bpscriptLanguage, bp3Language } from 'bpscript/editor-lang';
 import { lintGutter } from '@codemirror/lint';
 import { bpscriptCompletion, bpscriptExtras } from './lang-bpscript';
 import { bpsLibwordHighlight } from './bps-libword-highlight';

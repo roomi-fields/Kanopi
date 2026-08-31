@@ -18,7 +18,7 @@
 import { describe, it, expect } from 'vitest';
 // MÊME porte que mes deux lecteurs (`bpx-adapter.ts:1`, `resources.ts:33`) : le verrou éprouve
 // l'objet que l'application reçoit, pas une relecture du paquet par un autre chemin.
-import { LIBS } from 'bpscript/src/transpiler/libs-data.js';
+import { LIBS } from 'bpscript/libs-data';
 
 // La source se prend par le collecteur de Vite, comme le fait déjà mon garde de corpus
 // (`corpus-compile.test.ts:73`) : un chemin de disque calculé depuis `import.meta.url` ne résout pas

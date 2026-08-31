@@ -30,7 +30,7 @@ const coreJson = LIBS.core;
 // file, same as the ones above.
 const digitalJson = LIBS.digital;
 
-import { LIBS } from 'bpscript/src/transpiler/libs-data.js';
+import { LIBS } from 'bpscript/libs-data';
 import { guestLibraries, type GuestLibrary } from 'runtime-codevoices';
 import { visualsCatalog } from './visuals';
 import type { VisualItem } from './visuals';

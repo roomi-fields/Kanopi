@@ -19,7 +19,7 @@
 // LE NOM DIT L'INTENTION, ET L'INTENTION EST VÉRIFIÉE. C'est la règle du rouge d'intention — un rouge
 // ne prouve que s'il échoue pour SA raison — posée DANS la porte au lieu d'être répétée dans chaque
 // banc.
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { compileToBPxAST } from 'bpscript';
 
 // ⛔ LA PORTE RELAIE LE TYPE DE L'AMONT, ELLE N'EN INVENTE PAS UN. Écrite d'abord avec un retour
 // `unknown`, elle a fait rougir cinq contrôles de typage : les bancs passent l'arbre à des fonctions

@@ -1,4 +1,4 @@
-import { LIBS } from 'bpscript/src/transpiler/libs-data.js';
+import { LIBS } from 'bpscript/libs-data';
 import type { RuntimeAdapter, EvalSource, LogPush } from './adapter';
 import type { Runtime } from '../core-mock';
 import { compileBps } from './compile-cache';
@@ -40,7 +40,7 @@ import type { FileRef, SeEngineSettings, ParseBP3Result } from 'bp3-frontend';
 // INVENTÉE par la copie de surface locale (supprimée le 2026-07-28) : l'amont n'a jamais publié ce
 // nom. On dérive donc l'acteur de ce qu'il publie vraiment — l'arbre de `parseBP3`.
 type Bp3Actor = NonNullable<NonNullable<ParseBP3Result['ast']>['actors']>[number];
-import { compileToBPxAST } from 'bpscript/src/transpiler/index.js';
+import { compileToBPxAST } from 'bpscript';
 // Les catalogues de l'amont sont transportés EN BLOC vers Kairos (`PITCH_LIB` plus bas) : aucune
 // constante par catalogue ici, sinon la liste ferme l'ensemble et le prochain fichier à nom libre
 // reste invisible. Une scène qui déclare `alphabet.X` ou `test_alphabets.X` résout à travers eux.
@@ -242,7 +242,7 @@ import routingJson from '../../../../library/routing.json';
 // noms. Il transporte ce que l'amont publie ; Kairos résout (loi 26/27, PORTER ≠ RÉSOUDRE).
 const PITCH_LIB: PitchLib = LIBS;
 
-// The provided DIGITAL function library (catalogue `digital` de `bpscript/src/transpiler/libs-data.js`), handed to Kairos as the
+// The provided DIGITAL function library (catalogue `digital` de `bpscript/libs-data`), handed to Kairos as the
 // read-only `ctx.digitalLib` — the exact sibling of `PITCH_LIB`. Kairos applies these deterministic
 // TS functions (e.g. `transpose`) AT PROJECTION (KAI-B03); the host supplies the DATA and runs no
 // function itself. Without it Kairos falls back to its legacy hardcoded transpose. `_comment` doc
@@ -748,7 +748,7 @@ export function interpsForScene(text: string): string[] {
 }
 
 /** Une ENTRÉE déclarée par la scène — recopiée VERBATIM du nœud `InDirective` de l'AST amont
- *  (`bpscript/src/transpiler/parser.js`, `parse`). L'hôte ne complète rien : `mapping` reste `null`
+ *  (l'analyseur de BPscript, `parse`). L'hôte ne complète rien : `mapping` reste `null`
  *  quand la scène n'invoque aucune table, parce qu'il n'existe AUCUNE table par défaut (décision
  *  `2026-07-27-forme-des-entrees-in-mapping-adresse-nue.md`). */
 export interface DeclaredInput {
