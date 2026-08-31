@@ -3,11 +3,7 @@ import type { Extension } from '@codemirror/state';
 import { hoverTooltip, EditorView, type Tooltip } from '@codemirror/view';
 import { linter, type Diagnostic } from '@codemirror/lint';
 import { compileBps } from '../../lib/runtimes/compile-cache';
-import {
-  describeVocabulary,
-  type VocabControl,
-  type VocabValue
-} from 'bpscript';
+import { describeVocabulary, type VocabControl, type VocabValue } from 'bpscript';
 
 // BPScript editor intelligence, ALL sourced from BPScript's LIVING vocabulary
 // authority `describeVocabulary()` (the same aggregation its compile guard uses),
