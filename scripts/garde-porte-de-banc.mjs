@@ -28,9 +28,17 @@ const RACINE = path.resolve(ICI, "..");
 const PORTEE = "packages/ui/src";
 const PORTE = "packages/ui/src/lib/library/scene-de-banc.ts";
 
-/** Ce qu'un banc ne doit plus importer : le compilateur amont, et mon mémo qui l'enveloppe. */
+/**
+ * Ce qu'un banc ne doit plus importer : le compilateur amont, et mon mémo qui l'enveloppe.
+ *
+ * ⛔ LE SPÉCIFICATEUR RACINE S'ÉCRIT EN ENTIER, GUILLEMETS COMPRIS. Le compilateur sort par la porte
+ * `bpscript` et par elle seule ; ses autres portes — `bpscript/libs-data`, `bpscript/editor-lang` —
+ * ne compilent rien et un banc a le droit de les lire. Un préfixe nu les capturerait toutes, et le
+ * mot capturerait jusqu'aux commentaires : 28 bancs accusés pour 13 vrais.
+ */
 const INTERDITS = [
-  "bpscript",
+  "from 'bpscript'",
+  'from "bpscript"',
   "compile-cache",
 ];
 
