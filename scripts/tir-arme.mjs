@@ -1113,7 +1113,23 @@ function rendreLeVerdict(
         `        ✓ les racines LUES des deux côtés — une racine absente à l'un de mes deux relevés est\n` +
         `          nommée, jamais sautée en silence\n` +
         `        ⛔ PAS une racine qui disparaît ET revient ENTIÈREMENT entre mes deux relevés : mes\n` +
-        `          lectures sont à dix-huit minutes, un renommage dure des millisecondes.\n`) +
+        `          lectures sont à dix-huit minutes, un renommage dure des millisecondes.\n` +
+        `        ⛔⛔ ET PAS VOTRE DISCIPLINE — c'est la borne que je viens d'apprendre, et la plus large\n` +
+        `          des quatre. Une absence de bascule ne distingue pas QUATRE états, et trois d'entre eux\n` +
+        `          ne prouvent rien de ce que ma consigne a obtenu :\n` +
+        `            ✅ DISCIPLINÉ       vous aviez un geste prêt, vous l'avez retenu — vous témoignez\n` +
+        `            ⛔ EMPÊCHÉ          votre portillon était rouge : vous ne pouviez pas (bp3-frontend)\n` +
+        `            ⛔ SANS OBJET       vous n'aviez rien à publier (runtime-ui) — et c'est le plus\n` +
+        `                               trompeur : un arbre propre ressemble EXACTEMENT à un arbre\n` +
+        `                               qu'on a tenu propre\n` +
+        `            ⛔ VERTU INSTITUÉE  le garde de fenêtre partagé est branché à votre PUBLICATION,\n` +
+        `                               donc à la voie qui me bascule : vous ne pouviez pas non plus\n` +
+        `                               (kronos, mesuré chez lui)\n` +
+        `          ⇒ ⛔ SA CONSÉQUENCE, ET ELLE EST À MOI : si les voisins que je lis par leur \`dist\`\n` +
+        `            ont tous ce garde branché à leur publication, AUCUN d'eux n'est un témoin — je\n` +
+        `            mesure la tenue du garde de la tour et je la lis comme la tenue de ma consigne.\n` +
+        `          ⇒ ✅ CE QUE JE VOUS DEMANDE, ET ÇA TIENT EN UNE LIGNE : dites-moi dans lequel des\n` +
+        `            quatre vous étiez. Un « je n'ai pas bougé » ne me suffit plus.\n`) +
     `(Relevé par kronos le 2026-08-25 : cette phrase promettait « VOTRE manifeste » et rendait la liste\n` +
     `de tout le monde — fausse dès sa rédaction, deux heures plus tôt, pas héritée d'une forme ancienne.\n` +
     `Il a nommé le risque que la réparation naïve aurait introduit : filtrer par destinataire SANS rendre\n` +
