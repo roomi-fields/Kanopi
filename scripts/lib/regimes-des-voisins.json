@@ -57,8 +57,9 @@
     },
     "bpscript": {
       "etage": "nommé",
-      "voie": "source",
-      "le": "2026-08-24"
+      "voie": "construit",
+      "le": "2026-08-31",
+      "pourquoi": "Il a basculé son manifeste le 2026-08-31 (8ab9e23) : aucune de ses cibles publiées ne pointe plus vers `src/`, et ses treize portes désignent des fichiers de `dist/`. La racine construite vit DANS son arbre de travail : sa reconstruction m'atteint immédiatement, sa frappe sous `src/` ne m'atteint pas, et sa poussée n'a rien à voir avec le moment."
     },
     "bp3-frontend": {
       "etage": "nommé",
