@@ -1114,22 +1114,35 @@ function rendreLeVerdict(
         `          nommée, jamais sautée en silence\n` +
         `        ⛔ PAS une racine qui disparaît ET revient ENTIÈREMENT entre mes deux relevés : mes\n` +
         `          lectures sont à dix-huit minutes, un renommage dure des millisecondes.\n` +
-        `        ⛔⛔ ET PAS VOTRE DISCIPLINE — c'est la borne que je viens d'apprendre, et la plus large\n` +
-        `          des quatre. Une absence de bascule ne distingue pas QUATRE états, et trois d'entre eux\n` +
-        `          ne prouvent rien de ce que ma consigne a obtenu :\n` +
-        `            ✅ DISCIPLINÉ       vous aviez un geste prêt, vous l'avez retenu — vous témoignez\n` +
-        `            ⛔ EMPÊCHÉ          votre portillon était rouge : vous ne pouviez pas (bp3-frontend)\n` +
-        `            ⛔ SANS OBJET       vous n'aviez rien à publier (runtime-ui) — et c'est le plus\n` +
+        `        ⛔⛔ ET PAS VOTRE DISCIPLINE — c'est la borne la plus large, et cinq d'entre vous me\n` +
+        `          l'ont apprise en une nuit. Une absence de bascule ne distingue pas CINQ états, et un\n` +
+        `          seul atteste que ma consigne a obtenu quelque chose :\n` +
+        `            ✅ DISCIPLINÉ       vous aviez un geste prêt SUR MA VOIE, vous l'avez retenu\n` +
+        `            ⛔ EMPÊCHÉ          quelque chose vous en empêchait (bp3-frontend)\n` +
+        `            ⛔ SANS OBJET       vous n'aviez rien à faire (runtime-ui) — et c'est le plus\n` +
         `                               trompeur : un arbre propre ressemble EXACTEMENT à un arbre\n` +
         `                               qu'on a tenu propre\n` +
-        `            ⛔ VERTU INSTITUÉE  le garde de fenêtre partagé est branché à votre PUBLICATION,\n` +
-        `                               donc à la voie qui me bascule : vous ne pouviez pas non plus\n` +
-        `                               (kronos, mesuré chez lui)\n` +
-        `          ⇒ ⛔ SA CONSÉQUENCE, ET ELLE EST À MOI : si les voisins que je lis par leur \`dist\`\n` +
-        `            ont tous ce garde branché à leur publication, AUCUN d'eux n'est un témoin — je\n` +
-        `            mesure la tenue du garde de la tour et je la lis comme la tenue de ma consigne.\n` +
-        `          ⇒ ✅ CE QUE JE VOUS DEMANDE, ET ÇA TIENT EN UNE LIGNE : dites-moi dans lequel des\n` +
-        `            quatre vous étiez. Un « je n'ai pas bougé » ne me suffit plus.\n`) +
+        `            ⛔ VERTU INSTITUÉE  un garde fermait la voie : vous ne pouviez pas non plus (kronos)\n` +
+        `            ⛔ NON LU           je vous lis par un PAQUET ÉPINGLÉ : aucun geste de vous ne\n` +
+        `                               m'atteint, même retenu (runtime-in). ⇒ Vous n'êtes pas des\n` +
+        `                               témoins faibles, vous n'êtes pas des témoins — et ça vaut pour\n` +
+        `                               TOUTES mes fenêtres, jamais l'une après l'autre.\n` +
+        `          ⛔⛔ ET LA QUESTION SE POSE UNE FOIS PAR VOIE, JAMAIS SUR UN GESTE QUELCONQUE — c'est\n` +
+        `            la règle de bp3-frontend, et elle corrige un classement que j'avais fait de lui :\n` +
+        `              lu en SOURCE     seul un empêchement d'ÉCRITURE compte. Un portillon rouge\n` +
+        `                               n'empêche AUCUNE frappe — vous pouvez me basculer d'un octet.\n` +
+        `                               ⚠️ ET J'AI ÉCRIT « rien ne garde une sauvegarde, donc vous seuls\n` +
+        `                                 pouvez m'être des témoins » : FAUX, réfuté par runtime-midi\n` +
+        `                                 avant que la ligne parte. Il est lu en SOURCE et gardé des\n` +
+        `                                 DEUX côtés — un crochet pré-écriture refuse l'édition sous ses\n` +
+        `                                 racines. ⇒ La vertu instituée n'est pas réservée aux voies\n` +
+        `                                 construites : elle se mesure chez chacun, jamais par sa voie.\n` +
+        `              lu en CONSTRUIT  seul un empêchement de RECONSTRUCTION compte. Votre poussée ne\n` +
+        `                               me bascule pas ; la retenir n'atteste rien.\n` +
+        `            ⇒ ⛔ TROIS D'ENTRE VOUS ONT RETIRÉ LEURS PROPRES TÉMOINS en appliquant ça : ils\n` +
+        `              avaient mesuré leur discipline sur leur POUSSÉE, qui n'est pas ma voie.\n` +
+        `          ⇒ ✅ CE QUE JE VOUS DEMANDE : dites-moi dans lequel des cinq vous étiez, SUR MA VOIE.\n` +
+        `            Un « je n'ai pas bougé » ne me suffit plus.\n`) +
     `(Relevé par kronos le 2026-08-25 : cette phrase promettait « VOTRE manifeste » et rendait la liste\n` +
     `de tout le monde — fausse dès sa rédaction, deux heures plus tôt, pas héritée d'une forme ancienne.\n` +
     `Il a nommé le risque que la réparation naïve aurait introduit : filtrer par destinataire SANS rendre\n` +
