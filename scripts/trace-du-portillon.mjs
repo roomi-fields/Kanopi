@@ -26,6 +26,7 @@ import {
   empreinteDuPortillon,
   ecrireReleve,
   lireReleve,
+  estUneMesure,
   CHEMIN_DU_RELEVE,
 } from "./lib/releve-du-portillon.mjs";
 
@@ -69,7 +70,15 @@ console.log(
 // VALIDE. Mesuré le 2026-08-30 : deux traces de suite ont rendu 1 pour des causes qui ne sont pas
 // le portillon — du courrier arrivé pendant l'une, l'arbre sale d'un voisin pendant l'autre. Chacune
 // écrasait le fichier. Un troisième essai réussi n'aurait rien restauré du tout.
-const ancien = lireReleve();
+//
+// ⛔ ET CE QU'ON GARDE EN MAIN DOIT ÊTRE UNE MESURE, PAS N'IMPORTE QUEL RELEVÉ. Mesuré le 2026-08-31 :
+// une trace tuée en route a laissé son marqueur `enCours` seul sur le disque ; la trace suivante l'a
+// relu ici, l'a réécrit tel quel plus bas, et a annoncé « le relevé précédent est INTACT ». La phrase
+// était fausse et la mesure était déjà perdue. `estUneMesure` écarte le marqueur et le plancher pris
+// sur un rouge ; l'empreinte n'entre pas dans la question, puisque ce qu'on garde est par nature le
+// relevé d'AVANT.
+const surLeDisque = lireReleve();
+const ancien = estUneMesure(surLeDisque) ? surLeDisque : null;
 
 // ⛔ LE RELEVÉ S'OUVRE AVANT DE MESURER, ET IL PORTE DÉJÀ L'EMPREINTE DU JOUR. Sans ça, le garde
 // refuserait le portillon que cette trace est justement en train de faire tourner, et la mesure
@@ -116,7 +125,10 @@ if (sortie !== "0") {
       attribution.phrase +
       (ancien
         ? "\n   Le relevé précédent est INTACT : une tentative ratée n'écrase pas une mesure valide."
-        : "\n   Aucun relevé précédent à garder — le portillon reste refusé jusqu'à une trace complète."),
+        : surLeDisque?.enCours
+          ? "\n   Aucune mesure à garder : le disque ne portait qu'un MARQUEUR d'ouverture, laissé par une" +
+            "\n   trace tuée en route. La mesure d'avant était déjà perdue quand celle-ci a commencé."
+          : "\n   Aucun relevé précédent à garder — le portillon reste refusé jusqu'à une trace complète."),
   );
   process.exit(1);
 }
