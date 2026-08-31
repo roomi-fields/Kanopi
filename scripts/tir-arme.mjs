@@ -1033,8 +1033,15 @@ function rendreLeVerdict(
   const texte =
     avertissementDeVersion +
     `VERDICT DE LA CAMPAGNE ${identifiant}, tirée par ${ARME} — départ ${hh(depart)}, arrivée ${hh(arrivee)}.\n\n` +
-    `⛔ CET IDENTIFIANT EST CELUI DE L'AVIS QUE VOUS AVEZ REÇU. S'il ne correspond pas au DERNIER\n` +
-    `avis reçu de moi, ce verdict ne vous libère PAS : une autre campagne mesure encore.\n\n` +
+    `⛔ CET IDENTIFIANT EST CELUI ÉCRIT DANS LE MOTIF DE MON AVIS, sur la ligne « CAMPAGNE … » —\n` +
+    `JAMAIS celui que la tour met sur le crochet du message. S'il ne correspond pas au DERNIER avis\n` +
+    `reçu de moi, ce verdict ne vous libère PAS : une autre campagne mesure encore.\n` +
+    `⚠️ ET JE NOMME LEQUEL DES DEUX PARCE QUE MON AVIS EN A PORTÉ DEUX. Relevé par runtime-codevoices\n` +
+    `le 2026-08-31 : mon avis de 23:01 portait \`…210142Z\` sur son crochet et \`…210141Z\` dans son\n` +
+    `motif, une seconde d'écart pour un seul objet ; mon verdict citait le second. Un lecteur qui\n` +
+    `appliquait ma clause à la lettre concluait qu'une autre campagne mesurait, et RESTAIT GELÉ.\n` +
+    `La tour a réparé sa fabrication d'identifiant à 23:06 — ma clause, elle, restait ambiguë, et\n` +
+    `elle aurait retenu quelqu'un au prochain second identifiant venu.\n\n` +
     `    CODE DE SORTIE DU CROCHET : ${sortie}\n` +
     pourquoi +
     `    ${pousse}${bascule}\n\n` +
