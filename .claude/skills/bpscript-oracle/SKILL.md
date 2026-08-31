@@ -116,8 +116,16 @@ se relit à la main à chaque décision de langage. **Quand cette section et les
 divergent, ce sont elles qui font foi.**
 
 **Trois mots restent** : `object`, `def`, `init`. Tout le reste est un **type déclaré** — `actor`,
-`terminal`, et les catalogues qui fonctionnent déjà ainsi : `alphabet`, `tuning`, `octaves`,
-`homomorphism`.
+`terminal`.
+
+⛔ **DEUX CATALOGUES DÉCLARENT LEURS ENTRÉES PAR LEUR TYPE, ET EUX SEULS** — `scales` et `types`.
+Mesuré le 2026-08-31 au paquet publié `01da677`, sur la trace de dérivation que porte chaque entrée
+dérivée : `scales` **185**, `types` **4**, **189 au total**. `alphabets`, `tunings`, `octaves` et
+`homomorphism` en portent **zéro**.
+
+⚠️ **La liste des mots réservés du socle ne tranche pas cette question**, et le croire mène au faux :
+`actor` y figure — vingt mots, mesurés au même paquet — et il se déclare pourtant en tête de ligne.
+**Ce qui tranche est la trace de dérivation**, jamais l'appartenance à cette liste.
 
 **Le type vient en tête**, et la **position** qualifie la ligne, de part et d'autre du délimiteur
 `-----`. L'arobase de tête est sortie le 2026-08-16.
