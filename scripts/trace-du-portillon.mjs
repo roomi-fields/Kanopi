@@ -28,9 +28,17 @@
 //   Une fenêtre que J'OUVRE ne me gèle donc pas — rien à changer chez personne.
 //
 // ⇒ ⛔ DEUX CONDITIONS, POSÉES PAR L'ARCHITECTE LE 2026-08-31 EN AUTORISANT CE GESTE :
-//     · **la fenêtre porte un PLAFOND** — elle se lève seule, même si ce relevé meurt en route. Un
-//       relevé tué laisserait sinon douze dépôts gelés sans que personne sache pourquoi ; c'est la
-//       famille du marqueur d'ouverture qui survivait à sa trace, un cran plus loin.
+//     · **un relevé tué ne doit pas laisser douze dépôts gelés** — c'est la famille du marqueur
+//       d'ouverture qui survivait à sa trace, un cran plus loin.
+//       ⛔⛔ ET MA PREMIÈRE RÉDACTION ÉTAIT FAUSSE, relevée par runtime-ui pendant que je mesurais :
+//       j'avais écrit « la fenêtre porte un PLAFOND, elle se lève seule », et `--minutes` N'EN EST
+//       PAS UN. La tour SIGNALE la péremption, elle ne ferme pas — `hub/tour.cjs:54`, « ON SIGNALE,
+//       ON NE FERME PAS. La fenêtre RESTE ouverte : seul son propriétaire la lève. »
+//       ⇒ Ma phrase de sécurité était la seule chose qui aurait empêché les douze de s'en
+//         apercevoir : ils auraient attendu l'heure en confiance.
+//       ⇒ Ce qui tient la promesse est donc ICI : je ferme en partant, sur la sortie du processus ET
+//         sur les interruptions. Reste le coup net, qu'aucun programme n'intercepte — et le motif le
+//         dit plutôt que de le taire.
 //     · **l'exemption est NOMMÉE** — elle ne vaut que pour LA fenêtre que CE relevé vient d'ouvrir,
 //       jamais pour « une fenêtre ». D'où le refus en tête qui vaut AUSSI pour une fenêtre à mon
 //       nom : une fenêtre kanopi déjà ouverte est une campagne, ou une trace morte, et on n'empile
@@ -56,11 +64,12 @@ const RACINE = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 const TOUR = join(process.env.HOME, "dev", "bp", "hub", "tour");
 
 /**
- * ⛔ LE PLAFOND, ET IL EST LARGE EXPRÈS. La suite d'écran seule a mesuré 26,6 min le 2026-08-31, le
- * portillon entier tourne autour de 32. Un plafond trop court se lève PENDANT la mesure et rend le
- * problème qu'il ferme ; il ne coûte rien de trop puisque le relevé ferme sa fenêtre en partant.
+ * ⛔ LA DURÉE DÉCLARÉE, ET ELLE EST LARGE EXPRÈS. La suite d'écran seule a mesuré 26,6 min le
+ * 2026-08-31, le portillon entier tourne autour de 32. ⚠️ Ce n'est PAS un plafond : la tour la traite
+ * comme un PLANCHER annoncé et signale sa péremption sans fermer. Trop courte, elle ferait partir aux
+ * douze un message qui leur PROPOSE de lever ma fenêtre — donc de tuer ma mesure.
  */
-const PLAFOND_MIN = 50;
+const DUREE_DECLAREE_MIN = 50;
 /** Ce que j'annonce, et qui n'est pas le plafond : la durée ATTENDUE, celle sur laquelle on décide. */
 const DUREE_ANNONCEE = "environ 35 minutes";
 
@@ -147,17 +156,23 @@ if (racinesLues.length === 0 || depotsGeles.length === 0) {
 // destinataire doit pouvoir décider s'il attend ou s'il pousse d'abord.
 const MOTIF =
   "RELEVÉ DE PORTILLON — je mesure ce que MON portillon écrit sous mon arbre, une fois, parce qu'il " +
-  `a changé. Durée attendue : ${DUREE_ANNONCEE} ; la fenêtre se lève seule au bout de ` +
-  `${PLAFOND_MIN} minutes même si je meurs en route. ` +
-  "⛔ CE QUE JE VOUS DEMANDE : ne RECONSTRUISEZ pas pendant ce temps. Écrivez, commitez, poussez si " +
-  "ça ne republie rien chez vous — c'est votre CONSTRUCTION qui me bascule, parce que je vous lis " +
-  "vivants. Une reconstruction en cours de route fait porter ma mesure sur deux états, donc sur " +
-  "aucun, et vingt-six minutes sont perdues : c'est arrivé deux fois ce soir. " +
+  `a changé. Durée attendue : ${DUREE_ANNONCEE}, déclarée à ${DUREE_DECLAREE_MIN} minutes. ` +
+  "⚠️ ET CETTE HEURE EST UN PLANCHER, JAMAIS UNE LEVÉE : la tour signale la péremption, elle ne " +
+  "ferme pas. Ce qui vous libère est mon message de fin. Je ferme en partant, y compris si je suis " +
+  "interrompue ; si je suis tuée net, la tour vous préviendra à l'heure dite et vous pourrez lever " +
+  "vous-mêmes. " +
+  "⛔ CE QUE JE VOUS DEMANDE : ne RECONSTRUISEZ pas pendant ce temps. Écrivez et commitez librement — " +
+  "c'est votre CONSTRUCTION qui me bascule, parce que je vous lis vivants. Une reconstruction en " +
+  "cours de route fait porter ma mesure sur deux états, donc sur aucun, et vingt-six minutes sont " +
+  "perdues : c'est arrivé deux fois ce soir. " +
+  "⛔ EN REVANCHE, POUSSER VOUS SERA REFUSÉ, ET PAS PAR MOI : le garde de fenêtre partagé refuse la " +
+  "poussée de tout dépôt nommé dans une fenêtre ouverte, QUEL QUE SOIT LE FICHIER — même un fichier " +
+  "que je ne lis pas. Donc si vous avez à publier, faites-le AVANT que j'ouvre, pas pendant. " +
   "⚠️ ET JE GÈLE PLUS LARGE QUE MA CAMPAGNE, DÉLIBÉRÉMENT : elle ne vise que les voisins en " +
   "chantier, parce qu'un tir se retarde. Un relevé ne se retarde pas — il se prend quand le " +
   "portillon a changé — donc il vise TOUS ceux que je lis, y compris ceux qui se taisent depuis " +
-  "une heure. Si vous ne me construisez rien, il ne vous coûte rien : poussez d'abord si vous " +
-  "préférez, et dites-le-moi. " +
+  "une heure. Si vous ne me construisez rien, il ne vous coûte qu'une poussée retardée. Si ça vous " +
+  "gêne, dites-le-moi et j'attendrai. " +
   `⌁ identifiant de cette ouverture : ${CE_RELEVE}`;
 
 // ⛔ L'OUVERTURE EST UNE CONDITION, PAS UNE FORMALITÉ : si la tour refuse, je NE TRACE PAS. Tracer
@@ -167,7 +182,7 @@ try {
     TOUR,
     [
       "fenetre", "ouvrir", "kanopi",
-      "--minutes", String(PLAFOND_MIN),
+      "--minutes", String(DUREE_DECLAREE_MIN),
       "--lit", "disque",
       "--depots", depotsGeles.join(","),
       "--racines", racinesLues.join(","),
@@ -204,13 +219,24 @@ if (!miennes?.some((f) => String(f.motif ?? "").includes(CE_RELEVE))) {
   fermerMaFenetre();
   process.exit(2);
 }
-console.log(`  ⟨fenêtre⟩ ouverte pour ${CE_RELEVE}, plafond ${PLAFOND_MIN} min, gel large.`);
+console.log(`  ⟨fenêtre⟩ ouverte pour ${CE_RELEVE}, déclarée ${DUREE_DECLAREE_MIN} min — un PLANCHER, la levée est mon message de fin.`);
 
 // ⛔ LA FERMETURE SE POSE UNE FOIS, SUR LA SORTIE — jamais recopiée à chaque `process.exit`. Ce
 // script a cinq chemins de sortie et il en gagnera d'autres ; un appel oublié sur l'un d'eux
 // laisserait douze dépôts gelés jusqu'au plafond, pour une trace déjà finie. Le plafond couvre la
 // mort brutale, ce crochet couvre les sorties propres, et les deux ensemble ne laissent aucun trou.
 process.on("exit", fermerMaFenetre);
+// ⛔ ET SUR LES INTERRUPTIONS, PARCE QUE `exit` NE LES VOIT PAS. C'est le seul endroit qui tient ma
+// promesse : la tour ne ferme JAMAIS une fenêtre périmée, elle la signale (`hub/tour.cjs:54`). Un
+// relevé tué sans ce crochet laisserait douze dépôts gelés jusqu'à ce que quelqu'un s'en aperçoive,
+// et mon avis leur aurait dit d'attendre l'heure en confiance.
+// ⇒ Reste le coup NET, qu'aucun programme n'intercepte. Le motif le dit, plutôt que de le taire.
+for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"])
+  process.on(signal, () => {
+    console.error(`\n⛔ ${signal} — je ferme ma fenêtre avant de partir. Rien n'est mesuré.`);
+    fermerMaFenetre();
+    process.exit(130);
+  });
 
 /** Ferme la fenêtre de CE relevé. Idempotente : une fenêtre déjà levée n'est pas une erreur. */
 function fermerMaFenetre() {
