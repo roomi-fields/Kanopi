@@ -1020,9 +1020,23 @@ function rendreLeVerdict(
   const nommes = [
     ...sortiePush.matchAll(/^\s*•\s+(\S+)\s+—\s+(\d+)\s+entrée/gm),
   ].map((m) => `${m[1]} (${m[2]} entrée(s))`);
-  const bascule = /BASCUL/.test(sortiePush)
-    ? `\n    ⚠ BASCULE NOMMÉE CHEZ : ${nommes.join(", ") || "nom non extrait — voir mon journal"}`
-    : "";
+  // ⛔⛔ ET LA LIGNE NE PARAÎT QUE SI UN NOM A ÉTÉ EXTRAIT — le mot nu ne la déclenche plus.
+  //
+  // Elle reposait sur `/BASCUL/` appliqué à la sortie ENTIÈRE du crochet. Relevé par runtime-osc le
+  // 2026-08-31 sur mon verdict de 23:25, qui portait DEUX LIGNES CONTRADICTOIRES : « BASCULE NOMMÉE
+  // CHEZ : nom non extrait » et, plus bas, « aucune bascule chez AUCUN des 12 dépôts gelés ».
+  //
+  // ⇒ MESURÉ DANS LE JOURNAL DE CETTE CAMPAGNE, et les deux seules occurrences du mot étaient :
+  //     · le TITRE d'un de mes propres cas d'épreuve, VERT — « un voisin qui BASCULE pendant la
+  //       mesure est attribué au voisin »
+  //     · ma propre phrase de relevé — « AUCUNE BASCULE pendant ma mesure »
+  //   ⇒ ⛔ Mon motif s'est déclenché sur un banc qui passe et sur une phrase qui dit le CONTRAIRE.
+  //
+  // ⇒ Un verdict qui annonce un nommé ET n'en nomme aucun envoie chercher un coupable qui n'existe
+  //   pas — ou pire, fait classer l'affaire à qui lit la seconde ligne. Le fait, c'est le NOM :
+  //   `nommes` le tire de la forme structurée que mon garde écrit (`• dépôt — N entrée(s)`). Pas de
+  //   nom, pas de bascule. Un marqueur compte une FORME, jamais une chaîne.
+  const bascule = nommes.length ? `\n    ⚠ BASCULE NOMMÉE CHEZ : ${nommes.join(", ")}` : "";
   // ⛔ LE VERDICT NOMME SA CAUSE. Relevé par runtime-MIDI le 2026-08-24, après trois rouges en
   // quinze minutes : « un verdict qui ne nomme pas sa cause ne permet à personne de t'aider — tes
   // voisins ne peuvent que répondre "pas moi", et je viens de le faire trois fois ».
