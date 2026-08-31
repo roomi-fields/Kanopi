@@ -606,9 +606,18 @@ function preVol() {
         //   RECONSTRUIT sous la mesure — a été mesuré le 2026-08-30 et n'aurait été ajouté qu'à une
         //   des deux copies.
         attribution: attributionDuRouge(sortie),
+        // ⛔⛔ ET LE REPLI SE DÉCLARE COMME UN REPLI. Il rendait les HUIT DERNIÈRES LIGNES de la sortie,
+        // nues, comme si elles étaient la cause. Mesuré le 2026-09-01 à 00:00 : une étape a rougi sans
+        // qu'aucune ligne ne corresponde au motif, le repli a donc rendu la queue du journal — SIX
+        // LIGNES VERTES et un « vert — morsure et bornes prouvées ». ⇒ Un rouge présenté par des verts.
+        // J'ai relancé la mesure à la main pour trouver ce que mon propre outil avait sous les yeux.
+        // ⇒ Une sonde tronquée rend une conclusion fausse ; une sonde tronquée QUI NE LE DIT PAS la rend
+        //   confiante. Le repli dit maintenant qu'il n'a rien reconnu, et ce qu'il montre à la place.
         cause: lignes.length
           ? lignes.join("\n")
-          : sortie.split("\n").slice(-8).join("\n"),
+          : "    ⚠️ AUCUNE LIGNE D'ÉCHEC RECONNUE dans la sortie de cette étape — ce qui suit est la " +
+            "QUEUE du journal,\n       pas la cause. Rejoue l'étape à la main pour la voir.\n" +
+            sortie.split("\n").slice(-8).join("\n"),
       };
     }
   }

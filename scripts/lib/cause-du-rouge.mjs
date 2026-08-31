@@ -118,7 +118,10 @@ export function attributionDuRouge(sortie) {
   const texte = String(sortie);
   for (const a of ATTRIBUTIONS)
     if (texte.includes(a.marqueur)) return { qui: a.qui, phrase: a.phrase };
-  return { qui: "moi", phrase: "La cause est chez moi — elle est écrite ci-dessus." };
+  // ⛔ « CI-DESSOUS », PARCE QUE C'EST LÀ QU'ELLE S'IMPRIME. La phrase disait « ci-dessus » et l'appelant
+  // l'écrit AVANT la cause : au premier pré-vol rouge de la nuit, la ligne était la PREMIÈRE du journal
+  // et renvoyait à un vide. J'ai cherché la cause ailleurs qu'à l'endroit où elle était.
+  return { qui: "moi", phrase: "La cause est chez moi — elle est écrite ci-dessous." };
 }
 
 export function causeDuRouge(sortie) {
