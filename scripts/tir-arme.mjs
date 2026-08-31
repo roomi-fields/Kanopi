@@ -469,9 +469,18 @@ function racinesDeCeVoisin(v) {
  *   dériverait de la première. Le relevé la demande à l'arme par `--releve-racines`, comme
  *   bp3-frontend demande son périmètre par `--releve` : la réponse vient de l'arme, jamais d'un
  *   harnais qui la copie.
+ *
+ * ⛔ ELLE REND DES PAIRES QUALIFIÉES — `bpscript/dist` — ET NON UNE UNION PLATE. L'union était une
+ * perte de sens imposée par la tour, qui croisait la liste avec TOUS les gelés : mesuré le
+ * 2026-08-31, 39 combinaisons inexistantes sur 72, dont aucune n'était une faute de ma part —
+ * `doc-utilisateur` est à atlas seul, `dist` à ceux qui construisent, `types` à trois runtimes.
+ * ⇒ La tour sait qualifier depuis `f46963da` : une entrée préfixée ne vaut que pour son dépôt. Je
+ *   cesse donc d'aplatir ce que je dérive déjà par voisin, et mon gel dit enfin ce qu'il protège.
  */
 function racinesQueJeLis() {
-  return [...new Set(voisinsAGeler().flatMap((v) => [...racinesDeCeVoisin(v)]))].sort();
+  return voisinsAGeler()
+    .flatMap((v) => [...racinesDeCeVoisin(v)].map((r) => `${nomDeGel(v).toLowerCase()}/${r}`))
+    .sort();
 }
 
 /**

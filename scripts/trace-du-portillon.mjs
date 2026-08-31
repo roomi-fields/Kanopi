@@ -110,7 +110,7 @@ console.log(
 // lue sale ». C'est le trou que mon arme avait déjà nommé le 2026-08-21, et je le rencontrais ici
 // pour la première fois.
 //
-// ⇒ ⛔ ET LA RÉPONSE NE SE RECOPIE PAS : `tir-arme.mjs --releve-racines` DÉRIVE l'union par les mêmes
+// ⇒ ⛔ ET LA RÉPONSE NE SE RECOPIE PAS : `tir-arme.mjs --releve-racines` DÉRIVE les paires par les mêmes
 //   fonctions que sa fenêtre de campagne. Une seconde liste écrite ici dériverait de la première, et
 //   c'est un verdict qui porterait sur un périmètre que personne n'a mesuré. Le drapeau n'appelle ni
 //   la tour ni aucun gel : il dérive, il imprime, il sort.
