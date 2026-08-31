@@ -32,7 +32,7 @@
 //       d'ouverture qui survivait à sa trace, un cran plus loin.
 //       ⛔⛔ ET MA PREMIÈRE RÉDACTION ÉTAIT FAUSSE, relevée par runtime-ui pendant que je mesurais :
 //       j'avais écrit « la fenêtre porte un PLAFOND, elle se lève seule », et `--minutes` N'EN EST
-//       PAS UN. La tour SIGNALE la péremption, elle ne ferme pas — `hub/tour.cjs:54`, « ON SIGNALE,
+//       PAS UN. La tour SIGNALE la péremption, elle ne ferme pas — `hub/tour.cjs`, dans `purgerFenetresPerimees` : « ON SIGNALE,
 //       ON NE FERME PAS. La fenêtre RESTE ouverte : seul son propriétaire la lève. »
 //       ⇒ Ma phrase de sécurité était la seule chose qui aurait empêché les douze de s'en
 //         apercevoir : ils auraient attendu l'heure en confiance.
@@ -227,7 +227,7 @@ console.log(`  ⟨fenêtre⟩ ouverte pour ${CE_RELEVE}, déclarée ${DUREE_DECL
 // mort brutale, ce crochet couvre les sorties propres, et les deux ensemble ne laissent aucun trou.
 process.on("exit", fermerMaFenetre);
 // ⛔ ET SUR LES INTERRUPTIONS, PARCE QUE `exit` NE LES VOIT PAS. C'est le seul endroit qui tient ma
-// promesse : la tour ne ferme JAMAIS une fenêtre périmée, elle la signale (`hub/tour.cjs:54`). Un
+// promesse : la tour ne ferme JAMAIS une fenêtre périmée, elle la signale (`hub/tour.cjs`, `purgerFenetresPerimees`). Un
 // relevé tué sans ce crochet laisserait douze dépôts gelés jusqu'à ce que quelqu'un s'en aperçoive,
 // et mon avis leur aurait dit d'attendre l'heure en confiance.
 // ⇒ Reste le coup NET, qu'aucun programme n'intercepte. Le motif le dit, plutôt que de le taire.
