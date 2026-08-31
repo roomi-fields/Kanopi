@@ -48,7 +48,7 @@ import {
 } from "node:fs";
 import { causeDuRouge, attributionDuRouge } from "./lib/cause-du-rouge.mjs";
 import { qualifierEcriture } from "./lib/qualifier-ecriture.mjs";
-import { geleParUnVoisin } from "./lib/gel-recu.mjs";
+import { geleParUnVoisin, repliDeLectureImpossible } from "./lib/gel-recu.mjs";
 import {
   racinesSurveillees,
   derniereEcriture,
@@ -66,6 +66,13 @@ import {
 import { voisinsLusParChemin } from "./lib/voisins-lus-par-chemin.mjs";
 
 const RACINE = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
+
+/**
+ * ⛔ CE QUI DISTINGUE UNE TOUR ABSENTE D'UNE TOUR MUETTE — et le repli n'est pas le même.
+ * Le chemin est celui que `hub/tools/garde-fenetre.sh` interroge, dans les mêmes termes : le dossier
+ * existe = la tour existe. Je ne l'invente pas ici, je m'aligne sur le garde partagé.
+ */
+const DOSSIER_DES_FENETRES = join(homedir(), "dev", "bp", "hub", ".tour", "fenetres");
 
 /**
  * ⛔ MON PROPRE SOURCE, TEL QU'IL ÉTAIT AU LANCEMENT — et pourquoi je le retiens.
@@ -623,8 +630,23 @@ function preVol() {
  *   ce qui est à moi soit vert ». Il couvrait mes gardes et mon typage ; il ne couvrait pas le fait
  *   d'être gelé. Un rouge prévisible n'a pas à coûter un gel à onze dépôts.
  *
- * Rend la raison en clair, ou `null` si personne ne me gèle. La tour muette ne bloque rien : un outil
- * qui ne répond pas ne doit pas m'interdire de tirer — même décision que pour le crochet d'écriture.
+ * Rend la raison en clair, ou `null` si personne ne me gèle.
+ *
+ * ⛔⛔ UNE TOUR ABSENTE ET UNE TOUR QUI REFUSE MA QUESTION NE SONT PAS LE MÊME ÉTAT, ET J'AI LONGTEMPS
+ * RENDU LE MÊME `null` POUR LES DEUX. Mesuré le 2026-08-31 : la tour a refusé `fenetre --json`
+ * pendant une heure — un garde de drapeau inconnu écrit pour le geste qui GÈLE et appliqué au geste
+ * qui LIT. ⇒ Mon arme lisait donc « PERSONNE NE ME GÈLE » d'une tour vivante et pleine de fenêtres,
+ * et elle aurait mesuré dans celle d'un voisin sans la voir.
+ *
+ * ⇒ ⛔ LE REPLI SÛR N'EST PAS LE MÊME DES DEUX CÔTÉS. Absente : ne rien opposer, sinon un dépôt isolé
+ *   devient impoussable — pire que le trou couvert. Vivante et muette : REFUSER, parce que ses
+ *   fenêtres existent sur le disque et ne sont plus lues. Un vert voudrait alors dire « personne ne
+ *   mesure » alors qu'il veut dire « je ne sais pas ».
+ *
+ * ⇒ ✅ ET LA DISCRIMINATION NE S'INVENTE PAS ICI : c'est celle que `hub/tools/garde-fenetre.sh`
+ *   applique déjà, dans ces termes — « LE DOSSIER DES FENÊTRES EXISTE = LA TOUR EXISTE. Si elle
+ *   existe et que l'appel échoue, on REFUSE. » Je m'aligne sur le garde partagé plutôt que d'inventer
+ *   un second critère qui divergerait du sien.
  */
 function quiMeGele() {
   let brut;
@@ -634,15 +656,38 @@ function quiMeGele() {
       stdio: ["ignore", "pipe", "ignore"],
       env: { ...process.env, BP_AGENT: "kanopi" },
     });
-  } catch {
-    return null; // la tour ne répond pas — on ne se bloque pas là-dessus
+  } catch (e) {
+    if (!existsSync(DOSSIER_DES_FENETRES)) return null; // tour ABSENTE — dépôt isolé, rien à opposer
+    return repliDeLectureImpossible(
+      existsSync(DOSSIER_DES_FENETRES),
+      "son outil a ÉCHOUÉ sur `fenetre --json`",
+      e.stderr ?? e.message,
+    );
   }
   try {
     // La DÉCISION vit dans `lib/gel-recu.mjs`, éprouvée sur des fenêtres fabriquées : je ne peux pas
     // demander à un voisin d'ouvrir une fenêtre sur moi pour voir ce garde mordre.
-    return geleParUnVoisin(JSON.parse(brut), "kanopi");
-  } catch {
-    return null; // réponse illisible — on ne se bloque pas là-dessus non plus
+    //
+    // ⛔ ET UNE RÉPONSE QUI N'EST PAS UN TABLEAU S'ÉCARTE ICI, AVANT `geleParUnVoisin`. Elle, par
+    // construction, rend `null` sur tout ce qui n'est pas une liste de fenêtres — c'est-à-dire
+    // « personne ne me gèle » pour une tour qui m'aurait répondu autre chose. Le JSON valide mais
+    // non tabulaire est le seul cas que le bloc `catch` ne voit pas : il ne jette pas.
+    const lu = JSON.parse(brut);
+    if (!Array.isArray(lu))
+      return repliDeLectureImpossible(
+        existsSync(DOSSIER_DES_FENETRES),
+        "sa réponse à `fenetre --json` n'est PAS une liste de fenêtres",
+        JSON.stringify(lu).slice(0, 120),
+      );
+    return geleParUnVoisin(lu, "kanopi");
+  } catch (e) {
+    // ⛔ MÊME RAISONNEMENT POUR UNE RÉPONSE ILLISIBLE : elle vient d'une tour qui a répondu, donc
+    // vivante. Un `null` ici dirait « personne ne me gèle » sur une réponse que je n'ai pas su lire.
+    return repliDeLectureImpossible(
+      existsSync(DOSSIER_DES_FENETRES),
+      "sa réponse à `fenetre --json` est ILLISIBLE",
+      e.message,
+    );
   }
 }
 

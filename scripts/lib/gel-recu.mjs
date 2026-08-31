@@ -62,6 +62,37 @@ export function geleParUnVoisin(fenetres, moi) {
   return null;
 }
 
+/**
+ * ⛔⛔ QUE FAIRE QUAND JE N AI PAS PU LIRE LES FENÊTRES — et le repli n est pas le même des deux côtés.
+ *
+ * Mesuré le 2026-08-31 : la tour a refusé `fenetre --json` pendant une heure, un garde de drapeau
+ * inconnu écrit pour le geste qui GÈLE et appliqué au geste qui LIT. Mon arme rendait `null` sur tout
+ * échec — donc « PERSONNE NE ME GÈLE » d une tour vivante et pleine de fenêtres. Elle aurait mesuré
+ * dans celle d un voisin sans la voir.
+ *
+ *   tour ABSENTE   ⇒ `null` — ne rien opposer, sinon un dépôt isolé devient impoussable, ce qui est
+ *                    pire que le trou couvert.
+ *   tour VIVANTE   ⇒ REFUSER — ses fenêtres sont sur le disque et ne sont plus lues. Un vert voudrait
+ *                    dire « personne ne mesure » alors qu il veut dire « je ne sais pas ».
+ *
+ * ⇒ La discrimination ne s invente pas ici : c est celle de `hub/tools/garde-fenetre.sh`, dans ses
+ *   termes — « LE DOSSIER DES FENÊTRES EXISTE = LA TOUR EXISTE ». L appelant mesure le disque et
+ *   passe le fait ; cette fonction ne décide que du repli.
+ *
+ * @param tourExiste le dossier des fenêtres est-il là — un FAIT, pas une supposition
+ * @param quoi       ce qui a échoué, en clair
+ * @param dit        ce que la tour a répondu, pour que le refus porte sa cause
+ */
+export function repliDeLectureImpossible(tourExiste, quoi, dit) {
+  if (!tourExiste) return null;
+  const premiere = String(dit ?? "").trim().split("\n")[0];
+  return (
+    `la tour EXISTE et ${quoi} — ses fenêtres sont sur le disque et ne sont plus lues. ` +
+    `Je ne peux pas savoir qui me gèle : un vert ici voudrait dire « je ne sais pas »` +
+    (premiere ? `\n   ${premiere}` : "")
+  );
+}
+
 // ── L ÉPREUVE ────────────────────────────────────────────────────────────────────────────────────
 {
   const { pathToFileURL } = await import("node:url");
@@ -99,6 +130,22 @@ export function geleParUnVoisin(fenetres, moi) {
       geleParUnVoisin([F("Runtime-IN", ["KANOPI"])], "kanopi") !== null,
       true,
     );
+    // ⛔ LE REPLI QUAND JE N AI PAS PU LIRE — les deux sens, parce que le bon repli diffère.
+    juge(
+      "une tour VIVANTE que je n ai pas su lire me REFUSE le tir",
+      repliDeLectureImpossible(true, "son outil a ÉCHOUÉ", "drapeau non implémenté : --json") !== null,
+      true,
+    );
+    juge(
+      "une tour ABSENTE ne m interdit RIEN (témoin inverse — sinon un dépôt isolé est impoussable)",
+      repliDeLectureImpossible(false, "son outil a ÉCHOUÉ", "drapeau non implémenté : --json"),
+      null,
+    );
+    juge(
+      "le refus PORTE la cause rendue par la tour, il ne la perd pas",
+      /--json/.test(repliDeLectureImpossible(true, "son outil a ÉCHOUÉ", "drapeau non implémenté : --json") ?? ""),
+      true,
+    );
     // Une fenêtre sans liste gèle tout le monde.
     juge(
       "une fenêtre sans liste de dépôts me gèle aussi",
@@ -123,9 +170,14 @@ export function geleParUnVoisin(fenetres, moi) {
 
     // Aucune fenêtre : le cas nominal, et il doit laisser passer.
     juge("aucune fenêtre ouverte : je peux tirer", geleParUnVoisin([], "kanopi"), null);
-    // Une tour muette rend autre chose qu un tableau — on ne se bloque pas là-dessus.
+    // ⛔ CE CAS PORTAIT UN TITRE QUI ÉNONÇAIT UNE POLITIQUE, ET LA POLITIQUE A CHANGÉ. Il disait
+    // « une réponse illisible de la tour ne bloque pas le tir » — c est FAUX depuis le 2026-08-31 :
+    // une tour VIVANTE dont je ne sais pas lire la réponse me refuse le tir (voir
+    // `repliDeLectureImpossible`). Ce que ce cas mesure réellement, et qui reste vrai, est plus
+    // étroit : CETTE fonction-ci ne juge que des fenêtres, elle ne décide pas du repli. C est
+    // l APPELANT qui écarte une réponse non tabulaire avant de l atteindre.
     juge(
-      "une réponse illisible de la tour ne bloque pas le tir",
+      "cette fonction ne PLANTE pas sur une entrée non tabulaire — elle ne décide pas du repli",
       geleParUnVoisin(null, "kanopi"),
       null,
     );
