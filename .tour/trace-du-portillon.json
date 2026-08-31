@@ -1,16 +1,7 @@
 {
-  "quand": "2026-08-31T10:12:38.945Z",
-  "empreinte": "4664aafeb48adf87",
-  "sortieDuPortillon": "0",
-  "mesure": {
-    "appelsExamines": 871874,
-    "appelsEcrivants": 375308,
-    "cheminsSousMonArbre": 10694,
-    "parRacineDeTete": {
-      "packages": 10694
-    },
-    "relatifsNonResolus": 0,
-    "relatifsHorsGit": 0,
-    "echantillonHorsGit": []
-  }
+  "quand": "2026-08-31T19:05:32.258Z",
+  "empreinte": "0aa85b98b107022c",
+  "sortieDuPortillon": "1",
+  "mesure": null,
+  "pourquoi": "portillon rouge"
 }
