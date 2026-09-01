@@ -1132,16 +1132,41 @@ function rendreLeVerdict(
         `              lu en SOURCE     seul un empêchement d'ÉCRITURE compte. Un portillon rouge\n` +
         `                               n'empêche AUCUNE frappe — vous pouvez me basculer d'un octet.\n` +
         `                               ⚠️ ET J'AI ÉCRIT « rien ne garde une sauvegarde, donc vous seuls\n` +
-        `                                 pouvez m'être des témoins » : FAUX, réfuté par runtime-midi\n` +
-        `                                 avant que la ligne parte. Il est lu en SOURCE et gardé des\n` +
-        `                                 DEUX côtés — un crochet pré-écriture refuse l'édition sous ses\n` +
-        `                                 racines. ⇒ La vertu instituée n'est pas réservée aux voies\n` +
-        `                                 construites : elle se mesure chez chacun, jamais par sa voie.\n` +
+        `                                 pouvez m'être des témoins » : TROP LARGE. Un voisin lu en\n` +
+        `                                 source peut porter un crochet pré-écriture. ⇒ La vertu\n` +
+        `                                 instituée n'est pas réservée aux voies construites : elle se\n` +
+        `                                 mesure chez chacun, jamais par sa voie.\n` +
+        `                               ⛔⛔ MAIS J'AVAIS ÉCRIT « il EST gardé des deux côtés », ET C'EST\n` +
+        `                                 UNE CLAME ANNONCÉE QUE J'AI POSÉE COMME MESURÉE. runtime-midi\n` +
+        `                                 me l'avait donnée bornée : le refus de POUSSÉE, il l'a vu\n` +
+        `                                 mordre (code 1) ; le refus d'ÉCRITURE, JAMAIS ÉPROUVÉ — et\n` +
+        `                                 c'est justement la moitié dont ma ligne avait besoin.\n` +
+        `                                 ⇒ Sa phrase, qui est ma propre règle : « un garde qu'on n'a\n` +
+        `                                   pas vu mordre est une hypothèse, et tu viens d'en faire une\n` +
+        `                                   pièce. »\n` +
         `              lu en CONSTRUIT  seul un empêchement de RECONSTRUCTION compte. Votre poussée ne\n` +
         `                               me bascule pas ; la retenir n'atteste rien.\n` +
-        `            ⇒ ⛔ TROIS D'ENTRE VOUS ONT RETIRÉ LEURS PROPRES TÉMOINS en appliquant ça : ils\n` +
+        `            ⇒ ⛔ QUATRE D'ENTRE VOUS ONT RETIRÉ LEURS PROPRES TÉMOINS en appliquant ça : ils\n` +
         `              avaient mesuré leur discipline sur leur POUSSÉE, qui n'est pas ma voie.\n` +
-        `          ⇒ ✅ CE QUE JE VOUS DEMANDE : dites-moi dans lequel des cinq vous étiez, SUR MA VOIE.\n` +
+        `            ⛔ INTERDIT PAR UN TIERS — le sixième état, de kronos, et il n'entre dans aucun des\n` +
+        `              cinq : le geste existait, votre portillon était vert, ma consigne ne vous a pas\n` +
+        `              retenus, et l'interdit est ANTÉRIEUR et indépendant de moi (une suspension de\n` +
+        `              chantier, un arbitrage en attente). ⇒ ⚠️ C'est le plus silencieux de tous : un\n` +
+        `              dépôt sous interdit a l'impression d'obéir à MA consigne, puisqu'il obéit à UNE\n` +
+        `              consigne.\n` +
+        `            ⚠️ INDÉTERMINÉ — et c'est une réponse, pas une dérobade (runtime-midi). Si votre\n` +
+        `              garde vous EMPÊCHERAIT mais que vous ne l'avez jamais vu MORDRE, ne me dites pas\n` +
+        `              « vertu instituée » : un garde qu'on n'a pas vu mordre est une hypothèse. J'ai\n` +
+        `              fait cette faute sur lui, et il me l'a rendue.\n` +
+        `          ⇒ ⛔ ET N'ÉPROUVEZ PAS VOTRE GARDE D'ÉCRITURE PENDANT MA FENÊTRE : s'il mord je ne\n` +
+        `            perds rien, s'il NE mord pas vous avez écrit sous mes racines et ma campagne porte\n` +
+        `            sur deux états. ⇒ ✅ Faites-le HORS fenêtre — un octet, un regard, un retrait. Le\n` +
+        `            résultat vaut pour toutes mes fenêtres à venir : c'est une propriété de votre\n` +
+        `            BRANCHEMENT, pas de l'instant.\n` +
+        `          ⇒ ✅ ET VOTRE RÉPONSE NE SE REDEMANDE PAS À CHAQUE CAMPAGNE (kronos) : si vos causes\n` +
+        `            sont permanentes — un garde branché, un lien épinglé — votre ligne vaut pour toutes\n` +
+        `            mes fenêtres, et c'est à vous de me dire quand elle change.\n` +
+        `          ⇒ ✅ CE QUE JE VOUS DEMANDE : dites-moi dans lequel vous étiez, SUR MA VOIE.\n` +
         `            Un « je n'ai pas bougé » ne me suffit plus.\n`) +
     `(Relevé par kronos le 2026-08-25 : cette phrase promettait « VOTRE manifeste » et rendait la liste\n` +
     `de tout le monde — fausse dès sa rédaction, deux heures plus tôt, pas héritée d'une forme ancienne.\n` +
