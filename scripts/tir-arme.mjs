@@ -1082,8 +1082,8 @@ function rendreLeVerdict(
     `⛔ CET IDENTIFIANT EST CELUI ÉCRIT DANS LE MOTIF DE MON AVIS, sur la ligne « CAMPAGNE … » —\n` +
     `JAMAIS celui que la tour met sur le crochet du message. S'il ne correspond pas au DERNIER avis\n` +
     `reçu de moi, ce verdict ne vous libère PAS : une autre campagne mesure encore.\n` +
-    `⚠️ ET JE NOMME LEQUEL DES DEUX PARCE QUE MON AVIS EN A PORTÉ DEUX. Relevé par runtime-codevoices\n` +
-    `le 2026-08-31 : mon avis de 23:01 portait \`…210142Z\` sur son crochet et \`…210141Z\` dans son\n` +
+    `⚠️ ET JE NOMME LEQUEL DES DEUX PARCE QUE MON AVIS EN A PORTÉ DEUX. Relevé par kronos\n` +
+    `le 2026-08-31 à 23:29 : mon avis de 23:01 portait \`…210142Z\` sur son crochet et \`…210141Z\` dans son\n` +
     `motif, une seconde d'écart pour un seul objet ; mon verdict citait le second. Un lecteur qui\n` +
     `appliquait ma clause à la lettre concluait qu'une autre campagne mesurait, et RESTAIT GELÉ.\n` +
     `La tour a réparé sa fabrication d'identifiant à 23:06 — ma clause, elle, restait ambiguë, et\n` +
