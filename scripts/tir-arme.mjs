@@ -1118,7 +1118,13 @@ function rendreLeVerdict(
         `          l'ont apprise en une nuit. Une absence de bascule ne distingue pas CINQ états, et un\n` +
         `          seul atteste que ma consigne a obtenu quelque chose :\n` +
         `            ✅ DISCIPLINÉ       vous aviez un geste prêt SUR MA VOIE, vous l'avez retenu\n` +
-        `            ⛔ EMPÊCHÉ          quelque chose vous en empêchait (bp3-frontend)\n` +
+        `            ⛔ EMPÊCHÉ          quelque chose vous en empêchait, SUR MA VOIE\n` +
+        `                               ⚠️ CET ÉTAT A LONGTEMPS PORTÉ LE NOM DE bp3-frontend, ET C'ÉTAIT\n` +
+        `                                 UNE ERREUR DE MOI. Il l'a retiré quatre fois : son empêchement\n` +
+        `                                 portait sur sa POUSSÉE, et je le lis en SOURCE — un portillon\n` +
+        `                                 rouge n'empêche aucune frappe. Je le republiais à chaque\n` +
+        `                                 campagne sous une catégorie qu'il refusait. ⇒ Sa vraie ligne\n` +
+        `                                 est plus bas : REFUS TENU, avec sa trace dans mon journal.\n` +
         `            ⛔ SANS OBJET       vous n'aviez rien à faire (runtime-ui) — et c'est le plus\n` +
         `                               trompeur : un arbre propre ressemble EXACTEMENT à un arbre\n` +
         `                               qu'on a tenu propre\n` +
@@ -1128,13 +1134,18 @@ function rendreLeVerdict(
         `                               témoins faibles, vous n'êtes pas des témoins — et ça vaut pour\n` +
         `                               TOUTES mes fenêtres, jamais l'une après l'autre.\n` +
         `            ✅ REFUS TENU        vous avez VISÉ une de mes racines et le garde vous a refusé\n` +
-        `                               (atlas, qui me l'a avoué non sollicité). ⇒ ⚠️ C'est le SEUL des\n` +
+        `                               (atlas, qui me l'a avoué non sollicité ; puis bp3-frontend, avec\n` +
+        `                               sa trace horodatée dans mon journal). ⇒ ⚠️ C'est le SEUL des\n` +
         `                               sept qui atteste un FAIT au lieu d'une absence — les six autres\n` +
         `                               disent « rien à faire », « rien qui pouvait », « rien qui\n` +
         `                               m'atteint ». ⇒ Il laisse une trace qu'un tiers relit sans nous :\n` +
         `                               le journal des morsures. ⇒ ⛔ Et il corrige ce que « aucune\n` +
         `                               bascule » laisse croire : une campagne peut n'être pas douze\n` +
         `                               immobilités, mais une tentative délibérée et refusée.\n` +
+        `                               ⛔ SA BORNE, DE runtime-codevoices : le journal ne distingue pas\n` +
+        `                                 une ÉPREUVE d'une INTENTION CONTRARIÉE. Une nuit d'épreuves le\n` +
+        `                                 remplit de refus qui ne disent rien de votre discipline. ⇒ Si\n` +
+        `                                 vous y figurez, DITES-MOI lequel des deux c'était.\n` +
         `          ⛔ ET RÉPONDEZ PAR MOITIÉ SI VOTRE ÉTAT A CHANGÉ SOUS MA FENÊTRE. Le 2026-09-01, une\n` +
         `            réparation du garde est entrée en service TROIS minutes après mon ouverture : les\n` +
         `            douze sont passés de LIBRES à EMPÊCHÉS au milieu de ma mesure. ⇒ « Pas de bascule »\n` +
