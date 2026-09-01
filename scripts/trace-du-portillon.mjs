@@ -194,9 +194,10 @@ const MOTIF =
   "mesuré aussi par runtime-codevoices et bpx. " +
   "⚠️ ET « TOUTE ÉCRITURE » SERAIT TROP LARGE — je n'écris pas cette formule-là, et c'est " +
   "runtime-audio qui m'a arrêtée avant de la publier : LE CROCHET RECONNAÎT DES FORMES D'ÉCRITURE, " +
-  "ET CE QU'IL NE RECONNAÎT PAS PASSE. La borne est de l'architecte, tranchée le 2026-09-01 à 10:44, " +
-  "et il la porte dans l'avis avec la forme manquante. ⇒ NE CONCLUEZ DONC PAS D'UN PASSAGE QUE VOUS " +
-  "N'ÊTES PAS GELÉ : `tour fenetre` est le seul instrument juste. " +
+  "ET CE QU'IL NE RECONNAÎT PAS PASSE. La borne est de l'architecte, tranchée le 2026-09-01 à 10:44. " +
+  "⇒ NE CONCLUEZ DONC PAS D'UN PASSAGE QUE VOUS N'ÊTES PAS GELÉ : `tour fenetre` est le seul " +
+  "instrument juste. ⚠️ Une forme manquait — modifier un manifeste sans le nommer — et elle est " +
+  "refermée depuis le 2026-09-01 ; la règle générale, elle, ne se périme pas. " +
   "⇒ LA CAUSE N'EST PAS UNE FAUTE DU GARDE : la tour ne porte " +
   "que deux régimes, `publie` et `disque` ; je lis vos arbres vivants, donc `disque`, et `disque` " +
   "arme le refus d'écriture. Ma demande était plus étroite que le seul régime qui la porte. Le " +

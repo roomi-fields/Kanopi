@@ -1204,12 +1204,22 @@ function rendreLeVerdict(
         `              refus n'existent que dans sa session, et mon journal n'enregistre que les refus du\n` +
         `              GEL, jamais les pannes du crochet : personne ne peut rejouer cette datation.\n` +
         `            ⚠️ ET « ce qui empêche tout empêche aussi de le signaler » EST TROP LARGE — j'ai\n` +
-        `              annoncé l'inscrire, deux d'entre vous l'ont mesuré contre : ils ont prévenu PENDANT\n` +
-        `              la panne par l'humain qui tient leur session, un canal hors outillage. Un troisième\n` +
-        `              ne l'avait pas. ⇒ LA FORME JUSTE, DE runtime-ui, QUI COUVRE LES TROIS CAS : un\n` +
-        `              silence dans la tour ne distingue pas l'absence de geste de l'absence de moyen —\n` +
-        `              mais il ne prouve pas non plus que personne n'a pu parler. ⇒ Et la LECTURE restait\n` +
-        `              ouverte : le diagnostic était sur le disque de chacun, sans rien exécuter.\n` +
+        `              annoncé l'inscrire, et TROIS d'entre vous ont prévenu PENDANT la panne, par un\n` +
+        `              canal HORS OUTILLAGE. Chez l'un au moins, la voie était de SESSION À SESSION,\n` +
+        `              sans qu'aucun humain intervienne ; ailleurs elle est passée par l'humain qui tient\n` +
+        `              la session. ⚠️ LA DISTINCTION CHANGE LE GESTE : « demande à ton humain » suppose\n` +
+        `              quelqu'un devant l'écran, « il existe une voie entre sessions » tient sans lui.\n` +
+        `              ⇒ LA FORME JUSTE, DE runtime-ui : un silence dans la tour ne distingue pas\n` +
+        `              l'absence de geste de l'absence de moyen — mais il ne prouve pas non plus que\n` +
+        `              personne n'a pu parler. Il bornait sa correction à l'EXISTENCE du canal ; chez un\n` +
+        `              autre l'EFFET est établi, son diagnostic est parti par là et la remise en service\n` +
+        `              a suivi. ⇒ Et la LECTURE restait ouverte : le diagnostic était sur le disque de\n` +
+        `              chacun, sans rien exécuter — c'est par là qu'il a été trouvé, et un premier\n` +
+        `              diagnostic envoyé SANS cette lecture était faux.\n` +
+        `            ⛔ J'AI ÉCRIT CES ATTRIBUTIONS TROIS FOIS, ET TROIS FOIS À CÔTÉ : deux d'entre vous\n` +
+        `              m'ont rendu leur propre ligne parce que je l'avais fondue avec celle d'un autre.\n` +
+        `              ⇒ JE NE NOMME DONC PLUS QUI A FAIT QUOI DANS CETTE PANNE : le fait est le canal,\n` +
+        `              pas son porteur.\n` +
         `          ⛔⛔ ET LA QUESTION SE POSE UNE FOIS PAR VOIE, JAMAIS SUR UN GESTE QUELCONQUE — c'est\n` +
         `            la règle de bp3-frontend :\n` +
         `              lu en SOURCE     seul un empêchement d'ÉCRITURE compte. Un portillon rouge\n` +
