@@ -37,12 +37,12 @@ import { describe, it, expect } from 'vitest';
 // valeur que la complétion, les info-bulles et la coloration consomment. Et c'est aussi ce qui
 // évite d'ouvrir une TRENTE-TROISIÈME lecture de source voisine : cette dette ne peut que
 // rétrécir (décision de Romain, 2026-08-24), et mon pré-vol l'a refusée à juste titre.
-import { vocab } from './lang-bpscript';
+import { vocab, MOTS_INVOCABLES } from './lang-bpscript';
 
 type Vocabulaire = Record<string, unknown>;
 
 /** Les axes que mon éditeur consomme, avec le plancher sous lequel ils ne peuvent pas tomber.
- *  Mesuré le 2026-08-24 : voices 15 · keywords 68 · controls 96 · functions 4 · components 6 ·
+ *  Remesuré le 2026-09-01 : voices 15 · keywords 68 · controls 96 · functions 4 · components 7 ·
  *  addressKeys 5 · qualifierKeys 7. Le plancher est posé BAS — il attrape un effondrement, pas
  *  une variation. */
 const PLANCHERS: Record<string, number> = {
@@ -55,9 +55,15 @@ const PLANCHERS: Record<string, number> = {
 };
 
 /** Des mots que la bible définit et que mes scènes écrivent — leur disparition est un fait, jamais
- *  un ajustement de librairie. */
+ *  un ajustement de librairie.
+ *
+ *  ⛔ SEULS LES MOTS DU SOCLE SE VERROUILLENT ICI. Un mot qui est aussi un axe de catalogue peut
+ *  QUITTER `keywords` sans quitter le langage : la table des types est le socle, étendu par les
+ *  librairies invoquées (décision du 2026-08-23), et `alphabet` fait ce trajet le 2026-09-01. Le
+ *  verrouiller sur `keywords` rendrait ce banc rouge pour un mot que l'éditeur propose toujours —
+ *  il est verrouillé sur les mots OFFERTS, plus bas, qui couvrent les DEUX sources. */
 const TEMOIN: Record<string, string[]> = {
-  keywords: ['scale', 'alphabet', 'tuning', 'octaves', 'sound', 'eval', 'def', 'init', 'actor'],
+  keywords: ['def', 'init', 'actor'],
   controls: ['wave', 'attack', 'release', 'volume'],
   functions: ['transpose'],
   addressKeys: ['channel', 'note', 'port'],
@@ -132,6 +138,49 @@ export function verifierLeVocabulaire(entree: unknown): string[] {
   return manques;
 }
 
+/** Les mots que l'éditeur doit PROPOSER, quelle que soit la source qui les porte. Les six premiers
+ *  sont des axes de catalogue autant que des mots du socle : c'est ici qu'ils se verrouillent, et
+ *  pas sur `keywords`, parce qu'un déménagement du socle vers une librairie ne les retire pas de
+ *  l'écran. */
+const TEMOIN_OFFERTS: string[] = ['scale', 'alphabet', 'tuning', 'octaves', 'sound', 'eval'];
+
+/**
+ * LES DEUX SOURCES SONT-ELLES LUES ? — rend la liste des manques, vide quand tout tient.
+ *
+ * ⛔ CE GARDE MORD SUR LE DÉFAUT RÉEL. Mesuré le 2026-09-01 avant correction : `voice` est un axe
+ * que le compilateur sert (`voice.wobble` compile) et que `keywords` ne portait pas ; la complétion
+ * dérivait de `keywords` seul, donc ne le proposait jamais. Cette vérification était ROUGE sur ce
+ * mot-là avant l'union, et c'est sa morsure sur pièce.
+ */
+export function verifierLesMotsOfferts(entree: unknown, offerts: string[]): string[] {
+  const v = (entree ?? {}) as Vocabulaire;
+  const manques: string[] = [];
+
+  const axes = Object.keys((v.components ?? {}) as Record<string, unknown>);
+  // Un garde compte ce qu'il a examiné et refuse d'avoir examiné zéro.
+  if (axes.length === 0)
+    return ['describeVocabulary().components ne sert AUCUN axe — rien à vérifier'];
+  if (offerts.length === 0) return ["l'éditeur ne propose AUCUN mot d'invocation"];
+
+  for (const axe of axes)
+    if (!offerts.includes(axe))
+      manques.push(
+        `l'axe « ${axe} » est servi par une librairie — le compilateur l'accepte — et mon éditeur ` +
+          `ne le propose pas. La complétion ne lit qu'une des deux sources du vocabulaire ` +
+          `d'invocation : le socle et les axes de catalogue.`
+      );
+
+  // Un mot OFFERT en trop n'est pas une faute : le socle en porte que nul catalogue ne sert.
+  for (const mot of TEMOIN_OFFERTS)
+    if (!offerts.includes(mot))
+      manques.push(
+        `le mot « ${mot} » n'est plus proposé par mon éditeur — ni par le socle, ni par un axe de ` +
+          `catalogue. Il a quitté le langage, ou mes deux sources ont cessé de le porter.`
+      );
+
+  return manques;
+}
+
 /** Un vocabulaire de contrôle, conforme et écrit à la main — jamais dérivé de la porte réelle. */
 function vocabulaireConforme(): Vocabulaire {
   const remplir = (n: number, prefixe: string) =>
@@ -153,6 +202,49 @@ describe("le vocabulaire VIVANT que mon éditeur met à l'écran", () => {
     const manques = verifierLeVocabulaire(vocab);
     expect(manques, manques.join('\n')).toEqual([]);
   });
+
+  it('mon éditeur propose les DEUX sources du vocabulaire d’invocation', () => {
+    const manques = verifierLesMotsOfferts(vocab, MOTS_INVOCABLES);
+    expect(manques, manques.join('\n')).toEqual([]);
+  });
+
+  // ─── LES DEUX SOURCES, LE MORDANT ÉPROUVÉ PAR INJECTION ────────────────────────────────────
+  const AXES_INJECTES = { alphabet: [], tuning: [], voice: [] };
+  const OFFERTS_INJECTES = [...TEMOIN_OFFERTS, 'voice'];
+  const DEUX_SOURCES: [string, () => string[], unknown, boolean][] = [
+    [
+      'le cas CONFORME — les deux sources sont lues',
+      () => OFFERTS_INJECTES,
+      { components: AXES_INJECTES },
+      false
+    ],
+    [
+      '⛔ LE DÉFAUT RÉEL — un axe servi par une librairie n’est pas proposé',
+      () => OFFERTS_INJECTES.filter((m) => m !== 'voice'),
+      { components: AXES_INJECTES },
+      true
+    ],
+    [
+      'un mot de référence quitte les DEUX sources',
+      () => OFFERTS_INJECTES.filter((m) => m !== 'alphabet'),
+      { components: { tuning: [], voice: [] } },
+      true
+    ],
+    [
+      'la porte ne sert AUCUN axe — le garde refuse d’avoir examiné zéro',
+      () => OFFERTS_INJECTES,
+      {},
+      true
+    ],
+    ['l’éditeur ne propose AUCUN mot', () => [], { components: AXES_INJECTES }, true]
+  ];
+
+  for (const [quoi, offerts, vocabulaire, doitMordre] of DEUX_SOURCES) {
+    it(`${doitMordre ? 'MORD' : 'laisse passer'} : ${quoi}`, () => {
+      const manques = verifierLesMotsOfferts(vocabulaire, offerts());
+      expect(manques.length > 0, manques.join('\n') || '(aucun manque)').toBe(doitMordre);
+    });
+  }
 
   // ─── LE MORDANT, ÉPROUVÉ PAR INJECTION, DANS LES DEUX SENS ─────────────────────────────────
   const INJECTIONS: [string, () => Vocabulaire, boolean][] = [

@@ -60,9 +60,25 @@ function valueInfo(v: VocabValue): string | undefined {
   return parts.length ? parts.join(' · ') : undefined;
 }
 
-// Invocation completions: the reserved words, offered BARE — the form in which
-// they appear in a scene (`mode`, `alphabet.western`, …).
-const DIRECTIVE_COMPLETIONS: Completion[] = vocab.keywords.map((name) => ({
+// Invocation completions: les mots invocables, offerts NUS — la forme sous laquelle ils
+// apparaissent dans une scène (`mode`, `alphabet.western`, …).
+//
+// ⛔ LE VOCABULAIRE D'INVOCATION A DEUX SOURCES, ET N'EN LIRE QU'UNE PERD DES MOTS QUI COMPILENT.
+//   `keywords` porte le SOCLE ; `components` porte les axes qu'une LIBRAIRIE sert (décision
+//   du 2026-08-23 : la table des types est le socle, étendu par les librairies invoquées).
+//   Le compilateur nomme lui-même cette seconde population — il refuse un axe inconnu par
+//   « aucune librairie ne sert l'axe 'zorglub' ».
+//   MESURÉ le 2026-09-01 sur la porte vive : `voice.wobble` compile et `voice` était absent de
+//   `keywords`, donc jamais proposé. L'info-bulle, elle, lisait déjà les deux (`hoverHitAt`) :
+//   la complétion était le seul point à une seule source.
+// L'union se déduplique — un axe peut vivre dans les deux, et six des sept y vivent aujourd'hui.
+// EXPORTÉ pour la même raison que `vocab` : un témoin qui referait l'union de son côté
+// mesurerait sa propre arithmétique, pas ce que la complétion a en main.
+export const MOTS_INVOCABLES: string[] = [
+  ...new Set([...vocab.keywords, ...Object.keys(vocab.components)])
+];
+
+const DIRECTIVE_COMPLETIONS: Completion[] = MOTS_INVOCABLES.map((name) => ({
   label: name,
   type: 'keyword',
   detail: 'directive'
