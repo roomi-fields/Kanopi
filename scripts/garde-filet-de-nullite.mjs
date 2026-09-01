@@ -60,6 +60,11 @@ const INJECTION = [
  *  se trouve plus fait ÉCHOUER — il veut dire que l'arme a bougé sous ce garde. */
 const ANCRE = "let identifiant = null;";
 const LIGNE_TOUR = /^const TOUR = .*$/m;
+/** ⛔ ET LE VERROU SE DÉVIE AUSSI. L'arme refuse de démarrer quand une autre tient le verrou — or ce
+ *  garde tourne DANS le portillon, donc pendant que la vraie arme le tient. La copie sortait alors en
+ *  3 avant même d'atteindre l'injection, et ce garde rendait ROUGE un filet intact. Vert seul, rouge
+ *  sous le portillon : un garde dont le verdict dépend de qui tourne à côté ne mesure pas son sujet. */
+const LIGNE_VERROU = /^const VERROU = .*$/m;
 
 function preparerLaCopie(atelier) {
   const source = readFileSync(ARME, "utf8");
@@ -73,8 +78,14 @@ function preparerLaCopie(atelier) {
       "la ligne qui désigne la tour a disparu de tir-arme.mjs — l'épreuve ne peut plus la dévier, " +
         "et sans déviation elle enverrait de VRAIS messages à de VRAIS voisins",
     );
+  if (!LIGNE_VERROU.test(source))
+    throw new Error(
+      "la ligne qui désigne le verrou a disparu de tir-arme.mjs — la copie partagerait celui de la " +
+        "vraie arme, refuserait de démarrer sous le portillon, et ce garde rendrait rouge un filet intact",
+    );
   const copie = source
     .replace(LIGNE_TOUR, "const TOUR = process.env.TOUR_EPREUVE;")
+    .replace(LIGNE_VERROU, "const VERROU = process.env.VERROU_EPREUVE;")
     .replace(ANCRE, `${ANCRE}\n${INJECTION}`);
   const chemin = join(atelier, "arme-copie.mjs");
   writeFileSync(chemin, copie, "utf8");
@@ -106,6 +117,7 @@ function tirer(copie, mouchard, atelier, cas) {
       env: {
         ...process.env,
         TOUR_EPREUVE: mouchard,
+        VERROU_EPREUVE: join(atelier, `${cas}.pid`),
         MOUCHARD: journal,
         EPREUVE_CAS: cas,
       },
