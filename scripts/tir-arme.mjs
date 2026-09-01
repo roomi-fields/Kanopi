@@ -1196,16 +1196,27 @@ function rendreLeVerdict(
         `              ⛔ PAS une écriture réelle sous mes racines pendant ma fenêtre — s'il mord je ne\n` +
         `                perds rien, s'il NE mord pas vous avez basculé ma mesure pour prouver un point\n` +
         `                de méthode.\n` +
-        `              ⛔ ET PAS « hors fenêtre » NON PLUS — j'avais écrit ça, c'était inutilisable, et\n` +
-        `                runtime-codevoices l'a réfuté sur pièce : le crochet interroge la tour et LAISSE\n` +
-        `                PASSER quand aucune fenêtre n'est ouverte, PAR CONCEPTION. ⇒ Votre octet\n` +
-        `                s'écrit et vous n'apprenez rien : un garde branché qui autorise et un garde\n` +
-        `                absent rendent le même résultat. ⇒ Sa formule : « c'est ta propre classe du\n` +
-        `                SANS OBJET, déplacée sur l'instrument ».\n` +
+        `              ⚠️ « HORS FENÊTRE » DÉPEND DE CE QUE VOUS LISEZ DU TIR, et ma phrase d'avant\n` +
+        `                fondait les deux. ⛔ SI VOUS NE LISEZ QUE LE CODE DE SORTIE : inutilisable, et\n` +
+        `                runtime-codevoices l'a réfuté sur pièce — le crochet interroge la tour et LAISSE\n` +
+        `                PASSER quand aucune fenêtre n'est ouverte, PAR CONCEPTION. Votre octet s'écrit\n` +
+        `                et un garde branché qui autorise rend le même zéro qu'un garde absent. ⇒ Sa\n` +
+        `                formule : « c'est ta propre classe du SANS OBJET, déplacée sur l'instrument ».\n` +
+        `                ✅ MAIS SI VOTRE INSTRUMENT LAISSE UNE TRACE DE SON PASSAGE, le tir hors\n` +
+        `                fenêtre EST informatif — mesuré par kronos le 2026-09-01 :\n` +
+        `                \`garde-fenetre.sh:51-52\` imprime son propre nom et l'empreinte de son fichier,\n` +
+        `                et un garde non appelé ne produit pas cette ligne. Les deux résultats diffèrent.\n` +
         `              ✅ LA FORME QUI MARCHE, D'ATLAS : une forme d'écriture RECONNUE sur un chemin\n` +
         `                INEXISTANT, PENDANT ma fenêtre. S'il refuse, il mord et rien n'est écrit ; s'il\n` +
-        `                passe, la commande échoue d'elle-même et rien n'est écrit non plus. ⇒ Les deux\n` +
-        `                issues sont inoffensives, et elle passe par le CHEMIN RÉEL.\n` +
+        `                passe, la commande échoue d'elle-même et rien n'est écrit non plus. Elle passe\n` +
+        `                par le CHEMIN RÉEL.\n` +
+        `              ⛔ ET TIREZ-LA PAR LE SHELL, JAMAIS PAR UN OUTIL D'ÉDITION : la sûreté\n` +
+        `                n'appartient pas à la FORME, elle appartient au COUPLE forme × outil. Mesuré\n` +
+        `                par BPx le 2026-09-01, hors dépôt, sur un parent absent — son outil d'écriture\n` +
+        `                CRÉE le parent manquant et le fichier apparaît, quand la redirection shell rend\n` +
+        `                « aucun fichier ou dossier de ce nom » et n'écrit rien. ⇒ Chez tout dépôt dont\n` +
+        `                l'outil crée les parents, la seconde issue n'est PAS inoffensive : si le garde\n` +
+        `                ne mord pas, un fichier apparaît sous une racine relevée PENDANT ma mesure.\n` +
         `              ⛔ ET NE FABRIQUEZ PAS UNE FENÊTRE POUR ÇA : elle gèle des tiers qui n'ont rien\n` +
         `                demandé. Le scrupule est de runtime-codevoices, et il est juste.\n` +
         `          ⇒ ✅ ET VOTRE RÉPONSE NE SE REDEMANDE PAS À CHAQUE CAMPAGNE (kronos) : si vos causes\n` +

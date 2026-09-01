@@ -23,6 +23,14 @@ import { readFileSync } from "node:fs";
 
 // Les appels qui ÉCRIVENT toujours, quel que soit leur drapeau. `openat` n'en est pas : il lit dans
 // l'immense majorité des cas, et c'est son drapeau qui tranche.
+//
+// ⚠️ BORNE CONNUE — `symlink` ET `link` PORTENT LEUR CHEMIN ÉCRIT EN SECOND. Presque tous les appels
+// de cette liste écrivent leur PREMIER chemin ; ces deux-là écrivent le SECOND, et le premier est la
+// cible, qui n'est que LUE. Ce relevé retient les deux, donc il compte une cible de lien comme une
+// écriture. Mesuré le 2026-09-01 : `garde-filet-de-nullite.mjs` crée un lien vers `scripts/lib`, et
+// le relevé a fait apparaître une racine `scripts` à 1 — un chemin que le portillon n'a jamais
+// écrit. ⇒ L'effet est un SUR-COMPTE, jamais un manque : aucune écriture réelle ne s'échappe, mais
+// une cible de lien peut se faire accuser. Reporté à l'architecte pour inscription.
 const TOUJOURS_ECRIVANTS =
   /^(creat|rename|renameat|renameat2|unlink|unlinkat|mkdir|mkdirat|link|linkat|symlink|symlinkat|truncate)$/;
 

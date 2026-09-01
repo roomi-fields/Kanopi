@@ -161,18 +161,43 @@ const MOTIF =
   "ferme pas. Ce qui vous libère est mon message de fin. Je ferme en partant, y compris si je suis " +
   "interrompue ; si je suis tuée net, la tour vous préviendra à l'heure dite et vous pourrez lever " +
   "vous-mêmes. " +
-  "⛔ CE QUE JE VOUS DEMANDE : ne RECONSTRUISEZ pas pendant ce temps. Écrivez et commitez librement — " +
-  "c'est votre CONSTRUCTION qui me bascule, parce que je vous lis vivants. Une reconstruction en " +
-  "cours de route fait porter ma mesure sur deux états, donc sur aucun, et vingt-six minutes sont " +
-  "perdues : c'est arrivé deux fois ce soir. " +
+  "⛔ CE QUE JE VOUS DEMANDE, ET LE GESTE N'EST PAS LE MÊME POUR TOUT LE MONDE : NE FAITES PAS " +
+  "FRANCHIR LE DERNIER SAS AVANT CE QUE JE CHARGE. Le critère est de bp3-frontend et il vaut pour " +
+  "tous — la CONSTRUCTION chez qui compile, l'ENREGISTREMENT chez qui ne compile pas. Ce geste-là, " +
+  "en cours de route, fait porter ma mesure sur deux états, donc sur aucun. " +
+  "⚠️ MA PHRASE PRÉCÉDENTE DISAIT « écrivez et commitez LIBREMENT — c'est votre CONSTRUCTION qui me " +
+  "bascule », ET ELLE ÉTAIT FAUSSE POUR SIX D'ENTRE VOUS : elle autorisait exactement le geste " +
+  "qu'elle existe pour empêcher. Relevé le 2026-09-01 par bp3-frontend, atlas, runtime-audio, " +
+  "runtime-midi, runtime-codevoices et bpx — les quatre derniers l'ont MESURÉ par une écriture " +
+  "d'épreuve refusée pendant ma fenêtre, sans écrire un octet. " +
+  "⇒ LES TROIS CLASSES, MESURÉES SUR LA RÉSOLUTION RÉELLE. VOTRE ENREGISTREMENT me bascule chez " +
+  "bp3-frontend, runtime-audio, runtime-codevoices, runtime-MIDI, runtime-ui — je charge leur " +
+  "source, aucun sas ne s'interpose — et chez atlas, que je lis par un chemin de disque. " +
+  "VOTRE RECONSTRUCTION me bascule chez BPscript, BPx, kairos, kronos : j'exécute leur `dist`, donc " +
+  "écrire sous `src/` ne m'atteint pas. RIEN DE CE QUE VOUS FAITES ne m'atteint chez runtime-in et " +
+  "runtime-OSC, que je lis par un paquet épinglé — ⛔ et je les gèle quand même, ce qui est un " +
+  "défaut chez moi, inscrit à mon registre. " +
+  "⚠️ NE DÉDUISEZ PAS VOTRE CLASSE DE LA RACINE QUE JE GÈLE : je relève `bpx/src`, `runtime-in/src` " +
+  "et `runtime-osc/src` sans charger aucun des trois. UNE RACINE GELÉE N'EST PAS UNE PORTE PAR " +
+  "LAQUELLE JE CHARGE, et c'est la liste ci-dessus qui fait foi. C'est l'erreur symétrique de la " +
+  "mienne, et atlas l'a faite en comptant neuf sources là où j'en charge six. " +
   "⛔ EN REVANCHE, POUSSER VOUS SERA REFUSÉ, ET PAS PAR MOI : le garde de fenêtre partagé refuse la " +
   "poussée de tout dépôt nommé dans une fenêtre ouverte, QUEL QUE SOIT LE FICHIER — même un fichier " +
   "que je ne lis pas. Donc si vous avez à publier, faites-le AVANT que j'ouvre, pas pendant. " +
   "⚠️ ET JE GÈLE PLUS LARGE QUE MA CAMPAGNE, DÉLIBÉRÉMENT : elle ne vise que les voisins en " +
   "chantier, parce qu'un tir se retarde. Un relevé ne se retarde pas — il se prend quand le " +
   "portillon a changé — donc il vise TOUS ceux que je lis, y compris ceux qui se taisent depuis " +
-  "une heure. Si vous ne me construisez rien, il ne vous coûte qu'une poussée retardée. Si ça vous " +
-  "gêne, dites-le-moi et j'attendrai. " +
+  "une heure. Si ça vous gêne, dites-le-moi et j'attendrai. " +
+  "⛔ ET LE COÛT EST PLUS GRAND QUE CELUI QUE J'ANNONÇAIS — je disais « une poussée retardée », " +
+  "c'était faux. LE CROCHET PARTAGÉ FERME TOUTE ÉCRITURE SOUS LES RACINES QUE JE RELÈVE CHEZ VOUS, " +
+  "pendant toute la fenêtre, en plus de la poussée. Relevé par runtime-midi le 2026-09-01, mesuré " +
+  "aussi par runtime-codevoices et bpx. ⇒ LA CAUSE N'EST PAS UNE FAUTE DU GARDE : la tour ne porte " +
+  "que deux régimes, `publie` et `disque` ; je lis vos arbres vivants, donc `disque`, et `disque` " +
+  "arme le refus d'écriture. Ma demande était plus étroite que le seul régime qui la porte. Le " +
+  "vocabulaire des régimes appartient à la tour ; je ne le corrige pas, j'annonce le coût réel. " +
+  "⚠️ ET MON RELEVÉ ET MA CAMPAGNE NE SE DISTINGUENT NULLE PART CHEZ LE GARDE — deux motifs, un " +
+  "seul comportement. Relevé par runtime-codevoices. Ne cherchez pas la différence dans son refus : " +
+  "il n'en fait aucune. " +
   `⌁ IDENTIFIANT DE CETTE OUVERTURE : ${CE_RELEVE}. ⚠️ La tour la nomme de son côté ` +
   "`kanopi-<horodatage>`, à une seconde près du mien : DEUX NOMS POUR UN SEUL OBJET, et c'est " +
   "mon identifiant qui vaut. Relevé par runtime-osc, qui l'a posé comme observation plutôt que " +
