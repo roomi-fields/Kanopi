@@ -1149,6 +1149,11 @@ function rendreLeVerdict(
         `        ⛔⛔ ET PAS VOTRE DISCIPLINE — c'est la borne la plus large, et cinq d'entre vous me\n` +
         `          l'ont apprise en une nuit. Une absence de bascule ne distingue pas CINQ états, et un\n` +
         `          seul atteste que ma consigne a obtenu quelque chose :\n` +
+        `            ⛔ AUCUN DÉPÔT N'EST NOMMÉ DANS CES SEPT ÉTATS, ET C'EST DÉLIBÉRÉ. Ce texte part du\n` +
+        `              code qui tire : un nom écrit ici se republie à CHAQUE campagne, et vous n'avez\n` +
+        `              aucun moyen de savoir de quand il date. bp3-frontend a dû retirer le sien quatre\n` +
+        `              fois, runtime-midi une. ⇒ Les SEPT ÉTATS viennent tous de vous — aucun n'est de\n` +
+        `              moi — et c'est la seule attribution que je maintienne ici.\n` +
         `            ✅ DISCIPLINÉ       vous aviez un geste prêt SUR MA VOIE, vous l'avez retenu\n` +
         `            ⛔ EMPÊCHÉ          quelque chose vous en empêchait, SUR MA VOIE\n` +
         `                               ⚠️ CET ÉTAT A LONGTEMPS PORTÉ LE NOM DE bp3-frontend, ET C'ÉTAIT\n` +
@@ -1157,17 +1162,16 @@ function rendreLeVerdict(
         `                                 rouge n'empêche aucune frappe. Je le republiais à chaque\n` +
         `                                 campagne sous une catégorie qu'il refusait. ⇒ Sa vraie ligne\n` +
         `                                 est plus bas : REFUS TENU, avec sa trace dans mon journal.\n` +
-        `            ⛔ SANS OBJET       vous n'aviez rien à faire (runtime-ui) — et c'est le plus\n` +
+        `            ⛔ SANS OBJET       vous n'aviez rien à faire — et c'est le plus\n` +
         `                               trompeur : un arbre propre ressemble EXACTEMENT à un arbre\n` +
         `                               qu'on a tenu propre\n` +
-        `            ⛔ VERTU INSTITUÉE  un garde fermait la voie : vous ne pouviez pas non plus (kronos)\n` +
+        `            ⛔ VERTU INSTITUÉE  un garde fermait la voie : vous ne pouviez pas non plus\n` +
         `            ⛔ NON LU           je vous lis par un PAQUET ÉPINGLÉ : aucun geste de vous ne\n` +
-        `                               m'atteint, même retenu (runtime-in). ⇒ Vous n'êtes pas des\n` +
+        `                               m'atteint, même retenu. ⇒ Vous n'êtes pas des\n` +
         `                               témoins faibles, vous n'êtes pas des témoins — et ça vaut pour\n` +
         `                               TOUTES mes fenêtres, jamais l'une après l'autre.\n` +
-        `            ✅ REFUS TENU        vous avez VISÉ une de mes racines et le garde vous a refusé\n` +
-        `                               (atlas, qui me l'a avoué non sollicité ; puis bp3-frontend, avec\n` +
-        `                               sa trace horodatée dans mon journal). ⇒ ⚠️ C'est le SEUL des\n` +
+        `            ✅ REFUS TENU        vous avez VISÉ une de mes racines et le garde vous a refusé.\n` +
+        `                               ⇒ ⚠️ C'est le SEUL des\n` +
         `                               sept qui atteste un FAIT au lieu d'une absence — les six autres\n` +
         `                               disent « rien à faire », « rien qui pouvait », « rien qui\n` +
         `                               m'atteint ». ⇒ Il laisse une trace qu'un tiers relit sans nous :\n` +
@@ -1211,30 +1215,55 @@ function rendreLeVerdict(
         `              chantier, un arbitrage en attente). ⇒ ⚠️ C'est le plus silencieux de tous : un\n` +
         `              dépôt sous interdit a l'impression d'obéir à MA consigne, puisqu'il obéit à UNE\n` +
         `              consigne.\n` +
-        `            ⚠️ INDÉTERMINÉ — et c'est une réponse, pas une dérobade (runtime-midi). Si votre\n` +
-        `              garde vous EMPÊCHERAIT mais que vous ne l'avez jamais vu MORDRE, ne me dites pas\n` +
-        `              « vertu instituée » : un garde qu'on n'a pas vu mordre est une hypothèse. J'ai\n` +
-        `              fait cette faute sur lui, et il me l'a rendue.\n` +
+        `            ⚠️ INDÉTERMINÉ — et c'est une réponse, pas une dérobade. Si votre garde vous\n` +
+        `              EMPÊCHERAIT mais que vous ne l'avez jamais vu MORDRE, ne me dites pas « vertu\n` +
+        `              instituée » : un garde qu'on n'a pas vu mordre est une hypothèse.\n` +
+        `              ⚠️ CET ÉTAT N'EST PLUS ILLUSTRÉ PAR UN DÉPÔT NOMMÉ. Il l'était par runtime-midi,\n` +
+        `                qui en est SORTI le 2026-09-01 à 09:53:18 — garde vu mordre pendant ma fenêtre,\n` +
+        `                sur un chemin nommé sous ma racine, le même geste hors racine traversant. Une\n` +
+        `                classe illustrée par un dépôt qui en est sorti enseigne le contraire de ce\n` +
+        `                qu'elle veut dire, et il me l'a rendu à sa PREMIÈRE republication.\n` +
+        `            ⛔ ET C'EST POURQUOI JE NE NOMME PLUS PERSONNE DANS CES ÉTATS. Ce texte part du code\n` +
+        `              qui tire : une ligne écrite sur vous y reste jusqu'à ce que je la change, et vous\n` +
+        `              n'avez aucun moyen de savoir de QUAND elle date. bp3-frontend a dû retirer la\n` +
+        `              sienne QUATRE FOIS. ⇒ Les états restent, les exemples nommés sortent — et si l'un\n` +
+        `              d'eux revient un jour, il portera SA DATE. Remède de runtime-midi : une ligne qui\n` +
+        `              n'a pas été reconfirmée doit se lire comme datée, jamais comme actuelle.\n` +
         `          ⇒ ⛔ ET SI VOUS ÉPROUVEZ VOTRE GARDE D'ÉCRITURE, LE TÉMOIN NE DOIT PAS COÛTER CE QU'IL\n` +
         `            MESURE (la phrase est d'atlas, et c'est la meilleure de la nuit) :\n` +
         `              ⛔ PAS une écriture réelle sous mes racines pendant ma fenêtre — s'il mord je ne\n` +
         `                perds rien, s'il NE mord pas vous avez basculé ma mesure pour prouver un point\n` +
         `                de méthode.\n` +
-        `              ⚠️ « HORS FENÊTRE » DÉPEND DE CE QUE VOUS LISEZ DU TIR, et ma phrase d'avant\n` +
-        `                fondait les deux. ⛔ SI VOUS NE LISEZ QUE LE CODE DE SORTIE : inutilisable, et\n` +
-        `                runtime-codevoices l'a réfuté sur pièce — le crochet interroge la tour et LAISSE\n` +
-        `                PASSER quand aucune fenêtre n'est ouverte, PAR CONCEPTION. Votre octet s'écrit\n` +
-        `                et un garde branché qui autorise rend le même zéro qu'un garde absent. ⇒ Sa\n` +
-        `                formule : « c'est ta propre classe du SANS OBJET, déplacée sur l'instrument ».\n` +
-        `                ✅ MAIS SI VOTRE INSTRUMENT LAISSE UNE TRACE DE SON PASSAGE, le tir hors\n` +
-        `                fenêtre EST informatif — mesuré par kronos le 2026-09-01 :\n` +
-        `                \`garde-fenetre.sh:51-52\` imprime son propre nom et l'empreinte de son fichier,\n` +
-        `                et un garde non appelé ne produit pas cette ligne. Les deux résultats diffèrent.\n` +
+        `              ⛔ ET « HORS FENÊTRE » SE TRANCHE PAR LE GARDE NOMMÉ, JAMAIS PAR UNE RÈGLE\n` +
+        `                GÉNÉRALE. Ma phrase d'avant disait « si votre instrument laisse une trace » —\n` +
+        `                elle invitait chacun à espérer la sienne, et runtime-codevoices l'a arrêtée :\n` +
+        `                dans une section qui parle du garde d'ÉCRITURE, elle donnait une exception qui\n` +
+        `                n'existe pas sur ce fichier-là. DEUX GARDES, DEUX FICHIERS, UN SEUL NOM DANS LA\n` +
+        `                TÊTE DU LECTEUR — et c'est la faute que je répète aujourd'hui.\n` +
+        `                  garde de FENÊTRE (\`garde-fenetre.sh\`, sur la POUSSÉE)\n` +
+        `                    ✅ tir hors fenêtre INFORMATIF : \`:51-52\` imprime son nom et l'empreinte\n` +
+        `                       de son fichier à CHAQUE exécution, donc il s'annonce même quand il\n` +
+        `                       autorise. Mesuré par kronos le 2026-09-01, sur le chemin réel.\n` +
+        `                  garde d'ÉCRITURE (\`gel-ecriture.sh\`, sur la SAUVEGARDE)\n` +
+        `                    ⛔ tir hors fenêtre MUET : il sort en 0 sans un mot à sept endroits\n` +
+        `                       (\`:91 :104 :106 :109 :206 :240 :264\`) — il ne parle QUE pour refuser.\n` +
+        `                       Un branché qui autorise et un absent rendent le même zéro et la même\n` +
+        `                       sortie vide. ⇒ ÉPROUVEZ-LE PENDANT MA FENÊTRE. Réfutation de\n` +
+        `                       runtime-codevoices, re-mesurée par runtime-audio à 11:41 sur les deux\n` +
+        `                       gardes côte à côte. ⇒ Sa formule : « c'est ta propre classe du SANS\n` +
+        `                       OBJET, déplacée sur l'instrument ».\n` +
         `              ✅ LA FORME QUI MARCHE, D'ATLAS : une forme d'écriture RECONNUE sur un chemin\n` +
         `                INEXISTANT, PENDANT ma fenêtre. S'il refuse, il mord et rien n'est écrit ; s'il\n` +
         `                passe, la commande échoue d'elle-même et rien n'est écrit non plus. Elle passe\n` +
         `                par le CHEMIN RÉEL.\n` +
-        `              ⛔ ET TIREZ-LA PAR LE SHELL, JAMAIS PAR UN OUTIL D'ÉDITION : la sûreté\n` +
+        `              ✅ ET UNE TROISIÈME FORME ÉCHAPPE AU COUPLE, celle de runtime-audio : APPELER LE\n` +
+        `                GARDE DIRECTEMENT, l'entrée fabriquée sur son entrée standard. Aucune écriture\n` +
+        `                n'est jamais tentée, par personne — le garde décide, imprime, rend un code, et\n` +
+        `                rien d'autre ne s'est passé. Elle passe par le crochet DÉPLOYÉ, pas une copie.\n` +
+        `                ⚠️ SA BORNE, qu'il pose lui-même : elle éprouve la DÉCISION du garde, jamais le\n` +
+        `                BRANCHEMENT de l'outil qui l'appelle. Pour ce second point il faut la forme\n` +
+        `                d'atlas. LES DEUX NE MESURENT PAS LA MÊME CHOSE, ET IL FAUT LES DEUX.\n` +
+        `              ⛔ ET LA FORME D'ATLAS SE TIRE PAR LE SHELL, JAMAIS PAR UN OUTIL D'ÉDITION : la sûreté\n` +
         `                n'appartient pas à la FORME, elle appartient au COUPLE forme × outil. Mesuré\n` +
         `                par BPx le 2026-09-01, hors dépôt, sur un parent absent — son outil d'écriture\n` +
         `                CRÉE le parent manquant et le fichier apparaît, quand la redirection shell rend\n` +
