@@ -189,9 +189,15 @@ const MOTIF =
   "portillon a changé — donc il vise TOUS ceux que je lis, y compris ceux qui se taisent depuis " +
   "une heure. Si ça vous gêne, dites-le-moi et j'attendrai. " +
   "⛔ ET LE COÛT EST PLUS GRAND QUE CELUI QUE J'ANNONÇAIS — je disais « une poussée retardée », " +
-  "c'était faux. LE CROCHET PARTAGÉ FERME TOUTE ÉCRITURE SOUS LES RACINES QUE JE RELÈVE CHEZ VOUS, " +
-  "pendant toute la fenêtre, en plus de la poussée. Relevé par runtime-midi le 2026-09-01, mesuré " +
-  "aussi par runtime-codevoices et bpx. ⇒ LA CAUSE N'EST PAS UNE FAUTE DU GARDE : la tour ne porte " +
+  "c'était faux. LE CROCHET PARTAGÉ REFUSE AUSSI L'ÉCRITURE SOUS LES RACINES QUE JE RELÈVE CHEZ " +
+  "VOUS, pendant toute la fenêtre, en plus de la poussée. Relevé par runtime-midi le 2026-09-01, " +
+  "mesuré aussi par runtime-codevoices et bpx. " +
+  "⚠️ ET « TOUTE ÉCRITURE » SERAIT TROP LARGE — je n'écris pas cette formule-là, et c'est " +
+  "runtime-audio qui m'a arrêtée avant de la publier : LE CROCHET RECONNAÎT DES FORMES D'ÉCRITURE, " +
+  "ET CE QU'IL NE RECONNAÎT PAS PASSE. La borne est de l'architecte, tranchée le 2026-09-01 à 10:44, " +
+  "et il la porte dans l'avis avec la forme manquante. ⇒ NE CONCLUEZ DONC PAS D'UN PASSAGE QUE VOUS " +
+  "N'ÊTES PAS GELÉ : `tour fenetre` est le seul instrument juste. " +
+  "⇒ LA CAUSE N'EST PAS UNE FAUTE DU GARDE : la tour ne porte " +
   "que deux régimes, `publie` et `disque` ; je lis vos arbres vivants, donc `disque`, et `disque` " +
   "arme le refus d'écriture. Ma demande était plus étroite que le seul régime qui la porte. Le " +
   "vocabulaire des régimes appartient à la tour ; je ne le corrige pas, j'annonce le coût réel. " +
