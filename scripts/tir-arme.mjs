@@ -307,7 +307,25 @@ const identifiantDeCampagne = (ouverte) =>
  * dans la phrase suivante que l'occurrence la lèverait. Annoncer d'avance qu'une observation future
  * prouvera quelque chose EST DÉJÀ UNE CONCLUSION.
  */
-const ARME = `arme-${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`;
+const NAISSANCE_DE_L_ARME = new Date();
+const ARME = `arme-${NAISSANCE_DE_L_ARME.toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`;
+
+/**
+ * L'HEURE DE NAISSANCE DE L'ARME, EN LOCAL — parce que mon critère de recouvrement la compare à une
+ * LEVÉE, et que la levée de la tour est annoncée sans fuseau, donc en local.
+ *
+ * ⛔ SANS CETTE CONVERSION, LE CRITÈRE CRIE À CHAQUE CAMPAGNE. Le nom d'arme porte un `Z` : il est en
+ * UTC. Comparés bruts, `09:11:30` précède `11:07:16`, et l'écart est CONSTANT — la naissance d'une
+ * arme précéderait donc TOUJOURS la levée précédente, quelle que soit la séquence réelle. Mesuré par
+ * atlas le 2026-09-01 sur deux points, jamais déduit : deux de mes avis, +2 h les deux fois.
+ * ⇒ SA FORMULE, ET JE LA REPRENDS : « c'est l'instrument qui manque, pas la règle ». Le critère reste
+ *   muet sur la séquence de 10:06 une fois les fuseaux harmonisés.
+ * ⇒ ET LE FUSEAU DE LA LEVÉE APPARTIENT À LA TOUR : je ne le touche pas. Ce qui est à moi est de
+ *   MARQUER ce que j'émets — un lecteur ne peut pas convertir ce que rien ne marque.
+ */
+const NAISSANCE_LOCALE = NAISSANCE_DE_L_ARME.toLocaleTimeString("fr-FR", {
+  hour12: false,
+});
 
 /**
  * LA LISTE DE GEL SE DÉRIVE DE LA LISTE LUE — c'est la même liste, jamais une seconde.
@@ -871,8 +889,14 @@ function demanderLaFenetre(ecritures, identifiant) {
     + "différentes viennent d'une réouverture après refus ou annulation, et sont normaux aussi. "
     + "⛔ CE QUE JE VOUS DEMANDE DE ME SIGNALER EST AUTRE, ET ÇA SE MESURE SUR DEUX HORODATAGES QUE MES "
     + "MESSAGES PORTENT DÉJÀ : DEUX DE MES ARMES SE RECOUVRENT SI ET SEULEMENT SI LA NAISSANCE DE LA "
-    + "SECONDE PRÉCÈDE LA LEVÉE DE LA PREMIÈRE. Le nom d'arme porte son heure, la levée de la tour porte "
-    + "la sienne : comparez-les, et signalez-moi le recouvrement. La tour ne tient qu'une fenêtre par "
+    + "SECONDE PRÉCÈDE LA LEVÉE DE LA PREMIÈRE. ⛔ ET COMPAREZ DEUX HEURES DU MÊME FUSEAU : mon nom "
+    + "d'arme est en UTC — il porte un `Z` — quand la levée de la tour est annoncée NUE, donc en LOCAL. "
+    + `⇒ CETTE ARME EST NÉE À ${NAISSANCE_LOCALE} EN HEURE LOCALE, et c'est cette valeur-là qui se `
+    + "compare à une levée. ⚠️ Sans cette conversion le critère crie à CHAQUE campagne, parce que "
+    + "l'écart est CONSTANT : une naissance en UTC précède toujours une levée en local. Mesuré par "
+    + "atlas le 2026-09-01 sur deux de mes avis, +2 h les deux fois — c'est l'instrument qui manquait, "
+    + "jamais la règle, et la formule est de lui. Signalez-moi le recouvrement. La tour ne tient "
+    + "qu'une fenêtre par "
     + "émetteur, donc vous ne verrez JAMAIS deux des miennes coexister : vous verrez la seconde "
     + "remplacer la première sans le savoir, et c'est ce qui vous est arrivé à onze le 2026-08-25 à 11:36. "
     + "⚠️ N'UTILISEZ PLUS « un second avis avant le verdict du précédent » : c'était ma clause d'avant, "
