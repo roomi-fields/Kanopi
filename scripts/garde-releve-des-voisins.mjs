@@ -145,6 +145,47 @@ for (const cible of ["bpscript", "@kairos/core"]) {
   }
 }
 
+// 2 bis. Il mord sur le MANIFESTE, chez CHACUN — et ce cas manquait.
+//   ⛔ Le 2026-09-01, une mesure a montré que sur ONZE manifestes que mon avis gèle, QUATRE seulement
+//   entraient au relevé : le manifeste n'y venait que chez les voisins qui l'exposent ou dont le
+//   régime courant le compte parmi ses racines. Chez les sept autres, une bascule de manifeste sous
+//   ma fenêtre n'était vue par personne.
+//   ⇒ ET CE GARDE NE POUVAIT PAS LE DIRE : il éprouvait sa morsure sur des `dist/` et sur une
+//     déclaration de types, jamais sur un manifeste. Un garde ne prouve que ce qu'il a examiné, et le
+//     trou a survécu chez moi sans rougir parce que rien ne le visait.
+//   ⇒ POURQUOI LE MANIFESTE COMPTE MÊME QUAND JE NE LE LIS PAS, argument de kronos du 2026-08-25 :
+//     il DÉFINIT la liste de mes racines. S'il bascule sous ma mesure, mon périmètre a changé et mon
+//     témoin reste vert en attestant l'immobilité d'un périmètre qui a bougé.
+{
+  let examines = 0;
+  const muets = [];
+  for (const [nom, marques] of reel) {
+    const cle = [...marques.keys()].find(
+      (k) => k === "package.json" || k === "./package.json",
+    );
+    if (!cle) {
+      muets.push(`${nom} : AUCUN manifeste au relevé`);
+      continue;
+    }
+    // Un voisin sans manifeste porte la marque qui le dit — elle ne se fait pas passer pour une
+    // empreinte, et l'injecter ne prouverait rien.
+    if (marques.get(cle) === "sans manifeste") continue;
+    examines++;
+    const faux = clone(reel);
+    faux.get(nom).set(cle, "MARQUE-INJECTEE");
+    if (!cequiABascule(faux, RACINE, racines).find((b) => b.nom === nom))
+      muets.push(`${nom} : manifeste basculé et NON dénoncé`);
+  }
+  // ⛔ UN GARDE COMPTE CE QU'IL A EXAMINÉ ET REFUSE D'AVOIR EXAMINÉ ZÉRO.
+  if (examines === 0) muets.push("aucun manifeste examiné — ce cas ne teste rien");
+  dire(
+    muets.length === 0,
+    muets.length === 0
+      ? `le manifeste de chaque voisin est relevé et sa bascule dénoncée (${examines})`
+      : muets.join(" · "),
+  );
+}
+
 // 3. Il NE mord PAS sur un banc du voisin — et l'épreuve porte sur du réel, pas sur du vide.
 {
   const sous = (base) => {

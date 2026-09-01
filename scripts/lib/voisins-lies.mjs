@@ -421,6 +421,29 @@ export function empreinteDuVoisin(racine, racinesLues) {
         }
       }
     }
+    // ⛔ ET LE MANIFESTE, TOUJOURS — il n'entre pas parce qu'on le LIT, il entre parce qu'il DÉFINIT
+    // ce qu'on lit. Les deux clauses au-dessus le prennent seulement chez les voisins qui l'exposent
+    // ou dont le régime courant le compte parmi ses racines.
+    // ⇒ MESURÉ le 2026-09-01 : sur ONZE manifestes que mon avis gèle, QUATRE seulement entraient au
+    //   relevé. Chez les sept autres, une bascule de manifeste sous ma fenêtre n'était vue par
+    //   personne — ni par le crochet d'écriture, dont la forme qui ferme ce cas était sortie du
+    //   fichier déployé, ni par moi. Je gelais onze et j'en surveillais quatre.
+    // ⇒ L'ARGUMENT EST CELUI DE KRONOS, 2026-08-25, et c'est déjà celui qui me fait le geler chez
+    //   tous : si le manifeste bascule sous ma mesure, la liste de mes racines a changé, et mon
+    //   témoin reste vert en attestant l'immobilité d'un périmètre qui a bougé.
+    // ⚠️ SON ABSENCE CHEZ UN VOISIN N'EST PAS UNE FAUTE : un dépôt sans manifeste — atlas — se relève
+    //   par son arbre seul, et la marque `sans manifeste` le dit au lieu de le taire.
+    {
+      const cle = "package.json";
+      if (!marques.has(cle) && !marques.has(`./${cle}`)) {
+        try {
+          const st = statSync(join(v.chemin, cle));
+          marques.set(cle, `${st.ino}:${st.mtimeMs}:${st.size}`);
+        } catch {
+          marques.set(cle, "sans manifeste");
+        }
+      }
+    }
     if (marques.size === 0) {
       throw new Error(
         `RELEVÉ VIDE CHEZ « ${nom} » — aucune entrée sous ${[...racines].join(", ")}. Un relevé ` +
