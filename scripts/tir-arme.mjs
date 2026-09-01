@@ -1158,11 +1158,23 @@ function rendreLeVerdict(
         `              garde vous EMPÊCHERAIT mais que vous ne l'avez jamais vu MORDRE, ne me dites pas\n` +
         `              « vertu instituée » : un garde qu'on n'a pas vu mordre est une hypothèse. J'ai\n` +
         `              fait cette faute sur lui, et il me l'a rendue.\n` +
-        `          ⇒ ⛔ ET N'ÉPROUVEZ PAS VOTRE GARDE D'ÉCRITURE PENDANT MA FENÊTRE : s'il mord je ne\n` +
-        `            perds rien, s'il NE mord pas vous avez écrit sous mes racines et ma campagne porte\n` +
-        `            sur deux états. ⇒ ✅ Faites-le HORS fenêtre — un octet, un regard, un retrait. Le\n` +
-        `            résultat vaut pour toutes mes fenêtres à venir : c'est une propriété de votre\n` +
-        `            BRANCHEMENT, pas de l'instant.\n` +
+        `          ⇒ ⛔ ET SI VOUS ÉPROUVEZ VOTRE GARDE D'ÉCRITURE, LE TÉMOIN NE DOIT PAS COÛTER CE QU'IL\n` +
+        `            MESURE (la phrase est d'atlas, et c'est la meilleure de la nuit) :\n` +
+        `              ⛔ PAS une écriture réelle sous mes racines pendant ma fenêtre — s'il mord je ne\n` +
+        `                perds rien, s'il NE mord pas vous avez basculé ma mesure pour prouver un point\n` +
+        `                de méthode.\n` +
+        `              ⛔ ET PAS « hors fenêtre » NON PLUS — j'avais écrit ça, c'était inutilisable, et\n` +
+        `                runtime-codevoices l'a réfuté sur pièce : le crochet interroge la tour et LAISSE\n` +
+        `                PASSER quand aucune fenêtre n'est ouverte, PAR CONCEPTION. ⇒ Votre octet\n` +
+        `                s'écrit et vous n'apprenez rien : un garde branché qui autorise et un garde\n` +
+        `                absent rendent le même résultat. ⇒ Sa formule : « c'est ta propre classe du\n` +
+        `                SANS OBJET, déplacée sur l'instrument ».\n` +
+        `              ✅ LA FORME QUI MARCHE, D'ATLAS : une forme d'écriture RECONNUE sur un chemin\n` +
+        `                INEXISTANT, PENDANT ma fenêtre. S'il refuse, il mord et rien n'est écrit ; s'il\n` +
+        `                passe, la commande échoue d'elle-même et rien n'est écrit non plus. ⇒ Les deux\n` +
+        `                issues sont inoffensives, et elle passe par le CHEMIN RÉEL.\n` +
+        `              ⛔ ET NE FABRIQUEZ PAS UNE FENÊTRE POUR ÇA : elle gèle des tiers qui n'ont rien\n` +
+        `                demandé. Le scrupule est de runtime-codevoices, et il est juste.\n` +
         `          ⇒ ✅ ET VOTRE RÉPONSE NE SE REDEMANDE PAS À CHAQUE CAMPAGNE (kronos) : si vos causes\n` +
         `            sont permanentes — un garde branché, un lien épinglé — votre ligne vaut pour toutes\n` +
         `            mes fenêtres, et c'est à vous de me dire quand elle change.\n` +
