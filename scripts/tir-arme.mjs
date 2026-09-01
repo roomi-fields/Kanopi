@@ -869,17 +869,25 @@ function demanderLaFenetre(ecritures, identifiant) {
     + "FONCTIONNEMENT NORMAL : une arme meurt avec sa campagne, donc deux campagnes d'affilée portent "
     + "toujours deux noms d'arme. Ne me signalez PAS cela. Deux avis de MÊME arme et de campagnes "
     + "différentes viennent d'une réouverture après refus ou annulation, et sont normaux aussi. "
-    + "⛔ CE QUE JE VOUS DEMANDE DE ME SIGNALER EST AUTRE : UN SECOND AVIS DE MOI QUI VOUS ARRIVE AVANT "
-    + "LE VERDICT DU PRÉCÉDENT, quelle que soit l'arme. C'est le seul signe observable de chez vous que "
-    + "deux de mes armes tournent — la tour ne tient qu'une fenêtre par émetteur, donc vous ne verrez "
-    + "JAMAIS deux des miennes coexister : vous verrez la seconde remplacer la première sans le savoir, "
-    + "et c'est exactement ce qui vous est arrivé à onze le 2026-08-25 à 11:36. "
+    + "⛔ CE QUE JE VOUS DEMANDE DE ME SIGNALER EST AUTRE, ET ÇA SE MESURE SUR DEUX HORODATAGES QUE MES "
+    + "MESSAGES PORTENT DÉJÀ : DEUX DE MES ARMES SE RECOUVRENT SI ET SEULEMENT SI LA NAISSANCE DE LA "
+    + "SECONDE PRÉCÈDE LA LEVÉE DE LA PREMIÈRE. Le nom d'arme porte son heure, la levée de la tour porte "
+    + "la sienne : comparez-les, et signalez-moi le recouvrement. La tour ne tient qu'une fenêtre par "
+    + "émetteur, donc vous ne verrez JAMAIS deux des miennes coexister : vous verrez la seconde "
+    + "remplacer la première sans le savoir, et c'est ce qui vous est arrivé à onze le 2026-08-25 à 11:36. "
+    + "⚠️ N'UTILISEZ PLUS « un second avis avant le verdict du précédent » : c'était ma clause d'avant, "
+    + "et elle a UNE SECONDE CAUSE. Le 2026-09-01 à 10:06 elle a tiré chez les DOUZE sans qu'aucune "
+    + "seconde arme n'existe — une arme tuée par un délai de mon outillage, un verdict rendu une minute "
+    + "après l'avis suivant. Le critère neuf reste MUET sur cette séquence, où la seconde arme naît "
+    + "6 min 43 s APRÈS la levée, et il crie sur le recouvrement réel : c'est la prédiction falsifiable "
+    + "qui le juge. "
     + "(Le nom d'arme entre le 2026-08-25 : sans lui, personne ne pouvait vérifier de l'extérieur que "
     + "mon identifiant nomme la campagne et non le processus — relevé par kronos, expliqué par "
-    + "runtime-codevoices. Et ma première rédaction de cette clause désignait le mauvais signe : elle "
-    + "vous ordonnait de me signaler un défaut à chaque cycle normal, et aurait crié onze fois pour "
-    + "rien avant le jour où ça compte — relevé par runtime-ui, qui avait déjà le bon critère sous les "
-    + "yeux et que ma clause faisait regarder ailleurs.) " +
+    + "runtime-codevoices. Ma PREMIÈRE rédaction ordonnait de me signaler un défaut à chaque cycle "
+    + "normal — relevé par runtime-ui. La DEUXIÈME criait sur tout verdict tardif — relevée le "
+    + "2026-09-01 par runtime-in, runtime-midi, runtime-osc, runtime-ui, runtime-codevoices, "
+    + "bp3-frontend, atlas et bpx, et c'est runtime-in qui a nommé la borne par les deux horodatages. "
+    + "Trois rédactions, et les deux premières désignaient un signe qui ne discrimine pas sa cible.) " +
     `Cet identifiant est le NOM de cette campagne, et mon verdict le ` +
     "portera. ⛔ UN AVIS PLUS RÉCENT PORTANT UN AUTRE IDENTIFIANT REMPLACE CELUI-CI : n'attendez "
     + "alors que le verdict du DERNIER. Le 2026-08-25, deux de mes armes ont ouvert deux fenêtres à "
@@ -1565,11 +1573,60 @@ const VERROU = join(homedir(), ".local", "state", "kanopi", "tir.pid");
   // ⇒ CE FILET NE LÂCHAIT QUE LE VERROU. Le verrou protège MA prochaine arme ; la fenêtre gèle LES
   //   AUTRES. Ne relâcher que le premier soigne exactement la moitié dont je suis victime.
   //
-  // ⚠️ ET LE VERDICT NE PART PAS D'ICI : un gestionnaire de signal a le temps de fermer, pas celui de
-  //   composer un rapport. Fermer sans rendre laisse les gelés sans nouvelle — c'est mieux que gelés
-  //   sans nouvelle ET sans fin, et la levée que la tour envoie à la fermeture les prévient.
+  // ⛔ ET LA LEVÉE NE SUFFIT PAS — LA PHRASE QUI TENAIT ICI ÉTAIT FAUSSE, MESURÉE LE 2026-09-01.
+  //   Elle disait : « le verdict ne part pas d'ici, la levée que la tour envoie les prévient ». Une
+  //   arme a été tuée à 09:58, la levée est partie, et les DOUZE ont signalé le signe que mon avis
+  //   leur demande de rendre, alors qu'aucune seconde arme n'existait. La levée dit que la fenêtre
+  //   est close ; elle ne dit PAS qu'aucune mesure n'en sort, et c'est ce qu'un lecteur ne peut
+  //   pas deviner.
+  //
+  // ⇒ CE QUE LE FILET REND MAINTENANT : une phrase FIXE, pas un rapport. Composer un rapport demande
+  //   la mesure ; dire qu'il n'y en a pas n'en demande aucune, et c'est ce qui la rend tenable dans
+  //   un gestionnaire de signal.
+  // ⇒ SON RANG EST LE POINT, relevé par runtime-ui : ce verdict existait déjà, envoyé À LA MAIN, et
+  //   il est arrivé une minute APRÈS l'avis suivant. Tant qu'il peut suivre l'avis d'après, la
+  //   clause crie. Émis d'ici, il précède toujours la campagne suivante.
+  // ⇒ ÉPROUVÉ PAR `garde-filet-de-nullite.mjs`, dans les deux sens, à chaque portillon.
+  const rendreLaNullite = (campagne, destinataires) => {
+    if (!campagne || !destinataires || destinataires.length === 0) return;
+    const fichier = `/tmp/kanopi-nullite-${campagne}.txt`;
+    writeFileSync(
+      fichier,
+      `VERDICT DE LA CAMPAGNE ${campagne} : NULLE. AUCUNE MESURE N'EN SORT.\n\n` +
+        `Le processus qui la tirait a reçu un signal et s'est arrêté avant son arrivée. Aucun\n` +
+        `portillon n'a tourné, aucun relevé d'arrivée n'a été pris, aucune immobilité n'est attestée\n` +
+        `par kanopi. La discipline demandée pendant cette fenêtre n'a servi à rien.\n\n` +
+        `Ce message est émis par le filet lui-même, donc AVANT toute campagne suivante. Un second\n` +
+        `avis de kanopi après ce verdict est un cycle normal, jamais le signe d'une seconde arme :\n` +
+        `ce signe-là se mesure sur deux horodatages — la naissance de la seconde arme contre la\n` +
+        `levée de la première.\n`,
+      "utf8",
+    );
+    for (const dest of destinataires) {
+      try {
+        execFileSync(TOUR, ["note", dest, "--fichier", fichier], {
+          encoding: "utf8",
+          env: { ...process.env, BP_AGENT: "kanopi" },
+        });
+      } catch {
+        /* un destinataire injoignable ne retient pas les autres */
+      }
+    }
+    try {
+      unlinkSync(fichier);
+    } catch {
+      /* déjà disparu — sans effet, le verdict est parti */
+    }
+  };
   for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"])
     process.on(sig, () => {
+      // La nullité part AVANT la fermeture : si la tour refuse de fermer, les gelés ont au moins su
+      // qu'aucune mesure ne sortira de leur discipline.
+      try {
+        rendreLaNullite(identifiant, geles);
+      } catch {
+        /* la tour ne répond pas — la fermeture reste à tenter */
+      }
       try {
         fermerLaFenetre();
       } catch {
