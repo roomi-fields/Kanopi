@@ -1193,6 +1193,23 @@ function rendreLeVerdict(
         `            d'avant et d'après ne veulent pas dire la même chose, et rien dans ma chaîne ne date\n` +
         `            le changement. ⇒ Trouvé par runtime-MIDI ; l'architecte me l'a dit PENDANT, pour ne\n` +
         `            pas me laisser publier un verdict qu'il savait ambigu.\n` +
+        `          ⛔ ET UN SILENCE SOUS MA FENÊTRE N'EST PAS UNE MESURE. Le 2026-09-01, le crochet\n` +
+        `            pré-écriture partagé est tombé sur une faute de graphie et a refusé TOUT appel\n` +
+        `            d'outil chez seize dépôts — ni commande, ni écriture, ni courrier. Une de mes\n` +
+        `            campagnes a couru dix minutes là-dedans : sur cet intervalle, l'immobilité des douze\n` +
+        `            n'est ni une discipline ni une vertu instituée, c'est un outil cassé.\n` +
+        `            ⚠️ ET J'AI DATÉ CETTE PANNE PAR L'OUVERTURE DE MA PROPRE FENÊTRE, ce qui était faux :\n` +
+        `              elle courait au moins sept minutes avant. Ma fenêtre n'a rien causé, elle a\n` +
+        `              commencé pendant. Relevé par runtime-midi, qui borne aussi sa propre mesure — ces\n` +
+        `              refus n'existent que dans sa session, et mon journal n'enregistre que les refus du\n` +
+        `              GEL, jamais les pannes du crochet : personne ne peut rejouer cette datation.\n` +
+        `            ⚠️ ET « ce qui empêche tout empêche aussi de le signaler » EST TROP LARGE — j'ai\n` +
+        `              annoncé l'inscrire, deux d'entre vous l'ont mesuré contre : ils ont prévenu PENDANT\n` +
+        `              la panne par l'humain qui tient leur session, un canal hors outillage. Un troisième\n` +
+        `              ne l'avait pas. ⇒ LA FORME JUSTE, DE runtime-ui, QUI COUVRE LES TROIS CAS : un\n` +
+        `              silence dans la tour ne distingue pas l'absence de geste de l'absence de moyen —\n` +
+        `              mais il ne prouve pas non plus que personne n'a pu parler. ⇒ Et la LECTURE restait\n` +
+        `              ouverte : le diagnostic était sur le disque de chacun, sans rien exécuter.\n` +
         `          ⛔⛔ ET LA QUESTION SE POSE UNE FOIS PAR VOIE, JAMAIS SUR UN GESTE QUELCONQUE — c'est\n` +
         `            la règle de bp3-frontend :\n` +
         `              lu en SOURCE     seul un empêchement d'ÉCRITURE compte. Un portillon rouge\n` +
