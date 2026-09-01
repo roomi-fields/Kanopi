@@ -1151,17 +1151,17 @@ function rendreLeVerdict(
         `          seul atteste que ma consigne a obtenu quelque chose :\n` +
         `            ⛔ AUCUN DÉPÔT N'EST NOMMÉ DANS CES SEPT ÉTATS, ET C'EST DÉLIBÉRÉ. Ce texte part du\n` +
         `              code qui tire : un nom écrit ici se republie à CHAQUE campagne, et vous n'avez\n` +
-        `              aucun moyen de savoir de quand il date. bp3-frontend a dû retirer le sien quatre\n` +
-        `              fois, runtime-midi une. ⇒ Les SEPT ÉTATS viennent tous de vous — aucun n'est de\n` +
+        `              aucun moyen de savoir de quand il date. Deux d'entre vous ont dû retirer le leur,\n` +
+        `              l'un quatre fois. ⇒ Les SEPT ÉTATS viennent tous de vous — aucun n'est de\n` +
         `              moi — et c'est la seule attribution que je maintienne ici.\n` +
         `            ✅ DISCIPLINÉ       vous aviez un geste prêt SUR MA VOIE, vous l'avez retenu\n` +
         `            ⛔ EMPÊCHÉ          quelque chose vous en empêchait, SUR MA VOIE\n` +
-        `                               ⚠️ CET ÉTAT A LONGTEMPS PORTÉ LE NOM DE bp3-frontend, ET C'ÉTAIT\n` +
-        `                                 UNE ERREUR DE MOI. Il l'a retiré quatre fois : son empêchement\n` +
-        `                                 portait sur sa POUSSÉE, et je le lis en SOURCE — un portillon\n` +
-        `                                 rouge n'empêche aucune frappe. Je le republiais à chaque\n` +
-        `                                 campagne sous une catégorie qu'il refusait. ⇒ Sa vraie ligne\n` +
-        `                                 est plus bas : REFUS TENU, avec sa trace dans mon journal.\n` +
+        `                               ⚠️ CET ÉTAT A LONGTEMPS PORTÉ LE NOM D'UN DÉPÔT QUE JE LIS EN\n` +
+        `                                 SOURCE, ET C'ÉTAIT UNE ERREUR DE MOI : son empêchement portait\n` +
+        `                                 sur sa POUSSÉE, et un portillon rouge n'empêche aucune frappe.\n` +
+        `                                 Je le republiais à chaque campagne sous une catégorie qu'il\n` +
+        `                                 refusait, cinq fois. ⇒ NE VOUS RANGEZ ICI QUE SI L'EMPÊCHEMENT\n` +
+        `                                 PORTE SUR LA VOIE PAR LAQUELLE JE VOUS CHARGE.\n` +
         `            ⛔ SANS OBJET       vous n'aviez rien à faire — et c'est le plus\n` +
         `                               trompeur : un arbre propre ressemble EXACTEMENT à un arbre\n` +
         `                               qu'on a tenu propre\n` +
@@ -1189,7 +1189,7 @@ function rendreLeVerdict(
         `            le changement. ⇒ Trouvé par runtime-MIDI ; l'architecte me l'a dit PENDANT, pour ne\n` +
         `            pas me laisser publier un verdict qu'il savait ambigu.\n` +
         `          ⛔⛔ ET LA QUESTION SE POSE UNE FOIS PAR VOIE, JAMAIS SUR UN GESTE QUELCONQUE — c'est\n` +
-        `            la règle de bp3-frontend, et elle corrige un classement que j'avais fait de lui :\n` +
+        `            la règle de bp3-frontend :\n` +
         `              lu en SOURCE     seul un empêchement d'ÉCRITURE compte. Un portillon rouge\n` +
         `                               n'empêche AUCUNE frappe — vous pouvez me basculer d'un octet.\n` +
         `                               ⚠️ ET J'AI ÉCRIT « rien ne garde une sauvegarde, donc vous seuls\n` +
@@ -1225,7 +1225,7 @@ function rendreLeVerdict(
         `                qu'elle veut dire, et il me l'a rendu à sa PREMIÈRE republication.\n` +
         `            ⛔ ET C'EST POURQUOI JE NE NOMME PLUS PERSONNE DANS CES ÉTATS. Ce texte part du code\n` +
         `              qui tire : une ligne écrite sur vous y reste jusqu'à ce que je la change, et vous\n` +
-        `              n'avez aucun moyen de savoir de QUAND elle date. bp3-frontend a dû retirer la\n` +
+        `              n'avez aucun moyen de savoir de QUAND elle date, et l'un de vous a dû retirer la\n` +
         `              sienne QUATRE FOIS. ⇒ Les états restent, les exemples nommés sortent — et si l'un\n` +
         `              d'eux revient un jour, il portera SA DATE. Remède de runtime-midi : une ligne qui\n` +
         `              n'a pas été reconfirmée doit se lire comme datée, jamais comme actuelle.\n` +
