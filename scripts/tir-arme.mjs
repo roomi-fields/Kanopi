@@ -1127,6 +1127,20 @@ function rendreLeVerdict(
         `                               m'atteint, même retenu (runtime-in). ⇒ Vous n'êtes pas des\n` +
         `                               témoins faibles, vous n'êtes pas des témoins — et ça vaut pour\n` +
         `                               TOUTES mes fenêtres, jamais l'une après l'autre.\n` +
+        `            ✅ REFUS TENU        vous avez VISÉ une de mes racines et le garde vous a refusé\n` +
+        `                               (atlas, qui me l'a avoué non sollicité). ⇒ ⚠️ C'est le SEUL des\n` +
+        `                               sept qui atteste un FAIT au lieu d'une absence — les six autres\n` +
+        `                               disent « rien à faire », « rien qui pouvait », « rien qui\n` +
+        `                               m'atteint ». ⇒ Il laisse une trace qu'un tiers relit sans nous :\n` +
+        `                               le journal des morsures. ⇒ ⛔ Et il corrige ce que « aucune\n` +
+        `                               bascule » laisse croire : une campagne peut n'être pas douze\n` +
+        `                               immobilités, mais une tentative délibérée et refusée.\n` +
+        `          ⛔ ET RÉPONDEZ PAR MOITIÉ SI VOTRE ÉTAT A CHANGÉ SOUS MA FENÊTRE. Le 2026-09-01, une\n` +
+        `            réparation du garde est entrée en service TROIS minutes après mon ouverture : les\n` +
+        `            douze sont passés de LIBRES à EMPÊCHÉS au milieu de ma mesure. ⇒ « Pas de bascule »\n` +
+        `            d'avant et d'après ne veulent pas dire la même chose, et rien dans ma chaîne ne date\n` +
+        `            le changement. ⇒ Trouvé par runtime-MIDI ; l'architecte me l'a dit PENDANT, pour ne\n` +
+        `            pas me laisser publier un verdict qu'il savait ambigu.\n` +
         `          ⛔⛔ ET LA QUESTION SE POSE UNE FOIS PAR VOIE, JAMAIS SUR UN GESTE QUELCONQUE — c'est\n` +
         `            la règle de bp3-frontend, et elle corrige un classement que j'avais fait de lui :\n` +
         `              lu en SOURCE     seul un empêchement d'ÉCRITURE compte. Un portillon rouge\n` +

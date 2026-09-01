@@ -118,15 +118,19 @@ divergent, ce sont elles qui font foi.**
 **Trois mots restent** : `object`, `def`, `init`. Tout le reste est un **type déclaré** — `actor`,
 `terminal`.
 
-⛔ **DEUX CATALOGUES DÉCLARENT LEURS ENTRÉES PAR LEUR TYPE, ET EUX SEULS** — `scales` et `types`.
-Mesuré le 2026-08-31 au paquet publié `01da677`, sur la trace de dérivation que porte chaque entrée
-dérivée : `scales` **185**, `types` **4**, **189 au total**. `alphabets`, `tunings`, `octaves` et
-`homomorphism` en portent **zéro**.
+⛔ **CE QUI DIT QU'UN CATALOGUE DÉCLARE SES ENTRÉES PAR LEUR TYPE EST LA TRACE DE DÉRIVATION** que
+porte chaque entrée dérivée, jamais l'appartenance d'un mot à une liste. **Une minorité de catalogues
+le fait ; les autres n'en portent aucune.**
 
-⚠️ **LA LISTE DES MOTS RÉSERVÉS DU SOCLE TRANCHE POUR DIX-HUIT MOTS SUR VINGT, ET DEUX Y ÉCHAPPENT.**
-Mesuré le 2026-08-31 au paquet publié : `<mot> essai (x:1)` en partie déclarative est **refusé pour
-les dix-huit**, et **accepté pour `def` et `actor`**, qui portent leur propre forme de déclaration.
-Témoin `zorglub` refusé — la sonde discrimine.
+⚠️ **LA LISTE DES MOTS RÉSERVÉS DU SOCLE TRANCHE POUR LA PLUPART DES MOTS, ET DEUX Y ÉCHAPPENT** —
+`def` et `actor`, qui portent leur propre forme de déclaration. La sonde est
+`<mot> essai (x:1)` en partie déclarative, témoin négatif `zorglub`.
+
+⛔ **AUCUN COMPTE N'EST RECOPIÉ ICI, ET C'EST DÉLIBÉRÉ** : cette fiche est un instantané diffusé à
+seize exemplaires qui ne peut pas rougir, et un chiffre y périmerait à la première frappe de BPscript
+sans que rien ne le signale. **Les comptes datés vivent à leur mesure** —
+`atlas/carte-autorites/bpscript.md`, rangs « LE TYPE D'UNE ENTRÉE EST LE PROTOTYPE DONT ELLE DÉRIVE »
+et « `types` REGROUPE LES PROTOTYPES », et le détail dans `atlas/carte-autorites/verifications.md`.
 
 ⛔ **Ce sont deux questions distinctes, et la liste ne répond qu'à la première** : ce que le code
 REFUSE, et ce que les catalogues FONT. **Pour la seconde, ce qui tranche est la trace de dérivation.**
