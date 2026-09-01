@@ -960,10 +960,15 @@ function demanderLaFenetre(ecritures, identifiant) {
     "c'est lui qui DÉFINIT les racines ci-dessus. Le laisser dehors permettait qu'il bascule sous ma " +
     "mesure — la liste changeait, et mon témoin restait vert en attestant l'immobilité d'un périmètre " +
     "qui avait bougé (relevé par kronos, 2026-08-25). " +
-    "⛔ CE QUI FERME CETTE FENÊTRE EST MON MESSAGE DE FIN, JAMAIS L'HEURE : l'heure annoncée est un " +
+    "⛔ CE QUI FERME CETTE FENÊTRE EST MA LEVÉE, JAMAIS L'HEURE : l'heure annoncée est un " +
     "PLANCHER calculé sur une constante, et mes campagnes la dépassent déjà de plusieurs minutes. " +
-    "Attendez le verdict que je vous enverrai à l'arrivée ; une attente calée sur l'horloge écrite " +
-    "vous fera écrire pendant que je mesure encore";
+    "Une attente calée sur l'horloge écrite vous fera écrire pendant que je mesure encore. " +
+    "⚠️ ET DEUX MESSAGES ARRIVENT, DANS CET ORDRE, DEPUIS LE 2026-09-01 : la LEVÉE de la tour vous " +
+    "LIBÈRE — « tu es libre MAINTENANT » — puis mon VERDICT dit ce que la mesure a donné, ce que la " +
+    "levée ne dit pas. ⇒ SANS VERDICT LA CAMPAGNE EST NULLE, et ma discipline vous aura coûté pour " +
+    "rien : dites-le-moi. ⇒ J'ai inversé cet ordre le 2026-09-01 parce que l'exemption de diffusion " +
+    "de la tour se cale sur LA LEVÉE : en rendant avant de fermer, neuf d'entre vous perdaient le " +
+    "verdict à chaque campagne, deux fois de suite";
   // ⛔ CET APPEL NE PASSE PLUS PAR UN SHELL, ET C'EST LE MOTIF QUI L'EXIGE. Le 2026-08-25 j'ai ajouté
   // un accent grave dans ce texte — « votre `package.json` est surveillé » — et la tour a répondu
   // « bash: package.json : commande introuvable ». Un accent grave à l'intérieur des guillemets que
@@ -1855,6 +1860,19 @@ for (;;) {
     // ⛔ ENREGISTRER AVANT DE RENDRE LE VERDICT : la durée d'une campagne ne se mesure qu'une
     // fois, et un verdict qui échoue ne doit pas emporter la mesure avec lui.
     enregistrerLaCampagne(ouverteA ?? depart, arrivee, sortie, identifiant, ARME);
+    // ⛔ FERMER AVANT DE RENDRE, ET L'ORDRE INVERSE COÛTAIT NEUF VERDICTS PAR CAMPAGNE.
+    //   Le garde de diffusion de la tour refuse un même corps au-delà de trois destinataires — sa
+    //   mesure est juste, sept diffusions aux treize en une nuit font quatre-vingt-onze réveils.
+    //   L'architecte a posé le 2026-09-01 à 12:14 une exemption MÉCANIQUE : « À LA LEVÉE, la tour
+    //   mémorise qui était gelé par qui », puis exempte cet émetteur vers ces destinataires pendant
+    //   trente minutes.
+    // ⇒ MON ARME RENDAIT LE VERDICT AVANT DE FERMER : au moment de l'envoi, l'exemption n'existait
+    //   pas encore, et neuf des douze le perdaient — deux campagnes de suite, 12:09 et 12:43. Le
+    //   défaut est un ORDRE chez moi, jamais une faute de son mécanisme.
+    // ⇒ ET FERMER D'ABORD NE LES LAISSE PAS SANS NOUVELLE : la levée de la tour les libère déjà et
+    //   le dit — « tu es libre MAINTENANT ». Le verdict suit dans la seconde et dit ce que la mesure
+    //   a donné, ce que la levée ne dit pas.
+    fermerLaFenetre();
     rendreLeVerdict(
       geles,
       ouverteA ?? depart,
@@ -1865,7 +1883,6 @@ for (;;) {
       pendant,
       ecrituresChezMoi,
     );
-    fermerLaFenetre();
     break;
   }
 
