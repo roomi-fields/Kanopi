@@ -218,8 +218,8 @@ import routingJson from '../../../../library/routing.json';
 //
 // ⛔⛔ ET POURTANT LE SAC EST ENCORE TENDU — PARCE QUE MA MESURE LE DIT, PAS PARCE QUE LA DÉCISION
 // SERAIT DISCUTÉE. Mesuré le 2026-09-02 à 22:50 sur MA chaîne — le `dist` de kairos que mon lien
-// exécute, reconstruit sur son commit de ratification — par `contexteDeProjection` réel, même
-// instrument, deux états :
+// exécute — un paquet daté du 25 AOÛT, qu il ne republie que par `npm run publier` — par
+// `contexteDeProjection` réel, même instrument, deux états :
 //     western `C4 E4 G4`   SANS sac : hz=0 sur 3 notes   AVEC sac : hz=3
 //     tabla                SANS sac : voix=0            AVEC sac : voix=3
 // La section VOYAGE (tree.metadata.librairies porte 5 et 8 clés) ; c'est le `dist` de kairos qui
