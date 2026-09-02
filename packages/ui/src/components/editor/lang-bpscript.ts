@@ -4,6 +4,7 @@ import { hoverTooltip, EditorView, type Tooltip } from '@codemirror/view';
 import { linter, type Diagnostic } from '@codemirror/lint';
 import { compileBps } from '../../lib/runtimes/compile-cache';
 import { describeVocabulary, type VocabControl, type VocabValue } from 'bpscript';
+import { famille } from 'bpscript/objets';
 
 // BPScript editor intelligence, ALL sourced from BPScript's LIVING vocabulary
 // authority `describeVocabulary()` (the same aggregation its compile guard uses),
@@ -71,11 +72,22 @@ function valueInfo(v: VocabValue): string | undefined {
 //   MESURÉ le 2026-09-01 sur la porte vive : `voice.wobble` compile et `voice` était absent de
 //   `keywords`, donc jamais proposé. L'info-bulle, elle, lisait déjà les deux (`hoverHitAt`) :
 //   la complétion était le seul point à une seule source.
-// L'union se déduplique — un axe peut vivre dans les deux, et six des sept y vivent aujourd'hui.
+//
+// ⛔ ET IL Y EN A UNE TROISIÈME : LES PROTOTYPES DE `types`. Le 2026-09-02, les types de déclaration
+//   ont quitté le socle pour devenir des objets de la librairie `types` — `flag`, `symbol`, `actor`,
+//   `control`, `signal` et ses trois dérivés, `addresskey`, `destination`, `enum`. Mesuré sur la
+//   porte vive juste après la frappe : `keywords` 49, axes 7, et les mots que TOUTES mes scènes
+//   écrivent — `actor`, `flag`, `symbol` — offerts par AUCUNE des deux premières sources. Le
+//   compilateur les accepte, mon éditeur cessait de les proposer et de les colorer.
+//   `describeVocabulary()` ne porte pas cette population ; `bpscript/objets` la sert, et c'est la
+//   porte que BPscript expose pour lire ses librairies comme des objets.
+// L'union se déduplique — un mot peut vivre dans plusieurs sources, et `scale` vit dans les trois.
 // EXPORTÉ pour la même raison que `vocab` : un témoin qui referait l'union de son côté
 // mesurerait sa propre arithmétique, pas ce que la complétion a en main.
+const PROTOTYPES_DE_TYPES: string[] = (famille('types')?.entrees ?? []).map((e) => e.nom);
+
 export const MOTS_INVOCABLES: string[] = [
-  ...new Set([...vocab.keywords, ...Object.keys(vocab.components)])
+  ...new Set([...vocab.keywords, ...Object.keys(vocab.components), ...PROTOTYPES_DE_TYPES])
 ];
 
 const DIRECTIVE_COMPLETIONS: Completion[] = MOTS_INVOCABLES.map((name) => ({

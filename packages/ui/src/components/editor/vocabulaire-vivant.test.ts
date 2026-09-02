@@ -61,9 +61,13 @@ const PLANCHERS: Record<string, number> = {
  *  QUITTER `keywords` sans quitter le langage : la table des types est le socle, étendu par les
  *  librairies invoquées (décision du 2026-08-23), et `alphabet` fait ce trajet le 2026-09-01. Le
  *  verrouiller sur `keywords` rendrait ce banc rouge pour un mot que l'éditeur propose toujours —
- *  il est verrouillé sur les mots OFFERTS, plus bas, qui couvrent les DEUX sources. */
+ *  il est verrouillé sur les mots OFFERTS, plus bas, qui couvrent les DEUX sources.
+ *
+ *  ⛔ `def` ET `init` SONT LES DEUX SEULS QUI RESTENT, ET LE COMPTE NE LE DIT PAS. `actor` a quitté
+ *  `keywords` le 2026-09-02 pour devenir un objet de `types` ; le plancher, à 30 pour 49 mots, ne
+ *  bouge pas d'un cran. C'est le témoin nommé, et lui seul, qui l'a vu. */
 const TEMOIN: Record<string, string[]> = {
-  keywords: ['def', 'init', 'actor'],
+  keywords: ['def', 'init'],
   controls: ['wave', 'attack', 'release', 'volume'],
   functions: ['transpose'],
   addressKeys: ['channel', 'note', 'port'],
@@ -141,8 +145,24 @@ export function verifierLeVocabulaire(entree: unknown): string[] {
 /** Les mots que l'éditeur doit PROPOSER, quelle que soit la source qui les porte. Les six premiers
  *  sont des axes de catalogue autant que des mots du socle : c'est ici qu'ils se verrouillent, et
  *  pas sur `keywords`, parce qu'un déménagement du socle vers une librairie ne les retire pas de
- *  l'écran. */
-const TEMOIN_OFFERTS: string[] = ['scale', 'alphabet', 'tuning', 'octaves', 'sound', 'eval'];
+ *  l'écran.
+ *
+ *  ⛔ LES TROIS DERNIERS SONT LES TYPES DE DÉCLARATION, ET AUCUNE DES DEUX PREMIÈRES SOURCES NE LES
+ *  PORTE. Le 2026-09-02 ils quittent `keywords` pour la librairie `types` ; ils ne sont pas des axes
+ *  de catalogue, donc `components` ne les voit pas non plus. Mesuré sur la porte vive après la
+ *  frappe : `actor`, `flag`, `symbol` offerts par personne, alors que chacune de mes scènes en
+ *  écrit au moins un. C'est ce trou qui a fait ouvrir la troisième source, `bpscript/objets`. */
+const TEMOIN_OFFERTS: string[] = [
+  'scale',
+  'alphabet',
+  'tuning',
+  'octaves',
+  'sound',
+  'eval',
+  'actor',
+  'flag',
+  'symbol'
+];
 
 /**
  * LES DEUX SOURCES SONT-ELLES LUES ? — rend la liste des manques, vide quand tout tient.
@@ -275,7 +295,7 @@ describe("le vocabulaire VIVANT que mon éditeur met à l'écran", () => {
       'UN SEUL mot de référence s’en va',
       () => {
         const v = vocabulaireConforme();
-        v.keywords = (v.keywords as string[]).filter((m) => m !== 'actor');
+        v.keywords = (v.keywords as string[]).filter((m) => m !== 'init');
         return v;
       },
       true
