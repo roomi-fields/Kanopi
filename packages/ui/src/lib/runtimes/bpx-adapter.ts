@@ -98,9 +98,9 @@ import { createMidiRuntime } from 'runtime-midi';
 // in KAIROS: it OWNS the pitch module and GRAVES `content.pitch.hz` + `content.sounds`
 // per note (KAI-10), from the library contents the TREE carries (`metadata.librairies`,
 // joined by BPscript at compilation — décision du 2026-09-02). Kanopi RESOLVES NOTHING, runs
-// NO resolver and transports NO pitch catalogue — it only READS the graven facets. The host
-// imports ZERO of the pitch module (logic AND type).
-import { type DigitalLib } from '@kairos/core';
+// NO resolver — it only READS the graven facets. ⚠️ Le sac `pitchLib` est ENCORE tendu, voir le
+// bloc du contexte de projection : la décision l'a retiré, ma mesure sur MA chaîne le retient.
+import { type PitchLib, type DigitalLib } from '@kairos/core';
 // Tree-derived dispatch events (M5+ multi-actor refacto): flatten the tree of
 // `derive()` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
@@ -216,10 +216,26 @@ import routingJson from '../../../../library/routing.json';
 // projection) ; une conversion `as` qui aurait rendu le compilateur muet des deux côtés. Un
 // transport qui n'existe plus n'a plus de forme à garder.
 //
-// ⛔ CE QUI RESTE TRANSPORTÉ, ET POURQUOI : `voicesLib`, `digitalLib`, `homomorphismeLib`. La
-// section de l'arbre ne porte AUCUNE voix — le binding d'un alphabet de percussion vit un étage
-// sous celui que la règle de BPscript regarde (non tranché, porté chez lui) ; retirer `voicesLib`
-// rendrait toute scène de tabla muette. Les deux autres restent lus par Kairos dans le contexte.
+// ⛔⛔ ET POURTANT LE SAC EST ENCORE TENDU — PARCE QUE MA MESURE LE DIT, PAS PARCE QUE LA DÉCISION
+// SERAIT DISCUTÉE. Mesuré le 2026-09-02 à 22:50 sur MA chaîne — le `dist` de kairos que mon lien
+// exécute, reconstruit sur son commit de ratification — par `contexteDeProjection` réel, même
+// instrument, deux états :
+//     western `C4 E4 G4`   SANS sac : hz=0 sur 3 notes   AVEC sac : hz=3
+//     tabla                SANS sac : voix=0            AVEC sac : voix=3
+// La section VOYAGE (tree.metadata.librairies porte 5 et 8 clés) ; c'est le `dist` de kairos qui
+// ne la LIT pas encore — `dist/projection/projeter.js` : 0 occurrence de `librairies`, 5 de
+// `pitchLib`. Sa confirmation a été mesurée chez lui, sur un chemin qui n'est pas celui que
+// j'exécute. Le retrait se fera quand MA sonde (`facettes-de-kairos.test.ts`) rendra hz>0 SANS
+// le sac : un témoin non nul, jamais un mot reçu. Jusque-là, retirer le sac rend chaque note
+// muette sans un rouge — c'est exactement ce que ce fichier interdit.
+//
+// `voicesLib`, `digitalLib`, `homomorphismeLib` restent transportés pour la même raison, et la
+// voix en porte la preuve ci-dessus.
+// LE SAC ENTIER, JAMAIS UNE LISTE — L35 : une librairie à nom libre est adressable, une liste
+// fermée ne voit pas la suivante (sept scènes `test_alphabets.X` crevaient à la projection).
+// L'AFFECTATION EST DIRECTE, SANS CONVERSION : le compilateur compare la forme du sac au type
+// que Kairos publie ; un `as` le rendrait muet des deux côtés de la frontière.
+const PITCH_LIB: PitchLib = LIBS;
 
 // The provided DIGITAL function library (catalogue `digital` de `bpscript/libs-data`), handed to Kairos as the
 // read-only `ctx.digitalLib`. Kairos applies these deterministic
@@ -267,8 +283,9 @@ export function contexteDeProjection(base: unknown): Parameters<Kairos['charger'
   return {
     // Le contexte construit PAR BPx — l'hôte n'assemble AUCUN résolveur (KAI-8).
     ...(base as object),
-    // ⛔ PAS DE `pitchLib` : la hauteur se lit dans `metadata.librairies` de l'arbre, jointe par
-    // BPscript à la compilation (décision du 2026-09-02, retrait confirmé par Kairos — voir plus haut).
+    // KAI-10 — catalogues de hauteur. ⚠️ VOUÉ AU RETRAIT (décision du 2026-09-02, l'arbre joint
+    // ses librairies) et ENCORE TENDU : sans lui, hz=0 sur ma chaîne — voir le bloc plus haut.
+    pitchLib: PITCH_LIB,
     // KAI-B03 — fonctions numériques fournies (transpose &c.).
     digitalLib: DIGITAL_LIB,
     // LANG-SONS-3 — registre des voix (Kairos grave `content.voice`).
