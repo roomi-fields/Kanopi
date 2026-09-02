@@ -23,7 +23,7 @@ describe('interpsForScene — engines a scene declares (for on-open preload)', (
 
   it('detects BOTH engines of a strudel + hydra scene', () => {
     const code =
-      'actor groove  eval.strudel\nactor viz  eval.hydra\n\n-----\nS -> { groove_r, viz_r }\n\ngroove_r -> groove.`sound("bd")`\n\nviz_r -> viz.`osc(60).out()`';
+      'core\nactor groove  eval.strudel\nactor viz  eval.hydra\n\n-----\nS -> { groove_r, viz_r }\n\ngroove_r -> groove.`sound("bd")`\n\nviz_r -> viz.`osc(60).out()`';
     const interps = interpsForScene(code);
     expect(interps.some((i) => /strudel/.test(i))).toBe(true);
     expect(interps.some((i) => /hydra/.test(i))).toBe(true);

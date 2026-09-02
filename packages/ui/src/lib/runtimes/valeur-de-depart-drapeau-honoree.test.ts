@@ -100,7 +100,7 @@ describe('la valeur de départ déclarée par un drapeau est honorée à la dér
   });
 
   it('la forme à états nommés est REFUSÉE — elle ne peut plus revenir en douce', () => {
-    const source = `actor drums eval.strudel\nflag section(intro:1, drop:2)\n-----\n[section==intro] S -> drums_r\ndrums_r -> drums.\`s("bd")\`\n`;
+    const source = `core\nactor drums eval.strudel\nflag section(intro:1, drop:2)\n-----\n[section==intro] S -> drums_r\ndrums_r -> drums.\`s("bd")\`\n`;
     const { erreurs } = sceneQuiEchoue(source);
     expect(
       erreurs.map((e) => e.message ?? '').join(' | '),

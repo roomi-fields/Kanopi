@@ -47,7 +47,8 @@ beforeEach(() => {
     0;
 });
 
-const ORCH = `actor groove eval.strudel
+const ORCH = `core
+actor groove eval.strudel
 actor viz eval.hydra
 -----
 S -> { groove_r, viz_r }
@@ -67,7 +68,8 @@ viz_r -> viz.\`osc(60).out()\`
 // sans rien envoyer à la synthèse. L'essai avec de vraies notes le prouve a contrario : il fait
 // entrer le banc dans le runtime audio, où le faux nœud de gain n'a pas de rampe et casse pour
 // une raison qui n'a aucun rapport avec ce qu'on veut prouver.
-const PLAIN = `symbol c
+const PLAIN = `core
+symbol c
 symbol d
 symbol e
 symbol f

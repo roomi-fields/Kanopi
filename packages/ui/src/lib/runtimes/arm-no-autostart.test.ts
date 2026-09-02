@@ -100,7 +100,8 @@ afterEach(() => {
 
 // Two native (audio) orchestrated actors — no Strudel/Hydra code voices needed to
 // exercise the arm/mute channel, which is uniform across actor kinds ([673]).
-const SRC = `actor lead out.audio
+const SRC = `core
+actor lead out.audio
 actor bass out.audio
 
 -----

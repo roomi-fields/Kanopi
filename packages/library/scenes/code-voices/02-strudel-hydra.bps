@@ -11,6 +11,8 @@
 // Deux voix de code : Strudel → audio, Hydra → vidéo. `beat`/`bar` sont injectés par
 // l'adaptateur Hydra de Kanopi (horloge partagée, cf. ADAPTER_SPEC §5bis).
 
+core
+
 actor groove  eval.strudel
 actor viz  eval.hydra
 

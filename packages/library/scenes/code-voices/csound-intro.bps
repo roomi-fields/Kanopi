@@ -11,6 +11,8 @@
 // (Barry Vercoe, 1986, ~1700 opcodes). Évaluer la voix `synth_r` : le moteur
 // démarre et les notes de la partition jouent. Ctrl+. pour couper.
 
+core
+
 actor synth  eval.csound
 
 -----

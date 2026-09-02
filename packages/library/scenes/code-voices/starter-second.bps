@@ -7,6 +7,8 @@
 // @tags: sections, flag, silence
 //
 // second session — démo minimale, 2 sections (1 mélodie / 2 silence).
+core
+
 actor melody eval.strudel
 
 // section — 1 : mélodie · 2 : silence

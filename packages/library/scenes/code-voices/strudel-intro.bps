@@ -14,6 +14,8 @@
 // Ctrl+. pour couper.
 // La batterie joue des échantillons (bd/cp/hh) : on lie la banque dirt-samples.
 // section — 1 : intro, batterie seule · 2 : full, batterie + basse
+core
+
 flag section:1
 
 actor drums  eval.strudel(bank:"dirt-samples")

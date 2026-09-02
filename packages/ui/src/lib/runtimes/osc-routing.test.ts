@@ -124,7 +124,7 @@ describe('OSC address-in-the-tree (consumed bpscript/bpx copies — stale-dep gu
   // rsynced). The address now travels via `out.osc(device:…, ch:…)` →
   // `metadata.actors` → per-event `event.output`, NOT via the old host-read `.binding`. This
   // derives a real OSC scene and asserts BOTH layers — so a future stale copy fails loudly.
-  const osc = `actor bass out.osc(device:bridge1, ch:5)\n-----\nS -> bass.C4 bass.E4`;
+  const osc = `core\nactor bass out.osc(device:bridge1, ch:5)\n-----\nS -> bass.C4 bass.E4`;
 
   it('the actor→output table carries `{runtime:osc, params:{device, ch}}` (OSC enumeration)', () => {
     const ast = sceneQuiPasse(osc, { tempo: 120 });

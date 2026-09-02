@@ -73,7 +73,8 @@ beforeEach(() => {
     0;
 });
 
-const SRC = `actor groove  eval.strudel
+const SRC = `core
+actor groove  eval.strudel
 actor viz  eval.hydra
 -----
 S -> { groove_r, viz_r }
@@ -81,11 +82,17 @@ groove_r -> groove.\`stack(note("c2*4"))\`
 viz_r -> viz.\`osc(60).out()\`
 `;
 
-// Verbatim copy of the bundled orchestrator the UI ships
-// (packages/library/bundled/02-strudel-hydra.bps) — the very file the live
-// arm/disarm must work on. Kept inline (multi-line backticks + comments) so the
-// mapping is exercised against the REAL rule shape, not a simplified fixture.
+// Copie À LA MAIN de l'orchestrateur embarqué
+// (packages/library/scenes/code-voices/02-strudel-hydra.bps), gardée inline pour
+// exercer la mapping sur la VRAIE forme de règle — backticks multilignes et
+// commentaires — plutôt que sur une fixture simplifiée.
+//
+// ⛔ ELLE DÉRIVE DE SA SOURCE, ET RIEN NE LE SIGNALE TANT QUE LA COPIE COMPILE. Le
+// 2026-09-02 la scène a gagné sa ligne `core` et cette copie ne l'avait pas : le banc
+// a rougi pour la bonne raison, mais un écart qui ne casse PAS la compilation passerait
+// muet. Le chemin cité ci-dessus est le seul état qui fasse foi.
 const BUNDLED = `// 02 — Strudel + Hydra synchronisés sur le transport Kanopi.
+core
 actor groove  eval.strudel
 actor viz  eval.hydra
 

@@ -9,6 +9,8 @@
 //
 // Sélecteur de scènes A5 — règles gardées par le drapeau `section`.
 // section — 1 : calm, batterie seule · 2 : full, batterie + lead
+core
+
 flag section:1
 
 actor drums  eval.strudel

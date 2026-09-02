@@ -5,6 +5,8 @@
 // niveau événement : preuve que le mute atteint quand même le drain, l'index ayant été élargi aux
 // déclarations `actor` — l'ancien index (acteurs d'événements seuls) écartait ce mute à tort.
 
+core
+
 actor drums  eval.strudel
 
 -----
