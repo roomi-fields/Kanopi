@@ -60,7 +60,7 @@ a -> voice.\`s("bd sd")\``;
     // the top-of-file `@` directives.
     const code = `core\nalphabet.western:audio\ntempo:120\n-----\nS -> Bass\nBass -> C2 C2 (wave:triangle123)`;
     const libs = referencedLibraries('bad.bps', code);
-    expect(libs).toContainEqual({ type: 'module', typeLabel: 'module', name: 'core' });
+    expect(libs).toContainEqual({ type: 'core', typeLabel: 'library', name: 'core' });
     expect(libs).toContainEqual({ type: 'alphabet', typeLabel: 'alphabet', name: 'western' });
   });
 
@@ -70,7 +70,7 @@ a -> voice.\`s("bd sd")\``;
     const code = `filter\ncore\nalphabet.western:audio\ntempo:180\n-----\nS -> {Bass, env1 -}\nBass -> C2 - (wave, vel:100) [weight:30]`;
     const libs = referencedLibraries('cv-adsr.bps', code);
     expect(libs).toContainEqual({ type: 'module', typeLabel: 'module', name: 'filter' });
-    expect(libs).toContainEqual({ type: 'module', typeLabel: 'module', name: 'core' });
+    expect(libs).toContainEqual({ type: 'core', typeLabel: 'library', name: 'core' });
     expect(libs).toContainEqual({ type: 'alphabet', typeLabel: 'alphabet', name: 'western' });
   });
 });

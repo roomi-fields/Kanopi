@@ -3,34 +3,34 @@
 // (also reused, as-is, for Factory's "Libraries" section — ESPACE_PERSO_SPEC §10.3).
 //
 // Two sources, glued here:
-//   - bpscript's musical catalogs (alphabets, tunings, temperaments, scales,
-//     octaves, sounds) — shipped as JSON in the `bpscript` dep, imported AS-IS.
+//   - bpscript's libraries, read as OBJETS through its `objets` door — one family per
+//     invocation word (`alphabet`, `tuning`, `scale`…), each entry the object the
+//     library declares. Consumed AS-IS, never re-read from the package's file table.
 //   - Kanopi's own catalogs (audio banks, visuals, devices) — already parsed by
 //     their existing modules; reused, never re-read.
-
-const alphabetsJson = LIBS.alphabets;
-const tuningsJson = LIBS.tunings;
-const temperamentsJson = LIBS.temperaments;
-const scalesJson = LIBS.scales;
-const octavesJson = LIBS.octaves;
-// BPScript language module `core`: a real library file with browsable content
-// (core symbols/settings). Imported AS-IS so opening one shows it.
 //
-// ⚠️ DEUX CATALOGUES ONT DISPARU DE CETTE LISTE, ET LEUR FICHIER AVEC. Ce ne sont pas des
-// entrées retirées de l'affichage — ce sont des formes que le langage ne porte plus, et les
-// exposer encore montrerait ce que le langage a retiré (le reproche que le backlog KAN-42
-// adresse à 203 scènes).
-//   • `controls`, le 2026-08-10 : fusionné dans `core`, `lib/controls.json` supprimé
-//     (bpscript 647df04, ordre de Romain).
-//   • `mod`, le 2026-08-23 : archivé avec les modules et la graphie `module.X`
-//     (bpscript 885327d, décision `2026-08-23-mod-sort-avec-les-modules-et-la-graphie-module-point`).
-//     `LIBS.mod` vaut désormais `undefined` — la carte affichait un catalogue absent.
-const coreJson = LIBS.core;
-// Digital functions library (transpose &c.) — a real browsable bpscript library
-// file, same as the ones above.
-const digitalJson = LIBS.digital;
+// ⛔ LA PORTE DES OBJETS REMPLACE LA TABLE DE FICHIERS, ET C'EST LA DÉCISION DU 2026-09-02
+// (`la-structure-des-objets-suffit-les-cablages-1-et-2-se-font-par-la-phase-5`). Ce fichier lisait
+// sept clés de `bpscript/libs-data` — `LIBS.alphabets`, `…tunings`, `…temperaments`, `…scales`,
+// `…octaves`, `…core`, `…digital` — c'est-à-dire des NOMS DE FICHIER amont, quand une scène invoque
+// par le MOT que la librairie déclare (`alphabet`, non `alphabets` ; `function`, non `digital`).
+// Trois choses meurent avec cette table, et rien ne les remplace parce que rien n'en a plus besoin :
+//   · le filtre « une entrée est un objet, un champ de sommet est une chaîne ou un tableau » — la
+//     porte rend `entrees: Objet[]`, une population sans champ de sommet à écarter. Ce filtre a
+//     laissé passer `resolves` (2026-08-10) puis `apporte` (2026-08-31) sans qu'un rouge le dise ;
+//     sa disparition est la seule forme qui ne peut plus rouvrir ce trou ;
+//   · les catalogues disparus dont ce fichier tenait la chronique (`controls` fusionné dans `core`
+//     le 2026-08-10, `mod` archivé le 2026-08-23) — la porte ne les sert pas, donc ils n'existent
+//     pas ici, sans qu'une ligne ait à le dire ;
+//   · l'adresse qui rend `undefined` en silence : `famille()` rend `null` sur un mot inconnu, et
+//     `familleOuCrie` en fait une exception AU CHARGEMENT DU MODULE — un mot que l'amont retire
+//     fait rougir tout banc qui importe ce fichier, au lieu d'afficher une carte vide.
+//
+// ⚠️ `sound` était écrit `[]` À LA MAIN — une absence inventée. La synthèse de percussion est sortie
+// de Kanopi (RA-6), mais la librairie `sound` existe chez l'amont et la porte la sert ; ce que le
+// langage déclare s'affiche, ce que l'hôte ne joue plus n'est pas un motif pour le cacher.
 
-import { LIBS } from 'bpscript/libs-data';
+import { famille, type Famille, type Objet } from 'bpscript/objets';
 import { guestLibraries, type GuestLibrary } from 'runtime-codevoices';
 import { visualsCatalog } from './visuals';
 import type { VisualItem } from './visuals';
@@ -49,7 +49,7 @@ export interface ResourceEntry {
   id: string;
   /** short human label / description / source, when the catalog carries one. */
   label?: string;
-  /** raw catalog value for this entry — opened read-only as formatted JSON. */
+  /** the entry as its source declares it — opened read-only as formatted JSON. */
   data: unknown;
 }
 
@@ -61,130 +61,60 @@ export interface ResourceGroup {
   entries: ResourceEntry[];
 }
 
-// bpscript catalogs are objects keyed by name, alongside catalog-LEVEL fields that
-// are not entries and must never surface as browsable cards.
-//
-// ⛔ CE FILTRE NE NOMME PLUS AUCUN CHAMP, ET C'EST LA CORRECTION. Il excluait `domain`,
-// la self-déclaration du catalogue. `domain` a été RENOMMÉ `resolves` chez bpscript le
-// 2026-08-10 : depuis, le filtre écartait un mot que plus personne n'écrit pendant que
-// son remplaçant passait. Mesuré le 2026-08-20 sur les 29 librairies publiées — ZÉRO
-// portait encore `domain`, 12 portaient `resolves` et 21 `resolvedBy`. DIX non-entrées
-// franchissaient donc le filtre, deux dans CHACUN des cinq catalogues énumérés ici
-// (alphabets, tunings, temperaments, scales, octaves). Rien ne rougissait — un filtre
-// qui ne filtre plus rien a la même forme qu'un filtre qui n'a rien à filtrer.
-//
-// ⚠️ CE QU'ELLES NE FAISAIENT PAS, ET JE L'AI D'ABORD ÉCRIT À TORT : elles n'étaient PAS
-// affichées. `RESOURCE_GROUPS` a UN seul consommateur — `NowView.openReferenced`, qui y
-// cherche une entrée PAR SON NOM (NowView.svelte:21) — et n'alimente aucune liste rendue ;
-// les cartes parcourables viennent de `RESOURCE_FILES`, une par fichier. Le défaut était
-// donc LATENT : une scène qui invoque `@resolves` ouvrait la chaîne « scale » comme si
-// c'était un catalogue, au lieu de la note « rien à parcourir ici ». Réel, invisible.
-//
-// LA NATURE REMPLACE LE NOM : une entrée de catalogue est un OBJET, un champ de catalogue
-// est une chaîne. Aucun renommage ne peut casser un filtre qui ne nomme rien.
-//
-// La règle du blanc souligné initial RESTE, et elle se garde CONTRE un cas qui n'est plus
-// là. Mesuré le 2026-08-24 sur les 26 librairies publiées : UNE seule clé à blanc souligné
-// est encore un OBJET, `mapping._comment` — et son catalogue sort du paquet (décision
-// `2026-08-24-une-place-qui-ne-porte-aucune-donnee-n-a-pas-de-fichier`, 26 → 25). Les deux
-// autres que ce commentaire nommait ont disparu avant : `temperaments._comment` (clé
-// absente) et `mod._comment_curve` (catalogue archivé le 2026-08-23, ce que l'en-tête de ce
-// fichier dit déjà). ⛔ La nature seule — objet contre chaîne — ne suffit donc PAS à tenir
-// le filtre : elle est aujourd'hui vraie par accident, et le blanc souligné est ce qui
-// reste vrai quand un catalogue réécrit sa prose en objet.
-//
-// ⛔⛔ L'ACCIDENT A CESSÉ LE 2026-08-31, ET IL A COÛTÉ UNE FICHE FANTÔME. Un catalogue porte
-// désormais un champ de SOMMET dont la valeur est un TABLEAU DE CHAÎNES — `apporte: ["types"]`,
-// et `core.apporte` en liste neuf. ⛔ EN JAVASCRIPT UN TABLEAU EST UN OBJET : `typeof [] vaut
-// 'object'`, donc l'ancienne forme du prédicat rendait `true` et `apporte` devenait une carte
-// parcourable au milieu des gammes. Mesuré au paquet publié : `scales` rendait 186 fiches dont
-// une était `apporte` — l'arithmétique le disait déjà (186 entrées, 185 portant `_derive`) sans
-// que personne la lise. ⇒ UNE ENTRÉE EST UN OBJET SIMPLE. Le tableau sort par sa nature, comme
-// la chaîne, et aucun renommage de champ de sommet ne peut rouvrir ce trou.
-function isMetaKey(k: string): boolean {
-  return k.startsWith('_');
+/** Une famille par son mot d'invocation — et un mot que la porte ne sert pas est une EXCEPTION,
+ *  jamais une liste vide. C'est le mode d'échec que bpscript a nommé le 2026-08-30 (« tout code qui
+ *  lit une adresse retirée rend `undefined`, sans erreur ») et que `LIBS.mod` avait déjà joué ici :
+ *  une carte affichée sur un catalogue absent, sans un rouge. */
+function familleOuCrie(mot: string): Famille {
+  const f = famille(mot);
+  if (f === null)
+    throw new Error(
+      `la porte des objets de bpscript ne sert aucune famille « ${mot} » — l'amont l'a retirée ou ` +
+        'renommée. Corriger le MOT, jamais afficher une carte vide.'
+    );
+  return f;
 }
 
-type NamedCatalog = Record<string, unknown>;
-
-/** Une entrée EST un objet SIMPLE. Ce prédicat est la moitié durable du filtre : il classe par
- *  la NATURE de la valeur, jamais par le nom du champ — un nom se périme sans rougir.
- *  ⛔ Le tableau est exclu explicitement : il est un objet pour le langage, et un champ de
- *  catalogue pour l'amont. Sans cette ligne, tout champ de sommet à valeur de liste devient
- *  une fiche. */
-export function estUneEntree(valeur: unknown): boolean {
-  return typeof valeur === 'object' && valeur !== null && !Array.isArray(valeur);
+/** Le libellé court d'un objet, lu dans ce qu'il déclare : sa description, ou sa culture pour les
+ *  gammes. Aucune prose inventée — un objet qui n'en porte pas montre son seul nom. */
+function libelle(membres: Record<string, unknown>): string | undefined {
+  const { description, culture } = membres;
+  if (typeof description === 'string') return description;
+  if (typeof culture === 'string') return culture;
+  return undefined;
 }
 
-export function entriesFromNamedCatalog(catalog: NamedCatalog): ResourceEntry[] {
-  return Object.keys(catalog)
-    .filter((k) => !isMetaKey(k) && estUneEntree(catalog[k]))
-    .map((id) => {
-      const v = catalog[id] as { description?: unknown; culture?: unknown } | undefined;
-      const desc = v && typeof v === 'object' ? v.description : undefined;
-      const culture = v && typeof v === 'object' ? v.culture : undefined;
-      const label =
-        typeof desc === 'string' ? desc : typeof culture === 'string' ? culture : undefined;
-      return { id, label, data: catalog[id] };
-    });
+/** Une entrée par objet de la famille — l'objet entier est la donnée ouverte en lecture seule :
+ *  son nom, ce dont il dérive, ses membres, sa place, sa chaîne d'invocation. */
+function entreeDObjet(o: Objet): ResourceEntry {
+  return { id: o.nom, label: libelle(o.membres), data: o };
 }
 
-// Percussion SOUND is no longer in Kanopi (RA-6 / décision Romain): the synthesis
-// (`tabla_perc.json` + the synth) moved out with the deleted audio output. The tabla
-// ALPHABET (bols) + grammars stay as language content — bols are writable but MUTE
-// until the alphabet→sound-backtick model is rebuilt. So no sound resources here.
-function soundEntries(): ResourceEntry[] {
-  return [];
-}
-
-// A bpscript library module (`core`) → a browsable entry.
-// `description`/`name` is the label when present; the whole JSON is the content.
-function moduleEntry(id: string, json: unknown): ResourceEntry {
-  const j = json as { description?: unknown; name?: unknown; type?: unknown } | undefined;
-  const label =
-    (j && typeof j.description === 'string' && j.description) ||
-    (j && typeof j.type === 'string' && j.type) ||
-    undefined;
-  return { id, label: label || undefined, data: json };
+function groupeDeFamille(mot: string, title: string): ResourceGroup {
+  return { type: mot, title, entries: familleOuCrie(mot).entrees.map(entreeDObjet) };
 }
 
 /** All resource libraries, grouped by type. Computed once at module load. */
 export const RESOURCE_GROUPS: ResourceGroup[] = [
+  // `core` s'invoque NU — il apporte le socle (LANGUAGE.md § « Invoquer »). Ce qu'une scène
+  // référence est donc la famille entière, sous son propre nom : une entrée `core` dont la
+  // donnée est la famille, comme `devices` référence toute la librairie sous `all`.
   {
-    type: 'module',
-    title: 'Modules (langage)',
-    entries: [moduleEntry('core', coreJson)]
+    type: 'core',
+    title: 'Core (socle)',
+    entries: [
+      (() => {
+        const f = familleOuCrie('core');
+        return { id: f.nom, label: libelle(f.membres), data: f };
+      })()
+    ]
   },
-  {
-    type: 'alphabet',
-    title: 'Alphabets',
-    entries: entriesFromNamedCatalog(alphabetsJson as NamedCatalog)
-  },
-  {
-    type: 'tuning',
-    title: 'Tunings',
-    entries: entriesFromNamedCatalog(tuningsJson as NamedCatalog)
-  },
-  {
-    type: 'temperament',
-    title: 'Temperaments',
-    entries: entriesFromNamedCatalog(temperamentsJson as NamedCatalog)
-  },
-  {
-    type: 'scale',
-    title: 'Scales',
-    entries: entriesFromNamedCatalog(scalesJson as NamedCatalog)
-  },
-  {
-    type: 'octaves',
-    title: 'Octaves',
-    entries: entriesFromNamedCatalog(octavesJson as NamedCatalog)
-  },
-  {
-    type: 'sound',
-    title: 'Sounds',
-    entries: soundEntries()
-  },
+  groupeDeFamille('alphabet', 'Alphabets'),
+  groupeDeFamille('tuning', 'Tunings'),
+  groupeDeFamille('temperament', 'Temperaments'),
+  groupeDeFamille('scale', 'Scales'),
+  groupeDeFamille('octaves', 'Octaves'),
+  groupeDeFamille('sound', 'Sounds'),
   {
     type: 'audio-bank',
     title: 'Audio banks',
@@ -210,21 +140,22 @@ export const RESOURCE_GROUPS: ResourceGroup[] = [
 
 // --- Real library FILES, grouped BY LANGUAGE (Romain/architecte 2026-07-16) ---
 //
-// RESOURCE_GROUPS above splits each catalog file into one card per NAMED entry
-// inside it (`western`, `sargam`… are entries INSIDE `LIBS.alphabets`) — kept
+// RESOURCE_GROUPS above splits each family into one card per NAMED entry
+// inside it (`western`, `sargam`… are entries INSIDE the `alphabet` family) — kept
 // only because NowView's "Libraries used" panel must open the ONE entry a
-// scene actually references (`alphabet.western` → just that sub-object).
+// scene actually references (`alphabet.western` → just that object).
 //
 // Factory's "Libraries" browser is a different concern: it lists the real
-// FILES/entries a language ships. Previous cut grouped by "who ships the file"
+// libraries a language ships. Previous cut grouped by "who ships the file"
 // (bpscript/lib vs Kanopi's own) — two groups, too coarse once bp3/strudel/
 // mercury/hydra/p5 each got their own real, separately-browsable entries.
 // Grouping is now by LANGUAGE: which language's catalog a card belongs to —
 // a real fact per source (which import/registry it came from), same class of
 // "this is our own data, we may name it" reasoning the old `domainOverride`
 // already used for Kanopi's own catalogs ([726]):
-//   - `bpscript` — the upstream BPScript pitch/function catalogs (one card per
-//     whole file, as before).
+//   - `bpscript` — the upstream families, one card per INVOCATION WORD (the
+//     word a scene writes — `alphabet`, `tuning`, `function`… — never the name
+//     of the file that happens to carry it).
 //   - `bp3`      — one card per `-se.<name>` auxiliary settings file bundled
 //     for the BP3 grammars (BUNDLED_SE, reused verbatim from bp3-aux.ts).
 //   - `strudel` / `mercury` — one card per `guestLibraries` entry, grouped by
@@ -267,10 +198,17 @@ function describeFile(json: unknown): string | undefined {
   return undefined;
 }
 
-/** A whole-file card (bpscript catalogs, Kanopi's own catalogs): id doubles as
- *  the display name, description read straight off the file's own content. */
+/** A whole-file card (Kanopi's own catalogs): id doubles as the display name,
+ *  description read straight off the file's own content. */
 function libraryFile(id: string, data: unknown, language: string): LibraryFile {
   return { id, name: id, description: describeFile(data), language, data };
+}
+
+/** One card per upstream FAMILY, under the word a scene invokes it by. The
+ *  family — its root members and every object it declares — is the content. */
+function carteDeFamille(mot: string): LibraryFile {
+  const f = familleOuCrie(mot);
+  return { id: f.nom, name: f.nom, description: libelle(f.membres), language: 'bpscript', data: f };
 }
 
 /** One card per bundled BP3 `-se.<name>` auxiliary settings file — same source
@@ -306,19 +244,19 @@ function visualFile(v: VisualItem): LibraryFile {
   return { id: v.id, name: v.name, description: v.description, language: v.runtimes[0], data: v };
 }
 
-/** One card per REAL library file/entry (Factory › Libraries browser), grouped
- *  by LANGUAGE. `LIBS.core` is EXCLUDED (architecte [726]): it is the LANGUAGE
+/** One card per REAL library (Factory › Libraries browser), grouped by
+ *  LANGUAGE. `core` is EXCLUDED (architecte [726]): it is the LANGUAGE
  *  SCHEMA (core: base defaults + reserved vocabulary), NOT a browsable
- *  library. It stays in RESOURCE_GROUPS below for NowView (a scene that
+ *  library. It stays in RESOURCE_GROUPS above for NowView (a scene that
  *  references core still surfaces it as "used"). */
 export const RESOURCE_FILES: LibraryFile[] = [
-  // bpscript — language pitch/function catalogs.
-  libraryFile('alphabets', alphabetsJson, 'bpscript'),
-  libraryFile('tunings', tuningsJson, 'bpscript'),
-  libraryFile('temperaments', temperamentsJson, 'bpscript'),
-  libraryFile('scales', scalesJson, 'bpscript'),
-  libraryFile('octaves', octavesJson, 'bpscript'),
-  libraryFile('digital', digitalJson, 'bpscript'),
+  // bpscript — one card per family, under its invocation word.
+  carteDeFamille('alphabet'),
+  carteDeFamille('tuning'),
+  carteDeFamille('temperament'),
+  carteDeFamille('scale'),
+  carteDeFamille('octaves'),
+  carteDeFamille('function'),
   // bp3 — one card per bundled `-se.<name>` auxiliary settings file.
   ...Object.entries(BUNDLED_SE).map(([name, raw]) => bp3AuxFile(name, raw)),
   // strudel + mercury — one card per guestLibraries entry (engine = language).

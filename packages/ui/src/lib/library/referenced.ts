@@ -47,13 +47,14 @@ const DIRECTIVE_TYPES: Record<string, { type: string; typeLabel: string }> = {
   // Une scène qui l'écrit encore ne compile plus : elle tombe donc dans le repli-texte, où
   // cette entrée l'aurait affichée comme un appareil valide au panneau des ressources.
   devices: { type: 'device', typeLabel: 'devices' },
-  // `core` / `controls` / `filter` are bare module directives (no
-  // sub-reference): they pull in a BPScript library — core grammar functions, the
-  // control terminals (`vel:`/`wave:`…), the CV filter library (`filter.adsr(…)`).
-  // They carry no name in subkey/runtime, so their own directive name IS the
-  // referenced module — surfaced so the "libraries used" list shows them like any
-  // other dependency.
-  core: { type: 'module', typeLabel: 'module' },
+  // `core` s'invoque NU : il apporte le socle (LANGUAGE.md § « Invoquer », EBNF
+  // `library_invocation = "core" | LIBRARY "." entry_name`). Il ne porte aucun nom en
+  // subkey/runtime, donc son propre mot EST la librairie référencée — affichée au panneau
+  // comme n'importe quelle autre dépendance, sous le mot du langage pour cette chose : une
+  // LIBRAIRIE. ⛔ Ce n'est PAS un « module » : dans le langage, un module est un calque
+  // inséré entre un terminal et sa sortie (EBNF § 4.13), et l'étiquette qui le disait ici
+  // nommait la mauvaise notion — relevée sur une capture d'écran le 2026-09-02.
+  core: { type: 'core', typeLabel: 'library' },
   controls: { type: 'module', typeLabel: 'module' },
   filter: { type: 'module', typeLabel: 'module' }
 };

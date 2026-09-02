@@ -44,23 +44,16 @@ describe('les entrées affichées dans mes listes de ressources', () => {
 
   // ⛔ UNE ADRESSE QUI CESSE DE RÉSOUDRE, ET C'EST LA SEULE DES DEUX FORMES QUI SE TAIT.
   //
-  // J'adresse sept catalogues du paquet de bpscript par une clé écrite en dur — `LIBS.alphabets`,
-  // `…tunings`, `…temperaments`, `…scales`, `…octaves`, `…core`, `…digital`. Ces clés sont
-  // aujourd'hui le NOM DU FICHIER amont, et elles deviendront le MOT qui invoque la librairie
-  // (décision `2026-08-29-le-paquet-publie-les-prototypes-et-un-catalogue-est-un-objet-distinct`).
-  // Chaque clé qui change est une adresse de plus qui rend `undefined`.
+  // Ce fichier adressait sept catalogues du paquet de bpscript par une clé écrite en dur — le NOM
+  // DU FICHIER amont. `digital` n'existait QUE comme carte de fichier entier : sa disparition
+  // rendait une carte au contenu vide, sans une seule assertion rouge — exactement ce qu'a fait
+  // `mod` le 2026-08-23 (`LIBS.mod` passé à `undefined`, la carte restée affichée).
   //
-  // ⇒ MESURÉ LE 2026-08-29, ET LES DEUX FORMES NE SE VALENT PAS :
-  //   · six des sept alimentent aussi `RESOURCE_GROUPS` — `entriesFromNamedCatalog(undefined)` JETTE
-  //     au chargement du module, donc tout banc qui l'importe rougit. Elles crient déjà.
-  //   · `digital` n'existe QUE comme carte de fichier entier. Sa disparition rend une carte au
-  //     contenu vide, sans une seule assertion rouge. C'est exactement ce qu'a fait `mod` le
-  //     2026-08-23 : `LIBS.mod` est passé à `undefined`, la carte est restée affichée, et rien
-  //     ne l'a signalé (cf. l'en-tête de `resources.ts`).
-  //
-  // Ce verrou porte donc sur la population qui se tait — les cartes de fichier entier — et il ne
-  // cite aucune clé : il lit la surface que je rends réellement, si bien qu'une carte ajoutée
-  // demain entre dans son assiette sans qu'on y pense.
+  // ⇒ DEPUIS LE 2026-09-02, la source est la porte des objets, adressée par le MOT qui invoque la
+  //   librairie (`alphabet`, `function`…), et un mot que la porte ne sert pas JETTE au chargement du
+  //   module (`familleOuCrie`) : tout banc qui importe `resources.ts` rougit. La forme muette a
+  //   disparu du code ; ce verrou garde la SURFACE — chaque carte amont porte un objet — pour que la
+  //   morsure ne dépende pas d'une exception que quelqu'un pourrait un jour attraper en amont d'ici.
   it('chaque carte de librairie amont porte sa donnée — une adresse qui ne résout plus est un carton vide', () => {
     const vides: string[] = [];
     let examinees = 0;

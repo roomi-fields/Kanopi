@@ -1,60 +1,63 @@
 import { describe, it, expect } from 'vitest';
-import { estUneEntree, entriesFromNamedCatalog, RESOURCE_GROUPS } from './resources';
+import { RESOURCE_GROUPS, RESOURCE_FILES } from './resources';
 
-// UN CHAMP DE SOMMET NE DEVIENT JAMAIS UNE FICHE — le verrou sur l'ABSENCE.
+// UNE FICHE VIENT D'UN OBJET QUE LA LIBRAIRIE DÉCLARE, JAMAIS D'UN CHAMP DE SOMMET — le verrou
+// sur l'ABSENCE, retourné sur la porte des objets.
 //
-// ⛔ CE QU'IL RATTRAPE, ET CE N'ÉTAIT PAS UNE HYPOTHÈSE. Le 2026-08-31, `apporte: ["types"]` est
-// arrivé au SOMMET des catalogues de l'amont. Le filtre classait par la NATURE de la valeur —
-// « une entrée est un objet, un champ de catalogue est une chaîne » — et EN JAVASCRIPT UN TABLEAU
-// EST UN OBJET. `apporte` franchissait donc le filtre et s'affichait comme une gamme parcourable
-// au milieu des 185 vraies. Rien ne rougissait : un filtre qui laisse passer une entrée de trop a
-// exactement la même forme qu'un filtre qui n'avait rien à écarter.
+// ⛔ CE QU'IL A RATTRAPÉ DEUX FOIS, ET CE N'ÉTAIT PAS UNE HYPOTHÈSE. Quand ce fichier lisait la table
+// de fichiers de l'amont, un filtre écartait les champs de sommet du catalogue par leur NATURE.
+// `resolves` (une chaîne, 2026-08-10) puis `apporte` (un tableau, 2026-08-31 — et en JavaScript un
+// tableau est un objet) l'ont franchi, et une gamme fantôme s'est affichée au milieu des 185 vraies.
+// Rien ne rougissait : un filtre qui laisse passer une entrée de trop a exactement la même forme
+// qu'un filtre qui n'avait rien à écarter.
 //
-// ⚠️ CE BANC NE NOMME PAS `apporte` COMME MOTIF, et c'est délibéré : un verrou bâti sur le nom du
-// champ du jour se périme au prochain renommage de l'amont, sans rougir — c'est précisément la
-// faute que la version qui nommait `domain` avait déjà commise ici. Il verrouille la NATURE.
-describe('une fiche de catalogue vient d’une entrée, jamais d’un champ de sommet', () => {
-  // Le témoin est écrit à la main : il porte les trois natures d'un coup, et il reste vrai quel
-  // que soit ce que l'amont publie ce jour-là.
-  const TEMOIN = {
-    // deux vraies entrées — un objet simple, avec et sans description
-    ionian: { description: 'la gamme majeure', degrees: [0, 2, 4, 5, 7, 9, 11] },
-    dorian: { degrees: [0, 2, 3, 5, 7, 9, 10] },
-    // les champs de SOMMET, dans les trois formes que l'amont écrit
-    documented: 'oui', // chaîne
-    apporte: ['types'], // ⛔ TABLEAU — la nature qui a produit la fiche fantôme
-    _comment: ['une prose de catalogue'] // blanc souligné ET tableau : les deux moitiés
-  };
+// ⇒ DEPUIS LE 2026-09-02, LE FILTRE N'EXISTE PLUS : la porte `bpscript/objets` rend `entrees`, une
+// population d'objets sans champ de sommet. Ce banc ne prouve donc plus un prédicat — il prouve
+// que la porte tient ce contrat SUR LA DONNÉE DU JOUR, ce qui est la seule chose que l'amont peut
+// encore casser. Il ne nomme aucun champ : un verrou bâti sur le nom du jour se périme au prochain
+// renommage, sans rougir.
+describe('une fiche de catalogue vient d’un objet déclaré, jamais d’un champ de sommet', () => {
+  const FAMILLES = ['alphabet', 'tuning', 'temperament', 'scale', 'octaves', 'sound'];
+  const groupes = RESOURCE_GROUPS.filter((g) => FAMILLES.includes(g.type));
 
-  it('exclut le tableau par sa NATURE, comme la chaîne', () => {
-    expect(estUneEntree(['types'])).toBe(false);
-    expect(estUneEntree('temperament')).toBe(false);
-    expect(estUneEntree(null)).toBe(false);
-    // ⚠️ LE CONTRÔLE INVERSE — sans lui, un prédicat qui refuserait TOUT passerait les trois
-    // lignes ci-dessus et viderait la bibliothèque en restant vert.
-    expect(estUneEntree({ degrees: [0, 2, 4] })).toBe(true);
+  it('chaque famille est là, et aucune n’est vide — un paquet illisible rendrait zéro fiche', () => {
+    // ANTI-VACUITÉ sur les DEUX bouts : six familles, et aucune vide. Sans ce plancher, une porte
+    // muette rendrait zéro fiche et le banc dirait « aucune fiche fautive ».
+    expect(groupes.map((g) => g.type)).toEqual(FAMILLES);
+    for (const g of groupes) expect(g.entries.length, `famille ${g.type} vide`).toBeGreaterThan(0);
   });
 
-  it('ne rend que les deux vraies entrées du témoin', () => {
-    const ids = entriesFromNamedCatalog(TEMOIN).map((e) => e.id);
-    expect(ids).toEqual(['ionian', 'dorian']);
+  it('chaque fiche est un OBJET nommé, dont la donnée porte ses membres', () => {
+    const fautives = groupes.flatMap((g) =>
+      g.entries
+        .filter((e) => {
+          const o = e.data as { nom?: unknown; membres?: unknown } | null;
+          return (
+            Array.isArray(e.data) ||
+            typeof o !== 'object' ||
+            o === null ||
+            typeof o.nom !== 'string' ||
+            typeof o.membres !== 'object' ||
+            o.membres === null
+          );
+        })
+        .map((e) => `${g.type}.${e.id}`)
+    );
+    expect(fautives).toEqual([]);
   });
 
-  // ⛔ ET LE MÊME VERROU SUR LA DONNÉE RÉELLE : le témoin prouve le prédicat, il ne prouve pas que
-  // l'amont d'aujourd'hui passe par lui. Une fiche dont la donnée est un TABLEAU est, par
-  // construction, un champ de sommet qui a franchi le filtre.
-  it('aucune fiche de l’amont ne porte un tableau pour donnée', () => {
-    const catalogues = RESOURCE_GROUPS.filter((g) =>
-      ['alphabet', 'tuning', 'temperament', 'scale', 'octaves'].includes(g.type)
-    );
-    // ANTI-VACUITÉ sur les DEUX bouts : cinq catalogues, et aucun vide. Sans ce plancher, un
-    // paquet illisible rendrait zéro fiche et le banc dirait « aucune fiche fautive ».
-    expect(catalogues).toHaveLength(5);
-    for (const g of catalogues) expect(g.entries.length).toBeGreaterThan(0);
-
-    const fautives = catalogues.flatMap((g) =>
-      g.entries.filter((e) => Array.isArray(e.data)).map((e) => `${g.type}.${e.id}`)
-    );
+  it('aucune fiche ne porte le nom d’un membre de RACINE de sa famille', () => {
+    // C'est la forme exacte du défaut d'avant : un champ de sommet du catalogue (`resolves`,
+    // `apporte`, `documented`…) pris pour une entrée. La racine de la famille vit sur la carte de
+    // fichier entier ; ses clés et les noms des fiches doivent être disjoints.
+    const fautives: string[] = [];
+    for (const g of groupes) {
+      const carte = RESOURCE_FILES.find((f) => f.language === 'bpscript' && f.id === g.type);
+      const racine = (carte?.data as { membres?: Record<string, unknown> } | undefined)?.membres;
+      if (!racine) continue; // `sound` n'a pas de carte de fichier entier (voir RESOURCE_FILES)
+      const clesDeRacine = new Set(Object.keys(racine));
+      for (const e of g.entries) if (clesDeRacine.has(e.id)) fautives.push(`${g.type}.${e.id}`);
+    }
     expect(fautives).toEqual([]);
   });
 });
