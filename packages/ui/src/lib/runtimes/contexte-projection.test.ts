@@ -38,7 +38,7 @@ const CODE = SOURCE.split('\n')
   .join('\n');
 
 /** Les clés que porte le contexte de projection, au-delà de ce que BPx construit. */
-const CATALOGUES = ['digitalLib:', 'homomorphismeLib:', 'modulation:'];
+const CATALOGUES = ['homomorphismeLib:', 'modulation:'];
 
 describe('le contexte de projection a UNE source, pas trois', () => {
   it('la fabrique existe (sinon ce garde mesurerait le vide)', () => {
@@ -75,10 +75,13 @@ describe('le contexte de projection a UNE source, pas trois', () => {
   // Le cas qui verrouillait une PRÉSENCE ne se supprime pas, il verrouille son ABSENCE : sinon rien
   // n'empêcherait le transport de repousser — sous son nom ou sous un nom neutre — et les décisions
   // interdisent exactement cela. Le compilateur résout, l'arbre porte, l'aval lit.
-  it('et AUCUN sac de hauteur, AUCUN registre de voix, AUCUN canal personnel n’est transporté', () => {
+  // `digitalLib:` a suivi le 2026-09-03 à 01:30 (kairos `3a7be2d` lit `function.<nom>` et son corps
+  // dans la section ; sonde `tryTicks`/`transpose` 16/16 sans lui). Même verrou d'absence.
+  it('et AUCUN sac de hauteur, de voix ni de fonctions, AUCUN canal personnel n’est transporté', () => {
     const suspects = [
       'pitchLib:',
       'voicesLib:',
+      'digitalLib:',
       'pitchLibMine',
       'personalPitchLib',
       'libMine',

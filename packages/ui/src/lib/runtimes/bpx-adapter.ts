@@ -43,18 +43,13 @@ type Bp3Actor = NonNullable<NonNullable<ParseBP3Result['ast']>['actors']>[number
 import { compileToBPxAST } from 'bpscript';
 // Les catalogues de HAUTEUR et le registre des VOIX ne transitent plus par l'hôte : l'arbre les
 // JOINT (`metadata.librairies`, décision de Romain du 2026-09-02) et Kairos y lit ses deux facettes
-// — voir le bloc du contexte de projection plus bas. Ce qui reste transporté ici est ce que la
-// section de l'arbre ne porte pas : les fonctions numériques, les homomorphismes.
-// Lib de FONCTIONS DIGITALES fournie (KAI-B03) : Kairos applique ces fonctions TS déterministes
-// (ex. `transpose`) à la projection. Donnée read-only fournie par l'hôte (3 provenances) ; sans
-// elle Kairos retombe sur un repli hérité hardcodé.
-// SOURCE : le `body` (code TS de chaque fonction) vit hors de la DÉCLARATION du catalogue, qui n'en
-// porte que la signature. `captureDigitalBodies` (bpscript, `libs-bundle.js`) le capte depuis
-// `lib/digital/<fn>.ts` et le grave dans le paquet. On consomme donc `LIBS.digital`, avec le body.
+// — voir le bloc du contexte de projection plus bas. Les fonctions numériques (`function.<nom>`,
+// avec leur corps) y sont jointes aussi depuis kairos `3a7be2d` (2026-09-03). Ce qui reste
+// transporté ici est ce que la section de l'arbre ne porte pas encore : les homomorphismes.
 // ⛔ ON NOMME LA PORTE (`LIBS.<clé>`), JAMAIS LE FICHIER SOURCE : bpscript convertit ses catalogues
-//   de `.json` vers `.bpsl` au fil (`alphabets`, `settings`, `digital` le 2026-08-23). Le format
-//   d'une source n'est pas une information utile ici — la donnée est dans le paquet quel qu'il soit.
-//   Sept lecteurs se sont rendus aveugles en énumérant `lib/` par extension, dont le générateur.
+//   de `.json` vers `.bpsl` au fil. Le format d'une source n'est pas une information utile ici — la
+//   donnée est dans le paquet quel qu'il soit. Sept lecteurs se sont rendus aveugles en énumérant
+//   `lib/` par extension, dont le générateur.
 import {
   createSession,
   renderChain,
@@ -93,7 +88,6 @@ import { createMidiRuntime } from 'runtime-midi';
 // joined by BPscript at compilation — décision du 2026-09-02). Kanopi RESOLVES NOTHING, runs
 // NO resolver and transports NO pitch catalogue — it only READS the graven facets. The host
 // imports ZERO of the pitch module (logic AND type).
-import { type DigitalLib } from '@kairos/core';
 // Tree-derived dispatch events (M5+ multi-actor refacto): flatten the tree of
 // `derive()` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
@@ -220,15 +214,12 @@ import routingJson from '../../../../library/routing.json';
 // `pitchLib` et `voicesLib` sortent ensemble sur ce témoin non nul. `facettes-de-kairos.test.ts`
 // verrouille l'ARRIVÉE des deux facettes par ma chaîne : s'il rougit, le retrait est faux ici.
 //
-// `digitalLib` et `homomorphismeLib` restent transportés — la section ne les porte pas, kairos les
-// lit dans le contexte.
-
-// The provided DIGITAL function library (catalogue `digital` de `bpscript/libs-data`), handed to Kairos as the
-// read-only `ctx.digitalLib`. Kairos applies these deterministic
-// TS functions (e.g. `transpose`) AT PROJECTION (KAI-B03); the host supplies the DATA and runs no
-// function itself. Without it Kairos falls back to its legacy hardcoded transpose. `_comment` doc
-// keys → cast through `unknown`. Personal/community digital libs overlay here later (3 provenances).
-const DIGITAL_LIB: DigitalLib = LIBS.digital as unknown as DigitalLib;
+// `digitalLib` est sorti à son tour le 2026-09-03 à 01:30 : kairos `3a7be2d` (reconstruit 01:23:58)
+// lit `function.<nom>` et son corps dans la section ; ma sonde SANS `digitalLib` rend `tryTicks`
+// (`transpose`) 16 notes / 16 hauteurs, comme avec. Reste `homomorphismeLib`, et lui seul : la
+// section joint les tables de l'homomorphisme mais pas la fonction qui les applique — BPscript a
+// proposé un membre `function:` sur le prototype à Romain ; kairos bascule à son mot, moi après ma
+// sonde.
 
 // HomomorphismLib (`lib/homomorphism`, fonction `substitute`) — jumelle structurelle de `digital` :
 // on consomme `LIBS.homomorphism` (AVEC le `body` TS capté depuis `lib/homomorphism/substitute.ts`
@@ -272,8 +263,7 @@ export function contexteDeProjection(base: unknown): Parameters<Kairos['charger'
     // ⛔ NI `pitchLib` NI `voicesLib` : la hauteur et la voix se lisent dans `metadata.librairies`
     // de l'arbre, jointes par BPscript à la compilation (décision du 2026-09-02 ; retrait mesuré
     // sur ma chaîne le 2026-09-03 — voir le bloc plus haut).
-    // KAI-B03 — fonctions numériques fournies (transpose &c.).
-    digitalLib: DIGITAL_LIB,
+    // NI `digitalLib` : les fonctions numériques se lisent dans la section depuis kairos `3a7be2d`.
     // ⛔ LE CATALOGUE D'ACTIONS N'EST PLUS FOURNI : Romain a tranché le 2026-08-30 — « cv gate trig
     // sont obsoletes a supprimer », « il n'y a plus de cablage ca n'existe plus ». Le patching sort,
     // et avec lui l'appel-composant que ce catalogue servait à classer. L'hôte ne transporte pas un
