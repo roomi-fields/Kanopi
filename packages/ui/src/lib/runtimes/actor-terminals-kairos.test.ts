@@ -9,6 +9,7 @@ import { sceneQuiPasse } from '../library/scene-de-banc';
 import { createSession } from 'bpx';
 import { Kairos } from '@kairos/core';
 import type { Timeline } from '@kronos/core';
+import { contexteDeProjection } from './bpx-adapter';
 
 // Two actors that SHARE a terminal: both `lead` and `bass` play `C4`. The shared token
 // must survive in the actor-terminals set (the regression we guard against).
@@ -43,11 +44,15 @@ describe('actorTerminals sourced from the Kairos timeline', () => {
     const session = createSession(ast!, { seed: 1 });
     const tree = session.derive().tree;
 
-    // Build the Kairos timeline the same way the adapter does (charger → arbreCourant).
+    // Build the Kairos timeline the same way the adapter does (charger → arbreCourant) — PAR LA
+    // FABRIQUE DE PRODUCTION, jamais un contexte recopié. Ce banc tendait le contexte NU de BPx ;
+    // tant que Kairos ne branchait la hauteur que sur un sac `pitchLib`, l'absence de `digitalLib`
+    // passait. Depuis qu'il lit la section de l'arbre (`8d8d50a`, 2026-09-03), il branche la hauteur
+    // et exige la lib de fonctions — un câblage partiel qui crie enfin, et c'était le sien à copier.
     const kairos = new Kairos();
     kairos.charger(
       tree as unknown as Parameters<Kairos['charger']>[0],
-      session.buildProjectionContext() as unknown as Parameters<Kairos['charger']>[1]
+      contexteDeProjection(session.buildProjectionContext())
     );
     const fromKairos = actorTerminalsFromKairos(kairos.arbreCourant());
 

@@ -3,9 +3,9 @@ import { describe, it, expect } from 'vitest';
 // LES CATALOGUES DE PROJECTION ONT UNE SEULE SOURCE — le garde qui empêche les copies de revenir.
 //
 // ⛔ CE QU'IL FERME, et c'est moi qui l'ai mesuré avant de le subir : les catalogues de projection
-// (hauteurs, numérique, voix, homomorphisme, modulation) étaient RECOPIÉS À LA MAIN sur TROIS
-// sites — l'évaluation, la mise à jour vivante, le re-tirage de boucle. Trois listes à tenir
-// d'accord, et rien pour le vérifier.
+// (numérique, homomorphisme, modulation — et la hauteur et la voix, tant que l'hôte les
+// transportait) étaient RECOPIÉS À LA MAIN sur TROIS sites — l'évaluation, la mise à jour vivante,
+// le re-tirage de boucle. Trois listes à tenir d'accord, et rien pour le vérifier.
 //
 // POURQUOI UN GARDE PLUTÔT QU'UNE RELECTURE : un câblage PARTIEL NE CRIE PAS. Kairos refuse
 // bruyamment quand rien n'est branché — mais un catalogue manquant sur UN des trois sites fait
@@ -37,15 +37,8 @@ const CODE = SOURCE.split('\n')
   .filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*'))
   .join('\n');
 
-/** Les clés que porte le contexte de projection, au-delà de ce que BPx construit.
- *
- *  ⚠️ `pitchLib:` EST VOUÉ AU RETRAIT ET ENCORE LÀ. Décision de Romain du 2026-09-02 : l'arbre
- *  joint le contenu des librairies qu'il invoque, l'hôte cesse de transporter le sac. Mesuré le
- *  soir même sur MA chaîne, sans le sac : hz=0 sur trois notes — le `dist` de kairos que j'exécute
- *  ne lit pas encore la section. Le jour où `facettes-de-kairos.test.ts` rend hz>0 SANS le sac, la
- *  clé sort d'ici et rejoint les ABSENCES verrouillées plus bas. Pas avant, quoi qu'une
- *  confirmation reçue en dise. */
-const CATALOGUES = ['pitchLib:', 'digitalLib:', 'voicesLib:', 'homomorphismeLib:', 'modulation:'];
+/** Les clés que porte le contexte de projection, au-delà de ce que BPx construit. */
+const CATALOGUES = ['digitalLib:', 'homomorphismeLib:', 'modulation:'];
 
 describe('le contexte de projection a UNE source, pas trois', () => {
   it('la fabrique existe (sinon ce garde mesurerait le vide)', () => {
@@ -64,23 +57,39 @@ describe('le contexte de projection a UNE source, pas trois', () => {
     });
   }
 
-  // ⛔ LE VERROU RETOURNÉ. Ce fichier tenait une clé de plus, `pitchLibMine:` — un canal dédié aux
-  // librairies personnelles. Il est sorti le 2026-08-20 : « il ne doit y avoir strictement aucune
-  // particularité relative aux librairies personnelles, et c'est le compilateur qui résout les
-  // fichiers de librairie » (décision Romain 2026-08-19), en lockstep avec Kairos qui l'a retiré de
-  // son type publié au même moment.
+  // ⛔ LE VERROU RETOURNÉ, TROIS FOIS.
   //
-  // Le cas qui verrouillait sa PRÉSENCE ne se supprime pas, il verrouille son ABSENCE : sinon rien
-  // n'empêcherait un canal de remplacement de repousser sous un nom neutre, et la décision interdit
-  // exactement cela — le compilateur résout, l'aval reçoit ce qu'il a résolu.
-  it('et AUCUN canal ne distingue une librairie personnelle', () => {
-    const suspects = ['pitchLibMine', 'personalPitchLib', 'libMine', 'mineLib'];
+  // `pitchLibMine:` — un canal dédié aux librairies personnelles — est sorti le 2026-08-20 : « il ne
+  // doit y avoir strictement aucune particularité relative aux librairies personnelles, et c'est le
+  // compilateur qui résout les fichiers de librairie » (décision Romain 2026-08-19), en lockstep
+  // avec Kairos qui l'a retiré de son type publié au même moment.
+  //
+  // `pitchLib:` et `voicesLib:` — le sac des catalogues de hauteur et le registre des voix que l'hôte
+  // tendait à Kairos — sont sortis le 2026-09-03 : « l'arbre joint le contenu des librairies qu'il
+  // invoque » (décision Romain 2026-09-02), Kairos lit `metadata.librairies` (paquet `8d8d50a`), et
+  // MA sonde (`facettes-de-kairos.test.ts`) rend hauteur et voix SANS les deux champs. Un premier
+  // retrait, la veille, sur une confirmation reçue, avait rendu trois notes muettes : le paquet
+  // exécuté gardait le sac pour porte. « L'hôte fournit les catalogues à l'utilisateur, pas aux
+  // composants de l'infrastructure. »
+  //
+  // Le cas qui verrouillait une PRÉSENCE ne se supprime pas, il verrouille son ABSENCE : sinon rien
+  // n'empêcherait le transport de repousser — sous son nom ou sous un nom neutre — et les décisions
+  // interdisent exactement cela. Le compilateur résout, l'arbre porte, l'aval lit.
+  it('et AUCUN sac de hauteur, AUCUN registre de voix, AUCUN canal personnel n’est transporté', () => {
+    const suspects = [
+      'pitchLib:',
+      'voicesLib:',
+      'pitchLibMine',
+      'personalPitchLib',
+      'libMine',
+      'mineLib'
+    ];
     const poses = suspects.filter((c) => CODE.includes(c));
     expect(
       poses,
-      'un canal dédié aux librairies personnelles est reposé dans bpx-adapter.ts. Aucune ' +
-        'particularité ne les distingue : le compilateur résout les fichiers de librairie, ' +
-        "l'hôte reçoit ce qu'il a résolu — et ne monte pas un chemin neuf sous un nom neutre."
+      'un transport de hauteur ou de voix est reposé dans bpx-adapter.ts. Ces facettes se lisent ' +
+        "dans `metadata.librairies` de l'arbre ; l'hôte ne tend plus de sac à Kairos, et ne monte " +
+        'pas un chemin neuf sous un nom neutre.'
     ).toEqual([]);
   });
 

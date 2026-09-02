@@ -16,9 +16,11 @@
 // fichier qui lit une adresse de plus, et elle se périme EN VERT. Ce verrou lit la graphie que mon
 // code écrit vraiment, il la compte, et il refuse d'en avoir examiné zéro.
 import { describe, it, expect } from 'vitest';
-// MÊME porte que mes lecteurs restants (`bpx-adapter.ts`, `devices/registry.ts`) : le verrou
-// éprouve l'objet que l'application reçoit, pas une relecture du paquet par un autre chemin.
-// `resources.ts` n'en est plus un depuis le 2026-09-02 — il lit la porte des objets.
+// MÊME porte que mes lecteurs restants — `bpx-adapter.ts` (`digital`, `homomorphism`) et
+// `devices/registry.ts` (`core.schema.channels`) : le verrou éprouve l'objet que l'application
+// reçoit, pas une relecture du paquet par un autre chemin. `resources.ts` n'en est plus un depuis
+// le 2026-09-02 (il lit la porte des objets), ni le sac de hauteur et le registre des voix depuis
+// le 2026-09-03 (l'arbre les joint).
 import { LIBS } from 'bpscript/libs-data';
 
 // La source se prend par le collecteur de Vite, comme le fait déjà mon garde de corpus

@@ -41,17 +41,10 @@ import type { FileRef, SeEngineSettings, ParseBP3Result } from 'bp3-frontend';
 // nom. On dérive donc l'acteur de ce qu'il publie vraiment — l'arbre de `parseBP3`.
 type Bp3Actor = NonNullable<NonNullable<ParseBP3Result['ast']>['actors']>[number];
 import { compileToBPxAST } from 'bpscript';
-// Les catalogues de HAUTEUR ne transitent plus par l'hôte : l'arbre les JOINT (`metadata.librairies`,
-// décision de Romain du 2026-09-02) — voir le bloc du contexte de projection plus bas. Ce qui reste
-// transporté ici est ce que la section de l'arbre ne porte pas : les voix, les fonctions
-// numériques, les homomorphismes.
-// Registre des VOIX (`LIBS.voices`, domaine 'voice' — LANG-SONS-3, résolution voix Kairos
-// 79118df) : jumelle de `digitalLib`, donnée read-only fournie par l'hôte (L26).
-// Kairos RÉSOUT terminal→voix (réf de l'acteur / binding d'alphabet), cascade `for:<device>`,
-// et grave `content.voice`. ABSENT ⇒ pas de facette voix (rétro-compat : oscillateur du runtime).
-// L'hôte TRANSPORTE le registre, il ne l'interprète pas. Le RENDU du backtick de voix (aval,
-// runtime-audio) est tenu jusqu'à l'étude son [828] — ici c'est la plomberie de l'injection.
-const voicesJson = LIBS.voices;
+// Les catalogues de HAUTEUR et le registre des VOIX ne transitent plus par l'hôte : l'arbre les
+// JOINT (`metadata.librairies`, décision de Romain du 2026-09-02) et Kairos y lit ses deux facettes
+// — voir le bloc du contexte de projection plus bas. Ce qui reste transporté ici est ce que la
+// section de l'arbre ne porte pas : les fonctions numériques, les homomorphismes.
 // Lib de FONCTIONS DIGITALES fournie (KAI-B03) : Kairos applique ces fonctions TS déterministes
 // (ex. `transpose`) à la projection. Donnée read-only fournie par l'hôte (3 provenances) ; sans
 // elle Kairos retombe sur un repli hérité hardcodé.
@@ -98,9 +91,9 @@ import { createMidiRuntime } from 'runtime-midi';
 // in KAIROS: it OWNS the pitch module and GRAVES `content.pitch.hz` + `content.sounds`
 // per note (KAI-10), from the library contents the TREE carries (`metadata.librairies`,
 // joined by BPscript at compilation — décision du 2026-09-02). Kanopi RESOLVES NOTHING, runs
-// NO resolver — it only READS the graven facets. ⚠️ Le sac `pitchLib` est ENCORE tendu, voir le
-// bloc du contexte de projection : la décision l'a retiré, ma mesure sur MA chaîne le retient.
-import { type PitchLib, type DigitalLib } from '@kairos/core';
+// NO resolver and transports NO pitch catalogue — it only READS the graven facets. The host
+// imports ZERO of the pitch module (logic AND type).
+import { type DigitalLib } from '@kairos/core';
 // Tree-derived dispatch events (M5+ multi-actor refacto): flatten the tree of
 // `derive()` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
@@ -216,26 +209,19 @@ import routingJson from '../../../../library/routing.json';
 // projection) ; une conversion `as` qui aurait rendu le compilateur muet des deux côtés. Un
 // transport qui n'existe plus n'a plus de forme à garder.
 //
-// ⛔⛔ ET POURTANT LE SAC EST ENCORE TENDU — PARCE QUE MA MESURE LE DIT, PAS PARCE QUE LA DÉCISION
-// SERAIT DISCUTÉE. Mesuré le 2026-09-02 à 22:50 sur MA chaîne — le `dist` de kairos que mon lien
-// exécute — un paquet daté du 25 AOÛT, qu il ne republie que par `npm run publier` — par
-// `contexteDeProjection` réel, même instrument, deux états :
-//     western `C4 E4 G4`   SANS sac : hz=0 sur 3 notes   AVEC sac : hz=3
-//     tabla                SANS sac : voix=0            AVEC sac : voix=3
-// La section VOYAGE (tree.metadata.librairies porte 5 et 8 clés) ; c'est le `dist` de kairos qui
-// ne la LIT pas encore — `dist/projection/projeter.js` : 0 occurrence de `librairies`, 5 de
-// `pitchLib`. Sa confirmation a été mesurée chez lui, sur un chemin qui n'est pas celui que
-// j'exécute. Le retrait se fera quand MA sonde (`facettes-de-kairos.test.ts`) rendra hz>0 SANS
-// le sac : un témoin non nul, jamais un mot reçu. Jusque-là, retirer le sac rend chaque note
-// muette sans un rouge — c'est exactement ce que ce fichier interdit.
+// ⛔ LE RETRAIT S'EST FAIT SUR UNE MESURE, PAS SUR UN MOT — et il a fallu deux temps. Le 2026-09-02
+// à 22:50, kairos m'avait confirmé deux fois que je pouvais retirer le sac ; ma sonde sur MA chaîne
+// rendait `C4 E4 G4` SANS hauteur (hz=0) dès qu'il sortait — son paquet datait du 25 août et gardait
+// `contexte.pitchLib` pour porte, quand sa source lisait déjà la section. Sac retendu. Le
+// 2026-09-03 à 00:33 il a publié `8d8d50a` (reconstruit 00:33:22, `projeter.js` lit
+// `tree.metadata.librairies` pour la hauteur ET la voix) ; ma sonde, même instrument, rejouée :
+//     western `C4 E4 G4`   SANS sac : hz=3 sur 3      AVEC sac : hz=3
+//     tabla                SANS sac : voix=3 sur 3    AVEC sac : voix=3
+// `pitchLib` et `voicesLib` sortent ensemble sur ce témoin non nul. `facettes-de-kairos.test.ts`
+// verrouille l'ARRIVÉE des deux facettes par ma chaîne : s'il rougit, le retrait est faux ici.
 //
-// `voicesLib`, `digitalLib`, `homomorphismeLib` restent transportés pour la même raison, et la
-// voix en porte la preuve ci-dessus.
-// LE SAC ENTIER, JAMAIS UNE LISTE — L35 : une librairie à nom libre est adressable, une liste
-// fermée ne voit pas la suivante (sept scènes `test_alphabets.X` crevaient à la projection).
-// L'AFFECTATION EST DIRECTE, SANS CONVERSION : le compilateur compare la forme du sac au type
-// que Kairos publie ; un `as` le rendrait muet des deux côtés de la frontière.
-const PITCH_LIB: PitchLib = LIBS;
+// `digitalLib` et `homomorphismeLib` restent transportés — la section ne les porte pas, kairos les
+// lit dans le contexte.
 
 // The provided DIGITAL function library (catalogue `digital` de `bpscript/libs-data`), handed to Kairos as the
 // read-only `ctx.digitalLib`. Kairos applies these deterministic
@@ -283,13 +269,11 @@ export function contexteDeProjection(base: unknown): Parameters<Kairos['charger'
   return {
     // Le contexte construit PAR BPx — l'hôte n'assemble AUCUN résolveur (KAI-8).
     ...(base as object),
-    // KAI-10 — catalogues de hauteur. ⚠️ VOUÉ AU RETRAIT (décision du 2026-09-02, l'arbre joint
-    // ses librairies) et ENCORE TENDU : sans lui, hz=0 sur ma chaîne — voir le bloc plus haut.
-    pitchLib: PITCH_LIB,
+    // ⛔ NI `pitchLib` NI `voicesLib` : la hauteur et la voix se lisent dans `metadata.librairies`
+    // de l'arbre, jointes par BPscript à la compilation (décision du 2026-09-02 ; retrait mesuré
+    // sur ma chaîne le 2026-09-03 — voir le bloc plus haut).
     // KAI-B03 — fonctions numériques fournies (transpose &c.).
     digitalLib: DIGITAL_LIB,
-    // LANG-SONS-3 — registre des voix (Kairos grave `content.voice`).
-    voicesLib: voicesJson,
     // ⛔ LE CATALOGUE D'ACTIONS N'EST PLUS FOURNI : Romain a tranché le 2026-08-30 — « cv gate trig
     // sont obsoletes a supprimer », « il n'y a plus de cablage ca n'existe plus ». Le patching sort,
     // et avec lui l'appel-composant que ce catalogue servait à classer. L'hôte ne transporte pas un

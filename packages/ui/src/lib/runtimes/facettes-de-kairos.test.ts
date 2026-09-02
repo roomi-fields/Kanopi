@@ -19,8 +19,10 @@ import tabla from '../../../../library/scenes/BPScript-tests/kairos-voix-tabla.b
 // alphabet occidental, la voix sur un alphabet de percussion. Un plancher > 0, jamais un compte.
 //
 // ⚠️ IL NE DIT PAS D'OÙ LA FACETTE VIENT — du sac transporté ou de la section de l'arbre. C'est
-// voulu : il verrouille l'ARRIVÉE. Le jour où le sac sort, ce banc doit rester vert SANS lui ;
-// s'il rougit, le retrait est faux sur ma chaîne, quoi qu'en dise une confirmation reçue.
+// voulu : il verrouille l'ARRIVÉE. Le sac est sorti le 2026-09-03 à 00:35, sur ce témoin rendu
+// SANS lui (kairos `8d8d50a`, reconstruit 00:33:22) : hz=3 sur 3, voix=3 sur 3. S'il rougit un
+// jour, c'est que la section a cessé d'arriver jusqu'à Kairos — chez BPx, chez kairos ou chez
+// moi — et aucune confirmation reçue ne vaut contre lui.
 
 function facettes(src: string): { notes: number; hz: number; voix: number } {
   const ast = sceneQuiPasse(src, { tempo: 120 });

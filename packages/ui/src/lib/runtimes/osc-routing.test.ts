@@ -6,6 +6,7 @@ import { sceneQuiPasse } from '../library/scene-de-banc';
 import { createSession } from 'bpx';
 import { Kairos } from '@kairos/core';
 import type { TimelineEvent } from '@kronos/core';
+import { contexteDeProjection } from './bpx-adapter';
 
 /**
  * OSC-5b — proves Kanopi's OSC branchement emits the resolved address on the right
@@ -145,10 +146,14 @@ describe('OSC address-in-the-tree (consumed bpscript/bpx copies — stale-dep gu
     const ast = sceneQuiPasse(osc, { tempo: 120 });
     const session = createSession(ast!, { seed: 1 });
     const tree = session.derive().tree;
+    // PAR LA FABRIQUE DE PRODUCTION, jamais un contexte recopié : ce banc tendait le contexte NU de
+    // BPx, sans `digitalLib`. Depuis que Kairos lit la section de l'arbre (`8d8d50a`, 2026-09-03), il
+    // branche la hauteur dès qu'elle est là et exige la lib de fonctions — un câblage partiel qui
+    // crie enfin.
     const kairos = new Kairos();
     kairos.charger(
       tree as unknown as Parameters<Kairos['charger']>[0],
-      session.buildProjectionContext() as unknown as Parameters<Kairos['charger']>[1]
+      contexteDeProjection(session.buildProjectionContext())
     );
     const tl = kairos.arbreCourant();
     const notes = [...tl.query(0, tl.duration + 1)].filter(
