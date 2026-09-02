@@ -4,7 +4,7 @@ description: >
   Oracle du langage BPScript — il répond sur la FORME du langage, telle qu'elle est spécifiée, lue à
   la référence PUBLIÉE de BPscript et citée par le fichier et le NOM DE LA SECTION, jamais par un
   numéro de ligne. Répondre de mémoire est non fiable : le langage a été refondu, et il bouge
-  encore (trois mots restent — `object`, `def`, `init` ; le **type vient en tête**, `flag
+  encore (deux mots racines restent — `def` et `init` ; le **type vient en tête**, `flag
   section:1` · `symbol x` · `in.midi sync1` ; la **position** qualifie la ligne de part
   et d'autre du délimiteur `-----` ; `transport.` est devenu `out.`/`in.` ; `sub`/`transcription` sont
   devenus `homomorphism` ; la vitesse s'écrit avec l'opérateur seul). Utilise ce skill pour TOUTE
@@ -115,16 +115,43 @@ lit aucun sens**. Le reste — les formes d'exemple, « trois mots restent », l
 se relit à la main à chaque décision de langage. **Quand cette section et les trois spécifications
 divergent, ce sont elles qui font foi.**
 
-**Trois mots restent** : `object`, `def`, `init`. Tout le reste est un **type déclaré** — `actor`,
-`terminal`.
+**Deux mots racines restent** : `def` et `init`. Tout le reste est un **type déclaré**, et le socle
+déclare ces types dans `types` comme n'importe quelle librairie déclare les siens.
+
+⛔ **UN TYPE DU SOCLE N'EST EN PORTÉE QUE S'IL EST INVOQUÉ.** Une scène qui déclare par `flag`,
+`symbol`, `control`, `addresskey`, `destination`, `enum`, `actor`, `signal`, `pitch`, `phase` ou
+`logic` **sans invoquer** `core`, `types`, ni une librairie qui invoque `types` est refusée :
+*« 'flag K1' : 'flag' n'est pas un type en portée »*. **L'invocation se lit en tête, avant la première
+déclaration** — le registre se remplit à la lecture.
+
+⚠️ **La mesure, au paquet publié `ed3d208`** : `core.schema.grammarWords.mots` porte neuf mots —
+`actor`, `core`, `def`, `in`, `init`, `mode`, `out`, `seed`, `terminal` — et **`object` n'y est plus** ;
+`core.schema.declarationTypes` et `core.schema.varConventions` **sont sortis** ; `types` porte `scale`,
+`actor`, `signal`, `pitch`, `phase`, `logic`, `control`, `addresskey`, `destination`, `enum`, `flag`,
+`symbol`. **Les mots de grammaire et les mots racines sont deux listes distinctes** : la première est
+un plancher de coloration, la seconde dit ce que le langage connaît en propre.
 
 ⛔ **CE QUI DIT QU'UN CATALOGUE DÉCLARE SES ENTRÉES PAR LEUR TYPE EST LA TRACE DE DÉRIVATION** que
 porte chaque entrée dérivée, jamais l'appartenance d'un mot à une liste. **Une minorité de catalogues
 le fait ; les autres n'en portent aucune.**
 
-⚠️ **LA LISTE DES MOTS RÉSERVÉS DU SOCLE TRANCHE POUR LA PLUPART DES MOTS, ET DEUX Y ÉCHAPPENT** —
-`def` et `actor`, qui portent leur propre forme de déclaration. La sonde est
-`<mot> essai (x:1)` en partie déclarative, témoin négatif `zorglub`.
+⛔ **UNE SONDE PAR DÉCLARATION NE MESURE PAS LA LISTE DES MOTS RÉSERVÉS — elle mesure la présence
+d'un PROTOTYPE.** Rejoué au paquet publié `0a741a0` : `alphabet essai (x:1)` et `zorglub essai (x:1)`
+tombent du **même** refus, et poser `object <mot> (scope(scene))` les fait passer **tous les deux**,
+mot réservé comme mot libre. **Un mot libre se comporte donc exactement comme un mot réservé**, dans
+les deux régimes. ⚠️ **La graphie de cette mesure est celle de son paquet** : `object` est sorti le
+2026-09-02, et le prototype s'y écrit désormais `def <mot> (scope(scene))`.
+
+⚠️ **Le témoin négatif `zorglub` ne discriminait rien** : il rendait un refus, mais de la même cause
+que les autres. *Un témoin qui refuse pour la raison qu'il devait écarter ressemble à une mesure.*
+
+⛔ **CE QUE LA LISTE FAIT N'EST PAS ÉTABLI ICI, ET CETTE FICHE NE LE DEVINE PAS.** Mesuré : à
+l'invocation, le refus d'un mot réservé et celui d'un mot libre **diffèrent**. **La cause de cet
+écart ne l'est pas** — elle a été déplacée deux fois le 2026-09-01, et l'exercer demande de muter les
+listes du compilateur, ce que cette fiche ne fait pas.
+
+⇒ **L'obstacle qui est mesuré est ailleurs** : une entrée déclarée **en scène** ne peuple jamais le
+catalogue, et c'est là que l'invocation échoue — *« alphabet 'essai' introuvable dans le catalogue »*.
 
 ⛔ **AUCUN COMPTE N'EST RECOPIÉ ICI, ET C'EST DÉLIBÉRÉ** : cette fiche est un instantané diffusé à
 seize exemplaires qui ne peut pas rougir, et un chiffre y périmerait à la première frappe de BPscript
@@ -135,15 +162,18 @@ et « `types` REGROUPE LES PROTOTYPES », et le détail dans `atlas/carte-autori
 ⛔ **Ce sont deux questions distinctes, et la liste ne répond qu'à la première** : ce que le code
 REFUSE, et ce que les catalogues FONT. **Pour la seconde, ce qui tranche est la trace de dérivation.**
 
-⚠️ **Et cette sonde se monte avec sa production** : `actor essai (x:1)` sur une production par défaut
-est refusé parce qu'un **second acteur rend `C4` ambigu** — un refus qui ne dit rien de la liste. La
-même forme avec `S -> lead.C4` compile. *Mesuré ici même, après un premier relevé qui rendait `def`
-seul.*
+⚠️ **Et toute sonde se monte avec sa production** : `actor essai (x:1)` sur une production par défaut
+est refusé parce qu'un **second acteur rend `C4` ambigu** — un refus qui ne dit rien du mot. La même
+forme avec `S -> lead.C4` compile. *Un refus se lit avant d'être compté.*
 
 **Le type vient en tête**, et la **position** qualifie la ligne, de part et d'autre du délimiteur
 `-----`. L'arobase de tête est sortie le 2026-08-16.
 
+**L'invocation vient avant toute déclaration** : un type du socle n'est en portée que s'il est
+invoqué, et le registre se remplit à la lecture.
+
 ```bpscript
+core
 flag section:1
 symbol x
 in.midi sync1
@@ -156,8 +186,10 @@ actor lead alphabet.western out.midi(ch:1)
 le nom nu est refusé, l'emploi sans déclaration aussi, et les états nommés entre parenthèses sont
 sortis.
 
-`object` est **décidé et non câblé** : `def fort (vel:100)` et `init tempo:120` passent, `object kit`
-rend un message générique.
+**`object` est SORTI du langage** (Romain, 2026-09-02 ; frappé en `3447e05`, publié). La racine d'une
+famille se déclare `def kick (vel:120)` — un nom et un sac séparé — ou `def kick` pour une racine au
+sac vide ; un exemplaire se déclare par son type en tête, `scale interval (…)`. `object x (…)` est
+refusé, avec sa réécriture.
 
 ### Le mot d'invocation est DÉCLARÉ, jamais le nom du fichier
 
@@ -196,8 +228,10 @@ mémoire, ils datent d'avant leur retrait.
 | le **type en tête** — `flag section:1`, `symbol x`, `in.midi sync1` | `var`, et les directives `flag`, `in`, `cv` |
 | `flag <nom>:<entier>`, déclaration obligatoire | les états nommés, `flag section(calm:1, full:2)`, sortis le 2026-08-22 |
 | la **position**, de part et d'autre de `-----` | l'arobase de tête |
-| `def` | `macro`, `alias`, `cc`, `label` |
+| `def` | `macro`, `alias`, `cc`, `label`, et `object` sorti le 2026-09-02 |
 | `init` | `wire` |
+| `scale`, prototype des gammes | `gamut` |
+| un geste natif est un `control` portant `bp3:` et `bpscript:false` | `native` |
 | `out.<canal>` · `in.<canal>` | `transport.<canal>` |
 | `homomorphism.<table>` | `sub.`, `transcription.` |
 | l'**opérateur** de vitesse — `(/N)`, `(*a/b)` qui vaut `/(b/a)` | `speed`, et `tempx` qui l'avait renommé |
