@@ -16,20 +16,20 @@
     "grammaires_gr": 113,
     "scenes_bps": 320,
     "scenes_hors_bibliotheque": 8,
-    "corpus_compile": "331 cas du corpus verts (statuts inchanges) apres deux frappes de BPscript le 2026-09-02 : « plus de socle implicite » (quinze scenes posent `core`) puis « les defauts vivent dans la donnee » (deux de plus). Onze scenes de banc d'ecran et six fixtures unitaires ont suivi — le perimetre d'une migration se prend sur l'extension, jamais sur le corpus."
+    "corpus_compile": "331 cas du corpus verts (statuts inchanges) apres trois frappes de BPscript les 2 et 3 septembre : « plus de socle implicite » (quinze scenes posent core), « les defauts vivent dans la donnee » (deux), « l univers suit l invocation » (onze, arbre mesure identique). Onze scenes de banc d ecran et six fixtures unitaires ont suivi — le perimetre d une migration se prend sur l extension."
   },
   "bancs": {
     "declares": 126,
     "vitest": 85,
     "playwright": 41,
     "hors_portillon": 0,
-    "campagne": "938 unitaires verts · ecran 104 verts, 5 rouges, 2 instables (kanopi-20260902T224808Z, 26,4 min, SORTIE 1) — les cinq rouges sont les grammaires BP3 `.gr` MUETTES (RMS 0, trois essais). Derniere campagne verte : 76899c4, 2026-09-02 20:45 (23,9 min).",
+    "campagne": "938 unitaires · 111 ecran (kanopi-20260902T233630Z, 22,1 min, SORTIE 0 — 76899c4..e3f9a0c). Cinq cas BP3 .gr en ECHEC ATTENDU (exception nommee, datee, qui expire seule : it.fails / test.fail).",
     "temoin_minimal": "facettes-de-kairos.test.ts porte les TROIS temoins de la charte — .bps occidental (hz 3/3), .bps tabla (voix 3/3), .gr bp3_english (hz 0/8, ROUGE pour sa raison)"
   },
   "poussee": {
-    "publie": "76899c4 (2026-09-02 20:45)",
-    "enregistres_non_pousses": 8,
-    "bloque_par": "le chemin .gr n'a plus de source de hauteur : kairos 8d8d50a ne lit que tree.metadata.librairies, bp3-frontend ne joint aucune section — avec ou sans le sac pitchLib, hz=0. Question a l'architecte le 2026-09-03 01:20 : qui joint les librairies d'une grammaire native."
+    "publie": "e3f9a0c (2026-09-03 01:58)",
+    "enregistres_non_pousses": 0,
+    "exception_nommee": "le chemin .gr n a pas de producteur de section (bp3-frontend ne joint rien, kairos ne lit que la section) — hz=0 avec ou sans sac ; decision de Romain attendue ; arbitrage de l architecte du 2026-09-03 01:18 : exception nommee et datee, elle rougit et se retire le jour ou le son revient"
   },
   "backlog": {
     "note": "l'architecte clot, je reporte — compte non refait ce jour ; quatre dettes reportees le 2026-09-03 (interruption d'arme rendue comme un rouge, fin de releve livree a 3/12, LIBRARY_DOMAINS recopie, copie a la main de 02-strudel-hydra dans un banc)"
@@ -46,8 +46,8 @@
   },
   "voisins": {
     "porte_des_objets": "resources.ts lit bpscript/objets — famille(mot), une famille par mot d'invocation ; les sept cles de fichier de libs-data sont sorties ; un mot inconnu de la porte fait crier le module au chargement",
-    "lecteurs_restants_de_libs_data": "LIBS.digital, LIBS.homomorphism (bpx-adapter) · LIBS.core.schema.channels (devices/registry) — le paquet ne sort pas avant eux ; BPscript le redemandera nommement",
-    "sac_de_hauteur": "pitchLib ET voicesLib retires du contexte tendu a Kairos le 2026-09-03 00:40, sur ma sonde (hz 3/3, voix 3/3 sans le sac, kairos 8d8d50a). Un premier retrait la veille, sur confirmation recue, avait rendu trois notes muettes : le paquet execute (25 aout) gardait le sac pour porte. Une confirmation du voisin se rejoue sur MA chaine.",
+    "lecteurs_restants_de_libs_data": "LIBS.homomorphism (bpx-adapter, jusqu au membre function: propose par BPscript a Romain) · LIBS.core.schema.channels (devices/registry) — le paquet ne sort pas avant eux ; BPscript le redemandera nommement",
+    "sac_de_hauteur": "pitchLib, voicesLib (kairos 8d8d50a, 00:40) puis digitalLib (kairos 3a7be2d, 01:30) retires du contexte tendu a Kairos, chacun sur ma sonde (hz 3/3, voix 3/3, transpose 16/16 sans le sac). Un premier retrait la veille, sur confirmation recue, avait rendu trois notes muettes : le paquet execute (25 aout) gardait le sac pour porte. Une confirmation du voisin se rejoue sur MA chaine.",
     "fenetre_de_mesure": "ma campagne se DEMANDE — scripts/tir-arme.mjs ; onze campagnes le 2026-09-02, dont deux nulles par ma faute (ecriture dans mon arbre apres l'ouverture ; arme tuee a la seconde ou elle ouvrait)"
   },
   "ouvert": [
