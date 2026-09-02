@@ -1,4 +1,6 @@
 // @language: bpscript
+core
+
 -----
 mode:ord
 S -> X Y

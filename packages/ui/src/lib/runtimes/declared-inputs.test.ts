@@ -5,7 +5,10 @@ import { declaredInputsForScene } from './bpx-adapter';
 
 describe('declaredInputsForScene', () => {
   it('rend les rôles déclarés, dans l’ordre, avec leur canal', () => {
-    const scene = 'in.midi pedale\nin.keyboard touches\n\n-----\nA -> C4 D4\n';
+    // `core` en tête partout : sans lui, `C4` est un terminal non déclaré et la scène entière est
+    // refusée (décision du 2026-09-02, plus aucun socle implicite) — et un banc de refus rougirait
+    // pour une cause qui n'est pas son sujet.
+    const scene = 'core\nin.midi pedale\nin.keyboard touches\n\n-----\nA -> C4 D4\n';
     expect(declaredInputsForScene(scene)).toEqual([
       { name: 'pedale', transport: 'midi', mapping: null },
       { name: 'touches', transport: 'keyboard', mapping: null }
@@ -15,7 +18,7 @@ describe('declaredInputsForScene', () => {
   it('n’invente AUCUNE table : sans invocation, `mapping` reste nul', () => {
     // Il n'existe pas de table par défaut (décision Romain) : poser une identité implicite
     // rendrait indistinguables « je n'ai pas de table » et « ma table ne fait rien ».
-    const [role] = declaredInputsForScene('in.midi pedale\n-----\nA -> C4\n');
+    const [role] = declaredInputsForScene('core\nin.midi pedale\n-----\nA -> C4\n');
     expect(role.mapping).toBeNull();
   });
 
@@ -27,19 +30,21 @@ describe('declaredInputsForScene', () => {
   it('la forme NUE est refusée en amont — une scène qui la porte ne déclare RIEN', () => {
     // Le refus porte sur la SCÈNE entière : elle ne rend aucun arbre, donc l'entrée voisine
     // pourtant bien formée ne remonte pas non plus. C'est le voyant de santé qui le dit.
-    expect(declaredInputsForScene('in pedale\nin.midi expression\n-----\nA -> C4\n')).toEqual([]);
+    expect(declaredInputsForScene('core\nin pedale\nin.midi expression\n-----\nA -> C4\n')).toEqual(
+      []
+    );
   });
 
   it('tout canal rendu est une CHAÎNE de la liste fermée — jamais nul', () => {
     // Le témoin positif : sans lui, un rendu VIDE passerait ce test sans rien mesurer.
     const roles = declaredInputsForScene(
-      'in.midi pedale\nin.keyboard touches\nin.osc fader\n-----\nA -> C4\n'
+      'core\nin.midi pedale\nin.keyboard touches\nin.osc fader\n-----\nA -> C4\n'
     );
     expect(roles.map((r) => r.transport)).toEqual(['midi', 'keyboard', 'osc']);
   });
 
   it('une scène sans entrée ne déclare rien', () => {
-    expect(declaredInputsForScene('A -> C4 D4\n')).toEqual([]);
+    expect(declaredInputsForScene('core\n-----\nA -> C4 D4\n')).toEqual([]);
   });
 
   it('une scène qui ne compile pas ne déclare rien de lisible — et ne crie pas ici', () => {

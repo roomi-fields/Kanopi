@@ -14,12 +14,15 @@ import { mmFromAst } from './bpx-adapter';
 // compiler et de mentir.
 describe('bpscript propagation — env → AST à travers le paquet consommé', () => {
   it("inscrit le défaut de tempo d'environnement quand la scène ne déclare rien", () => {
-    const ast = sceneQuiPasse('A -> C4', { tempo: 88 });
+    // `core` apporte l'alphabet par défaut : sans lui, `C4` est un terminal non déclaré et la scène est
+    // refusée (décision du 2026-09-02, plus aucun socle implicite). La scène ne déclare toujours pas
+    // de tempo — c'est le sujet.
+    const ast = sceneQuiPasse('core\n-----\nA -> C4', { tempo: 88 });
     expect(mmFromAst(ast as Parameters<typeof mmFromAst>[0])).toBe(88); // ÉCHOUE si la copie ignore `environnement`
   });
 
   it("la scène qui déclare mm gagne (pas d'écrasement)", () => {
-    const ast = sceneQuiPasse('tempo:70\n-----\nA -> C4', { tempo: 88 });
+    const ast = sceneQuiPasse('core\ntempo:70\n-----\nA -> C4', { tempo: 88 });
     expect(mmFromAst(ast as Parameters<typeof mmFromAst>[0])).toBe(70);
   });
 });

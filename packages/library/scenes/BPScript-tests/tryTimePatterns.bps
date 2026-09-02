@@ -11,6 +11,8 @@
 // LES VALEURS SONT LUES DANS L'ORIGINAL, pas choisies : `-ho.tryTimePatterns` porte un bloc
 // « TIMEPATTERNS: t1 = 1/1  t2 = 3/2  t3 = 4/3  t4 = 1/2 ». La surface BPScript existe déjà et
 // une scène voisine l'emploie (Mozartexpression.bps:20).
+core
+
 timepatterns: t1=1/1, t2=3/2, t3=4/3, t4=1/2
 
 tempo:120
