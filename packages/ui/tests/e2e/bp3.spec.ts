@@ -63,13 +63,24 @@ test('bp3 grammar evaluates and produces audio', async ({ page }) => {
   // Ctrl+Enter anywhere evaluates the whole grammar (extract-block bp3 case).
   await evalBlockAt(page, 1);
 
+  // ⛔ EXCEPTION NOMMÉE, DATÉE, ET QUI EXPIRE SEULE (arbitrage de l'architecte, 2026-09-03 01:18).
+  // Depuis que kairos lit `tree.metadata.librairies` (`8d8d50a`), une grammaire `.gr` — qui entre par
+  // bp3-frontend, lequel ne joint aucune section — n'a plus de source de hauteur : `melody.gr` rend
+  // 8 notes, hz=0, avec ou sans l'ancien sac. La décision (qui joint la section d'une grammaire
+  // native) est chez Romain. `test.fail` dit que ce cas ÉCHOUE aujourd'hui pour cette cause ; le
+  // jour où le son revient, il PASSE, Playwright le signale, et l'exception se retire.
+  test.fail(
+    true,
+    'EXCEPTION 2026-09-03 — chemin .gr sans producteur de section (kairos 8d8d50a), décision attendue'
+  );
+
   // The derivation schedules 8 notes across ~4s; sample peak RMS over 2.5s to
   // catch the oscillators while they sound.
   const rms = await audio.getMaxRMS(2500);
-  expect(rms).toBeGreaterThan(0.001);
 
-  // Hush (Ctrl+.) — the user is at the machine; never leave audio running.
+  // Hush (Ctrl+.) — the user is at the machine; never leave audio running. AVANT l'assertion.
   await page.keyboard.press('ControlOrMeta+Period');
   await page.waitForTimeout(200);
   noErrors();
+  expect(rms).toBeGreaterThan(0.001);
 });

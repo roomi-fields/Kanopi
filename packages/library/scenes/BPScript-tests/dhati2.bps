@@ -1,4 +1,6 @@
 // @language: bpscript
+core
+
 homomorphism.dhati
 alphabet.dhati
 

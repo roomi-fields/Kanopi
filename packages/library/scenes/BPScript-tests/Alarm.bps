@@ -11,6 +11,8 @@
 // NATIF. Son registre est donc celui du natif. La destination vient de la meme lecture :
 // l'original charge -in.abc1, un fichier d'interaction MIDI.
 // (Alphabet integre en amont le 2026-07-29, bpscript 759474b ; decision Romain du meme jour.)
+core
+
 alphabet.bp3_fr:midi
 
 -----

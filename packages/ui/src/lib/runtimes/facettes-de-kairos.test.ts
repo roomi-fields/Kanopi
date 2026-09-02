@@ -72,16 +72,26 @@ describe('les facettes de Kairos arrivent sur sa timeline par ma chaîne de prod
   // (`8d8d50a`) ne lit plus que la section, et une grammaire `.gr` entre par bp3-frontend, qui n'en
   // joint aucune. Ce n'est pas le retrait qui l'a rendue muette, c'est le chemin `.gr` qui n'a
   // plus de source de hauteur. La question — qui joint les librairies d'une grammaire native ? —
-  // est chez l'architecte ; ce cas reste ROUGE tant qu'elle n'est pas tranchée et câblée.
-  it('la HAUTEUR d’une grammaire BP3 native (`.gr`, alphabet `bp3_english`) arrive aussi', () => {
-    const f = facettesDe(arbreDeGrammaire(melodyGr));
-    expect(f.notes, 'aucune note sur la timeline — la sonde ne mesure rien').toBeGreaterThan(0);
-    expect(
-      f.hz,
-      `${f.hz} note(s) sur ${f.notes} portent une hauteur. Une grammaire \`.gr\` sans \`pitch.hz\` ` +
-        'est MUETTE au runtime — quatorze vitrines BP3 de ma bibliothèque passent par ce chemin.'
-    ).toBe(f.notes);
-  });
+  // est chez l'architecte (recommandation : le frontal qui produit l'AST, donc bp3-frontend, par la
+  // porte des objets ; décision de Romain attendue).
+  //
+  // ⛔ EXCEPTION NOMMÉE, DATÉE, ET QUI EXPIRE SEULE — arbitrage de l'architecte du 2026-09-03 01:18 :
+  // « si ton garde admet une exception NOMMÉE avec sa cause et sa date, pousse ». `it.fails` dit que
+  // ce cas ÉCHOUE aujourd'hui pour la cause ci-dessus ; le jour où la section arrive à Kairos par le
+  // chemin `.gr`, le cas PASSE, `it.fails` rougit, et l'exception se retire dans le même geste. Une
+  // exception qui ne rougit jamais en expirant est un trou ; celle-ci ne peut pas l'être.
+  it.fails(
+    'la HAUTEUR d’une grammaire BP3 native (`.gr`, alphabet `bp3_english`) — EXCEPTION 2026-09-03 : aucun producteur de section sur le chemin .gr, décision attendue',
+    () => {
+      const f = facettesDe(arbreDeGrammaire(melodyGr));
+      expect(f.notes, 'aucune note sur la timeline — la sonde ne mesure rien').toBeGreaterThan(0);
+      expect(
+        f.hz,
+        `${f.hz} note(s) sur ${f.notes} portent une hauteur. Une grammaire \`.gr\` sans \`pitch.hz\` ` +
+          'est MUETTE au runtime — quatorze vitrines BP3 de ma bibliothèque passent par ce chemin.'
+      ).toBe(f.notes);
+    }
+  );
 
   it('la HAUTEUR : chaque note d’un alphabet occidental porte un `pitch.hz` > 0', () => {
     const f = facettes('core\nalphabet.western:audio\n-----\nS -> C4 E4 G4\n');

@@ -65,15 +65,29 @@ for (const { cardName, grFile, audibleHeadless } of SHOWCASE) {
     // the grammar bundled, parsed, derived, and scheduled.
     await evalBlockAt(page, 1);
 
+    // ⛔ EXCEPTION NOMMÉE, DATÉE, ET QUI EXPIRE SEULE (arbitrage de l'architecte, 2026-09-03 01:18).
+    // Depuis que kairos lit `tree.metadata.librairies` (`8d8d50a`), une grammaire `.gr` — qui entre
+    // par bp3-frontend, lequel ne joint aucune section — n'a plus de source de hauteur : RMS 0,
+    // mesuré trois essais sur les quatre vitrines. La décision (qui joint la section d'une grammaire
+    // native) est chez Romain. `test.fail` dit que ce cas ÉCHOUE aujourd'hui pour cette cause ; le
+    // jour où le son revient, il PASSE, Playwright le signale comme « expected to fail but passed »,
+    // et l'exception se retire dans le même geste.
+    test.fail(
+      audibleHeadless,
+      'EXCEPTION 2026-09-03 — chemin .gr sans producteur de section (kairos 8d8d50a), décision attendue'
+    );
+
+    let rms = 1;
     if (audibleHeadless) {
       // Sample a window wide enough to cover the opening bars, catch the peak.
-      const rms = await audio.getMaxRMS(7000);
-      expect(rms).toBeGreaterThan(0.001);
+      rms = await audio.getMaxRMS(7000);
     }
 
-    // Hush (Ctrl+.) — never leave audio running for the user at the machine.
+    // Hush (Ctrl+.) — never leave audio running for the user at the machine. AVANT l'assertion :
+    // un rouge attendu ne doit pas laisser une grammaire jouer.
     await page.keyboard.press('ControlOrMeta+Period');
     await page.waitForTimeout(300);
     noErrors();
+    if (audibleHeadless) expect(rms).toBeGreaterThan(0.001);
   });
 }
