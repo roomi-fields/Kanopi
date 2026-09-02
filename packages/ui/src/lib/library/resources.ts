@@ -34,7 +34,6 @@ import { famille, type Famille, type Objet } from 'bpscript/objets';
 import { guestLibraries, type GuestLibrary } from 'runtime-codevoices';
 import { visualsCatalog } from './visuals';
 import type { VisualItem } from './visuals';
-import { listDevices } from '../devices/registry';
 // Kanopi's own bundled catalogs — real files, read AS-IS (not the `listDevices()`
 // merge, which adds a computed default-midi entry not present in the file).
 import devicesJson from '../../../../library/devices.json';
@@ -126,16 +125,10 @@ export const RESOURCE_GROUPS: ResourceGroup[] = [
     type: 'visual',
     title: 'Visuals',
     entries: visualsCatalog.items.map((v) => ({ id: v.id, label: v.name, data: v }))
-  },
-  {
-    type: 'device',
-    title: 'Devices',
-    entries: listDevices().map((d) => ({
-      id: d.name,
-      label: d.label ? `${d.type} · ${d.label}` : d.type,
-      data: d
-    }))
   }
+  // Pas de groupe `device` : `devices` écrit nu en tête de scène est refusé par le compilateur
+  // (mesuré le 2026-09-02), donc aucune scène ne le référence plus — le groupe n'avait plus de
+  // lecteur. Les appareils restent une carte de fichier entier dans RESOURCE_FILES.
 ];
 
 // --- Real library FILES, grouped BY LANGUAGE (Romain/architecte 2026-07-16) ---

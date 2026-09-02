@@ -45,10 +45,8 @@ a -> voice.\`s("bd sd")\``;
     });
   });
 
-  it('reads devices', () => {
-    const devicesLib = referencedLibraries('d.bps', `core\ndevices\n\n-----\nS -> a\na -> c d`);
-    expect(devicesLib.some((l) => l.type === 'device')).toBe(true);
-  });
+  // (`devices` nu en tête de scène est REFUSÉ par le compilateur — son absence au panneau est
+  //  verrouillée dans `formes-mortes-hors-panneau.test.ts`, avec `controls` et `filter`.)
 
   it('returns empty for a non-program file', () => {
     expect(referencedLibraries('notes.txt', 'hello')).toEqual([]);
@@ -67,9 +65,8 @@ a -> voice.\`s("bd sd")\``;
   it('still lists directives when a HARD syntax error leaves no AST', () => {
     // A malformed rule (missing arrow / value) makes the compiler produce NO ast.
     // The text-scan fallback must still surface the `@` directives.
-    const code = `filter\ncore\nalphabet.western:audio\ntempo:180\n-----\nS -> {Bass, env1 -}\nBass -> C2 - (wave, vel:100) [weight:30]`;
+    const code = `core\nalphabet.western:audio\ntempo:180\n-----\nS -> {Bass, env1 -}\nBass -> C2 - (wave, vel:100) [weight:30]`;
     const libs = referencedLibraries('cv-adsr.bps', code);
-    expect(libs).toContainEqual({ type: 'module', typeLabel: 'module', name: 'filter' });
     expect(libs).toContainEqual({ type: 'core', typeLabel: 'library', name: 'core' });
     expect(libs).toContainEqual({ type: 'alphabet', typeLabel: 'alphabet', name: 'western' });
   });

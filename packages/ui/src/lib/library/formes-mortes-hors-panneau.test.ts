@@ -36,6 +36,29 @@ const SUPPRIMEES = [
     scene: 'transport.midi\ncore\n-----\nS -> C4 D4\n',
     jamais: 'midi',
     empreinte: /aucune librairie ne sert l'axe 'transport'/
+  },
+  // ⛔ TROIS DE PLUS LE 2026-09-02, ET ILS VIVAIENT DANS MA PROPRE TABLE. `devices`, `controls` et
+  // `filter` figuraient dans `DIRECTIVE_TYPES` comme des invocations valides — la table datait de
+  // l'époque de l'arobase. Mesurés au compilateur du jour : les trois sont refusés nus en tête, donc
+  // une scène qui les écrit tombe dans le repli-texte, qui les affichait au panneau. `devices` s'y
+  // affichait sous le nom `all` ; les deux autres sous leur propre mot.
+  {
+    mot: 'devices',
+    scene: 'devices\ncore\n-----\nS -> C4 D4\n',
+    jamais: 'all',
+    empreinte: /'devices' n'est déclaré par aucune librairie chargée/
+  },
+  {
+    mot: 'controls',
+    scene: 'controls\ncore\n-----\nS -> C4 D4\n',
+    jamais: 'controls',
+    empreinte: /'controls' n'est déclaré par aucune librairie chargée/
+  },
+  {
+    mot: 'filter',
+    scene: 'filter\ncore\n-----\nS -> C4 D4\n',
+    jamais: 'filter',
+    empreinte: /'filter' ne peut pas s'écrire en tête de scène/
   }
 ];
 

@@ -34,7 +34,14 @@ interface BpsDirective {
 // `scale.<x>` / `octaves.<x>` / `sound.<x>` / `out.<device>` put <x> in
 // `subkey`. The `runtime` slot carries a `:value` (an output target like
 // `alphabet.western:audio` → `audio`), never a resource name.
-// `devices` (no subkey) means "the whole device library".
+//
+// ⛔ TROIS MOTS SONT SORTIS DE CETTE TABLE LE 2026-09-02, MESURÉS AU COMPILATEUR : `devices`,
+// `controls` et `filter` écrits nus en tête de scène sont REFUSÉS — « n'est déclaré par aucune
+// librairie chargée » pour les deux premiers, « ne peut pas s'écrire en tête de scène » pour le
+// troisième, qui est un contrôle. Une scène qui les écrit ne compile pas : elle tombe dans le
+// repli-texte, où cette table les affichait comme des ressources VALIDES au panneau — la forme
+// exacte du défaut que `formes-mortes-hors-panneau.test.ts` a déjà fermé pour `library` et
+// `transport`. Leur ABSENCE est verrouillée là-bas.
 const DIRECTIVE_TYPES: Record<string, { type: string; typeLabel: string }> = {
   alphabet: { type: 'alphabet', typeLabel: 'alphabet' },
   tuning: { type: 'tuning', typeLabel: 'tuning' },
@@ -46,7 +53,6 @@ const DIRECTIVE_TYPES: Record<string, { type: string; typeLabel: string }> = {
   // 2026-08-04, BPscript parser.js:1692) — la direction se déclare sur l'acteur, `out.<canal>`.
   // Une scène qui l'écrit encore ne compile plus : elle tombe donc dans le repli-texte, où
   // cette entrée l'aurait affichée comme un appareil valide au panneau des ressources.
-  devices: { type: 'device', typeLabel: 'devices' },
   // `core` s'invoque NU : il apporte le socle (LANGUAGE.md § « Invoquer », EBNF
   // `library_invocation = "core" | LIBRARY "." entry_name`). Il ne porte aucun nom en
   // subkey/runtime, donc son propre mot EST la librairie référencée — affichée au panneau
@@ -54,13 +60,11 @@ const DIRECTIVE_TYPES: Record<string, { type: string; typeLabel: string }> = {
   // LIBRAIRIE. ⛔ Ce n'est PAS un « module » : dans le langage, un module est un calque
   // inséré entre un terminal et sa sortie (EBNF § 4.13), et l'étiquette qui le disait ici
   // nommait la mauvaise notion — relevée sur une capture d'écran le 2026-09-02.
-  core: { type: 'core', typeLabel: 'library' },
-  controls: { type: 'module', typeLabel: 'module' },
-  filter: { type: 'module', typeLabel: 'module' }
+  core: { type: 'core', typeLabel: 'library' }
 };
 
-// Bare module directives whose referenced name is the directive name itself.
-const SELF_NAMED = new Set(['core', 'controls', 'filter']);
+// Bare library invocations whose referenced name is the word itself.
+const SELF_NAMED = new Set(['core']);
 
 function nameOfDirective(d: BpsDirective): string | null {
   // Prefer subkey (`alphabet.arabic`, `tuning.sargam_22shruti`, `scale.bilaval`,
@@ -68,10 +72,8 @@ function nameOfDirective(d: BpsDirective): string | null {
   // canon a resource name always lands in subkey, never the value slot.
   if (typeof d.subkey === 'string' && d.subkey.length > 0) return d.subkey;
   if (typeof d.runtime === 'string' && d.runtime.length > 0) return d.runtime;
-  // A bare module directive (`core`, `controls`) names itself.
+  // A bare library invocation (`core`) names itself.
   if (SELF_NAMED.has(d.name)) return d.name;
-  // `devices` with no name = the whole library.
-  if (d.name === 'devices') return 'all';
   return null;
 }
 
