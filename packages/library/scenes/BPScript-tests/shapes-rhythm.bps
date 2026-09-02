@@ -86,7 +86,7 @@ Gap45 -> Toit(vel:100) {Tp3 Tp3,- sol2 - sol2 sol2 - sol2 Drapeau -}
 Gap56 -> CerfVolant(vel:60) {Tp3,- {6,do4,- do5} -} {Tp3,PedalOn(vel:50, velcont) do2 sol#2 fa#2 do#3 PedalOff -(vel:90)}
 Gap67 -> Guimbarde {Tp3,{do3___(vel:40),-fa3(vel:40, velcont) fa3_(vel:60),---fa2}}
 Gap78 -> {Tp3,7 PedalOff -}
-Gap89 -> Michiko {Tp3,- PedalOn(press:0, presscont, pitchbend:0, pitchcont) re5______(press:127, pitchbend:3808) - PedalOff}(pitchbend:0, press:0) (vel:110)
+Gap89 -> Michiko {Tp3,- PedalOn(pressure:0, presscont, pitchbend:0, pitchcont) re5______(pressure:127, pitchbend:3808) - PedalOff}(pitchbend:0, pressure:0) (vel:110)
 
 -----
 

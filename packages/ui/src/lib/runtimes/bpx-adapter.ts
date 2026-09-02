@@ -41,19 +41,20 @@ import type { FileRef, SeEngineSettings, ParseBP3Result } from 'bp3-frontend';
 // nom. On dérive donc l'acteur de ce qu'il publie vraiment — l'arbre de `parseBP3`.
 type Bp3Actor = NonNullable<NonNullable<ParseBP3Result['ast']>['actors']>[number];
 import { compileToBPxAST } from 'bpscript';
-// Les catalogues de l'amont sont transportés EN BLOC vers Kairos (`PITCH_LIB` plus bas) : aucune
-// constante par catalogue ici, sinon la liste ferme l'ensemble et le prochain fichier à nom libre
-// reste invisible. Une scène qui déclare `alphabet.X` ou `test_alphabets.X` résout à travers eux.
+// Les catalogues de HAUTEUR ne transitent plus par l'hôte : l'arbre les JOINT (`metadata.librairies`,
+// décision de Romain du 2026-09-02) — voir le bloc du contexte de projection plus bas. Ce qui reste
+// transporté ici est ce que la section de l'arbre ne porte pas : les voix, les fonctions
+// numériques, les homomorphismes.
 // Registre des VOIX (`LIBS.voices`, domaine 'voice' — LANG-SONS-3, résolution voix Kairos
-// 79118df) : jumelle de `pitchLib`/`digitalLib`, donnée read-only fournie par l'hôte (L26).
+// 79118df) : jumelle de `digitalLib`, donnée read-only fournie par l'hôte (L26).
 // Kairos RÉSOUT terminal→voix (réf de l'acteur / binding d'alphabet), cascade `for:<device>`,
 // et grave `content.voice`. ABSENT ⇒ pas de facette voix (rétro-compat : oscillateur du runtime).
 // L'hôte TRANSPORTE le registre, il ne l'interprète pas. Le RENDU du backtick de voix (aval,
 // runtime-audio) est tenu jusqu'à l'étude son [828] — ici c'est la plomberie de l'injection.
 const voicesJson = LIBS.voices;
 // Lib de FONCTIONS DIGITALES fournie (KAI-B03) : Kairos applique ces fonctions TS déterministes
-// (ex. `transpose`) à la projection. Donnée read-only fournie par l'hôte (3 provenances, comme
-// PITCH_LIB) ; sans elle Kairos retombe sur un repli hérité hardcodé.
+// (ex. `transpose`) à la projection. Donnée read-only fournie par l'hôte (3 provenances) ; sans
+// elle Kairos retombe sur un repli hérité hardcodé.
 // SOURCE : le `body` (code TS de chaque fonction) vit hors de la DÉCLARATION du catalogue, qui n'en
 // porte que la signature. `captureDigitalBodies` (bpscript, `libs-bundle.js`) le capte depuis
 // `lib/digital/<fn>.ts` et le grave dans le paquet. On consomme donc `LIBS.digital`, avec le body.
@@ -94,12 +95,12 @@ import { exprSource } from 'runtime-audio';
 // Kronos lui passe l'événement BRUT et câble l'horloge+le bus via `bindClock`.
 import { createMidiRuntime } from 'runtime-midi';
 // Pitch resolution (token → Hz) AND the alphabet-aware "sounds" classification both live
-// in KAIROS now: it OWNS the pitch module and GRAVES `content.pitch.hz` + `content.sounds`
-// per note (KAI-10), from the catalogs the host supplies as `ctx.pitchLib`. Kanopi RESOLVES
-// NOTHING and runs NO resolver — it only hands the `PitchLib` DATA down and READS the graven
-// facets. The host imports ZERO of `@kronos/core/pitch` (logic AND type); only the `PitchLib`
-// type survives, sourced from `@kairos/core` (the module's new owner), for the catalog constant.
-import { type PitchLib, type DigitalLib } from '@kairos/core';
+// in KAIROS: it OWNS the pitch module and GRAVES `content.pitch.hz` + `content.sounds`
+// per note (KAI-10), from the library contents the TREE carries (`metadata.librairies`,
+// joined by BPscript at compilation — décision du 2026-09-02). Kanopi RESOLVES NOTHING, runs
+// NO resolver and transports NO pitch catalogue — it only READS the graven facets. The host
+// imports ZERO of the pitch module (logic AND type).
+import { type DigitalLib } from '@kairos/core';
 // Tree-derived dispatch events (M5+ multi-actor refacto): flatten the tree of
 // `derive()` to ordered events that each carry their
 // OWN actor/params payload, so a terminal shared by two actors routes distinctly.
@@ -201,49 +202,27 @@ import routingJson from '../../../../library/routing.json';
  * The slice scopes to ONE engine instance + ONE transport per file.
  */
 
-// Les catalogues de l'amont, remis à Kairos en lecture seule (`ctx.pitchLib`) : LUI bâtit le
-// résolveur et grave `content.pitch.hz` / `content.sounds`. Kanopi ne porte aucune logique de
-// résolution et n'exécute aucun résolveur — il fournit cette DONNÉE.
-// L'AFFECTATION EST DIRECTE, SANS CONVERSION, et c'est une garde en soi : le compilateur compare
-// vraiment la forme du sac amont au type que Kairos publie. Elle l'est devenue le 2026-08-17,
-// quand Kairos a ouvert sa surface sur les trois points qui l'obligeaient — la liste fermée à cinq
-// axes, les clés de documentation, et leur forme TABLEAU. Chacun a été trouvé en retirant la
-// conversion et en lui rendant l'erreur du compilateur, jamais en la contournant.
-// ⛔ NE PAS Y REMETTRE UN `as` : il rendrait le compilateur muet DES DEUX CÔTÉS de la frontière —
-// un catalogue qui disparaît de l'amont ou change de forme ne rougirait plus nulle part.
-// UNE SEULE SOURCE, celle de l'amont. Les conventions du moteur BP3 natif (`bp3_english`,
-// `bp3_fr`, `bp3_indian`) sont des entrées ORDINAIRES de ces catalogues depuis le 2026-07-29 :
-// bp3-frontend les a livrées VERBATIM à BPScript, qui les porte désormais (chaque entrée cite sa
-// provenance). Un seul `ctx.pitchLib`, un seul résolveur Kairos générique — aucune branche BP3.
+// ⛔ LES CATALOGUES DE HAUTEUR NE SONT PLUS TRANSPORTÉS PAR L'HÔTE — l'arbre les JOINT.
+// Décision de Romain du 2026-09-02 (`l-arbre-joint-le-contenu-des-librairies-qu-il-invoque`) :
+// l'arbre compilé porte `metadata.librairies`, le contenu des librairies que la scène invoque, et
+// Kairos y lit sa résolution de hauteur — plus dans un sac `ctx.pitchLib` que l'hôte lui tendait.
+// Kairos l'a confirmé avec sa mesure avant ce retrait (166 scènes résolues par la section, 11 394
+// hauteurs, écart de fréquence section-contre-sac ZÉRO, amendement de contrat ratifié `afe4f48`).
+// « L'hôte fournit les catalogues à l'utilisateur, pas aux composants de l'infrastructure. »
 //
-// ⛔ CE QUI A ÉTÉ RETIRÉ ICI, ET POURQUOI IL NE DOIT PAS REVENIR (2026-07-30) : l'hôte étalait
-// PAR-DESSUS un second catalogue, `BP3_PITCH_CATALOG`, qu'exportait alors bp3-frontend — cet export
-// A DEPUIS ÉTÉ SUPPRIMÉ CHEZ EUX (leur c35de48, dans la foulée de ce retrait) ; le symbole n'existe
-// donc plus nulle part, et le nommer ici raconte l'histoire, il ne désigne rien de vivant. Ses clés
-// étaient déclarées « disjointes des clés BPScript ». C'était FAUX et mesuré : les trois alphabets, les
-// trois accordages et l'octavier `bp3_fr` existaient des DEUX côtés. Comme cet étalement passait
-// en SECOND, c'est la copie vouée au retrait qui était en vigueur à l'exécution — la bifurcation
-// silencieuse que ce dépôt interdit. Les deux formes avaient déjà divergé (7 naturelles + table
-// d'altérations contre 21 notes en dur ; degrés `[0,2,4,5,7,9,11]` contre `[0,1,…,12,…]` ;
-// tempérament `12TET` contre `tet12`). Elles restaient équivalentes en HAUTEUR : mesuré sous
-// graine figée, les 14 grammaires `.gr` publiées et les 6 scènes `.bps` qui déclarent un alphabet
-// `bp3_*` gravent EXACTEMENT les mêmes fréquences avec ou sans l'étalement. Le retrait est donc
-// neutre à l'oreille — et il enlève la seule chose qui décidait laquelle des deux formes gagnait.
-// ⛔ LE SAC ENTIER, JAMAIS UNE LISTE — L35 (constitution d'Atlas) : « zéro valeur codée en dur —
-// pas de `'audio'`, pas de `440`, pas de liste `['tunings']` dans le code ; tout défaut est une
-// donnée de lib », et elle nomme Kanopi pour les librairies. Cet objet énumérait CINQ catalogues,
-// ce qui était la faute exacte que L35 interdit : une librairie à NOM LIBRE est adressable, donc
-// une liste fermée ne peut structurellement pas voir la suivante.
-// CE QUE ÇA COÛTAIT, MESURÉ : les scènes déclarant `test_alphabets.<X>` — un catalogue réel de
-// l'amont, hors des cinq — crevaient à la projection sur « fichier factory 'test_alphabets'
-// introuvable ». Sept scènes du corpus étaient dans cet état, et le défaut MASQUAIT celui qu'on
-// cherchait : une fois le sac injecté, le cri devient celui de la collision de domaine.
-// L'hôte reste OPAQUE : il ne lit aucune entrée, ne trie rien par domaine, n'en connaît pas les
-// noms. Il transporte ce que l'amont publie ; Kairos résout (loi 26/27, PORTER ≠ RÉSOUDRE).
-const PITCH_LIB: PitchLib = LIBS;
+// Ce que ce sac avait coûté à tenir, et qui ne se rejoue plus ici : un second catalogue étalé
+// par-dessus (2026-07-30, deux formes divergentes dont la copie vouée au retrait gagnait) ; une
+// liste fermée de cinq axes qui ne voyait pas `test_alphabets` (sept scènes crevaient à la
+// projection) ; une conversion `as` qui aurait rendu le compilateur muet des deux côtés. Un
+// transport qui n'existe plus n'a plus de forme à garder.
+//
+// ⛔ CE QUI RESTE TRANSPORTÉ, ET POURQUOI : `voicesLib`, `digitalLib`, `homomorphismeLib`. La
+// section de l'arbre ne porte AUCUNE voix — le binding d'un alphabet de percussion vit un étage
+// sous celui que la règle de BPscript regarde (non tranché, porté chez lui) ; retirer `voicesLib`
+// rendrait toute scène de tabla muette. Les deux autres restent lus par Kairos dans le contexte.
 
 // The provided DIGITAL function library (catalogue `digital` de `bpscript/libs-data`), handed to Kairos as the
-// read-only `ctx.digitalLib` — the exact sibling of `PITCH_LIB`. Kairos applies these deterministic
+// read-only `ctx.digitalLib`. Kairos applies these deterministic
 // TS functions (e.g. `transpose`) AT PROJECTION (KAI-B03); the host supplies the DATA and runs no
 // function itself. Without it Kairos falls back to its legacy hardcoded transpose. `_comment` doc
 // keys → cast through `unknown`. Personal/community digital libs overlay here later (3 provenances).
@@ -288,9 +267,8 @@ export function contexteDeProjection(base: unknown): Parameters<Kairos['charger'
   return {
     // Le contexte construit PAR BPx — l'hôte n'assemble AUCUN résolveur (KAI-8).
     ...(base as object),
-    // KAI-10 — catalogues de hauteur (données de librairie, lecture seule).
-    pitchLib: PITCH_LIB,
-    // Librairies personnelles : map PLATE chemin→contenu BRUT, opaque à l'hôte (Kairos la lit).
+    // ⛔ PAS DE `pitchLib` : la hauteur se lit dans `metadata.librairies` de l'arbre, jointe par
+    // BPscript à la compilation (décision du 2026-09-02, retrait confirmé par Kairos — voir plus haut).
     // KAI-B03 — fonctions numériques fournies (transpose &c.).
     digitalLib: DIGITAL_LIB,
     // LANG-SONS-3 — registre des voix (Kairos grave `content.voice`).
@@ -1860,8 +1838,9 @@ function makeBpxAdapter(
       let liveUpdateTrace: Parameters<Kairos['charger']>[2] | undefined;
       // KAI-10 — the host builds NO pitch resolver at all. Kairos graves `content.pitch.hz`
       // (read by every output) AND `content.sounds` (the DISPLAY note-vs-text predicate, read
-      // below off the timeline), both from `ctx.pitchLib` + the tree; the sound transpose
-      // lives in Kairos too. The host imports no runtime pitch builder anymore.
+      // below off the timeline), both from the tree — its `metadata.librairies` section carries
+      // the library contents (décision du 2026-09-02); the sound transpose lives in Kairos too.
+      // The host imports no runtime pitch builder anymore.
       try {
         // `effectiveFlags` (e.g. `{ scene: 2 }`) is applied as the BPx engine's
         // initial flag state, so a flag-guarded rule (`/scene=2/`) derives
