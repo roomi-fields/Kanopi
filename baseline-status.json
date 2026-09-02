@@ -1,12 +1,13 @@
 {
   "component": "Kanopi",
-  "updated": "2026-08-25",
+  "updated": "2026-09-03",
   "mesure": "chaque chiffre vient d'une commande relancée ce jour, jamais recopié du relevé précédent",
   "sources": {
-    "grammaires": "ls packages/library/scenes/BP3-tests/*.gr",
-    "scenes": "find packages/library/scenes -name '*.bps'",
+    "grammaires": "git ls-files 'packages/library/scenes/BP3-tests/*.gr'",
+    "scenes": "git ls-files 'packages/library/scenes/**/*.bps'",
     "bancs": "node scripts/meta-garde-tests.mjs",
     "corpus": "vitest src/lib/library/corpus-compile.test.ts",
+    "facettes": "vitest src/lib/runtimes/facettes-de-kairos.test.ts",
     "backlog": "BACKLOG.md",
     "navigation": "hub/tools/garde-navigation.py --depot kanopi",
     "charte": "hub/tools/garde-chartes.py"
@@ -14,40 +15,45 @@
   "bibliotheque": {
     "grammaires_gr": 113,
     "scenes_bps": 320,
-    "scenes_hors_bibliotheque": 7,
-    "corpus_compile": "320 scenes .bps balayees, 308 compilent, 12 refusees — ZERO par la fermeture de la tete nue de BPscript (mesure le 2026-08-25, temoin positif : 275 directives `core` nues)"
+    "scenes_hors_bibliotheque": 8,
+    "corpus_compile": "331 cas du corpus verts (statuts inchanges) apres deux frappes de BPscript le 2026-09-02 : « plus de socle implicite » (quinze scenes posent `core`) puis « les defauts vivent dans la donnee » (deux de plus). Onze scenes de banc d'ecran et six fixtures unitaires ont suivi — le perimetre d'une migration se prend sur l'extension, jamais sur le corpus."
   },
   "bancs": {
-    "declares": 123,
-    "vitest": 82,
+    "declares": 126,
+    "vitest": 85,
     "playwright": 41,
     "hors_portillon": 0,
-    "campagne": "923 unitaires · 110 ecran (21ce205..4966b82, arrivee 02:47:29) — huit campagnes vertes dans la nuit du 24 au 25"
+    "campagne": "938 unitaires verts · ecran 104 verts, 5 rouges, 2 instables (kanopi-20260902T224808Z, 26,4 min, SORTIE 1) — les cinq rouges sont les grammaires BP3 `.gr` MUETTES (RMS 0, trois essais). Derniere campagne verte : 76899c4, 2026-09-02 20:45 (23,9 min).",
+    "temoin_minimal": "facettes-de-kairos.test.ts porte les TROIS temoins de la charte — .bps occidental (hz 3/3), .bps tabla (voix 3/3), .gr bp3_english (hz 0/8, ROUGE pour sa raison)"
+  },
+  "poussee": {
+    "publie": "76899c4 (2026-09-02 20:45)",
+    "enregistres_non_pousses": 8,
+    "bloque_par": "le chemin .gr n'a plus de source de hauteur : kairos 8d8d50a ne lit que tree.metadata.librairies, bp3-frontend ne joint aucune section — avec ou sans le sac pitchLib, hz=0. Question a l'architecte le 2026-09-03 01:20 : qui joint les librairies d'une grammaire native."
   },
   "backlog": {
-    "total": 215,
-    "ouverts": 80,
-    "note": "l'architecte clôt, je reporte"
+    "note": "l'architecte clot, je reporte — compte non refait ce jour ; quatre dettes reportees le 2026-09-03 (interruption d'arme rendue comme un rouge, fin de releve livree a 3/12, LIBRARY_DOMAINS recopie, copie a la main de 02-strudel-hydra dans un banc)"
   },
   "gardes": {
-    "racine": 9,
+    "racine": 11,
     "hors_portillon": 0,
     "navigation": "0 orphelin",
-    "charte": "19/19 contre le gabarit a5a6cd3",
+    "charte": "16/19 conformes — 3 ecarts contre le gabarit du jour (mesure garde-chartes.py, 2026-09-03 ; a reprendre)",
     "sosie_de_portillon": "aucun",
-    "typage": "svelte-check, 651 fichiers, dans verify — le crochet le NOMME sans le réclamer depuis 7185bc6",
-    "chemins_sortants": "69 chemins d agent vers un voisin dans 48 documents, tous vivants ; 302 fichiers balayes, aucune ancre par numero de ligne (13 reancrees par symbole ou section le 2026-08-25). Porte au hub par l architecte sur la demande de kronos.",
-    "vocabulaire_vivant": "plancher par axe + temoin nomme sur describeVocabulary() — la sortie vive de BPscript que mon editeur met a l ecran (completion, info-bulles, coloration) et que rien ne comparait"
+    "typage": "svelte-check, 656 fichiers, dans verify",
+    "vocabulaire_vivant": "TROIS sources — describeVocabulary().keywords, ses axes de catalogue, et famille('types') de la porte bpscript/objets (55 → 72 mots offerts le 2026-09-02, actor/flag/symbol revenus a l'ecran)",
+    "contexte_de_projection": "verrou d'ABSENCE sur pitchLib, voicesLib, pitchLibMine ; presence unique de digitalLib, homomorphismeLib, modulation"
   },
   "voisins": {
-    "lus_en_source": "DERIVE de la resolution reelle, plus declare a la main : 7 en SOURCE (bpscript, bp3-frontend, runtime-audio, runtime-codevoices, runtime-in, runtime-midi, runtime-ui) · 3 en RACINE CONSTRUITE — leur dist, dans leur arbre (bpx, @kairos/core, @kronos/core) · 1 en PAQUET PUBLIE epingle (runtime-osc)",
-    "deux_regimes": "la case « racine construite, dans l arbre », nommee par kronos le 2026-08-25 : la frappe du voisin sous src/ ne m atteint PAS, sa RECONSTRUCTION m atteint immediatement — ni sa poussee ni sa publication",
-    "refus_de_production": "actif ; il lit le manifeste du voisin, il ne devine pas ses dossiers",
-    "legende": "porte les DEUX états : source vive ET paquet exécuté quand ils diffèrent, et dit qu'elle ne sait pas là où le producteur ne grave rien",
-    "fenetre_de_mesure": "ma campagne se DEMANDE — scripts/tir-arme.mjs, deux conditions mesurées + délai de grâce (arbitrage 2026-08-20)",
-    "etat_pris": "DECLARE — scripts/lib/regimes-des-voisins.json, cle `etat-pris`. Trois etages (epingle / nomme / rien-pris) et trois voies (source / construit / paquet). Le garde ECHOUE si la voie declaree differe de la voie MESUREE, si un voisin lie n est pas declare, si une entree ne designe plus rien, ou si un etat n est pas nommable. `npm run repointer` repose les liens ; `--dernier` prend le dernier publie et reecrit la declaration."
+    "porte_des_objets": "resources.ts lit bpscript/objets — famille(mot), une famille par mot d'invocation ; les sept cles de fichier de libs-data sont sorties ; un mot inconnu de la porte fait crier le module au chargement",
+    "lecteurs_restants_de_libs_data": "LIBS.digital, LIBS.homomorphism (bpx-adapter) · LIBS.core.schema.channels (devices/registry) — le paquet ne sort pas avant eux ; BPscript le redemandera nommement",
+    "sac_de_hauteur": "pitchLib ET voicesLib retires du contexte tendu a Kairos le 2026-09-03 00:40, sur ma sonde (hz 3/3, voix 3/3 sans le sac, kairos 8d8d50a). Un premier retrait la veille, sur confirmation recue, avait rendu trois notes muettes : le paquet execute (25 aout) gardait le sac pour porte. Une confirmation du voisin se rejoue sur MA chaine.",
+    "fenetre_de_mesure": "ma campagne se DEMANDE — scripts/tir-arme.mjs ; onze campagnes le 2026-09-02, dont deux nulles par ma faute (ecriture dans mon arbre apres l'ouverture ; arme tuee a la seconde ou elle ouvrait)"
   },
   "ouvert": [
+    "grammaires .gr muettes — qui joint metadata.librairies sur le chemin bp3-frontend → BPx → kairos (question a l'architecte, 2026-09-03)",
+    "describeVocabulary() doit-elle porter les prototypes de `types`, ou objets EST-elle la porte d'editeur (question chez Romain via BPscript)",
+    "quatre scenes du corpus sans hauteur par la section (defauts implicites de kairos, chez Romain)",
     "KAN-49 — deux runtimes audio vivants quand jeu et évaluation passent tous deux ; à instruire avant de corriger",
     "KAN-16 et KAN-37 — remèdes périmés, énoncés à réécrire",
     "@strudel/web — dépendance morte à élaguer, preuve par campagne audio"
