@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { sceneQuiPasse } from '../library/scene-de-banc';
+import { parseBP3 } from 'bp3-frontend';
 import { createSession } from 'bpx';
 import { Kairos } from '@kairos/core';
 import { contexteDeProjection } from './bpx-adapter';
 import tabla from '../../../../library/scenes/BPScript-tests/kairos-voix-tabla.bps?raw';
+import melodyGr from '../../../tests/fixtures/melody.gr?raw';
 
 // LES FACETTES ARRIVENT-ELLES SUR LA TIMELINE DE KAIROS PAR MA CHAÎNE ? — le témoin qui manquait.
 //
@@ -24,9 +26,19 @@ import tabla from '../../../../library/scenes/BPScript-tests/kairos-voix-tabla.b
 // jour, c'est que la section a cessé d'arriver jusqu'à Kairos — chez BPx, chez kairos ou chez
 // moi — et aucune confirmation reçue ne vaut contre lui.
 
-function facettes(src: string): { notes: number; hz: number; voix: number } {
-  const ast = sceneQuiPasse(src, { tempo: 120 });
-  const session = createSession(ast, { seed: 1 });
+/** Une grammaire BP3 native entre par bp3-frontend, jamais par le compilateur BPScript — c'est le
+ *  chemin de `grFrontend` dans l'adaptateur. Le banc refuse une grammaire que le frontal refuse. */
+function arbreDeGrammaire(src: string): unknown {
+  const r = parseBP3(src) as { ast?: unknown; errors?: unknown[] };
+  if (!r.ast || (r.errors ?? []).length > 0)
+    throw new Error(
+      `LA GRAMMAIRE DE CE BANC EST REFUSÉE par bp3-frontend : ${JSON.stringify(r.errors)}`
+    );
+  return r.ast;
+}
+
+function facettesDe(ast: unknown): { notes: number; hz: number; voix: number } {
+  const session = createSession(ast as never, { seed: 1 });
   const tree = session.derive().tree;
   const kairos = new Kairos();
   kairos.charger(
@@ -47,7 +59,30 @@ function facettes(src: string): { notes: number; hz: number; voix: number } {
   return { notes, hz, voix };
 }
 
+function facettes(src: string): { notes: number; hz: number; voix: number } {
+  return facettesDe(sceneQuiPasse(src, { tempo: 120 }));
+}
+
 describe('les facettes de Kairos arrivent sur sa timeline par ma chaîne de production', () => {
+  // ⛔ LE TÉMOIN MINIMAL DE MA CHARTE NOMME UNE GRAMMAIRE `.gr`, ET CE BANC L'AVAIT OUBLIÉE. Le
+  // 2026-09-03 à 00:40 j'ai retiré le sac sur deux témoins `.bps` verts ; la campagne a rendu
+  // CINQ grammaires BP3 muettes (RMS 0 sur quatre vitrines et la tranche verticale). Mesuré ensuite
+  // par ma chaîne : `melody.gr` — 8 notes, hz=0, `tree.metadata.librairies` ABSENTE, acteur
+  // `default(alphabet="bp3_english")` — et hz=0 AUSSI avec le sac réinjecté : le paquet de kairos
+  // (`8d8d50a`) ne lit plus que la section, et une grammaire `.gr` entre par bp3-frontend, qui n'en
+  // joint aucune. Ce n'est pas le retrait qui l'a rendue muette, c'est le chemin `.gr` qui n'a
+  // plus de source de hauteur. La question — qui joint les librairies d'une grammaire native ? —
+  // est chez l'architecte ; ce cas reste ROUGE tant qu'elle n'est pas tranchée et câblée.
+  it('la HAUTEUR d’une grammaire BP3 native (`.gr`, alphabet `bp3_english`) arrive aussi', () => {
+    const f = facettesDe(arbreDeGrammaire(melodyGr));
+    expect(f.notes, 'aucune note sur la timeline — la sonde ne mesure rien').toBeGreaterThan(0);
+    expect(
+      f.hz,
+      `${f.hz} note(s) sur ${f.notes} portent une hauteur. Une grammaire \`.gr\` sans \`pitch.hz\` ` +
+        'est MUETTE au runtime — quatorze vitrines BP3 de ma bibliothèque passent par ce chemin.'
+    ).toBe(f.notes);
+  });
+
   it('la HAUTEUR : chaque note d’un alphabet occidental porte un `pitch.hz` > 0', () => {
     const f = facettes('core\nalphabet.western:audio\n-----\nS -> C4 E4 G4\n');
     // ANTI-VACUITÉ : zéro note passerait un « toutes ont une hauteur ».
