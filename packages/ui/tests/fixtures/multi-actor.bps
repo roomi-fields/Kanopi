@@ -1,5 +1,7 @@
 // multi-actor fixture (migré de multi-actor.kanopi) — Strudel (audio, banque
 // dirt-samples déclarée sur l'acteur) + Hydra (vidéo), les deux armées dans une scène.
+core
+
 actor beat  eval.strudel(bank:"dirt-samples")
 actor viz  eval.hydra
 -----

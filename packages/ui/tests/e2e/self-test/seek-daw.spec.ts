@@ -116,7 +116,7 @@ test('seek notes: cliquer la règle fait REPARTIR la lecture depuis ce point (po
   await loadScene(
     page,
     'seek-notes.bps',
-    'actor voice alphabet.sargam out.audio\n-----\nS -> sa re ga ma pa dha ni sa\n'
+    'core\nactor voice alphabet.sargam out.audio\n-----\nS -> sa re ga ma pa dha ni sa\n'
   );
   await evalWholeSession(page);
   await bottomTab(page, /structure/);
@@ -161,7 +161,7 @@ test('seek Hydra: l’horloge propre de la voix (synth.time) se recale sur le po
   await loadScene(
     page,
     'seek-hydra.bps',
-    'actor viz eval.hydra\n' +
+    'core\nactor viz eval.hydra\n' +
       '-----\n' +
       'S -> viz_r viz_r viz_r viz_r viz_r viz_r viz_r viz_r\n' +
       'viz_r -> viz.`osc(10,0.1,0.8).out()`\n'
@@ -220,7 +220,7 @@ test('seek Strudel: repli best-effort — le motif redémarre depuis le début d
   await loadScene(
     page,
     'seek-strudel.bps',
-    'actor drums eval.strudel\n' +
+    'core\nactor drums eval.strudel\n' +
       'actor lead eval.strudel\n' +
       '-----\n' +
       'S -> calm full\n' +

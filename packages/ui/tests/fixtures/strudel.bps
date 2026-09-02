@@ -1,5 +1,7 @@
 // strudel fixture (migré de strudel.kanopi) — voix-code Strudel → audio.
 // Banque d'échantillons déclarée en paramètre de l'acteur qui la charge.
+core
+
 actor beat  eval.strudel(bank:"dirt-samples")
 -----
 

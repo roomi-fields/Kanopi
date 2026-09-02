@@ -1,4 +1,6 @@
 // p5 fixture (migré de p5.kanopi) — voix-code p5 → vidéo.
+core
+
 actor sketch  eval.p5
 -----
 

@@ -23,7 +23,7 @@ test('Broken Strudel JS triggers a red flash on eval', async ({ page }) => {
   // Minimal session + intentionally broken actor body — `note("c` is an
   // unterminated string AND an unbalanced paren, which fails the
   // `new Function(stripped)` guard at strudel.ts:773-778 (parse: SyntaxError).
-  const session = 'actor broken broken.strudel strudel\n';
+  const session = 'core\nactor broken broken.strudel strudel\n';
   const broken = 'note("c, unbalanced parens\n';
 
   await page.evaluate(
@@ -124,7 +124,7 @@ test('Failed Strudel eval surfaces an error entry in the Console panel', async (
   await page.goto('');
   await expect(page.getByText('KANOPI').first()).toBeVisible({ timeout: 10_000 });
 
-  const session = 'actor broken broken.strudel strudel\n';
+  const session = 'core\nactor broken broken.strudel strudel\n';
   const broken = 'note("c, unbalanced parens\n';
 
   await page.evaluate(

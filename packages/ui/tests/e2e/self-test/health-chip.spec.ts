@@ -57,7 +57,13 @@ test('an unresolved eval.strudel(bank:…) bank turns the compile chip RED (sign
 
   // Same skeleton as tests/fixtures/strudel.bps (parses + derives clean) but declaring
   // a bank absent from the guestLibraries catalog — the ONLY thing wrong with it.
-  const broken = `actor beat  eval.strudel(bank:"zzz-nonexistent")
+  //
+  // ⛔ ET « LA SEULE » SE VÉRIFIE À CHAQUE FRAPPE DU LANGAGE. Le 2026-09-02, `actor` a quitté le
+  // socle : cette scène a cessé de compiler, le voyant a dit « 1 error » là où le banc attend
+  // « resource error », et le banc a rougi pour une cause qui n'est pas son sujet. La ligne `core`
+  // lui rend son unique défaut.
+  const broken = `core
+actor beat  eval.strudel(bank:"zzz-nonexistent")
 
 -----
 S -> beat_r
