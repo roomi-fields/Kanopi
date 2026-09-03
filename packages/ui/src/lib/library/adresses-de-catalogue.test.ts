@@ -74,31 +74,16 @@ function cheminLisible(cle: string): string {
 
 type Trouvaille = { quoi: string; ou: string };
 
-/**
- * ⛔ UNE EXEMPTION NOMMÉE, DATÉE, POUR UN SEUL CHEMIN — jamais un périmètre rétréci.
- *
- * `scripts/garde-portes-de-librairie.mjs` importe le paquet pour en tirer LA LISTE DES CLÉS, et
- * bâtit son motif dessus : il refuse que ma source nomme `lib/<clé>.json` au lieu de la porte.
- *
- * ⇒ POURQUOI IL N'EST PAS ENCORE BASCULÉ, ET C'EST MESURÉ, PAS SUPPOSÉ. J'ai essayé le 2026-09-03
- *   de lui faire lire la porte des objets : les deux populations NE SE RECOUVRENT PAS — `LIBS`
- *   porte 24 clés qui sont des noms de FICHIER (`alphabets`, `scales`, `tunings`, `sounds`,
- *   `temperaments`, `voices`, `test_alphabets`…), la porte 20 familles qui sont des MOTS
- *   d'invocation (`alphabet`, `scale`, `tuning`, `sound`…). Dix clés ne sont pas des familles.
- * ⇒ J'ai alors essayé de retirer la liste et de refuser tout `lib/<mot>.<ext>` : l'instrument m'a
- *   corrigé en trois secondes — il attrapait `scripts/lib/regimes-des-voisins.json`, MON PROPRE
- *   fichier, et ses propres lignes. **La liste avait une fonction que je n'avais pas vue** :
- *   distinguer un catalogue de l'amont d'un fichier `lib/` quelconque. Réécriture annulée.
- * ⇒ ⇒ La liste des noms de fichier n'existe QUE dans le paquet qui sort. Le sujet de ce garde meurt
- *   donc avec lui — « ne nomme pas le fichier d'un catalogue » n'a plus d'objet quand aucun fichier
- *   n'est atteignable. Se retire-t-il, ou prend-il une autre forme ? **Ce n'est pas à moi de le
- *   trancher seul** ; la question est chez l'architecte, avec cette mesure.
- *
- * ⚠️ CETTE EXEMPTION NE COUVRE QU'UN CHEMIN, ET C'EST TOUT SON INTÉRÊT : un lecteur NEUF, ailleurs,
- * fait toujours rougir ce verrou. Rétrécir le périmètre à la place — ce que ce fichier faisait sans
- * le savoir jusqu'à ce matin — aurait tout laissé passer en silence.
- */
-const EXEMPTE = 'scripts/garde-portes-de-librairie.mjs';
+// ⛔ L'EXEMPTION QUI VIVAIT ICI EST RETIRÉE, ET SA CAUSE AVEC — 2026-09-03, quelques heures après
+// l'avoir posée. Elle couvrait `scripts/garde-portes-de-librairie.mjs`, seul vrai lecteur restant :
+// il importait le paquet pour en tirer sa liste de noms de catalogue. Deux réécritures avaient
+// échoué (les familles de la porte ne recouvrent pas les noms de fichier ; sans liste, l'instrument
+// rendait des faux positifs sur mes propres fichiers), et j'avais conclu que la liste n'existait que
+// dans le paquet qui sort.
+// ⇒ ⚠️ C'ÉTAIT FAUX, ET LA SOURCE QUE JE N'AVAIS PAS ESSAYÉE ÉTAIT LA PLUS ÉVIDENTE : les fichiers
+//   eux-mêmes, dans l'espace PUBLIÉ de bpscript (`.publie/BPscript/lib/`). Le garde y lit 21 noms de
+//   catalogue réels — son sujet exact, au lieu d'une projection en clés — sans importer quoi que ce
+//   soit. Une exemption posée sur « je ne sais pas faire » se retire quand on trouve comment.
 
 /** Ce que mon code écrit et qui atteindrait le paquet voué au retrait : l'import de la porte, ou un
  *  accès à son objet. Les deux graphies d'un accès — le point et le crochet — parce qu'un verrou qui
@@ -109,7 +94,6 @@ function lecturesDuPaquet(): { trouvailles: Trouvaille[]; fichiers: number } {
   for (const [chemin, texte] of Object.entries(SOURCE)) {
     fichiers++;
     const lisible = cheminLisible(chemin);
-    if (lisible.endsWith(EXEMPTE)) continue;
     const lignes = sansCommentaires(texte).split('\n');
     lignes.forEach((l, i) => {
       const ou = `${lisible}:${i + 1}`;
@@ -141,15 +125,19 @@ describe('le paquet `bpscript/libs-data` n’a plus aucun lecteur dans ma source
     ).toBeGreaterThan(150);
   });
 
-  it('l’exemption vise un chemin qui EXISTE — sinon elle couvre un fantôme', () => {
-    // ⛔ UNE EXEMPTION QUI NE DÉSIGNE PLUS RIEN EST UN TROU QUI SE TAIT. Le jour où ce garde bascule
-    // ou disparaît, ce cas rougit et l'exemption se retire dans le même geste.
+  it('le balayage atteint bien mes DEUX racines de code — pas seulement l’une', () => {
+    // ⛔ LE PÉRIMÈTRE SE VÉRIFIE, IL NE SE SUPPOSE PAS. Ce verrou ne balayait que `packages/ui/src`
+    // et proclamait une absence sur cette portion-là ; le seul vrai lecteur vivait dans `scripts/`.
+    // Sans ce cas, un glob qui cesserait de résoudre rendrait le verrou muet et vert.
     const vus = Object.keys(SOURCE).map(cheminLisible);
     expect(
-      vus.filter((v) => v.endsWith(EXEMPTE)),
-      `l'exemption nomme « ${EXEMPTE} », et le balayage ne le voit pas : soit il a basculé (retire ` +
-        `l'exemption), soit le périmètre ne l'atteint plus (et le verrou ment sur ce qu'il couvre).`
-    ).toHaveLength(1);
+      vus.filter((v) => v.startsWith('scripts/')).length,
+      'ZÉRO fichier de `scripts/` balayé — le verrou ne couvre plus que la moitié de mon code.'
+    ).toBeGreaterThan(10);
+    expect(
+      vus.filter((v) => v.startsWith('src/')).length,
+      'ZÉRO fichier de `packages/ui/src` balayé — le collecteur ne résout plus.'
+    ).toBeGreaterThan(100);
   });
 
   it('aucune ligne ne l’importe ni n’accède à son objet', () => {
