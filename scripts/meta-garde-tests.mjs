@@ -28,7 +28,7 @@
  * être mis à jour EN MÊME TEMPS (aucun import partagé possible : les configs sont dans
  * packages/ui, ce script tourne depuis la racine, avant que quoi que ce soit ne soit construit).
  */
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 const ICI = path.dirname(new URL(import.meta.url).pathname);
@@ -117,6 +117,101 @@ if (admisSansMotif.length > 0) {
   );
 }
 
+// ⛔ UN BANC DÉSARMÉ RESTE VERT DES DEUX CÔTÉS — mesuré le 2026-09-04 par injection.
+//   `describe.skip` posé sur un bloc de `tempo.test.ts` : ce méta-garde a rendu « 126 test(s) vus »,
+//   inchangé — il compte des DÉCLARATIONS dans le texte, et un test sauté reste déclaré — et vitest
+//   a rendu « Test Files 1 passed », parce qu'un test sauté n'est pas un test rouge. Personne ne
+//   voyait rien. (Le cas voisin, un fichier qui ne se CHARGE plus, est bien attrapé : vitest rougit
+//   sur « Failed to resolve import ». Et un fichier déplacé HORS PORTÉE mord au contrôle ci-dessus.
+//   C'était le seul des trois angles sans gardien.)
+//
+// CE QUI PASSE, ET C'EST LA SEULE FORME ADMISE : un saut CONDITIONNEL motivé —
+//   `test.skip(!isProd, 'requires KANOPI_BASE_URL…')`. Il dit à quelle condition le cas ne
+//   s'applique pas, et il s'exécute partout ailleurs. Un `it.skip('…')` ne dit rien et ne
+//   s'exécute jamais : c'est un banc retiré du service sans que rien ne le signale.
+//   `it.fails` n'est pas concerné — il EXÉCUTE, et exige l'échec ; le jour où le cas passe, vitest
+//   le dit. C'est une exception qui expire seule, l'inverse d'un saut.
+// ⛔ ET IL EXIGE UNE DATE, PARCE QU'UN COMMENTAIRE N'EXPIRE PAS. Ma première rédaction refusait tout
+//   saut, et elle était TROP LARGE : les quatre sauts vivants ici portent leur motif juste au-dessus,
+//   en commentaire — « la forme qui préserverait ces réglages n'existe pas encore dans le parseur,
+//   sera revue avec FaustX ». Une description fausse d'une situation juste envoie corriger le mauvais
+//   objet. ⇒ Mais le défaut de fond restait : ce motif ne rougit JAMAIS. Le jour où FaustX arrive,
+//   rien ne rappelle ces bancs, et ils dorment un mois de plus. Un `it.fails` expire seul ; un saut
+//   commenté, non. ⇒ La date le rend mortel : le garde la lit et REFUSE au-delà de PEREMPTION_JOURS.
+const PEREMPTION_JOURS = 90;
+const RE_SAUT =
+  /\b(?:describe|it|test)\.only\b|\b(?:describe|it)\.skip\s*\(|\btest\.skip\s*\(\s*['"`]|\bx(?:it|describe)\s*\(/;
+const RE_TOUJOURS_REFUSE = /\b(?:describe|it|test)\.only\b/; // `.only` éteint TOUS les autres
+const RE_DATE = /\b(20\d\d)-(\d\d)-(\d\d)\b/;
+const sansCommentaires = (t) =>
+  t
+    .replace(/\/\*[\s\S]*?\*\//g, (b) => b.replace(/[^\n]/g, " "))
+    .replace(/\/\/[^\n]*/g, " ");
+
+/** Le motif d'un saut se lit dans les lignes de COMMENTAIRE qui le précèdent immédiatement — c'est
+ *  là qu'il s'écrit vraiment, et un garde se prouve sur la graphie que le code écrit. */
+const motifAuDessus = (brutes, i) => {
+  const bloc = [];
+  for (let k = i - 1; k >= 0; k--) {
+    const l = brutes[k].trim();
+    if (l.startsWith("//") || l.startsWith("*") || l.startsWith("/*"))
+      bloc.unshift(l);
+    else break;
+  }
+  return bloc.join(" ");
+};
+
+const desarmes = [];
+let sautsExamines = 0;
+for (const f of [...couvertsVitest, ...couvertsPlaywright]) {
+  const brutes = readFileSync(path.join(RACINE, f), "utf-8").split("\n");
+  const nues = sansCommentaires(brutes.join("\n")).split("\n");
+  nues.forEach((l, i) => {
+    if (!RE_SAUT.test(l)) return;
+    sautsExamines++;
+    const ou = `${f}:${i + 1}`;
+    const extrait = l.trim().slice(0, 72);
+    if (RE_TOUJOURS_REFUSE.test(l))
+      return desarmes.push(`${ou} — ${extrait}\n         (un \`.only\` ÉTEINT tous les autres cas)`);
+    const motif = motifAuDessus(brutes, i);
+    const d = motif.match(RE_DATE);
+    if (!d)
+      return desarmes.push(
+        `${ou} — ${extrait}\n         (aucune DATE dans le motif au-dessus : rien ne le fera expirer)`,
+      );
+    const jours = Math.floor((Date.now() - Date.parse(d[0])) / 86400000);
+    if (jours > PEREMPTION_JOURS)
+      desarmes.push(
+        `${ou} — ${extrait}\n         (motif du ${d[0]}, soit ${jours} jours : PÉRIMÉ au-delà de ${PEREMPTION_JOURS})`,
+      );
+  });
+}
+// ⛔ CE SOUS-GARDE COMPTE CE QU'IL A EXAMINÉ. Zéro saut vu n'est pas « aucun saut » : c'est un motif
+//   qui ne reconnaît plus la graphie que le code écrit, ou une liste de fichiers vide. Le plancher
+//   est à UN parce que la population réelle vaut quatre au 2026-09-04 ; le jour où le dernier saut
+//   part, cette ligne rougit et se retire avec lui — c'est voulu, elle dit alors la vérité.
+if (sautsExamines === 0) {
+  echecs++;
+  console.error(
+    "FAIL méta-garde — ZÉRO saut examiné : le motif ne reconnaît plus la graphie des sauts, ou la " +
+      "liste de fichiers est vide. Un garde qui n'a rien regardé ne prouve rien.",
+  );
+}
+
+if (desarmes.length > 0) {
+  echecs++;
+  console.error(
+    `FAIL méta-garde — ${desarmes.length} banc(s) DÉSARMÉ(S) sans motif daté et vivant : ils sont ` +
+      "déclarés, comptés ici, et ne mesurent rien. Ni ce garde ni le lanceur ne rougit dessus.",
+  );
+  for (const d of desarmes) console.error(`       ${d}`);
+  console.error(
+    `       ⇒ Réparer le cas et retirer le saut ; ou écrire au-dessus un motif portant sa DATE ` +
+      `(AAAA-MM-JJ), qui rougira de lui-même passé ${PEREMPTION_JOURS} jours ; ou, si la condition ` +
+      "est mesurable, un saut CONDITIONNEL : `test.skip(<condition>, '<raison>')`.",
+  );
+}
+
 // ANTI-VACUITÉ : le balayage doit voir un nombre significatif de fichiers ; sinon il ne regarde
 // plus au bon endroit. Compte réel au moment T : 91 (59 vitest + 32 playwright). Plancher fixé
 // nettement en dessous pour tolérer la croissance/suppression normale du repo sans être un
@@ -134,6 +229,6 @@ if (trouves.length < PLANCHER_TESTS) {
 console.log(
   `${echecs === 0 ? "PASS" : "FAIL"} méta-garde — ${trouves.length} test(s) vu(s) ` +
     `(${couvertsVitest.length} couverts vitest, ${couvertsPlaywright.length} couverts playwright, ` +
-    `${nonCouverts.length - horsGateNonAdmis.length} hors-gate admis motivés).`,
+    `${nonCouverts.length - horsGateNonAdmis.length} hors-gate admis motivés, ${sautsExamines} saut(s) examiné(s)).`,
 );
 process.exit(echecs ? 1 : 0);
