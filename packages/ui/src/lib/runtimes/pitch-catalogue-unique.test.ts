@@ -25,9 +25,13 @@
 // possède) ou à Kairos (qui le lit). Le fait qui l'a montré : quand le champ d'accordage a été
 // renommé en amont le 2026-08-08, le SEUL code cassé chez nous était ce verrou — nous avons été
 // mis en rouge par un champ que l'application ne lit jamais.
-import { LIBS } from 'bpscript/libs-data';
+// ⛔ LU À LA PORTE DES OBJETS DEPUIS LE 2026-09-03, plus dans le paquet `bpscript/libs-data` : il
+// SORT (décision de Romain, phase 5) et `adresses-de-catalogue.test.ts` verrouille désormais
+// l'absence de tout lecteur. Le sujet de CE banc ne change pas — les trois conventions du moteur
+// BP3 natif sont des entrées ORDINAIRES du catalogue de l'amont, sans branche BP3 nulle part.
+// Une famille remplace un nom de fichier : `alphabet`, le mot qu'une scène invoque.
+import { famille } from 'bpscript/objets';
 import { describe, it, expect } from 'vitest';
-const alphabetsJson = LIBS.alphabets;
 
 // Source de l'adaptateur lue par le bundler (même route que le garde de corpus,
 // `library/corpus-compile.test.ts:60`) : rien de Node ici, `src/` n'en porte pas les types.
@@ -41,8 +45,7 @@ const ADAPTATEUR = Object.values(
 /** Les trois conventions de notes du moteur BP3 natif, portées par l'amont depuis le 2026-07-29. */
 const CONVENTIONS_BP3 = ['bp3_english', 'bp3_fr', 'bp3_indian'] as const;
 
-type Entree = Record<string, unknown>;
-const ALPHABETS = alphabetsJson as unknown as Record<string, Entree>;
+const ALPHABETS = new Set((famille('alphabet')?.entrees ?? []).map((e) => e.nom));
 
 describe('un seul catalogue de hauteur', () => {
   it('l’adaptateur n’étale AUCUN second catalogue dans le `pitchLib` qu’il tend à Kairos', () => {
@@ -62,9 +65,14 @@ describe('un seul catalogue de hauteur', () => {
     ).toEqual([]);
   });
 
-  it('les trois conventions BP3 sont des entrées ORDINAIRES du catalogue amont', () => {
+  it('les trois conventions BP3 sont des entrées ORDINAIRES de la famille `alphabet`', () => {
+    // ANTI-VACUITÉ : une famille vide passerait un « chacune est là » en n'ayant rien examiné.
+    expect(
+      ALPHABETS.size,
+      'la famille `alphabet` est VIDE à la porte — rien à vérifier'
+    ).toBeGreaterThan(3);
     for (const nom of CONVENTIONS_BP3) {
-      expect(ALPHABETS[nom], `alphabet ${nom} absent de l’amont`).toBeDefined();
+      expect(ALPHABETS.has(nom), `alphabet ${nom} absent de l’amont`).toBe(true);
     }
   });
 });

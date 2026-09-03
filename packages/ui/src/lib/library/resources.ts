@@ -249,7 +249,15 @@ export const RESOURCE_FILES: LibraryFile[] = [
   carteDeFamille('temperament'),
   carteDeFamille('scale'),
   carteDeFamille('octaves'),
-  carteDeFamille('function'),
+  // ⛔ PAS DE CARTE `function` : la famille a DISPARU le 2026-09-03 (BPscript `45d0808`, arbitrage de
+  // Romain sur les en-têtes) — une manipulation est un MOT du langage, et les quatre sont désormais
+  // les CONTRÔLES qui les nommaient déjà (`transpo.transpose`, `scaleshift`, `chromashift`,
+  // `keyxpand`), chacun portant son `body` et ses `params`. `transpo` est un axe de réglage, pas un
+  // catalogue parcourable : la carte n'a pas de remplaçante, et en afficher une montrerait ce que le
+  // langage a retiré — le reproche exact que le backlog KAN-42 adresse à 203 scènes.
+  // ⚠️ C'EST `familleOuCrie` QUI L'A DIT, AU CHARGEMENT DU MODULE : cinq bancs sont tombés d'un coup
+  // sur « la porte ne sert aucune famille `function` ». C'est le cri que ce fichier a été écrit pour
+  // produire — l'ancienne forme (`LIBS.digital` devenu `undefined`) aurait affiché une carte vide.
   // bp3 — one card per bundled `-se.<name>` auxiliary settings file.
   ...Object.entries(BUNDLED_SE).map(([name, raw]) => bp3AuxFile(name, raw)),
   // strudel + mercury — one card per guestLibraries entry (engine = language).

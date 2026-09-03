@@ -9,21 +9,41 @@
 // Glue: the bundled library is shipped as raw JSON (same `?raw` pattern as the
 // `-se` aux files in bp3-aux.ts) and parsed here.
 
-import { LIBS } from 'bpscript/libs-data';
+import { objets } from 'bpscript/objets';
 import type { VoiceOutputType } from '../runtimes/adapter';
 import bundledDevicesRaw from '../../../../library/devices.json?raw';
-// The channel catalog is bpscript's, imported AS-IS (same pattern as
-// bpx-adapter.ts:22's `LIBS.alphabets`) — directions (`in`/`out`) and default
-// connection `params` are amont data, not a second copy kept here.
-const coreJson = LIBS.core;
 
-const CANAUX = coreJson.schema.channels;
+// LES CANAUX SONT LES EXEMPLAIRES DU PROTOTYPE `destination`, LUS À LA PORTE DES OBJETS —
+// directions (`in`/`out`) et `params` de connexion sont la donnée de l'amont, jamais une seconde
+// copie tenue ici.
+//
+// ⛔ CE FICHIER A JETÉ AU CHARGEMENT LE 2026-09-03. Il lisait `LIBS.core.schema.channels` dans le
+// paquet `bpscript/libs-data` ; le schéma de `core` s'est DISSOUS (arbitrage de Romain, point 2 des
+// cinq du 2026-09-03 ; BPscript `e5b1ee6`), `LIBS.core.schema` est devenu `undefined`, et l'accès
+// levait à l'IMPORT du module — tout ce qui l'importe tombait avec lui. Le préavis nommait cette
+// ligne et sa réécriture ; un préavis lu n'est pas une bascule faite.
+//
+// ⚠️ UN CANAL EST UN EXEMPLAIRE, PAS UNE FAMILLE : `famille('destination')` rend `null` (mesuré),
+// c'est `derive === 'destination'` qui les trouve. BPscript s'est fait prendre par là en frappant,
+// et me l'a écrit — la mesure est refaite ici : six canaux, `audio midi osc keyboard dmx text`.
+const CANAUX: Record<string, Record<string, unknown>> = Object.fromEntries(
+  objets()
+    .filter((o) => o.derive === 'destination')
+    .map((o) => [o.nom, o.membres])
+);
 
 // DEVICES_SPEC §1 — a device is name + type + connection params.
 // `video` A ETE RETIRE (decision 2026-07-14-modele-producteur-canal-eval-transport.md:32 :
 // « Il n'y a PAS de transport.video / transport.visual »). Les visuels embarques (hydra/p5)
 // ne sortent par AUCUN transport : ce sont des producteurs, pas des destinations.
-export type DeviceType = keyof typeof CANAUX;
+//
+// ⚠️ CE TYPE ÉTAIT UNE UNION DE LITTÉRAUX, IL EST DEVENU `string`, ET JE LE DIS PLUTÔT QUE DE LE
+// TAIRE. Il se lisait `keyof typeof CANAUX` sur un import JSON typé ; la porte des objets rend de la
+// DONNÉE (`Objet[]`), donc plus aucun littéral. Ce que le type garantissait à la compilation — une
+// clé de compatibilité pour chaque canal de sortie — est tenu à l'exécution par
+// `catalogue-source-unique.test.ts`, qui NOMME le canal manquant. Le garde existait déjà ; c'est lui
+// qui porte la garantie désormais, et non un type dérivé d'un fichier.
+export type DeviceType = string;
 
 export interface Device {
   /** unique name referenced by `out.<name>` (kebab/lower) */

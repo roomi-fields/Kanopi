@@ -38,7 +38,7 @@ const CODE = SOURCE.split('\n')
   .join('\n');
 
 /** Les clés que porte le contexte de projection, au-delà de ce que BPx construit. */
-const CATALOGUES = ['homomorphismeLib:', 'modulation:'];
+const CATALOGUES = ['modulation:'];
 
 describe('le contexte de projection a UNE source, pas trois', () => {
   it('la fabrique existe (sinon ce garde mesurerait le vide)', () => {
@@ -76,12 +76,18 @@ describe('le contexte de projection a UNE source, pas trois', () => {
   // n'empêcherait le transport de repousser — sous son nom ou sous un nom neutre — et les décisions
   // interdisent exactement cela. Le compilateur résout, l'arbre porte, l'aval lit.
   // `digitalLib:` a suivi le 2026-09-03 à 01:30 (kairos `3a7be2d` lit `function.<nom>` et son corps
-  // dans la section ; sonde `tryTicks`/`transpose` 16/16 sans lui). Même verrou d'absence.
-  it('et AUCUN sac de hauteur, de voix ni de fonctions, AUCUN canal personnel n’est transporté', () => {
+  // dans la section ; sonde `tryTicks`/`transpose` 16/16 sans lui).
+  // `homomorphismeLib:` le dernier, le 2026-09-03 au soir — et sur une mesure qui dit plus que ce
+  // qu'on m'annonçait : BPscript a fait descendre le corps de l'applicateur sur le PROTOTYPE
+  // `homomorphism` (`45d0808`), donc la section joint la table AVEC sa fonction. On m'écrivait
+  // « il reste, présent, pas cassé » ; mesuré : SANS lui `tryhomomorphism` rend 11 notes / 6
+  // hauteurs et `dhati2` 58 notes, AVEC lui **Kairos JETTE**. Le retrait répare une casse.
+  it('et AUCUN sac de hauteur, de voix, de fonctions ni d’homomorphisme n’est transporté', () => {
     const suspects = [
       'pitchLib:',
       'voicesLib:',
       'digitalLib:',
+      'homomorphismeLib:',
       'pitchLibMine',
       'personalPitchLib',
       'libMine',

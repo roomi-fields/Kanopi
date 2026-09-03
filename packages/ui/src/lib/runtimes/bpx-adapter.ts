@@ -1,4 +1,3 @@
-import { LIBS } from 'bpscript/libs-data';
 import type { RuntimeAdapter, EvalSource, LogPush } from './adapter';
 import type { Runtime } from '../core-mock';
 import { compileBps } from './compile-cache';
@@ -216,19 +215,18 @@ import routingJson from '../../../../library/routing.json';
 //
 // `digitalLib` est sorti à son tour le 2026-09-03 à 01:30 : kairos `3a7be2d` (reconstruit 01:23:58)
 // lit `function.<nom>` et son corps dans la section ; ma sonde SANS `digitalLib` rend `tryTicks`
-// (`transpose`) 16 notes / 16 hauteurs, comme avec. Reste `homomorphismeLib`, et lui seul : la
-// section joint les tables de l'homomorphisme mais pas la fonction qui les applique — BPscript a
-// proposé un membre `function:` sur le prototype à Romain ; kairos bascule à son mot, moi après ma
-// sonde.
-
-// HomomorphismLib (`lib/homomorphism`, fonction `substitute`) — jumelle structurelle de `digital` :
-// on consomme `LIBS.homomorphism` (AVEC le `body` TS capté depuis `lib/homomorphism/substitute.ts`
-// par libs-bundle, PAS le JSON nu qui n'a que la description). Kairos APPLIQUE la substitution de
-// symbole à la résolution (HOST-HOMOLIB-INJECT). SÛR à injecter : BPx NE SUBSTITUE PLUS au niveau
-// feuille (ex-`applyImage` retiré, session.ts:1155 / node.ts:495 de BPx e339dec ; bascule PROUVÉE
-// anti-double-substitution par l'e2e ISO HZ 75/75 de kairos 63f38b2). Le `Image()` de TEMPLATE reste
-// un mécanisme BPx séparé et inchangé, non concerné par cette lib.
-const HOMOMORPHISM_LIB = LIBS.homomorphism;
+// (`transpose`) 16 notes / 16 hauteurs, comme avec.
+//
+// ⛔ ET `homomorphismeLib` EST SORTI LE DERNIER, SUR UNE MESURE QUI DIT PLUS QUE CE QU'ON M'AVAIT
+// ANNONCÉ. BPscript a fait descendre le corps de l'applicateur sur le PROTOTYPE `homomorphism`
+// (`45d0808`) : les dix-huit tables en héritent, donc la section joint la table AVEC la fonction qui
+// l'applique — `homomorphism.substitute` n'existe plus comme objet. On m'écrivait « `LIBS.homomorphism`
+// reste, présent, pas cassé » ; mesuré sur MA chaîne, les deux sens :
+//     tryhomomorphism   SANS le sac : 11 notes, 6 hauteurs, jetons `a b c do4 c mi4`
+//     dhati2            SANS le sac : 58 notes, jetons `dha ti dha ge na dha`
+//     les deux          AVEC le sac : ⛔ Kairos JETTE — « Cannot convert undefined or null to object »
+// Le sac ne « restait » donc pas : il cassait toute scène d'homomorphisme, et le retrait RÉPARE.
+// Une clame qui me décharge se mesure aussi.
 
 // ════════════════════════════════════════════════════════════════════════════════
 // LE CONTEXTE DE PROJECTION — UNE SEULE SOURCE, TROIS APPELS.
@@ -264,12 +262,13 @@ export function contexteDeProjection(base: unknown): Parameters<Kairos['charger'
     // de l'arbre, jointes par BPscript à la compilation (décision du 2026-09-02 ; retrait mesuré
     // sur ma chaîne le 2026-09-03 — voir le bloc plus haut).
     // NI `digitalLib` : les fonctions numériques se lisent dans la section depuis kairos `3a7be2d`.
+    // NI `homomorphismeLib` : la table ET son applicateur voyagent dans la section depuis BPscript
+    // `45d0808` — et le tendre encore FAIT JETER Kairos (mesuré, voir le bloc plus haut).
     // ⛔ LE CATALOGUE D'ACTIONS N'EST PLUS FOURNI : Romain a tranché le 2026-08-30 — « cv gate trig
     // sont obsoletes a supprimer », « il n'y a plus de cablage ca n'existe plus ». Le patching sort,
     // et avec lui l'appel-composant que ce catalogue servait à classer. L'hôte ne transporte pas un
     // catalogue dont plus rien n'est la destination. Même forme que `modLib` ci-dessous, deux causes
     // différentes : là un catalogue amont archivé, ici un mécanisme du langage supprimé.
-    homomorphismeLib: HOMOMORPHISM_LIB,
     // KRO-24 — fabrique de courbe : Kairos COMPOSE à l'aplatissement.
     // ⛔ LE REGISTRE `modLib` N'EST PLUS FOURNI : bpscript a archivé le catalogue `mod` avec les
     // modules (`885327d`, 2026-08-23), `LIBS.mod` n'existe plus, et l'hôte ne fournit pas un

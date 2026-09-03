@@ -16,12 +16,23 @@
 // des appareils rendue à l'UI est exactement les canaux `out === true` du
 // catalogue (ni plus, ni moins — `text` dedans, `keyboard` dehors).
 
-import { LIBS } from 'bpscript/libs-data';
+import { objets } from 'bpscript/objets';
 import { describe, it, expect } from 'vitest';
-const coreJson = LIBS.core;
 import { acceptedOutputTypes, listDevices, type DeviceType } from './registry';
 
-const CANAUX = coreJson.schema.channels;
+// ⛔ LES CANAUX SE LISENT À LA PORTE DES OBJETS DEPUIS LE 2026-09-03, comme `registry.ts` : le
+// schéma de `core` s'est dissous (BPscript `e5b1ee6`) et `LIBS.core.schema.channels` JETAIT. Un
+// canal est un EXEMPLAIRE du prototype `destination`, pas une famille — `famille('destination')`
+// rend `null`.
+// ⚠️ CE BANC PORTE DÉSORMAIS LA GARANTIE QUE LE TYPE TENAIT : `DeviceType` était une union de
+// littéraux dérivée d'un import JSON ; la porte rend de la donnée, donc le type est `string`. Le
+// premier cas ci-dessous — chaque canal de sortie a son entrée de compatibilité — est ce qui reste
+// pour l'assurer, et il NOMME le canal manquant.
+const CANAUX: Record<string, Record<string, unknown>> = Object.fromEntries(
+  objets()
+    .filter((o) => o.derive === 'destination')
+    .map((o) => [o.nom, o.membres])
+);
 
 function isOutChannel(canal: unknown): canal is { out: true } {
   return (
