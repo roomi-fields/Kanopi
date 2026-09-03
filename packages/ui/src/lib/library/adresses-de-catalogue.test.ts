@@ -21,16 +21,31 @@
 //
 // ⛔ LA LISTE SE DÉRIVE DE MA SOURCE, JAMAIS ÉCRITE À LA MAIN — inchangé : ce verrou lit la graphie
 // que mon code écrit vraiment, il la compte, et il refuse d'avoir examiné zéro FICHIER.
+//
+// ⛔⛔ ET SON PÉRIMÈTRE ÉTAIT TROP ÉTROIT, CE QUI EST PIRE QU'UN VERROU ABSENT : il ne balayait que
+// `packages/ui/src`, et proclamait « le paquet n'a plus AUCUN lecteur dans ma source » sur cette
+// portion-là. Le 2026-09-03, le relevé de la tour (`hub/tools/releve-porte.mjs`) m'a compté un
+// lecteur que je ne voyais pas — `scripts/garde-portes-de-librairie.mjs`, qui IMPORTAIT le paquet
+// pour en tirer sa liste de clés. *Une absence n'est une preuve que si le périmètre de recherche
+// est établi*, et le mien ne l'était pas : il était HÉRITÉ du collecteur de Vite, jamais choisi.
+// ⇒ Le balayage couvre désormais mes DEUX racines de code — `packages/ui/src` et `scripts/`.
 import { describe, it, expect } from 'vitest';
 
 // La source se prend par le collecteur de Vite, comme le fait déjà mon garde de corpus
 // (`corpus-compile.test.ts:73`) : un chemin de disque calculé depuis `import.meta.url` ne résout pas
 // sous le banc, dont l'URL de module n'est pas un fichier.
-const SOURCE = import.meta.glob('../../**/*.{ts,svelte}', {
-  query: '?raw',
-  import: 'default',
-  eager: true
-}) as Record<string, string>;
+const SOURCE: Record<string, string> = {
+  ...(import.meta.glob('../../**/*.{ts,svelte}', {
+    query: '?raw',
+    import: 'default',
+    eager: true
+  }) as Record<string, string>),
+  ...(import.meta.glob('../../../../../scripts/**/*.mjs', {
+    query: '?raw',
+    import: 'default',
+    eager: true
+  }) as Record<string, string>)
+};
 
 // ⛔ LES COMMENTAIRES SORTENT AVANT LE RELEVÉ. Trois fichiers gardent la trace ÉCRITE de leur
 // ancienne lecture — `registry.ts` raconte la ligne qui jetait, `resources.ts` les sept clés
@@ -59,6 +74,32 @@ function cheminLisible(cle: string): string {
 
 type Trouvaille = { quoi: string; ou: string };
 
+/**
+ * ⛔ UNE EXEMPTION NOMMÉE, DATÉE, POUR UN SEUL CHEMIN — jamais un périmètre rétréci.
+ *
+ * `scripts/garde-portes-de-librairie.mjs` importe le paquet pour en tirer LA LISTE DES CLÉS, et
+ * bâtit son motif dessus : il refuse que ma source nomme `lib/<clé>.json` au lieu de la porte.
+ *
+ * ⇒ POURQUOI IL N'EST PAS ENCORE BASCULÉ, ET C'EST MESURÉ, PAS SUPPOSÉ. J'ai essayé le 2026-09-03
+ *   de lui faire lire la porte des objets : les deux populations NE SE RECOUVRENT PAS — `LIBS`
+ *   porte 24 clés qui sont des noms de FICHIER (`alphabets`, `scales`, `tunings`, `sounds`,
+ *   `temperaments`, `voices`, `test_alphabets`…), la porte 20 familles qui sont des MOTS
+ *   d'invocation (`alphabet`, `scale`, `tuning`, `sound`…). Dix clés ne sont pas des familles.
+ * ⇒ J'ai alors essayé de retirer la liste et de refuser tout `lib/<mot>.<ext>` : l'instrument m'a
+ *   corrigé en trois secondes — il attrapait `scripts/lib/regimes-des-voisins.json`, MON PROPRE
+ *   fichier, et ses propres lignes. **La liste avait une fonction que je n'avais pas vue** :
+ *   distinguer un catalogue de l'amont d'un fichier `lib/` quelconque. Réécriture annulée.
+ * ⇒ ⇒ La liste des noms de fichier n'existe QUE dans le paquet qui sort. Le sujet de ce garde meurt
+ *   donc avec lui — « ne nomme pas le fichier d'un catalogue » n'a plus d'objet quand aucun fichier
+ *   n'est atteignable. Se retire-t-il, ou prend-il une autre forme ? **Ce n'est pas à moi de le
+ *   trancher seul** ; la question est chez l'architecte, avec cette mesure.
+ *
+ * ⚠️ CETTE EXEMPTION NE COUVRE QU'UN CHEMIN, ET C'EST TOUT SON INTÉRÊT : un lecteur NEUF, ailleurs,
+ * fait toujours rougir ce verrou. Rétrécir le périmètre à la place — ce que ce fichier faisait sans
+ * le savoir jusqu'à ce matin — aurait tout laissé passer en silence.
+ */
+const EXEMPTE = 'scripts/garde-portes-de-librairie.mjs';
+
 /** Ce que mon code écrit et qui atteindrait le paquet voué au retrait : l'import de la porte, ou un
  *  accès à son objet. Les deux graphies d'un accès — le point et le crochet — parce qu'un verrou qui
  *  n'en connaît qu'une devient aveugle le jour où l'autre arrive. */
@@ -68,6 +109,7 @@ function lecturesDuPaquet(): { trouvailles: Trouvaille[]; fichiers: number } {
   for (const [chemin, texte] of Object.entries(SOURCE)) {
     fichiers++;
     const lisible = cheminLisible(chemin);
+    if (lisible.endsWith(EXEMPTE)) continue;
     const lignes = sansCommentaires(texte).split('\n');
     lignes.forEach((l, i) => {
       const ou = `${lisible}:${i + 1}`;
@@ -97,6 +139,17 @@ describe('le paquet `bpscript/libs-data` n’a plus aucun lecteur dans ma source
       `${fichiers} fichier(s) balayé(s) — le collecteur ne lit plus ma source (racine changée, ` +
         `extension renommée), pas que le dépôt s'est vidé.`
     ).toBeGreaterThan(150);
+  });
+
+  it('l’exemption vise un chemin qui EXISTE — sinon elle couvre un fantôme', () => {
+    // ⛔ UNE EXEMPTION QUI NE DÉSIGNE PLUS RIEN EST UN TROU QUI SE TAIT. Le jour où ce garde bascule
+    // ou disparaît, ce cas rougit et l'exemption se retire dans le même geste.
+    const vus = Object.keys(SOURCE).map(cheminLisible);
+    expect(
+      vus.filter((v) => v.endsWith(EXEMPTE)),
+      `l'exemption nomme « ${EXEMPTE} », et le balayage ne le voit pas : soit il a basculé (retire ` +
+        `l'exemption), soit le périmètre ne l'atteint plus (et le verrou ment sur ce qu'il couvre).`
+    ).toHaveLength(1);
   });
 
   it('aucune ligne ne l’importe ni n’accède à son objet', () => {
