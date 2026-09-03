@@ -21,7 +21,8 @@ function applyTheme(t: Theme) {
 class UiStore {
   activeActivityView = $state<ActivityView>('now');
   sidebarCollapsed = $state(false);
-  // KAN-21: Structure is the default bottom tab (the 'structure' production view).
+  // KAN-77 (renuméroté depuis KAN-21 le 2026-09-03) : Structure is the default bottom tab
+  // (the 'structure' production view).
   bottomPanelTab = $state<BottomPanelTab>('structure');
   bottomPanelHeight = $state(200);
   bottomPanelCollapsed = $state(false);

@@ -9,7 +9,9 @@
   // views (Structure=timeline, Texte=text) are rendered by the runtime-ui runtime
   // — Kanopi CABLES them in as tabs and fixes their ORDER here; it does not own
   // their rendering.
-  // Tab order (KAN-21): Structure (the default tab) · Texte · Console.
+  // Tab order (KAN-77, renuméroté depuis KAN-21 le 2026-09-03 : trois numéros portaient chacun
+  // DEUX entrées de contenu différent au backlog, une citation ne disait plus laquelle elle visait).
+  // Structure (the default tab) · Texte · Console.
   const pvTab = (id: BottomPanelTab): { id: BottomPanelTab; label: string }[] => {
     const v = productionViews.find((v) => v.id === id);
     return v ? [{ id, label: v.title }] : [];
