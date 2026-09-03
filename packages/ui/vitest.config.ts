@@ -35,6 +35,11 @@ export default defineConfig({
     dedupe: ['svelte']
   },
   test: {
+    // ⛔ AUCUNE TRONCATURE DANS UN MESSAGE D'ÉCHEC — 2026-09-04. Par défaut chai coupe à 40
+    // caractères, et le 2026-09-04 onze bancs ont rougi en ne montrant que « 'filter' cannot be
+    // written at the t… ». Un motif ne peut pas se caler sur un texte qu'on n'a pas vu en entier :
+    // l'instrument forçait à deviner la graphie, exactement ce qu'un garde interdit.
+    chaiConfig: { truncateThreshold: 0 },
     // La LÉGENDE de cette campagne : l'état des voisins lus vivants, imprimé en tête et refusant
     // de s'afficher vide (voir le fichier). Mise en place GLOBALE, jamais amorce de banc — la
     // raison est écrite ci-dessous, à `setupFiles`.

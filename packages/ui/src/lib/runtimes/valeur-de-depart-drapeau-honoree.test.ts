@@ -105,6 +105,6 @@ describe('la valeur de départ déclarée par un drapeau est honorée à la dér
     expect(
       erreurs.map((e) => e.message ?? '').join(' | '),
       'le refus ne parle pas de la forme du drapeau — il échoue pour une autre raison'
-    ).toMatch(/drapeau/i);
+    ).toMatch(/a flag carries its initial value/i);
   });
 });

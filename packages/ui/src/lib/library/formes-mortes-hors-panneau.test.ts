@@ -35,7 +35,7 @@ const SUPPRIMEES = [
     mot: 'transport',
     scene: 'transport.midi\ncore\n-----\nS -> C4 D4\n',
     jamais: 'midi',
-    empreinte: /aucune librairie ne sert l'axe 'transport'/
+    empreinte: /no library serves the axis 'transport'/
   },
   // ⛔ TROIS DE PLUS LE 2026-09-02, ET ILS VIVAIENT DANS MA PROPRE TABLE. `devices`, `controls` et
   // `filter` figuraient dans `DIRECTIVE_TYPES` comme des invocations valides — la table datait de
@@ -46,19 +46,19 @@ const SUPPRIMEES = [
     mot: 'devices',
     scene: 'devices\ncore\n-----\nS -> C4 D4\n',
     jamais: 'all',
-    empreinte: /'devices' n'est déclaré par aucune librairie chargée/
+    empreinte: /'devices' is declared by no loaded library/
   },
   {
     mot: 'controls',
     scene: 'controls\ncore\n-----\nS -> C4 D4\n',
     jamais: 'controls',
-    empreinte: /'controls' n'est déclaré par aucune librairie chargée/
+    empreinte: /'controls' is declared by no loaded library/
   },
   {
     mot: 'filter',
     scene: 'filter\ncore\n-----\nS -> C4 D4\n',
     jamais: 'filter',
-    empreinte: /'filter' ne peut pas s'écrire en tête de scène/
+    empreinte: /'filter' cannot be written at the top of a scene/
   }
 ];
 

@@ -1,3 +1,11 @@
+// ⛔ LES DIAGNOSTICS DU COMPILATEUR SONT PASSÉS EN ANGLAIS — bpscript `d6d98ac`, 2026-09-03 23:19.
+// Les motifs de ce fichier verrouillent le TEXTE que bpscript écrit, faute d'un code d'erreur stable
+// (son catalogue de diagnostics est un projet, `docs/design/PARSEUR_DERIVE.md` § Phase 2 bis). Onze
+// bancs ont rougi d'un coup le 2026-09-04 : « terminal 'a' non déclaré » → « terminal 'a' undeclared
+// — absent from the alphabets in scope ». ⇒ CONFRONTÉ AVANT DE TRADUIRE, cas par cas : les onze sont
+// le MÊME refus, même sujet et même conseil, dans une autre langue. Aucun comportement n'a bougé —
+// traduire ces motifs ne masque donc aucune régression. ⚠️ Cette fragilité est reportée : un banc
+// calé sur un texte libre recasse à chaque reformulation de l'amont.
 // GARDE DE STATUT DU CORPUS — chaque scène BPScript de la bibliothèque a un statut ATTENDU, et
 // le portillon échoue dès que le réel s'en écarte, DANS LES DEUX SENS.
 //
@@ -187,7 +195,7 @@ const ROUGES_DECLAREES: Array<{
   // d'arbitrage ne se fossilise pas : il sort dès que sa cause est levée.)
   {
     fichier: 'BPScript-tests/tryCsoundObjects.bps',
-    motif: /terminal '(a|b|c|d|e|f|midiobject)' non déclaré/,
+    motif: /terminal '(a|b|c|d|e|f|midiobject)' undeclared/,
     cause: 'arbitrage-attendu',
     attend:
       "la DESTINATION Csound. L'alphabet original charge -mi ET -cs : ce sont des objets sonores Csound. Toutes les scènes déjà migrées vont vers :midi ; aucune ne montre comment s'écrit une destination Csound. Je n'invente pas un précédent. Attend : architecte / bpscript."
@@ -208,7 +216,7 @@ const ROUGES_DECLAREES: Array<{
     // CE QUE ÇA VAUT : avoir écrit l'ORDRE des causes empilées a permis de rebrancher le garde
     // sans rien redécouvrir. Un rouge déclaré n'a pas UNE cause, il a une PILE ; ne pas croire le
     // sujet clos quand la première se lève.
-    motif: /terminal '(a|b)' non déclaré/,
+    motif: /terminal '(a|b)' undeclared/,
     cause: 'arbitrage-attendu',
     attend:
       "COMMENT BPScript écrit « un alphabet PLUS une convention de notes » — question chez Romain, 11 conversions concernées, 61 notes à déclarer. La source répond pour le CONTENU (le réglage natif -se.trySrand porte « NoteConvention: 0 » = anglaise, et -ho.tryKeyXpand déclare l'alphabet « a b ») ; ce qui manque est sa GRAPHIE en BPScript. Je n'y touche pas : c'est l'écriture de bpscript et l'arbitrage est chez Romain. ✅ ET SON SAC DE MODE N'EST PLUS UNE EXCEPTION EN ATTENTE — c'est LA FORME JUSTE. Décision Romain du 2026-08-09 : le critère est l'ISO avec le moteur natif, pas une préférence de graphie. BPx a dérivé cette grammaire AU BINAIRE et établi que LE NATIF A LES DEUX PLACES ET QUE LES DEUX AGISSENT — une règle varie à cause de la re-semence posée EN TÊTE, une autre à cause de celle qui la précède DANS UNE RÈGLE. Ce ne sont pas deux graphies pour une fonction, ce sont DEUX PORTÉES d'une même fonction. Le sac ne se ferme donc pas pour `randomize`, et cette scène le garde sans dérogation. ⚠️ CE QUI M'AVAIT FAIT LA DÉFAIRE RESTE VRAI ET N'EST PLUS UN OBSTACLE : j'avais migré, puis mesuré que la scène cessait de refuser sous graine figée — le mot quittait le champ que BPx lit. La mesure était juste ; c'est sa CONCLUSION qui a changé de sens. Ce n'était pas « la migration casse », c'était « les deux places existent, et l'une d'elles porte cette fonction »."
@@ -330,14 +338,14 @@ const ROUGES_DECLAREES: Array<{
   // écriture `(cutoff:…)` passerait sans le dire — même cause, donc l'excuse resterait juste.
   {
     fichier: 'cv/cv-backtick.bps',
-    motif: /attribut '\(cutoff:…\)' inconnu/,
+    motif: /unknown attribute '\(cutoff:…\)'/,
     cause: 'forme-a-venir',
     attend:
       "le branchement d'une courbe au point de paramètre (`C2(cutoff:wobble)`, lignes 32 à 34), retiré du langage avec la librairie `modulation` le 2026-08-22 et revu avec FaustX."
   },
   {
     fichier: 'code-voices/cv-curve-js.bps',
-    motif: /attribut '\(cutoff:…\)' inconnu/,
+    motif: /unknown attribute '\(cutoff:…\)'/,
     cause: 'forme-a-venir',
     attend:
       "le branchement d'une courbe au point de paramètre (`C4(cutoff:sweep)` et `G4(cutoff:sweep)`, ligne 25), retiré du langage avec la librairie `modulation` le 2026-08-22 et revu avec FaustX."
@@ -460,7 +468,7 @@ describe('[932] statut de compilation du corpus BPScript', () => {
 // banc s'éteindra une troisième fois. La condition de rallumage est la même : que trySrand.bps
 // analyse de nouveau.
 // ⚠️ SUSPENDU LE 2026-08-10, DATÉ ET MOTIVÉ — pas « réparé », pas « sauvé ».
-// Ce témoin n'ANALYSE plus : « terminal 'a' non déclaré ». Il porte lui-même la garde qui le dit
+// Ce témoin n'ANALYSE plus : « terminal 'a' undeclared ». Il porte lui-même la garde qui le dit
 // (« le témoin existe et ANALYSE proprement, sinon on ne mesure pas la dérivation ») — il fait donc
 // exactement son travail en refusant de rendre un vert.
 //
@@ -489,9 +497,9 @@ describe('[932] statut de compilation du corpus BPScript', () => {
 //  · SENS 1 — le témoin échoue POUR UNE AUTRE RAISON ⇒ non couvert, donc rouge. Une seconde
 //    casse ne peut plus se cacher derrière la première.
 const SUSPENSION_TEMOIN = {
-  /** La cause EXACTE, mesurée le 2026-08-11 : `analyse : terminal 'a' non déclaré — absent des
-   *  alphabets en portée | terminal 'b' non déclaré — absent des alphabets en portée`. */
-  motif: /terminal '[ab]' non déclaré/,
+  /** La cause EXACTE, mesurée le 2026-08-11 : `analyse : terminal 'a' undeclared — absent from
+   *  the alphabets in scope | terminal 'b' undeclared — absent from the alphabets in scope`. */
+  motif: /terminal '[ab]' undeclared/,
   /** Deux causes empilées : la scène porte encore un sac de mode que le langage ne connaît plus,
    *  et son alphabet en mémoire ne déclare plus ses deux terminaux. */
   levee:
@@ -515,7 +523,7 @@ describe('le rattrapage de graine mord', () => {
       `trySrand.bps ANALYSE de nouveau — la suspension est levée : restaurer \`expect(errors).toEqual([])\` ici ET \`expect(statut(avecAlphabet())).toBeNull()\` plus bas, puis retirer SUSPENSION_TEMOIN (${SUSPENSION_TEMOIN.levee})`
     ).toBeGreaterThan(0);
     // SENS 1 — et pour LA raison déclarée, pas pour une seconde casse qui se cacherait derrière.
-    expect(msg, `le témoin échoue, mais pas sur « terminal non déclaré » : ${msg}`).toMatch(
+    expect(msg, `le témoin échoue, mais pas sur « terminal undeclared » : ${msg}`).toMatch(
       SUSPENSION_TEMOIN.motif
     );
   });
@@ -540,7 +548,7 @@ describe('le rattrapage de graine mord', () => {
   // en frappant (df09e67, « un compilateur qui refuse ne livre rien en aval », décision Romain du
   // 2026-08-19) ; celui-ci a exactement cette forme.
   // Le sujet est devenu INEXERÇABLE ici, et pour une raison qui ne le regarde pas : le témoin est
-  // suspendu pour son propre motif (SUSPENSION_TEMOIN, « terminal non déclaré »). Tant qu'il ne
+  // suspendu pour son propre motif (SUSPENSION_TEMOIN, « terminal undeclared »). Tant qu'il ne
   // compile pas, aucun arbre n'arrive, et le rattrapage de graine ne peut pas être éprouvé.
   // SENS 2 — le jour où le témoin compile, `ast` cesse d'être nul et ce volet ROUGIT en réclamant
   // la restauration de son vrai verrou. Une suspension ne survit pas à la disparition de sa cause.
@@ -565,7 +573,7 @@ describe('le rattrapage de graine mord', () => {
     ).not.toBeNull();
     // SENS 1 — et pour LA raison déclarée. Sans ceci, un échec de DÉRIVATION (le sujet du banc)
     // passerait pour l'échec d'ANALYSE de la suspension, et la mesure serait perdue en silence.
-    expect(echec!, `il échoue, mais pas sur « terminal non déclaré » : ${echec}`).toMatch(
+    expect(echec!, `il échoue, mais pas sur « terminal undeclared » : ${echec}`).toMatch(
       SUSPENSION_TEMOIN.motif
     );
   });
