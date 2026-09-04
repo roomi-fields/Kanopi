@@ -62,11 +62,29 @@ const REGISTRE = JSON.parse(
 const DETTE = REGISTRE["encore-en-source"] ?? {};
 let examines = 0;
 
+// ⛔ UN PAQUET SE CHERCHE AUX DEUX NIVEAUX, PAS À LA RACINE SEULE — 2026-09-04. npm décide seul de
+// hisser une dépendance d'espace de travail à la racine ou de la laisser sous `packages/ui`, et sa
+// décision change avec la FORME du spécificateur : mes voisins étaient hissés quand ils visaient
+// `../../../../bp/.publie/<nom>`, ils ne le sont plus depuis qu'ils visent `../../.last/<nom>` — un
+// chemin interne au dépôt. Mesuré en service : ce garde a refusé le portillon sur « bpx : package.json
+// introuvable » alors que bpx était installé, sous l'autre `node_modules`.
+// ⇒ *Un garde qui ne regarde qu'un des deux emplacements mesure la décision de npm, pas la mienne.*
+// ⚠️ La liste des deux bases existait déjà plus bas, dans le garde anti-copie — elle n'avait pas
+//   remonté jusqu'ici. Une connaissance présente dans un fichier n'est pas une connaissance partagée.
+const BASES = ["node_modules", "packages/ui/node_modules"];
+const resoudre = (dep, ...suite) => {
+  for (const base of BASES) {
+    const p = join(repoRoot, base, dep, ...suite);
+    if (existsSync(p)) return p;
+  }
+  return null;
+};
+
 for (const dep of SOURCE_DEPS) {
-  const pkgPath = join(repoRoot, "node_modules", dep, "package.json");
-  if (!existsSync(pkgPath)) {
+  const pkgPath = resoudre(dep, "package.json");
+  if (!pkgPath) {
     errors.push(
-      `${dep} : package.json introuvable (${pkgPath}) — dépendance non installée ?`,
+      `${dep} : package.json introuvable sous ${BASES.join(" ni ")} — dépendance non installée ?`,
     );
     continue;
   }
@@ -101,8 +119,8 @@ for (const dep of SOURCE_DEPS) {
   if (dev === undefined) {
     // Consommé par son paquet : ce qui doit répondre est la porte publiée, pas une source.
     const publiee = pkg.exports?.["."]?.import;
-    const cible = publiee && join(repoRoot, "node_modules", dep, publiee);
-    if (!publiee || !existsSync(cible)) {
+    const cible = publiee && resoudre(dep, publiee);
+    if (!publiee || !cible) {
       errors.push(
         `${dep} : consommé par son paquet, et sa porte publiée ne répond pas ` +
           `(exports["."].import = ${publiee ? `"${publiee}"` : "ABSENTE"}). Ce qui passe par cette ` +
@@ -119,9 +137,9 @@ for (const dep of SOURCE_DEPS) {
     );
     continue;
   }
-  const srcEntry = join(repoRoot, "node_modules", dep, dev);
-  if (!existsSync(srcEntry)) {
-    errors.push(`${dep} : la cible "${dev}" n'existe pas (${srcEntry}).`);
+  const srcEntry = resoudre(dep, dev);
+  if (!srcEntry) {
+    errors.push(`${dep} : la cible "${dev}" n'existe sous aucun des deux node_modules.`);
   }
 }
 
