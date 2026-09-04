@@ -1,13 +1,13 @@
 {
-  "quand": "2026-09-03T23:20:02.350Z",
-  "empreinte": "181f0a05d1b00f29",
+  "quand": "2026-09-04T09:45:18.222Z",
+  "empreinte": "10d1ee5c549db330",
   "sortieDuPortillon": "0",
   "mesure": {
-    "appelsExamines": 759305,
-    "appelsEcrivants": 388337,
-    "cheminsSousMonArbre": 11462,
+    "appelsExamines": 805693,
+    "appelsEcrivants": 390342,
+    "cheminsSousMonArbre": 12032,
     "parRacineDeTete": {
-      "packages": 11461,
+      "packages": 12031,
       "scripts": 1
     },
     "relatifsNonResolus": 0,

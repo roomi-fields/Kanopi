@@ -26,3 +26,9 @@ docs/plan/
 _archive/
 packages/ui/.playwright-artifacts/
 .aider*
+
+# Rapport de la passe de bancs — artefact lu par `scripts/garde-population-bancs.mjs`,
+# regénéré à chaque passe. Ce qui se VERSIONNE est le registre attendu (`scripts/bancs-attendus.json`),
+# jamais la photo du moment : commiter la photo ferait coïncider les deux par construction, et le
+# garde ne mordrait plus jamais.
+packages/ui/.vitest-rapport.json
