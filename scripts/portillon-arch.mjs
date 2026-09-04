@@ -10,22 +10,21 @@
  *     gardes est de 80 s : le rouge tombait au quatrième. *Une durée relevée sur un enchaînement
  *     court-circuité mesure l'endroit où il s'est arrêté, pas ce qu'il coûte.*
  *
- * ⇒ CE QUE J'AI MESURÉ CHEZ MOI, parce que la recette ne se reprend pas sans être vérifiée sur son
- *   propre profil (2026-09-04) :
+ * ⛔ ET LE GAIN NE SE CHIFFRE PAS EN SECONDES ICI — RETIRÉ LE 2026-09-04, LE JOUR MÊME. J'avais écrit
+ *   « 80 s → 18,9 s, ×4,2 » : deux durées AU MUR sur une machine à douze cœurs portant seize sessions.
+ *   Quatre dépôts ont mesuré la même journée que ces durées varient du simple au double sur le même
+ *   code, et l'architecte a retiré son propre chiffre pour la même raison. *Un rapport de durées sur
+ *   une machine partagée n'est pas une mesure : c'est un instantané de charge.*
  *
- *     depcruise                        29,5 s   37 %
- *     garde-releve-des-voisins         17,4 s   22 %
- *     garde-etat-pris                   7,6 s
- *     garde-source-voisine (python)     6,6 s
- *     les dix-huit autres              ~19 s
- *     ────────────────────────────────────────
- *     amorçage de 21 processus node     5,7 s    7 %
+ * ⇒ CE QUI RESTE VRAI SANS DÉPENDRE D'AUCUNE CHARGE, et qui se lit dans un seul tir :
+ *     · le nombre d'attentes successives passe de N à UN par groupe — *la somme devient le maximum* ;
+ *     · un lanceur `npm run` est retiré de chaque maillon, ce qui supprime du travail, pas de l'attente.
  *
- * ⛔ L'AMORÇAGE N'EST DONC PAS MON POSTE. Chez BPscript il pèse les deux tiers — 212 gardes chargeant
- *   un compilateur à 1,3 s chacun — et le processus partagé y vaut ×11. Chez moi il pèse 7 % : mes
- *   gardes ne chargent pas de compilateur, ils lisent des fichiers et interrogent git. Le levier qui
- *   paie ici est le PARALLÉLISME, que le lanceur du hub écarte à juste titre POUR SON PROFIL À LUI.
- *   ⇒ *Une recette se reprend avec sa mesure, jamais avec sa conclusion.*
+ * ⚠️ LE PROFIL, LUI, RESTE UNE INFORMATION — c'est un RAPPORT entre postes, pas une durée absolue, et
+ *   il survit à la charge qui les multiplie tous : l'amorçage de mes processus node pèse ~7 % du total,
+ *   contre les deux tiers chez BPscript dont 212 gardes chargent un compilateur. C'est ce rapport, et
+ *   lui seul, qui dit que le processus partagé ne paierait presque rien ici et que le parallélisme
+ *   paie. ⇒ *Une recette se reprend avec sa mesure, jamais avec sa conclusion.*
  *
  * ⛔ LES DEUX CONDITIONS NON NÉGOCIABLES, ET ELLES SONT LA RAISON D'ÊTRE DE CE FICHIER :
  *   1. LE REFUS NOMME QUI REFUSE. Un lot parallèle qui rend « 1 » sans nom est indistinguable d'un
@@ -83,8 +82,14 @@ const MAILLONS = [
   ["porte-de-banc", "node", ["scripts/garde-porte-de-banc.mjs"]],
   ["copies-miroir", "node", ["scripts/garde-copies-miroir.mjs"]],
   ["portes-de-librairie", "node", ["scripts/garde-portes-de-librairie.mjs"]],
-  ["traversee", "python3", [join(process.env.HOME, "dev/bp/hub/tools/garde-traversee.py")]],
-  ["source-voisine", "python3", [join(process.env.HOME, "dev/bp/hub/tools/garde-source-voisine.py")]],
+  // ⛔ LE GARDE DE TRAVERSÉE ET CELUI DES SOURCES VOISINES ONT ÉTÉ RETIRÉS D'ICI LE 2026-09-04. Je les
+  // appelais en direct ; depuis `f8995aa9`, le point d'entrée partagé du hub les porte — et il les
+  // appelle avec `--depot`, que mes appels ne passaient pas. Deux exemplaires du même garde, dont le
+  // mien était le moins correct.
+  // ⚠️ EN REVANCHE LE GARDE DE FENÊTRE RESTE DANS MON CROCHET, en tête, et ce n'est PAS un doublon :
+  //   il est sorti du point d'entrée le même jour (`83c263b4`) parce que celui-ci est appelé depuis
+  //   `verify` — un gel doit refuser une POUSSÉE, jamais une vérification locale. Le crochet est son
+  //   seul site correct.
 ];
 
 /** ⛔ La déclaration se lit DANS le garde — jamais ici. Illisible ⇒ on n'affirme rien : on isole. */

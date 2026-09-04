@@ -64,14 +64,23 @@ const RACINE = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 const TOUR = join(process.env.HOME, "dev", "bp", "hub", "tour");
 
 /**
- * ⛔ LA DURÉE DÉCLARÉE, ET ELLE EST LARGE EXPRÈS. La suite d'écran seule a mesuré 26,6 min le
- * 2026-08-31, le portillon entier tourne autour de 32. ⚠️ Ce n'est PAS un plafond : la tour la traite
- * comme un PLANCHER annoncé et signale sa péremption sans fermer. Trop courte, elle ferait partir aux
- * douze un message qui leur PROPOSE de lever ma fenêtre — donc de tuer ma mesure.
+ * ⛔ LA DURÉE DÉCLARÉE, ET ELLE EST LARGE EXPRÈS. Ce n'est PAS un plafond : la tour la traite comme un
+ * PLANCHER annoncé et signale sa péremption sans fermer. Trop courte, elle fait partir aux douze un
+ * message qui leur PROPOSE de lever ma fenêtre — donc de tuer ma mesure — et elle m'attire des
+ * demandes « où en es-tu » qu'un chiffre juste aurait évitées.
+ *
+ * ⛔ ELLE A MENTI LE 2026-09-04, ET LA FORME DU MENSONGE EST INSTRUCTIVE : déclarée à 50 minutes, la
+ * mesure en a pris 58 — la tour a signalé la péremption, et kronos a demandé où j'en étais alors que
+ * mes bancs d'écran tournaient encore. *Une durée écrite en dur ne suit pas la suite qu'elle décrit* :
+ * ma suite d'écran a grossi depuis, et ce nombre est resté. ⇒ 80 la porte, et la marge n'est pas du
+ * confort : elle est ce qui sépare une fenêtre longue d'une fenêtre qu'on croit abandonnée.
+ *
+ * ⚠️ La borne juste serait dérivée — la durée du dernier relevé, majorée — et non écrite. Reporté ;
+ * une constante qu'on relève à la main se re-périme au prochain banc ajouté.
  */
-const DUREE_DECLAREE_MIN = 50;
+const DUREE_DECLAREE_MIN = 80;
 /** Ce que j'annonce, et qui n'est pas le plafond : la durée ATTENDUE, celle sur laquelle on décide. */
-const DUREE_ANNONCEE = "environ 35 minutes";
+const DUREE_ANNONCEE = "environ 55 minutes";
 
 /** L'identifiant de CETTE ouverture — c'est lui qui rend l'exemption nommée, jamais « une fenêtre ». */
 const CE_RELEVE = `releve-${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`;
@@ -158,9 +167,17 @@ const MOTIF =
   "RELEVÉ DE PORTILLON — je mesure ce que MON portillon écrit sous mon arbre, une fois, parce qu'il " +
   `a changé. Durée attendue : ${DUREE_ANNONCEE}, déclarée à ${DUREE_DECLAREE_MIN} minutes. ` +
   "⚠️ ET CETTE HEURE EST UN PLANCHER, JAMAIS UNE LEVÉE : la tour signale la péremption, elle ne " +
-  "ferme pas. Ce qui vous libère est mon message de fin. Je ferme en partant, y compris si je suis " +
-  "interrompue ; si je suis tuée net, la tour vous préviendra à l'heure dite et vous pourrez lever " +
-  "vous-mêmes. " +
+  "ferme pas. Ce qui vous libère est mon message de fin. " +
+  "⛔ ET JE RETIRE UNE PROMESSE QUE JE VOUS FAISAIS ICI. J'écrivais « je ferme en partant, Y COMPRIS " +
+  "SI JE SUIS INTERROMPUE ». C'EST FAUX, et mesuré le 2026-09-04 : j'ai envoyé un signal d'arrêt à " +
+  "mon propre relevé, il a continué UNE HEURE, et ma fenêtre est restée ouverte pendant tout ce " +
+  "temps. ⇒ La cause est que j'attends mon portillon par un appel SYNCHRONE : mon gestionnaire de " +
+  "signal existe, mais Node ne peut pas l'exécuter tant que cet appel bloque. *Un gestionnaire " +
+  "enregistré n'est pas un gestionnaire joignable.* " +
+  "⇒ CE QUI EST VRAI À LA PLACE, ET C'EST MOINS CONFORTABLE : je ferme quand je finis, et une " +
+  "interruption ne me fait PAS fermer avant la fin de mon portillon. Si mon heure est dépassée et que " +
+  "rien n'arrive, `tour fenetre fermer kanopi` est à vous — demandez-moi d'abord, mais ne comptez pas " +
+  "sur un signal pour me lever. " +
   "⛔ CE QUE JE VOUS DEMANDE A CHANGÉ DE NATURE LE 2026-09-04, ET C'EST BEAUCOUP PLUS ÉTROIT " +
   "QU'AVANT : NE PUBLIEZ PAS PENDANT MA FENÊTRE. Écrivez, construisez, enregistrez, poussez — rien " +
   "de tout cela ne m'atteint plus. " +
@@ -183,8 +200,14 @@ const MOTIF =
   "aujourd'hui parce qu'il gelait vos frappes dans des arbres que je ne peux plus lire. " +
   "⚠️ ET « PUBLIE » RESTE UNE APPROXIMATION, je le nomme plutôt que de vous le laisser croire : la " +
   "tour connaît l'arbre de travail et le COMMIT POUSSÉ, jamais l'espace publié, qui est ce que je " +
-  "lis. Une publication sans poussée m'atteint et ce régime ne la couvre pas. C'est reporté à " +
-  "l'architecte ; le vocabulaire des régimes appartient à la tour, je ne le corrige pas. " +
+  "lis. Une publication sans poussée m'atteint et ce régime ne la nomme pas. " +
+  "⇒ ⛔ MAIS MA PHRASE D'AVANT EN TIRAIT UNE CONCLUSION FAUSSE — « ce régime ne la couvre pas » — et " +
+  "c'est kronos qui l'a réfutée en mesurant chez lui : son site de publication appelle LUI-MÊME le " +
+  "garde de fenêtre, parce que publier ne passe par aucun git chez lui, et ma fenêtre a donc refusé sa " +
+  "publication DIRECTEMENT. ⇒ Le trou n'est pas dans le régime de la tour, il est chez qui publie sans " +
+  "appeler ce garde — et je ne sais pas combien vous êtes dans ce cas. *Je décrivais un manque de la " +
+  "tour là où le fait dépend du site de chacun.* Si votre publication n'appelle pas ce garde, ma " +
+  "fenêtre ne vous arrête pas ; dites-le-moi, c'est une information que je n'ai pas. " +
   "⚠️ ET JE GÈLE PLUS LARGE QUE MA CAMPAGNE, DÉLIBÉRÉMENT : elle ne vise que les voisins en " +
   "chantier, parce qu'un tir se retarde. Un relevé ne se retarde pas — il se prend quand le " +
   "portillon a changé — donc il vise TOUS ceux que je lis, y compris ceux qui se taisent depuis " +
