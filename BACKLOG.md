@@ -593,3 +593,33 @@ Mesure du 2026-08-18, prise sur la base d'index et sur l'arbre de travail.
 - **KAN-72** `ouvert` [PP3] — `FilesView.svelte:78` `LIBRARY_DOMAINS` — cinq domaines recopiés de Kairos à la main ; la porte des objets les sert (`familles()`), ils doivent en dériver. Reporté par kanopi le 2026-09-03 [9134].
 - **KAN-73** `ouvert` [PP3] — `orchestrator-actors.test.ts` — une copie à la main de `02-strudel-hydra.bps` qui a dérivé de sa source le 2026-09-02 ; un banc « verbatim » qui ne lit pas le fichier. Reporté par kanopi le 2026-09-03 [9134].
 - **KAN-74** `ouvert` [PP3] — Le relevé d'intervalle sur-compte une cible de lien — `symlink`/`link` écrivent leur chemin en SECOND. Reporté deux fois par kanopi, inscrit le 2026-09-03 [9134].
+- **KAN-78** `ouvert` — ⛔ UN BANC QUI NE PASSE QU'AU RÉESSAI REND LE PORTILLON VERT SUR UN COMPORTEMENT QUI NE L'EST PAS.
+
+    tests/e2e/p5.spec.ts:12   « a .bps p5 code voice evaluates and paints non-background pixels »
+    1er essai   ✘ 26,3 s (dépassement)        retry #1   ✓ 10,0 s
+    ⇒ DEUX campagnes de suite, même profil.
+
+⇒ LA CAUSE, mesurée : le premier essai paie une initialisation que le second trouve chaude. C'est la
+  signature d'un **préchauffage manquant**, et le préchauffage est chez kanopi.
+
+⇒ ⛔ CE QUE ÇA MASQUE, ET C'EST LE POINT : **chez l'utilisateur il n'y a pas de réessai.** Un premier
+  chargement qui ne peint rien dans le temps imparti est exactement ce que ce banc devrait dire — et
+  il le DIT, puis le rattrapage l'efface.
+⇒ ⇒ *Un réessai qui verdit un banc ne le répare pas : il retire le seul témoin du défaut qu'il
+  mesure.* Le portillon est vert sur un comportement qui ne l'est pas.
+
+⇒ CE QUI N'EST PAS TRANCHÉ : si la réparation est le préchauffage, l'élargissement du délai avec sa
+  mesure nommée, ou le retrait du réessai sur ce seul banc. Les trois disent des choses différentes.
+⌁ Reporté par kanopi le 2026-09-04, hors priorité 1 ; demande une mesure à l'écran.
+- **KAN-79** `ouvert` — ⛔ LE RELEVÉ NOMME LE MANIFESTE D'UN VOISIN PAR SA DATE, PAS PAR L'EMPREINTE DE SES CHAMPS RÉCOLTÉS.
+
+⇒ Il ne distingue donc pas un renommage de script d'un changement de porte — deux gestes dont un seul
+  compte pour la mesure en cours.
+⇒ ⛔ COÛT MESURÉ le 2026-09-04 : **23,70 minutes de campagne annulées et douze dépôts gelés** pour une
+  ligne de `scripts` chez un voisin, sans aucun effet sur les champs récoltés.
+⇒ ⇒ *Un instrument qui compare une DATE là où il devrait comparer un CONTENU sur-déclenche, et chaque
+  faux déclenchement coûte une campagne entière.*
+
+⇒ CE QUI LE FERMERAIT : comparer l'empreinte des champs effectivement récoltés, et non l'horodatage du
+  fichier. Non tranché ici — la liste des champs qui comptent appartient à kanopi.
+⌁ Reporté par kanopi le 2026-09-04, avec le coût mesuré.
