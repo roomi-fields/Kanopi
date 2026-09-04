@@ -45,10 +45,25 @@ bash ~/dev/bp/hub/tools/garde-fenetre.sh --fenetres || exit 1
 #   son arbre — donc de sa vitesse de rédaction.
 # ⇒ ⇒ Je consomme désormais ce qu'il PUBLIE. La différence est celle de tous mes autres voisins :
 #   son écriture ne m'atteint plus, sa publication oui, et elle seule.
-DOC_SITE="$UI_DIR/../../../.publie/atlas/doc-utilisateur/site"
+# ⚠️ DEUX EMPLACEMENTS, ET L'ORDRE EST LE POINT. Atlas déclare son site à `doc-utilisateur/site`,
+# mais l'outil de publication du hub dépose un chemin de DEUX segments à la racine de l'archive : le
+# site atterrit en `site/`, pendant que l'empreinte annonce le chemin déclaré. Le défaut est chez
+# l'outil, remonté par atlas ; il ne renomme pas sa sortie pour le contourner.
+# ⇒ Je cherche donc le DÉCLARÉ d'abord et l'accidentel ensuite. Quand le portage sera réparé, le
+#   premier répondra et le second cessera d'être atteint, sans que personne ait à revenir ici.
+# ⛔ Me caler sur le seul chemin d'aujourd'hui serait hériter du défaut de quelqu'un d'autre — il est
+#   juste par accident, et il redeviendra faux à la réparation.
+ATLAS_PUBLIE="$UI_DIR/../../../.publie/atlas"
+DOC_SITE=""
+for candidat in "doc-utilisateur/site" "site"; do
+  if [[ -f "$ATLAS_PUBLIE/$candidat/index.html" ]]; then
+    DOC_SITE="$ATLAS_PUBLIE/$candidat"
+    break
+  fi
+done
 
-if [[ ! -f "$DOC_SITE/index.html" ]]; then
-  echo "ERREUR : le site bâti d'atlas est absent ($DOC_SITE/index.html)." >&2
+if [[ -z "$DOC_SITE" ]]; then
+  echo "ERREUR : le site bâti d'atlas est absent ($ATLAS_PUBLIE — ni doc-utilisateur/site, ni site)." >&2
   echo "         public/docs N'A PAS été régénéré — s'il existe, il porte l'aide d'un" >&2
   echo "         déploiement antérieur, et rien à l'écran ne le distinguera d'une aide à jour." >&2
   echo "         Atlas doit PUBLIER sa documentation construite ; son espace publié ne porte" >&2
