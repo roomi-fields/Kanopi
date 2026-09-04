@@ -1290,9 +1290,17 @@ function rendreLeVerdict(
         `                                 mais c'est une PUBLICATION retenue, plus une frappe. Qui aurait\n` +
         `                                 retiré, allégé ou relâché un témoin sur l'une ou l'autre de mes\n` +
         `                                 lignes d'avant : elles étaient fausses, rétablissez-le.\n` +
-        `                               ⚠️ ET IL RESTE UN VIVANT, QUE JE NOMME : atlas, lu par chemin de\n` +
-        `                                 disque pour bâtir ma documentation. Son ÉCRITURE me bascule, et\n` +
-        `                                 c'est la dernière lecture vive que je porte.\n` +
+        `                               ✅ IL N'EN RESTE PLUS AUCUN, ET C'ÉTAIT ENCORE FAUX CE MATIN. Cette\n` +
+        `                                 ligne nommait atlas — lu par chemin de disque pour bâtir ma\n` +
+        `                                 documentation, ma dernière lecture vive. Deux choses l'ont\n` +
+        `                                 refermée le 2026-09-04 : je consomme désormais le SITE qu'il\n` +
+        `                                 PUBLIE au lieu de bâtir son aide avec son outil, et ma session\n` +
+        `                                 tourne SOUS ENVELOPPE — de vous tous je ne vois plus que\n` +
+        `                                 \`.publie/<nom>/\`, mesuré et non déduit.\n` +
+        `                                 ⇒ C'est la TROISIÈME péremption de ce paragraphe en douze heures.\n` +
+        `                                   Les deux premières venaient d'une mesure manquée puis de mon\n` +
+        `                                   propre geste ; celle-ci d'un changement que je n'ai pas décidé.\n` +
+        `                                   *Aucune des trois n'aurait rougi quelque part.*\n` +
         `                                 ⛔ ET JE NE DIS PLUS COMBIEN L'ONT FAIT. J'avais écrit ici\n` +
         `                                   « QUATRE D'ENTRE VOUS ONT RETIRÉ LEURS PROPRES TÉMOINS » :\n` +
         `                                   ce nombre n'a AUCUNE mesure derrière. Je ne lis pas vos\n` +

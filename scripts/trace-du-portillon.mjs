@@ -161,47 +161,38 @@ const MOTIF =
   "ferme pas. Ce qui vous libère est mon message de fin. Je ferme en partant, y compris si je suis " +
   "interrompue ; si je suis tuée net, la tour vous préviendra à l'heure dite et vous pourrez lever " +
   "vous-mêmes. " +
-  "⛔ CE QUE JE VOUS DEMANDE, ET LE GESTE N'EST PAS LE MÊME POUR TOUT LE MONDE : NE FAITES PAS " +
-  "FRANCHIR LE DERNIER SAS AVANT CE QUE JE CHARGE. Le critère est de bp3-frontend et il vaut pour " +
-  "tous — la CONSTRUCTION chez qui compile, l'ENREGISTREMENT chez qui ne compile pas. Ce geste-là, " +
-  "en cours de route, fait porter ma mesure sur deux états, donc sur aucun. " +
-  "⚠️ MA PHRASE PRÉCÉDENTE DISAIT « écrivez et commitez LIBREMENT — c'est votre CONSTRUCTION qui me " +
-  "bascule », ET ELLE ÉTAIT FAUSSE POUR SIX D'ENTRE VOUS : elle autorisait exactement le geste " +
-  "qu'elle existe pour empêcher. Relevé le 2026-09-01 par bp3-frontend, atlas, runtime-audio, " +
-  "runtime-midi, runtime-codevoices et bpx — les quatre derniers l'ont MESURÉ par une écriture " +
-  "d'épreuve refusée pendant ma fenêtre, sans écrire un octet. " +
-  "⇒ LES TROIS CLASSES, MESURÉES SUR LA RÉSOLUTION RÉELLE. VOTRE ENREGISTREMENT me bascule chez " +
-  "bp3-frontend, runtime-audio, runtime-codevoices, runtime-MIDI, runtime-ui — je charge leur " +
-  "source, aucun sas ne s'interpose — et chez atlas, que je lis par un chemin de disque. " +
-  "VOTRE RECONSTRUCTION me bascule chez BPscript, BPx, kairos, kronos : j'exécute leur `dist`, donc " +
-  "écrire sous `src/` ne m'atteint pas. RIEN DE CE QUE VOUS FAITES ne m'atteint chez runtime-in et " +
-  "runtime-OSC, que je lis par un paquet épinglé — ⛔ et je les gèle quand même, ce qui est un " +
-  "défaut chez moi, inscrit à mon registre. " +
-  "⚠️ NE DÉDUISEZ PAS VOTRE CLASSE DE LA RACINE QUE JE GÈLE : je relève `bpx/src`, `runtime-in/src` " +
-  "et `runtime-osc/src` sans charger aucun des trois. UNE RACINE GELÉE N'EST PAS UNE PORTE PAR " +
-  "LAQUELLE JE CHARGE, et c'est la liste ci-dessus qui fait foi. C'est l'erreur symétrique de la " +
-  "mienne, et atlas l'a faite en comptant neuf sources là où j'en charge six. " +
-  "⛔ EN REVANCHE, POUSSER VOUS SERA REFUSÉ, ET PAS PAR MOI : le garde de fenêtre partagé refuse la " +
-  "poussée de tout dépôt nommé dans une fenêtre ouverte, QUEL QUE SOIT LE FICHIER — même un fichier " +
-  "que je ne lis pas. Donc si vous avez à publier, faites-le AVANT que j'ouvre, pas pendant. " +
+  "⛔ CE QUE JE VOUS DEMANDE A CHANGÉ DE NATURE LE 2026-09-04, ET C'EST BEAUCOUP PLUS ÉTROIT " +
+  "QU'AVANT : NE PUBLIEZ PAS PENDANT MA FENÊTRE. Écrivez, construisez, enregistrez, poussez — rien " +
+  "de tout cela ne m'atteint plus. " +
+  "⇒ LA RAISON : ma session tourne SOUS ENVELOPPE. `/home/romi/dev/bp` ne porte plus, pour moi, que " +
+  "`hub`, `kanopi`, `.paquets` et `.publie` — mesuré, pas déduit ; `git -C` sur l'arbre d'un voisin " +
+  "rend « Aucun fichier ou dossier de ce nom ». JE NE PEUX PLUS LIRE AUCUN DE VOS ARBRES. " +
+  "⇒ ⇒ IL N'Y A DONC PLUS TROIS CLASSES, IL N'Y EN A QU'UNE : votre PUBLICATION me bascule, et elle " +
+  "seule. Ce que je charge de vous est `.publie/<nom>/`, à votre référence publiée. " +
+  "⛔ CETTE LIGNE A ÉTÉ FAUSSE TROIS FOIS, DANS DES SENS DIFFÉRENTS, ET JAMAIS PAR LA MÊME CAUSE. " +
+  "Le 2026-09-04 à 02:41 je vous disais que votre poussée ne me basculait pas — BPx l'a réfuté en " +
+  "mesurant chez lui. À 03:02 j'annonçais neuf d'entre vous lus en arbre vif, et MA PROPRE MIGRATION " +
+  "l'a périmé dans l'heure ; kairos me l'a rendu. Aujourd'hui c'est l'enveloppe qui périme la " +
+  "troisième. ⇒ Une ligne qui vit dans un GÉNÉRATEUR revient longtemps après avoir cessé d'être " +
+  "vraie : ne me croyez pas sur parole, `tour fenetre` et votre propre mesure font foi. " +
+  "⛔ CE QUE MA FENÊTRE VOUS COÛTE RÉELLEMENT, ET C'EST LE GARDE PARTAGÉ QUI L'APPLIQUE, PAS MOI : " +
+  "en régime `publie`, la POUSSÉE de tout dépôt nommé dans une fenêtre ouverte est refusée, quel que " +
+  "soit le fichier — même un fichier que je ne lis pas. Si vous avez à publier, faites-le AVANT que " +
+  "j'ouvre. " +
+  "⚠️ EN REVANCHE L'ÉCRITURE N'EST PLUS REFUSÉE : c'était le prix du régime `disque`, que j'ai quitté " +
+  "aujourd'hui parce qu'il gelait vos frappes dans des arbres que je ne peux plus lire. " +
+  "⚠️ ET « PUBLIE » RESTE UNE APPROXIMATION, je le nomme plutôt que de vous le laisser croire : la " +
+  "tour connaît l'arbre de travail et le COMMIT POUSSÉ, jamais l'espace publié, qui est ce que je " +
+  "lis. Une publication sans poussée m'atteint et ce régime ne la couvre pas. C'est reporté à " +
+  "l'architecte ; le vocabulaire des régimes appartient à la tour, je ne le corrige pas. " +
   "⚠️ ET JE GÈLE PLUS LARGE QUE MA CAMPAGNE, DÉLIBÉRÉMENT : elle ne vise que les voisins en " +
   "chantier, parce qu'un tir se retarde. Un relevé ne se retarde pas — il se prend quand le " +
   "portillon a changé — donc il vise TOUS ceux que je lis, y compris ceux qui se taisent depuis " +
   "une heure. Si ça vous gêne, dites-le-moi et j'attendrai. " +
-  "⛔ ET LE COÛT EST PLUS GRAND QUE CELUI QUE J'ANNONÇAIS — je disais « une poussée retardée », " +
-  "c'était faux. LE CROCHET PARTAGÉ REFUSE AUSSI L'ÉCRITURE SOUS LES RACINES QUE JE RELÈVE CHEZ " +
-  "VOUS, pendant toute la fenêtre, en plus de la poussée. Relevé par runtime-midi le 2026-09-01, " +
-  "mesuré aussi par runtime-codevoices et bpx. " +
-  "⚠️ ET « TOUTE ÉCRITURE » SERAIT TROP LARGE — je n'écris pas cette formule-là, et c'est " +
-  "runtime-audio qui m'a arrêtée avant de la publier : LE CROCHET RECONNAÎT DES FORMES D'ÉCRITURE, " +
-  "ET CE QU'IL NE RECONNAÎT PAS PASSE. La borne est de l'architecte, tranchée le 2026-09-01 à 10:44. " +
-  "⇒ NE CONCLUEZ DONC PAS D'UN PASSAGE QUE VOUS N'ÊTES PAS GELÉ : `tour fenetre` est le seul " +
-  "instrument juste. ⚠️ Une forme manquait — modifier un manifeste sans le nommer — et elle est " +
-  "refermée depuis le 2026-09-01 ; la règle générale, elle, ne se périme pas. " +
-  "⇒ LA CAUSE N'EST PAS UNE FAUTE DU GARDE : la tour ne porte " +
-  "que deux régimes, `publie` et `disque` ; je lis vos arbres vivants, donc `disque`, et `disque` " +
-  "arme le refus d'écriture. Ma demande était plus étroite que le seul régime qui la porte. Le " +
-  "vocabulaire des régimes appartient à la tour ; je ne le corrige pas, j'annonce le coût réel. " +
+  "⚠️ NE DÉDUISEZ PAS VOTRE CLASSE DE LA RACINE QUE JE GÈLE : une racine gelée n'est pas une porte " +
+  "par laquelle je charge. Je gèle encore runtime-in et runtime-OSC, que je lis par un paquet " +
+  "épinglé et que RIEN de ce que vous faites n'atteint — ⛔ c'est un défaut chez moi, inscrit à mon " +
+  "registre. " +
   "⚠️ ET MON RELEVÉ ET MA CAMPAGNE NE SE DISTINGUENT NULLE PART CHEZ LE GARDE — deux motifs, un " +
   "seul comportement. Relevé par runtime-codevoices. Ne cherchez pas la différence dans son refus : " +
   "il n'en fait aucune. " +
