@@ -15,10 +15,19 @@
  * (`trace-switch.svelte.ts` — a pure rune module, no CSS, no `.svelte` view
  * import) — single-source, no reimplementation. `productionViews` is stubbed
  * empty since nothing exercises it under vitest.
+ *
+ * ⛔ ET IL VISE L'ESPACE PUBLIÉ, PLUS L'ARBRE DE TRAVAIL DU VOISIN — 2026-09-04.
+ * Ce chemin pointait `../../../../../runtime-ui/src/…`, donc l'arbre VIF : la
+ * moindre frappe de runtime-ui entrait dans mes bancs sans qu'il ait enregistré
+ * ni publié quoi que ce soit. `.publie/runtime-ui` est un instantané figé, posé
+ * par sa publication — ce que je lis ne bouge que quand il le décide.
+ * ⚠️ La contrepartie, et elle est réelle : ce que je lis RETARDE sur sa source
+ * tant qu'il n'a pas republié. Un rouge ici se discrimine donc contre son état
+ * publié, jamais contre son arbre.
  */
 export {
   traceEnabled,
   setTraceEnabled
-} from '../../../../../runtime-ui/src/views/trace/trace-switch.svelte';
+} from '../../../../../.publie/runtime-ui/src/views/trace/trace-switch.svelte';
 
 export const productionViews: readonly unknown[] = [];

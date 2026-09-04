@@ -27,7 +27,7 @@ import {
 import { relative } from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadavg, cpus } from "node:os";
-import { join } from "node:path";
+import { join, resolve, dirname } from "node:path";
 
 /**
  * LES RACINES QU'UN PAQUET EXPOSE — dérivées de SON manifeste, jamais énumérées ici.
@@ -127,7 +127,53 @@ function entrees(base) {
 }
 
 /**
- * Chaque dépôt voisin consommé par lien symbolique, avec l'état de son arbre de TRAVAIL.
+ * Ce que MES MANIFESTES déclarent en `file:` — spécificateur → chemin absolu de la cible.
+ *
+ * ⛔ POURQUOI CETTE CARTE EXISTE, ET C'EST LA MIGRATION DU 2026-09-04. Ce module ne reconnaissait un
+ * voisin qu'à un LIEN SYMBOLIQUE dans `node_modules`. Depuis la bascule vers l'espace publié, mes
+ * dépendances s'installent avec `--install-links` : ce sont des COPIES, des dossiers réels. Le test
+ * du lien n'en voyait plus AUCUN, et le garde de régime coupait toute la campagne — « aucun voisin
+ * lu vivant », vitest « no tests », les 939 unitaires muets.
+ * ⇒ ⚠️ Son refus de zéro était JUSTE ; c'est son CRITÈRE qui avait vieilli. *Un garde qui mesure le
+ *   système de fichiers mesure une conséquence ; la déclaration, elle, dit l'intention.*
+ * ⇒ La vérité vient donc du manifeste, qui dit vers QUOI chaque dépendance pointe — un arbre vif,
+ *   un espace publié, ou un paquet épinglé — et reste lisible quand npm a tout recopié.
+ */
+function ciblesDeclarees(racine) {
+  const carte = new Map();
+  const manifestes = [join(racine, "package.json")];
+  const paquets = join(racine, "packages");
+  if (existsSync(paquets))
+    for (const p of readdirSync(paquets, { withFileTypes: true }))
+      if (p.isDirectory())
+        manifestes.push(join(paquets, p.name, "package.json"));
+
+  for (const m of manifestes) {
+    if (!existsSync(m)) continue;
+    let json;
+    try {
+      json = JSON.parse(readFileSync(m, "utf-8"));
+    } catch {
+      continue; // un manifeste illisible se signale ailleurs ; ici on ne devine pas
+    }
+    for (const champ of [
+      "dependencies",
+      "devDependencies",
+      "optionalDependencies",
+    ]) {
+      for (const [nom, val] of Object.entries(json[champ] ?? {})) {
+        if (typeof val !== "string" || !val.startsWith("file:")) continue;
+        const cible = resolve(dirname(m), val.slice("file:".length));
+        if (existsSync(cible)) carte.set(nom, realpathSync(cible));
+      }
+    }
+  }
+  return carte;
+}
+
+/**
+ * Chaque dépôt voisin consommé — par lien symbolique OU par copie déclarée en `file:` — avec l'état
+ * de son arbre de TRAVAIL quand il en a un.
  *
  * Rend, par dépôt (dédupliqué : plusieurs spécificateurs peuvent viser le même dépôt) :
  *   { depot, chemin, tete, specificateurs[], modifications[{etat, fichier, atteintLeBuild}] }
@@ -141,12 +187,19 @@ export function voisinsLies(racine) {
   racine = realpathSync(racine.replace(/\/+$/, ""));
   const parDepot = new Map();
 
+  const declarees = ciblesDeclarees(racine);
+
   for (const base of basesNodeModules(racine)) {
     for (const [specificateur, chemin] of entrees(base)) {
       let cible;
       try {
-        if (!lstatSync(chemin).isSymbolicLink()) continue;
-        cible = realpathSync(chemin);
+        // Un LIEN dit sa cible lui-même. Une COPIE ne dit rien du tout : `realpath` rend son propre
+        // emplacement dans `node_modules`, jamais l'endroit d'où elle vient. C'est la déclaration
+        // qui le sait, et c'est pour ça qu'elle passe en premier.
+        if (lstatSync(chemin).isSymbolicLink()) cible = realpathSync(chemin);
+        else if (declarees.has(specificateur))
+          cible = declarees.get(specificateur);
+        else continue; // un paquet du registre : ni lien, ni `file:` — pas un voisin
       } catch {
         continue;
       }
@@ -879,6 +932,24 @@ export function legendeDesVoisins(voisins, racine) {
             ? " · ⚠ empreinte lue par sa porte MÉTIER, sa porte `/empreinte` ne répond pas encore"
             : "")
         );
+      // ⛔ LA SOURCE PUBLIÉE SE NOMME, ELLE NE SE RANGE PAS DANS « NON MESURABLE ». Son commit est
+      // gravé dans le fichier `EMPREINTE` que la publication dépose à côté — donc l'état EST
+      // mesurable, et le taire ici rendrait un verdict que personne ne pourrait rejouer. C'est
+      // exactement ce que cette mention existe pour empêcher.
+      const f = join(v.depot, "EMPREINTE");
+      if (existsSync(f)) {
+        const mots = readFileSync(f, "utf-8").trim().split(/\s+/);
+        const commit = mots[0];
+        // La deuxième colonne varie d'un producteur à l'autre : « branche <nom> » chez les uns, le
+        // commit long chez les autres. Seule la branche ajoute quelque chose ; répéter le commit
+        // ferait croire à deux valeurs distinctes.
+        const branche = mots[1] === "branche" ? ` (${mots[2] ?? "?"})` : "";
+        if (/^[0-9a-f]{7,40}$/.test(commit))
+          return (
+            `${nom} : SOURCE PUBLIÉE ${commit}${branche} — ` +
+            "instantané posé par sa publication · aucun arbre de travail ne m'atteint"
+          );
+      }
       return `${nom} : hors git (${v.chemin}) — état non mesurable`;
     }
     const paquet = mentionDuPaquet(regimes.get(v.depot), v.tete, v.depot);
@@ -963,7 +1034,29 @@ export function mentionDeRegime(racine) {
   // qui le nomme est son EMPREINTE, lue PAR SA PORTE : `regime: 'paquet'` plus le commit gravé.
   // ⇒ Le refus garde ses dents et change de critère : est aveugle ce qui n'a NI dépôt NI empreinte
   //   de paquet. Un lien vers un dossier quelconque reste refusé, comme avant.
-  const sansDepot = voisins.filter((v) => v.tete === null);
+  // ⛔ ET IL Y A UN TROISIÈME RÉGIME, MESURÉ LE 2026-09-04 : LA SOURCE PUBLIÉE.
+  // `.publie/<voisin>` n'est ni un arbre de travail — il n'a pas de `.git` — ni un paquet construit :
+  // c'est un INSTANTANÉ de l'arbre, posé par la publication de son propriétaire. Son témoin ne se lit
+  // donc pas par la porte du paquet mais À CÔTÉ, dans le fichier `EMPREINTE` que la publication
+  // dépose : le commit gravé, et la branche.
+  // ⇒ ⚠️ POURQUOI LA PORTE NE PEUT PAS RÉPONDRE ICI, et c'est mesuré, pas supposé :
+  //   · l'empreinte qu'un voisin EXPORTE décrit SON régime à lui — plusieurs annoncent
+  //     « source-vive », ce qui est vrai chez eux et ne dit rien de la façon dont JE les lis ;
+  //   · deux d'entre eux exportent du TypeScript, et Node refuse de le charger depuis
+  //     `node_modules` (`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`). Leur porte est illisible
+  //     par construction, alors que leur `EMPREINTE` se lit sans rien exécuter.
+  // ⇒ Le refus garde ses dents : est aveugle ce qui n'a NI dépôt, NI empreinte de paquet, NI fichier
+  //   `EMPREINTE`. Un lien vers un dossier quelconque reste refusé, exactement comme avant.
+  const empreinteDuPublie = (chemin) => {
+    const f = join(chemin, "EMPREINTE");
+    if (!existsSync(f)) return null;
+    const commit = readFileSync(f, "utf-8").trim().split(/\s+/)[0];
+    return /^[0-9a-f]{7,40}$/.test(commit) ? commit : null;
+  };
+
+  const sansDepot = voisins.filter(
+    (v) => v.tete === null && empreinteDuPublie(v.depot) === null,
+  );
   if (sansDepot.length > 0) {
     const empreintes = empreintesParPorte(
       racine,
@@ -977,7 +1070,7 @@ export function mentionDeRegime(racine) {
           ? `témoin illisible : ${e.echec}`
           : e?.absente
             ? "n'exporte aucune empreinte"
-            : `régime « ${e?.regime ?? "non dit"} », attendu « paquet »`;
+            : `régime « ${e?.regime ?? "non dit"} », attendu « paquet » — et aucun fichier EMPREINTE`;
         return `  • ${v.chemin} — ${pourquoi}`;
       });
     if (aveugles.length > 0) {

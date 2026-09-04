@@ -25,7 +25,7 @@
 // --- bpx -------------------------------------------------------------------
 // SINGLE-SOURCE : l'arbre de scene vient du VRAI type publie par BPx, jamais d'une copie de
 // surface. Le specificateur NU `bpx` pointe vers CE fichier ; `bpx/dist/index.js` est mappe vers
-// l'AMONT (`tsconfig.json:18` -> `../../../BPx/dist/index.d.ts`), donc cet import atteint la
+// l'AMONT (`tsconfig.json:18` -> `../../../.publie/BPx/dist/index.d.ts`, espace PUBLIE depuis le 2026-09-04), donc cet import atteint la
 // surface publiee sans boucler sur lui-meme.
 // AVANT [951] ce fichier typait l'arbre `unknown` des DEUX cotes : Kanopi ne voyait donc
 // JAMAIS `SceneAST`, et l'erreur qui en resultait a ete imputee a tort a BPx — dont le type
