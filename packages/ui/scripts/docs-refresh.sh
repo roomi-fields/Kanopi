@@ -2,8 +2,17 @@
 # Rebuild the embedded user docs (public/docs/, git-ignored) from atlas/doc-utilisateur
 # for the DEV loop. Same command as scripts/publish/build-and-deploy.sh's [0/6] step,
 # which is the only place this normally runs (at deploy time) — dev sessions never see
-# doc-utilisateur updates until this is run manually. Best-effort: absence of mkdocs
-# just warns, it never blocks dev.
+# doc-utilisateur updates until this is run manually.
+#
+# ⛔ CE SCRIPT SE REFUSE, IL N'AVERTIT PLUS. Il portait un repli : mkdocs absent → un mot sur la
+# sortie d'erreur, et `public/docs` restait tel quel, sous le code de sortie zéro. Or ce dossier
+# EXISTE déjà, régénéré à un déploiement antérieur — donc la boucle de développement continuait de
+# servir une aide PÉRIMÉE, avec l'apparence d'une aide fraîche. Un avertissement noyé dans une sortie
+# de commande ne prévient personne : c'est le code de sortie qu'on lit, et il disait vert.
+#
+# ⇒ La forme est celle que porte déjà `build-and-deploy.sh` pour sa cible de production. La différence
+#   de régime entre développement et production n'a jamais justifié une différence de VÉRACITÉ : dans
+#   les deux cas, ou bien l'aide embarquée vient d'être bâtie, ou bien la commande a échoué.
 set -euo pipefail
 
 UI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -28,9 +37,13 @@ UI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 bash ~/dev/bp/hub/tools/garde-fenetre.sh --fenetres || exit 1
 DOC_SRC="$UI_DIR/../../../atlas/doc-utilisateur"
 
-if [[ -x "$DOC_SRC/.venv/bin/mkdocs" ]]; then
-  ( cd "$DOC_SRC" && ./.venv/bin/mkdocs build -d "$UI_DIR/public/docs" )
-  echo "docs:refresh — public/docs mis à jour depuis $DOC_SRC"
-else
-  echo "docs:refresh — mkdocs introuvable ($DOC_SRC/.venv/bin/mkdocs), public/docs inchangé" >&2
+if [[ ! -x "$DOC_SRC/.venv/bin/mkdocs" ]]; then
+  echo "ERREUR : mkdocs introuvable ($DOC_SRC/.venv/bin/mkdocs)." >&2
+  echo "         public/docs N'A PAS été régénéré — s'il existe, il porte l'aide d'un" >&2
+  echo "         déploiement antérieur, et rien à l'écran ne le distinguera d'une aide à jour." >&2
+  echo "         L'outil vit dans l'arbre d'atlas ; demande-lui son environnement, ou son site bâti." >&2
+  exit 1
 fi
+
+( cd "$DOC_SRC" && ./.venv/bin/mkdocs build -d "$UI_DIR/public/docs" )
+echo "docs:refresh — public/docs mis à jour depuis $DOC_SRC"
