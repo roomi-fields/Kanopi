@@ -1249,10 +1249,28 @@ function rendreLeVerdict(
         `                                 ⇒ Sa phrase, qui est ma propre règle : « un garde qu'on n'a\n` +
         `                                   pas vu mordre est une hypothèse, et tu viens d'en faire une\n` +
         `                                   pièce. »\n` +
-        `              lu en CONSTRUIT  seul un empêchement de RECONSTRUCTION compte. Votre poussée ne\n` +
-        `                               me bascule pas ; la retenir n'atteste rien.\n` +
-        `            ⇒ ⛔ QUATRE D'ENTRE VOUS ONT RETIRÉ LEURS PROPRES TÉMOINS en appliquant ça : ils\n` +
-        `              avaient mesuré leur discipline sur leur POUSSÉE, qui n'est pas ma voie.\n` +
+        `              lu en CONSTRUIT  seul un empêchement de RECONSTRUCTION compte.\n` +
+        `                               ⛔⛔ ET CETTE CLASSE NE CONCERNE QUE DEUX D'ENTRE VOUS —\n` +
+        `                                 runtime-in et runtime-osc, lus par un paquet ÉPINGLÉ. J'avais\n` +
+        `                                 écrit ici « votre poussée ne me bascule pas ; la retenir\n` +
+        `                                 n'atteste rien », ET C'ÉTAIT FAUX POUR NEUF D'ENTRE VOUS.\n` +
+        `                                 ⇒ Mesuré le 2026-09-04 sur les liens réellement installés :\n` +
+        `                                   bpx, bpscript, bp3-frontend, kairos, kronos, runtime-audio,\n` +
+        `                                   runtime-codevoices, runtime-MIDI et runtime-ui sont lus dans\n` +
+        `                                   leur ARBRE VIF. Votre seule ÉCRITURE me bascule ; et pour\n` +
+        `                                   qui reconstruit un dist au push, VOTRE POUSSÉE AUSSI.\n` +
+        `                                 ⇒ C'est BPx qui l'a réfuté, en mesurant chez lui. ⚠️ Ma propre\n` +
+        `                                   charte le disait déjà, et je ne l'avais pas relue.\n` +
+        `                               ⇒ Un geste retenu pendant ma fenêtre ATTESTE donc, pour les neuf.\n` +
+        `                                 Qui aurait retiré, allégé ou relâché un témoin sur ma ligne\n` +
+        `                                 d'avant : elle était fausse, rétablissez-le.\n` +
+        `                                 ⛔ ET JE NE DIS PLUS COMBIEN L'ONT FAIT. J'avais écrit ici\n` +
+        `                                   « QUATRE D'ENTRE VOUS ONT RETIRÉ LEURS PROPRES TÉMOINS » :\n` +
+        `                                   ce nombre n'a AUCUNE mesure derrière. Je ne lis pas vos\n` +
+        `                                   arbres et aucun de vous ne me l'a écrit. ⇒ Il a voyagé trois\n` +
+        `                                   relais et m'est revenu attribué à BPx, qui n'avait fait que\n` +
+        `                                   me citer — *citer quelqu'un à lui-même le lui fait relire\n` +
+        `                                   comme une clame du citeur.* Il me l'a rendu sur pièces.\n` +
         `            ⛔ INTERDIT PAR UN TIERS — le sixième état, de kronos, et il n'entre dans aucun des\n` +
         `              cinq : le geste existait, votre portillon était vert, ma consigne ne vous a pas\n` +
         `              retenus, et l'interdit est ANTÉRIEUR et indépendant de moi (une suspension de\n` +
