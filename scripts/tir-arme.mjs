@@ -26,9 +26,10 @@
  *   4. LA PUBLICATION — et son absence condamnait le tir suivant : le garde de poussée refuse dès
  *      que mon état publié RETARDE sur ce que mes voisins peuvent lire. Mesuré le 2026-09-04 à 23:17.
  *
- * ⚠️ CE QUI N'EST PAS ICI ET QUI RESTE : `hub/tools/garde-fenetre.sh`, appelé en tête de mon crochet
- * de poussée. Je n'ouvre plus de fenêtre ; je reste arrêtable par celle d'un voisin tant qu'il en
- * ouvre. Ce garde se retirera au hub, en dernier, quand plus personne n'en ouvrira.
+ * ⚠️ ET PLUS RIEN NE M'ARRÊTE POUR CE MOTIF — 2026-09-05. L'appel au garde partagé du hub vivait en
+ * tête de mon crochet de poussée : il restait tant qu'une fenêtre pouvait s'ouvrir quelque part.
+ * La porte d'ouverture est supprimée au hub, donc ce garde lisait un registre qui ne peut plus se
+ * remplir. ⇒ Du code mort, et le code mort s'élague dans le mouvement qui le rend mort.
  */
 import { execFileSync } from "node:child_process";
 import {
@@ -41,20 +42,9 @@ import {
 } from "node:fs";
 import { causeDuRouge, attributionDuRouge } from "./lib/cause-du-rouge.mjs";
 import { qualifierEcriture } from "./lib/qualifier-ecriture.mjs";
-import {
-  racinesSurveillees,
-  derniereEcriture,
-} from "./lib/releve-des-ecritures.mjs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { lireReleve } from "./lib/releve-du-portillon.mjs";
-import {
-  voisinsLies,
-  racinesExposees,
-  raisonDuRefus,
-  depotsSales,
-} from "./lib/voisins-lies.mjs";
-import { voisinsLusParChemin } from "./lib/voisins-lus-par-chemin.mjs";
 
 const RACINE = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 
@@ -384,7 +374,7 @@ function ceQueMonPortillonAEcrit() {
     : "";
   return (
     `CE QUE MON PORTILLON ÉCRIT CHEZ MOI — relevé du ${releve.quand}, portillon @${releve.empreinte}, ` +
-    `pris HORS FENÊTRE (il sortait en ${releve.sortieDuPortillon}) :\n    ` +
+    `sorti en ${releve.sortieDuPortillon} :\n    ` +
     `${m.appelsExamines} appel(s) examiné(s), ${m.appelsEcrivants} écrivant(s), ${m.cheminsSousMonArbre} chemin(s) sous mon arbre\n    ` +
     (tetes.length ? `sous ${tetes.join(" · ")}` : "AUCUNE écriture sous mon arbre") +
     relatifs +
@@ -414,8 +404,8 @@ const VERROU = join(homedir(), ".local", "state", "kanopi", "tir.pid");
     }
     if (vivant) {
       console.log(
-        `⛔ UNE ARME TOURNE DÉJÀ (pid ${pid}) — je ne démarre pas. Deux armes ouvrent deux fenêtres ` +
-          `au même nom, la tour n'en tient qu'une, et la première n'a jamais de fin.`,
+        `⛔ UNE ARME TOURNE DÉJÀ (pid ${pid}) — je ne démarre pas. Deux armes poussent et publient ` +
+          `en même temps, sur deux états différents de mon arbre.`,
       );
       process.exit(3);
     }

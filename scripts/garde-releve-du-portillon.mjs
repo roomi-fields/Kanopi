@@ -36,7 +36,7 @@ if (!bon) {
   console.error(
     `⛔ LE RELEVÉ DE MON PORTILLON NE LE DÉCRIT PLUS — ${raison}\n` +
       `   Ce que ma campagne annonce aux gelés viendrait d'une mesure prise sur un autre portillon.\n` +
-      `   ⇒ HORS FENÊTRE : node scripts/trace-du-portillon.mjs\n` +
+      `   ⇒ Le reprendre : node scripts/trace-du-portillon.mjs\n` +
       `   (relevé : ${CHEMIN_DU_RELEVE} · empreinte du jour : ${empreinte}, ${pieces} pièce(s), ${bancs} banc(s))`,
   );
   process.exit(1);

@@ -60,16 +60,6 @@ UI_DIR="$REPO_ROOT/packages/ui"
 
 TS="$(date +%Y%m%d-%H%M%S)"
 
-# Doc utilisateur EMBARQUÉE → packages/ui/public/docs, posée AVANT le vite build (public/ → dist/)
-# pour être servie à la même origine sous /kanopi/docs — SOURCE UNIQUE ([463]).
-# L'artefact public/docs est git-ignoré ; c'est CETTE étape qui le (re)produit à chaque déploiement.
-# ⇒ Le refus vaut pour LES DEUX cibles. Il portait un régime par cible — obligatoire en production,
-#   au mieux en local — et cette différence justifiait qu'un déploiement local serve une aide périmée
-#   sans le dire. La cible décide de ce qu'on publie, jamais de ce qu'on affirme.
-# ⚠️ ET ICI AUSSI, PAS SEULEMENT AU PUSH : ce script construit et déploie sans qu'aucun git
-# n'intervienne. Un déploiement lancé à la main pendant la fenêtre d'un voisin lirait ses sources en
-# plein chantier, et le crochet de poussée ne le verrait jamais passer.
-bash ~/dev/bp/hub/tools/garde-fenetre.sh || exit 1
 
 echo ">> [0/6] Aide utilisateur publiee par atlas -> packages/ui/public/docs"
 

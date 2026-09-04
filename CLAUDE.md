@@ -186,8 +186,9 @@ posée par `tour last` — donc leur écriture ne peut plus atteindre ma mesure.
 un **pré-vol** (rien ne part avant que ce qui est à moi soit vert), la **poussée**, puis la
 **publication** — celle-ci n'est pas une suite mais une part du tir, car le garde de poussée refuse
 dès que mon état publié retarde sur ce que mes voisins peuvent lire.
-⚠️ Je reste **arrêtable** par la fenêtre d'un voisin tant qu'il en ouvre : `hub/tools/garde-fenetre.sh`
-est appelé en tête de mon crochet de poussée.
+⚠️ Plus aucune fenêtre ne peut exister : la porte d'ouverture est supprimée au hub, et l'appel au
+garde partagé a été retiré de mes trois sites — crochet de poussée, déploiement, régénération de
+l'aide.
 
 **Le courrier se relit au moment de PUBLIER, pas au réveil** : un préavis reçu entre-temps porte
 peut-être sur ce que je m'apprête à écraser.
@@ -205,9 +206,9 @@ manifeste de paquet. Sur mes **55 dépendances déclarées**, toutes résolues :
   commutateur (`file:…/.paquets/<nom>`) et mon lien installé désigne un dossier de **version**.
   Ce qui me protège de leur republication est un **instantané d'installation**, pas une ligne : il
   disparaît au premier `npm install`, et **mon relevé de campagne ne regarde pas `.paquets`**.
-- **Atlas, par un chemin de disque** — deux de mes scripts lisent son arbre vif pour construire
-  `public/docs/`. Il n'est pas une dépendance ; il entre dans mes gelés par
-  `scripts/lib/voisins-lus-par-chemin.mjs`, qui dérive cette population de ma chaîne.
+- **Atlas, par un chemin de disque** — deux de mes scripts lisent son arbre pour construire
+  `public/docs/`. Il n'est pas une dépendance, et il n'apparaît dans aucun manifeste : sa présence
+  dans ma chaîne se lit dans ces deux scripts, jamais dans mes dépendances déclarées.
 
 **En réception** : discriminer un rouge contre le HEAD du voisin (`git archive`) avant de conclure
 « ma régression ».

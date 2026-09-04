@@ -2,11 +2,16 @@
 # Portillon de conformité (install-gate.sh). Bloque le push si la garde mord.
 set -e
 cd "$(git rev-parse --show-toplevel)"
-# ⛔ LE GEL DE LA TOUR FERME SA PORTE, PAS CELLE DE GIT. Un voisin qui mesure sur ce dépôt n'a rien
-# pour m'arrêter : seule une relecture de courrier mordrait, et c'est précisément ce qu'on saute.
-# Garde partagé, posé par BPx et généralisé par l'architecte le 2026-08-21 — il ne lit que le champ
-# des dépôts (jamais le motif, texte libre) et laisse passer si la tour est injoignable.
-bash ~/dev/bp/hub/tools/garde-fenetre.sh || exit 1
+# ⛔ LE REFUS SUR COURRIER NON LU, RENDU À SON PROPRE GARDE — 2026-09-05. Il vivait dans
+# `garde-fenetre.sh`, qui portait DEUX refus sans rapport : les fenêtres de gel et le courrier. En
+# retirant l'appel au premier, j'ai emporté le second sans le voir — et c'est pourtant lui qui
+# m'avait arrêté à 23:46, sur huit messages non lus.
+# ⇒ ⛔ *Deux refus dans un même script sont DEUX gardes* : un fichier partagé n'est pas une fonction
+#   partagée, et ils se retirent séparément.
+# ⚠️ AU CROCHET DE POUSSÉE SEULEMENT, jamais à un site de bascule : le portillon dure des minutes
+#   quand le courrier arrive toutes les une à deux — branché ailleurs, il mesure un autre instant
+#   que le geste qu'il garde.
+bash ~/dev/bp/hub/tools/garde-courrier-non-lu.sh || exit 1
 # ⛔ MON ÉTAT PUBLIÉ NE DOIT PAS RETARDER SUR CE QUE JE POUSSE. Tant qu'il retarde, mes voisins me
 # mesurent à ma dernière publication : le 2026-09-03, le relevé des lecteurs d'un paquet me comptait
 # encore SIX sites que ma tête avait déjà retirés, et le producteur ne pouvait pas retirer sa porte.

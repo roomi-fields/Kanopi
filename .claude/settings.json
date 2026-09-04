@@ -56,15 +56,6 @@
             "command": "bash ~/dev/bp/hub/tools/hooks/index-dabord.sh"
           }
         ]
-      },
-      {
-        "matcher": "Write|Edit|NotebookEdit|Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/dev/bp/hub/tools/hooks/gel-ecriture.sh"
-          }
-        ]
       }
     ]
   }

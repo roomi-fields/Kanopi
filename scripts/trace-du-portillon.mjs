@@ -61,54 +61,18 @@ import {
 } from "./lib/releve-du-portillon.mjs";
 
 const RACINE = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
-const TOUR = join(process.env.HOME, "dev", "bp", "hub", "tour");
 
-/**
- * ⛔ LA DURÉE DÉCLARÉE, ET ELLE EST LARGE EXPRÈS. Ce n'est PAS un plafond : la tour la traite comme un
- * PLANCHER annoncé et signale sa péremption sans fermer. Trop courte, elle fait partir aux douze un
- * message qui leur PROPOSE de lever ma fenêtre — donc de tuer ma mesure — et elle m'attire des
- * demandes « où en es-tu » qu'un chiffre juste aurait évitées.
- *
- * ⛔ ELLE A MENTI LE 2026-09-04, ET LA FORME DU MENSONGE EST INSTRUCTIVE : déclarée à 50 minutes, la
- * mesure en a pris 58 — la tour a signalé la péremption, et kronos a demandé où j'en étais alors que
- * mes bancs d'écran tournaient encore. *Une durée écrite en dur ne suit pas la suite qu'elle décrit* :
- * ma suite d'écran a grossi depuis, et ce nombre est resté. ⇒ 80 la porte, et la marge n'est pas du
- * confort : elle est ce qui sépare une fenêtre longue d'une fenêtre qu'on croit abandonnée.
- *
- * ⚠️ La borne juste serait dérivée — la durée du dernier relevé, majorée — et non écrite. Reporté ;
- * une constante qu'on relève à la main se re-périme au prochain banc ajouté.
- */
-/** Ce que j'annonce, et qui n'est pas le plafond : la durée ATTENDUE, celle sur laquelle on décide. */
-
-/** L'identifiant de CETTE ouverture — c'est lui qui rend l'exemption nommée, jamais « une fenêtre ». */
-
-let fenetres;
-try {
-  fenetres = JSON.parse(
-    execFileSync(TOUR, ["fenetre", "--json"], {
-      encoding: "utf8",
-      env: { ...process.env, BP_AGENT: "kanopi" },
-    }),
-  );
-} catch (e) {
-  // ⛔ UNE TOUR INJOIGNABLE N'EST PAS UNE ABSENCE DE FENÊTRE. Un contrôle qui prend une panne pour un
-  // feu vert est pire que pas de contrôle (formule de bpscript, 2026-08-30).
-  console.error(`⛔ la tour n'a pas répondu — je ne trace pas : ${e.message}`);
-  process.exit(2);
-}
-// ⛔ AUCUNE FENÊTRE OUVERTE, PAS MÊME LA MIENNE. Celle d'un voisin gèlerait ma mesure ; une à mon
-// nom est une campagne en cours ou une trace morte, et empiler deux ouvertures kanopi est l'accident
-// que mon arme garde déjà de son côté.
-if (fenetres.length) {
-  console.error(
-    "⛔ UNE FENÊTRE EST DÉJÀ OUVERTE — je ne trace pas :\n" +
-      fenetres
-        .map((f) => `   ${f.demandeur} jusqu'à ${f.fin} · ${(f.depots ?? []).join(", ")}`)
-        .join("\n") +
-      "\n   Ce relevé OUVRE la sienne : il ne s'ajoute jamais à une autre, la mienne comprise.",
-  );
-  process.exit(1);
-}
+// ⛔ JE NE RELIS PLUS LES FENÊTRES OUVERTES — 2026-09-04. Ce bloc interrogeait la tour et refusait
+// de tracer dès qu'une fenêtre existait, la mienne comprise. Sa justification était écrite juste
+// en dessous : « ce relevé OUVRE la sienne, il ne s'ajoute jamais à une autre ». Il n'en ouvre
+// plus, et la phrase était donc devenue fausse avant le code qu'elle expliquait.
+// ⇒ L'autre moitié de sa raison — « la fenêtre d'un voisin gèlerait ma mesure » — est tombée avec
+//   la copie figée : je lis mes voisins dans `.last/`, leur écriture ne m'atteint plus.
+// ⇒ ⛔ ET LE GARDER AURAIT ÉTÉ LE PIRE CAS, celui que l'architecte nomme : une relecture privée de
+//   ses ouvreurs ne trouve jamais rien à son nom, donc sa condition devient TOUJOURS VRAIE. Ici
+//   elle serait restée verte en n'interdisant plus rien — un contrôle qu'on croit en service.
+// ⇒ Et l'appel au garde partagé a suivi le 2026-09-05 : la porte d'ouverture étant supprimée au
+//   hub, il interrogeait un registre qui ne peut plus se remplir.
 
 const { empreinte, pieces, bancs } = empreinteDuPortillon();
 const quand = new Date().toISOString();
