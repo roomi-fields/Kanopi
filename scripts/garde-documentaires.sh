@@ -22,12 +22,15 @@ racine="$(git rev-parse --show-toplevel)"
 hub="${KANOPI_HUB:-$(cd "$racine/.." && pwd)/hub}"
 moi="$(basename "$racine")"
 
-# ⛔ CHAQUE OUTIL SE SONDE PAR SON NOM, ET LE DOSSIER SE DISTINGUE DE L'OUTIL. Ma première
-# version sondait UN fichier et en appelait DEUX : le second manquant, la sonde passait et l'appel
-# cassait sur « can't open file », sans cause nommée. Et l'inverse accusait « hub introuvable »
-# alors que le dossier était là. Défaut hérité du bloc greffé, corrigé chez son auteur et survivant
-# chez son jumeau — c'est exactement ce que la douzième directive de mesure décrit.
-OUTILS="garde-navigation.py garde-copies.py"
+# ⛔ ET LA LISTE DES OUTILS NE VIT PLUS ICI — 2026-09-04. Elle était écrite en dur
+# (`OUTILS="garde-navigation.py garde-copies.py"`), et c'était une COPIE autant qu'un fichier
+# recopié : quinze dépôts portaient chacun leur exemplaire de la même liste. Ajouter un garde au
+# portillon partagé n'atteignait personne, et rien ne le disait — c'est ainsi qu'un garde du retard
+# de publication a existé, fonctionné, et n'a été appelé par aucun portillon pendant une journée.
+# ⇒ `hub/tools/gardes-du-portillon.sh <dépôt>` est le point d'entrée unique : il porte la liste, et
+#   toute évolution arrive sans qu'une ligne change ici. *Un garde partagé s'appelle, jamais ne se
+#   recopie* — et la sonde ci-dessous porte sur le point d'entrée, plus sur les outils qu'il choisit.
+POINT_ENTREE="$hub/tools/gardes-du-portillon.sh"
 
 if [ ! -d "$hub/tools" ]; then
   echo "✗ gardes documentaires INEXÉCUTABLES — hub introuvable à $hub" >&2
@@ -35,16 +38,10 @@ if [ ! -d "$hub/tools" ]; then
   exit 1
 fi
 
-manquants=""
-for outil in $OUTILS; do
-  [ -f "$hub/tools/$outil" ] || manquants="$manquants $outil"
-done
-if [ -n "$manquants" ]; then
-  echo "✗ gardes documentaires INEXÉCUTABLES — absent(s) de $hub/tools :$manquants" >&2
+if [ ! -f "$POINT_ENTREE" ]; then
+  echo "✗ gardes documentaires INEXÉCUTABLES — absent : $POINT_ENTREE" >&2
   echo "  Ces gardes ne se sautent pas : sans eux, le portillon n'est pas complet." >&2
   exit 1
 fi
 
-for outil in $OUTILS; do
-  python3 "$hub/tools/$outil" --depot "$moi"
-done
+bash "$POINT_ENTREE" "$moi"
