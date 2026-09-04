@@ -414,10 +414,10 @@
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.check&",
      "nom_amont": "-se.check&",
-     "format": "texte BP2"
+     "format": "JSON court"
     }
    },
-   "produit": false,
+   "produit": true,
    "convention": "french",
    "origine_du_couple": "le couple est celui que la grammaire declare. Son fichier de reglages est au format texte BP2 : le moteur le refuse et s arrete. L entree ne produit rien, et c est la mesure."
   },
@@ -1037,7 +1037,7 @@
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.koto1",
      "nom_amont": "-se.koto1",
-     "format": "texte BP2"
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
@@ -1046,7 +1046,7 @@
      "format": "texte"
     }
    },
-   "produit": false,
+   "produit": true,
    "convention": "english",
    "origine_du_couple": "le couple est celui que la grammaire declare. Son fichier de reglages est au format texte BP2 : le moteur le refuse et s arrete. L entree ne produit rien, et c est la mesure."
   },
@@ -1059,7 +1059,7 @@
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.koto1",
      "nom_amont": "-se.koto1",
-     "format": "texte BP2"
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
@@ -1068,7 +1068,7 @@
      "format": "texte"
     }
    },
-   "produit": false,
+   "produit": true,
    "convention": "english",
    "origine_du_couple": "le couple est celui que la grammaire declare. Son fichier de reglages est au format texte BP2 : le moteur le refuse et s arrete. L entree ne produit rien, et c est la mesure."
   },
@@ -1548,7 +1548,7 @@
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.transposition",
      "nom_amont": "-se.transposition",
-     "format": "texte BP2"
+     "format": "JSON court"
     },
     "-al": {
      "role": "alphabet",
@@ -1557,7 +1557,7 @@
      "format": "texte"
     }
    },
-   "produit": false,
+   "produit": true,
    "convention": "english",
    "origine_du_couple": "le couple est celui que la grammaire declare. Son fichier de reglages est au format texte BP2 : le moteur le refuse et s arrete. L entree ne produit rien, et c est la mesure."
   },
@@ -1761,10 +1761,10 @@
      "role": "reglages",
      "chemin": "test-assets/bp3/commun/-se.tryMIDIfile",
      "nom_amont": "-se.tryMIDIfile",
-     "format": "texte BP2"
+     "format": "JSON court"
     }
    },
-   "produit": false,
+   "produit": true,
    "convention": "english",
    "origine_du_couple": "le couple est celui que la grammaire declare. Son fichier de reglages est au format texte BP2 : le moteur le refuse et s arrete. L entree ne produit rien, et c est la mesure."
   },
