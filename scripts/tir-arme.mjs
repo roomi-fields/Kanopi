@@ -388,9 +388,13 @@ function ceQueMaChaineLit() {
   const suivis = execFileSync("git", ["ls-files"], { cwd: RACINE, encoding: "utf-8" })
     .split("\n")
     // ⛔ UN `tsconfig` PORTE UN CHEMIN DE DISQUE, ET MA PORTÉE NE LE VOYAIT PAS. Trouvé par BPx le
-    // 2026-08-25 : `packages/ui/tsconfig.json:18` mappe `bpx/dist/index.js` vers `../../../BPx/dist/
-    // index.d.ts`. Sa cible était déjà gelée, donc aucun écart — mais ma portée nommait des SCRIPTS et
-    // ratait les fichiers de CONFIGURATION, qui portent exactement le même genre de chemin.
+    // 2026-08-25 : `packages/ui/tsconfig.json:18` mappe `bpx/dist/index.js` vers un chemin de disque
+    // chez le voisin. Sa cible était déjà gelée, donc aucun écart — mais ma portée nommait des SCRIPTS
+    // et ratait les fichiers de CONFIGURATION, qui portent exactement le même genre de chemin.
+    // ⇒ Cette ligne vise l'espace PUBLIÉ depuis le 2026-09-04 (`../../../.publie/BPx/dist/index.d.ts`).
+    //   La leçon ne bouge pas — un fichier de configuration atteint un voisin sans qu'aucun `import`
+    //   ne le montre — mais l'exemple se met à jour avec le code : *un commentaire décrit le chemin
+    //   que le code emprunte RÉELLEMENT*, et celui-là citait un mapping que la migration a changé.
     // ⚠️ Sa première passe portait la casse exacte `BPx` et aurait raté une graphie minuscule ; c'est en
     // la reprenant insensible que le `tsconfig` est sorti. Mon motif est déjà insensible à la casse.
     // ⛔ ET MES BANCS NE FIGURAIENT PAS DANS CETTE PORTÉE — pourtant ce sont EUX qui ouvrent des
