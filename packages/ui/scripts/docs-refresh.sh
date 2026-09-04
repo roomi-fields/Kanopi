@@ -51,8 +51,14 @@ bash ~/dev/bp/hub/tools/garde-fenetre.sh --fenetres || exit 1
 # emplacements le temps que ça dure, le déclaré d'abord — se caler sur le chemin accidentel aurait
 # été hériter du défaut d'un autre. L'architecte l'a réparé (`64096fbb`), l'emplacement à plat a
 # DISPARU, et le second candidat est mort avec lui.
-ATLAS_PUBLIE="$UI_DIR/../../../.publie/atlas"
-DOC_SITE="$ATLAS_PUBLIE/doc-utilisateur/site"
+#
+# ⛔ ET LE CHEMIN S'ÉCRIT D'UN SEUL TENANT, CE N'EST PAS UN DÉTAIL DE STYLE. Ma propre dérivation de
+# population lit les chemins littéraux de mes fichiers pour savoir qui je lis et quoi geler pendant
+# une campagne. Coupé en deux variables — une racine `.publie/atlas`, puis `$RACINE/doc-utilisateur/
+# site` — le chemin ne matche plus, et ATLAS EST SORTI DE MA LISTE DE GEL sans que rien ne rougisse.
+# ⇒ Mesuré : mon arme relevait onze dépôts au lieu de douze, dix minutes après que j'aie moi-même
+#   changé cette graphie. *Un outil qui dérive d'une graphie se casse quand on embellit la graphie.*
+DOC_SITE="$UI_DIR/../../../.publie/atlas/doc-utilisateur/site"
 
 if [[ ! -f "$DOC_SITE/index.html" ]]; then
   echo "ERREUR : le site bâti d'atlas est absent ($DOC_SITE/index.html)." >&2

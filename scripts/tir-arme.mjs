@@ -425,9 +425,42 @@ function ceQueMaChaineLit() {
       return null;
     }
   };
-  const depots = readdirSync(ATELIER, { withFileTypes: true })
-    .filter((e) => e.isDirectory())
-    .map((e) => e.name);
+  // ⛔ UN ESPACE PARTAGÉ N'EST PAS UN DÉPÔT, ET C'EST ICI QUE ÇA SE TRANCHE. `.publie` et `.paquets`
+  // sont des dossiers de l'atelier comme les autres pour `readdirSync` : ils entraient donc dans la
+  // liste qui dit « ceci est un dépôt », et ma liste de gel a nommé `.publie`. La tour a refusé —
+  // « dépôt inconnu: .publie » — et mon relevé est mort avant de tracer.
+  //
+  // ⚠️ CE N'EST PAS LE MÊME DÉFAUT QUE CELUI DU MOTIF, réparé le matin même : là, le motif franchit
+  // l'espace pour nommer le dépôt qui suit. Ici, l'espace était déclaré RECEVABLE en amont, donc le
+  // motif pouvait revenir en arrière et le retenir quand le chemin s'arrête sur le nom du dépôt —
+  // `$UI_DIR/../../../.publie/atlas`, qui n'a pas de segment après. ⇒ Deux gardes contre la même
+  // confusion, et le second n'a mordu que quand mes propres chemins ont changé de forme.
+  //
+  // ⇒ Le critère est celui de la tour : elle connaît des dépôts, et aucun ne commence par un point.
+  //
+  // ⛔ ET L'ATELIER NE SUFFIT PLUS À LES ÉNUMÉRER. Sous enveloppe, `/home/romi/dev/bp` ne porte que
+  // `hub`, `kanopi`, `.paquets` et `.publie` : cette liste est passée de seize noms à DEUX, donc tout
+  // chemin sortant vers un voisin était écarté comme « pas un dépôt ». Mesuré — mon arme relevait
+  // atlas hier et ne le relevait plus aujourd'hui, sans qu'aucun garde ne rougisse.
+  // ⇒ ⇒ Un dépôt qui sort de cette liste sort de ma liste de GEL : il peut alors publier en pleine
+  //   campagne et faire porter mon verdict sur deux états. *Une énumération qui rétrécit ne rend pas
+  //   une erreur, elle rend un ensemble plus petit — et un ensemble plus petit a l'air d'une mesure.*
+  //
+  // ⇒ L'espace publié porte, lui, un dossier par dépôt connu : il devient la seconde source, réunie
+  //   avec l'atelier plutôt que substituée — hors enveloppe les deux coïncident, sous enveloppe la
+  //   seconde est la seule qui répond.
+  const dossiers = (chemin) => {
+    try {
+      return readdirSync(chemin, { withFileTypes: true })
+        .filter((e) => e.isDirectory() && !e.name.startsWith("."))
+        .map((e) => e.name);
+    } catch {
+      return [];
+    }
+  };
+  const depots = [
+    ...new Set([...dossiers(ATELIER), ...dossiers(join(ATELIER, ".publie"))]),
+  ];
   return [() => suivis, lireTexte, depots, existsSync];
 }
 

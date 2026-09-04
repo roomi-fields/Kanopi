@@ -56,8 +56,13 @@ export function voisinsLusParChemin(atelier, lireFichiers, lireTexte, depotsDeLA
   // ⚠️ Un paquet épinglé y apparaît sous sa forme figée (`runtime-in-<sha>`) et n'est donc pas un nom
   // de la tour : le filtre par les dossiers de l'atelier l'écarte, et c'est juste — un instantané
   // scellé ne peut pas changer sous ma campagne.
+  // ⛔ L'ESPACE SE CAPTURE, IL NE SE JETTE PLUS — 2026-09-04, sous enveloppe. Il était franchi sans
+  // être retenu, donc la racine se vérifiait sous `<atelier>/<dépôt>/`, c'est-à-dire dans l'ARBRE du
+  // voisin. Cet arbre n'existe plus pour moi : la vérification échouait pour tout voisin lu par
+  // `.publie`, et il sortait de ma liste de gel en silence.
+  // ⇒ Le chemin dit OÙ je lis ; la racine se vérifie donc là où le chemin mène, jamais ailleurs.
   const MOTIF =
-    /(?:\.\.\/)+(?:\.(?:publie|paquets)\/)?([A-Za-z0-9._-]+)\/([A-Za-z0-9._-]+)/g;
+    /(?:\.\.\/)+(\.(?:publie|paquets)\/)?([A-Za-z0-9._-]+)\/([A-Za-z0-9._-]+)/g;
   for (const f of fichiers) {
     examines++;
     const texte = lireTexte(f);
@@ -73,7 +78,7 @@ export function voisinsLusParChemin(atelier, lireFichiers, lireTexte, depotsDeLA
       MOTIF.lastIndex = 0;
       let m;
       while ((m = MOTIF.exec(ligne)) !== null) {
-        const [, dossier, racine] = m;
+        const [, espace, dossier, racine] = m;
         // ⛔ LA CASSE NE DÉCIDE PAS : un script écrit le nom du dépôt tel qu'il est sur le disque,
         // capitales comprises, quand la tour le connaît en minuscules (`bpscript`), et le
         // dossier réel porte encore une autre graphie. Le dossier de l'atelier fait foi.
@@ -84,10 +89,13 @@ export function voisinsLusParChemin(atelier, lireFichiers, lireTexte, depotsDeLA
         // `doc-utilisateur` en fin de ligne, et ma liste de gel a déclaré une racine `doc-` que
         // personne n'a jamais eue. ⇒ Un garde se prouve sur la graphie que le code écrit — ici, sur
         // celle que j'écris moi-même à côté du code. Le disque tranche, la graphie ne suffit pas.
-        if (!existe(`${atelier}/${reel}/${racine}`)) continue;
+        // ⇒ La base est le chemin RÉELLEMENT emprunté, espace compris — c'est aussi là que se mesurent
+        //   les dernières écritures du voisin, donc la faire pointer ailleurs mesurerait un autre objet.
+        const base = `${atelier}/${espace ?? ""}${reel}`;
+        if (!existe(`${base}/${racine}`)) continue;
         const nom = reel.toLowerCase();
         if (!parNom.has(nom))
-          parNom.set(nom, { nom, chemin: `${atelier}/${reel}`, racines: new Set(), sites: [] });
+          parNom.set(nom, { nom, chemin: base, racines: new Set(), sites: [] });
         const v = parNom.get(nom);
         v.racines.add(racine);
         v.sites.push(`${f}:${n + 1}`);

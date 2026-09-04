@@ -93,8 +93,10 @@ echo ">> [0/6] Aide utilisateur publiee par atlas -> packages/ui/public/docs"
 # la racine de l'archive, parce que l'outil de publication du hub aplatissait un chemin de DEUX
 # segments pendant que l'empreinte annonçait le chemin déclaré. Lu aux deux emplacements le temps que
 # ça dure, le déclaré d'abord ; réparé par l'architecte (`64096fbb`), l'emplacement à plat a DISPARU.
-ATLAS_PUBLIE="$REPO_ROOT/../.publie/atlas"
-DOC_SITE="$ATLAS_PUBLIE/doc-utilisateur/site"
+# ⛔ ET LE CHEMIN S'ÉCRIT D'UN SEUL TENANT : ma dérivation de population lit les chemins littéraux de
+# mes fichiers pour savoir qui geler pendant une campagne. Coupé en deux variables, il ne matche plus
+# et atlas sort de ma liste de gel sans que rien ne rougisse — mesuré, onze dépôts au lieu de douze.
+DOC_SITE="$REPO_ROOT/../.publie/atlas/doc-utilisateur/site"
 
 if [[ ! -f "$DOC_SITE/index.html" ]]; then
   echo "ERREUR : le site bati d atlas est absent ($DOC_SITE/index.html) — deploy REFUSE" >&2
