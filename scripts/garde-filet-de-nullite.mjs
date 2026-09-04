@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// @isole — il fabrique un atelier, y écrit une copie de l'arme, la fourche et lui fait lever un
+// signal. Il ne partage donc ni processus ni ressource avec un autre garde, et part seul.
 /**
  * LE FILET REND-IL ENCORE LA NULLITÉ ? — l'épreuve par injection du verdict de campagne tuée.
  *
