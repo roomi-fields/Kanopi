@@ -38,7 +38,7 @@ set -euo pipefail
 TARGET="${1:-}"
 if [[ "$TARGET" != "local" && "$TARGET" != "prod" ]]; then
   echo "Usage : $(basename "$0") local | prod" >&2
-  echo "  local : rebuild dist amont (BPx, kronos, kairos) + vite build + vite preview (4173)" >&2
+  echo "  local : construit amont vérifié (bpx, kronos, kairos) + vite build + vite preview (4173)" >&2
   echo "  prod  : même tronc de build, puis déploiement VPS (releases + rollback)" >&2
   exit 64
 fi
@@ -135,32 +135,35 @@ else
   echo "   (local) mkdocs introuvable — doc embarquée non régénérée, on continue" >&2
 fi
 
-# DIST AMONT FRAIS (LAN-14 / DEPLOY-DIST-STALE, GO [521]) : le build prod consomme les
-# DIST de bpx/kronos/kairos (condition d'export `import`) ; depuis deps-fraîches le dev
-# sert leurs SRC et plus rien ne rebuildait les dist → un deploy embarquait des briques
-# périmées (site potentiellement muet, 'ax is not a constructor'). On REBUILD dans
-# l'ordre de dépendance (bpx et kronos, puis kairos qui dépend des deux), puis une GARDE
-# refuse BRUYAMMENT le deploy si un dist reste plus vieux que sa source.
-# ⛔ LES CHEMINS SE DÉRIVENT, ILS NE S'ÉCRIVENT PAS. Ils portaient `/home/romi/dev/bp/...` en
-# absolu : sur une autre machine, ce déploiement échouerait au premier `cd`, et rien ne l'aurait
-# dit avant. Un chemin absolu ne se déclare nulle part et ne se voit qu'au moment où il échoue,
-# ailleurs que là où il a été écrit (mesure d'atlas, 2026-08-14 : douze sites chez lui, dont son
-# oracle et deux étapes de son portillon).
-ATELIER="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"
-UPSTREAMS=("$ATELIER/BPx" "$ATELIER/kronos" "$ATELIER/kairos")
-echo ">> [0bis/6] Rebuild des dist amont (bpx, kronos, kairos)…"
-for d in "${UPSTREAMS[@]}"; do
-  echo "   - $(basename "$d")"
-  ( cd "$d" && npm run build )
-done
-for d in "${UPSTREAMS[@]}"; do
-  main="$d/dist/index.js"
-  [[ -f "$main" ]] || { echo "ERREUR : $main absent après build — deploy REFUSÉ" >&2; exit 1; }
-  stale="$(find "$d/src" -type f \( -name '*.ts' -o -name '*.js' \) -newer "$main" | head -1)"
-  if [[ -n "$stale" ]]; then
-    echo "ERREUR : dist périmé pour $d (source plus récente : $stale) — deploy REFUSÉ" >&2
+# CONSTRUIT AMONT PRÉSENT — vérifié LÀ OÙ MON BUILD LE RÉSOUT, c'est-à-dire dans mes propres
+# `node_modules`. Le build de production consomme le `dist` de bpx, kronos et kairos par la condition
+# d'export `import` ; ces trois-là sont installés en liens vers l'espace publié, donc le construit
+# que j'embarque est celui de leur commit publié.
+#
+# ⛔ CETTE ÉTAPE CONSTRUISAIT DANS LEURS ARBRES DE TRAVAIL, ET CE GESTE EST MORT LE 2026-09-04.
+# Elle faisait `npm run build` dans `../BPx`, `../kronos`, `../kairos`, puis comparait la date de
+# leur `dist` à celle de leur `src`. Depuis que mes onze dépendances sont déclarées vers l'espace
+# publié, AUCUNE de mes résolutions n'atteint plus ces arbres : le construit produit n'entrait plus
+# dans mon paquet, et la garde qui suivait mesurait la fraîcheur d'un objet que je ne consomme pas.
+#
+# ⚠️ UNE GARDE QUI MESURE LE MAUVAIS OBJET EST PIRE QUE MORTE : elle rend un vert, et ce vert se lit
+#   comme une preuve que ce que j'embarque est frais. Elle l'a été entre ma migration et ce retrait.
+#
+# ⛔ ET ELLE ÉCRIVAIT CHEZ TROIS VOISINS À CHAQUE DÉPLOIEMENT — une construction dans l'arbre d'autrui,
+#   hors de mon périmètre, invisible à ma propre discipline de fenêtre puisque aucun git n'intervenait.
+#
+# ⇒ Ce qui reste vérifiable CHEZ MOI est la présence du construit dans ce que je résous. Sa
+#   FRAÎCHEUR appartient au producteur et se règle à sa publication : dans une archive publiée, la
+#   source et le construit viennent du même commit, et je n'ai aucun `src` à comparer.
+echo ">> [0bis/6] Construit amont présent (bpx, kronos, kairos)…"
+for p in bpx @kronos/core @kairos/core; do
+  main="$REPO_ROOT/node_modules/$p/dist/index.js"
+  if [[ ! -f "$main" ]]; then
+    echo "ERREUR : $p ne porte pas son construit ($main) — deploy REFUSÉ" >&2
+    echo "         Son archive publiée doit emporter son \`dist\` ; demande-le à son producteur." >&2
     exit 1
   fi
+  echo "   - $p"
 done
 
 if [[ "$TARGET" == "local" ]]; then
@@ -196,7 +199,7 @@ if [[ "$TARGET" == "local" ]]; then
       exit 1
     fi
   fi
-  echo ">> ✓ Build local FRAIS servi — http://localhost:$PREVIEW_PORT/ (dist amont rebâtis + gardés)"
+  echo ">> ✓ Build local servi — http://localhost:$PREVIEW_PORT/ (construit amont publié, vérifié présent)"
   exit 0
 fi
 
