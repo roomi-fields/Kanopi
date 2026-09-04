@@ -89,23 +89,15 @@ echo ">> [0/6] Aide utilisateur publiee par atlas -> packages/ui/public/docs"
 #   est sale. Si ce signal lui sert, il le tient chez lui — je ne peux plus le lui rendre.
 #
 # ⇒ Bâtir l'aide n'a jamais été mon geste : je porte l'interface, atlas porte la documentation.
-# ⚠️ DEUX EMPLACEMENTS, ET L'ORDRE EST LE POINT. Atlas déclare son site à `doc-utilisateur/site`,
-# mais l'outil de publication du hub dépose un chemin de DEUX segments à la racine de l'archive : le
-# site atterrit en `site/`, pendant que l'empreinte annonce le chemin déclaré. Le défaut est chez
-# l'outil, remonté par atlas ; il ne renomme pas sa sortie pour le contourner.
-# ⇒ Le DÉCLARÉ d'abord, l'accidentel ensuite : à la réparation, le premier répond et le second cesse
-#   d'être atteint, sans que personne ait à revenir ici.
+# ⇒ LE CHEMIN EST CELUI QU'ATLAS DÉCLARE. Il a porté un quart d'heure une seconde valeur, `site/` à
+# la racine de l'archive, parce que l'outil de publication du hub aplatissait un chemin de DEUX
+# segments pendant que l'empreinte annonçait le chemin déclaré. Lu aux deux emplacements le temps que
+# ça dure, le déclaré d'abord ; réparé par l'architecte (`64096fbb`), l'emplacement à plat a DISPARU.
 ATLAS_PUBLIE="$REPO_ROOT/../.publie/atlas"
-DOC_SITE=""
-for candidat in "doc-utilisateur/site" "site"; do
-  if [[ -f "$ATLAS_PUBLIE/$candidat/index.html" ]]; then
-    DOC_SITE="$ATLAS_PUBLIE/$candidat"
-    break
-  fi
-done
+DOC_SITE="$ATLAS_PUBLIE/doc-utilisateur/site"
 
-if [[ -z "$DOC_SITE" ]]; then
-  echo "ERREUR : le site bati d atlas est absent ($ATLAS_PUBLIE — ni doc-utilisateur/site, ni site) — deploy REFUSE" >&2
+if [[ ! -f "$DOC_SITE/index.html" ]]; then
+  echo "ERREUR : le site bati d atlas est absent ($DOC_SITE/index.html) — deploy REFUSE" >&2
   echo "         Son espace publie ne porte aujourd hui que les sources markdown ; l outil qui" >&2
   echo "         les batit vit dans son arbre, hors de mon enveloppe." >&2
   echo "         Atlas doit PUBLIER sa documentation construite." >&2
