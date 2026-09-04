@@ -1262,21 +1262,30 @@ function rendreLeVerdict(
         `                                 ⇒ Sa phrase, qui est ma propre règle : « un garde qu'on n'a\n` +
         `                                   pas vu mordre est une hypothèse, et tu viens d'en faire une\n` +
         `                                   pièce. »\n` +
-        `              lu en CONSTRUIT  seul un empêchement de RECONSTRUCTION compte.\n` +
-        `                               ⛔⛔ ET CETTE CLASSE NE CONCERNE QUE DEUX D'ENTRE VOUS —\n` +
-        `                                 runtime-in et runtime-osc, lus par un paquet ÉPINGLÉ. J'avais\n` +
-        `                                 écrit ici « votre poussée ne me bascule pas ; la retenir\n` +
-        `                                 n'atteste rien », ET C'ÉTAIT FAUX POUR NEUF D'ENTRE VOUS.\n` +
-        `                                 ⇒ Mesuré le 2026-09-04 sur les liens réellement installés :\n` +
-        `                                   bpx, bpscript, bp3-frontend, kairos, kronos, runtime-audio,\n` +
-        `                                   runtime-codevoices, runtime-MIDI et runtime-ui sont lus dans\n` +
-        `                                   leur ARBRE VIF. Votre seule ÉCRITURE me bascule ; et pour\n` +
-        `                                   qui reconstruit un dist au push, VOTRE POUSSÉE AUSSI.\n` +
-        `                                 ⇒ C'est BPx qui l'a réfuté, en mesurant chez lui. ⚠️ Ma propre\n` +
-        `                                   charte le disait déjà, et je ne l'avais pas relue.\n` +
-        `                               ⇒ Un geste retenu pendant ma fenêtre ATTESTE donc, pour les neuf.\n` +
-        `                                 Qui aurait retiré, allégé ou relâché un témoin sur ma ligne\n` +
-        `                                 d'avant : elle était fausse, rétablissez-le.\n` +
+        `              lu en INSTANTANÉ seul un empêchement de PUBLICATION compte — votre écriture ne\n` +
+        `                               me bascule plus, votre PUBLICATION oui, et elle seule.\n` +
+        `                               ⇒ Mesuré le 2026-09-04 à midi sur les liens réellement\n` +
+        `                                 installés : ONZE d'entre vous, c'est-à-dire TOUS. Neuf par\n` +
+        `                                 l'espace publié — bpx, bpscript, bp3-frontend, kairos, kronos,\n` +
+        `                                 runtime-audio, runtime-codevoices, runtime-MIDI, runtime-ui —\n` +
+        `                                 et deux par un paquet ÉPINGLÉ, runtime-in et runtime-osc.\n` +
+        `                               ⛔⛔ CETTE LIGNE A ÉTÉ FAUSSE DEUX FOIS, EN SENS INVERSE, ET LA\n` +
+        `                                 SECONDE PAR MON PROPRE GESTE. Elle disait « votre poussée ne me\n` +
+        `                                 bascule pas » quand je lisais vos arbres — BPx l'a réfutée en\n` +
+        `                                 mesurant chez lui. Puis elle a dit « NEUF d'entre vous en ARBRE\n` +
+        `                                 VIF », et ma migration du matin l'a périmée dans l'heure : je\n` +
+        `                                 ne lis plus AUCUN arbre de travail. C'est kairos qui l'a vu.\n` +
+        `                                 ⇒ *Une ligne écrite sur vous vit dans le motif que je republie,\n` +
+        `                                   donc elle vous revient longtemps après avoir cessé d'être\n` +
+        `                                   vraie.* Remesurez-la plutôt que de me croire — c'est ma règle,\n` +
+        `                                   et elle vaut d'abord contre moi.\n` +
+        `                               ⇒ Un geste retenu pendant ma fenêtre ATTESTE donc, pour les onze,\n` +
+        `                                 mais c'est une PUBLICATION retenue, plus une frappe. Qui aurait\n` +
+        `                                 retiré, allégé ou relâché un témoin sur l'une ou l'autre de mes\n` +
+        `                                 lignes d'avant : elles étaient fausses, rétablissez-le.\n` +
+        `                               ⚠️ ET IL RESTE UN VIVANT, QUE JE NOMME : atlas, lu par chemin de\n` +
+        `                                 disque pour bâtir ma documentation. Son ÉCRITURE me bascule, et\n` +
+        `                                 c'est la dernière lecture vive que je porte.\n` +
         `                                 ⛔ ET JE NE DIS PLUS COMBIEN L'ONT FAIT. J'avais écrit ici\n` +
         `                                   « QUATRE D'ENTRE VOUS ONT RETIRÉ LEURS PROPRES TÉMOINS » :\n` +
         `                                   ce nombre n'a AUCUNE mesure derrière. Je ne lis pas vos\n` +
