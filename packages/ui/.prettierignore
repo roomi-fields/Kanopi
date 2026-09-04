@@ -6,5 +6,9 @@ playwright-report
 .playwright-mcp
 # Vendored upstream — kept verbatim (no reformatting)
 src/lib/timeline/timeline.js
-# Doc utilisateur embarquée (MkDocs, artefact régénéré [446]) — non reformatée
+# Doc utilisateur embarquée — le SITE que publie atlas, copié tel quel, jamais reformaté
 public/docs
+# Le rapport machine du coureur de bancs — écrit à chaque passage, lu par le garde de population.
+# Il est ignoré de git, mais Prettier balaie le disque : depuis que ce rapport existe, il refusait le
+# portillon sur la mise en forme d'un fichier que personne n'écrit à la main.
+.vitest-rapport.json
