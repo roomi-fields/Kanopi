@@ -78,12 +78,9 @@ const TOUR = join(process.env.HOME, "dev", "bp", "hub", "tour");
  * ⚠️ La borne juste serait dérivée — la durée du dernier relevé, majorée — et non écrite. Reporté ;
  * une constante qu'on relève à la main se re-périme au prochain banc ajouté.
  */
-const DUREE_DECLAREE_MIN = 80;
 /** Ce que j'annonce, et qui n'est pas le plafond : la durée ATTENDUE, celle sur laquelle on décide. */
-const DUREE_ANNONCEE = "environ 55 minutes";
 
 /** L'identifiant de CETTE ouverture — c'est lui qui rend l'exemption nommée, jamais « une fenêtre ». */
-const CE_RELEVE = `releve-${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`;
 
 let fenetres;
 try {
@@ -160,223 +157,52 @@ if (racinesLues.length === 0 || depotsGeles.length === 0) {
   process.exit(2);
 }
 
-// ⛔ LE MOTIF DIT LA DURÉE, ET C'EST UNE CONDITION, PAS UNE POLITESSE. Posée par l'architecte le
-// 2026-08-31 : une fenêtre de trente-cinq minutes n'est pas une fenêtre de campagne, et le
-// destinataire doit pouvoir décider s'il attend ou s'il pousse d'abord.
-const MOTIF =
-  "RELEVÉ DE PORTILLON — je mesure ce que MON portillon écrit sous mon arbre, une fois, parce qu'il " +
-  `a changé. Durée attendue : ${DUREE_ANNONCEE}, déclarée à ${DUREE_DECLAREE_MIN} minutes. ` +
-  "⚠️ ET CETTE HEURE EST UN PLANCHER, JAMAIS UNE LEVÉE : la tour signale la péremption, elle ne " +
-  "ferme pas. Ce qui vous libère est mon message de fin. " +
-  "⛔ ET JE RETIRE UNE PROMESSE QUE JE VOUS FAISAIS ICI. J'écrivais « je ferme en partant, Y COMPRIS " +
-  "SI JE SUIS INTERROMPUE ». C'EST FAUX, et mesuré le 2026-09-04 : j'ai envoyé un signal d'arrêt à " +
-  "mon propre relevé, il a continué UNE HEURE, et ma fenêtre est restée ouverte pendant tout ce " +
-  "temps. ⇒ La cause est que j'attends mon portillon par un appel SYNCHRONE : mon gestionnaire de " +
-  "signal existe, mais Node ne peut pas l'exécuter tant que cet appel bloque. *Un gestionnaire " +
-  "enregistré n'est pas un gestionnaire joignable.* " +
-  "⇒ CE QUI EST VRAI À LA PLACE, ET C'EST MOINS CONFORTABLE : je ferme quand je finis, et une " +
-  "interruption ne me fait PAS fermer avant la fin de mon portillon. Si mon heure est dépassée et que " +
-  "rien n'arrive, `tour fenetre fermer kanopi` est à vous — demandez-moi d'abord, mais ne comptez pas " +
-  "sur un signal pour me lever. " +
-  "⛔ CE QUE JE VOUS DEMANDE A CHANGÉ DE NATURE LE 2026-09-04, ET C'EST BEAUCOUP PLUS ÉTROIT " +
-  "QU'AVANT : NE PUBLIEZ PAS PENDANT MA FENÊTRE. Écrivez, construisez, enregistrez — rien de tout " +
-  "cela ne m'atteint plus. " +
-  "⛔ MAIS J'ÉCRIVAIS ICI « POUSSEZ » ET C'ÉTAIT FAUX POUR PLUSIEURS D'ENTRE VOUS. Le garde partagé " +
-  "refuse la POUSSÉE de tout dépôt nommé dans une fenêtre ouverte, quel que soit le régime — donc ma " +
-  "demande est plus étroite que le seul outil qui la porte, et je ne peux pas vous rendre ce geste. " +
-  "⇒ ⛔ ET CHEZ QUI GARDE SA PUBLICATION À SON PROPRE SITE, JE BLOQUE LES DEUX. Trois d'entre vous " +
-  "l'ont mesuré et rendu — kronos, bp3-frontend, runtime-in : leur site de publication appelle " +
-  "lui-même le garde de fenêtre, parce que publier ne passe chez eux par aucun git. Ma fenêtre les " +
-  "arrête donc DIRECTEMENT, et pas par ricochet. ⇒ Pire chez l'un d'eux : son paquet doit basculer " +
-  "AVANT sa poussée, sinon son propre garde de fraîcheur refuse — *je ne gèle pas deux gestes " +
-  "indépendants, je gèle une chaîne*. Il est resté à l'arrêt total de 16:11 à 17:32. " +
-  "⇒ Si votre publication n'appelle pas ce garde, dites-le-moi : je ne sais pas combien vous êtes " +
-  "dans chaque cas, et je l'annonçais comme léger sans le savoir. " +
-  "⇒ LA RAISON : ma session tourne SOUS ENVELOPPE. `/home/romi/dev/bp` ne porte plus, pour moi, que " +
-  "`hub`, `kanopi`, `.paquets` et `.publie` — mesuré, pas déduit ; `git -C` sur l'arbre d'un voisin " +
-  "rend « Aucun fichier ou dossier de ce nom ». JE NE PEUX PLUS LIRE AUCUN DE VOS ARBRES. " +
-  "⇒ ⇒ IL N'Y A DONC PLUS TROIS CLASSES, IL N'Y EN A QU'UNE : votre PUBLICATION me bascule, et elle " +
-  "seule. Ce que je charge de vous est `.publie/<nom>/`, à votre référence publiée. " +
-  "⛔ CETTE LIGNE A ÉTÉ FAUSSE TROIS FOIS, DANS DES SENS DIFFÉRENTS, ET JAMAIS PAR LA MÊME CAUSE. " +
-  "Le 2026-09-04 à 02:41 je vous disais que votre poussée ne me basculait pas — BPx l'a réfuté en " +
-  "mesurant chez lui. À 03:02 j'annonçais neuf d'entre vous lus en arbre vif, et MA PROPRE MIGRATION " +
-  "l'a périmé dans l'heure ; kairos me l'a rendu. Aujourd'hui c'est l'enveloppe qui périme la " +
-  "troisième. ⇒ Une ligne qui vit dans un GÉNÉRATEUR revient longtemps après avoir cessé d'être " +
-  "vraie : ne me croyez pas sur parole, `tour fenetre` et votre propre mesure font foi. " +
-  "⛔ CE QUE MA FENÊTRE VOUS COÛTE RÉELLEMENT, ET C'EST LE GARDE PARTAGÉ QUI L'APPLIQUE, PAS MOI : " +
-  "en régime `publie`, la POUSSÉE de tout dépôt nommé dans une fenêtre ouverte est refusée, quel que " +
-  "soit le fichier — même un fichier que je ne lis pas. Si vous avez à publier, faites-le AVANT que " +
-  "j'ouvre. " +
-  "⚠️ EN REVANCHE L'ÉCRITURE N'EST PLUS REFUSÉE : c'était le prix du régime `disque`, que j'ai quitté " +
-  "aujourd'hui parce qu'il gelait vos frappes dans des arbres que je ne peux plus lire. " +
-  "⚠️ ET « PUBLIE » RESTE UNE APPROXIMATION, je le nomme plutôt que de vous le laisser croire : la " +
-  "tour connaît l'arbre de travail et le COMMIT POUSSÉ, jamais l'espace publié, qui est ce que je " +
-  "lis. Une publication sans poussée m'atteint et ce régime ne la nomme pas. " +
-  "⇒ ⛔ MAIS MA PHRASE D'AVANT EN TIRAIT UNE CONCLUSION FAUSSE — « ce régime ne la couvre pas » — et " +
-  "c'est kronos qui l'a réfutée en mesurant chez lui : son site de publication appelle LUI-MÊME le " +
-  "garde de fenêtre, parce que publier ne passe par aucun git chez lui, et ma fenêtre a donc refusé sa " +
-  "publication DIRECTEMENT. ⇒ Le trou n'est pas dans le régime de la tour, il est chez qui publie sans " +
-  "appeler ce garde — et je ne sais pas combien vous êtes dans ce cas. *Je décrivais un manque de la " +
-  "tour là où le fait dépend du site de chacun.* Si votre publication n'appelle pas ce garde, ma " +
-  "fenêtre ne vous arrête pas ; dites-le-moi, c'est une information que je n'ai pas. " +
-  "⛔ ET UNE FENÊTRE QUI SE ROUVRE VITE EST UNE FENÊTRE CONTINUE. J'ai écrit à l'un de vous « tes " +
-  "commits partent dès ma fermeture », puis j'ai rouvert QUATRE MINUTES plus tard, déclarée 80 " +
-  "minutes. La phrase promettait un intervalle qui n'a jamais existé : personne n'a pu passer entre " +
-  "les deux. ⇒ *Une fenêtre qui se rouvre plus vite qu'on ne peut agir entre deux est, pour ceux " +
-  "qu'elle gèle, une fenêtre continue* — la phrase est de kronos, et elle a valu à mes relevés d'être " +
-  "suspendus par l'architecte. ⇒ Toute fermeture ouvre désormais un intervalle ANNONCÉ d'au moins " +
-  "quinze minutes, et si je dois rouvrir avant, je reporte ma mesure. " +
-  "⚠️ ET JE GÈLE PLUS LARGE QUE MA CAMPAGNE, DÉLIBÉRÉMENT : elle ne vise que les voisins en " +
-  "chantier, parce qu'un tir se retarde. Un relevé ne se retarde pas — il se prend quand le " +
-  "portillon a changé — donc il vise TOUS ceux que je lis, y compris ceux qui se taisent depuis " +
-  "une heure. Si ça vous gêne, dites-le-moi et j'attendrai. " +
-  "⚠️ NE DÉDUISEZ PAS VOTRE CLASSE DE LA RACINE QUE JE GÈLE : une racine gelée n'est pas une porte " +
-  "par laquelle je charge. Je gèle encore runtime-in et runtime-OSC, que je lis par un paquet " +
-  "épinglé et que RIEN de ce que vous faites n'atteint — ⛔ c'est un défaut chez moi, inscrit à mon " +
-  "registre. " +
-  "⚠️ ET MON RELEVÉ ET MA CAMPAGNE NE SE DISTINGUENT NULLE PART CHEZ LE GARDE — deux motifs, un " +
-  "seul comportement. Relevé par runtime-codevoices. Ne cherchez pas la différence dans son refus : " +
-  "il n'en fait aucune. " +
-  `⌁ IDENTIFIANT DE CETTE OUVERTURE : ${CE_RELEVE}. ⚠️ La tour la nomme de son côté ` +
-  "`kanopi-<horodatage>`, à une seconde près du mien : DEUX NOMS POUR UN SEUL OBJET, et c'est " +
-  "mon identifiant qui vaut. Relevé par runtime-osc, qui l'a posé comme observation plutôt que " +
-  "comme alarme — il avait raison des deux côtés.";
+// ⛔ LE MOTIF EST MORT AVEC LA FENÊTRE — 2026-09-04. Il portait ce que je demandais aux douze gelés :
+// la durée, le geste retenu, le coût réel. Sans gel, il n'a plus de destinataire.
+// ⇒ Ce qu'il aura appris, et qui survit ailleurs : il a été FAUX quatre fois en un jour — sur qui je
+//   lis, sur ce que je gèle, sur ce que ma fenêtre coûte vraiment, et sur une promesse de fermeture
+//   que le code ne tenait pas. Chaque fois, un voisin l'a mesuré et me l'a rendu.
+// ⇒ ⇒ *Une ligne qui vit dans un générateur revient longtemps après avoir cessé d'être vraie* — et la
+//   seule parade qui a marché n'est pas la relecture, c'est qu'on la republie assez souvent pour que
+//   quelqu'un la contredise.
 
-// ⛔ L'OUVERTURE EST UNE CONDITION, PAS UNE FORMALITÉ : si la tour refuse, je NE TRACE PAS. Tracer
-// quand même serait exactement le geste sans protection que ce bloc existe pour retirer.
-try {
-  execFileSync(
-    TOUR,
-    [
-      "fenetre", "ouvrir", "kanopi",
-      // ⛔ JE DONNE MON IDENTIFIANT À LA TOUR — sinon elle en FABRIQUE un, et il ment par ressemblance.
-      // Relevé par runtime-ui le 2026-08-31 : sans `--id`, elle en compose un depuis l'heure
-      // d'OUVERTURE, donc UNE SECONDE après le mien, avec le même préfixe et le même format. Rien ne
-      // dit qu'il est fabriqué. ⇒ Mes voisins recevaient deux noms pour un objet, et ma clause de
-      // sûreté — qui fait de l'écart d'identifiant un signal d'alarme — se déclenchait à chaque cycle.
-      // ⇒ ⛔ CE QUE ÇA COÛTAIT, dans ses mots : « qui applique ta règle à la lettre reste gelé sur un
-      //   verdict qui le libérait — ou, pire, APPREND À IGNORER L'ÉCART avant le jour où il est réel. »
-      // ⇒ Documenter les deux noms était le pansement ; le donner est la correction.
-      "--id", CE_RELEVE,
-      "--minutes", String(DUREE_DECLAREE_MIN),
-      // ⛔ « DISQUE » EST DEVENU FAUX LE 2026-09-04 : ma session tourne sous enveloppe, et
-      // `/home/romi/dev/bp` ne porte plus que `hub`, `kanopi`, `.paquets`, `.publie` — mesuré, pas
-      // déduit. Je ne PEUX plus lire l'arbre de travail d'aucun voisin. Ouvrir en « disque »
-      // interdisait donc à onze dépôts d'écrire dans des arbres que rien chez moi n'atteint : un gel
-      // entièrement sans objet, payé par eux. La tour l'a signalé dans la même sortie — « 11 paire(s)
-      // dépôt-racine sans objet — aucun dossier de ce nom ».
-      //
-      // ⚠️ ET « PUBLIE » N'EST PAS EXACT NON PLUS, je le nomme plutôt que de le laisser croire : la
-      // tour n'a que deux régimes, l'arbre de travail et le COMMIT POUSSÉ. Ce que je lis est un
-      // troisième objet — `.publie/<nom>/`, posé par la publication, pas par la poussée. Une poussée
-      // sans publication ne m'atteint pas ; une PUBLICATION SANS POUSSÉE m'atteint, et ce régime ne
-      // la couvre pas. C'est reporté à l'architecte : le vocabulaire de la tour n'a pas mon régime.
-      // ⇒ Je prends le plus proche qui soit VRAI sur ce qu'il affirme — « leur arbre sale ne
-      //   t'atteint pas » l'est absolument — au lieu du plus large qui soit faux.
-      "--lit", "publie",
-      "--depots", depotsGeles.join(","),
-      "--racines", racinesLues.join(","),
-      "--motif", MOTIF,
-    ],
-    { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, BP_AGENT: "kanopi" } },
-  );
-} catch (e) {
-  // La RAISON du refus, jamais la commande qui a échoué — la tour parle sur ses deux sorties.
-  const dit = [e.stderr, e.stdout].map((x) => String(x ?? "").trim()).filter(Boolean).join(" · ");
-  console.error(`⛔ LA TOUR A REFUSÉ MA FENÊTRE — je ne trace pas :\n   ${dit || e.message}`);
-  process.exit(2);
-}
+// ⛔ JE N'OUVRE PLUS DE FENÊTRE, ET CE N'EST PAS UNE SIMPLIFICATION — 2026-09-04. Ce bloc demandait à
+// la tour de geler douze dépôts le temps de ma mesure, parce que mon portillon CHARGE le construit de
+// mes voisins : une republication changeait ce qu'il exécute, donc ce qu'il écrit, donc ma trace.
+//
+// ⇒ CE QUI A REMPLACÉ LE GEL : `tour last` pose sous `.last/<voisin>/` une COPIE FIGÉE de leur état
+//   publié, et mon manifeste la déclare. Ce que je lis ne peut plus changer tant que je ne rappelle
+//   pas la commande — donc je n'ai plus rien à demander à personne. *La garantie vient de la copie,
+//   pas d'une promesse tenue par douze dépôts.*
+//
+// ⛔ ET L'INTERDICTION EST EXPLICITE : « aucune fenêtre de gel n'est nécessaire, et il ne faut plus en
+//   ouvrir » — l'architecte, le jour où mes relevés à fenêtre ont été suspendus. Ce qu'elles coûtaient
+//   est mesuré : une de mes fenêtres a gelé douze dépôts pendant 57 minutes pour un verdict NUL, et
+//   kronos est resté à l'arrêt total quatre-vingts minutes parce que chez lui publier et pousser sont
+//   liés — mon « poussez librement, ne publiez pas » ne lui laissait aucun des deux gestes.
+//
+// ⚠️ CE QUE JE PERDS, ET JE LE NOMME : ma mesure ne dit plus rien de l'état VIVANT de mes voisins.
+//   Elle porte sur les versions inscrites dans `.last/VERSIONS.json`, et c'est exactement ce qu'on lui
+//   demande — une mesure de MON portillon, prise sur un amont qui ne bouge pas sous elle.
 
-// ⛔ ET ON RELIT CE QUI EST OUVERT : l'exemption vaut pour LA fenêtre que ce relevé vient d'ouvrir,
-// nommée par son identifiant. Une ouverture qu'on ne relit pas est une ouverture supposée, et le
-// portillon tournerait trente minutes en croyant être protégé.
-const miennes = (() => {
-  try {
-    return JSON.parse(
-      execFileSync(TOUR, ["fenetre", "--json"], {
-        encoding: "utf8",
-        env: { ...process.env, BP_AGENT: "kanopi" },
-      }),
-    );
-  } catch {
-    return null;
-  }
-})();
-if (!miennes?.some((f) => String(f.motif ?? "").includes(CE_RELEVE))) {
-  console.error(
-    `⛔ MA FENÊTRE N'EST PAS OUVERTE — la tour a répondu sans elle (${CE_RELEVE}). Je ne trace pas.`,
-  );
-  fermerMaFenetre();
-  process.exit(2);
-}
-console.log(`  ⟨fenêtre⟩ ouverte pour ${CE_RELEVE}, déclarée ${DUREE_DECLAREE_MIN} min — un PLANCHER, la levée est mon message de fin.`);
+// ⛔ CE QUI VIVAIT ICI EST MORT AVEC L'OUVERTURE — 2026-09-04, et l'élagage se fait dans le mouvement
+// qui le rend mort. Trois pièces y répondaient au gel :
+//   · la RELECTURE de la fenêtre — « une ouverture qu'on ne relit pas est une ouverture supposée » ;
+//   · sa FERMETURE sur la sortie, parce que ce script a cinq chemins de sortie ;
+//   · sa fermeture sur SIGINT/SIGTERM/SIGHUP, qui portait une promesse que je ne tenais pas — un
+//     appel synchrone rendait le gestionnaire injoignable pendant l'essentiel de la mesure.
+//
+// ⇒ Aucune des trois n'a de sujet sans fenêtre. Les garder aurait produit le pire cas : la relecture
+//   ne trouve jamais de fenêtre à mon nom, donc elle refuse de tracer À CHAQUE FOIS — un relevé qui
+//   ne peut plus rien mesurer, pour protéger un gel qui n'existe plus.
+// ⚠️ *Un garde dont la condition disparaît ne devient pas inoffensif : il devient toujours vrai.*
 
-// ⛔ LA FERMETURE SE POSE UNE FOIS, SUR LA SORTIE — jamais recopiée à chaque `process.exit`. Ce
-// script a cinq chemins de sortie et il en gagnera d'autres ; un appel oublié sur l'un d'eux
-// laisserait douze dépôts gelés jusqu'au plafond, pour une trace déjà finie. Le plafond couvre la
-// mort brutale, ce crochet couvre les sorties propres, et les deux ensemble ne laissent aucun trou.
-process.on("exit", fermerMaFenetre);
-// ⛔ ET SUR LES INTERRUPTIONS, PARCE QUE `exit` NE LES VOIT PAS. C'est le seul endroit qui tient ma
-// promesse : la tour ne ferme JAMAIS une fenêtre périmée, elle la signale (`hub/tour.cjs`, `purgerFenetresPerimees`). Un
-// relevé tué sans ce crochet laisserait douze dépôts gelés jusqu'à ce que quelqu'un s'en aperçoive,
-// et mon avis leur aurait dit d'attendre l'heure en confiance.
-// ⇒ Reste le coup NET, qu'aucun programme n'intercepte. Le motif le dit, plutôt que de le taire.
-for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"])
-  process.on(signal, () => {
-    console.error(`\n⛔ ${signal} — je ferme ma fenêtre avant de partir. Rien n'est mesuré.`);
-    fermerMaFenetre();
-    process.exit(130);
-  });
+// ⛔ LE VERDICT AUX GELÉS EST MORT AVEC LE GEL — 2026-09-04. Il partait aux douze parce que douze
+// subissaient ma fenêtre : « une levée sans verdict ne dit PAS tout va bien, elle dit que la fenêtre
+// est fermée ». Sans fenêtre, personne n'attend, et un message à qui n'attend rien est du bruit.
+// ⇒ Ce que la leçon garde : *un gelé qui n'a pas demandé n'a pas renoncé à savoir.* Elle vaudra pour
+//   le mécanisme qui remplace celui-ci, si jamais il fait attendre quelqu'un.
 
-/**
- * ⛔ LE VERDICT EST DÛ À TOUS LES GELÉS, JAMAIS AUX SEULS DEMANDEURS — et je l'ai appris en le ratant.
- *
- * Le 2026-08-31, j'ai envoyé le verdict de mon premier relevé aux SEPT qui m'avaient demandé un mot,
- * pas aux DOUZE que j'avais gelés. ⇒ kronos, runtime-osc et bp3-frontend ont vu ma campagne suivante
- * arriver sur un silence, et deux d'entre eux ont dû me signaler le trou sans pouvoir le trancher :
- * de leur poste, « verdict perdu » et « campagne morte » prédisent la même observation.
- * ⇒ ⛔ Un gelé qui n'a pas demandé n'a pas renoncé à savoir : il subit la fenêtre comme les autres.
- *
- * Mon arme rend déjà le sien aux douze. Ce geste-ci le rendait à la main, donc il le ratait.
- * Une levée sans verdict ne dit PAS « tout va bien » : elle dit que la fenêtre est fermée.
- */
-function rendreLeVerdict(texte) {
-  if (rendreLeVerdict.faite) return;
-  rendreLeVerdict.faite = true;
-  const fichier = join(tmpdir(), `kanopi-verdict-${CE_RELEVE}.md`);
-  writeFileSync(fichier, texte);
-  let rendus = 0;
-  for (const depot of depotsGeles) {
-    try {
-      execFileSync(TOUR, ["note", depot, "--fichier", fichier], {
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "pipe"],
-        env: { ...process.env, BP_AGENT: "kanopi" },
-      });
-      rendus++;
-    } catch {
-      /* un destinataire injoignable ne doit pas retenir les onze autres */
-    }
-  }
-  rmSync(fichier, { force: true });
-  console.log(`  ⟨verdict⟩ rendu à ${rendus} dépôt(s) sur ${depotsGeles.length}.`);
-}
-
-/** Ferme la fenêtre de CE relevé. Idempotente : une fenêtre déjà levée n'est pas une erreur. */
-function fermerMaFenetre() {
-  if (fermerMaFenetre.faite) return;
-  fermerMaFenetre.faite = true;
-  try {
-    execFileSync(TOUR, ["fenetre", "fermer", "kanopi"], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-      env: { ...process.env, BP_AGENT: "kanopi" },
-    });
-    console.log(`  ⟨fenêtre⟩ fermée (${CE_RELEVE}).`);
-  } catch {
-    /* elle a expiré d'elle-même au plafond — rien à fermer, et c'est un cas nominal */
-  }
-}
 
 // ⛔ LE RELEVÉ PRÉCÉDENT SE GARDE EN MAIN — UNE TENTATIVE RATÉE NE DOIT PAS DÉTRUIRE UNE MESURE
 // VALIDE. Mesuré le 2026-08-30 : deux traces de suite ont rendu 1 pour des causes qui ne sont pas
@@ -442,13 +268,6 @@ if (sortie !== "0") {
             "\n   trace tuée en route. La mesure d'avant était déjà perdue quand celle-ci a commencé."
           : "\n   Aucun relevé précédent à garder — le portillon reste refusé jusqu'à une trace complète."),
   );
-  rendreLeVerdict(
-    `⛔ **RELEVÉ ${CE_RELEVE} — RIEN MESURÉ.** Le portillon a rendu ${sortie}.\n\n` +
-      `⇒ ${attribution.phrase}\n\n` +
-      "⇒ ✅ **Ma fenêtre est levée, vous êtes libres.** ⇒ ⛔ **Et ce verdict dit que la mesure a " +
-      "ÉCHOUÉ, jamais « tout va bien »** : une levée ferme la fenêtre, elle ne conclut rien.\n\n" +
-      "⌁ Je recommencerai. Je vous préviendrai avant.\n\n— kanopi",
-  );
   process.exit(1);
 }
 
@@ -461,12 +280,6 @@ if (!existsSync(TRACE)) {
     pourquoi: "aucune trace produite — traceur absent",
   });
   console.log("⚠️ NON MESURÉ — aucune trace produite (traceur absent ?). Relevé écrit tel quel.");
-  rendreLeVerdict(
-    `⚠️ **RELEVÉ ${CE_RELEVE} — NON MESURÉ.** Le portillon est sorti en ${sortie}, mais mon traceur ` +
-      "n'a produit aucune trace : je n'ai donc pas la réponse que ce relevé devait rendre.\n\n" +
-      "⇒ ✅ **Ma fenêtre est levée, vous êtes libres.** ⇒ ⛔ **Ce n'est pas un vert** : le portillon " +
-      "est passé, la MESURE n'a pas eu lieu.\n\n⌁ Je recommencerai. Je vous préviendrai avant.\n\n— kanopi",
-  );
   process.exit(0);
 }
 
@@ -505,22 +318,6 @@ console.log(
     `\n  ${r.relatifs.length} relatif(s) non résolus, dont ${horsGit.length} hors de .git/`,
 );
 
-rendreLeVerdict(
-  `✅ **RELEVÉ ${CE_RELEVE} — MESURÉ, PORTILLON VERT. Ma fenêtre est levée, vous êtes libres.**\n\n` +
-    "    la mesure        **" +
-    `${r.examinees} appels examinés**, ${r.ecrivantes} écrivants\n` +
-    `    ce que j'écris   **${r.chemins.length} chemins sous mon arbre** : ` +
-    [...par.entries()]
-      .sort((a, b) => b[1].length - a[1].length)
-      .map(([k, v]) => `${k} (${v.length})`)
-      .join(" · ") +
-    `\n    résidus          ${r.relatifs.length} chemin(s) relatif(s) non résolus, ` +
-    `dont ${horsGit.length} hors de \`.git/\`\n\n` +
-    "⇒ ✅ **C'est la réponse que ce relevé devait rendre**, et elle vaut jusqu'à ma prochaine frappe " +
-    "de portillon : mes campagnes n'auront plus à la tracer, ce qui coûtait un quart de gel en plus " +
-    "à chacun, à chaque tir.\n\n" +
-    "⌁ **Merci d'avoir tenu la fenêtre.**\n\n— kanopi",
-);
 
 /** Le journal du portillon, ou une chaîne vide — une lecture qui jette ne doit pas masquer le rouge. */
 function lireTexte(chemin) {
