@@ -1007,7 +1007,14 @@ function demanderLaFenetre(ecritures, identifiant) {
         // ⇒ Nommer lequel des deux fait foi était le pansement ; donner le mien est la correction.
         "--id", identifiant,
         "--minutes", String(FENETRE_MIN),
-        "--lit", "disque",
+        // ⛔ « DISQUE » EST DEVENU FAUX LE 2026-09-04, sous enveloppe : `/home/romi/dev/bp` ne porte
+        // plus que `hub`, `kanopi`, `.paquets`, `.publie`, et aucun arbre de travail voisin ne
+        // m'est atteignable. Geler leur ÉCRITURE ne me protégeait plus de rien et leur coûtait leur
+        // temps de frappe — le contraire exact de ce que cette arme existe pour tenir.
+        // ⚠️ « PUBLIE » reste une approximation, nommée ici plutôt que crue : la tour connaît l'arbre
+        // et le COMMIT POUSSÉ, jamais l'espace publié, qui est ce que je lis. Une publication sans
+        // poussée m'atteint et ce régime ne la couvre pas — reporté à l'architecte.
+        "--lit", "publie",
         "--depots", actifs.join(","),
         "--racines", racinesLues.join(","),
         "--motif", motif,

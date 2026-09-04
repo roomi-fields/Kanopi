@@ -227,7 +227,21 @@ try {
       // ⇒ Documenter les deux noms était le pansement ; le donner est la correction.
       "--id", CE_RELEVE,
       "--minutes", String(DUREE_DECLAREE_MIN),
-      "--lit", "disque",
+      // ⛔ « DISQUE » EST DEVENU FAUX LE 2026-09-04 : ma session tourne sous enveloppe, et
+      // `/home/romi/dev/bp` ne porte plus que `hub`, `kanopi`, `.paquets`, `.publie` — mesuré, pas
+      // déduit. Je ne PEUX plus lire l'arbre de travail d'aucun voisin. Ouvrir en « disque »
+      // interdisait donc à onze dépôts d'écrire dans des arbres que rien chez moi n'atteint : un gel
+      // entièrement sans objet, payé par eux. La tour l'a signalé dans la même sortie — « 11 paire(s)
+      // dépôt-racine sans objet — aucun dossier de ce nom ».
+      //
+      // ⚠️ ET « PUBLIE » N'EST PAS EXACT NON PLUS, je le nomme plutôt que de le laisser croire : la
+      // tour n'a que deux régimes, l'arbre de travail et le COMMIT POUSSÉ. Ce que je lis est un
+      // troisième objet — `.publie/<nom>/`, posé par la publication, pas par la poussée. Une poussée
+      // sans publication ne m'atteint pas ; une PUBLICATION SANS POUSSÉE m'atteint, et ce régime ne
+      // la couvre pas. C'est reporté à l'architecte : le vocabulaire de la tour n'a pas mon régime.
+      // ⇒ Je prends le plus proche qui soit VRAI sur ce qu'il affirme — « leur arbre sale ne
+      //   t'atteint pas » l'est absolument — au lieu du plus large qui soit faux.
+      "--lit", "publie",
       "--depots", depotsGeles.join(","),
       "--racines", racinesLues.join(","),
       "--motif", MOTIF,
