@@ -60,80 +60,48 @@ UI_DIR="$REPO_ROOT/packages/ui"
 
 TS="$(date +%Y%m%d-%H%M%S)"
 
-# Doc utilisateur EMBARQUÉE (MkDocs) → packages/ui/public/docs, régénérée AVANT le vite build
-# (public/ → dist/) pour être servie à la même origine sous /kanopi/docs — SOURCE UNIQUE ([463]).
+# Doc utilisateur EMBARQUÉE → packages/ui/public/docs, posée AVANT le vite build (public/ → dist/)
+# pour être servie à la même origine sous /kanopi/docs — SOURCE UNIQUE ([463]).
 # L'artefact public/docs est git-ignoré ; c'est CETTE étape qui le (re)produit à chaque déploiement.
-# prod : OBLIGATOIRE (on ne publie pas sans la doc). local : best-effort (le banc de test
-# n'a pas besoin de la doc ; absente → avertir et continuer).
+# ⇒ Le refus vaut pour LES DEUX cibles. Il portait un régime par cible — obligatoire en production,
+#   au mieux en local — et cette différence justifiait qu'un déploiement local serve une aide périmée
+#   sans le dire. La cible décide de ce qu'on publie, jamais de ce qu'on affirme.
 # ⚠️ ET ICI AUSSI, PAS SEULEMENT AU PUSH : ce script construit et déploie sans qu'aucun git
 # n'intervienne. Un déploiement lancé à la main pendant la fenêtre d'un voisin lirait ses sources en
 # plein chantier, et le crochet de poussée ne le verrait jamais passer.
 bash ~/dev/bp/hub/tools/garde-fenetre.sh || exit 1
 
-echo ">> [0/6] Build doc utilisateur (MkDocs) → packages/ui/public/docs"
-DOC_SRC="$REPO_ROOT/../atlas/doc-utilisateur"
+echo ">> [0/6] Aide utilisateur publiee par atlas -> packages/ui/public/docs"
 
-# ⛔ MKDOCS LIT L'ARBRE DE TRAVAIL D'ATLAS, PAS UN COMMIT. Mesuré par Atlas le 2026-08-21, témoin
-# vivant à l'appui : une page jamais enregistrée (état `??` chez git) ressort dans le site construit,
-# en page ET dans son index de recherche. Aucun git n'intervient — ni son commit, ni sa poussée, ni
-# son portillon. Une page à moitié réécrite partait donc en production sans que rien ne rougisse.
+# ⛔ LA SOURCE EST LE SITE BÂTI PAR ATLAS, DANS SON ESPACE PUBLIÉ. Cette étape appelait le mkdocs qui
+# vit dans l'arbre d'atlas, et bâtissait son aide avec ses affaires. Ce chemin a cessé d'exister le
+# 2026-09-04 : ma session tourne sous enveloppe, et de mes voisins je ne vois plus que
+# `.publie/<nom>/`. Mesuré — `/home/romi/dev/bp` ne porte que `hub`, `kanopi`, `.paquets`, `.publie`.
 #
-# ⚠️ ET IL EST INVISIBLE À TOUT LE RESTE DE MON OUTILLAGE : mon relevé de voisins est bâti sur les
-# LIENS SYMBOLIQUES de node_modules, et atlas est consommé par CHEMIN. Il n'est dans aucun des onze,
-# donc ni ma légende, ni mon garde de bascule, ni ma fenêtre de mesure ne le connaissent. Ce refus-ci
-# ne couvre que la publication ; le reste est KAN-68 au backlog.
-# ⚠️ CE RENVOI A ÉTÉ MUET DU 2026-08-21 AU 2026-08-25 : il disait « le reste est au backlog » et aucun
-# item n'y était. Une affirmation du code se relit comme une preuve — celle-ci nomme désormais l'item,
-# donc elle se vérifie.
+# ⛔ CE QUI DISPARAÎT AVEC, ET LE PRÉAVIS EST PARTI : le garde qui refusait de partir en production
+# quand la doc d'atlas portait du non-enregistré. Il lisait son arbre par `git -C "$DOC_SRC" status`,
+# et ATLAS CHERCHAIT CETTE CHAÎNE CHEZ MOI, à mon commit publié, à chaque passage de son portillon —
+# c'était le seul garde protégeant sa publication contre sa propre doc sale, et il vivait ici.
 #
-# La règle est celle que j'applique déjà aux onze : je ne pars pas en production sur du non-enregistré
-# QUI ENTRE DANS MON PAQUET. Sa doc entre dans mon paquet (`public/docs` → `dist/docs`), donc elle y
-# tombe. Sa charte le dit désormais aussi (atlas f87b2d3).
+# ⇒ Il n'est pas retiré, il est SANS OBJET : je ne peux plus voir son arbre du tout, donc sa doc non
+#   enregistrée ne peut plus m'atteindre, quoi qu'il écrive. Ce que je consomme est ce qu'il PUBLIE.
+# ⚠️ CE QU'IL PERD QUAND MÊME, ET JE LE NOMME : il n'a plus, chez moi, de miroir lui disant que sa doc
+#   est sale. Si ce signal lui sert, il le tient chez lui — je ne peux plus le lui rendre.
 #
-# ⛔ `--no-optional-locks` PARCE QUE `status` RAFRAÎCHIT L'INDEX ET PREND `.git/index.lock` CHEZ LUI.
-# Sa commande git échoue alors sur « Unable to create '.git/index.lock' », rarement et sans que rien
-# dans son dépôt ne le nomme. Ces DEUX appels ont été trouvés par atlas le 2026-08-30, dans le geste
-# où il me signalait le même défaut chez lui.
-#
-# ⇒ ILS ÉTAIENT HORS DES TROIS CHEMINS QUE J'AVAIS TRACÉS — relevé, gardes de structure, construction
-#   — et j'avais écrit cette limite en rendant ma mesure. C'est par elle qu'il est entré : une borne
-#   écrite se fait vérifier par quelqu'un d'autre, tue elle ne l'aurait pas été.
-#
-# ⚠️ ET IL Y EN A DEUX, LÀ OÙ SON CONSTAT EN NOMMAIT UN. Le second recompte ce que le premier a lu.
-#
-# ⛔ ATLAS LIT CETTE LIGNE, À MON COMMIT PUBLIÉ, À CHAQUE PASSAGE DE SON PORTILLON. C'est le seul garde
-# qui protège sa publication contre sa propre doc non enregistrée, et il vit ICI — donc il le mesure au
-# lieu de le supposer. ⇒ CHANGER LA GRAPHIE DE CET APPEL SE PRÉAVISE : quand j'ai inséré
-# `--no-optional-locks` le 2026-08-30, son motif cherchait la chaîne contiguë `git -C "$DOC_SRC" status
-# --porcelain` et le drapeau l'a brisée EN SON MILIEU. Son verdict a alors annoncé « AUCUN garde côté
-# kanopi » pendant que ce garde était là et refusait toujours.
-#
-# ⚠️ ET LE FAUX EST PARTI SOUS UN VERT : sa garde était VERTE, seule sa mention de régime avait basculé,
-# à l'intérieur d'un verdict de succès — un lecteur qui lit « VERTE » ne relit pas la ligne de régime.
-# ⇒ Il a réancré son motif depuis ; le préavis reste dû au prochain changement de forme.
-if [[ -d "$DOC_SRC" ]]; then
-  DOC_SALE="$(git -C "$DOC_SRC" --no-optional-locks status --porcelain -- . 2>/dev/null | head -20)"
-  if [[ -n "$DOC_SALE" ]]; then
-    DOC_N="$(git -C "$DOC_SRC" --no-optional-locks status --porcelain -- . 2>/dev/null | wc -l)"
-    if [[ "$TARGET" == "prod" ]]; then
-      echo "ERREUR : la doc d'atlas porte $DOC_N modification(s) non enregistrée(s) — elles" >&2
-      echo "         PARTIRAIENT en production, et rien ne les signalerait ensuite :" >&2
-      printf '%s\n' "$DOC_SALE" | sed 's/^/           /' >&2
-      echo "         Demande-lui d'enregistrer, ou déploie en local." >&2
-      exit 1
-    fi
-    echo "   (local) la doc d'atlas porte $DOC_N modification(s) non enregistrée(s) — embarquées telles quelles" >&2
-  fi
-fi
+# ⇒ Bâtir l'aide n'a jamais été mon geste : je porte l'interface, atlas porte la documentation.
+DOC_SITE="$REPO_ROOT/../.publie/atlas/doc-utilisateur/site"
 
-if [[ -x "$DOC_SRC/.venv/bin/mkdocs" ]]; then
-  ( cd "$DOC_SRC" && ./.venv/bin/mkdocs build -d "$UI_DIR/public/docs" )
-elif [[ "$TARGET" == "prod" ]]; then
-  echo "ERREUR : mkdocs introuvable ($DOC_SRC/.venv/bin/mkdocs) — doc embarquée non régénérée" >&2
+if [[ ! -f "$DOC_SITE/index.html" ]]; then
+  echo "ERREUR : le site bati d atlas est absent ($DOC_SITE/index.html) — deploy REFUSE" >&2
+  echo "         Son espace publie ne porte aujourd hui que les sources markdown ; l outil qui" >&2
+  echo "         les batit vit dans son arbre, hors de mon enveloppe." >&2
+  echo "         Atlas doit PUBLIER sa documentation construite." >&2
   exit 1
-else
-  echo "   (local) mkdocs introuvable — doc embarquée non régénérée, on continue" >&2
 fi
+
+rm -rf "$UI_DIR/public/docs"
+cp -r "$DOC_SITE" "$UI_DIR/public/docs"
+echo "   aide publiee copiee depuis $DOC_SITE"
 
 # CONSTRUIT AMONT PRÉSENT — vérifié LÀ OÙ MON BUILD LE RÉSOUT, c'est-à-dire dans mes propres
 # `node_modules`. Le build de production consomme le `dist` de bpx, kronos et kairos par la condition

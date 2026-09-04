@@ -35,15 +35,27 @@ UI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 #   pas. Amendement de l'architecte du 2026-08-25 : le drapeau se pose AU SITE, jamais dans une
 #   fonction partagée — ce fichier EST le site, et il n'a aucun autre appelant que lui-même.
 bash ~/dev/bp/hub/tools/garde-fenetre.sh --fenetres || exit 1
-DOC_SRC="$UI_DIR/../../../atlas/doc-utilisateur"
+# ⛔ LA SOURCE EST LE SITE BÂTI PAR ATLAS, DANS SON ESPACE PUBLIÉ. Ce script bâtissait lui-même
+# l'aide, en appelant le mkdocs qui vit dans l'arbre d'atlas. Ce chemin a cessé d'exister le
+# 2026-09-04 : ma session tourne sous enveloppe, et de mes voisins je ne vois plus que
+# `.publie/<nom>/`. Mesuré — `/home/romi/dev/bp` ne porte que `hub`, `kanopi`, `.paquets`, `.publie`.
+#
+# ⇒ Bâtir l'aide n'a jamais été mon geste : je porte l'interface, atlas porte la documentation. Tant
+#   que j'appelais son outil, je faisais son travail avec ses affaires, et je dépendais de l'état de
+#   son arbre — donc de sa vitesse de rédaction.
+# ⇒ ⇒ Je consomme désormais ce qu'il PUBLIE. La différence est celle de tous mes autres voisins :
+#   son écriture ne m'atteint plus, sa publication oui, et elle seule.
+DOC_SITE="$UI_DIR/../../../.publie/atlas/doc-utilisateur/site"
 
-if [[ ! -x "$DOC_SRC/.venv/bin/mkdocs" ]]; then
-  echo "ERREUR : mkdocs introuvable ($DOC_SRC/.venv/bin/mkdocs)." >&2
+if [[ ! -f "$DOC_SITE/index.html" ]]; then
+  echo "ERREUR : le site bâti d'atlas est absent ($DOC_SITE/index.html)." >&2
   echo "         public/docs N'A PAS été régénéré — s'il existe, il porte l'aide d'un" >&2
   echo "         déploiement antérieur, et rien à l'écran ne le distinguera d'une aide à jour." >&2
-  echo "         L'outil vit dans l'arbre d'atlas ; demande-lui son environnement, ou son site bâti." >&2
+  echo "         Atlas doit PUBLIER sa documentation construite ; son espace publié ne porte" >&2
+  echo "         aujourd'hui que les sources markdown, et l'outil qui les bâtit vit chez lui." >&2
   exit 1
 fi
 
-( cd "$DOC_SRC" && ./.venv/bin/mkdocs build -d "$UI_DIR/public/docs" )
-echo "docs:refresh — public/docs mis à jour depuis $DOC_SRC"
+rm -rf "$UI_DIR/public/docs"
+cp -r "$DOC_SITE" "$UI_DIR/public/docs"
+echo "docs:refresh — public/docs mis à jour depuis $DOC_SITE"
