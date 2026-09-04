@@ -48,7 +48,16 @@ export function voisinsLusParChemin(atelier, lireFichiers, lireTexte, depotsDeLA
   let examines = 0;
   // `../x/`, `../../x/`, … — la forme qu'un script écrit pour sortir de mon arbre. Le premier segment
   // non-`..` est le dépôt ; le segment suivant est la racine que je lis chez lui.
-  const MOTIF = /(?:\.\.\/)+([A-Za-z0-9._-]+)\/([A-Za-z0-9._-]+)/g;
+  // ⛔ ET UN ESPACE PARTAGÉ SE TRAVERSE, IL NE SE NOMME PAS — 2026-09-04. Depuis la migration, mes
+  // chemins passent par `../.publie/<dépôt>/…` : le premier segment non-`..` était donc `.publie`, et
+  // ma liste de gel a nommé cet espace comme s'il était un dépôt. La tour a refusé ma fenêtre —
+  // « dépôt inconnu: .publie ». ⇒ `.publie` et `.paquets` sont des ESPACES qui contiennent des dépôts,
+  // pas des dépôts : le motif les franchit et nomme ce qui suit.
+  // ⚠️ Un paquet épinglé y apparaît sous sa forme figée (`runtime-in-<sha>`) et n'est donc pas un nom
+  // de la tour : le filtre par les dossiers de l'atelier l'écarte, et c'est juste — un instantané
+  // scellé ne peut pas changer sous ma campagne.
+  const MOTIF =
+    /(?:\.\.\/)+(?:\.(?:publie|paquets)\/)?([A-Za-z0-9._-]+)\/([A-Za-z0-9._-]+)/g;
   for (const f of fichiers) {
     examines++;
     const texte = lireTexte(f);

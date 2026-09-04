@@ -443,9 +443,18 @@ function nomDeGel(v) {
   // Un voisin LU PAR CHEMIN porte déjà son nom résolu contre le dossier réel de l'atelier : il n'a ni
   // spécificateur ni manifeste d'où le tirer.
   if (v.nom !== undefined) return v.nom;
-  return (v.tete === null ? v.specificateurs[0] : v.depot.split("/").pop())
-    .split("/")
-    .pop();
+  // ⛔ UN SPÉCIFICATEUR SCOPÉ NOMME LE DÉPÔT PAR SON SCOPE, PAS PAR SA FIN — 2026-09-04. La ligne
+  // d'avant prenait le dernier segment, donc `@kairos/core` et `@kronos/core` rendaient tous deux
+  // « core » : DEUX dépôts fondus en UN nom que la tour ne connaît pas, et elle a refusé ma fenêtre.
+  // ⚠️ Ce n'était pas visible avant la migration vers l'espace publié : mes voisins avaient alors une
+  // tête git, donc le nom venait du DOSSIER. Ils sont maintenant tous sans tête — des instantanés
+  // publiés — et cette branche, qui ne servait qu'aux deux paquets épinglés, sert désormais à tous.
+  // *Un cas rare devient le cas général quand le régime change, et le défaut arrive avec lui.*
+  if (v.tete === null) {
+    const spec = v.specificateurs[0];
+    return spec.startsWith("@") ? spec.slice(1).split("/")[0] : spec;
+  }
+  return v.depot.split("/").pop();
 }
 
 /**
