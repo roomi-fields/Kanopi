@@ -178,13 +178,16 @@ qui écrit. Le préavis nomme ce qui change, ce qu'il **périme chez lui**, et u
 falsifiable. Un voisin qui lit ma **source** est prévenu à la frappe ; celui qui exécute mon **paquet
 publié**, à la publication.
 
-**Et le préavis vaut DANS L'AUTRE SENS : ma campagne se demande.** Une campagne de portillon dure
-quinze minutes, un voisin en chantier enregistre toutes les trois à huit — sans demande, aucun
-verdict n'est attribuable, et rejouer jusqu'à tomber sur un creux est la relance interdite sous un
-autre nom. `scripts/tir-arme.mjs` porte le geste : il attend deux conditions mesurées — aucune
-écriture sous les racines exposées d'aucun voisin, **et** aucun arbre sale qui ferme ma construction
-— demande la fenêtre aux seuls voisins en chantier, laisse un délai de grâce, puis tire. Un préavis
-simultané informe, il ne coordonne pas. Arbitrage de l'architecte, `hub/contrats/ce-qu-un-banc-lit-chez-son-voisin.md`.
+**Ma campagne ne se demande plus, et elle ne gèle plus personne.** Elle le faisait tant que je
+lisais l'arbre vif de mes voisins : quinze minutes de mesure contre une frappe toutes les trois à
+huit minutes, aucun verdict attribuable. Je les lis désormais en **copie figée** — `.last/<voisin>`,
+posée par `tour last` — donc leur écriture ne peut plus atteindre ma mesure.
+`scripts/tir-arme.mjs` porte le geste, et il tient en quatre pas : un **verrou** (une seule arme),
+un **pré-vol** (rien ne part avant que ce qui est à moi soit vert), la **poussée**, puis la
+**publication** — celle-ci n'est pas une suite mais une part du tir, car le garde de poussée refuse
+dès que mon état publié retarde sur ce que mes voisins peuvent lire.
+⚠️ Je reste **arrêtable** par la fenêtre d'un voisin tant qu'il en ouvre : `hub/tools/garde-fenetre.sh`
+est appelé en tête de mon crochet de poussée.
 
 **Le courrier se relit au moment de PUBLIER, pas au réveil** : un préavis reçu entre-temps porte
 peut-être sur ce que je m'apprête à écraser.

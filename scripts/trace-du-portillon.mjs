@@ -116,46 +116,14 @@ console.log(
   `TRACE DU PORTILLON — empreinte ${empreinte} (${pieces} pièce(s) de définition, ${bancs} banc(s)), départ ${quand}`,
 );
 
-// ⛔ CE QUE JE LIS SE DÉCLARE, ET LA RÉPONSE VIENT DE L'ARME — jamais d'une liste recopiée ici.
-//
-// Mesuré le 2026-08-31 en éprouvant ce mécanisme : sans `--racines`, la tour REFUSE d'ouvrir dès
-// qu'un dépôt gelé porte un fichier non enregistré N'IMPORTE OÙ. Onze dépôts refusés, dont dix pour
-// la MÊME fiche de skill diffusée par atlas — pas une seule sous une racine que mon portillon lit.
-// Le critère n'était pas faux, il était au mauvais niveau : « dépôt sale » là où il faut « racine
-// lue sale ». C'est le trou que mon arme avait déjà nommé le 2026-08-21, et je le rencontrais ici
-// pour la première fois.
-//
-// ⇒ ⛔ ET LA RÉPONSE NE SE RECOPIE PAS : `tir-arme.mjs --releve-racines` DÉRIVE les paires par les mêmes
-//   fonctions que sa fenêtre de campagne. Une seconde liste écrite ici dériverait de la première, et
-//   c'est un verdict qui porterait sur un périmètre que personne n'a mesuré. Le drapeau n'appelle ni
-//   la tour ni aucun gel : il dérive, il imprime, il sort.
-const demanderALArme = (drapeau) => {
-  try {
-    return execFileSync("node", [join(RACINE, "scripts", "tir-arme.mjs"), drapeau], {
-      encoding: "utf8",
-      env: { ...process.env, BP_AGENT: "kanopi" },
-    })
-      .split("\n")
-      .map((l) => l.trim())
-      .filter(Boolean);
-  } catch (e) {
-    console.error(`⛔ mon arme n'a pas rendu \`${drapeau}\` — je ne trace pas : ${e.message}`);
-    process.exit(2);
-  }
-};
-const racinesLues = demanderALArme("--releve-racines");
-// ⛔ ET LES DÉPÔTS AVEC : la tour refuse des racines sans dépôts, et elle a raison de le refuser —
-// « sinon tu gèles les quinze pour ce que tu lis chez trois ». Les deux moitiés vont ensemble.
-const depotsGeles = demanderALArme("--releve-depots");
-// ⛔ UN PÉRIMÈTRE VIDE N'EST PAS UN PÉRIMÈTRE : la tour le lirait comme « je ne lis rien », donc
-// n'opposerait aucun refus, et ma fenêtre protégerait ce qu'elle nomme — rien.
-if (racinesLues.length === 0 || depotsGeles.length === 0) {
-  console.error(
-    `⛔ PÉRIMÈTRE VIDE — ${depotsGeles.length} dépôt(s), ${racinesLues.length} racine(s). ` +
-      "Une fenêtre qui ne déclare rien ne protège rien.",
-  );
-  process.exit(2);
-}
+// ⛔ JE NE DÉCLARE PLUS DE PÉRIMÈTRE — 2026-09-04. Ce bloc demandait à mon arme les racines que je
+// lis et les dépôts à geler, puis refusait de tracer sur un périmètre vide. Les deux servaient
+// EXCLUSIVEMENT à remplir une fenêtre de gel, et je n'en ouvre plus : mes voisins se lisent en
+// copie figée, donc leur écriture ne peut plus atteindre ma mesure.
+// ⇒ ⛔ Le garder aurait été le pire cas : sans fenêtre à remplir, un périmètre exigé devient une
+//   condition qui ne peut plus être satisfaite — le relevé aurait refusé de tracer à chaque
+//   passage. *Un garde dont la condition disparaît ne devient pas inoffensif : il devient
+//   toujours vrai.*
 
 // ⛔ LE MOTIF EST MORT AVEC LA FENÊTRE — 2026-09-04. Il portait ce que je demandais aux douze gelés :
 // la durée, le geste retenu, le coût réel. Sans gel, il n'a plus de destinataire.

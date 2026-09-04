@@ -57,11 +57,9 @@ const RACINE = join(ICI, "..");
 const MAILLONS = [
   ["deps-fraicheur", "node", ["scripts/deps-fraicheur.mjs"]],
   ["releve-des-voisins", "node", ["scripts/garde-releve-des-voisins.mjs"]],
-  ["filet-de-nullite", "node", ["scripts/garde-filet-de-nullite.mjs"]],
   ["etat-pris", "node", ["scripts/garde-etat-pris.mjs"]],
   ["eprouve:qualifier-ecriture", "node", ["scripts/lib/qualifier-ecriture.mjs", "--eprouver"]],
   ["eprouve:releve-des-ecritures", "node", ["scripts/lib/releve-des-ecritures.mjs", "--eprouver"]],
-  ["eprouve:gel-recu", "node", ["scripts/lib/gel-recu.mjs", "--eprouver"]],
   ["eprouve:cause-du-rouge", "node", ["scripts/lib/cause-du-rouge.mjs", "--eprouver"]],
   ["eprouve:voisins-lus-par-chemin", "node", ["scripts/lib/voisins-lus-par-chemin.mjs", "--eprouver"]],
   ["eprouve:ecritures-du-portillon", "node", ["scripts/lib/ecritures-du-portillon.mjs", "--eprouver"]],
