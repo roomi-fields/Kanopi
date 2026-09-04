@@ -1,14 +1,13 @@
 {
-  "quand": "2026-09-04T18:45:11.771Z",
-  "empreinte": "8d2b7f9f7811327b",
+  "quand": "2026-09-04T23:38:06.180Z",
+  "empreinte": "669ff5cee999401c",
   "sortieDuPortillon": "0",
   "mesure": {
-    "appelsExamines": 763197,
-    "appelsEcrivants": 390911,
-    "cheminsSousMonArbre": 11641,
+    "appelsExamines": 727178,
+    "appelsEcrivants": 383491,
+    "cheminsSousMonArbre": 10779,
     "parRacineDeTete": {
-      "packages": 11640,
-      "scripts": 1
+      "packages": 10779
     },
     "relatifsNonResolus": 0,
     "relatifsHorsGit": 0,
