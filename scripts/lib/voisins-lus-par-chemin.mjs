@@ -65,7 +65,8 @@ export function voisinsLusParChemin(atelier, lireFichiers, lireTexte, depotsDeLA
       let m;
       while ((m = MOTIF.exec(ligne)) !== null) {
         const [, dossier, racine] = m;
-        // ⛔ LA CASSE NE DÉCIDE PAS : un script écrit `../BPscript/`, la tour connaît `bpscript`, et le
+        // ⛔ LA CASSE NE DÉCIDE PAS : un script écrit le nom du dépôt tel qu'il est sur le disque,
+        // capitales comprises, quand la tour le connaît en minuscules (`bpscript`), et le
         // dossier réel porte encore une autre graphie. Le dossier de l'atelier fait foi.
         const reel = depotsDeLAtelier.find((d) => d.toLowerCase() === dossier.toLowerCase());
         if (!reel) continue;

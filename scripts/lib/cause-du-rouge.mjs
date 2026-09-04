@@ -51,7 +51,9 @@ const CONSEQUENCE =
  *     error during build:
  *
  * …c'est-à-dire DEUX ACCUSATIONS ET AUCUNE CAUSE. La cause vivait juste en dessous, indentée :
- * « ../../../kairos/dist/empreinte.js (3:9): "dirname" is not exported by "__vite-browser-external" ».
+ * « <remontée vers le dossier du voisin>/dist/empreinte.js (3:9): "dirname" is not exported by
+ * "__vite-browser-external" » — la graphie du chemin est écartée à dessein : ce garde compte les
+ * remontées vers un voisin, et l'écrire ici en ferait une.
  * ⇒ J'ai dû rejouer la construction à la main pour l'écrire au voisin concerné.
  *
  * ⚠️ C'EST LE SYMÉTRIQUE EXACT DU DÉFAUT QU'UN VOISIN A MESURÉ CHEZ LUI LA MÊME NUIT : ses gardes

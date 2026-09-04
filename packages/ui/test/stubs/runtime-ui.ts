@@ -17,7 +17,7 @@
  * empty since nothing exercises it under vitest.
  *
  * ⛔ ET IL VISE L'ESPACE PUBLIÉ, PLUS L'ARBRE DE TRAVAIL DU VOISIN — 2026-09-04.
- * Ce chemin pointait `../../../../../runtime-ui/src/…`, donc l'arbre VIF : la
+ * Ce chemin remontait vers le dossier de travail du voisin, donc son arbre VIF : la
  * moindre frappe de runtime-ui entrait dans mes bancs sans qu'il ait enregistré
  * ni publié quoi que ce soit. `.publie/runtime-ui` est un instantané figé, posé
  * par sa publication — ce que je lis ne bouge que quand il le décide.

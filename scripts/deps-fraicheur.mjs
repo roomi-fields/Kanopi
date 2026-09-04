@@ -228,7 +228,18 @@ if (etats.some((e) => e.includes("NON COMMITÉ"))) {
 // sur une autre machine ce garde aurait déclaré le manifeste illisible et mon portillon serait
 // devenu rouge pour une cause étrangère au dépôt. Un chemin absolu ne se déclare nulle part et
 // ne se voit qu'au moment où il échoue, ailleurs que là où il a été écrit (atlas, 2026-08-14).
-const RACINES_KAIROS = racinesExposees(resolve(repoRoot, "..", "kairos"));
+// ⛔ ET IL LIT L'ÉTAT PUBLIÉ, PLUS L'ARBRE DE TRAVAIL — 2026-09-04. Ce chemin remontait vers le
+// dossier vif du voisin : la moindre frappe de kairos changeait ce que ce garde dérivait, sans qu'il
+// ait rien enregistré ni publié. C'était la forme ÉCLATÉE — le nom du voisin passé en segment
+// séparé plutôt que collé au chemin — celle que le
+// garde des sources voisines ne voyait pas avant sa définition du 2026-09-04 — mon compte est donc
+// passé de 7 à 12 sans qu'aucun geste n'ait régressé : l'instrument voyait moins qu'il n'affirmait.
+// ⇒ Mesurer la fraîcheur contre l'état PUBLIÉ est aussi la seule lecture cohérente : c'est celui-là
+//   que je consomme depuis la migration, et un qualificatif dérivé d'un autre état parlerait d'un
+//   voisin que je n'utilise pas.
+const RACINES_KAIROS = racinesExposees(
+  resolve(repoRoot, "..", ".publie", "kairos"),
+);
 if (RACINES_KAIROS === null) {
   errors.push(
     "le manifeste de kairos n'est plus lisible — le qualificatif du refus ne se dérive plus, tout compterait.",
