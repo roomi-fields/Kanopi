@@ -72,7 +72,13 @@ try {
     `[garde-portes] IMPOSSIBLE DE LIRE LES CATALOGUES DE BPSCRIPT — ${e.message}`,
   );
   console.error(
-    `   Attendu sous ${LIB_AMONT} — bpscript a-t-il publié (hub/tools/publier.sh bpscript) ?`,
+    // ⛔ LA PORTE DE PUBLICATION A CHANGÉ LE 2026-09-04 À 17:06, ET CE MESSAGE PRESCRIVAIT L'ANCIENNE.
+    // `hub/tools/publier.sh` REFUSE désormais l'appel direct : tout passe par `tour publie`, qui prend
+    // un verrou de quelques secondes — parce que la publication VIDE le dossier avant de recopier, et
+    // qu'un lecteur tombé au milieu voyait un dépôt à moitié effacé.
+    // ⇒ Un message d'erreur qui prescrit une commande morte envoie son lecteur dans un mur, au moment
+    //   précis où il cherche de l'aide. Une prescription est une affirmation du code comme une autre.
+    `   Attendu sous ${LIB_AMONT} — bpscript a-t-il publié (node ~/dev/bp/hub/tour.cjs publie bpscript) ?`,
   );
   console.error(
     "   Sans ses noms le garde ne reconnaît aucun catalogue : il refuse de passer pour vert.",
