@@ -204,7 +204,22 @@ export function voisinsLies(racine) {
         continue;
       }
       // Un lien interne à l'atelier (paquet à paquet) n'est pas un voisin.
-      if (cible === racine || cible.startsWith(racine + "/")) continue;
+      // ⛔ SAUF `.last/`, ET C'EST UN QUATRIÈME RÉGIME — 2026-09-04. Les copies figées que pose
+      // `tour last` vivent PHYSIQUEMENT sous ma racine : ce filtre, écrit pour écarter mes propres
+      // paquets d'espace de travail, les écartait toutes. Mesuré en service — mes gardes ne
+      // reconnaissaient plus que DEUX voisins sur onze, et deux d'entre eux ont refusé le portillon
+      // en disant « relevé trop maigre pour prouver quoi que ce soit ». Ils ont eu raison de refuser :
+      // la mesure avait raté, elle n'avait pas trouvé zéro voisin.
+      //
+      // ⇒ *Un voisin se définit par CE QU'IL EST, jamais par l'endroit où sa copie se trouve.* Le
+      //   critère « hors de ma racine » confondait deux choses que rien n'obligeait à coïncider : être
+      //   à moi, et être chez moi. Une copie figée est à eux et chez moi.
+      //
+      // ⚠️ C'est le quatrième régime en un jour — arbre vif, paquet épinglé, source publiée, copie
+      //   figée — et chacun a cassé les pièces qui interrogeaient le SYSTÈME DE FICHIERS plutôt que
+      //   l'INTENTION. Le manifeste, lui, n'a jamais menti : il déclare `file:../../.last/<voisin>`.
+      const dansLesCopiesFigees = cible.startsWith(join(racine, ".last") + "/");
+      if (!dansLesCopiesFigees && (cible === racine || cible.startsWith(racine + "/"))) continue;
 
       // ⛔ UN VOISIN EST UN DÉPÔT DONT LA CIBLE EST LA RACINE — pas « un dossier qui se trouve dans un
       // dépôt ». Mesuré le 2026-08-24, à la première bascule vers un paquet publié : runtime-OSC
