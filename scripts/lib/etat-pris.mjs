@@ -100,11 +100,28 @@ export function etatPrisReel(racine) {
     //   la frappe du voisin sous `src/` ne m'atteint pas, sa RECONSTRUCTION m'atteint immédiatement,
     //   et sa poussée n'a rien à voir avec le moment. Un moment de plus, invisible aux deux autres.
     // ⇒ LA VOIE SE DÉRIVE DE CE QUI EST RÉSOLU, jamais du dépôt où le lien atterrit.
+    // ⛔ ET LA SOURCE PUBLIÉE EST NOMMABLE, ELLE AUSSI — 2026-09-04. `.publie/<voisin>` n'a ni tête
+    // git — l'archive ne porte pas de `.git` — ni empreinte de paquet, puisqu'elle n'est pas un
+    // construit. Ce garde la déclarait donc NON NOMMABLE et refusait mes neuf voisins d'un coup,
+    // le jour même où ils y basculaient tous.
+    // ⇒ Son exigence est juste : *rendre un verdict sur un état qu'aucun tiers ne peut rejouer, c'est
+    //   publier un vert qui ne se vérifie pas.* ⇒ Mais l'état EST rejouable : la publication grave le
+    //   commit dans un fichier `EMPREINTE` posé à côté. Le garde lisait deux témoins sur trois.
+    // ⚠️ Il garde ses dents : un dossier sans tête, sans empreinte de paquet ET sans `EMPREINTE`
+    //   reste non nommable, et c'est le cas qui a fait naître cette pièce.
+    const empreinteDuPublie = () => {
+      const f = join(v.chemin, "EMPREINTE");
+      if (!existsSync(f)) return null;
+      const commit = readFileSync(f, "utf-8").trim().split(/\s+/)[0];
+      return /^[0-9a-f]{7,40}$/.test(commit) ? commit : null;
+    };
+    const publie = v.tete === null ? empreinteDuPublie() : null;
+
     out.push({
       nom,
       voie: voieResolue(racine, nom),
-      etat: v.tete,
-      nommable: v.tete !== null,
+      etat: v.tete ?? publie,
+      nommable: v.tete !== null || publie !== null,
       viseUneReferenceMouvante: false,
       cibleEcrite: brut?.cible ?? null,
       dernierPublie: null,
