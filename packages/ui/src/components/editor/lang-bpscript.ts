@@ -4,7 +4,7 @@ import { hoverTooltip, EditorView, type Tooltip } from '@codemirror/view';
 import { linter, type Diagnostic } from '@codemirror/lint';
 import { compileBps } from '../../lib/runtimes/compile-cache';
 import { describeVocabulary, type VocabControl, type VocabValue } from 'bpscript';
-import { famille } from 'bpscript/objets';
+import { famille, objets } from 'bpscript/objets';
 
 // BPScript editor intelligence, ALL sourced from BPScript's LIVING vocabulary
 // authority `describeVocabulary()` (the same aggregation its compile guard uses),
@@ -37,9 +37,37 @@ function enumValues(values: string | string[] | undefined): string[] {
   return arr.map((v) => v.trim()).filter((v) => /^[A-Za-z][\w-]*$/.test(v));
 }
 
-/** Short inline `detail` for a control popup entry (its transport group if any). */
+/** Nom nu d'un contrôle → les librairies où il vit, dérivées de la porte des objets.
+ *
+ *  ⛔ Cette table remplace le champ `transportGroup` du vocabulaire, retiré en amont le
+ *  2026-09-04 : sa valeur était déjà écrite dans le chemin qualifié du contrôle
+ *  (`expression.transposecont`), et c'est au lecteur de la composer plutôt qu'au
+ *  compilateur de la publier deux fois.
+ *
+ *  ⚠️ Un nom nu ne suffit pas toujours : `volume` vit à la fois dans `audio`, `expression`
+ *  et `midi`. Un nom ambigu ne rend donc AUCUNE librairie — mieux vaut une étiquette courte
+ *  qu'une étiquette qui désigne la mauvaise. Mesuré sur les 104 contrôles publiés : 82
+ *  étiquettes inchangées, 20 gagnées (des contrôles que le champ laissait nus reçoivent leur
+ *  librairie), 1 perdue — `volume`, précisément l'ambigu. */
+const librairiesParControle: Map<string, Set<string>> = (() => {
+  const par = new Map<string, Set<string>>();
+  for (const e of objets()) {
+    // `chaine` EST le chemin qualifié — `['expression', 'transposecont']` — et sa tête est la
+    // librairie. C'est le champ que la porte déclare ; `librairie`, qu'elle porte à l'exécution,
+    // n'est pas dans son type et ne se lit donc pas.
+    const librairie = e?.place === 'controls' ? e.chaine?.[0] : undefined;
+    if (!librairie || !e.nom) continue;
+    let libs = par.get(e.nom);
+    if (!libs) par.set(e.nom, (libs = new Set()));
+    libs.add(librairie);
+  }
+  return par;
+})();
+
+/** Short inline `detail` for a control popup entry (the library it lives in, when unambiguous). */
 function controlDetail(c: VocabControl): string {
-  return c.transportGroup ? `control · ${c.transportGroup}` : 'control';
+  const libs = librairiesParControle.get(c.name);
+  return libs?.size === 1 ? `control · ${[...libs][0]}` : 'control';
 }
 
 /** Expanded `info` doc for a control (description + range/default/args). */

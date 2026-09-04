@@ -184,7 +184,6 @@ export interface VocabControl {
   values?: string | string[];
   default?: string | number;
   description?: string;
-  transportGroup?: string;
 }
 /** An overridable scene/occurrence value (e.g. `diapason`). */
 export interface VocabValue {
