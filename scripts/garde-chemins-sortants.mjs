@@ -73,6 +73,14 @@ const ABSENCES_DECLAREES = new Map([
 ]);
 
 /** Le nom du dossier sur disque, qui n'est pas toujours celui qu'un document écrit. */
+// ⛔ ET IL SE CHERCHE DANS DEUX ESPACES DEPUIS LE 2026-09-04. Ma session tourne sous enveloppe :
+// l'atelier ne me montre plus que `hub` et `kanopi`, donc CHAQUE renvoi vers un voisin était déclaré
+// mort et ce garde refusait le portillon en bloc — six renvois parfaitement vivants, dont la bible du
+// langage. ⇒ L'espace publié porte les mêmes arbres à leur référence publiée ; un renvoi documentaire
+// désigne un DOCUMENT, pas un état de travail, donc l'y trouver répond exactement à la question posée.
+// ⇒ L'atelier reste en premier : hors enveloppe les deux coïncident, et l'arbre vif fait foi quand il
+//   est là. Rendre les DEUX moitiés — l'espace et le nom — parce que l'appelant doit reconstruire le
+//   chemin complet, et qu'un dépôt trouvé dans un espace ne vit pas dans l'autre.
 function depotSurDisque(nom) {
   const candidats = [
     nom,
@@ -81,7 +89,9 @@ function depotSurDisque(nom) {
       nom.toLowerCase()
     ],
   ].filter(Boolean);
-  for (const c of candidats) if (existsSync(join(ATELIER, c))) return c;
+  for (const espace of [ATELIER, join(ATELIER, ".publie")])
+    for (const c of candidats)
+      if (existsSync(join(espace, c))) return join(espace, c);
   return null;
 }
 
@@ -122,7 +132,7 @@ for (const rel of fichiers) {
       const declaree = ABSENCES_DECLAREES.has(cible);
       const depot = depotSurDisque(cible.slice(0, cible.indexOf("/")));
       const reste = cible.slice(cible.indexOf("/") + 1);
-      const vit = depot !== null && existsSync(join(ATELIER, depot, reste));
+      const vit = depot !== null && existsSync(join(depot, reste));
       if (declaree) {
         vus.add(cible);
         // ⛔ LE VERROU SE RETOURNE : une absence déclarée qui se met à exister doit sortir.
