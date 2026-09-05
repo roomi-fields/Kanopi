@@ -53,12 +53,38 @@ if (suivis.length === 0) {
 const MOTIF =
   /(?:^|[\s;])(?:import|export)[^;\n]{0,400}?from\s*["'](\.\.?\/[^"']+)["']|import\(\s*["'](\.\.?\/[^"']+)["']\s*\)/g;
 
+/**
+ * ⛔ LES COMMENTAIRES SE RETIRENT AVANT DE CHERCHER, ET CE GARDE S'EST ACCUSÉ LUI-MÊME POUR
+ * L'APPRENDRE. Sa première version a mordu sur le `import('./x.mjs')` de sa PROPRE en-tête — un
+ * exemple pédagogique, pas un import. ⇒ *Un garde qui lit le texte au lieu du code accuse la prose
+ * qui l'explique*, et le prochain qui écrit un exemple le rallume sans le savoir.
+ * ⚠️ Le dépouillement est volontairement simple — blocs et lignes — parce qu'il ne sert qu'à écarter
+ * de la prose : une chaîne contenant `//` en sort intacte pour ce qui nous occupe, un import ne se
+ * cachant jamais dans une chaîne.
+ */
+const sansCommentaires = (t) =>
+  t.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^\s*\/\/.*$/gm, " ");
+
+/**
+ * ⛔ LA LIGNE D'INJECTION SE COMPOSE, ELLE NE S'ÉCRIT PAS. Écrite en clair, elle est une graphie que
+ * ce garde reconnaît — et il s'est accusé lui-même deux fois de suite en la lisant dans son propre
+ * source, d'abord dans son en-tête puis dans ses littéraux d'injection.
+ * ⇒ *Un garde ne peut pas porter en clair la graphie qu'il traque.* Mon garde des portes de
+ *   librairie avait déjà appris exactement cela.
+ */
+const LIGNE_INJECTEE =
+  "import { rien } from " + '"' + "." + "/lib/ce-fichier-n-existe-pas.mjs" + '"' + ";";
+
 let examines = 0;
 const morts = [];
 for (const [i, f] of suivis.entries()) {
   let texte = readFileSync(join(RACINE, f), "utf-8");
-  if (injecter && i === 0)
-    texte += `\nimport { rien } from "./lib/ce-fichier-n-existe-pas.mjs";\n`;
+  // ⛔ DEUX INJECTIONS OPPOSÉES : l'une DOIT mordre, l'autre NON. Sans la seconde, un garde qui
+  // accuse la prose reste vert sur la première — c'est le défaut qu'il a eu.
+  if (injecter && i === 0) texte += `\n${LIGNE_INJECTEE}\n`;
+  if (process.argv.includes("--injecter-en-commentaire") && i === 0)
+    texte += `\n// exemple pédagogique : ${LIGNE_INJECTEE}\n`;
+  texte = sansCommentaires(texte);
   MOTIF.lastIndex = 0;
   let m;
   while ((m = MOTIF.exec(texte)) !== null) {
