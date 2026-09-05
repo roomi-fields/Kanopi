@@ -41,7 +41,6 @@ import {
   existsSync,
 } from "node:fs";
 import { causeDuRouge, attributionDuRouge } from "./lib/cause-du-rouge.mjs";
-import { qualifierEcriture } from "./lib/qualifier-ecriture.mjs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { lireReleve } from "./lib/releve-du-portillon.mjs";

@@ -63,6 +63,7 @@ const MAILLONS = [
   ["eprouve:releve-du-portillon", "node", ["scripts/lib/releve-du-portillon.mjs", "--eprouver"]],
   ["releve-du-portillon", "node", ["scripts/garde-releve-du-portillon.mjs"]],
   ["chemins-sortants", "node", ["scripts/garde-chemins-sortants.mjs"]],
+  ["imports-resolus", "node", ["scripts/garde-imports-resolus.mjs"]],
   ["depcruise", "npx", [
     "depcruise",
     "packages/ui/src/**/*.{ts,svelte}",
