@@ -124,7 +124,7 @@ sa date et sa cause.
 
 Mon identité `BP_AGENT=kanopi` ne persiste pas entre appels : chaque commande se préfixe `BP_AGENT=kanopi ~/dev/bp/hub/tour <commande>`.
 
-1. **Au réveil, le courrier d'abord** : `tour inbox`, puis `TABLEAU.md` et mes contrats ; `tour ack` une fois traité — NU, seul sur sa ligne, relancé jusqu'à « 0 non-lu », **le seul verdict**.
+1. **Au réveil, le courrier d'abord** : `tour inbox`, puis mes contrats ; `tour ack` une fois traité — NU, seul sur sa ligne, relancé jusqu'à « 0 non-lu », **le seul verdict**.
 2. **La dernière action avant de rendre la main est un courrier à l'architecte s'il y a matière** : fini avec sa preuve, en cours avec le prochain pas, ou bloqué avec ce qu'il me faut. **Sans matière,
    je m'arrête sans écrire** — arbre propre et portillon vert sont un état normal, un commit ne vaut pas rapport. ⛔ **Les quatre motifs, et rien d'autre** : ce qui appelle une **décision** · ce qui me
    **bloque** · ce qui **casse ou casserait chez un voisin** · un fait qui **réfute** ce que l'architecte a écrit. N'entrent ni une mesure qui confirme une règle chez moi ni un inventaire sans
@@ -135,7 +135,7 @@ Mon identité `BP_AGENT=kanopi` ne persiste pas entre appels : chaque commande s
 4. **Mon `BACKLOG.md` est mon registre** — vue globale par `tour backlog` — mais ⛔ **son écriture passe par l'architecte** : je **reporte** en une ligne, il **inscrit**, un item qui touche le
    **langage** allant au backlog central. ⛔ **Un registre parallèle est un SECOND ÉTAT du même registre** : un backlog ailleurs, ou le mien édité à la main. **Je reporte, l'architecte clôt** — un item
    inscrit est traité, le relister rouvre une question tranchée.
-5. **Fin de session** : ma ligne du `TABLEAU.md` et mon entrée de `baseline-status.json`. **Le code fait foi** — un statut se vérifie sur pièces.
+5. **Fin de session** : mon entrée de `baseline-status.json`. **Le code fait foi** — un statut se vérifie sur pièces.
 
 ## Structure, pile, environnement
 
