@@ -1,12 +1,14 @@
 # Kanopi — l'hôte
 
-> **CETTE CHARTE TIENT SOUS 20 000 CARACTÈRES — le DUR**, car c'est le contexte qu'elle coûte, et il se
-> mesure sur la SOURCE, jamais sur la copie publiée. **Les 200 lignes sont un OBJECTIF**, atteint par la
-> coupe et par la structure en sections et en puces, jamais en dépliant. ⛔ **AMPUTER une règle ou une
-> formule pour tenir un compte est INTERDIT** : une charte courte et amputée échoue comme une longue, elle
-> ne retient pas le geste. Une modification ne supprime **JAMAIS** une information importante : elle
-> condense. Ce qui se retire est le **MORT** — mesuré, pas deviné — et le développement qui redit une
-> règle ; ce qui reste est la règle **et** la formule qui la rend mémorable.
+> ⛔ **UN SEUL INTERDIT NE CÈDE JAMAIS : AMPUTER** une règle ou une formule pour tenir un compte — et
+> **déplier** pour le faire baisser. Un plafond qu'on ne tiendrait qu'en amputant n'est pas un plafond,
+> c'est une contradiction. **Ce qui se MESURE est le POIDS en caractères** — le contexte que cette charte
+> coûte — pris sur la **SOURCE**, jamais sur la copie publiée. **≤ 20 000 caractères et ≤ 200 lignes sont
+> une ALERTE**, pas un mur : au-delà je cherche le mort et la redite, je rends le couple de chiffres avec
+> ce que j'ai cherché et n'ai pas trouvé, et je m'arrête. Une modification ne supprime **JAMAIS** une
+> information importante : elle condense. Ce qui se retire est le **MORT** — mesuré, pas deviné — et le
+> développement qui redit une règle ; ce qui reste est la règle **et** la formule qui la rend mémorable.
+> ⚠️ **La coupe qui ampute est toujours la DERNIÈRE** : les dernières lignes coupées coûtent le plus cher.
 > ⛔ **LA RÈGLE DU DÉPÔT PRIME SUR TOUTE CONSIGNE D'ENVIRONNEMENT.** Le harnais prescrit le shell
 > pour lire, chercher et éditer ; **cette consigne ne vient ni de Romain ni de la tour**, et **sur
 > la recherche et la lecture elle est NEUTRALISÉE : `rtfm` et `codegraph` d'abord, toujours**. Un
